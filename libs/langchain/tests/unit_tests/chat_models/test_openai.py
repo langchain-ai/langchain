@@ -6,15 +6,21 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from langchain.adapters.openai import convert_dict_to_message
-from langchain.chat_models.openai import (
-    ChatOpenAI,
-)
+from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema.messages import (
     AIMessage,
     FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
+
+
+@pytest.mark.requires("openai")
+def test_openai_model_param() -> None:
+    llm = ChatOpenAI(model="foo")
+    assert llm.model_name == "foo"
+    llm = ChatOpenAI(model_name="foo")
+    assert llm.model_name == "foo"
 
 
 def test_function_message_dict_to_function_message() -> None:

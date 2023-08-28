@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
+import threading
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import FIRST_COMPLETED, wait
+from functools import partial
 from itertools import tee
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Awaitable,
@@ -23,16 +27,31 @@ from typing import (
     cast,
 )
 
-from pydantic import Field
+if TYPE_CHECKING:
+    from langchain.callbacks.manager import (
+        AsyncCallbackManagerForChainRun,
+        CallbackManagerForChainRun,
+    )
 
-from langchain.callbacks.base import BaseCallbackManager
+
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
-from langchain.schema.runnable.config import RunnableConfig
+from langchain.pydantic_v1 import Field
+from langchain.schema.runnable.config import (
+    RunnableConfig,
+    ensure_config,
+    get_async_callback_manager_for_config,
+    get_callback_manager_for_config,
+    get_executor_for_config,
+    patch_config,
+)
 from langchain.schema.runnable.utils import (
+    accepts_run_manager,
+    accepts_run_manager_and_config,
     gather_with_concurrency,
 )
 from langchain.utils.aiter import atee, py_anext
+from langchain.utils.iter import safetee
 
 Input = TypeVar("Input")
 # Output type should implement __concat__, as eg str, list, dict do
@@ -49,7 +68,7 @@ class Runnable(Generic[Input, Output], ABC):
         other: Union[
             Runnable[Any, Other],
             Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
+            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
     ) -> RunnableSequence[Input, Other]:
         return RunnableSequence(first=self, last=coerce_to_runnable(other))
@@ -59,7 +78,7 @@ class Runnable(Generic[Input, Output], ABC):
         other: Union[
             Runnable[Other, Any],
             Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
+            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
     ) -> RunnableSequence[Other, Output]:
         return RunnableSequence(first=coerce_to_runnable(other), last=self)
@@ -71,22 +90,21 @@ class Runnable(Generic[Input, Output], ABC):
         ...
 
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
         """
         Default implementation of ainvoke, which calls invoke in a thread pool.
         Subclasses should override this method if they can run asynchronously.
         """
         return await asyncio.get_running_loop().run_in_executor(
-            None, self.invoke, input, config
+            None, partial(self.invoke, **kwargs), input, config
         )
 
     def batch(
         self,
         inputs: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        *,
-        max_concurrency: Optional[int] = None,
+        **kwargs: Optional[Any],
     ) -> List[Output]:
         """
         Default implementation of batch, which calls invoke N times.
@@ -96,47 +114,55 @@ class Runnable(Generic[Input, Output], ABC):
 
         # If there's only one input, don't bother with the executor
         if len(inputs) == 1:
-            return [self.invoke(inputs[0], configs[0])]
+            return [self.invoke(inputs[0], configs[0], **kwargs)]
 
-        with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
-            return list(executor.map(self.invoke, inputs, configs))
+        with get_executor_for_config(configs[0]) as executor:
+            return list(executor.map(partial(self.invoke, **kwargs), inputs, configs))
 
     async def abatch(
         self,
         inputs: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        *,
-        max_concurrency: Optional[int] = None,
+        **kwargs: Optional[Any],
     ) -> List[Output]:
         """
         Default implementation of abatch, which calls ainvoke N times.
         Subclasses should override this method if they can batch more efficiently.
         """
         configs = self._get_config_list(config, len(inputs))
-        coros = map(self.ainvoke, inputs, configs)
+        coros = map(partial(self.ainvoke, **kwargs), inputs, configs)
 
-        return await gather_with_concurrency(max_concurrency, *coros)
+        return await gather_with_concurrency(configs[0].get("max_concurrency"), *coros)
 
     def stream(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         """
         Default implementation of stream, which calls invoke.
         Subclasses should override this method if they support streaming output.
         """
-        yield self.invoke(input, config)
+        yield self.invoke(input, config, **kwargs)
 
     async def astream(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         """
         Default implementation of astream, which calls ainvoke.
         Subclasses should override this method if they support streaming output.
         """
-        yield await self.ainvoke(input, config)
+        yield await self.ainvoke(input, config, **kwargs)
 
     def transform(
-        self, input: Iterator[Input], config: Optional[RunnableConfig] = None
+        self,
+        input: Iterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         """
         Default implementation of transform, which buffers input and then calls stream.
@@ -153,10 +179,13 @@ class Runnable(Generic[Input, Output], ABC):
                 # This method should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
         if final:
-            yield from self.stream(final, config)
+            yield from self.stream(final, config, **kwargs)
 
     async def atransform(
-        self, input: AsyncIterator[Input], config: Optional[RunnableConfig] = None
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         """
         Default implementation of atransform, which buffers input and calls astream.
@@ -174,7 +203,7 @@ class Runnable(Generic[Input, Output], ABC):
                 final += chunk  # type: ignore[operator]
 
         if final:
-            async for output in self.astream(final, config):
+            async for output in self.astream(final, config, **kwargs):
                 yield output
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
@@ -182,6 +211,13 @@ class Runnable(Generic[Input, Output], ABC):
         Bind arguments to a Runnable, returning a new Runnable.
         """
         return RunnableBinding(bound=self, kwargs=kwargs)
+
+    def map(self) -> Runnable[List[Input], List[Output]]:
+        """
+        Return a new Runnable that maps a list of inputs to a list of outputs,
+        by calling invoke() with each input.
+        """
+        return RunnableEach(bound=self)
 
     def with_fallbacks(
         self,
@@ -204,6 +240,8 @@ class Runnable(Generic[Input, Output], ABC):
         Helper method to get a list of configs from a single config or a list of
         configs, useful for subclasses overriding batch() or abatch().
         """
+        if length < 1:
+            raise ValueError(f"length must be >= 1, but got {length}")
         if isinstance(config, list) and len(config) != length:
             raise ValueError(
                 f"config must be a list of the same length as inputs, "
@@ -211,95 +249,114 @@ class Runnable(Generic[Input, Output], ABC):
             )
 
         return (
-            config
+            list(map(ensure_config, config))
             if isinstance(config, list)
-            else [config.copy() if config is not None else {} for _ in range(length)]
+            else [patch_config(config, deep_copy_locals=True) for _ in range(length)]
         )
 
     def _call_with_config(
         self,
-        func: Callable[[Input], Output],
+        func: Union[
+            Callable[[Input], Output],
+            Callable[[Input, CallbackManagerForChainRun], Output],
+            Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
+        ],
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
         with callbacks. Use this method to implement invoke() in subclasses."""
-        from langchain.callbacks.manager import CallbackManager
-
-        config = config or {}
-        callback_manager = CallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            inheritable_tags=config.get("tags"),
-            inheritable_metadata=config.get("metadata"),
-        )
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
-            input if isinstance(input, dict) else {"input": input},
+            input,
             run_type=run_type,
         )
         try:
-            output = func(input)
+            if accepts_run_manager_and_config(func):
+                output = func(
+                    input,
+                    run_manager=run_manager,
+                    config=config,
+                )  # type: ignore[call-arg]
+            elif accepts_run_manager(func):
+                output = func(input, run_manager=run_manager)  # type: ignore[call-arg]
+            else:
+                output = func(input)  # type: ignore[call-arg]
         except Exception as e:
             run_manager.on_chain_error(e)
             raise
         else:
-            output_for_tracer = dumpd(output)
-            run_manager.on_chain_end(
-                output_for_tracer
-                if isinstance(output_for_tracer, dict)
-                else {"output": output_for_tracer}
-            )
+            run_manager.on_chain_end(dumpd(output))
             return output
 
     async def _acall_with_config(
         self,
-        func: Callable[[Input], Awaitable[Output]],
+        func: Union[
+            Callable[[Input], Awaitable[Output]],
+            Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
+            Callable[
+                [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+                Awaitable[Output],
+            ],
+        ],
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
         with callbacks. Use this method to implement ainvoke() in subclasses."""
-        from langchain.callbacks.manager import AsyncCallbackManager
-
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            inheritable_tags=config.get("tags"),
-            inheritable_metadata=config.get("metadata"),
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
-            input if isinstance(input, dict) else {"input": input},
+            input,
             run_type=run_type,
         )
         try:
-            output = await func(input)
+            if accepts_run_manager_and_config(func):
+                output = await func(
+                    input,
+                    run_manager=run_manager,
+                    config=config,
+                )  # type: ignore[call-arg]
+            elif accepts_run_manager(func):
+                output = await func(
+                    input,
+                    run_manager=run_manager,
+                )  # type: ignore[call-arg]
+            else:
+                output = await func(input)  # type: ignore[call-arg]
         except Exception as e:
             await run_manager.on_chain_error(e)
             raise
         else:
-            output_for_tracer = dumpd(output)
-            await run_manager.on_chain_end(
-                output_for_tracer
-                if isinstance(output_for_tracer, dict)
-                else {"output": output_for_tracer}
-            )
+            await run_manager.on_chain_end(dumpd(output))
             return output
 
     def _transform_stream_with_config(
         self,
         input: Iterator[Input],
-        transformer: Callable[[Iterator[Input]], Iterator[Output]],
+        transformer: Union[
+            Callable[[Iterator[Input]], Iterator[Output]],
+            Callable[[Iterator[Input], CallbackManagerForChainRun], Iterator[Output]],
+            Callable[
+                [
+                    Iterator[Input],
+                    CallbackManagerForChainRun,
+                    RunnableConfig,
+                ],
+                Iterator[Output],
+            ],
+        ],
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> Iterator[Output]:
         """Helper method to transform an Iterator of Input values into an Iterator of
         Output values, with callbacks.
         Use this to implement `stream()` or `transform()` in Runnable subclasses."""
-        from langchain.callbacks.manager import CallbackManager
-
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = tee(input, 2)
         # Start the input iterator to ensure the input runnable starts before this one
@@ -308,19 +365,28 @@ class Runnable(Generic[Input, Output], ABC):
         final_output: Optional[Output] = None
         final_output_supported = True
 
-        config = config or {}
-        callback_manager = CallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            inheritable_tags=config.get("tags"),
-            inheritable_metadata=config.get("metadata"),
-        )
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
             {"input": ""},
             run_type=run_type,
         )
         try:
-            for chunk in transformer(input_for_transform):
+            if accepts_run_manager_and_config(transformer):
+                iterator = transformer(
+                    input_for_transform,
+                    run_manager=run_manager,
+                    config=config,
+                )  # type: ignore[call-arg]
+            elif accepts_run_manager(transformer):
+                iterator = transformer(
+                    input_for_transform,
+                    run_manager=run_manager,
+                )  # type: ignore[call-arg]
+            else:
+                iterator = transformer(input_for_transform)  # type: ignore[call-arg]
+            for chunk in iterator:
                 yield chunk
                 if final_output_supported:
                     if final_output is None:
@@ -342,35 +408,35 @@ class Runnable(Generic[Input, Output], ABC):
                             final_input = None
                             final_input_supported = False
         except Exception as e:
-            run_manager.on_chain_error(
-                e,
-                inputs=final_input
-                if isinstance(final_input, dict)
-                else {"input": final_input},
-            )
+            run_manager.on_chain_error(e, inputs=final_input)
             raise
         else:
-            run_manager.on_chain_end(
-                final_output
-                if isinstance(final_output, dict)
-                else {"output": final_output},
-                inputs=final_input
-                if isinstance(final_input, dict)
-                else {"input": final_input},
-            )
+            run_manager.on_chain_end(final_output, inputs=final_input)
 
     async def _atransform_stream_with_config(
         self,
         input: AsyncIterator[Input],
-        transformer: Callable[[AsyncIterator[Input]], AsyncIterator[Output]],
+        transformer: Union[
+            Callable[[AsyncIterator[Input]], AsyncIterator[Output]],
+            Callable[
+                [AsyncIterator[Input], AsyncCallbackManagerForChainRun],
+                AsyncIterator[Output],
+            ],
+            Callable[
+                [
+                    AsyncIterator[Input],
+                    AsyncCallbackManagerForChainRun,
+                    RunnableConfig,
+                ],
+                AsyncIterator[Output],
+            ],
+        ],
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> AsyncIterator[Output]:
         """Helper method to transform an Async Iterator of Input values into an Async
         Iterator of Output values, with callbacks.
         Use this to implement `astream()` or `atransform()` in Runnable subclasses."""
-        from langchain.callbacks.manager import AsyncCallbackManager
-
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(input, 2)
         # Start the input iterator to ensure the input runnable starts before this one
@@ -379,19 +445,30 @@ class Runnable(Generic[Input, Output], ABC):
         final_output: Optional[Output] = None
         final_output_supported = True
 
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            inheritable_tags=config.get("tags"),
-            inheritable_metadata=config.get("metadata"),
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
             {"input": ""},
             run_type=run_type,
         )
         try:
-            async for chunk in transformer(input_for_transform):
+            # mypy can't quite work out thew type guard here, but this is safe,
+            # check implementations of the accepts_* functions
+            if accepts_run_manager_and_config(transformer):
+                iterator = transformer(
+                    input_for_transform,
+                    run_manager=run_manager,
+                    config=config,
+                )  # type: ignore[call-arg]
+            elif accepts_run_manager(transformer):
+                iterator = transformer(
+                    input_for_transform,
+                    run_manager=run_manager,
+                )  # type: ignore[call-arg]
+            else:
+                iterator = transformer(input_for_transform)  # type: ignore[call-arg]
+            async for chunk in iterator:
                 yield chunk
                 if final_output_supported:
                     if final_output is None:
@@ -413,22 +490,10 @@ class Runnable(Generic[Input, Output], ABC):
                             final_input = None
                             final_input_supported = False
         except Exception as e:
-            await run_manager.on_chain_error(
-                e,
-                inputs=final_input
-                if isinstance(final_input, dict)
-                else {"input": final_input},
-            )
+            await run_manager.on_chain_error(e, inputs=final_input)
             raise
         else:
-            await run_manager.on_chain_end(
-                final_output
-                if isinstance(final_output, dict)
-                else {"output": final_output},
-                inputs=final_input
-                if isinstance(final_input, dict)
-                else {"input": final_input},
-            )
+            await run_manager.on_chain_end(final_output, inputs=final_input)
 
 
 class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
@@ -457,29 +522,17 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         yield from self.fallbacks
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-        from langchain.callbacks.manager import CallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = CallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
         # start the root run
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = callback_manager.on_chain_start(dumpd(self), input)
         first_error = None
         for runnable in self.runnables:
             try:
                 output = runnable.invoke(
                     input,
-                    patch_config(config, run_manager.get_child()),
+                    patch_config(config, callbacks=run_manager.get_child()),
                 )
             except self.exceptions_to_handle as e:
                 if first_error is None:
@@ -488,9 +541,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 run_manager.on_chain_error(e)
                 raise e
             else:
-                run_manager.on_chain_end(
-                    output if isinstance(output, dict) else {"output": output}
-                )
+                run_manager.on_chain_end(output)
                 return output
         if first_error is None:
             raise ValueError("No error stored at end of fallbacks.")
@@ -498,32 +549,23 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         raise first_error
 
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Output:
-        from langchain.callbacks.manager import AsyncCallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
-        run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
         first_error = None
         for runnable in self.runnables:
             try:
                 output = await runnable.ainvoke(
                     input,
-                    patch_config(config, run_manager.get_child()),
+                    patch_config(config, callbacks=run_manager.get_child()),
                 )
             except self.exceptions_to_handle as e:
                 if first_error is None:
@@ -532,9 +574,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 await run_manager.on_chain_error(e)
                 raise e
             else:
-                await run_manager.on_chain_end(
-                    output if isinstance(output, dict) else {"output": output}
-                )
+                await run_manager.on_chain_end(output)
                 return output
         if first_error is None:
             raise ValueError("No error stored at end of fallbacks.")
@@ -545,8 +585,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         self,
         inputs: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        *,
-        max_concurrency: Optional[int] = None,
+        **kwargs: Optional[Any],
     ) -> List[Output]:
         from langchain.callbacks.manager import CallbackManager
 
@@ -579,10 +618,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                     inputs,
                     [
                         # each step a child run of the corresponding root run
-                        patch_config(config, rm.get_child())
+                        patch_config(config, callbacks=rm.get_child())
                         for rm, config in zip(run_managers, configs)
                     ],
-                    max_concurrency=max_concurrency,
                 )
             except self.exceptions_to_handle as e:
                 if first_error is None:
@@ -593,9 +631,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 raise e
             else:
                 for rm, output in zip(run_managers, outputs):
-                    rm.on_chain_end(
-                        output if isinstance(output, dict) else {"output": output}
-                    )
+                    rm.on_chain_end(output)
                 return outputs
         if first_error is None:
             raise ValueError("No error stored at end of fallbacks.")
@@ -607,13 +643,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         self,
         inputs: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        *,
-        max_concurrency: Optional[int] = None,
+        **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain.callbacks.manager import (
-            AsyncCallbackManager,
-            AsyncCallbackManagerForChainRun,
-        )
+        from langchain.callbacks.manager import AsyncCallbackManager
 
         # setup callbacks
         configs = self._get_config_list(config, len(inputs))
@@ -632,9 +664,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         # start the root runs, one per input
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
-                cm.on_chain_start(
-                    dumpd(self), input if isinstance(input, dict) else {"input": input}
-                )
+                cm.on_chain_start(dumpd(self), input)
                 for cm, input in zip(callback_managers, inputs)
             )
         )
@@ -646,10 +676,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                     inputs,
                     [
                         # each step a child run of the corresponding root run
-                        patch_config(config, rm.get_child())
+                        patch_config(config, callbacks=rm.get_child())
                         for rm, config in zip(run_managers, configs)
                     ],
-                    max_concurrency=max_concurrency,
                 )
             except self.exceptions_to_handle as e:
                 if first_error is None:
@@ -659,9 +688,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             else:
                 await asyncio.gather(
                     *(
-                        rm.on_chain_end(
-                            output if isinstance(output, dict) else {"output": output}
-                        )
+                        rm.on_chain_end(output)
                         for rm, output in zip(run_managers, outputs)
                     )
                 )
@@ -701,7 +728,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         other: Union[
             Runnable[Any, Other],
             Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
+            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
     ) -> RunnableSequence[Input, Other]:
         if isinstance(other, RunnableSequence):
@@ -722,7 +749,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         other: Union[
             Runnable[Other, Any],
             Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
+            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
     ) -> RunnableSequence[Other, Output]:
         if isinstance(other, RunnableSequence):
@@ -739,23 +766,11 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             )
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-        from langchain.callbacks.manager import CallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = CallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
         # start the root run
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = callback_manager.on_chain_start(dumpd(self), input)
 
         # invoke all steps in sequence
         try:
@@ -763,38 +778,27 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 input = step.invoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, run_manager.get_child()),
+                    patch_config(config, callbacks=run_manager.get_child()),
                 )
         # finish the root run
         except (KeyboardInterrupt, Exception) as e:
             run_manager.on_chain_error(e)
             raise
         else:
-            run_manager.on_chain_end(
-                input if isinstance(input, dict) else {"output": input}
-            )
+            run_manager.on_chain_end(input)
             return cast(Output, input)
 
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Output:
-        from langchain.callbacks.manager import AsyncCallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
-        run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
         # invoke all steps in sequence
         try:
@@ -802,24 +806,21 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 input = await step.ainvoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, run_manager.get_child()),
+                    patch_config(config, callbacks=run_manager.get_child()),
                 )
         # finish the root run
         except (KeyboardInterrupt, Exception) as e:
             await run_manager.on_chain_error(e)
             raise
         else:
-            await run_manager.on_chain_end(
-                input if isinstance(input, dict) else {"output": input}
-            )
+            await run_manager.on_chain_end(input)
             return cast(Output, input)
 
     def batch(
         self,
         inputs: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        *,
-        max_concurrency: Optional[int] = None,
+        **kwargs: Optional[Any],
     ) -> List[Output]:
         from langchain.callbacks.manager import CallbackManager
 
@@ -839,9 +840,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         ]
         # start the root runs, one per input
         run_managers = [
-            cm.on_chain_start(
-                dumpd(self), input if isinstance(input, dict) else {"input": input}
-            )
+            cm.on_chain_start(dumpd(self), input)
             for cm, input in zip(callback_managers, inputs)
         ]
 
@@ -852,10 +851,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     inputs,
                     [
                         # each step a child run of the corresponding root run
-                        patch_config(config, rm.get_child())
+                        patch_config(config, callbacks=rm.get_child())
                         for rm, config in zip(run_managers, configs)
                     ],
-                    max_concurrency=max_concurrency,
                 )
         # finish the root runs
         except (KeyboardInterrupt, Exception) as e:
@@ -864,19 +862,17 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             raise
         else:
             for rm, input in zip(run_managers, inputs):
-                rm.on_chain_end(input if isinstance(input, dict) else {"output": input})
+                rm.on_chain_end(input)
             return cast(List[Output], inputs)
 
     async def abatch(
         self,
         inputs: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        *,
-        max_concurrency: Optional[int] = None,
+        **kwargs: Optional[Any],
     ) -> List[Output]:
         from langchain.callbacks.manager import (
             AsyncCallbackManager,
-            AsyncCallbackManagerForChainRun,
         )
 
         # setup callbacks
@@ -896,9 +892,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         # start the root runs, one per input
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
-                cm.on_chain_start(
-                    dumpd(self), input if isinstance(input, dict) else {"input": input}
-                )
+                cm.on_chain_start(dumpd(self), input)
                 for cm, input in zip(callback_managers, inputs)
             )
         )
@@ -911,10 +905,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     inputs,
                     [
                         # each step a child run of the corresponding root run
-                        patch_config(config, rm.get_child())
+                        patch_config(config, callbacks=rm.get_child())
                         for rm, config in zip(run_managers, configs)
                     ],
-                    max_concurrency=max_concurrency,
                 )
         # finish the root runs
         except (KeyboardInterrupt, Exception) as e:
@@ -922,35 +915,21 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             raise
         else:
             await asyncio.gather(
-                *(
-                    rm.on_chain_end(
-                        input if isinstance(input, dict) else {"output": input}
-                    )
-                    for rm, input in zip(run_managers, inputs)
-                )
+                *(rm.on_chain_end(input) for rm, input in zip(run_managers, inputs))
             )
             return cast(List[Output], inputs)
 
     def stream(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        from langchain.callbacks.manager import CallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = CallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
         # start the root run
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = callback_manager.on_chain_start(dumpd(self), input)
 
         steps = [self.first] + self.middle + [self.last]
         streaming_start_index = 0
@@ -967,7 +946,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 input = step.invoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, run_manager.get_child()),
+                    patch_config(config, callbacks=run_manager.get_child()),
                 )
         except (KeyboardInterrupt, Exception) as e:
             run_manager.on_chain_error(e)
@@ -979,12 +958,13 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         try:
             # stream the first of the last steps with non-streaming input
             final_pipeline = steps[streaming_start_index].stream(
-                input, patch_config(config, run_manager.get_child())
+                input, patch_config(config, callbacks=run_manager.get_child())
             )
             # stream the rest of the last steps with streaming input
             for step in steps[streaming_start_index + 1 :]:
                 final_pipeline = step.transform(
-                    final_pipeline, patch_config(config, run_manager.get_child())
+                    final_pipeline,
+                    patch_config(config, callbacks=run_manager.get_child()),
                 )
             for output in final_pipeline:
                 yield output
@@ -1004,30 +984,19 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             run_manager.on_chain_error(e)
             raise
         else:
-            run_manager.on_chain_end(
-                final if isinstance(final, dict) else {"output": final}
-            )
+            run_manager.on_chain_end(final)
 
     async def astream(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        from langchain.callbacks.manager import AsyncCallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
-        run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
         steps = [self.first] + self.middle + [self.last]
         streaming_start_index = len(steps) - 1
@@ -1044,7 +1013,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 input = await step.ainvoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, run_manager.get_child()),
+                    patch_config(config, callbacks=run_manager.get_child()),
                 )
         except (KeyboardInterrupt, Exception) as e:
             await run_manager.on_chain_error(e)
@@ -1056,12 +1025,13 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         try:
             # stream the first of the last steps with non-streaming input
             final_pipeline = steps[streaming_start_index].astream(
-                input, patch_config(config, run_manager.get_child())
+                input, patch_config(config, callbacks=run_manager.get_child())
             )
             # stream the rest of the last steps with streaming input
             for step in steps[streaming_start_index + 1 :]:
                 final_pipeline = step.atransform(
-                    final_pipeline, patch_config(config, run_manager.get_child())
+                    final_pipeline,
+                    patch_config(config, callbacks=run_manager.get_child()),
                 )
             async for output in final_pipeline:
                 yield output
@@ -1081,9 +1051,31 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             await run_manager.on_chain_error(e)
             raise
         else:
-            await run_manager.on_chain_end(
-                final if isinstance(final, dict) else {"output": final}
-            )
+            await run_manager.on_chain_end(final)
+
+
+class RunnableMapChunk(Dict[str, Any]):
+    """
+    Partial output from a RunnableMap
+    """
+
+    def __add__(self, other: RunnableMapChunk) -> RunnableMapChunk:
+        chunk = RunnableMapChunk(self)
+        for key in other:
+            if key not in chunk or chunk[key] is None:
+                chunk[key] = other[key]
+            elif other[key] is not None:
+                chunk[key] += other[key]
+        return chunk
+
+    def __radd__(self, other: RunnableMapChunk) -> RunnableMapChunk:
+        chunk = RunnableMapChunk(other)
+        for key in self:
+            if key not in chunk or chunk[key] is None:
+                chunk[key] = self[key]
+            elif self[key] is not None:
+                chunk[key] += self[key]
+        return chunk
 
 
 class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
@@ -1124,7 +1116,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         from langchain.callbacks.manager import CallbackManager
 
         # setup callbacks
-        config = config or {}
+        config = ensure_config(config)
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
             local_callbacks=None,
@@ -1135,19 +1127,23 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             local_metadata=None,
         )
         # start the root run
-        run_manager = callback_manager.on_chain_start(dumpd(self), {"input": input})
+        run_manager = callback_manager.on_chain_start(dumpd(self), input)
 
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
             steps = dict(self.steps)
-            with ThreadPoolExecutor() as executor:
+            with get_executor_for_config(config) as executor:
                 futures = [
                     executor.submit(
                         step.invoke,
                         input,
                         # mark each step as a child run
-                        patch_config(config, run_manager.get_child()),
+                        patch_config(
+                            config,
+                            deep_copy_locals=True,
+                            callbacks=run_manager.get_child(),
+                        ),
                     )
                     for step in steps.values()
                 ]
@@ -1161,25 +1157,16 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             return output
 
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Dict[str, Any]:
-        from langchain.callbacks.manager import AsyncCallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
-        run_manager = await callback_manager.on_chain_start(
-            dumpd(self), {"input": input}
-        )
+        run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
         # gather results from all steps
         try:
@@ -1190,7 +1177,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                     step.ainvoke(
                         input,
                         # mark each step as a child run
-                        patch_config(config, run_manager.get_child()),
+                        patch_config(config, callbacks=run_manager.get_child()),
                     )
                     for step in steps.values()
                 )
@@ -1204,15 +1191,159 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             await run_manager.on_chain_end(output)
             return output
 
+    def _transform(
+        self,
+        input: Iterator[Input],
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> Iterator[RunnableMapChunk]:
+        # Shallow copy steps to ignore mutations while in progress
+        steps = dict(self.steps)
+        # Each step gets a copy of the input iterator,
+        # which is consumed in parallel in a separate thread.
+        input_copies = list(safetee(input, len(steps), lock=threading.Lock()))
+        with get_executor_for_config(config) as executor:
+            # Create the transform() generator for each step
+            named_generators = [
+                (
+                    name,
+                    step.transform(
+                        input_copies.pop(),
+                        patch_config(config, callbacks=run_manager.get_child()),
+                    ),
+                )
+                for name, step in steps.items()
+            ]
+            # Start the first iteration of each generator
+            futures = {
+                executor.submit(next, generator): (step_name, generator)
+                for step_name, generator in named_generators
+            }
+            # Yield chunks from each as they become available,
+            # and start the next iteration of that generator that yielded it.
+            # When all generators are exhausted, stop.
+            while futures:
+                completed_futures, _ = wait(futures, return_when=FIRST_COMPLETED)
+                for future in completed_futures:
+                    (step_name, generator) = futures.pop(future)
+                    try:
+                        chunk = RunnableMapChunk({step_name: future.result()})
+                        yield chunk
+                        futures[executor.submit(next, generator)] = (
+                            step_name,
+                            generator,
+                        )
+                    except StopIteration:
+                        pass
+
+    def transform(
+        self,
+        input: Iterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Iterator[Dict[str, Any]]:
+        yield from self._transform_stream_with_config(
+            input, self._transform, config, **kwargs
+        )
+
+    def stream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Dict[str, Any]]:
+        yield from self.transform(iter([input]), config)
+
+    async def _atransform(
+        self,
+        input: AsyncIterator[Input],
+        run_manager: AsyncCallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> AsyncIterator[RunnableMapChunk]:
+        # Shallow copy steps to ignore mutations while in progress
+        steps = dict(self.steps)
+        # Each step gets a copy of the input iterator,
+        # which is consumed in parallel in a separate thread.
+        input_copies = list(atee(input, len(steps), lock=asyncio.Lock()))
+        # Create the transform() generator for each step
+        named_generators = [
+            (
+                name,
+                step.atransform(
+                    input_copies.pop(),
+                    patch_config(config, callbacks=run_manager.get_child()),
+                ),
+            )
+            for name, step in steps.items()
+        ]
+
+        # Wrap in a coroutine to satisfy linter
+        async def get_next_chunk(generator: AsyncIterator) -> Optional[Output]:
+            return await py_anext(generator)
+
+        # Start the first iteration of each generator
+        tasks = {
+            asyncio.create_task(get_next_chunk(generator)): (step_name, generator)
+            for step_name, generator in named_generators
+        }
+        # Yield chunks from each as they become available,
+        # and start the next iteration of the generator that yielded it.
+        # When all generators are exhausted, stop.
+        while tasks:
+            completed_tasks, _ = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            for task in completed_tasks:
+                (step_name, generator) = tasks.pop(task)
+                try:
+                    chunk = RunnableMapChunk({step_name: task.result()})
+                    yield chunk
+                    new_task = asyncio.create_task(get_next_chunk(generator))
+                    tasks[new_task] = (step_name, generator)
+                except StopAsyncIteration:
+                    pass
+
+    async def atransform(
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        async for chunk in self._atransform_stream_with_config(
+            input, self._atransform, config, **kwargs
+        ):
+            yield chunk
+
+    async def astream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Dict[str, Any]]:
+        async def input_aiter() -> AsyncIterator[Input]:
+            yield input
+
+        async for chunk in self.atransform(input_aiter(), config):
+            yield chunk
+
 
 class RunnableLambda(Runnable[Input, Output]):
     """
     A runnable that runs a callable.
     """
 
-    def __init__(self, func: Callable[[Input], Output]) -> None:
-        if callable(func):
-            self.func = func
+    def __init__(
+        self,
+        func: Union[Callable[[Input], Output], Callable[[Input], Awaitable[Output]]],
+        afunc: Optional[Callable[[Input], Awaitable[Output]]] = None,
+    ) -> None:
+        if afunc is not None:
+            self.afunc = afunc
+
+        if inspect.iscoroutinefunction(func):
+            self.afunc = func
+        elif callable(func):
+            self.func = cast(Callable[[Input], Output], func)
         else:
             raise TypeError(
                 "Expected a callable type for `func`."
@@ -1221,12 +1352,122 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunnableLambda):
-            return self.func == other.func
+            if hasattr(self, "func") and hasattr(other, "func"):
+                return self.func == other.func
+            elif hasattr(self, "afunc") and hasattr(other, "afunc"):
+                return self.afunc == other.afunc
+            else:
+                return False
         else:
             return False
 
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-        return self._call_with_config(self.func, input, config)
+    def _invoke(
+        self,
+        input: Input,
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> Output:
+        output = self.func(input)
+        # If the output is a runnable, invoke it
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking {self} with input {input}."
+                )
+            output = output.invoke(
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            )
+        return output
+
+    async def _ainvoke(
+        self,
+        input: Input,
+        run_manager: AsyncCallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> Output:
+        output = await self.afunc(input)
+        # If the output is a runnable, invoke it
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking {self} with input {input}."
+                )
+            output = await output.ainvoke(
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            )
+        return output
+
+    def invoke(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Output:
+        if hasattr(self, "func"):
+            return self._call_with_config(self._invoke, input, config)
+        else:
+            raise TypeError(
+                "Cannot invoke a coroutine function synchronously."
+                "Use `ainvoke` instead."
+            )
+
+    async def ainvoke(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Output:
+        if hasattr(self, "afunc"):
+            return await self._acall_with_config(self._ainvoke, input, config)
+        else:
+            # Delegating to super implementation of ainvoke.
+            # Uses asyncio executor to run the sync version (invoke)
+            return await super().ainvoke(input, config)
+
+
+class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
+    """
+    A runnable that delegates calls to another runnable
+    with each element of the input sequence.
+    """
+
+    bound: Runnable[Input, Output]
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    @property
+    def lc_namespace(self) -> List[str]:
+        return self.__class__.__module__.split(".")[:-1]
+
+    def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
+        return RunnableEach(bound=self.bound.bind(**kwargs))
+
+    def invoke(
+        self, input: List[Input], config: Optional[RunnableConfig] = None
+    ) -> List[Output]:
+        return self.bound.batch(input, config)
+
+    async def ainvoke(
+        self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> List[Output]:
+        return await self.bound.abatch(input, config, **kwargs)
 
 
 class RunnableBinding(Serializable, Runnable[Input, Output]):
@@ -1252,72 +1493,82 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         return self.__class__(bound=self.bound, kwargs={**self.kwargs, **kwargs})
 
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-        return self.bound.invoke(input, config, **self.kwargs)
+    def invoke(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Output:
+        return self.bound.invoke(input, config, **{**self.kwargs, **kwargs})
 
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Output:
-        return await self.bound.ainvoke(input, config, **self.kwargs)
+        return await self.bound.ainvoke(input, config, **{**self.kwargs, **kwargs})
 
     def batch(
         self,
         inputs: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        *,
-        max_concurrency: Optional[int] = None,
+        **kwargs: Optional[Any],
     ) -> List[Output]:
-        return self.bound.batch(
-            inputs, config, max_concurrency=max_concurrency, **self.kwargs
-        )
+        return self.bound.batch(inputs, config, **{**self.kwargs, **kwargs})
 
     async def abatch(
         self,
         inputs: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        *,
-        max_concurrency: Optional[int] = None,
+        **kwargs: Optional[Any],
     ) -> List[Output]:
-        return await self.bound.abatch(
-            inputs, config, max_concurrency=max_concurrency, **self.kwargs
-        )
+        return await self.bound.abatch(inputs, config, **{**self.kwargs, **kwargs})
 
     def stream(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        yield from self.bound.stream(input, config, **self.kwargs)
+        yield from self.bound.stream(input, config, **{**self.kwargs, **kwargs})
 
     async def astream(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        async for item in self.bound.astream(input, config, **self.kwargs):
+        async for item in self.bound.astream(
+            input, config, **{**self.kwargs, **kwargs}
+        ):
             yield item
 
     def transform(
-        self, input: Iterator[Input], config: Optional[RunnableConfig] = None
+        self,
+        input: Iterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Iterator[Output]:
-        yield from self.bound.transform(input, config, **self.kwargs)
+        yield from self.bound.transform(input, config, **{**self.kwargs, **kwargs})
 
     async def atransform(
-        self, input: AsyncIterator[Input], config: Optional[RunnableConfig] = None
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[Output]:
-        async for item in self.bound.atransform(input, config, **self.kwargs):
+        async for item in self.bound.atransform(
+            input, config, **{**self.kwargs, **kwargs}
+        ):
             yield item
-
-
-def patch_config(
-    config: RunnableConfig, callback_manager: BaseCallbackManager
-) -> RunnableConfig:
-    config = config.copy()
-    config["callbacks"] = callback_manager
-    return config
 
 
 def coerce_to_runnable(
     thing: Union[
         Runnable[Input, Output],
         Callable[[Input], Output],
-        Mapping[str, Union[Runnable[Input, Output], Callable[[Input], Output]]],
+        Mapping[str, Any],
     ]
 ) -> Runnable[Input, Output]:
     if isinstance(thing, Runnable):
@@ -1325,7 +1576,9 @@ def coerce_to_runnable(
     elif callable(thing):
         return RunnableLambda(thing)
     elif isinstance(thing, dict):
-        runnables = {key: coerce_to_runnable(r) for key, r in thing.items()}
+        runnables: Mapping[str, Runnable[Any, Any]] = {
+            key: coerce_to_runnable(r) for key, r in thing.items()
+        }
         return cast(Runnable[Input, Output], RunnableMap(steps=runnables))
     else:
         raise TypeError(
