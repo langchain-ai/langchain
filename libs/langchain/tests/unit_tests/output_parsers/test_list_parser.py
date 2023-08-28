@@ -27,8 +27,6 @@ def test_numbered_list(self) -> None:
 
     text3 = "No items in the list."
 
-    pattern = r"\d+\.\s([^\n]+)"
-
     self.assertEqual(parser.parse(text1), ["foo", "bar", "baz"])
     self.assertEqual(parser.parse(text2), ["apple", "banana", "cherry"])
     self.assertEqual(parser.parse(text3), [])
