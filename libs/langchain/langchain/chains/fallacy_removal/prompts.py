@@ -80,7 +80,8 @@ examples = [
 FALLACY_CRITIQUE_PROMPT = FewShotPromptTemplate(
     example_prompt=fallacy_critique_example,
     examples=[
-        {k: v for k, v in e.items() if k != "fallacy_revision_request"} for e in examples
+        {k: v for k, v in e.items() if k != \
+         "fallacy_revision_request"} for e in examples
     ],
     prefix="Below is a conversation between a human and an \
     AI assistant. If there is no material critique of the \
