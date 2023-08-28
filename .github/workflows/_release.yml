@@ -23,6 +23,9 @@ jobs:
       # Trusted publishing has to also be configured on PyPI for each package:
       # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
       id-token: write
+
+      # This permission is needed by `ncipollo/release-action` to create the GitHub release.
+      contents: write
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
