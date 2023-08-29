@@ -112,7 +112,7 @@ class Vearch(VectorStore):
             dim:dimension of vector
             fileds_list: the filed you want to store
         Return:
-            code,0 for success,1 for faild
+            code,0 for success,1 for failed
         """
         type_dict = {"int": vearch.dataType.INT, "str": vearch.dataType.STRING}
         engine_info = {
@@ -202,7 +202,7 @@ class Vearch(VectorStore):
             Success or failure of loading the local specified table
         """
         if not metadata_path:
-            raise ValueError("No matadata path!!!")
+            raise ValueError("No metadata path!!!")
         if not table_name:
             raise ValueError("No table name!!!")
         table_path = os.path.join(metadata_path, table_name + ".schema")
