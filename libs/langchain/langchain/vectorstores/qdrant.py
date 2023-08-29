@@ -1298,7 +1298,7 @@ class Qdrant(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
         """
-        qdrant = cls._construct_instance(
+        qdrant = cls.construct_instance(
             texts,
             embedding,
             location,
@@ -1474,7 +1474,7 @@ class Qdrant(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
         """
-        qdrant = await cls._aconstruct_instance(
+        qdrant = await cls.aconstruct_instance(
             texts,
             embedding,
             location,
@@ -1510,7 +1510,7 @@ class Qdrant(VectorStore):
         return qdrant
 
     @classmethod
-    def _construct_instance(
+    def construct_instance(
         cls: Type[Qdrant],
         texts: List[str],
         embedding: Embeddings,
@@ -1676,7 +1676,7 @@ class Qdrant(VectorStore):
         return qdrant
 
     @classmethod
-    async def _aconstruct_instance(
+    async def aconstruct_instance(
         cls: Type[Qdrant],
         texts: List[str],
         embedding: Embeddings,

@@ -182,14 +182,12 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         return {"the right input": inputs["the wrong input"]}
 
     result = _run_llm_or_chain(example, lambda: mock_chain, input_mapper=input_mapper)
-    assert len(result) == 1
-    assert result[0] == {"output": "2", "the right input": "1"}
+    assert result == {"output": "2", "the right input": "1"}
     bad_result = _run_llm_or_chain(
         example,
         lambda: mock_chain,
     )
-    assert len(bad_result) == 1
-    assert "Error" in bad_result[0]
+    assert "Error" in bad_result
 
     # Try with LLM
     def llm_input_mapper(inputs: dict) -> str:
@@ -197,9 +195,7 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         return "the right input"
 
     mock_llm = FakeLLM(queries={"the right input": "somenumber"})
-    result = _run_llm_or_chain(example, mock_llm, input_mapper=llm_input_mapper)
-    assert len(result) == 1
-    llm_result = result[0]
+    llm_result = _run_llm_or_chain(example, mock_llm, input_mapper=llm_input_mapper)
     assert isinstance(llm_result, str)
     assert llm_result == "somenumber"
 
@@ -300,8 +296,8 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         tags: Optional[List[str]] = None,
         callbacks: Optional[Any] = None,
         **kwargs: Any,
-    ) -> List[Dict[str, Any]]:
-        return [{"result": f"Result for example {example.id}"}]
+    ) -> Dict[str, Any]:
+        return {"result": f"Result for example {example.id}"}
 
     def mock_create_project(*args: Any, **kwargs: Any) -> Any:
         proj = mock.MagicMock()
@@ -328,9 +324,10 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
         expected = {
-            uuid_: [
-                {"result": f"Result for example {uuid.UUID(uuid_)}"} for _ in range(1)
-            ]
+            uuid_: {
+                "output": {"result": f"Result for example {uuid.UUID(uuid_)}"},
+                "feedback": [],
+            }
             for uuid_ in uuids
         }
         assert results["results"] == expected
