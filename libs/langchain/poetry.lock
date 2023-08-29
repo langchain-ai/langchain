@@ -1729,7 +1729,7 @@ files = [
 name = "dashvector"
 version = "1.0.1"
 description = "DashVector Client Python Sdk Library"
-optional = false
+optional = true
 python-versions = ">=3.7.0"
 files = [
     {file = "dashvector-1.0.1-py3-none-any.whl", hash = "sha256:e2fc362c65979d55cf605fb90deca4a292c69e1c2101df22430c80db744591ad"},
@@ -2845,7 +2845,7 @@ test = ["objgraph", "psutil"]
 name = "grpcio"
 version = "1.57.0"
 description = "HTTP/2-based RPC framework"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "grpcio-1.57.0-cp310-cp310-linux_armv7l.whl", hash = "sha256:092fa155b945015754bdf988be47793c377b52b88d546e45c6a9f9579ac7f7b6"},
@@ -10454,4 +10454,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b1a29d2583294041fe56742e1b48bacf5a1f9dda7050ec6702fc1f5ddc3d6dba"
+content-hash = "e439bcd28d4fccdd9108f9b71e49d3a6a7d6353d7327dcbeef5b0c3b79a341b0"
