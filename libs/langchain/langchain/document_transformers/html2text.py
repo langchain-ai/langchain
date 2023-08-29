@@ -5,6 +5,11 @@ from langchain.schema import BaseDocumentTransformer, Document
 
 class Html2TextTransformer(BaseDocumentTransformer):
     """Replace occurrences of a particular search pattern with a replacement string
+
+    Arguments:
+        ignore_links: Whether links should be ignored; defaults to True.
+        ignore_images: Whether images should be ignored; defaults to True.
+
     Example:
         .. code-block:: python
             from langchain.document_transformers import Html2TextTransformer
@@ -12,11 +17,7 @@ class Html2TextTransformer(BaseDocumentTransformer):
             docs_transform=html2text.transform_documents(docs)
     """
 
-    def transform_documents(
-        self,
-        documents: Sequence[Document],
-        **kwargs: Any,
-    ) -> Sequence[Document]:
+    def __init__(self, ignore_links: bool = True, ignore_images: bool = True) -> None:
         try:
             import html2text
         except ImportError:
@@ -25,12 +26,20 @@ class Html2TextTransformer(BaseDocumentTransformer):
                 install it with `pip install html2text`"""
             )
 
-        # Create an html2text.HTML2Text object and override some properties
+        # Create a html2text.HTML2Text object and override some properties
         h = html2text.HTML2Text()
-        h.ignore_links = True
-        h.ignore_images = True
+        h.ignore_links = ignore_links
+        h.ignore_images = ignore_images
+
+        self.html2text = h
+
+    def transform_documents(
+        self,
+        documents: Sequence[Document],
+        **kwargs: Any,
+    ) -> Sequence[Document]:
         for d in documents:
-            d.page_content = h.handle(d.page_content)
+            d.page_content = self.html2text.handle(d.page_content)
         return documents
 
     async def atransform_documents(
