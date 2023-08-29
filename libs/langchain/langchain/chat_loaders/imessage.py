@@ -17,9 +17,7 @@ from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 from langchain import schema
 from langchain.chat_loaders import base as chat_loaders
 
-if TYPE_CHECKING:
-    import sqlite3
-
+import sqlite3
 
 class IMessageChatLoader(chat_loaders.BaseChatLoader):
     def __init__(self, path: Optional[Union[str, Path]] = None):
@@ -107,8 +105,13 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
             ) from e
         cursor = conn.cursor()
 
-        # Fetch the list of chat IDs
-        cursor.execute("SELECT ROWID FROM chat")
+        # Fetch the list of chat IDs sorted by time (most recent first)
+        query="""SELECT chat_id
+        FROM message
+        JOIN chat_message_join ON message.ROWID = chat_message_join.message_id
+        GROUP BY chat_id
+        ORDER BY MAX(date) DESC;"""
+        cursor.execute(query)
         chat_ids = [row[0] for row in cursor.fetchall()]
 
         for chat_id in chat_ids:
