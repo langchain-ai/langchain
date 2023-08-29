@@ -264,9 +264,7 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_emb() -> N
 
 
 @pytest.mark.requires("vowpal_wabbit_next")
-def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_embed_and_keep() -> (
-    None
-):
+def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_emakeep() -> None:
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
 
     str1 = "0"
