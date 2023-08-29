@@ -519,9 +519,7 @@ class Chroma(VectorStore):
         """
         return self.update_documents([document_id], [document])
 
-    def update_documents(
-        self, ids: List[str], documents: List[Document]
-    ) -> None:
+    def update_documents(self, ids: List[str], documents: List[Document]) -> None:
         """Update a document in the collection.
 
         Args:
