@@ -6,10 +6,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.anthropic import _AnthropicCommon
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-)
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
@@ -18,12 +14,14 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGenerationChunk
+from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
 
 
-class ChatAnthropic(BaseChatModel, _AnthropicCommon):
-    """`Anthropic` chat large language models.
+class ChatAnthropicMessageConverter:
+    """Class to the format the prompts in the expected format for the Anthropic model.
+    It also provides helper methods to convert the messages."""
 
+<<<<<<< HEAD
     To use, you should have the ``anthropic`` python package installed, and the
     environment variable ``ANTHROPIC_API_KEY`` set with your API key, or pass
     it as a named parameter to the constructor.
@@ -54,16 +52,23 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
     @property
     def lc_serializable(self) -> bool:
         return True
+=======
+    def __init__(
+        self, human_prompt: Optional[str] = None, ai_prompt: Optional[str] = None
+    ) -> None:
+        self.human_prompt = human_prompt if human_prompt else "\n\nHuman:"
+        self.ai_prompt = ai_prompt if ai_prompt else "\n\nAssistant:"
+>>>>>>> 1852c930 (feat: add bedrock claude chat)
 
     def _convert_one_message_to_text(self, message: BaseMessage) -> str:
         if isinstance(message, ChatMessage):
             message_text = f"\n\n{message.role.capitalize()}: {message.content}"
         elif isinstance(message, HumanMessage):
-            message_text = f"{self.HUMAN_PROMPT} {message.content}"
+            message_text = f"{self.human_prompt} {message.content}"
         elif isinstance(message, AIMessage):
-            message_text = f"{self.AI_PROMPT} {message.content}"
+            message_text = f"{self.ai_prompt} {message.content}"
         elif isinstance(message, SystemMessage):
-            message_text = f"{self.HUMAN_PROMPT} <admin>{message.content}</admin>"
+            message_text = f"{self.human_prompt} <admin>{message.content}</admin>"
         else:
             raise ValueError(f"Got unknown type {message}")
         return message_text
@@ -81,7 +86,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             self._convert_one_message_to_text(message) for message in messages
         )
 
-    def _convert_messages_to_prompt(self, messages: List[BaseMessage]) -> str:
+    def convert_messages_to_prompt(self, messages: List[BaseMessage]) -> str:
         """Format a list of messages into a full prompt for the Anthropic model
 
         Args:
@@ -92,15 +97,48 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         """
         messages = messages.copy()  # don't mutate the original list
 
-        if not self.AI_PROMPT:
-            raise NameError("Please ensure the anthropic package is loaded")
-
         if not isinstance(messages[-1], AIMessage):
             messages.append(AIMessage(content=""))
         text = self._convert_messages_to_text(messages)
         return (
             text.rstrip()
         )  # trim off the trailing ' ' that might come from the "Assistant: "
+
+
+class ChatAnthropic(BaseChatModel, _AnthropicCommon):
+    """`Anthropic` chat large language models.
+
+    Example:
+        .. code-block:: python
+
+            import anthropic
+            from langchain.chat_models import ChatAnthropic
+            model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")
+
+    To use, you should have the ``anthropic`` python package installed, and the
+    environment variable ``ANTHROPIC_API_KEY`` set with your API key, or pass
+    it as a named parameter to the constructor.
+
+    Example:
+        .. code-block:: python
+
+            import anthropic
+            from langchain.llms import Anthropic
+            model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")
+    """
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "anthropic-chat"
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
 
     def _stream(
         self,
@@ -109,7 +147,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        prompt = self._convert_messages_to_prompt(messages)
+        prompt = ChatAnthropicMessageConverter(
+            human_prompt=self.HUMAN_PROMPT, ai_prompt=self.AI_PROMPT
+        ).convert_messages_to_prompt(messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
@@ -128,7 +168,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        prompt = self._convert_messages_to_prompt(messages)
+        prompt = ChatAnthropicMessageConverter(
+            human_prompt=self.HUMAN_PROMPT, ai_prompt=self.AI_PROMPT
+        ).convert_messages_to_prompt(messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
@@ -152,7 +194,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 completion += chunk.text
         else:
-            prompt = self._convert_messages_to_prompt(messages)
+            prompt = ChatAnthropicMessageConverter(
+                human_prompt=self.HUMAN_PROMPT, ai_prompt=self.AI_PROMPT
+            ).convert_messages_to_prompt(messages)
             params: Dict[str, Any] = {
                 "prompt": prompt,
                 **self._default_params,
@@ -177,7 +221,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
                 completion += chunk.text
         else:
-            prompt = self._convert_messages_to_prompt(messages)
+            prompt = ChatAnthropicMessageConverter(
+                human_prompt=self.HUMAN_PROMPT, ai_prompt=self.AI_PROMPT
+            ).convert_messages_to_prompt(messages)
             params: Dict[str, Any] = {
                 "prompt": prompt,
                 **self._default_params,
