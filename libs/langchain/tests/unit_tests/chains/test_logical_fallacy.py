@@ -1,17 +1,17 @@
 """Unit tests for the Logical Fallacy chain, same format as CAI"""
 from langchain.chains.fallacy_removal.base import FallacyChain
 
-TEXT_ONE = """ This text is bad.
+TEXT_ONE = """ This text is bad.\
 
-Fallacy Revision request: Make it great.
+Fallacy Revision request: Make it great.\
 
 Fallacy Revision:"""
 
 TEXT_TWO = """ This text is bad.\n\n"""
 
-TEXT_THREE = """ This text is bad.
+TEXT_THREE = """ This text is bad.\
 
-Fallacy Revision request: Make it great again.
+Fallacy Revision request: Make it great again.\
 
 Fallacy Revision: Better text"""
 

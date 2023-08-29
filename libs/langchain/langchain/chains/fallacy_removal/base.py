@@ -3,15 +3,14 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_experimental.fallacy_removal.fallacies import FALLACIES
-from langchain_experimental.fallacy_removal.models import LogicalFallacy
-from langchain_experimental.fallacy_removal.prompts import (
+from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.chains.base import Chain
+from langchain.chains.fallacy_removal.fallacies import FALLACIES
+from langchain.chains.fallacy_removal.models import LogicalFallacy
+from langchain.chains.fallacy_removal.prompts import (
     FALLACY_CRITIQUE_PROMPT,
     FALLACY_REVISION_PROMPT,
 )
-
-from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
@@ -60,7 +59,7 @@ class FallacyChain(Chain):
     return_intermediate_steps: bool = False
 
     @classmethod
-    def get_principles(cls, names: Optional[List[str]] = None) -> List[LogicalFallacy]:
+    def get_fallacies(cls, names: Optional[List[str]] = None) -> List[LogicalFallacy]:
         if names is None:
             return list(FALLACIES.values())
         else:
@@ -173,9 +172,9 @@ class FallacyChain(Chain):
 
     @staticmethod
     def _parse_critique(output_string: str) -> str:
-        if "Revision request:" not in output_string:
+        if "Fallacy Revision request:" not in output_string:
             return output_string
-        output_string = output_string.split("Revision request:")[0]
+        output_string = output_string.split("Fallacy Revision request:")[0]
         if "\n\n" in output_string:
             output_string = output_string.split("\n\n")[0]
         return output_string
