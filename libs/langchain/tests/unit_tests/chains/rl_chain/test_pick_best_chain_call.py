@@ -140,7 +140,12 @@ def test_user_defined_scorer() -> None:
     llm, PROMPT = setup()
 
     class CustomSelectionScorer(rl_chain.SelectionScorer):
-        def score_response(self, inputs: Dict[str, Any], llm_response: str) -> float:
+        def score_response(
+            self,
+            inputs: Dict[str, Any],
+            llm_response: str,
+            event: pick_best_chain.PickBestEvent,
+        ) -> float:
             score = 200
             return score
 
@@ -161,11 +166,11 @@ def test_user_defined_scorer() -> None:
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_default_embeddings() -> None:
+def test_auto_embeddings_on() -> None:
     llm, PROMPT = setup()
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     chain = pick_best_chain.PickBest.from_llm(
-        llm=llm, prompt=PROMPT, feature_embedder=feature_embedder
+        llm=llm, prompt=PROMPT, feature_embedder=feature_embedder, auto_embed=True
     )
 
     str1 = "0"
@@ -188,6 +193,32 @@ def test_default_embeddings() -> None:
     response = chain.run(
         User=rl_chain.BasedOn(ctx_str_1),
         action=rl_chain.ToSelectFrom(actions),
+    )
+    selection_metadata = response["selection_metadata"]
+    vw_str = feature_embedder.format(selection_metadata)
+    assert vw_str == expected
+
+
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
+def test_default_auto_embedder_is_off() -> None:
+    llm, PROMPT = setup()
+    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
+    chain = pick_best_chain.PickBest.from_llm(
+        llm=llm, prompt=PROMPT, feature_embedder=feature_embedder
+    )
+
+    str1 = "0"
+    str2 = "1"
+    str3 = "2"
+    ctx_str_1 = "context1"
+
+    expected = f"""shared |User {ctx_str_1} \n|action {str1} \n|action {str2} \n|action {str3} """  # noqa
+
+    actions = [str1, str2, str3]
+
+    response = chain.run(
+        User=pick_best_chain.base.BasedOn(ctx_str_1),
+        action=pick_best_chain.base.ToSelectFrom(actions),
     )
     selection_metadata = response["selection_metadata"]
     vw_str = feature_embedder.format(selection_metadata)
@@ -225,7 +256,7 @@ def test_default_embeddings_mixed_w_explicit_user_embeddings() -> None:
     llm, PROMPT = setup()
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     chain = pick_best_chain.PickBest.from_llm(
-        llm=llm, prompt=PROMPT, feature_embedder=feature_embedder
+        llm=llm, prompt=PROMPT, feature_embedder=feature_embedder, auto_embed=True
     )
 
     str1 = "0"
