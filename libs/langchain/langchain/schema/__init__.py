@@ -1,5 +1,6 @@
 """**Schemas** are the LangChain Base Classes and Interfaces."""
 from langchain.schema.agent import AgentAction, AgentFinish
+from langchain.schema.cache import BaseCache
 from langchain.schema.document import BaseDocumentTransformer, Document
 from langchain.schema.exceptions import LangChainException
 from langchain.schema.memory import BaseChatMessageHistory, BaseMemory
@@ -38,6 +39,7 @@ RUN_KEY = "__run"
 Memory = BaseMemory
 
 __all__ = [
+    "BaseCache",
     "BaseMemory",
     "BaseStore",
     "BaseChatMessageHistory",

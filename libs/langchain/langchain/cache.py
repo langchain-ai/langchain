@@ -44,19 +44,18 @@ from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
-from langchain import BaseCache
-from langchain.schema.cache import RETURN_VAL_TYPE
-from langchain.utils import get_from_env
-
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+
 from langchain.embeddings.base import Embeddings
 from langchain.load.dump import dumps
 from langchain.load.load import loads
 from langchain.schema import ChatGeneration, Generation
+from langchain.schema.cache import RETURN_VAL_TYPE, BaseCache
+from langchain.utils import get_from_env
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
