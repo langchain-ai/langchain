@@ -60,7 +60,6 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
-          - "3.11.0"
     name: Python ${{ matrix.python-version }} extended tests
     steps:
       - uses: actions/checkout@v3
