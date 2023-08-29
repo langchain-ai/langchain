@@ -1,7 +1,7 @@
 import os
 import traceback
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Union
 from uuid import UUID
 
 import requests
@@ -36,11 +36,15 @@ def _serialize_lc_message(message: BaseMessage) -> Dict[str, Any]:
 class LLMonitorCallbackHandler(BaseCallbackHandler):
     """Initializes the `LLMonitorCallbackHandler`.
     #### Parameters:
-        - `app_id`: The app id of the app you want to report to. Defaults to `None`, which means that `LLMONITOR_APP_ID` will be used.
-        - `api_url`: The url of the LLMonitor API. Defaults to `None`, which means that either `LLMONITOR_API_URL` environment variable or `https://app.llmonitor.com` will be used.
+        - `app_id`: The app id of the app you want to report to. Defaults to
+        `None`, which means that `LLMONITOR_APP_ID` will be used.
+        - `api_url`: The url of the LLMonitor API. Defaults to `None`,
+        which means that either `LLMONITOR_API_URL` environment variable
+        or `https://app.llmonitor.com` will be used.
 
     #### Raises:
-        - `ValueError`: if `app_id` is not provided either as an argument or as an environment variable.
+        - `ValueError`: if `app_id` is not provided either as an
+        argument or as an environment variable.
         - `ConnectionError`: if the connection to the API fails.
 
 
@@ -50,7 +54,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     from langchain.callbacks import LLMonitorCallbackHandler
 
     llmonitor_callback = LLMonitorCallbackHandler()
-    llm = OpenAI(callbacks=[llmonitor_callback], metadata={"userId": "user-123"})
+    llm = OpenAI(callbacks=[llmonitor_callback],
+                 metadata={"userId": "user-123"})
     llm.predict("Hello, how are you?")
     ```
     """
@@ -68,7 +73,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         _app_id = app_id or os.getenv("LLMONITOR_APP_ID")
         if _app_id is None:
             raise ValueError(
-                "app_id must be provided either as an argument or as an environment variable"
+                """app_id must be provided either as an argument or as 
+                an environment variable"""
             )
         self.__app_id = _app_id
 
