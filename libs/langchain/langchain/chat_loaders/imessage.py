@@ -96,8 +96,6 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         import sqlite3
 
         try:
-            import sqlite3
-
             conn = sqlite3.connect(self.db_path)
         except sqlite3.OperationalError as e:
             raise ValueError(

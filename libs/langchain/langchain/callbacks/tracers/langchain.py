@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Set, Union
@@ -18,7 +19,7 @@ from langchain.schema.messages import BaseMessage
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-_TRACERS: List[LangChainTracer] = []
+_TRACERS: Set[LangChainTracer] = weakref.WeakSet()
 _CLIENT: Optional[Client] = None
 
 
@@ -34,8 +35,9 @@ def log_error_once(method: str, exception: Exception) -> None:
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
     global _TRACERS
-    for tracer in _TRACERS:
-        tracer.wait_for_futures()
+    for tracer in list(_TRACERS):
+        if tracer is not None:
+            tracer.wait_for_futures()
 
 
 def _get_client() -> Client:
@@ -78,7 +80,7 @@ class LangChainTracer(BaseTracer):
         self._futures: Set[Future] = set()
         self.tags = tags or []
         global _TRACERS
-        _TRACERS.append(self)
+        _TRACERS.add(self)
 
     def on_chat_model_start(
         self,
