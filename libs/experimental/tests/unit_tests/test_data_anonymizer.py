@@ -1,6 +1,15 @@
-from typing import List
+from typing import Iterator, List
 
 import pytest
+
+
+@pytest.fixture(scope="module", autouse=True)
+def check_spacy_model() -> Iterator[None]:
+    import spacy
+
+    if not spacy.util.is_package("en_core_web_lg"):
+        pytest.skip(reason="Spacy model 'en_core_web_lg' not installed")
+    yield
 
 
 @pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
@@ -33,9 +42,9 @@ def test_anonymize_multiple() -> None:
 @pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
 def test_anonymize_with_custom_operator() -> None:
     """Test anonymize a name with a custom operator"""
-    from langchain_experimental.data_anonymizer import PresidioAnonymizer
-
     from presidio_anonymizer.entities import OperatorConfig
+
+    from langchain_experimental.data_anonymizer import PresidioAnonymizer
 
     custom_operator = {"PERSON": OperatorConfig("replace", {"new_value": "<name>"})}
     anonymizer = PresidioAnonymizer(operators=custom_operator)
@@ -51,10 +60,10 @@ def test_add_recognizer_operator() -> None:
     """
     Test add recognizer and anonymize a new type of entity and with a custom operator
     """
-    from langchain_experimental.data_anonymizer import PresidioAnonymizer
-
     from presidio_analyzer import PatternRecognizer
     from presidio_anonymizer.entities import OperatorConfig
+
+    from langchain_experimental.data_anonymizer import PresidioAnonymizer
 
     anonymizer = PresidioAnonymizer(analyzed_fields=[])
     titles_list = ["Sir", "Madam", "Professor"]
