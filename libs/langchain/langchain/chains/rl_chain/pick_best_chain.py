@@ -161,7 +161,7 @@ class PickBest(base.RLChain[PickBestEvent]):
                 "--quiet",
                 "--interactions=::",
                 "--coin",
-                "--epsilon=0.2",
+                "--squarecb",
             ]
         else:
             if "--cb_explore_adf" not in vw_cmd:
