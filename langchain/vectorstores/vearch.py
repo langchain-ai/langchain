@@ -6,7 +6,7 @@ import uuid
 from typing import Any, Dict, Iterable, List, Optional, Type
 
 import numpy as np
-from langchain.docstore.document import Document
+from langchain.schema import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
