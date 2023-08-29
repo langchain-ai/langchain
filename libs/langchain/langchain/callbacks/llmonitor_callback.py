@@ -14,7 +14,9 @@ from langchain.schema.output import LLMResult
 DEFAULT_API_URL = "https://app.llmonitor.com"
 
 
-def _parse_lc_role(role: str) -> Literal["user", "ai", "system", "function"] | None:
+def _parse_lc_role(
+    role: str,
+) -> Union[Literal["user", "ai", "system", "function"], None]:
     if role == "human":
         return "user"
     elif role == "ai":
@@ -56,7 +58,9 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     __api_url: str
     __app_id: str
 
-    def __init__(self, app_id: str | None = None, api_url: str | None = None) -> None:
+    def __init__(
+        self, app_id: Union[str, None] = None, api_url: Union[str, None] = None
+    ) -> None:
         super().__init__()
 
         self.__api_url = api_url or os.getenv("LLMONITOR_API_URL") or DEFAULT_API_URL
@@ -89,9 +93,9 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         prompts: List[str],
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
-        tags: List[str] | None = None,
-        metadata: Dict[str, Any] | None = None,
+        parent_run_id: Union[UUID, None] = None,
+        tags: Union[List[str], None] = None,
+        metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> None:
         event = {
@@ -113,9 +117,9 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         messages: List[List[BaseMessage]],
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
-        tags: List[str] | None = None,
-        metadata: Dict[str, Any] | None = None,
+        parent_run_id: Union[UUID, None] = None,
+        tags: Union[List[str], None] = None,
+        metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> Any:
         event = {
@@ -136,7 +140,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         response: LLMResult,
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> None:
         token_usage = (response.llm_output or {}).get("token_usage", {})
@@ -156,10 +160,10 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
     def on_llm_error(
         self,
-        error: Exception | KeyboardInterrupt,
+        error: Union[Exception, KeyboardInterrupt],
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
         event = {
@@ -177,9 +181,9 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         input_str: str,
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
-        tags: List[str] | None = None,
-        metadata: Dict[str, Any] | None = None,
+        parent_run_id: Union[UUID, None] = None,
+        tags: Union[List[str], None] = None,
+        metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> None:
         event = {
@@ -200,8 +204,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         output: str,
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
-        tags: List[str] | None = None,
+        parent_run_id: Union[UUID, None] = None,
+        tags: Union[List[str], None] = None,
         **kwargs: Any,
     ) -> None:
         event = {
@@ -219,9 +223,9 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         inputs: Dict[str, Any],
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
-        tags: List[str] | None = None,
-        metadata: Dict[str, Any] | None = None,
+        parent_run_id: Union[UUID, None] = None,
+        tags: Union[List[str], None] = None,
+        metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> Any:
         name = serialized.get("id", [None, None, None, None])[3]
@@ -252,7 +256,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         outputs: Dict[str, Any],
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
         event = {
@@ -265,10 +269,10 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
     def on_chain_error(
         self,
-        error: Exception | KeyboardInterrupt,
+        error: Union[Exception, KeyboardInterrupt],
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
         event = {
@@ -285,7 +289,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         action: AgentAction,
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
         event = {
@@ -303,7 +307,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         finish: AgentFinish,
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
         event = {
