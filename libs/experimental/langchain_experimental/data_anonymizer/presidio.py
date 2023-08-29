@@ -1,35 +1,57 @@
-from typing import Dict, List, Optional
+from __future__ import annotations
 
-from presidio_analyzer import AnalyzerEngine, EntityRecognizer
-from presidio_anonymizer import AnonymizerEngine
-from presidio_anonymizer.entities import OperatorConfig
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from langchain_experimental.data_anonymizer.base import AnonymizerBase
 from langchain_experimental.data_anonymizer.faker_presidio_mapping import (
-    PSEUDOANONYMIZER_MAPPING,
+    get_pseudoanonymizer_mapping,
 )
+
+if TYPE_CHECKING:
+    from presidio_analyzer import EntityRecognizer
+    from presidio_anonymizer.entities import OperatorConfig
 
 
 class PresidioAnonymizer(AnonymizerBase):
-    """Anonymizer using Presidio"""
+    """Anonymizer using Microsoft Presidio."""
 
     def __init__(
         self,
-        analyzed_fields: List[str] = list(PSEUDOANONYMIZER_MAPPING.keys()),
+        analyzed_fields: Optional[List[str]] = None,
         language: str = "en",
         operators: Optional[Dict[str, OperatorConfig]] = None,
     ):
         """
         Args:
             analyzed_fields: List of fields to detect and then anonymize.
-                Defaults to all fields.
+                Defaults to all entities supported by Microsoft Presidio.
             language: Language to use for analysis. Defaults to english.
             operators: Operators to use for anonymization.
                 Operators allow for custom anonymization of detected PII.
                 Learn more:
                 https://microsoft.github.io/presidio/tutorial/10_simple_anonymization/
         """
-        self.analyzed_fields = analyzed_fields
+        try:
+            from presidio_analyzer import AnalyzerEngine
+        except ImportError as e:
+            raise ImportError(
+                "Could not import presidio_analyzer, please install with "
+                "`pip install presidio-analyzer`. You will also need to download a "
+                "spaCy model to use the analyzer, e.g. "
+                "`python -m spacy download en_core_web_lg`."
+            ) from e
+        try:
+            from presidio_anonymizer import AnonymizerEngine
+            from presidio_anonymizer.entities import OperatorConfig
+        except ImportError as e:
+            raise ImportError(
+                "Could not import presidio_anonymizer, please install with "
+                "`pip install presidio-anonymizer`."
+            ) from e
+
+        self.analyzed_fields = analyzed_fields or list(
+            get_pseudoanonymizer_mapping().keys()
+        )
         self.language = language
         self.operators = (
             operators
@@ -38,10 +60,9 @@ class PresidioAnonymizer(AnonymizerBase):
                 field: OperatorConfig(
                     operator_name="custom", params={"lambda": faker_function}
                 )
-                for field, faker_function in PSEUDOANONYMIZER_MAPPING.items()
+                for field, faker_function in get_pseudoanonymizer_mapping().items()
             }
         )
-
         self._analyzer = AnalyzerEngine()
         self._anonymizer = AnonymizerEngine()
 
