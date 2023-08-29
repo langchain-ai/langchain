@@ -37,7 +37,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         if not self.db_path.exists():
             raise FileNotFoundError(f"File {self.db_path} not found")
         try:
-            pass  # type: ignore
+            import sqlite3  # noqa: F401
         except ImportError as e:
             raise ImportError(
                 "The sqlite3 module is required to load iMessage chats.\n"
@@ -93,6 +93,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         Yields:
             ChatSession: Loaded chat session.
         """
+        import sqlite3
 
         try:
             conn = sqlite3.connect(self.db_path)
