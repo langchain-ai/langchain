@@ -1,5 +1,6 @@
 import pytest
 from test_utils import MockEncoder
+from typing import List
 
 import langchain.chains.rl_chain.base as base
 
