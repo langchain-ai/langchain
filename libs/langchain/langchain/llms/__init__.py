@@ -19,7 +19,6 @@ access to the large language model (**LLM**) APIs and services.
 """  # noqa: E501
 from typing import Dict, Type
 
-from langchain.chat_models.gigachat import GigaChat
 from langchain.llms.ai21 import AI21
 from langchain.llms.aleph_alpha import AlephAlpha
 from langchain.llms.amazon_api_gateway import AmazonAPIGateway
@@ -113,7 +112,7 @@ __all__ = [
     "Fireworks",
     "FireworksChat",
     "ForefrontAI",
-    "GigaChat" "GPT4All",
+    "GPT4All",
     "GooglePalm",
     "GooseAI",
     "HuggingFaceEndpoint",
@@ -184,7 +183,6 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "edenai": EdenAI,
     "fake-list": FakeListLLM,
     "forefrontai": ForefrontAI,
-    "gigachat": GigaChat,
     "google_palm": GooglePalm,
     "gooseai": GooseAI,
     "gpt4all": GPT4All,

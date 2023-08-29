@@ -5,7 +5,7 @@ GigaChatModel for GigaChat.
 
 import logging
 import os
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import requests
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt
@@ -47,7 +47,7 @@ class GigaChat(SimpleChatModel):
         return "giga-chat-model"
 
     @classmethod
-    def transform_output(cls, response: Any) -> str:
+    def transform_output(cls, response: Any) -> Tuple[str, str]:
         """Transforms API response to extract desired output."""
         choise = response.json()["choices"][0]
         return choise["message"]["content"], choise["finish_reason"]
