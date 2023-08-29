@@ -517,15 +517,15 @@ class Chroma(VectorStore):
             document_id (str): ID of the document to update.
             document (Document): Document to update.
         """
-        return self.update_document_batch([document_id], [document])
+        return self.update_documents([document_id], [document])
 
-    def update_document_batch(
-        self, document_ids: List[str], documents: List[Document]
+    def update_documents(
+        self, ids: List[str], documents: List[Document]
     ) -> None:
         """Update a document in the collection.
 
         Args:
-            document_ids (List[str]): List of ids of the document to update.
+            ids (List[str]): List of ids of the document to update.
             documents (List[Document]): List of documents to update.
         """
         text = [document.page_content for document in documents]
@@ -537,7 +537,7 @@ class Chroma(VectorStore):
         embeddings = self._embedding_function.embed_documents(text)
 
         self._collection.update(
-            ids=document_ids,
+            ids=ids,
             embeddings=embeddings,
             documents=text,
             metadatas=metadata,
