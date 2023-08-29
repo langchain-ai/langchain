@@ -378,15 +378,16 @@ class AzureSearch(VectorStore):
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
         )
         # Convert results to Document objects
         docs = [
             (
                 Document(
-                    page_content=result[FIELDS_CONTENT],
-                    metadata=json.loads(result[FIELDS_METADATA]),
+                    page_content=result.pop(FIELDS_CONTENT),
+                    metadata=json.loads(result[FIELDS_METADATA])
+                    if FIELDS_METADATA in result
+                    else result,
                 ),
                 float(result["@search.score"]),
             )
@@ -435,7 +436,6 @@ class AzureSearch(VectorStore):
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             top=k,
         )
@@ -443,8 +443,10 @@ class AzureSearch(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result[FIELDS_CONTENT],
-                    metadata=json.loads(result[FIELDS_METADATA]),
+                    page_content=result.pop(FIELDS_CONTENT),
+                    metadata=json.loads(result[FIELDS_METADATA])
+                    if FIELDS_METADATA in result
+                    else result,
                 ),
                 float(result["@search.score"]),
             )
@@ -495,7 +497,6 @@ class AzureSearch(VectorStore):
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             query_type="semantic",
             query_language=self.semantic_query_language,
@@ -516,22 +517,22 @@ class AzureSearch(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result["content"],
-                    metadata={
-                        **json.loads(result["metadata"]),
-                        **{
-                            "captions": {
-                                "text": result.get("@search.captions", [{}])[0].text,
-                                "highlights": result.get("@search.captions", [{}])[
-                                    0
-                                ].highlights,
-                            }
-                            if result.get("@search.captions")
-                            else {},
-                            "answers": semantic_answers_dict.get(
-                                json.loads(result["metadata"]).get("key"), ""
-                            ),
-                        },
+                    page_content=result.pop(FIELDS_CONTENT),
+                    metadata=json.loads(result[FIELDS_METADATA])
+                    if FIELDS_METADATA in result
+                    else result
+                    | {
+                        "captions": {
+                            "text": result.get("@search.captions", [{}])[0].text,
+                            "highlights": result.get("@search.captions", [{}])[
+                                0
+                            ].highlights,
+                        }
+                        if result.get("@search.captions")
+                        else {},
+                        "answers": semantic_answers_dict.get(
+                            json.loads(result["metadata"]).get("key"), ""
+                        ),
                     },
                 ),
                 float(result["@search.score"]),
@@ -568,7 +569,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     vectorstore: AzureSearch
     """Azure Search instance used to find similar documents."""
     search_type: str = "hybrid"
-    """Type of search to perform. Options are "similarity", "hybrid", 
+    """Type of search to perform. Options are "similarity", "hybrid",
     "semantic_hybrid"."""
     k: int = 4
     """Number of documents to return."""
