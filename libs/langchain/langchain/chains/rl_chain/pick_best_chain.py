@@ -54,9 +54,14 @@ class PickBestFeatureEmbedder(base.Embedder[PickBest.Event]):
         to_select_from_var_name, to_select_from = next(
             iter(event.to_select_from.items()), (None, None)
         )
+
         action_embs = (
-            base.embed(to_select_from, self.model, to_select_from_var_name)
-            if event.to_select_from
+            (
+                base.embed(to_select_from, self.model, to_select_from_var_name)
+                if event.to_select_from
+                else None
+            )
+            if to_select_from
             else None
         )
 
