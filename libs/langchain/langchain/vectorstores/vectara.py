@@ -260,7 +260,7 @@ class Vectara(VectorStore):
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview
                 for more details.
             score_threshold: minimal score threshold for the result.
-                If defined, results with score less than this value will be 
+                If defined, results with score less than this value will be
                 filtered out.
             n_sentence_context: number of sentences before/after the matching segment
                 to add, defaults to 2
