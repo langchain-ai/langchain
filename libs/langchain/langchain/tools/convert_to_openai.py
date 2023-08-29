@@ -19,7 +19,9 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     if isinstance(tool, StructuredTool):
         schema_ = tool.args_schema.schema()
         # Bug with required missing for structured tools.
-        required = sorted(schema_["properties"])  # BUG WORKAROUND
+        required = schema_.get(
+            "required", sorted(schema_["properties"])  # Backup is a BUG WORKAROUND
+        )
         return {
             "name": tool.name,
             "description": tool.description,
