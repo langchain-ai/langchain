@@ -592,7 +592,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
     def count_tokens(self, *, text: str) -> int:
         return len(self._encode(text))
 
-    _max_length_equal_32_bit_integer = 2**32
+    _max_length_equal_32_bit_integer: int = 2**32
 
     def _encode(self, text: str) -> List[int]:
         token_ids_with_start_and_end_token_ids = self.tokenizer.encode(
@@ -832,7 +832,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # Split along section titles
                 "\n=+\n",
                 "\n-+\n",
-                "\n\*+\n",
+                "\n\\*+\n",
                 # Split along directive markers
                 "\n\n.. *\n\n",
                 # Split by the normal type of lines
@@ -931,7 +931,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # End of code block
                 "```\n",
                 # Horizontal lines
-                "\n\*\*\*+\n",
+                "\n\\*\\*\\*+\n",
                 "\n---+\n",
                 "\n___+\n",
                 # Note that this splitter doesn't handle horizontal lines defined
@@ -944,19 +944,19 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         elif language == Language.LATEX:
             return [
                 # First, try to split along Latex sections
-                "\n\\\chapter{",
-                "\n\\\section{",
-                "\n\\\subsection{",
-                "\n\\\subsubsection{",
+                "\n\\\\chapter{",
+                "\n\\\\section{",
+                "\n\\\\subsection{",
+                "\n\\\\subsubsection{",
                 # Now split by environments
-                "\n\\\begin{enumerate}",
-                "\n\\\begin{itemize}",
-                "\n\\\begin{description}",
-                "\n\\\begin{list}",
-                "\n\\\begin{quote}",
-                "\n\\\begin{quotation}",
-                "\n\\\begin{verse}",
-                "\n\\\begin{verbatim}",
+                "\n\\\\begin{enumerate}",
+                "\n\\\\begin{itemize}",
+                "\n\\\\begin{description}",
+                "\n\\\\begin{list}",
+                "\n\\\\begin{quote}",
+                "\n\\\\begin{quotation}",
+                "\n\\\\begin{verse}",
+                "\n\\\\begin{verbatim}",
                 # Now split by math environments
                 "\n\\\begin{align}",
                 "$$",

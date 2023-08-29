@@ -16,8 +16,12 @@ from langchain.chat_models.vertexai import _parse_chat_history, _parse_examples
 from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
-def test_vertexai_single_call() -> None:
-    model = ChatVertexAI()
+@pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
+def test_vertexai_single_call(model_name: str) -> None:
+    if model_name:
+        model = ChatVertexAI(model_name=model_name)
+    else:
+        model = ChatVertexAI()
     message = HumanMessage(content="Hello")
     response = model([message])
     assert isinstance(response, AIMessage)
@@ -52,6 +56,22 @@ def test_vertexai_single_call_with_examples() -> None:
     context = SystemMessage(content=raw_context)
     message = HumanMessage(content=question)
     response = model([context, message], examples=[inp, output])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+
+
+@pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
+def test_vertexai_single_call_with_history(model_name: str) -> None:
+    if model_name:
+        model = ChatVertexAI(model_name=model_name)
+    else:
+        model = ChatVertexAI()
+    text_question1, text_answer1 = "How much is 2+2?", "4"
+    text_question2 = "How much is 3+3?"
+    message1 = HumanMessage(content=text_question1)
+    message2 = AIMessage(content=text_answer1)
+    message3 = HumanMessage(content=text_question2)
+    response = model([message1, message2, message3])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -145,7 +165,7 @@ def test_parse_examples_correct() -> None:
     ]
 
 
-def test_parse_exmaples_failes_wrong_sequence() -> None:
+def test_parse_examples_failes_wrong_sequence() -> None:
     with pytest.raises(ValueError) as exc_info:
         _ = _parse_examples([AIMessage(content="a")])
     print(str(exc_info.value))

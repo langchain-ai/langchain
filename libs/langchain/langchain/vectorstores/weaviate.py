@@ -1,4 +1,3 @@
-"""Wrapper around weaviate vector database."""
 from __future__ import annotations
 
 import datetime
@@ -44,7 +43,7 @@ def _create_weaviate_client(**kwargs: Any) -> Any:
     try:
         import weaviate
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import weaviate python  package. "
             "Please install it with `pip install weaviate-client`"
         )
@@ -70,7 +69,7 @@ def _json_serializable(value: Any) -> Any:
 
 
 class Weaviate(VectorStore):
-    """Wrapper around Weaviate vector database.
+    """`Weaviate` vector store.
 
     To use, you should have the ``weaviate-client`` python package installed.
 

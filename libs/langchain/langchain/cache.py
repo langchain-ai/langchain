@@ -33,6 +33,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    List,
     Optional,
     Sequence,
     Tuple,
@@ -216,10 +217,25 @@ class SQLiteCache(SQLAlchemyCache):
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
 
-    # TODO - implement a TTL policy in Redis
+    def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
+        """
+        Initialize an instance of RedisCache.
 
-    def __init__(self, redis_: Any):
-        """Initialize by passing in Redis instance."""
+        This method initializes an object with Redis caching capabilities.
+        It takes a `redis_` parameter, which should be an instance of a Redis
+        client class, allowing the object to interact with a Redis
+        server for caching purposes.
+
+        Parameters:
+            redis_ (Any): An instance of a Redis client class
+                (e.g., redis.Redis) used for caching.
+                This allows the object to communicate with a
+                Redis server for caching operations.
+            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
+                If provided, it sets the time duration for how long cached
+                items will remain valid. If not provided, cached items will not
+                have an automatic expiration.
+        """
         try:
             from redis import Redis
         except ImportError:
@@ -230,6 +246,7 @@ class RedisCache(BaseCache):
         if not isinstance(redis_, Redis):
             raise ValueError("Please pass in Redis object.")
         self.redis = redis_
+        self.ttl = ttl
 
     def _key(self, prompt: str, llm_string: str) -> str:
         """Compute key from prompt and llm_string"""
@@ -261,12 +278,19 @@ class RedisCache(BaseCache):
                 return
         # Write to a Redis HASH
         key = self._key(prompt, llm_string)
-        self.redis.hset(
-            key,
-            mapping={
-                str(idx): generation.text for idx, generation in enumerate(return_val)
-            },
-        )
+
+        with self.redis.pipeline() as pipe:
+            pipe.hset(
+                key,
+                mapping={
+                    str(idx): generation.text
+                    for idx, generation in enumerate(return_val)
+                },
+            )
+            if self.ttl is not None:
+                pipe.expire(key, self.ttl)
+
+            pipe.execute()
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
@@ -278,6 +302,14 @@ class RedisSemanticCache(BaseCache):
     """Cache that uses Redis as a vector-store backend."""
 
     # TODO - implement a TTL policy in Redis
+
+    DEFAULT_SCHEMA = {
+        "content_key": "prompt",
+        "text": [
+            {"name": "prompt"},
+        ],
+        "extra": [{"name": "return_val"}, {"name": "llm_string"}],
+    }
 
     def __init__(
         self, redis_url: str, embedding: Embeddings, score_threshold: float = 0.2
@@ -326,12 +358,14 @@ class RedisSemanticCache(BaseCache):
                 embedding=self.embedding,
                 index_name=index_name,
                 redis_url=self.redis_url,
+                schema=cast(Dict, self.DEFAULT_SCHEMA),
             )
         except ValueError:
             redis = RedisVectorstore(
-                embedding_function=self.embedding.embed_query,
+                embedding=self.embedding,
                 index_name=index_name,
                 redis_url=self.redis_url,
+                index_schema=cast(Dict, self.DEFAULT_SCHEMA),
             )
             _embedding = self.embedding.embed_query(text="test")
             redis._create_index(dim=len(_embedding))
@@ -351,17 +385,18 @@ class RedisSemanticCache(BaseCache):
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
         llm_cache = self._get_llm_cache(llm_string)
-        generations = []
+        generations: List = []
         # Read from a Hash
-        results = llm_cache.similarity_search_limit_score(
+        results = llm_cache.similarity_search(
             query=prompt,
             k=1,
-            score_threshold=self.score_threshold,
+            distance_threshold=self.score_threshold,
         )
         if results:
             for document in results:
-                for text in document.metadata["return_val"]:
-                    generations.append(Generation(text=text))
+                generations.extend(
+                    _load_generations_from_json(document.metadata["return_val"])
+                )
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -379,11 +414,11 @@ class RedisSemanticCache(BaseCache):
                 )
                 return
         llm_cache = self._get_llm_cache(llm_string)
-        # Write to vectorstore
+        _dump_generations_to_json([g for g in return_val])
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
-            "return_val": [generation.text for generation in return_val],
+            "return_val": _dump_generations_to_json([g for g in return_val]),
         }
         llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
 

@@ -3,7 +3,6 @@ import logging
 from typing import Any, Dict, List, Literal, Optional
 
 from aiohttp import ClientSession
-from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -11,6 +10,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.requests import Requests
 from langchain.utils import get_from_dict_or_env
 
@@ -30,7 +30,7 @@ class EdenAI(LLM):
     for api reference check edenai documentation: http://docs.edenai.co.
     """
 
-    base_url = "https://api.edenai.run/v2"
+    base_url: str = "https://api.edenai.run/v2"
 
     edenai_api_key: Optional[str] = None
 
