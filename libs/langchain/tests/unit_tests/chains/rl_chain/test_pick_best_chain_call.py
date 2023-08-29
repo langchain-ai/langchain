@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 import pytest
 from test_utils import MockEncoder
 
@@ -10,7 +12,7 @@ encoded_text = "[ e n c o d e d ] "
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def setup():
+def setup() -> tuple:
     _PROMPT_TEMPLATE = """This is a dummy prompt that will be ignored by the fake llm"""
     PROMPT = PromptTemplate(input_variables=[], template=_PROMPT_TEMPLATE)
 
@@ -19,7 +21,7 @@ def setup():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_multiple_ToSelectFrom_throws():
+def test_multiple_ToSelectFrom_throws() -> None:
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
     actions = ["0", "1", "2"]
@@ -32,7 +34,7 @@ def test_multiple_ToSelectFrom_throws():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_missing_basedOn_from_throws():
+def test_missing_basedOn_from_throws() -> None:
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
     actions = ["0", "1", "2"]
@@ -41,7 +43,7 @@ def test_missing_basedOn_from_throws():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_ToSelectFrom_not_a_list_throws():
+def test_ToSelectFrom_not_a_list_throws() -> None:
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
     actions = {"actions": ["0", "1", "2"]}
@@ -53,7 +55,7 @@ def test_ToSelectFrom_not_a_list_throws():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_update_with_delayed_score_with_auto_validator_throws():
+def test_update_with_delayed_score_with_auto_validator_throws() -> None:
     llm, PROMPT = setup()
     # this LLM returns a number so that the auto validator will return that
     auto_val_llm = FakeListChatModel(responses=["3"])
@@ -75,7 +77,7 @@ def test_update_with_delayed_score_with_auto_validator_throws():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_update_with_delayed_score_force():
+def test_update_with_delayed_score_force() -> None:
     llm, PROMPT = setup()
     # this LLM returns a number so that the auto validator will return that
     auto_val_llm = FakeListChatModel(responses=["3"])
@@ -99,7 +101,7 @@ def test_update_with_delayed_score_force():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_update_with_delayed_score():
+def test_update_with_delayed_score() -> None:
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm, prompt=PROMPT, selection_scorer=None
@@ -117,11 +119,11 @@ def test_update_with_delayed_score():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_user_defined_scorer():
+def test_user_defined_scorer() -> None:
     llm, PROMPT = setup()
 
     class CustomSelectionScorer(rl_chain.SelectionScorer):
-        def score_response(self, inputs, llm_response: str) -> float:
+        def score_response(self, inputs: Dict[str, Any], llm_response: str) -> float:
             score = 200
             return score
 
@@ -139,7 +141,7 @@ def test_user_defined_scorer():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_default_embeddings():
+def test_default_embeddings() -> None:
     llm, PROMPT = setup()
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     chain = pick_best_chain.PickBest.from_llm(
@@ -173,7 +175,7 @@ def test_default_embeddings():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_default_embeddings_off():
+def test_default_embeddings_off() -> None:
     llm, PROMPT = setup()
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     chain = pick_best_chain.PickBest.from_llm(
@@ -199,7 +201,7 @@ def test_default_embeddings_off():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_default_embeddings_mixed_w_explicit_user_embeddings():
+def test_default_embeddings_mixed_w_explicit_user_embeddings() -> None:
     llm, PROMPT = setup()
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     chain = pick_best_chain.PickBest.from_llm(
@@ -234,7 +236,7 @@ def test_default_embeddings_mixed_w_explicit_user_embeddings():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_default_no_scorer_specified():
+def test_default_no_scorer_specified() -> None:
     _, PROMPT = setup()
     chain_llm = FakeListChatModel(responses=[100])
     chain = pick_best_chain.PickBest.from_llm(llm=chain_llm, prompt=PROMPT)
@@ -249,7 +251,7 @@ def test_default_no_scorer_specified():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_explicitly_no_scorer():
+def test_explicitly_no_scorer() -> None:
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm, prompt=PROMPT, selection_scorer=None
@@ -265,7 +267,7 @@ def test_explicitly_no_scorer():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_auto_scorer_with_user_defined_llm():
+def test_auto_scorer_with_user_defined_llm() -> None:
     llm, PROMPT = setup()
     scorer_llm = FakeListChatModel(responses=[300])
     chain = pick_best_chain.PickBest.from_llm(
@@ -284,7 +286,7 @@ def test_auto_scorer_with_user_defined_llm():
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_calling_chain_w_reserved_inputs_throws():
+def test_calling_chain_w_reserved_inputs_throws() -> None:
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
     with pytest.raises(ValueError):
