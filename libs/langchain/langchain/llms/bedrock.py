@@ -1,10 +1,11 @@
 import json
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Iterator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, root_validator
+from langchain.schema.output import GenerationChunk
 
 
 class LLMInputOutputAdapter:
@@ -32,6 +33,19 @@ class LLMInputOutputAdapter:
             input_body["max_tokens_to_sample"] = 50
 
         return input_body
+
+    @classmethod
+    def prepare_output_stream(self, provider: str, response: Any) -> Iterator[str]:
+        stream = response.get("body")
+        if stream:
+            for event in stream:
+                chunk = event.get("chunk")
+                if chunk:
+                    chunk_obj = json.loads(chunk.get("bytes").decode())
+                    if provider == "anthropic":
+                        yield GenerationChunk(text=chunk_obj["completion"])
+                    else:
+                        yield GenerationChunk(text=chunk_obj["outputText"])
 
     @classmethod
     def prepare_output(cls, provider: str, response: Any) -> str:
@@ -155,6 +169,26 @@ class Bedrock(LLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "amazon_bedrock"
+
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[str]:
+        _model_kwargs = self.model_kwargs or {}
+        provider = self.model_id.split(".")[0]
+        params = {**_model_kwargs, **kwargs}
+        input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
+        body = json.dumps(input_body)
+        response = self.client.invoke_model_with_response_stream(
+            body=body,
+            modelId=self.model_id,
+            accept="application/json",
+            contentType="application/json",
+        )
+        return LLMInputOutputAdapter.prepare_output_stream(provider, response)
 
     def _call(
         self,
