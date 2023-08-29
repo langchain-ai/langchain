@@ -31,7 +31,7 @@ class FalkorDBGraph:
             import redis
             from redis.commands.graph import Graph
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
