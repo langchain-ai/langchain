@@ -129,7 +129,7 @@ Fallacy Revision:""",
         "input_prompt",
         "output_from_model",
         "fallacy_critique_request",
-        "fallacy_revision",
+        "fallacy_critique",
         "fallacy_revision_request",
     ],
 )
