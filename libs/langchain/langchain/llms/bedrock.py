@@ -176,7 +176,7 @@ class Bedrock(LLM):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[str]:
+    ) -> Iterator[GenerationChunk]:
         _model_kwargs = self.model_kwargs or {}
         provider = self.model_id.split(".")[0]
         params = {**_model_kwargs, **kwargs}
