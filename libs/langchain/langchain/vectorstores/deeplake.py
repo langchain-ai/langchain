@@ -140,7 +140,8 @@ class DeepLake(VectorStore):
             and version_compare(deeplake.__version__, "3.6.7") == -1
         ):
             raise ImportError(
-                "To use tensor_db option you need to update deeplake to `3.6.7` or higher. "
+                "To use tensor_db option you need to update deeplake to `3.6.7` or "
+                "higher. "
                 f"Currently installed deeplake version is {deeplake.__version__}. "
             )
 
