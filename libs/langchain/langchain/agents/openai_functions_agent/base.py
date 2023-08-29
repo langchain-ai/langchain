@@ -94,7 +94,8 @@ def _format_intermediate_steps(
 
     for intermediate_step in intermediate_steps:
         agent_action, observation = intermediate_step
-        messages.extend(_convert_agent_action_to_messages(agent_action, observation))
+        messages.extend(_convert_agent_action_to_messages(
+            agent_action, observation))
 
     return messages
 
@@ -109,7 +110,8 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
     if function_call:
         function_name = function_call["name"]
         try:
-            _tool_input = json.loads(function_call["arguments"])
+            _tool_input = json.dumps(function_call["arguments"])
+            _tool_input = json.loads(_tool_input)
         except JSONDecodeError:
             raise OutputParserException(
                 f"Could not parse tool input: {function_call} because "
@@ -204,7 +206,8 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         selected_inputs = {
             k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
         }
-        full_inputs = dict(**selected_inputs, agent_scratchpad=agent_scratchpad)
+        full_inputs = dict(**selected_inputs,
+                           agent_scratchpad=agent_scratchpad)
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         if with_functions:
@@ -241,7 +244,8 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         selected_inputs = {
             k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
         }
-        full_inputs = dict(**selected_inputs, agent_scratchpad=agent_scratchpad)
+        full_inputs = dict(**selected_inputs,
+                           agent_scratchpad=agent_scratchpad)
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = await self.llm.apredict_messages(
