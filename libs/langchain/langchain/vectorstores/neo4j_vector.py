@@ -33,6 +33,11 @@ def check_if_not_null(props: List[str], values: List[Any]) -> None:
             raise ValueError(f"Parameter `{prop}` must not be None or empty string")
 
 
+def sort_by_index_name(lst: List[str], index_name: str) -> List[str]:
+    """Sort first element to match the index_name if exists"""
+    return sorted(lst, key=lambda x: x.get("index_name") != index_name)
+
+
 class Neo4jVector(VectorStore):
     """`Neo4j` vector index.
 
@@ -229,12 +234,9 @@ class Neo4jVector(VectorStore):
 
         index_information = self.query(
             "SHOW INDEXES YIELD name, type, labelsOrTypes, properties, options "
-            "WHERE type = 'VECTOR' AND name = $index_name "
-            "RETURN name, labelsOrTypes, properties, options "
-            "UNION "
-            "SHOW INDEXES YIELD name, type, labelsOrTypes, properties, options "
-            "WHERE labelsOrTypes[0] = $node_label AND "
-            "properties[0] = $embedding_node_property "
+            "WHERE type = 'VECTOR' AND (name = $index_name "
+            "OR (labelsOrTypes[0] = $node_label AND "
+            "properties[0] = $embedding_node_property)) "
             "RETURN name, labelsOrTypes, properties, options ",
             {
                 "index_name": self.index_name,
@@ -242,6 +244,8 @@ class Neo4jVector(VectorStore):
                 "embedding_node_property": self.embedding_node_property,
             },
         )
+        # sort by index_name
+        index_information = sort_by_index_name(index_information, self.index_name)
         try:
             self.index_name = index_information[0]["name"]
             self.node_label = index_information[0]["labelsOrTypes"][0]
@@ -587,7 +591,6 @@ class Neo4jVector(VectorStore):
         cls: Type[Neo4jVector],
         embedding: Embeddings,
         index_name: str,
-        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         **kwargs: Any,
     ) -> Neo4jVector:
         """
@@ -602,7 +605,6 @@ class Neo4jVector(VectorStore):
         store = cls(
             embedding=embedding,
             index_name=index_name,
-            distance_strategy=distance_strategy,
             **kwargs,
         )
 

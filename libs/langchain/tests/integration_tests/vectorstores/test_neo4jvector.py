@@ -21,6 +21,19 @@ docker-compose -f neo4j.yml up
 """
 
 
+def drop_vector_indexes(store: Neo4jVector) -> None:
+    """Cleanup all vector indexes"""
+    all_indexes = store.query(
+        """
+            SHOW INDEXES YIELD name, type
+            WHERE type = "VECTOR"
+            RETURN name
+                              """
+    )
+    for index in all_indexes:
+        store.query(f"DROP INDEX {index['name']}")
+
+
 class FakeEmbeddingsWithOsDimension(FakeEmbeddings):
     """Fake embeddings functionality for testing."""
 
@@ -49,6 +62,8 @@ def test_neo4jvector() -> None:
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
+    drop_vector_indexes(docsearch)
+
 
 def test_neo4jvector_euclidean() -> None:
     """Test euclidean distance"""
@@ -63,6 +78,8 @@ def test_neo4jvector_euclidean() -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
+
+    drop_vector_indexes(docsearch)
 
 
 def test_neo4jvector_embeddings() -> None:
@@ -79,6 +96,8 @@ def test_neo4jvector_embeddings() -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
+
+    drop_vector_indexes(docsearch)
 
 
 def test_neo4jvector_catch_wrong_index_name() -> None:
@@ -102,6 +121,8 @@ def test_neo4jvector_catch_wrong_index_name() -> None:
     )
     output = existing.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
+
+    drop_vector_indexes(existing)
 
 
 def test_neo4jvector_catch_wrong_node_label() -> None:
@@ -127,6 +148,8 @@ def test_neo4jvector_catch_wrong_node_label() -> None:
     output = existing.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
+    drop_vector_indexes(existing)
+
 
 def test_neo4jvector_with_metadatas() -> None:
     """Test end to end construction and search."""
@@ -143,6 +166,8 @@ def test_neo4jvector_with_metadatas() -> None:
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
+    drop_vector_indexes(docsearch)
+
 
 def test_neo4jvector_with_metadatas_with_scores() -> None:
     """Test end to end construction and search."""
@@ -158,6 +183,8 @@ def test_neo4jvector_with_metadatas_with_scores() -> None:
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
+
+    drop_vector_indexes(docsearch)
 
 
 def test_neo4jvector_relevance_score() -> None:
@@ -179,6 +206,8 @@ def test_neo4jvector_relevance_score() -> None:
         (Document(page_content="bar", metadata={"page": "1"}), 0.9998376369476318),
         (Document(page_content="baz", metadata={"page": "2"}), 0.9993523359298706),
     ]
+
+    drop_vector_indexes(docsearch)
 
 
 def test_neo4jvector_retriever_search_threshold() -> None:
@@ -203,6 +232,8 @@ def test_neo4jvector_retriever_search_threshold() -> None:
         Document(page_content="foo", metadata={"page": "0"}),
     ]
 
+    drop_vector_indexes(docsearch)
+
 
 def test_custom_return_neo4jvector() -> None:
     """Test end to end construction and search."""
@@ -217,3 +248,86 @@ def test_custom_return_neo4jvector() -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"test": "test"})]
+
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_prefer_indexname() -> None:
+    """Test using when two indexes are found, prefer by index_name."""
+    Neo4jVector.from_texts(
+        texts=["foo"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+    )
+
+    Neo4jVector.from_texts(
+        texts=["bar"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        node_label="Test",
+        embedding_node_property="vector",
+        text_node_property="info",
+        pre_delete_collection=True,
+    )
+
+    existing_index = Neo4jVector.from_existing_index(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        text_node_property="info",
+    )
+
+    output = existing_index.similarity_search("bar", k=1)
+    assert output == [Document(page_content="bar", metadata={})]
+    drop_vector_indexes(existing_index)
+
+
+def test_neo4jvector_prefer_indexname_insert() -> None:
+    """Test using when two indexes are found, prefer by index_name."""
+    Neo4jVector.from_texts(
+        texts=["baz"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+    )
+
+    Neo4jVector.from_texts(
+        texts=["foo"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        node_label="Test",
+        embedding_node_property="vector",
+        text_node_property="info",
+        pre_delete_collection=True,
+    )
+
+    existing_index = Neo4jVector.from_existing_index(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        text_node_property="info",
+    )
+
+    existing_index.add_documents([Document(page_content="bar", metadata={})])
+
+    output = existing_index.similarity_search("bar", k=2)
+    assert output == [
+        Document(page_content="bar", metadata={}),
+        Document(page_content="foo", metadata={}),
+    ]
+    drop_vector_indexes(existing_index)
