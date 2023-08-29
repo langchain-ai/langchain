@@ -27,8 +27,8 @@ class CommaSeparatedListOutputParser(ListOutputParser):
 
     def get_format_instructions(self) -> str:
         return (
-            "Your response should be a list of comma separated values, "
-            "eg: `foo, bar, baz`"
+            "Ответ должен быть списком, разделенным запятыми, "
+            "например: `foo, bar, baz`. Кроме списка в ответе не должно быть никаких других слов."
         )
 
     def parse(self, text: str) -> List[str]:

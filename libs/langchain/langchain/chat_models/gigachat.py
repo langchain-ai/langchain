@@ -8,7 +8,7 @@ import os
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 import requests
-from tenacity import retry, stop_after_attempt
+from tenacity import retry, stop_after_attempt, retry_if_not_exception_type
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
@@ -33,6 +33,12 @@ class GigaChat(SimpleChatModel):
     user: str = os.environ.get("GIGA_USER", "")
     password: str = os.environ.get("GIGA_PASSWORD", "")
     verbose: bool = False
+    timeout: int = 600
+    max_tokens: int = 0
+    """ Maximum number of tokens to generate """
+    stop_on_censor: bool = True
+    """ Stop generation and throw exception if censor is detected """
+    censor_finish_reason: List[str] = ["request_censor", "request_blacklist"]
 
     logger = logging.getLogger(__name__)
 
@@ -43,7 +49,8 @@ class GigaChat(SimpleChatModel):
     @classmethod
     def transform_output(cls, response: Any) -> str:
         """Transforms API response to extract desired output."""
-        return response.json()["choices"][0]["message"]["content"]
+        choise = response.json()["choices"][0]
+        return choise["message"]["content"], choise["finish_reason"]
 
     @classmethod
     def convert_message_to_dict(cls, message: BaseMessage) -> dict:
@@ -86,7 +93,7 @@ class GigaChat(SimpleChatModel):
             f"{self.api_url}/v1/token",
             auth=(self.user, self.password),
             data=[],
-            timeout=600,
+            timeout=self.timeout,
         )
         if not response.ok:
             raise ValueError(
@@ -96,7 +103,7 @@ class GigaChat(SimpleChatModel):
         self.token = response.json()["tok"]
         return
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(retry=retry_if_not_exception_type(PermissionError), stop=stop_after_attempt(3))
     def _call(
         self,
         messages: List[BaseMessage],
@@ -119,8 +126,12 @@ class GigaChat(SimpleChatModel):
         payload = {
             "model": self.model,
             "profanity_check": self.profanity,
-            "messages": message_dicts,
+            "messages": message_dicts
         }
+        if self.temperature > 0:
+            payload["temperature"] = self.temperature
+        if self.max_tokens > 0:
+            payload["max_tokens"] = self.max_tokens
 
         if self.verbose:
             self.logger.warning("Giga request: %s", payload)
@@ -141,7 +152,12 @@ class GigaChat(SimpleChatModel):
             raise ValueError(
                 f"Can't get response from GigaChat. Error code: {response.status_code}"
             )
-        text = self.transform_output(response)
+        text, finish_reason = self.transform_output(response)
+        if finish_reason != "stop":
+            self.logger.warning("Giga generation stopped with reason: %s", finish_reason)
+
+        if self.stop_on_censor and finish_reason in self.censor_finish_reason:
+            raise PermissionError("Censor detected")
 
         if self.verbose:
             self.logger.warning("Giga response: %s", text)
