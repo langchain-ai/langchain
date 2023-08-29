@@ -568,7 +568,6 @@ def _load_run_evaluators(
     input_key, prediction_key, reference_key = None, None, None
     if (
         config.evaluators
-        or config.custom_evaluators
         or any([isinstance(e, EvaluatorType) for e in config.evaluators])
         or (
             config.custom_evaluators
