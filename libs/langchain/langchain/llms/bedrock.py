@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Mapping, Optional, Iterator
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
