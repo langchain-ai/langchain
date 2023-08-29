@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import dataclasses
+import abc
+
 import enum
 from typing import Callable
 
@@ -23,6 +24,7 @@ class MessageType(enum.Enum):
     FUNCTION = enum.auto()
     AI = enum.auto()
     AI_INVOKE = enum.auto()
+    AI_SELF = enum.auto()
 
 
 def infer_message_type(message: BaseMessage) -> MessageType:

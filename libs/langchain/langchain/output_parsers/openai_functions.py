@@ -25,9 +25,6 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
             )
         message = generation.message
         try:
-<<<<<<< HEAD
-            func_call = message.additional_kwargs["function_call"].copy()
-=======
             func_call = copy.deepcopy(message.additional_kwargs["function_call"])
         except KeyError as exc:
             raise OutputParserException(f"Could not parse function call: {exc}")
