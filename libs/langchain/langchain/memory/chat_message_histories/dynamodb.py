@@ -51,11 +51,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             client = boto3.resource("dynamodb")
         self.table = client.Table(table_name)
         self.session_id = session_id
-
-        if key:
-            self.key = key
-        else:
-            self.key = {primary_key_name: session_id}
+        self.key: Dict = key or {primary_key_name: session_id}
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
