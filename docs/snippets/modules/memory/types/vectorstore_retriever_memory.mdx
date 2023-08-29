@@ -7,9 +7,9 @@ from langchain.chains import ConversationChain
 from langchain.prompts import PromptTemplate
 ```
 
-### Initialize your VectorStore
+### Initialize your vector store
 
-Depending on the store you choose, this step may look different. Consult the relevant VectorStore documentation for more details.
+Depending on the store you choose, this step may look different. Consult the relevant vector store documentation for more details.
 
 
 ```python
@@ -25,9 +25,9 @@ embedding_fn = OpenAIEmbeddings().embed_query
 vectorstore = FAISS(embedding_fn, index, InMemoryDocstore({}), {})
 ```
 
-### Create your the VectorStoreRetrieverMemory
+### Create your `VectorStoreRetrieverMemory`
 
-The memory object is instantiated from any VectorStoreRetriever.
+The memory object is instantiated from any vector store retriever.
 
 
 ```python
