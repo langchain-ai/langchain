@@ -363,3 +363,41 @@ def test_calling_chain_w_reserved_inputs_throws() -> None:
             User=rl_chain.BasedOn("Context"),
             rl_chain_selected=rl_chain.ToSelectFrom(["0", "1", "2"]),
         )
+
+
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
+def test_activate_and_deactivate_scorer() -> None:
+    llm, PROMPT = setup()
+    scorer_llm = FakeListChatModel(responses=[300])
+    chain = pick_best_chain.PickBest.from_llm(
+        llm=llm,
+        prompt=PROMPT,
+        selection_scorer=pick_best_chain.base.AutoSelectionScorer(llm=scorer_llm),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+    )
+    response = chain.run(
+        User=pick_best_chain.base.BasedOn("Context"),
+        action=pick_best_chain.base.ToSelectFrom(["0", "1", "2"]),
+    )
+    # chain llm used for both basic prompt and for scoring
+    assert response["response"] == "hey"
+    selection_metadata = response["selection_metadata"]
+    assert selection_metadata.selected.score == 300.0
+
+    chain.deactivate_selection_scorer()
+    response = chain.run(
+        User=pick_best_chain.base.BasedOn("Context"),
+        action=pick_best_chain.base.ToSelectFrom(["0", "1", "2"]),
+    )
+    assert response["response"] == "hey"
+    selection_metadata = response["selection_metadata"]
+    assert selection_metadata.selected.score is None
+
+    chain.activate_selection_scorer()
+    response = chain.run(
+        User=pick_best_chain.base.BasedOn("Context"),
+        action=pick_best_chain.base.ToSelectFrom(["0", "1", "2"]),
+    )
+    assert response["response"] == "hey"
+    selection_metadata = response["selection_metadata"]
+    assert selection_metadata.selected.score == 300.0
