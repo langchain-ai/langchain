@@ -4,7 +4,7 @@ from typing import List
 
 import pytest
 
-import langchain
+import langchain_xfyun
 from langchain_xfyun.cache import RedisCache, RedisSemanticCache
 from langchain_xfyun.embeddings.base import Embeddings
 from langchain_xfyun.schema import Generation, LLMResult

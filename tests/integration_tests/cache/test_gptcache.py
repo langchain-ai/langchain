@@ -3,7 +3,7 @@ from typing import Any, Callable, Union
 
 import pytest
 
-import langchain
+import langchain_xfyun
 from langchain_xfyun.cache import GPTCache
 from langchain_xfyun.schema import Generation
 from tests.unit_tests.llms.fake_llm import FakeLLM

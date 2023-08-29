@@ -37,7 +37,7 @@ from tenacity import (
     wait_exponential,
 )
 
-import langchain
+import langchain_xfyun
 from langchain_xfyun.callbacks.base import BaseCallbackManager
 from langchain_xfyun.callbacks.manager import (
     AsyncCallbackManager,

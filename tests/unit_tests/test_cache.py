@@ -6,7 +6,7 @@ from _pytest.fixtures import FixtureRequest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-import langchain
+import langchain_xfyun
 from langchain_xfyun.cache import (
     InMemoryCache,
     SQLAlchemyCache,

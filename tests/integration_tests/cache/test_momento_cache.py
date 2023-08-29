@@ -12,7 +12,7 @@ from typing import Iterator
 
 import pytest
 
-import langchain
+import langchain_xfyun
 from langchain_xfyun.cache import MomentoCache
 from langchain_xfyun.schema import Generation, LLMResult
 from tests.unit_tests.llms.fake_llm import FakeLLM

@@ -325,7 +325,7 @@ class RedisSemanticCache(BaseCache):
 
         .. code-block:: python
 
-            import langchain
+            import langchain_xfyun
 
             from langchain_xfyun.cache import RedisSemanticCache
             from langchain_xfyun.embeddings import OpenAIEmbeddings

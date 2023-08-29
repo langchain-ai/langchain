@@ -25,7 +25,7 @@ from uuid import UUID
 
 from tenacity import RetryCallState
 
-import langchain
+import langchain_xfyun
 from langchain_xfyun.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
