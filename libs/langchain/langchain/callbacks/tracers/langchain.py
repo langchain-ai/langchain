@@ -19,7 +19,7 @@ from langchain.schema.messages import BaseMessage
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-_TRACERS: Set[LangChainTracer] = weakref.WeakSet()
+_TRACERS: weakref.WeakSet[LangChainTracer] = weakref.WeakSet()
 _CLIENT: Optional[Client] = None
 
 
