@@ -67,6 +67,13 @@ JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES = """```json
 }
 ```"""
 
+JSON_WITH_DOUBLED_ESCAPED_JSON_QUOTES = """```json
+{
+    "action": "Final Answer",
+    "action_input": "{\\"foo\\": \\"bar\\", \\"bar\\": \\"foo\\"}"
+}
+```"""
+
 NO_TICKS = """{
     "foo": "bar"
 }"""
@@ -130,4 +137,12 @@ def test_parse_json_with_code_blocks() -> None:
     assert parsed == {
         "action": "Final Answer",
         "action_input": '```bar\n<div id="1" class="value">\n\ttext\n</div>```',
+    }
+
+
+def test_parse_json_with_escaped_json() -> None:
+    parsed = parse_json_markdown(JSON_WITH_DOUBLED_ESCAPED_JSON_QUOTES)
+    assert parsed == {
+        "action": "Final Answer",
+        "action_input": '{"foo": "bar", "bar": "foo"}'
     }
