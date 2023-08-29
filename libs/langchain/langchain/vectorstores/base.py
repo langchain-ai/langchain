@@ -1,5 +1,3 @@
-"""Interface for vector stores."""
-
 from __future__ import annotations
 
 import asyncio
@@ -37,7 +35,7 @@ VST = TypeVar("VST", bound="VectorStore")
 
 
 class VectorStore(ABC):
-    """Interface for vector stores."""
+    """Interface for vector store."""
 
     @abstractmethod
     def add_texts(
@@ -520,7 +518,7 @@ class VectorStore(ABC):
 
 
 class VectorStoreRetriever(BaseRetriever):
-    """Retriever class for VectorStore."""
+    """Base Retriever class for VectorStore."""
 
     vectorstore: VectorStore
     """VectorStore to use for retrieval."""

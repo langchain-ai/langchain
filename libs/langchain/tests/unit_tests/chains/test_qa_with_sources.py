@@ -13,6 +13,21 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
             "28-pl",
         ),
         (
+            "This Agreement is governed by English law.\nSources: 28-pl",
+            "This Agreement is governed by English law.\n",
+            "28-pl",
+        ),
+        (
+            "This Agreement is governed by English law.\nsource: 28-pl",
+            "This Agreement is governed by English law.\n",
+            "28-pl",
+        ),
+        (
+            "This Agreement is governed by English law.\nSource: 28-pl",
+            "This Agreement is governed by English law.\n",
+            "28-pl",
+        ),
+        (
             "This Agreement is governed by English law.\n"
             "SOURCES: 28-pl\n\n"
             "QUESTION: Which state/country's law governs the interpretation of the "
