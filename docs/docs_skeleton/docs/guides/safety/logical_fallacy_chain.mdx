@@ -1,25 +1,15 @@
 # Chain for removing logical fallacies from model output
-Logical fallacies are flawed reasoning or false arguments that can undermine \
-the validity of a model's outputs. Examples include circular reasoning, false \
-dichotomies, ad hominem attacks, etc.  Machine learning models are optimized \
-to perform well on specific metrics like accuracy, perplexity, or loss. However, \
+Logical fallacies are flawed reasoning or false arguments that can undermine the validity of a model's outputs. Examples include circular reasoning, false
+dichotomies, ad hominem attacks, etc.  Machine learning models are optimized to perform well on specific metrics like accuracy, perplexity, or loss. However, \
 optimizing for metrics alone does not guarantee logically sound reasoning.
 
-Language models can learn to exploit flaws in reasoning to generate \
-plausible-sounding but logically invalid arguments.  When models rely on \
-fallacies, their outputs become unreliable and untrustworthy, even if they \
-achieve high scores on metrics. Users cannot depend on such outputs. Propagating \
-logical fallacies can spread misinformation, confuse users, and lead to harmful \
-real-world consequences when models are deployed in products or services.  \
-Monitoring and testing specifically for logical flaws is challenging unlike other \
-quality issues. It requires reasoning about arguments rather than pattern matching.
+Language models can learn to exploit flaws in reasoning to generate plausible-sounding but logically invalid arguments.  When models rely on fallacies, their outputs become unreliable and untrustworthy, even if they \achieve high scores on metrics. Users cannot depend on such outputs. Propagating logical fallacies can spread misinformation, confuse users, and lead to harmful real-world consequences when models are deployed in products or services.
 
-Therefore, it is crucial that model developers proactively address logical \
-fallacies after optimizing metrics. Specialized techniques like causal modeling, \
-robustness testing, and bias mitigation can help avoid flawed reasoning.  Overall, \
-allowing logical flaws to persist makes models less safe and ethical. Eliminating \
-fallacies ensures model outputs remain logically valid and aligned with human \
-reasoning. This maintains user trust and mitigates risks.
+Monitoring and testing specifically for logical flaws is challenging unlike other quality issues. It requires reasoning about arguments rather than pattern matching.
+
+Therefore, it is crucial that model developers proactively address logical fallacies after optimizing metrics. Specialized techniques like causal modeling, robustness testing, and bias mitigation can help avoid flawed reasoning.  Overall, allowing logical flaws to persist makes models less safe and ethical. Eliminating fallacies ensures model outputs remain logically valid and aligned with human reasoning. This maintains user trust and mitigates risks.
+
+
 
 ```python
 # Imports
@@ -28,7 +18,6 @@ from langchain.prompts import PromptTemplate
 from langchain.chains.llm import LLMChain
 from langchain.chains.fallacy_removal.base import FallacyChain
 ```
-
 
 ```python
 # Example of a model output being returned with a logical fallacy
