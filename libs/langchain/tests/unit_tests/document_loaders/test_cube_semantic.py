@@ -35,7 +35,7 @@ class TestCubeSemanticLoader(unittest.TestCase):
                 {
                     "name": "test_cube",
                     "type": "view",
-                    "isVisible": True,
+                    "public": True,
                     "measures": [],
                     "dimensions": [
                         {
