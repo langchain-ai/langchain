@@ -26,7 +26,6 @@ import inspect
 import json
 import logging
 import warnings
-from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
@@ -35,7 +34,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,
@@ -46,6 +44,8 @@ from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
+from langchain import BaseCache
+from langchain.schema.cache import RETURN_VAL_TYPE
 from langchain.utils import get_from_env
 
 try:
@@ -63,8 +63,6 @@ logger = logging.getLogger(__file__)
 
 if TYPE_CHECKING:
     import momento
-
-RETURN_VAL_TYPE = Sequence[Generation]
 
 
 def _hash(_input: str) -> str:
@@ -103,22 +101,6 @@ def _load_generations_from_json(generations_json: str) -> RETURN_VAL_TYPE:
         raise ValueError(
             f"Could not decode json to list of generations: {generations_json}"
         )
-
-
-class BaseCache(ABC):
-    """Base interface for cache."""
-
-    @abstractmethod
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
-
-    @abstractmethod
-    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
-
-    @abstractmethod
-    def clear(self, **kwargs: Any) -> None:
-        """Clear cache that can take additional keyword arguments."""
 
 
 class InMemoryCache(BaseCache):
