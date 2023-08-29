@@ -542,6 +542,9 @@ class GoogleDriveUtilities(Serializable, BaseModel):
     follow_shortcut: bool = True
     """If `true` and find a google link to document or folder, follow it."""
 
+    return_link: bool = False
+    """Return link when convert google drive documents."""
+
     conv_mapping: TYPE_CONV_MAPPING = Field(default_factory=default_conv_loader)
     """A dictionary to map a mime-type and a loader"""
 
@@ -1020,16 +1023,20 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                 "description": description,
             }
             # Search the description of the target_id
-            target = self.files.get(
-                fileId=target_id, supportsAllDrives=True, fields=self.fields
-            ).execute()
-            target_file["description"] = target.get(
-                "description", target_file["description"]
-            )
-            if "webViewLink" in target:
-                target_file["webViewLink"] = target["webViewLink"]
-            if "webContentLink" in target:
-                target_file["webContentLink"] = target["webContentLink"]
+            try:
+                target = self.files.get(
+                    fileId=target_id, supportsAllDrives=True, fields=self.fields
+                ).execute()
+                target_file["description"] = target.get(
+                    "description", target_file["description"]
+                )
+                if "webViewLink" in target:
+                    target_file["webViewLink"] = target["webViewLink"]
+                if "webContentLink" in target:
+                    target_file["webContentLink"] = target["webContentLink"]
+            except HttpError as x:
+                # Error when manage recursive directory
+                logger.debug(f"*** During follow link, ignore error {x}")
             logger.debug(f"Manage link {target_file}")
             if not current_mode.startswith("snippets"):
                 documents = self._get_document(target_file, current_mode)
@@ -1104,10 +1111,10 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                     else:
                         logger.debug(f"Filter reject the document {file['name']}")
                         return
-                except HttpError:
+                except HttpError as e:
                     logger.warning(
                         f"Impossible to read or convert the content "
-                        f"of '{file['name']}'' ({file['id']}"
+                        f"of '{file['name']}'' ({file['id']}) [{e}]"
                     )
                     return iter([])
             else:
@@ -1405,8 +1412,8 @@ class GoogleDriveUtilities(Serializable, BaseModel):
         if hasattr(self, "_slides") and self._slides:
             self._slides.close()
 
-    @staticmethod
     def _extract_text(
+            self,
         node: Any,
         *,
         key: str = "content",
@@ -1484,8 +1491,8 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                                 )
                                 link = style_node["link"]
                                 if isinstance(link, dict):
-                                    link = link["url"]
-                                if link:
+                                    link = link.get("url")
+                                if self.return_link and link:
                                     result[-1] = f"{result[-1]}[{node[key]}]({link})"
                                 else:
                                     # Empty link
@@ -1536,58 +1543,59 @@ class GoogleDriveUtilities(Serializable, BaseModel):
             )
             values = result.get("values", [])
 
-            width = max([len(v) for v in values])
-            headers = values[0]
-            if self.gsheet_mode == "elements":
-                for i, row in enumerate(values[1:], start=1):
-                    content = []
-                    for j, v in enumerate(row):
-                        title = (
-                            str(headers[j]).strip() + ": " if len(headers) > j else ""
-                        )
-                        content.append(f"{title}{str(v).strip()}")
+            if values:
+                width = max([len(v) for v in values])
+                headers = values[0]
+                if self.gsheet_mode == "elements":
+                    for i, row in enumerate(values[1:], start=1):
+                        content = []
+                        for j, v in enumerate(row):
+                            title = (
+                                str(headers[j]).strip() + ": " if len(headers) > j else ""
+                            )
+                            content.append(f"{title}{str(v).strip()}")
 
-                    raw_content = "\n".join(content)
-                    metadata = self._extract_meta_data(file)
-                    if "source" in metadata:
-                        metadata["source"] = (
-                            metadata["source"]
-                            + "#gid="
-                            + str(sheet["properties"]["sheetId"])
-                            + f"&{i}"
-                        )
+                        raw_content = "\n".join(content)
+                        metadata = self._extract_meta_data(file)
+                        if "source" in metadata:
+                            metadata["source"] = (
+                                metadata["source"]
+                                + "#gid="
+                                + str(sheet["properties"]["sheetId"])
+                                + f"&{i}"
+                            )
 
-                    yield Document(page_content=raw_content, metadata=metadata)
-            elif self.gsheet_mode == "single":
-                lines = []
-                line = "|"
-                i = 0
-                for i, head in enumerate(headers):
-                    line += head + "|"
-                for _ in range(i, width - 1):
-                    line += " |"
-
-                lines.append(line)
-                line = "|"
-                for _ in range(width):
-                    line += "---|"
-                lines.append(line)
-                for row in values[1:]:
+                        yield Document(page_content=raw_content, metadata=metadata)
+                elif self.gsheet_mode == "single":
+                    lines = []
                     line = "|"
-                    for i, v in enumerate(row):
-                        line += str(v).strip() + "|"
+                    i = 0
+                    for i, head in enumerate(headers):
+                        line += head + "|"
                     for _ in range(i, width - 1):
                         line += " |"
 
                     lines.append(line)
-                raw_content = "\n".join(lines)
-                single.append(raw_content)
-                yield Document(
-                    page_content="\n<PAGE BREAK>\n".join(single),
-                    metadata=self._extract_meta_data(file),
-                )
-            else:
-                raise ValueError(f"Invalid mode '{self.gslide_mode}'")
+                    line = "|"
+                    for _ in range(width):
+                        line += "---|"
+                    lines.append(line)
+                    for row in values[1:]:
+                        line = "|"
+                        for i, v in enumerate(row):
+                            line += str(v).strip() + "|"
+                        for _ in range(i, width - 1):
+                            line += " |"
+
+                        lines.append(line)
+                    raw_content = "\n".join(lines)
+                    single.append(raw_content)
+                    yield Document(
+                        page_content="\n<PAGE BREAK>\n".join(single),
+                        metadata=self._extract_meta_data(file),
+                    )
+                else:
+                    raise ValueError(f"Invalid mode '{self.gslide_mode}'")
 
     def _only_obj(
         self,
@@ -1640,7 +1648,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
             for slide in gslide["slides"]:
                 if "pageElements" in slide:
                     page_elements = self._sort_page_elements(slide["pageElements"])
-                    lines.extend(GoogleDriveUtilities._extract_text(page_elements))
+                    lines.extend(self._extract_text(page_elements))
                     lines.append("<PAGE BREAK>")
             if lines:
                 lines = lines[:-1]
@@ -1660,7 +1668,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                     meta["source"] = source
                     yield Document(
                         page_content="\n".join(
-                            GoogleDriveUtilities._extract_text(page_elements)
+                            self._extract_text(page_elements)
                         ),
                         metadata=meta,
                     )
@@ -1675,7 +1683,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                     if "pageElements" in slide:
                         page_elements = self._sort_page_elements(slide["pageElements"])
                         for i, line in enumerate(
-                            GoogleDriveUtilities._extract_text(page_elements)
+                            self._extract_text(page_elements)
                         ):
                             if line.strip():
                                 m = metadata.copy()
@@ -1692,7 +1700,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
             logger.warning(f"File with id '{file['id']}' is not a GDoc")
         else:
             gdoc = self._docs.get(documentId=file["id"]).execute()
-            text = GoogleDriveUtilities._extract_text(gdoc["body"]["content"])
+            text = self._extract_text(gdoc["body"]["content"])
             yield Document(
                 page_content="\n".join(text), metadata=self._extract_meta_data(file)
             )
