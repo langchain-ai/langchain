@@ -28,7 +28,8 @@ class CommaSeparatedListOutputParser(ListOutputParser):
     def get_format_instructions(self) -> str:
         return (
             "Ответ должен быть списком, разделенным запятыми, "
-            "например: `foo, bar, baz`. Кроме списка в ответе не должно быть никаких других слов."
+            "например: `foo, bar, baz`. Кроме списка в ответе \
+не должно быть никаких других слов."
         )
 
     def parse(self, text: str) -> List[str]:

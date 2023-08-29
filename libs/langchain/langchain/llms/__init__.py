@@ -19,6 +19,7 @@ access to the large language model (**LLM**) APIs and services.
 """  # noqa: E501
 from typing import Dict, Type
 
+from langchain.chat_models.gigachat import GigaChat
 from langchain.llms.ai21 import AI21
 from langchain.llms.aleph_alpha import AlephAlpha
 from langchain.llms.amazon_api_gateway import AmazonAPIGateway
@@ -85,7 +86,6 @@ from langchain.llms.vertexai import VertexAI
 from langchain.llms.vllm import VLLM, VLLMOpenAI
 from langchain.llms.writer import Writer
 from langchain.llms.xinference import Xinference
-from langchain.chat_models.gigachat import GigaChat
 
 __all__ = [
     "AI21",

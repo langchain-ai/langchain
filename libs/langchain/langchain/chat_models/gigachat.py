@@ -8,7 +8,7 @@ import os
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 import requests
-from tenacity import retry, stop_after_attempt, retry_if_not_exception_type
+from tenacity import retry, retry_if_not_exception_type, stop_after_attempt
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
@@ -103,7 +103,8 @@ class GigaChat(SimpleChatModel):
         self.token = response.json()["tok"]
         return
 
-    @retry(retry=retry_if_not_exception_type(PermissionError), stop=stop_after_attempt(3))
+    @retry(retry=retry_if_not_exception_type(PermissionError), 
+           stop=stop_after_attempt(3))
     def _call(
         self,
         messages: List[BaseMessage],
@@ -154,7 +155,8 @@ class GigaChat(SimpleChatModel):
             )
         text, finish_reason = self.transform_output(response)
         if finish_reason != "stop":
-            self.logger.warning("Giga generation stopped with reason: %s", finish_reason)
+            self.logger.warning("Giga generation stopped \
+with reason: %s", finish_reason)
 
         if self.stop_on_censor and finish_reason in self.censor_finish_reason:
             raise PermissionError("Censor detected")
