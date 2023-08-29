@@ -28,7 +28,8 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
             "28-pl",
         ),
         (
-            "According to the sources, the agreement is governed by English law.\nSource: 28-pl",
+            "According to the sources, the agreement is governed by English law.\n"
+            "Source: 28-pl",
             "According to the sources, the agreement is governed by English law.\n",
             "28-pl",
         ),
