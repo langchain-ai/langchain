@@ -115,9 +115,9 @@ class DeepLake(VectorStore):
                     responsible for storage and query execution. Only for data stored in
                     the Deep Lake Managed Database. Use runtime = {"db_engine": True}
                     during dataset creation.
-            runtime (Dict, optional): Parameters for creating the Vector Store in 
-                Deep Lake's Managed Tensor Database. Not applicable when loading an 
-                existing Vector Store. To create a Vector Store in the Managed Tensor 
+            runtime (Dict, optional): Parameters for creating the Vector Store in
+                Deep Lake's Managed Tensor Database. Not applicable when loading an
+                existing Vector Store. To create a Vector Store in the Managed Tensor
                 Database, set `runtime = {"tensor_db": True}`.
             **kwargs: Other optional keyword arguments.
 
