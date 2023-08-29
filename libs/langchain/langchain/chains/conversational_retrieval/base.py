@@ -120,7 +120,7 @@ class BaseConversationalRetrievalChain(Chain):
         get_chat_history = self.get_chat_history or _get_chat_history
         chat_history_str = get_chat_history(inputs["chat_history"])
 
-        if chat_history_str:
+        if chat_history_str and self.rephrase_question:
             callbacks = _run_manager.get_child()
             new_question = self.question_generator.run(
                 question=question, chat_history=chat_history_str, callbacks=callbacks
@@ -135,8 +135,8 @@ class BaseConversationalRetrievalChain(Chain):
         else:
             docs = self._get_docs(new_question, inputs)  # type: ignore[call-arg]
         new_inputs = inputs.copy()
-        if self.rephrase_question:
-            new_inputs["question"] = new_question
+
+        new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
         answer = self.combine_docs_chain.run(
             input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
@@ -167,7 +167,7 @@ class BaseConversationalRetrievalChain(Chain):
         question = inputs["question"]
         get_chat_history = self.get_chat_history or _get_chat_history
         chat_history_str = get_chat_history(inputs["chat_history"])
-        if chat_history_str:
+        if chat_history_str and self.rephrase_question:
             callbacks = _run_manager.get_child()
             new_question = await self.question_generator.arun(
                 question=question, chat_history=chat_history_str, callbacks=callbacks
@@ -183,8 +183,8 @@ class BaseConversationalRetrievalChain(Chain):
             docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
 
         new_inputs = inputs.copy()
-        if self.rephrase_question:
-            new_inputs["question"] = new_question
+
+        new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
         answer = await self.combine_docs_chain.arun(
             input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
