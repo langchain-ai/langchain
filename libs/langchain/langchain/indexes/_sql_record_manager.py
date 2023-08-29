@@ -14,12 +14,12 @@ allow it to work with a variety of SQL as a backend.
 * Keys can be deleted.
 """
 import contextlib
+import decimal
 import uuid
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
-import decimal
 
-from sqlalchemy import URL
 from sqlalchemy import (
+    URL,
     Column,
     Engine,
     Float,
