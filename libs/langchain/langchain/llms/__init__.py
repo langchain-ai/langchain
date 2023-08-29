@@ -113,8 +113,7 @@ __all__ = [
     "Fireworks",
     "FireworksChat",
     "ForefrontAI",
-    "GigaChat"
-    "GPT4All",
+    "GigaChat" "GPT4All",
     "GooglePalm",
     "GooseAI",
     "HuggingFaceEndpoint",
