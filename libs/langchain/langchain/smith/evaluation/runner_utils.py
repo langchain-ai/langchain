@@ -569,9 +569,10 @@ def _load_run_evaluators(
     if (
         config.evaluators
         or config.custom_evaluators
-        or any(
-            [isinstance(e, EvaluatorType) for e in config.evaluators]
-            or any([isinstance(e, StringEvaluator) for e in config.custom_evaluators])
+        or any([isinstance(e, EvaluatorType) for e in config.evaluators])
+        or (
+            config.custom_evaluators
+            and any([isinstance(e, StringEvaluator) for e in config.custom_evaluators])
         )
     ):
         input_key, prediction_key, reference_key = _get_keys(
