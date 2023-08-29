@@ -39,7 +39,7 @@ class NeptuneGraph:
         client: Any = None,
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
-        service: str = 'neptune-db',
+        service: str = "neptune-db",
     ) -> None:
         """Create a new Neptune graph wrapper instance."""
 
@@ -98,7 +98,19 @@ class NeptuneGraph:
         return self.client.execute_open_cypher_query(openCypherQuery=query)
 
     def _get_summary(self) -> Dict:
-        response = self.client.get_propertygraph_summary()
+        try:
+            response = self.client.get_propertygraph_summary()
+        except Exception as e:
+            raise NeptuneQueryException(
+                {
+                    "message": (
+                        "Summary API is not available for this instance of Neptune,"
+                        "ensure the engine version is >=1.2.1.0"
+                    ),
+                    "details": e.message,
+                }
+            )
+
         try:
             summary = response["payload"]["graphSummary"]
         except Exception:
