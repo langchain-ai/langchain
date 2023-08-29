@@ -33,8 +33,8 @@ Output should conform to the tags below.
 
 As an example, for the tags ["foo", "bar", "baz"], 
 the string "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>" is a well-formatted instance of the schema. 
-The string "<foo>\n   <bar>\n   </foo>" is not well-formatted.
-The string "<foo>\n   <tag>\n   </tag>\n</foo>" is not well-formatted.
+The string "<foo>\n   <bar>\n   </foo>" is a badly-formatted instance.
+The string "<foo>\n   <tag>\n   </tag>\n</foo>" is a badly-formatted instance.
 
 Here are the output tags:
 ```
