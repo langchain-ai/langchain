@@ -6,11 +6,9 @@ import uuid
 from typing import Any, Dict, Iterable, List, Optional, Type
 
 import numpy as np
-import vearch
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-from vearch import GammaFieldInfo, GammaVectorInfo
 
 DEFAULT_TOPN = 4
 
@@ -29,7 +27,7 @@ class Vearch(VectorStore):
         try:
             import vearch
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import vearch python package. "
                 "Please install it with `pip install vearch`."
             )
@@ -106,14 +104,18 @@ class Vearch(VectorStore):
             {"filed": "metadata", "type": "str"},
         ],
     ) -> int:
-        """
-        Create VectorStore Table
+        """Create VectorStore Table
+
         Args:
             dim:dimension of vector
             fileds_list: the filed you want to store
+
         Return:
             code,0 for success,1 for failed
         """
+        import vearch
+        from vearch import GammaFieldInfo, GammaVectorInfo
+
         type_dict = {"int": vearch.dataType.INT, "str": vearch.dataType.STRING}
         engine_info = {
             "index_size": 10000,
