@@ -33,7 +33,9 @@ def check_if_not_null(props: List[str], values: List[Any]) -> None:
             raise ValueError(f"Parameter `{prop}` must not be None or empty string")
 
 
-def sort_by_index_name(lst: List[str], index_name: str) -> List[str]:
+def sort_by_index_name(
+    lst: List[Dict[str, str]], index_name: str
+) -> List[Dict[str, str]]:
     """Sort first element to match the index_name if exists"""
     return sorted(lst, key=lambda x: x.get("index_name") != index_name)
 
