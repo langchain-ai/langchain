@@ -1,0 +1,142 @@
+name: lint
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "From which folder this pipeline executes"
+
+env:
+  POETRY_VERSION: "1.5.1"
+  WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # This number is set "by eye": we want it to be big enough
+      # so that it's bigger than the number of commits in any reasonable PR,
+      # and also as small as possible since increasing the number makes
+      # the initial `git fetch` slower.
+      FETCH_DEPTH: 50
+    strategy:
+      matrix:
+        # Only lint on the min and max supported Python versions.
+        # It's extremely unlikely that there's a lint issue on any version in between
+        # that doesn't show up on the min or max versions.
+        #
+        # GitHub rate-limits how many jobs can be running at any one time.
+        # Starting new jobs is also relatively slow,
+        # so linting on fewer versions makes CI faster.
+        python-version:
+          - "3.8"
+          - "3.11"
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # Fetch the last FETCH_DEPTH commits, so the mtime-changing script
+          # can accurately set the mtimes of files modified in the last FETCH_DEPTH commits.
+          fetch-depth: ${{ env.FETCH_DEPTH }}
+      - name: Restore workdir file mtimes to last-edited commit date
+        id: restore-mtimes
+        # This is needed to make black caching work.
+        # Black's cache uses file (mtime, size) to check whether a lookup is a cache hit.
+        # Without this command, files in the repo would have the current time as the modified time,
+        # since the previous action step just created them.
+        # This command resets the mtime to the last time the files were modified in git instead,
+        # which is a high-quality and stable representation of the last modification date.
+        run: |
+          # Important considerations:
+          # - These commands run at base of the repo, since we never `cd` to the `WORKDIR`.
+          # - We only want to alter mtimes for Python files, since that's all black checks.
+          # - We don't need to alter mtimes for directories, since black doesn't look at those.
+          # - We also only alter mtimes inside the `WORKDIR` since that's all we'll lint.
+          # - This should run before `poetry install`, because poetry's venv also contains
+          #   Python files, and we don't want to alter their mtimes since they aren't linted.
+
+          # Ensure we fail on non-zero exits and on undefined variables.
+          # Also print executed commands, for easier debugging.
+          set -eux
+
+          # Restore the mtimes of Python files in the workdir based on git history.
+          .github/tools/git-restore-mtime --no-directories "$WORKDIR/**/*.py"
+
+          # Since CI only does a partial fetch (to `FETCH_DEPTH`) for efficiency,
+          # the local git repo doesn't have full history. There are probably files
+          # that were last modified in a commit *older than* the oldest fetched commit.
+          # After `git-restore-mtime`, such files have a mtime set to the oldest fetched commit.
+          #
+          # As new commits get added, that timestamp will keep moving forward.
+          # If left unchanged, this will make `black` think that the files were edited
+          # more recently than its cache suggests. Instead, we can set their mtime
+          # to a fixed date in the far past that won't change and won't cause cache misses in black.
+          #
+          # For all workdir Python files modified in or before the oldest few fetched commits,
+          # make their mtime be 2000-01-01 00:00:00.
+          OLDEST_COMMIT="$(git log --reverse '--pretty=format:%H' | head -1)"
+          OLDEST_COMMIT_TIME="$(git show -s '--format=%ai' "$OLDEST_COMMIT")"
+          find "$WORKDIR" -name '*.py' -type f -not -newermt "$OLDEST_COMMIT_TIME" -exec touch -c -m -t '200001010000' '{}' '+'
+
+          echo "oldest-commit=$OLDEST_COMMIT" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: lint
+
+      - name: Check Poetry File
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          poetry check
+
+      - name: Check lock file
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          poetry lock --check
+
+      - name: Install dependencies
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          poetry install
+
+      - name: Install langchain editable
+        working-directory: ${{ inputs.working-directory }}
+        if: ${{ inputs.working-directory != 'libs/langchain' }}
+        run: |
+          pip install -e ../langchain
+
+      - name: Restore black cache
+        uses: actions/cache@v3
+        env:
+          CACHE_BASE: black-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
+          SEGMENT_DOWNLOAD_TIMEOUT_MIN: "1"
+        with:
+          path: |
+            ${{ env.WORKDIR }}/.black_cache
+          key: ${{ env.CACHE_BASE }}-${{ steps.restore-mtimes.outputs.oldest-commit }}
+          restore-keys:
+            # If we can't find an exact match for our cache key, accept any with this prefix.
+            ${{ env.CACHE_BASE }}-
+
+      - name: Get .mypy_cache to speed up mypy
+        uses: actions/cache@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MIN: "2"
+        with:
+          path: |
+            ${{ env.WORKDIR }}/.mypy_cache
+          key: mypy-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
+
+      - name: Analysing the code with our lint
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          BLACK_CACHE_DIR: .black_cache
+        run: |
+          make lint

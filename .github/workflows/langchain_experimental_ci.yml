@@ -1,0 +1,83 @@
+---
+name: libs/experimental CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    paths:
+      - '.github/workflows/_lint.yml'
+      - '.github/workflows/_test.yml'
+      - '.github/workflows/langchain_experimental_ci.yml'
+      - 'libs/langchain/**'
+      - 'libs/experimental/**'
+  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
+
+# If another push to the same PR or branch happens while this workflow is still running,
+# cancel the earlier run in favor of the next run.
+#
+# There's no point in testing an outdated version of the code. GitHub only allows
+# a limited number of job runners to be active at the same time, so it's better to cancel
+# pointless jobs early so that more useful jobs can run sooner.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VERSION: "1.5.1"
+  WORKDIR: "libs/experimental"
+
+jobs:
+  lint:
+    uses:
+      ./.github/workflows/_lint.yml
+    with:
+      working-directory: libs/experimental
+    secrets: inherit
+
+  test:
+    uses:
+      ./.github/workflows/_test.yml
+    with:
+      working-directory: libs/experimental
+    secrets: inherit
+
+  # It's possible that langchain-experimental works fine with the latest *published* langchain,
+  # but is broken with the langchain on `master`.
+  #
+  # We want to catch situations like that *before* releasing a new langchain, hence this test.
+  test-with-latest-langchain:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    name: test with unpublished langchain - Python ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ env.WORKDIR }}
+          cache-key: unpublished-langchain
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          echo "Running tests with unpublished langchain, installing dependencies with poetry..."
+          poetry install
+
+          echo "Editably installing langchain outside of poetry, to avoid messing up lockfile..."
+          poetry run pip install -e ../langchain
+
+      - name: Run tests
+        run: make test

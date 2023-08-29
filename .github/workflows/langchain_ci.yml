@@ -1,0 +1,83 @@
+---
+name: libs/langchain CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    paths:
+      - '.github/workflows/_lint.yml'
+      - '.github/workflows/_test.yml'
+      - '.github/workflows/_pydantic_compatibility.yml'
+      - '.github/workflows/langchain_ci.yml'
+      - 'libs/langchain/**'
+  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
+
+# If another push to the same PR or branch happens while this workflow is still running,
+# cancel the earlier run in favor of the next run.
+#
+# There's no point in testing an outdated version of the code. GitHub only allows
+# a limited number of job runners to be active at the same time, so it's better to cancel
+# pointless jobs early so that more useful jobs can run sooner.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VERSION: "1.5.1"
+  WORKDIR: "libs/langchain"
+
+jobs:
+  lint:
+    uses:
+      ./.github/workflows/_lint.yml
+    with:
+      working-directory: libs/langchain
+    secrets: inherit
+
+  test:
+    uses:
+      ./.github/workflows/_test.yml
+    with:
+      working-directory: libs/langchain
+    secrets: inherit
+
+  pydantic-compatibility:
+    uses:
+      ./.github/workflows/_pydantic_compatibility.yml
+    with:
+      working-directory: libs/langchain
+    secrets: inherit
+
+  extended-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    name: Python ${{ matrix.python-version }} extended tests
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: libs/langchain
+          cache-key: extended
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          echo "Running extended tests, installing dependencies with poetry..."
+          poetry install -E extended_testing
+
+      - name: Run extended tests
+        run: make extended_tests

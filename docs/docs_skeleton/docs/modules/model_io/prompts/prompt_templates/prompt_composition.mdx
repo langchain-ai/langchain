@@ -1,0 +1,10 @@
+# Composition
+
+This notebook goes over how to compose multiple prompts together. This can be useful when you want to reuse parts of prompts. This can be done with a PipelinePrompt. A PipelinePrompt consists of two main parts:
+
+- Final prompt: The final prompt that is returned
+- Pipeline prompts: A list of tuples, consisting of a string name and a prompt template. Each prompt template will be formatted and then passed to future prompt templates as a variable with the same name.
+
+import Example from "@snippets/modules/model_io/prompts/prompt_templates/prompt_composition.mdx"
+
+<Example/>
