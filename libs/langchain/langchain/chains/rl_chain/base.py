@@ -402,7 +402,7 @@ class RLChain(Chain, Generic[TEvent]):
         return [self.output_key]
 
     def update_with_delayed_score(
-        self, score: float, event: TEvent, force_score: bool = False
+        self, score: float, chain_response: Dict[str, Any], force_score: bool = False
     ) -> None:
         """
         Updates the learned policy with the score provided.
@@ -415,6 +415,7 @@ class RLChain(Chain, Generic[TEvent]):
             )
         if self.metrics:
             self.metrics.on_feedback(score)
+        event: TEvent = chain_response["selection_metadata"]
         self._call_after_scoring_before_learning(event=event, score=score)
         self.active_policy.learn(event=event)
         self.active_policy.log(event=event)
