@@ -17,7 +17,9 @@ from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 from langchain import schema
 from langchain.chat_loaders import base as chat_loaders
 
-import sqlite3
+if TYPE_CHECKING:
+    import sqlite3  # Only imported during type checking, not at runtime
+
 
 class IMessageChatLoader(chat_loaders.BaseChatLoader):
     def __init__(self, path: Optional[Union[str, Path]] = None):
@@ -34,13 +36,6 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         self.db_path = path if isinstance(path, Path) else Path(path)
         if not self.db_path.exists():
             raise FileNotFoundError(f"File {self.db_path} not found")
-        try:
-            pass  # type: ignore
-        except ImportError as e:
-            raise ImportError(
-                "The sqlite3 module is required to load iMessage chats.\n"
-                "Please install it with `pip install pysqlite3`"
-            ) from e
 
     def _load_single_chat_session(
         self, cursor: "sqlite3.Cursor", chat_id: int
@@ -91,6 +86,13 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         Yields:
             ChatSession: Loaded chat session.
         """
+        try:
+            import sqlite3
+        except ImportError as e:
+            raise ImportError(
+                "The sqlite3 module is required to load iMessage chats.\n"
+                "Please install it with `pip install pysqlite3`"
+            ) from e
 
         try:
             conn = sqlite3.connect(self.db_path)
@@ -106,7 +108,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         cursor = conn.cursor()
 
         # Fetch the list of chat IDs sorted by time (most recent first)
-        query="""SELECT chat_id
+        query = """SELECT chat_id
         FROM message
         JOIN chat_message_join ON message.ROWID = chat_message_join.message_id
         GROUP BY chat_id
