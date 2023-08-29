@@ -38,6 +38,7 @@ from langchain.callbacks.base import (
 )
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
+from langchain.callbacks.tracers import run_collector
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
@@ -74,6 +75,11 @@ tracing_v2_callback_var: ContextVar[
     Optional[LangChainTracer]
 ] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
+)
+run_collector_var: ContextVar[
+    Optional[run_collector.RunCollectorCallbackHandler]
+] = ContextVar(  # noqa: E501
+    "run_collector", default=None
 )
 
 
@@ -182,6 +188,24 @@ def tracing_v2_enabled(
     tracing_v2_callback_var.set(cb)
     yield
     tracing_v2_callback_var.set(None)
+
+
+@contextmanager
+def collect_runs() -> Generator[run_collector.RunCollectorCallbackHandler, None, None]:
+    """Collect all run traces in context.
+
+    Returns:
+        run_collector.RunCollectorCallbackHandler: The run collector callback handler.
+
+    Example:
+        >>> with collect_runs() as runs_cb:
+                chain.invoke("foo")
+                run_id = runs_cb.traced_runs[0].id
+    """
+    cb = run_collector.RunCollectorCallbackHandler()
+    run_collector_var.set(cb)
+    yield cb
+    run_collector_var.set(None)
 
 
 @contextmanager
@@ -1712,6 +1736,7 @@ def _configure(
     tracer_project = os.environ.get(
         "LANGCHAIN_PROJECT", os.environ.get("LANGCHAIN_SESSION", "default")
     )
+    run_collector_ = run_collector_var.get()
     debug = _get_debug()
     if (
         verbose
@@ -1774,4 +1799,6 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(open_ai, True)
+    if run_collector_ is not None:
+        callback_manager.add_handler(run_collector_, False)
     return callback_manager
