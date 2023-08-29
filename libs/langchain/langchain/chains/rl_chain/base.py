@@ -295,7 +295,7 @@ class AutoSelectionScorer(SelectionScorer, BaseModel):
             )
 
 
-class RLChain(Generic[TEvent], Chain):
+class RLChain(Chain, Generic[TEvent]):
     """
     The `RLChain` class leverages the Vowpal Wabbit (VW) model as a learned policy for reinforcement learning.
 
@@ -320,12 +320,24 @@ class RLChain(Generic[TEvent], Chain):
         The class initializes the VW model using the provided arguments. If `selection_scorer` is not provided, a warning is logged, indicating that no reinforcement learning will occur unless the `update_with_delayed_score` method is called.
     """  # noqa: E501
 
+    class _NoOpPolicy(Policy):
+        """Placeholder policy that does nothing"""
+
+        def predict(self, event: TEvent) -> Any:
+            return None
+
+        def learn(self, event: TEvent) -> None:
+            pass
+
+        def log(self, event: TEvent) -> None:
+            pass
+
     llm_chain: Chain
 
     output_key: str = "result"  #: :meta private:
     prompt: BasePromptTemplate
     selection_scorer: Union[SelectionScorer, None]
-    active_policy: Policy
+    active_policy: Policy = _NoOpPolicy()
     auto_embed: bool = True
     selected_input_key = "rl_chain_selected"
     selected_based_on_input_key = "rl_chain_selected_based_on"
@@ -351,7 +363,7 @@ class RLChain(Generic[TEvent], Chain):
                         unless update_with_delayed_score is called."
             )
 
-        if self.active_policy is None:
+        if isinstance(self.active_policy, RLChain._NoOpPolicy):
             self.active_policy = policy(
                 model_repo=ModelRepository(
                     model_save_dir, with_history=True, reset=reset_model
