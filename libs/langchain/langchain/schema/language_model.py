@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -18,7 +19,6 @@ from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable
 from langchain.utils import get_pydantic_field_names
-from functools import lru_cache
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import Callbacks
@@ -37,6 +37,7 @@ def get_tokenizer():
     # create a GPT-2 tokenizer instance
     return GPT2TokenizerFast.from_pretrained("gpt2")
 
+
 def _get_token_ids_default_method(text: str) -> List[int]:
     """Encode the text into token IDs."""
     # get the cached tokenizer
@@ -44,6 +45,7 @@ def _get_token_ids_default_method(text: str) -> List[int]:
 
     # tokenize the text using the GPT-2 tokenizer
     return tokenizer.encode(text)
+
 
 LanguageModelInput = Union[PromptValue, str, List[BaseMessage]]
 LanguageModelOutput = TypeVar("LanguageModelOutput")
