@@ -113,26 +113,38 @@ class CubeSemanticLoader(BaseLoader):
                     - column_title
                     - column_description
                     - column_values
+                    - cube_data_obj_type
         """
         headers = {
             "Content-Type": "application/json",
             "Authorization": self.cube_api_token,
         }
 
+        logger.info(f"Loading metadata from {self.cube_api_url}...")
         response = requests.get(f"{self.cube_api_url}/meta", headers=headers)
         response.raise_for_status()
         raw_meta_json = response.json()
-        cubes = raw_meta_json.get("cubes", [])
+        cube_data_objects = raw_meta_json.get("cubes", [])
+
+        logger.info(f"Found {len(cube_data_objects)} cube data objects in metadata.")
+
+        if not cube_data_objects:
+            raise ValueError("No cubes found in metadata.")
+
         docs = []
 
-        for cube in cubes:
-            if cube.get("type") != "view":
+        for cube_data_obj in cube_data_objects:
+            cube_data_obj_name = cube_data_obj.get("name")
+            cube_data_obj_type = cube_data_obj.get("type")
+            cube_data_obj_is_public = cube_data_obj.get("public")
+            measures = cube_data_obj.get("measures", [])
+            dimensions = cube_data_obj.get("dimensions", [])
+
+            logger.info(f"Processing {cube_data_obj_name}...")
+
+            if not cube_data_obj_is_public:
+                logger.info(f"Skipping {cube_data_obj_name} because it is not public.")
                 continue
-
-            cube_name = cube.get("name")
-
-            measures = cube.get("measures", [])
-            dimensions = cube.get("dimensions", [])
 
             for item in measures + dimensions:
                 column_member_type = "measure" if item in measures else "dimension"
@@ -148,13 +160,14 @@ class CubeSemanticLoader(BaseLoader):
                     dimension_values = self._get_dimension_values(item_name)
 
                 metadata = dict(
-                    table_name=str(cube_name),
+                    table_name=str(cube_data_obj_name),
                     column_name=item_name,
                     column_data_type=item_type,
                     column_title=str(item.get("title")),
                     column_description=str(item.get("description")),
                     column_member_type=column_member_type,
                     column_values=dimension_values,
+                    cube_data_obj_type=cube_data_obj_type,
                 )
 
                 page_content = f"{str(item.get('title'))}, "
