@@ -39,6 +39,7 @@ class NeptuneGraph:
         client: Any = None,
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
+        service: str = 'neptune-db',
     ) -> None:
         """Create a new Neptune graph wrapper instance."""
 
@@ -62,7 +63,7 @@ class NeptuneGraph:
 
                 client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
 
-                self.client = session.client("neptune-db", **client_params)
+                self.client = session.client(service, **client_params)
 
         except ImportError:
             raise ModuleNotFoundError(
