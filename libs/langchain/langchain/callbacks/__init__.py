@@ -20,6 +20,7 @@ from langchain.callbacks.human import HumanApprovalCallbackHandler
 from langchain.callbacks.infino_callback import InfinoCallbackHandler
 from langchain.callbacks.labelstudio_callback import LabelStudioCallbackHandler
 from langchain.callbacks.manager import (
+    collect_runs,
     get_openai_callback,
     tracing_enabled,
     tracing_v2_enabled,
@@ -66,6 +67,7 @@ __all__ = [
     "get_openai_callback",
     "tracing_enabled",
     "tracing_v2_enabled",
+    "collect_runs",
     "wandb_tracing_enabled",
     "FlyteCallbackHandler",
     "SageMakerCallbackHandler",
