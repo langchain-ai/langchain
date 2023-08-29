@@ -57,7 +57,7 @@ def mock_completion() -> dict:
     }
 
 
-def _patched_retry(*args, **kwargs):
+def _patched_retry(*args: Any, **kwargs: Any) -> Any:
     """Patched retry for unit tests that does not wait."""
     from tenacity import retry
 
