@@ -177,7 +177,7 @@ class Neo4jVector(VectorStore):
             except DatabaseError:  # Index didn't exist yet
                 pass
 
-    def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
+    def query(self, query: str, params: Optional[dict] = None) -> List[Dict[str, Any]]:
         """
         This method sends a Cypher query to the connected Neo4j database
         and returns the results as a list of dictionaries.
@@ -191,6 +191,7 @@ class Neo4jVector(VectorStore):
         """
         from neo4j.exceptions import CypherSyntaxError
 
+        params = params or {}
         with self._driver.session(database=self._database) as session:
             try:
                 data = session.run(query, params)
