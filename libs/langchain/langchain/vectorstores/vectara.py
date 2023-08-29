@@ -260,7 +260,8 @@ class Vectara(VectorStore):
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview
                 for more details.
             score_threshold: minimal score thresold for the result.
-                If defined, results with score less than this value will be filtered out.
+                If defined, results with score less than this value will be 
+                filtered out.
             n_sentence_context: number of sentences before/after the matching segment
                 to add, defaults to 2
 
@@ -309,7 +310,11 @@ class Vectara(VectorStore):
         result = response.json()
 
         if score_threshold:
-            responses = [r for r in result["responseSet"][0]["response"] if r["score"] > score_threshold]
+            responses = [
+                r
+                for r in result["responseSet"][0]["response"]
+                if r["score"] > score_threshold
+            ]
         else:
             responses = result["responseSet"][0]["response"]
         documents = result["responseSet"][0]["document"]
