@@ -526,7 +526,7 @@ class Tool(BaseTool):
 
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
-        self, name: str, func: Callable, description: str, **kwargs: Any
+        self, name: str, func: Optional[Callable], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
         super(Tool, self).__init__(
@@ -675,11 +675,15 @@ class StructuredTool(BaseTool):
                 tool = StructuredTool.from_function(add)
                 tool.run(1, 2) # 3
         """
-        if func is None and coroutine is None:
-            raise ValueError("Function and/or coroutine must be provided")
 
-        name = name or (func if func is not None else coroutine).__name__
-        description = description or (func if func is not None else coroutine).__doc__
+        if func is not None:
+            source_function = func
+        elif coroutine is not None:
+            source_function = coroutine
+        else:
+            raise ValueError("Function and/or coroutine must be provided")
+        name = name or source_function.__name__
+        description = description or source_function.__doc__
         if description is None:
             raise ValueError(
                 "Function must have a docstring if description not provided."
@@ -687,13 +691,11 @@ class StructuredTool(BaseTool):
 
         # Description example:
         # search_api(query: str) - Searches the API for the query.
-        description = f"{name}{signature(func)} - {description.strip()}"
+        sig = signature(source_function)
+        description = f"{name}{sig} - {description.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
-            if func is not None:
-                _args_schema = create_schema_from_function(f"{name}Schema", func)
-            else:
-                _args_schema = create_schema_from_function(f"{name}Schema", coroutine)
+            _args_schema = create_schema_from_function(f"{name}Schema", source_function)
         return cls(
             name=name,
             func=func,
