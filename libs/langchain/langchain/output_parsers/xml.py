@@ -19,9 +19,13 @@ class XMLOutputParser(BaseOutputParser):
         """
 
     def parse(self, text: str) -> str:
-        match = re.search(r"\n(.*)", text, re.MULTILINE | re.DOTALL)
-        if match:
-            return match.group()
+        encoding_match = re.search(
+            r"<([^>]*encoding[^>]*)>\n(.*)", text, re.MULTILINE | re.DOTALL
+        )
+        if encoding_match:
+            text = encoding_match.group(2)
+        if text.startswith("<") and text.endswith(">"):
+            return text
         else:
             raise ValueError(f"Could not parse output: {text}")
 
