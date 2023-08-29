@@ -1,13 +1,15 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
+from langchain.llms.openai import BaseOpenAI
+from langchain.pydantic_v1 import root_validator
 from langchain.schema.output import Generation, LLMResult
 
 
 class VLLM(BaseLLM):
+    """VLLM language model."""
+
     model: str = ""
     """The name or path of a HuggingFace Transformers model."""
 
@@ -54,6 +56,12 @@ class VLLM(BaseLLM):
     max_new_tokens: int = 512
     """Maximum number of tokens to generate per output sequence."""
 
+    logprobs: Optional[int] = None
+    """Number of log probabilities to return per output token."""
+
+    dtype: str = "auto"
+    """The data type for the model weights and activations."""
+
     client: Any  #: :meta private:
 
     @root_validator()
@@ -72,6 +80,7 @@ class VLLM(BaseLLM):
             model=values["model"],
             tensor_parallel_size=values["tensor_parallel_size"],
             trust_remote_code=values["trust_remote_code"],
+            dtype=values["dtype"],
         )
 
         return values
@@ -91,6 +100,7 @@ class VLLM(BaseLLM):
             "stop": self.stop,
             "ignore_eos": self.ignore_eos,
             "use_beam_search": self.use_beam_search,
+            "logprobs": self.logprobs,
         }
 
     def _generate(
@@ -121,3 +131,27 @@ class VLLM(BaseLLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "vllm"
+
+
+class VLLMOpenAI(BaseOpenAI):
+    """vLLM OpenAI-compatible API client"""
+
+    @property
+    def _invocation_params(self) -> Dict[str, Any]:
+        """Get the parameters used to invoke the model."""
+        openai_creds: Dict[str, Any] = {
+            "api_key": self.openai_api_key,
+            "api_base": self.openai_api_base,
+        }
+
+        return {
+            "model": self.model_name,
+            **openai_creds,
+            **self._default_params,
+            "logit_bias": None,
+        }
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "vllm-openai"

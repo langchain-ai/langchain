@@ -59,6 +59,9 @@ test_watch:
 integration_tests:
 	poetry run pytest tests/integration_tests
 
+scheduled_tests:
+	poetry run pytest -m scheduled tests/integration_tests
+
 docker_tests:
 	docker build -t my-langchain-image:test .
 	docker run --rm my-langchain-image:test
@@ -73,9 +76,9 @@ lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
 
 lint lint_diff:
-	poetry run mypy $(PYTHON_FILES)
-	poetry run black $(PYTHON_FILES) --check
 	poetry run ruff .
+	poetry run black $(PYTHON_FILES) --check
+	poetry run mypy $(PYTHON_FILES)
 
 format format_diff:
 	poetry run black $(PYTHON_FILES)

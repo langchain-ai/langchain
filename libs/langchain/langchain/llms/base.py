@@ -27,7 +27,6 @@ from typing import (
 )
 
 import yaml
-from pydantic import Field, root_validator, validator
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -50,6 +49,7 @@ from langchain.callbacks.manager import (
 from langchain.load.dump import dumpd
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
+from langchain.pydantic_v1 import Field, root_validator, validator
 from langchain.schema import (
     Generation,
     LLMResult,
@@ -219,9 +219,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> str:
+        config = config or {}
         return (
             self.generate_prompt(
-                [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
+                [self._convert_input(input)],
+                stop=stop,
+                callbacks=config.get("callbacks"),
+                tags=config.get("tags"),
+                metadata=config.get("metadata"),
+                **kwargs,
             )
             .generations[0][0]
             .text
@@ -241,8 +247,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 None, partial(self.invoke, input, config, stop=stop, **kwargs)
             )
 
+        config = config or {}
         llm_result = await self.agenerate_prompt(
-            [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
+            [self._convert_input(input)],
+            stop=stop,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
         )
         return llm_result.generations[0][0].text
 
@@ -516,9 +528,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 f" argument of type {type(prompts)}."
             )
         # Create callback managers
-        if isinstance(callbacks, list) and (
-            isinstance(callbacks[0], (list, BaseCallbackManager))
-            or callbacks[0] is None
+        if (
+            isinstance(callbacks, list)
+            and callbacks
+            and (
+                isinstance(callbacks[0], (list, BaseCallbackManager))
+                or callbacks[0] is None
+            )
         ):
             # We've received a list of callbacks args to apply to each input
             assert len(callbacks) == len(prompts)

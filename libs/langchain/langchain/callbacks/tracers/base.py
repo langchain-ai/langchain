@@ -13,7 +13,12 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run
 from langchain.load.dump import dumpd
 from langchain.schema.document import Document
-from langchain.schema.output import ChatGeneration, LLMResult
+from langchain.schema.output import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    GenerationChunk,
+    LLMResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +52,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
             parent_run = self.run_map[str(run.parent_run_id)]
             if parent_run:
                 self._add_child_run(parent_run, run)
+                parent_run.child_execution_order = max(
+                    parent_run.child_execution_order, run.child_execution_order
+                )
             else:
                 logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
         self.run_map[str(run.id)] = run
@@ -120,6 +128,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self,
         token: str,
         *,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
@@ -131,12 +140,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id_ = str(run_id)
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or llm_run.run_type != "llm":
-            raise TracerException("No LLM Run found to be traced")
+            raise TracerException(f"No LLM Run found to be traced for {run_id}")
+        event_kwargs: Dict[str, Any] = {"token": token}
+        if chunk:
+            event_kwargs["chunk"] = chunk
         llm_run.events.append(
             {
                 "name": "new_token",
                 "time": datetime.utcnow(),
-                "kwargs": {"token": token},
+                "kwargs": event_kwargs,
             },
         )
 
@@ -183,7 +195,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id_ = str(run_id)
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or llm_run.run_type != "llm":
-            raise TracerException("No LLM Run found to be traced")
+            raise TracerException(f"No LLM Run found to be traced for {run_id}")
         llm_run.outputs = response.dict()
         for i, generations in enumerate(response.generations):
             for j, generation in enumerate(generations):
@@ -211,7 +223,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id_ = str(run_id)
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or llm_run.run_type != "llm":
-            raise TracerException("No LLM Run found to be traced")
+            raise TracerException(f"No LLM Run found to be traced for {run_id}")
         llm_run.error = repr(error)
         llm_run.end_time = datetime.utcnow()
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
@@ -228,6 +240,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_type: Optional[str] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a chain run."""
@@ -240,7 +253,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
-            inputs=inputs,
+            inputs=inputs if isinstance(inputs, dict) else {"input": inputs},
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
@@ -248,24 +261,34 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             child_runs=[],
             run_type=run_type or "chain",
+            name=name,
             tags=tags or [],
         )
         self._start_trace(chain_run)
         self._on_chain_start(chain_run)
 
     def on_chain_end(
-        self, outputs: Dict[str, Any], *, run_id: UUID, **kwargs: Any
+        self,
+        outputs: Dict[str, Any],
+        *,
+        run_id: UUID,
+        inputs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         """End a trace for a chain run."""
         if not run_id:
             raise TracerException("No run_id provided for on_chain_end callback.")
         chain_run = self.run_map.get(str(run_id))
         if chain_run is None:
-            raise TracerException("No chain Run found to be traced")
+            raise TracerException(f"No chain Run found to be traced for {run_id}")
 
-        chain_run.outputs = outputs
+        chain_run.outputs = (
+            outputs if isinstance(outputs, dict) else {"output": outputs}
+        )
         chain_run.end_time = datetime.utcnow()
         chain_run.events.append({"name": "end", "time": chain_run.end_time})
+        if inputs is not None:
+            chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
         self._end_trace(chain_run)
         self._on_chain_end(chain_run)
 
@@ -273,6 +296,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
+        inputs: Optional[Dict[str, Any]] = None,
         run_id: UUID,
         **kwargs: Any,
     ) -> None:
@@ -281,11 +305,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
             raise TracerException("No run_id provided for on_chain_error callback.")
         chain_run = self.run_map.get(str(run_id))
         if chain_run is None:
-            raise TracerException("No chain Run found to be traced")
+            raise TracerException(f"No chain Run found to be traced for {run_id}")
 
         chain_run.error = repr(error)
         chain_run.end_time = datetime.utcnow()
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
+        if inputs is not None:
+            chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
         self._end_trace(chain_run)
         self._on_chain_error(chain_run)
 
@@ -329,7 +355,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             raise TracerException("No run_id provided for on_tool_end callback.")
         tool_run = self.run_map.get(str(run_id))
         if tool_run is None or tool_run.run_type != "tool":
-            raise TracerException("No tool Run found to be traced")
+            raise TracerException(f"No tool Run found to be traced for {run_id}")
 
         tool_run.outputs = {"output": output}
         tool_run.end_time = datetime.utcnow()
@@ -349,7 +375,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             raise TracerException("No run_id provided for on_tool_error callback.")
         tool_run = self.run_map.get(str(run_id))
         if tool_run is None or tool_run.run_type != "tool":
-            raise TracerException("No tool Run found to be traced")
+            raise TracerException(f"No tool Run found to be traced for {run_id}")
 
         tool_run.error = repr(error)
         tool_run.end_time = datetime.utcnow()
@@ -404,7 +430,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             raise TracerException("No run_id provided for on_retriever_error callback.")
         retrieval_run = self.run_map.get(str(run_id))
         if retrieval_run is None or retrieval_run.run_type != "retriever":
-            raise TracerException("No retriever Run found to be traced")
+            raise TracerException(f"No retriever Run found to be traced for {run_id}")
 
         retrieval_run.error = repr(error)
         retrieval_run.end_time = datetime.utcnow()
@@ -420,7 +446,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             raise TracerException("No run_id provided for on_retriever_end callback.")
         retrieval_run = self.run_map.get(str(run_id))
         if retrieval_run is None or retrieval_run.run_type != "retriever":
-            raise TracerException("No retriever Run found to be traced")
+            raise TracerException(f"No retriever Run found to be traced for {run_id}")
         retrieval_run.outputs = {"documents": documents}
         retrieval_run.end_time = datetime.utcnow()
         retrieval_run.events.append({"name": "end", "time": retrieval_run.end_time})

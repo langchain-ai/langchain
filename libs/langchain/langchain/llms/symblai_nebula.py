@@ -1,16 +1,25 @@
+import json
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import Extra, root_validator
+from requests import ConnectTimeout, ReadTimeout, RequestException
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
-DEFAULT_SYMBLAI_NEBULA_SERVICE_URL = "https://api-nebula.symbl.ai"
-DEFAULT_SYMBLAI_NEBULA_SERVICE_PATH = "/v1/model/generate"
+DEFAULT_NEBULA_SERVICE_URL = "https://api-nebula.symbl.ai"
+DEFAULT_NEBULA_SERVICE_PATH = "/v1/model/generate"
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +27,8 @@ logger = logging.getLogger(__name__)
 class Nebula(LLM):
     """Nebula Service models.
 
-    To use, you should have the environment variable ``SYMBLAI_NEBULA_SERVICE_URL``,
-    ``SYMBLAI_NEBULA_SERVICE_PATH`` and ``SYMBLAI_NEBULA_SERVICE_TOKEN`` set with your Nebula
+    To use, you should have the environment variable ``NEBULA_SERVICE_URL``,
+    ``NEBULA_SERVICE_PATH`` and ``NEBULA_API_KEY`` set with your Nebula
     Service, or pass it as a named parameter to the constructor.
 
     Example:
@@ -28,37 +37,29 @@ class Nebula(LLM):
             from langchain.llms import Nebula
 
             nebula = Nebula(
-                nebula_service_url="SERVICE_URL",
-                nebula_service_path="SERVICE_ROUTE",
-                nebula_service_token="SERVICE_TOKEN",
+                nebula_service_url="NEBULA_SERVICE_URL",
+                nebula_service_path="NEBULA_SERVICE_PATH",
+                nebula_api_key="NEBULA_API_KEY",
             )
-
-            # Use Ray for distributed processing
-            import ray
-
-            prompt_list=[]
-
-            @ray.remote
-            def send_query(llm, prompt):
-                resp = llm(prompt)
-                return resp
-
-            futures = [send_query.remote(nebula, prompt) for prompt in prompt_list]
-            results = ray.get(futures)
     """  # noqa: E501
 
     """Key/value arguments to pass to the model. Reserved for future use"""
     model_kwargs: Optional[dict] = None
 
     """Optional"""
+
     nebula_service_url: Optional[str] = None
     nebula_service_path: Optional[str] = None
-    nebula_service_token: Optional[str] = None
-    conversation: str = ""
-    return_scores: Optional[str] = "false"
-    max_new_tokens: Optional[int] = 2048
-    top_k: Optional[float] = 2
-    penalty_alpha: Optional[float] = 0.1
+    nebula_api_key: Optional[str] = None
+    model: Optional[str] = None
+    max_new_tokens: Optional[int] = 128
+    temperature: Optional[float] = 0.6
+    top_p: Optional[float] = 0.95
+    repetition_penalty: Optional[float] = 1.0
+    top_k: Optional[int] = 0
+    penalty_alpha: Optional[float] = 0.0
+    stop_sequences: Optional[List[str]] = None
+    max_retries: Optional[int] = 10
 
     class Config:
         """Configuration for this pydantic object."""
@@ -69,43 +70,43 @@ class Nebula(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         nebula_service_url = get_from_dict_or_env(
-            values, "nebula_service_url", "SYMBLAI_NEBULA_SERVICE_URL"
+            values,
+            "nebula_service_url",
+            "NEBULA_SERVICE_URL",
+            DEFAULT_NEBULA_SERVICE_URL,
         )
         nebula_service_path = get_from_dict_or_env(
-            values, "nebula_service_path", "SYMBLAI_NEBULA_SERVICE_PATH"
+            values,
+            "nebula_service_path",
+            "NEBULA_SERVICE_PATH",
+            DEFAULT_NEBULA_SERVICE_PATH,
         )
-        nebula_service_token = get_from_dict_or_env(
-            values, "nebula_service_token", "SYMBLAI_NEBULA_SERVICE_TOKEN"
+        nebula_api_key = get_from_dict_or_env(
+            values, "nebula_api_key", "NEBULA_API_KEY", None
         )
-
-        if len(nebula_service_url) == 0:
-            nebula_service_url = DEFAULT_SYMBLAI_NEBULA_SERVICE_URL
-        if len(nebula_service_path) == 0:
-            nebula_service_path = DEFAULT_SYMBLAI_NEBULA_SERVICE_PATH
 
         if nebula_service_url.endswith("/"):
             nebula_service_url = nebula_service_url[:-1]
         if not nebula_service_path.startswith("/"):
             nebula_service_path = "/" + nebula_service_path
 
-        """ TODO: Future login"""
-        """
-        try:
-            nebula_service_endpoint = f"{nebula_service_url}{nebula_service_path}"
-            headers = {
-                "Content-Type": "application/json",
-                "ApiKey": f"Bearer {nebula_service_token}",
-                }
-            requests.get(nebula_service_endpoint, headers=headers)
-        except requests.exceptions.RequestException as e:
-            raise ValueError(e)
-        """
-
         values["nebula_service_url"] = nebula_service_url
         values["nebula_service_path"] = nebula_service_path
-        values["nebula_service_token"] = nebula_service_token
+        values["nebula_api_key"] = nebula_api_key
 
         return values
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling Cohere API."""
+        return {
+            "max_new_tokens": self.max_new_tokens,
+            "temperature": self.temperature,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
+            "repetition_penalty": self.repetition_penalty,
+            "penalty_alpha": self.penalty_alpha,
+        }
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -115,13 +116,31 @@ class Nebula(LLM):
             "nebula_service_url": self.nebula_service_url,
             "nebula_service_path": self.nebula_service_path,
             **{"model_kwargs": _model_kwargs},
-            "conversation": self.conversation,
         }
 
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "nebula"
+
+    def _invocation_params(
+        self, stop_sequences: Optional[List[str]], **kwargs: Any
+    ) -> dict:
+        params = self._default_params
+        if self.stop_sequences is not None and stop_sequences is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+        elif self.stop_sequences is not None:
+            params["stop_sequences"] = self.stop_sequences
+        else:
+            params["stop_sequences"] = stop_sequences
+        return {**params, **kwargs}
+
+    @staticmethod
+    def _process_response(response: Any, stop: Optional[List[str]]) -> str:
+        text = response["output"]["text"]
+        if stop:
+            text = enforce_stop_tokens(text, stop)
+        return text
 
     def _call(
         self,
@@ -140,57 +159,84 @@ class Nebula(LLM):
             .. code-block:: python
                 response = nebula("Tell me a joke.")
         """
+        params = self._invocation_params(stop, **kwargs)
+        prompt = prompt.strip()
+        if "\n" in prompt:
+            instruction = prompt.split("\n")[0]
+            conversation = "\n".join(prompt.split("\n")[1:])
+        else:
+            raise ValueError("Prompt must contain instruction and conversation.")
 
-        _model_kwargs = self.model_kwargs or {}
+        response = completion_with_retry(
+            self,
+            instruction=instruction,
+            conversation=conversation,
+            params=params,
+            url=f"{self.nebula_service_url}{self.nebula_service_path}",
+        )
+        _stop = params.get("stop_sequences")
+        return self._process_response(response, _stop)
 
-        nebula_service_endpoint = f"{self.nebula_service_url}{self.nebula_service_path}"
 
-        headers = {
-            "Content-Type": "application/json",
-            "ApiKey": f"Bearer {self.nebula_service_token}",
+def make_request(
+    self: Nebula,
+    instruction: str,
+    conversation: str,
+    url: str = f"{DEFAULT_NEBULA_SERVICE_URL}{DEFAULT_NEBULA_SERVICE_PATH}",
+    params: Dict = {},
+) -> Any:
+    """Generate text from the model."""
+    headers = {
+        "Content-Type": "application/json",
+        "ApiKey": f"{self.nebula_api_key}",
+    }
+
+    body = {
+        "prompt": {
+            "instruction": instruction,
+            "conversation": {"text": f"{conversation}"},
         }
+    }
 
-        body = {
-            "prompt": {
-                "instruction": prompt,
-                "conversation": {"text": f"{self.conversation}"},
-            },
-            "return_scores": self.return_scores,
-            "max_new_tokens": self.max_new_tokens,
-            "top_k": self.top_k,
-            "penalty_alpha": self.penalty_alpha,
-        }
+    # add params to body
+    for key, value in params.items():
+        body[key] = value
 
-        if len(self.conversation) == 0:
-            raise ValueError("Error conversation is empty.")
+    # make request
+    response = requests.post(url, headers=headers, json=body)
 
-        logger.debug(f"NEBULA _model_kwargs: {_model_kwargs}")
-        logger.debug(f"NEBULA body: {body}")
-        logger.debug(f"NEBULA kwargs: {kwargs}")
-        logger.debug(f"NEBULA conversation: {self.conversation}")
+    if response.status_code != 200:
+        raise Exception(
+            f"Request failed with status code {response.status_code}"
+            f" and message {response.text}"
+        )
 
-        # call API
-        try:
-            response = requests.post(
-                nebula_service_endpoint, headers=headers, json=body
-            )
-        except requests.exceptions.RequestException as e:
-            raise ValueError(f"Error raised by inference endpoint: {e}")
+    return json.loads(response.text)
 
-        logger.debug(f"NEBULA response: {response}")
 
-        if response.status_code != 200:
-            raise ValueError(
-                f"Error returned by service, status code {response.status_code}"
-            )
+def _create_retry_decorator(llm: Nebula) -> Callable[[Any], Any]:
+    min_seconds = 4
+    max_seconds = 10
+    # Wait 2^x * 1 second between each retry starting with
+    # 4 seconds, then up to 10 seconds, then 10 seconds afterward
+    max_retries = llm.max_retries if llm.max_retries is not None else 3
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(
+            retry_if_exception_type((RequestException, ConnectTimeout, ReadTimeout))
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
 
-        """ get the result """
-        text = response.text
 
-        """ enforce stop """
-        if stop is not None:
-            # This is required since the stop tokens
-            # are not enforced by the model parameters
-            text = enforce_stop_tokens(text, stop)
+def completion_with_retry(llm: Nebula, **kwargs: Any) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator(llm)
 
-        return text
+    @retry_decorator
+    def _completion_with_retry(**_kwargs: Any) -> Any:
+        return make_request(llm, **_kwargs)
+
+    return _completion_with_retry(**kwargs)

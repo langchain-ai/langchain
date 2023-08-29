@@ -1,4 +1,3 @@
-"""Wrapper around Rockset vector database."""
 from __future__ import annotations
 
 import logging
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class Rockset(VectorStore):
-    """Wrapper arpund Rockset vector database.
+    """`Rockset` vector store.
 
     To use, you should have the `rockset` python package installed. Note that to use
     this, the collection being used must already exist in your Rockset instance.
@@ -83,6 +82,12 @@ class Rockset(VectorStore):
         self._text_key = text_key
         self._embedding_key = embedding_key
         self._workspace = workspace
+
+        try:
+            self._client.set_application("langchain")
+        except AttributeError:
+            # ignore
+            pass
 
     @property
     def embeddings(self) -> Embeddings:
