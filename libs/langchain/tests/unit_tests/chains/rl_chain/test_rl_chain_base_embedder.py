@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 import pytest
 from test_utils import MockEncoder
@@ -118,7 +118,7 @@ def test_simple_action_strlist_no_emb() -> None:
     str2 = "test2"
     str3 = "test3"
     expected = [{"a_namespace": str1}, {"a_namespace": str2}, {"a_namespace": str3}]
-    to_embed: List[str] = [str1, str2, str3]
+    to_embed: List[Union[str, base._Embed]] = [str1, str2, str3]
     assert base.embed(to_embed, MockEncoder(), "a_namespace") == expected
 
 
