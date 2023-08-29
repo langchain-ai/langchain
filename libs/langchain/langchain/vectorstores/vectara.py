@@ -259,7 +259,7 @@ class Vectara(VectorStore):
                 filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview
                 for more details.
-            score_threshold: minimal score thresold for the result.
+            score_threshold: minimal score threshold for the result.
                 If defined, results with score less than this value will be 
                 filtered out.
             n_sentence_context: number of sentences before/after the matching segment
