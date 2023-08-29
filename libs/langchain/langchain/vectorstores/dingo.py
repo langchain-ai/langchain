@@ -1,4 +1,3 @@
-"""Wrapper around the Dingo vector database."""
 from __future__ import annotations
 
 import logging
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class Dingo(VectorStore):
-    """Wrapper around Dingo vector database.
+    """`Dingo` vector store.
 
     To use, you should have the ``dingodb`` python package installed.
 

@@ -158,6 +158,7 @@ def test_marqo_multimodal() -> None:
                 "mainline/examples/ImageSearchGuide/data/image2.jpg",
             },
         ],
+        tensor_fields=["caption", "image"],
     )
 
     def get_content(res: Dict[str, str]) -> str:
