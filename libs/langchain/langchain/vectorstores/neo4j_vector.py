@@ -177,7 +177,9 @@ class Neo4jVector(VectorStore):
             except DatabaseError:  # Index didn't exist yet
                 pass
 
-    def query(self, query: str, params: Optional[dict] = None) -> List[Dict[str, Any]]:
+    def query(
+        self, query: str, *, params: Optional[dict] = None
+    ) -> List[Dict[str, Any]]:
         """
         This method sends a Cypher query to the connected Neo4j database
         and returns the results as a list of dictionaries.
@@ -241,7 +243,7 @@ class Neo4jVector(VectorStore):
             "OR (labelsOrTypes[0] = $node_label AND "
             "properties[0] = $embedding_node_property)) "
             "RETURN name, labelsOrTypes, properties, options ",
-            {
+            params={
                 "index_name": self.index_name,
                 "node_label": self.node_label,
                 "embedding_node_property": self.embedding_node_property,
@@ -282,7 +284,7 @@ class Neo4jVector(VectorStore):
             "embedding_dimension": self.embedding_dimension,
             "similarity_metric": distance_mapping[self._distance_strategy],
         }
-        self.query(index_query, parameters)
+        self.query(index_query, params=parameters)
 
     @property
     def embeddings(self) -> Embeddings:
@@ -382,7 +384,7 @@ class Neo4jVector(VectorStore):
             ]
         }
 
-        self.query(import_query, parameters)
+        self.query(import_query, params=parameters)
 
         return ids
 
@@ -483,7 +485,7 @@ class Neo4jVector(VectorStore):
 
         parameters = {"index": self.index_name, "k": k, "embedding": embedding}
 
-        results = self.query(read_query, parameters)
+        results = self.query(read_query, params=parameters)
 
         docs = [
             (
