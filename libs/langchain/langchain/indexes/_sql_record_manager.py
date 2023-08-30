@@ -14,12 +14,12 @@ allow it to work with a variety of SQL as a backend.
 * Keys can be deleted.
 """
 import contextlib
+import decimal
 import uuid
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
-import decimal
 
-from sqlalchemy import URL
 from sqlalchemy import (
+    URL,
     Column,
     Engine,
     Float,
@@ -203,11 +203,11 @@ class SQLRecordManager(RecordManager):
 
         with self._make_session() as session:
             if self.dialect == "sqlite":
-                from sqlalchemy.dialects.sqlite import insert
+                from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
-                insert_stmt = insert(UpsertionRecord).values(records_to_upsert)
+                insert_stmt = sqlite_insert(UpsertionRecord).values(records_to_upsert)
                 stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
                     [UpsertionRecord.key, UpsertionRecord.namespace],
                     set_=dict(
@@ -217,11 +217,11 @@ class SQLRecordManager(RecordManager):
                     ),
                 )
             elif self.dialect == "postgresql":
-                from sqlalchemy.dialects.postgresql import insert
+                from sqlalchemy.dialects.postgresql import insert as pg_insert
 
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
-                insert_stmt = insert(UpsertionRecord).values(records_to_upsert)
+                insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)
                 stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
