@@ -90,7 +90,6 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         session_id_field_name: str = "session_id",
         custom_message_converter: Optional[BaseMessageConverter] = None,
     ):
-        self.table_name = table_name
         self.connection_string = connection_string
         self.engine = create_engine(connection_string, echo=False)
         self.session_id_field_name = session_id_field_name
@@ -129,7 +128,6 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         """Clear session memory from db"""
 
         with self.Session() as session:
-            session.commit()
             session.query(self.sql_model_class).filter(
                 getattr(self.sql_model_class, self.session_id_field_name)
                 == self.session_id
