@@ -16,9 +16,9 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic_v1 import BaseModel, Extra, root_validator
 from requests import Request, Session
 
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 

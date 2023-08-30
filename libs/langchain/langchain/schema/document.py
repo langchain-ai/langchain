@@ -3,9 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Sequence
 
-from pydantic_v1 import Field
-
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Field
 
 
 class Document(Serializable):
@@ -17,6 +16,11 @@ class Document(Serializable):
     """Arbitrary metadata about the page content (e.g., source, relationships to other
         documents, etc.).
     """
+
+    @property
+    def lc_serializable(self) -> bool:
+        """Return whether or not the class is serializable."""
+        return True
 
 
 class BaseDocumentTransformer(ABC):

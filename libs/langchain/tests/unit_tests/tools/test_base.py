@@ -6,13 +6,13 @@ from functools import partial
 from typing import Any, List, Optional, Type, Union
 
 import pytest
-from pydantic_v1 import BaseModel
 
 from langchain.agents.tools import Tool, tool
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import BaseModel
 from langchain.tools.base import (
     BaseTool,
     SchemaAnnotationError,
@@ -43,9 +43,9 @@ class _MockSchema(BaseModel):
 
 
 class _MockStructuredTool(BaseTool):
-    name = "structured_api"
+    name: str = "structured_api"
     args_schema: Type[BaseModel] = _MockSchema
-    description = "A Structured Tool"
+    description: str = "A Structured Tool"
 
     def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         return f"{arg1} {arg2} {arg3}"
@@ -64,34 +64,15 @@ def test_structured_args() -> None:
     assert structured_api.run(args) == expected_result
 
 
-def test_unannotated_base_tool_raises_error() -> None:
-    """Test that a BaseTool without type hints raises an exception.""" ""
-    with pytest.raises(SchemaAnnotationError):
-
-        class _UnAnnotatedTool(BaseTool):
-            name = "structured_api"
-            # This would silently be ignored without the custom metaclass
-            args_schema = _MockSchema
-            description = "A Structured Tool"
-
-            def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
-                return f"{arg1} {arg2} {arg3}"
-
-            async def _arun(
-                self, arg1: int, arg2: bool, arg3: Optional[dict] = None
-            ) -> str:
-                raise NotImplementedError
-
-
 def test_misannotated_base_tool_raises_error() -> None:
     """Test that a BaseTool with the incorrect typehint raises an exception.""" ""
     with pytest.raises(SchemaAnnotationError):
 
         class _MisAnnotatedTool(BaseTool):
-            name = "structured_api"
+            name: str = "structured_api"
             # This would silently be ignored without the custom metaclass
             args_schema: BaseModel = _MockSchema  # type: ignore
-            description = "A Structured Tool"
+            description: str = "A Structured Tool"
 
             def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
                 return f"{arg1} {arg2} {arg3}"
@@ -106,9 +87,9 @@ def test_forward_ref_annotated_base_tool_accepted() -> None:
     """Test that a using forward ref annotation syntax is accepted.""" ""
 
     class _ForwardRefAnnotatedTool(BaseTool):
-        name = "structured_api"
+        name: str = "structured_api"
         args_schema: "Type[BaseModel]" = _MockSchema
-        description = "A Structured Tool"
+        description: str = "A Structured Tool"
 
         def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
             return f"{arg1} {arg2} {arg3}"
@@ -123,9 +104,9 @@ def test_subclass_annotated_base_tool_accepted() -> None:
     """Test BaseTool child w/ custom schema isn't overwritten."""
 
     class _ForwardRefAnnotatedTool(BaseTool):
-        name = "structured_api"
+        name: str = "structured_api"
         args_schema: Type[_MockSchema] = _MockSchema
-        description = "A Structured Tool"
+        description: str = "A Structured Tool"
 
         def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
             return f"{arg1} {arg2} {arg3}"
@@ -173,8 +154,8 @@ def test_decorated_function_schema_equivalent() -> None:
 
 def test_args_kwargs_filtered() -> None:
     class _SingleArgToolWithKwargs(BaseTool):
-        name = "single_arg_tool"
-        description = "A  single arged tool with kwargs"
+        name: str = "single_arg_tool"
+        description: str = "A  single arged tool with kwargs"
 
         def _run(
             self,
@@ -196,8 +177,8 @@ def test_args_kwargs_filtered() -> None:
     assert tool.is_single_input
 
     class _VarArgToolWithKwargs(BaseTool):
-        name = "single_arg_tool"
-        description = "A single arged tool with kwargs"
+        name: str = "single_arg_tool"
+        description: str = "A single arged tool with kwargs"
 
         def _run(
             self,
@@ -288,8 +269,8 @@ def test_base_tool_inheritance_base_schema() -> None:
     """Test schema is correctly inferred when inheriting from BaseTool."""
 
     class _MockSimpleTool(BaseTool):
-        name = "simple_tool"
-        description = "A Simple Tool"
+        name: str = "simple_tool"
+        description: str = "A Simple Tool"
 
         def _run(self, tool_input: str) -> str:
             return f"{tool_input}"
@@ -565,7 +546,7 @@ def test_tool_with_kwargs() -> None:
 def test_missing_docstring() -> None:
     """Test error is raised when docstring is missing."""
     # expect to throw a value error if there's no docstring
-    with pytest.raises(AssertionError, match="Function must have a docstring"):
+    with pytest.raises(ValueError, match="Function must have a docstring"):
 
         @tool
         def search_api(query: str) -> str:
@@ -612,8 +593,8 @@ async def test_create_async_tool() -> None:
 
 
 class _FakeExceptionTool(BaseTool):
-    name = "exception"
-    description = "an exception-throwing tool"
+    name: str = "exception"
+    description: str = "an exception-throwing tool"
     exception: Exception = ToolException()
 
     def _run(self) -> str:

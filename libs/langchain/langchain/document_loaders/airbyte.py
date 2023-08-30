@@ -60,6 +60,10 @@ class AirbyteCDKLoader(BaseLoader):
             stream_name=self._stream_name, state=self._state
         )
 
+    @property
+    def last_state(self) -> Any:
+        return self._integration.last_state
+
 
 class AirbyteHubspotLoader(AirbyteCDKLoader):
     """Load from `Hubspot` using an `Airbyte` source connector."""

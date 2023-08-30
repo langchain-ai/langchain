@@ -5,8 +5,7 @@ https://pypi.org/project/duckduckgo-search/
 """
 from typing import Dict, List, Optional
 
-from pydantic_v1 import BaseModel, Extra
-from pydantic_v1.class_validators import root_validator
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 
 
 class DuckDuckGoSearchAPIWrapper(BaseModel):
@@ -31,7 +30,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         try:
             from duckduckgo_search import DDGS  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import duckduckgo-search python package. "
                 "Please install it with `pip install duckduckgo-search`."
             )

@@ -20,13 +20,12 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
@@ -298,6 +297,7 @@ class BaseOpenAI(BaseLLM):
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
+                    chunk=chunk,
                     verbose=self.verbose,
                     logprobs=chunk.generation_info["logprobs"]
                     if chunk.generation_info
@@ -321,6 +321,7 @@ class BaseOpenAI(BaseLLM):
             if run_manager:
                 await run_manager.on_llm_new_token(
                     chunk.text,
+                    chunk=chunk,
                     verbose=self.verbose,
                     logprobs=chunk.generation_info["logprobs"]
                     if chunk.generation_info
@@ -826,9 +827,10 @@ class OpenAIChat(BaseLLM):
             self, messages=messages, run_manager=run_manager, **params
         ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
-            yield GenerationChunk(text=token)
+            chunk = GenerationChunk(text=token)
+            yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(token)
+                run_manager.on_llm_new_token(token, chunk=chunk)
 
     async def _astream(
         self,
@@ -843,9 +845,10 @@ class OpenAIChat(BaseLLM):
             self, messages=messages, run_manager=run_manager, **params
         ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
-            yield GenerationChunk(text=token)
+            chunk = GenerationChunk(text=token)
+            yield chunk
             if run_manager:
-                await run_manager.on_llm_new_token(token)
+                await run_manager.on_llm_new_token(token, chunk=chunk)
 
     def _generate(
         self,

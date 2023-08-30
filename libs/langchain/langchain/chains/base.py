@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
-from pydantic_v1 import Field, root_validator, validator
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -23,6 +22,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Field, root_validator, validator
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
 from langchain.schema.runnable import Runnable, RunnableConfig
 
@@ -136,6 +136,12 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     def raise_callback_manager_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
+            if values.get("callbacks") is not None:
+                raise ValueError(
+                    "Cannot specify both callback_manager and callbacks. "
+                    "callback_manager is deprecated, callbacks is the preferred "
+                    "parameter to pass in."
+                )
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,

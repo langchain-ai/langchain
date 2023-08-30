@@ -12,8 +12,6 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import BaseModel
-
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
 from langchain.output_parsers.openai_functions import (
@@ -22,6 +20,7 @@ from langchain.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
 from langchain.prompts import BasePromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema import BaseLLMOutputParser
 
 PYTHON_TO_JSON_TYPES = {
@@ -230,7 +229,7 @@ def create_openai_fn_chain(
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate
 
-                from pydantic import BaseModel, Field
+                from pydantic_v1 import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -316,7 +315,7 @@ def create_structured_output_chain(
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate
 
-                from pydantic import BaseModel, Field
+                from pydantic_v1 import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"

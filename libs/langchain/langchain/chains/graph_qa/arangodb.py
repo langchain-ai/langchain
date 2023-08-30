@@ -4,8 +4,6 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import Field
-
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -16,6 +14,7 @@ from langchain.chains.graph_qa.prompts import (
 )
 from langchain.chains.llm import LLMChain
 from langchain.graphs.arangodb_graph import ArangoGraph
+from langchain.pydantic_v1 import Field
 from langchain.schema import BasePromptTemplate
 
 
@@ -30,10 +29,10 @@ class ArangoGraphQAChain(Chain):
     output_key: str = "result"  #: :meta private:
 
     # Specifies the maximum number of AQL Query Results to return
-    top_k = 10
+    top_k: int = 10
 
     # Specifies the set of AQL Query Examples that promote few-shot-learning
-    aql_examples = ""
+    aql_examples: str = ""
 
     # Specify whether to return the AQL Query in the output dictionary
     return_aql_query: bool = False
@@ -42,7 +41,7 @@ class ArangoGraphQAChain(Chain):
     return_aql_result: bool = False
 
     # Specify the maximum amount of AQL Generation attempts that should be made
-    max_aql_generation_attempts = 3
+    max_aql_generation_attempts: int = 3
 
     @property
     def input_keys(self) -> List[str]:

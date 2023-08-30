@@ -7,13 +7,12 @@ import logging
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import requests
 import yaml
-from pydantic_v1 import ValidationError
 
-from langchain import _PYDANTIC_MAJOR_VERSION
+from langchain.pydantic_v1 import _PYDANTIC_MAJOR_VERSION, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -40,17 +39,22 @@ class HTTPVerb(str, Enum):
 
 
 if _PYDANTIC_MAJOR_VERSION == 1:
-    from openapi_schema_pydantic import (
-        Components,
-        OpenAPI,
-        Operation,
-        Parameter,
-        PathItem,
-        Paths,
-        Reference,
-        RequestBody,
-        Schema,
-    )
+    if TYPE_CHECKING:
+        from openapi_schema_pydantic import (
+            Components,
+            Operation,
+            Parameter,
+            PathItem,
+            Paths,
+            Reference,
+            RequestBody,
+            Schema,
+        )
+
+    try:
+        from openapi_schema_pydantic import OpenAPI
+    except ImportError:
+        OpenAPI = object  # type: ignore
 
     class OpenAPISpec(OpenAPI):
         """OpenAPI Model that removes mis-formatted parts of the spec."""
@@ -110,6 +114,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
 
         def _get_root_referenced_parameter(self, ref: Reference) -> Parameter:
             """Get the root reference or err."""
+            from openapi_schema_pydantic import Reference
+
             parameter = self._get_referenced_parameter(ref)
             while isinstance(parameter, Reference):
                 parameter = self._get_referenced_parameter(parameter)
@@ -124,12 +130,16 @@ if _PYDANTIC_MAJOR_VERSION == 1:
             return schemas[ref_name]
 
         def get_schema(self, schema: Union[Reference, Schema]) -> Schema:
+            from openapi_schema_pydantic import Reference
+
             if isinstance(schema, Reference):
                 return self.get_referenced_schema(schema)
             return schema
 
         def _get_root_referenced_schema(self, ref: Reference) -> Schema:
             """Get the root reference or err."""
+            from openapi_schema_pydantic import Reference
+
             schema = self.get_referenced_schema(ref)
             while isinstance(schema, Reference):
                 schema = self.get_referenced_schema(schema)
@@ -149,6 +159,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
             self, ref: Reference
         ) -> Optional[RequestBody]:
             """Get the root request Body or err."""
+            from openapi_schema_pydantic import Reference
+
             request_body = self._get_referenced_request_body(ref)
             while isinstance(request_body, Reference):
                 request_body = self._get_referenced_request_body(request_body)
@@ -236,6 +248,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
 
         def get_methods_for_path(self, path: str) -> List[str]:
             """Return a list of valid methods for the specified path."""
+            from openapi_schema_pydantic import Operation
+
             path_item = self._get_path_strict(path)
             results = []
             for method in HTTPVerb:
@@ -245,6 +259,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
             return results
 
         def get_parameters_for_path(self, path: str) -> List[Parameter]:
+            from openapi_schema_pydantic import Reference
+
             path_item = self._get_path_strict(path)
             parameters = []
             if not path_item.parameters:
@@ -257,6 +273,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
 
         def get_operation(self, path: str, method: str) -> Operation:
             """Get the operation object for a given path and HTTP method."""
+            from openapi_schema_pydantic import Operation
+
             path_item = self._get_path_strict(path)
             operation_obj = getattr(path_item, method, None)
             if not isinstance(operation_obj, Operation):
@@ -265,6 +283,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
 
         def get_parameters_for_operation(self, operation: Operation) -> List[Parameter]:
             """Get the components for a given operation."""
+            from openapi_schema_pydantic import Reference
+
             parameters = []
             if operation.parameters:
                 for parameter in operation.parameters:
@@ -277,6 +297,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
             self, operation: Operation
         ) -> Optional[RequestBody]:
             """Get the request body for a given operation."""
+            from openapi_schema_pydantic import Reference
+
             request_body = operation.requestBody
             if isinstance(request_body, Reference):
                 request_body = self._get_root_referenced_request_body(request_body)
