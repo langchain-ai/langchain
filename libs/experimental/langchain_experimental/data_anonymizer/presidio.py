@@ -49,8 +49,10 @@ class PresidioAnonymizer(AnonymizerBase):
                 "`pip install presidio-anonymizer`."
             ) from e
 
-        self.analyzed_fields = analyzed_fields or list(
-            get_pseudoanonymizer_mapping().keys()
+        self.analyzed_fields = (
+            analyzed_fields
+            if analyzed_fields is not None
+            else list(get_pseudoanonymizer_mapping().keys())
         )
         self.language = language
         self.operators = (
