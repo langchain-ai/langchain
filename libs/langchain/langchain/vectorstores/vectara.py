@@ -463,7 +463,7 @@ class VectaraRetriever(VectorStoreRetriever):
         self,
         texts: List[str],
         metadatas: Optional[List[dict]] = None,
-        doc_metadata: Optional[dict] = {},
+        doc_metadata: Optional[dict] = None,
     ) -> None:
         """Add text to the Vectara vectorstore.
 
@@ -471,4 +471,4 @@ class VectaraRetriever(VectorStoreRetriever):
             texts (List[str]): The text
             metadatas (List[dict]): Metadata dicts, must line up with existing store
         """
-        self.vectorstore.add_texts(texts, metadatas, doc_metadata)
+        self.vectorstore.add_texts(texts, metadatas, doc_metadata or {})

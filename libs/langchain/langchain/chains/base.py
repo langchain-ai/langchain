@@ -136,6 +136,12 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     def raise_callback_manager_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
+            if values.get("callbacks") is not None:
+                raise ValueError(
+                    "Cannot specify both callback_manager and callbacks. "
+                    "callback_manager is deprecated, callbacks is the preferred "
+                    "parameter to pass in."
+                )
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
