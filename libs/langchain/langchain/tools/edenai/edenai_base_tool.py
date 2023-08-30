@@ -5,11 +5,10 @@ from abc import abstractmethod
 from typing import Any, Dict, Optional
 
 import requests
-from pydantic import model_validator
+from pydantic import root_validator
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
-from langchain.utils import get_from_env
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +30,13 @@ class EdenaiTool(BaseTool):
     providers: list[str]
     """provider to use for the API call."""
 
-    @model_validator(mode="after")
-    def validate_environment(self) -> "EdenaiTool":
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        if not self.edenai_api_key:
-            self.edenai_api_key = get_from_env("edenai_api_key", "EDENAI_API_KEY")
-        return self
+        values["edenai_api_key"] = get_from_dict_or_env(
+            values, "edenai_api_key", "EDENAI_API_KEY"
+        )
+        return values
 
     @staticmethod
     def get_user_agent() -> str:

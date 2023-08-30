@@ -6,7 +6,7 @@ import time
 from typing import List, Optional
 
 import requests
-from pydantic import field_validator
+from pydantic import validator
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.edenai.edenai_base_tool import EdenaiTool
@@ -45,8 +45,7 @@ class EdenAiSpeechToTextTool(EdenaiTool):
     subfeature: str = "speech_to_text_async"
     base_url = "https://api.edenai.run/v2/audio/speech_to_text_async/"
 
-    @field_validator("providers")
-    @classmethod
+    @validator("providers")
     def check_only_one_provider_selected(cls, v: List[str]) -> List[str]:
         """
         This tool has no feature to combine providers results.
