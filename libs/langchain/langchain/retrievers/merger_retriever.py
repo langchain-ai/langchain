@@ -55,8 +55,9 @@ class MergerRetriever(BaseRetriever):
         """
 
         # Merge the results of the retrievers.
-        merged_documents = await self.amerge_documents(query, run_manager,
-                                                       retrievers_kwargs=kwargs)
+        merged_documents = await self.amerge_documents(
+            query, run_manager, retrievers_kwargs=kwargs
+        )
 
         return merged_documents
 
@@ -104,8 +105,10 @@ class MergerRetriever(BaseRetriever):
         return merged_documents
 
     async def amerge_documents(
-        self, query: str, run_manager: AsyncCallbackManagerForRetrieverRun,
-            retrievers_kwargs: Any | None = None,
+        self,
+        query: str,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        retrievers_kwargs: Any | None = None,
     ) -> List[Document]:
         """
         Asynchronously merge the results of the retrievers.
@@ -127,8 +130,9 @@ class MergerRetriever(BaseRetriever):
         # Get the results of all retrievers.
         retriever_docs = [
             await retriever.aget_relevant_documents(
-                query, callbacks=run_manager.get_child("retriever_{}".format(i + 1)),
-                **retrievers_kwargs_list[i]
+                query,
+                callbacks=run_manager.get_child("retriever_{}".format(i + 1)),
+                **retrievers_kwargs_list[i],
             )
             for i, retriever in enumerate(self.retrievers)
         ]

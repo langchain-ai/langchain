@@ -55,8 +55,7 @@ class EnsembleRetriever(BaseRetriever):
         """
 
         # Get fused result of the retrievers.
-        fused_documents = self.rank_fusion(query, run_manager,
-                                           retrievers_kwargs=kwargs)
+        fused_documents = self.rank_fusion(query, run_manager, retrievers_kwargs=kwargs)
 
         return fused_documents
 
@@ -78,13 +77,16 @@ class EnsembleRetriever(BaseRetriever):
         """
 
         # Get fused result of the retrievers.
-        fused_documents = await self.arank_fusion(query, run_manager,
-                                                  retrievers_kwargs=kwargs)
+        fused_documents = await self.arank_fusion(
+            query, run_manager, retrievers_kwargs=kwargs
+        )
 
         return fused_documents
 
     def rank_fusion(
-        self, query: str, run_manager: CallbackManagerForRetrieverRun,
+        self,
+        query: str,
+        run_manager: CallbackManagerForRetrieverRun,
         retrievers_kwargs: Any | None = None,
     ) -> List[Document]:
         """
@@ -109,7 +111,8 @@ class EnsembleRetriever(BaseRetriever):
         # Get the results of all retrievers.
         retriever_docs = [
             retriever.get_relevant_documents(
-                query, callbacks=run_manager.get_child(tag=f"retriever_{i+1}"),
+                query,
+                callbacks=run_manager.get_child(tag=f"retriever_{i+1}"),
                 **retrievers_kwargs_list[i],
             )
             for i, retriever in enumerate(self.retrievers)
@@ -121,9 +124,10 @@ class EnsembleRetriever(BaseRetriever):
         return fused_documents
 
     async def arank_fusion(
-        self, query: str, run_manager: AsyncCallbackManagerForRetrieverRun,
-            retrievers_kwargs: Any | None = None,
-
+        self,
+        query: str,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        retrievers_kwargs: Any | None = None,
     ) -> List[Document]:
         """
         Asynchronously retrieve the results of the retrievers
@@ -144,8 +148,9 @@ class EnsembleRetriever(BaseRetriever):
         # Get the results of all retrievers.
         retriever_docs = [
             await retriever.aget_relevant_documents(
-                query, callbacks=run_manager.get_child(tag=f"retriever_{i+1}"),
-                **retrievers_kwargs_list[i]
+                query,
+                callbacks=run_manager.get_child(tag=f"retriever_{i+1}"),
+                **retrievers_kwargs_list[i],
             )
             for i, retriever in enumerate(self.retrievers)
         ]
