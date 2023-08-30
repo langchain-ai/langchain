@@ -20,6 +20,7 @@ from langchain.schema.messages import (
     FunctionMessage,
 )
 from langchain.tools.base import tool as tool_maker
+from langchain.automaton.functions import generate_template
 
 
 class MessageBasedPromptValue(PromptValue):
@@ -35,7 +36,7 @@ class MessageBasedPromptValue(PromptValue):
         return self.messages
 
     def to_string(self) -> str:
-        return " ".join([message.content for message in self.messages])
+        return "\n".join([message.content for message in self.messages])
 
 
 def prompt_generator(memory: Memory) -> PromptValue:
@@ -97,3 +98,9 @@ def test_automaton() -> None:
             "id": "llm_program",
         }
     ]
+
+
+def test_generate_template() -> None:
+    """Generate template."""
+    template = generate_template()
+    assert template.format_messages(tools="hello", tool_names="hello") == []

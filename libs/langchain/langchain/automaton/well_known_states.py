@@ -4,7 +4,7 @@ import dataclasses
 from typing import Sequence
 
 from langchain.automaton.automaton import State, ExecutedState
-from langchain.automaton.open_ai_functions import create_action_taking_llm
+from langchain.automaton.open_ai_functions import create_action_taking_llm_2
 from langchain.automaton.typedefs import (
     Memory,
     PromptGenerator,
@@ -13,21 +13,20 @@ from langchain.automaton.typedefs import (
 )
 from langchain.schema import HumanMessage, FunctionMessage, AIMessage
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.runnable.base import RunnableLambda, Runnable
 from langchain.tools import BaseTool
 
 
-@dataclasses.dataclass
-class LLMProgram(State):
-    """A state that executes an LLM program."""
+def create_llm_program(
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt_generator: PromptGenerator,
+) -> Runnable:
+    """Create LLM Program."""
 
-    llm: BaseLanguageModel
-    tools: Sequence[BaseTool]
-    prompt_generator: PromptGenerator
-
-    def execute(self, memory: Memory) -> ExecutedState:
-        """Execute LLM program."""
-        action_taking_llm = create_action_taking_llm(self.llm, tools=self.tools)
-        prompt_value = self.prompt_generator(memory)
+    def _bound(memory: Memory):
+        prompt_value = prompt_generator(memory)
+        action_taking_llm = create_action_taking_llm_2(llm, tools=tools)
         result = action_taking_llm.invoke(prompt_value)
         # Memory is mutable
         message = result["message"]
@@ -56,6 +55,24 @@ class LLMProgram(State):
                 "message": routing_message,  # Last message
             },
         }
+
+    return RunnableLambda(
+        func=_bound,
+    )
+
+
+@dataclasses.dataclass
+class LLMProgram(State):
+    """A state that executes an LLM program."""
+
+    llm: BaseLanguageModel
+    tools: Sequence[BaseTool]
+    prompt_generator: PromptGenerator
+
+    def execute(self, memory: Memory) -> ExecutedState:
+        """Execute LLM program."""
+        llm_program = create_llm_program(self.llm, self.tools, self.prompt_generator)
+        return llm_program.invoke(memory)
 
 
 @dataclasses.dataclass

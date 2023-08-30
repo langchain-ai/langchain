@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import abc
-
 import enum
 from typing import Callable
 
