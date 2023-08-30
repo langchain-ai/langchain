@@ -31,13 +31,15 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
     steps:
       - uses: actions/checkout@v3
-      - name: Install poetry
-        run: pipx install "poetry==$POETRY_VERSION"
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
+
+      - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
         with:
           python-version: "3.10"
-          cache: "poetry"
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: release
+
       - name: Build project for distribution
         run: poetry build
       - name: Check Version
