@@ -493,7 +493,7 @@ def _determine_reference_key(
 
 def _construct_run_evaluator(
     eval_config: Union[EvaluatorType, str, EvalConfig],
-    eval_llm: BaseLanguageModel,
+    eval_llm: Optional[BaseLanguageModel],
     run_type: str,
     data_type: DataType,
     example_outputs: Optional[List[str]],
@@ -563,7 +563,6 @@ def _load_run_evaluators(
     Returns:
         A list of run evaluators.
     """
-    eval_llm = config.eval_llm or ChatOpenAI(model="gpt-4", temperature=0.0)
     run_evaluators = []
     input_key, prediction_key, reference_key = None, None, None
     if config.evaluators or any(
@@ -575,7 +574,7 @@ def _load_run_evaluators(
     for eval_config in config.evaluators:
         run_evaluator = _construct_run_evaluator(
             eval_config,
-            eval_llm,
+            config.eval_llm,
             run_type,
             data_type,
             example_outputs,
