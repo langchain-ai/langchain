@@ -105,6 +105,12 @@ class EdenaiTool(BaseTool):
                 raise ValueError(err_msg)
 
     @abstractmethod
+    def _run(
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        pass
+
+    @abstractmethod
     def _parse_response(self, response: Any) -> str:
         """Take a dict response and condense it's data in a human readable string"""
         pass
