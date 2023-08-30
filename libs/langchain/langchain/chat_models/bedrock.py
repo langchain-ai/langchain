@@ -25,7 +25,7 @@ class ChatPromptAdapter:
             prompt = convert_messages_to_prompt_anthropic(messages=messages)
         else:
             raise NotImplementedError(
-                f"Provider {provider} model does not supported chat."
+                f"Provider {provider} model does not support chat."
             )
         return prompt
 
