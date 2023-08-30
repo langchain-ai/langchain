@@ -5,8 +5,9 @@ from abc import abstractmethod
 from typing import Any, Dict, Optional
 
 import requests
-from pydantic import root_validator
 
+from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import root_validator
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
 
