@@ -11,6 +11,9 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.239"
+presidio-anonymizer = {version = "^2.2.33", optional = true}
+presidio-analyzer = {version = "^2.2.33", optional = true}
+faker = {version = "^19.3.1", optional = true}
 
 
 [tool.poetry.group.lint.dependencies]
@@ -30,6 +33,16 @@ setuptools = "^67.6.1"
 # dependencies used for running tests (e.g., pytest, freezegun, response).
 # Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
+
+# An extra used to be able to add extended testing.
+# Please use new-line on formatting to make it easier to add new packages without
+# merge-conflicts
+[tool.poetry.extras]
+extended_testing = [
+ "presidio-anonymizer",
+ "presidio-analyzer",
+ "faker",
+]
 
 [tool.ruff]
 select = [
