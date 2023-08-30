@@ -6,8 +6,9 @@ import uuid
 from typing import Any, Dict, Iterable, List, Optional, Type
 
 import numpy as np
-from langchain.schema import Document
+
 from langchain.embeddings.base import Embeddings
+from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore
 
 DEFAULT_TOPN = 4
@@ -180,7 +181,7 @@ class Vearch(VectorStore):
             if t_time > 6:
                 break
             t_time += 1
-       
+
         self.vearch_engine.dump()
 
         return docid
@@ -340,4 +341,3 @@ class Vearch(VectorStore):
                 page_content=content, metadata=meta_info
             )
         return results
-
