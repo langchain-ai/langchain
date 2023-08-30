@@ -9,22 +9,20 @@ class XMLOutputParser(BaseOutputParser):
     """Parse an output using xml format."""
 
     tags: Optional[List[str]] = None
-
+    encoding_matcher: re.Pattern = re.compile(r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL)
+    
     def get_format_instructions(self) -> str:
-        if self.tags:
-            return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
-        return """Write a following string formatted as an XML file.
-        Always mention the encoding of the file in the first line.
-        Remember to open and close all tags.
-        """
+        return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
     def parse(self, text: str) -> str:
-        encoding_match = re.search(
-            r"<([^>]*encoding[^>]*)>\n(.*)", text, re.MULTILINE | re.DOTALL
-        )
+        text = text.strip("`").strip("xml")
+        encoding_match = self.encoding_matcher.search(text)
         if encoding_match:
             text = encoding_match.group(2)
-        if text.startswith("<") and text.endswith(">"):
+        if (
+            (text.startswith("<") or text.startswith("\n<")) and 
+            (text.endswith(">") or text.endswith(">\n"))
+        ):
             return text
         else:
             raise ValueError(f"Could not parse output: {text}")

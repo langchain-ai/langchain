@@ -28,13 +28,14 @@ Here is the output schema:
 
 
 XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
-Always mention the encoding of the file in the first line.
-Output should conform to the tags below.
+1. Output should conform to the tags below. 
+2. If tags are not given, make them on your own.
+3. Remember to always open and close all the tags.
 
-As an example, for the tags ["foo", "bar", "baz"], 
-the string "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>" is a well-formatted instance of the schema. 
-The string "<foo>\n   <bar>\n   </foo>" is a badly-formatted instance.
-The string "<foo>\n   <tag>\n   </tag>\n</foo>" is a badly-formatted instance.
+As an example, for the tags ["foo", "bar", "baz"]:
+1. String "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>" is a well-formatted instance of the schema. 
+2. String "<foo>\n   <bar>\n   </foo>" is a badly-formatted instance.
+3. String "<foo>\n   <tag>\n   </tag>\n</foo>" is a badly-formatted instance.
 
 Here are the output tags:
 ```
