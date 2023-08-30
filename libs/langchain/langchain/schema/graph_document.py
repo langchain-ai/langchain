@@ -12,15 +12,15 @@ class Node(Serializable):
     """Class for storing a piece of text and associated metadata."""
 
     id: Union[str, int]
-    type: Optional[str]
+    type: str = "Node"
     properties: dict = Field(default_factory=dict)
 
 
 class Relationship(Serializable):
     """Class for storing a piece of text and associated metadata."""
 
-    source: Union[str, int]
-    target: Union[str, int]
+    source: Node
+    target: Node
     type: str
     properties: dict = Field(default_factory=dict)
 
@@ -38,10 +38,10 @@ class GraphDocument(Serializable):
 
 
 class BaseGraphDocumentTransformer(ABC):
-    """Abstract base class for document transformation systems.
+    """Abstract base class for graph document transformation systems.
 
     A document transformation system takes a sequence of Documents and returns a
-    sequence of transformed Documents.
+    sequence of graph Documents.
 
     Example:
         .. code-block:: python
