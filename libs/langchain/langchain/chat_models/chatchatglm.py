@@ -18,15 +18,13 @@ from typing import (
     Union,
 )
 
-from aiostream.stream import list as alist
-from pydantic import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import create_base_retry_decorator
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
     AIMessage,
@@ -101,6 +99,13 @@ async def acompletion_with_retry(
         else:
             m_kwargs["prompt"] = kwargs["messages"]
         if m_kwargs.get("streaming") or m_kwargs.get("stream"):
+            try:
+                from aiostream.stream import list as alist
+            except ImportError as e:
+                raise ImportError(
+                    "Streaming with ChatChatGLMrequires optional dependency aiostream. "
+                    "To install please run `pip install aiostream`."
+                ) from e
 
             async def async_gen(**m_kwargs: Any) -> Any:
                 for event in llm.client.sse_invoke(**m_kwargs).events():
