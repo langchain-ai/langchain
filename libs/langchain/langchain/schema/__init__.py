@@ -1,8 +1,9 @@
 """**Schemas** are the LangChain Base Classes and Interfaces."""
 from langchain.schema.agent import AgentAction, AgentFinish
+from langchain.schema.chat_history import BaseChatMessageHistory
 from langchain.schema.document import BaseDocumentTransformer, Document
 from langchain.schema.exceptions import LangChainException
-from langchain.schema.memory import BaseChatMessageHistory, BaseMemory
+from langchain.schema.memory import BaseMemory
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
@@ -40,10 +41,10 @@ Memory = BaseMemory
 __all__ = [
     "BaseMemory",
     "BaseStore",
-    "BaseChatMessageHistory",
     "AgentFinish",
     "AgentAction",
     "Document",
+    "BaseChatMessageHistory",
     "BaseDocumentTransformer",
     "BaseMessage",
     "ChatMessage",
