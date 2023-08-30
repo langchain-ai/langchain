@@ -10,6 +10,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from langchain.base_language import BaseLanguageModel
@@ -22,6 +23,7 @@ from langchain.output_parsers.openai_functions import (
 from langchain.prompts import BasePromptTemplate
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema import BaseLLMOutputParser
+from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 
 PYTHON_TO_JSON_TYPES = {
     "str": "string",
@@ -148,14 +150,7 @@ def convert_to_openai_function(
     if isinstance(function, dict):
         return function
     elif isinstance(function, type) and issubclass(function, BaseModel):
-        # Mypy error:
-        # "type" has no attribute "schema"
-        schema = function.schema()  # type: ignore[attr-defined]
-        return {
-            "name": schema["title"],
-            "description": schema["description"],
-            "parameters": schema,
-        }
+        return cast(Dict, convert_pydantic_to_openai_function(function))
     elif callable(function):
         return convert_python_function_to_openai_function(function)
 
