@@ -3,14 +3,13 @@ from __future__ import annotations
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 import numpy as np
-import vearch
-from langchain.docstore.document import Document
+
 from langchain.embeddings.base import Embeddings
+from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore
-from vearch import GammaFieldInfo, GammaVectorInfo
 
 DEFAULT_TOPN = 4
 
@@ -29,7 +28,7 @@ class Vearch(VectorStore):
         try:
             import vearch
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import vearch python package. "
                 "Please install it with `pip install vearch`."
             )
@@ -106,14 +105,18 @@ class Vearch(VectorStore):
             {"filed": "metadata", "type": "str"},
         ],
     ) -> int:
-        """
-        Create VectorStore Table
+        """Create VectorStore Table
+
         Args:
             dim:dimension of vector
             fileds_list: the filed you want to store
+
         Return:
             code,0 for success,1 for failed
         """
+        import vearch
+        from vearch import GammaFieldInfo, GammaVectorInfo
+
         type_dict = {"int": vearch.dataType.INT, "str": vearch.dataType.STRING}
         engine_info = {
             "index_size": 10000,
@@ -158,11 +161,13 @@ class Vearch(VectorStore):
             self.using_metapath, self.using_table_name + ".schema"
         )
         if not os.path.exists(table_path):
-            if embeddings is not None:
-                dim = len(embeddings[0])
+            if embeddings is None:
+                raise ValueError("embeddings is None")
+            dim = len(embeddings[0])
             response_code = self._create_table(dim)
             if response_code:
                 raise ValueError("create table failed!!!")
+
         if embeddings is not None:
             doc_items = []
             for i in range(len(embeddings)):
@@ -181,6 +186,7 @@ class Vearch(VectorStore):
                     break
                 t_time += 1
             self.vearch_engine.dump()
+        
         return docid
 
     def _load(self)->None:
@@ -339,4 +345,3 @@ class Vearch(VectorStore):
                 page_content=content, metadata=meta_info
             )
         return results
-
