@@ -1,4 +1,6 @@
 from typing import Any, Dict, List
+from langchain.schema.graph_document import GraphDocument
+
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -99,3 +101,27 @@ class Neo4jGraph:
         The relationships are the following:
         {[el['output'] for el in relationships]}
         """
+
+    def add_graph_documents(self, graph_documents: List[GraphDocument]) -> None:
+        """
+        Take GraphDocument as input as uses it to construct a graph.
+        """
+        for document in graph_documents:
+            # Import nodes
+            self.query(
+                """
+            UNWIND $data AS row
+            CALL apoc.merge.node([row.type], {id: row.id},
+                       row.properties, {}) YIELD node
+            RETURN distinct 'done' AS result
+                       """,
+                {"data": [el.__dict__ for el in document.nodes]},
+            )
+            # Import relationships
+            self.query("""
+            UNWIND $data AS row
+            MATCH (source {id:row.source})
+            MATCH (target {id:row.target})
+            CALL apoc.merge.relationship(source, row.type, {}, row.properties, target) YIELD rel
+            RETURN distinct 'done'    
+""", {"data": [el.__dict__ for el in document.relationships]})
