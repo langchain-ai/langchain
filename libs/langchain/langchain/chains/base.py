@@ -139,7 +139,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             if values.get("callbacks") is not None:
                 raise ValueError(
                     "Cannot specify both callback_manager and callbacks. "
-                    "callback_manager is deprecated, callbacks is the prefered "
+                    "callback_manager is deprecated, callbacks is the preferred "
                     "parameter to pass in."
                 )
             warnings.warn(
