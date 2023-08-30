@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, Dict, List
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -42,6 +42,7 @@ class MergerRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         """
         Asynchronously get the relevant documents for a given query.
@@ -54,7 +55,8 @@ class MergerRetriever(BaseRetriever):
         """
 
         # Merge the results of the retrievers.
-        merged_documents = await self.amerge_documents(query, run_manager)
+        merged_documents = await self.amerge_documents(query, run_manager,
+                                                       retrievers_kwargs=kwargs)
 
         return merged_documents
 
@@ -70,17 +72,18 @@ class MergerRetriever(BaseRetriever):
         Args:
             query: The query to search for.
             retrievers_kwargs: List containing the kwargs to pass to each retriever.
+                Must be in the same order as the list of retrievers passed to the
+                class constructor
 
         Returns:
             A list of merged documents.
         """
-
-        # Get the results of all retrievers.
+        # Prepare the kwargs for to pass to each retriever
+        retrievers_kwargs_list: List[Dict] = [{}] * len(self.retrievers)
         if retrievers_kwargs:
             if not isinstance(retrievers_kwargs, list):
                 retrievers_kwargs_list = [retrievers_kwargs] * len(self.retrievers)
-        else:
-            retrievers_kwargs_list = [{}] * len(self.retrievers)
+        # Get the results of all retrievers.
         retriever_docs = [
             retriever.get_relevant_documents(
                 query,
@@ -101,22 +104,31 @@ class MergerRetriever(BaseRetriever):
         return merged_documents
 
     async def amerge_documents(
-        self, query: str, run_manager: AsyncCallbackManagerForRetrieverRun
+        self, query: str, run_manager: AsyncCallbackManagerForRetrieverRun,
+            retrievers_kwargs: Any | None = None,
     ) -> List[Document]:
         """
         Asynchronously merge the results of the retrievers.
 
         Args:
             query: The query to search for.
+            retrievers_kwargs: List containing the kwargs to pass to each retriever.
+                Must be in the same order as the list of retrievers passed to the
+                class constructor
 
         Returns:
             A list of merged documents.
         """
-
+        # Prepare the kwargs for to pass to each retriever
+        retrievers_kwargs_list: List[Dict] = [{}] * len(self.retrievers)
+        if retrievers_kwargs:
+            if not isinstance(retrievers_kwargs, list):
+                retrievers_kwargs_list = [retrievers_kwargs] * len(self.retrievers)
         # Get the results of all retrievers.
         retriever_docs = [
             await retriever.aget_relevant_documents(
-                query, callbacks=run_manager.get_child("retriever_{}".format(i + 1))
+                query, callbacks=run_manager.get_child("retriever_{}".format(i + 1)),
+                **retrievers_kwargs_list[i]
             )
             for i, retriever in enumerate(self.retrievers)
         ]
