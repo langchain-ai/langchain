@@ -67,7 +67,28 @@ JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES = """```json
 }
 ```"""
 
-JSON_WITH_DOUBLED_ESCAPED_JSON_QUOTES = """```json
+JSON_WITH_UNESCAPED_QUOTES_IN_NESTED_JSON = """```json
+{
+    "action": "Final Answer",
+    "action_input": "{"foo": "bar", "bar": "foo"}"
+}
+```"""
+
+JSON_WITH_ESCAPED_QUOTES_IN_NESTED_JSON = """```json
+{
+    "action": "Final Answer",
+    "action_input": "{\"foo\": \"bar\", \"bar\": \"foo\"}"
+}
+```"""
+
+JSON_WITH_PYTHON_DICT = """```json
+{
+    "action": "Final Answer",
+    "action_input": {"foo": "bar", "bar": "foo"}
+}
+```"""
+
+JSON_WITH_ESCAPED_DOUBLE_QUOTES_IN_NESTED_JSON = """```json
 {
     "action": "Final Answer",
     "action_input": "{\\"foo\\": \\"bar\\", \\"bar\\": \\"foo\\"}"
@@ -140,9 +161,25 @@ def test_parse_json_with_code_blocks() -> None:
     }
 
 
-def test_parse_json_with_escaped_json() -> None:
-    parsed = parse_json_markdown(JSON_WITH_DOUBLED_ESCAPED_JSON_QUOTES)
+TEST_CASES_ESCAPED_QUOTES = [
+    JSON_WITH_UNESCAPED_QUOTES_IN_NESTED_JSON,
+    JSON_WITH_ESCAPED_QUOTES_IN_NESTED_JSON,
+    JSON_WITH_ESCAPED_DOUBLE_QUOTES_IN_NESTED_JSON,
+]
+
+
+@pytest.mark.parametrize("json_string", TEST_CASES_ESCAPED_QUOTES)
+def test_parse_nested_json_with_escaped_quotes(json_string: str) -> None:
+    parsed = parse_json_markdown(json_string)
     assert parsed == {
         "action": "Final Answer",
-        "action_input": '{"foo": "bar", "bar": "foo"}'
+        "action_input": '{"foo": "bar", "bar": "foo"}',
+    }
+
+
+def test_parse_json_with_python_dict() -> None:
+    parsed = parse_json_markdown(JSON_WITH_PYTHON_DICT)
+    assert parsed == {
+        "action": "Final Answer",
+        "action_input": {"foo": "bar", "bar": "foo"},
     }
