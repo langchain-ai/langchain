@@ -1,0 +1,8 @@
+input_variables: [question, summaries]
+output_parser: null
+template: "QUESTION: {question}
+=========
+{summaries}
+=========
+FINAL ANSWER:"
+template_format: f-string
