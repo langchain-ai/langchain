@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import requests
-from pydantic import Field, root_validator, validator
+from pydantic import Field, field_validator, model_validator
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.edenai.edenai_base_tool import EdenaiTool
@@ -51,7 +51,8 @@ class EdenAiTextToSpeechTool(EdenaiTool):
     feature: str = "audio"
     subfeature: str = "text_to_speech"
 
-    @validator("providers")
+    @field_validator("providers")
+    @classmethod
     def check_only_one_provider_selected(cls, v: List[str]) -> List[str]:
         """
         This tool has no feature to combine providers results.
@@ -65,15 +66,14 @@ class EdenAiTextToSpeechTool(EdenaiTool):
             )
         return v
 
-    @root_validator
-    def check_voice_models_key_is_provider_name(cls, values: dict) -> dict:
-        for key in values.get("voice_models", {}).keys():
-            if key not in values.get("providers", []):
-                raise ValueError(
-                    "voice_model should be formatted like this "
-                    "{<provider_name>: <its_voice_model>}"
-                )
-        return values
+    @model_validator(mode="after")
+    def check_voice_models_key_is_provider_name(self) -> "EdenAiTextToSpeechTool":
+        if not all(key in self.providers for key in self.voice_models.keys()):
+            raise ValueError(
+                "voice_model should be formatted like this "
+                "{<provider_name>: <its_voice_model>}"
+            )
+        return self
 
     def _download_wav(self, url: str, save_path: str) -> None:
         response = requests.get(url)
