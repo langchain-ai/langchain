@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Optional, TypeVar, Union, cast
+from copy import deepcopy
+from typing import Any, List, Optional, Sequence
 
 
 def _retrieve_ref(path: str, schema: dict) -> dict:
@@ -13,36 +14,59 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
     out = schema
     for component in components[1:]:
         out = out[component]
-    return out
+    return deepcopy(out)
 
 
-JSON_LIKE = TypeVar("JSON_LIKE", bound=Union[dict, list])
-
-
-def _dereference_refs_helper(obj: JSON_LIKE, full_schema: dict) -> JSON_LIKE:
+def _dereference_refs_helper(
+    obj: Any, full_schema: dict, skip_keys: Sequence[str]
+) -> Any:
     if isinstance(obj, dict):
         obj_out = {}
         for k, v in obj.items():
-            if k == "$ref":
+            if k in skip_keys:
+                obj_out[k] = v
+            elif k == "$ref":
                 ref = _retrieve_ref(v, full_schema)
-                obj_out[k] = _dereference_refs_helper(ref, full_schema)
+                return _dereference_refs_helper(ref, full_schema, skip_keys)
             elif isinstance(v, (list, dict)):
-                obj_out[k] = _dereference_refs_helper(v, full_schema)  # type: ignore
+                obj_out[k] = _dereference_refs_helper(v, full_schema, skip_keys)
             else:
                 obj_out[k] = v
-        return cast(JSON_LIKE, obj_out)
+        return obj_out
     elif isinstance(obj, list):
-        return cast(
-            JSON_LIKE, [_dereference_refs_helper(el, full_schema) for el in obj]
-        )
+        return [_dereference_refs_helper(el, full_schema, skip_keys) for el in obj]
     else:
         return obj
 
 
+def _infer_skip_keys(obj: Any, full_schema: dict) -> List[str]:
+    keys = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == "$ref":
+                ref = _retrieve_ref(v, full_schema)
+                keys.append(v.split("/")[1])
+                keys += _infer_skip_keys(ref, full_schema)
+            elif isinstance(v, (list, dict)):
+                keys += _infer_skip_keys(v, full_schema)
+    elif isinstance(obj, list):
+        for el in obj:
+            keys += _infer_skip_keys(el, full_schema)
+    return keys
+
+
 def dereference_refs(
-    schema_obj: dict, *, full_schema: Optional[dict] = None
-) -> Union[dict, list]:
+    schema_obj: dict,
+    *,
+    full_schema: Optional[dict] = None,
+    skip_keys: Optional[Sequence[str]] = None,
+) -> dict:
     """Try to substitute $refs in JSON Schema."""
 
     full_schema = full_schema or schema_obj
-    return _dereference_refs_helper(schema_obj, full_schema)
+    skip_keys = (
+        skip_keys
+        if skip_keys is not None
+        else _infer_skip_keys(schema_obj, full_schema)
+    )
+    return _dereference_refs_helper(schema_obj, full_schema, skip_keys)
