@@ -36,6 +36,7 @@ from langchain.chains.flare.base import FlareChain
 from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain.chains.graph_qa.falkordb import FalkorDBQAChain
 from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
 from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
@@ -85,6 +86,7 @@ __all__ = [
     "ConstitutionalChain",
     "ConversationChain",
     "ConversationalRetrievalChain",
+    "FalkorDBQAChain",
     "FlareChain",
     "GraphCypherQAChain",
     "GraphQAChain",

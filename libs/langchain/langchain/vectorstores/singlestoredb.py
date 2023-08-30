@@ -345,8 +345,9 @@ class SingleStoreDB(VectorStore):
             def build_where_clause(
                 where_clause_values: List[Any],
                 sub_filter: dict,
-                prefix_args: List[str] = [],
+                prefix_args: Optional[List[str]] = None,
             ) -> None:
+                prefix_args = prefix_args or []
                 for key in sub_filter.keys():
                     if isinstance(sub_filter[key], dict):
                         build_where_clause(
