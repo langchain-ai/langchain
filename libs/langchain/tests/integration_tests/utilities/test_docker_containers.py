@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import cast
 
 import pytest
-from docker_containers.docker_containers import (
+from langchain.utilities.docker_containers import (
     DockerContainer,
     DockerImage,
     generate_langchain_container_tag,
