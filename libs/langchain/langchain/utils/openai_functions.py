@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Type, TypedDict, cast
+from typing import Optional, Type, TypedDict
 
 from langchain.pydantic_v1 import BaseModel
 from langchain.utils.json_schema import dereference_refs
@@ -21,7 +21,8 @@ def convert_pydantic_to_openai_function(
     name: Optional[str] = None,
     description: Optional[str] = None
 ) -> FunctionDescription:
-    schema = cast(Dict, dereference_refs(model.schema()))
+    schema = dereference_refs(model.schema())
+    schema.pop("definitions", None)
     return {
         "name": name or schema["title"],
         "description": description or schema["description"],
