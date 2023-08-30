@@ -18,7 +18,7 @@ from langchain import schema
 from langchain.chat_loaders import base as chat_loaders
 
 if TYPE_CHECKING:
-    import sqlite3  # Only imported during type checking, not at runtime
+    import sqlite3
 
 
 class IMessageChatLoader(chat_loaders.BaseChatLoader):
@@ -36,6 +36,13 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         self.db_path = path if isinstance(path, Path) else Path(path)
         if not self.db_path.exists():
             raise FileNotFoundError(f"File {self.db_path} not found")
+        try:
+            import sqlite3  # noqa: F401
+        except ImportError as e:
+            raise ImportError(
+                "The sqlite3 module is required to load iMessage chats.\n"
+                "Please install it with `pip install pysqlite3`"
+            ) from e
 
     def _load_single_chat_session(
         self, cursor: "sqlite3.Cursor", chat_id: int
@@ -86,13 +93,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         Yields:
             ChatSession: Loaded chat session.
         """
-        try:
-            import sqlite3
-        except ImportError as e:
-            raise ImportError(
-                "The sqlite3 module is required to load iMessage chats.\n"
-                "Please install it with `pip install pysqlite3`"
-            ) from e
+        import sqlite3
 
         try:
             conn = sqlite3.connect(self.db_path)

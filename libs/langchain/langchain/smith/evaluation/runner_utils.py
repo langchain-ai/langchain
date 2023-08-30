@@ -566,8 +566,13 @@ def _load_run_evaluators(
     eval_llm = config.eval_llm or ChatOpenAI(model="gpt-4", temperature=0.0)
     run_evaluators = []
     input_key, prediction_key, reference_key = None, None, None
-    if config.evaluators or any(
-        [isinstance(e, EvaluatorType) for e in config.evaluators]
+    if (
+        config.evaluators
+        or any([isinstance(e, EvaluatorType) for e in config.evaluators])
+        or (
+            config.custom_evaluators
+            and any([isinstance(e, StringEvaluator) for e in config.custom_evaluators])
+        )
     ):
         input_key, prediction_key, reference_key = _get_keys(
             config, run_inputs, run_outputs, example_outputs
