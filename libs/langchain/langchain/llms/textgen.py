@@ -4,7 +4,10 @@ from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 import requests
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms.base import LLM
 from langchain.pydantic_v1 import Field
 from langchain.schema.output import GenerationChunk
@@ -228,7 +231,7 @@ class TextGen(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         """Call the textgen web API and return the output.
@@ -349,7 +352,7 @@ class TextGen(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         """Yields results objects as they are generated in real time.
