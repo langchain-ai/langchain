@@ -20,7 +20,7 @@ class Vearch(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Optional[Embeddings] = None,
+        embedding_function: Embeddings,
         table_name: str = _DEFAULT_TABLE_NAME,
         metadata_path: Optional[str] = None,
         **kwargs: Any,
@@ -59,7 +59,7 @@ class Vearch(VectorStore):
     def from_documents(
         cls: Type[Vearch],
         documents: List[Document],
-        embedding: Optional[Embeddings] = None,
+        embedding: Embeddings,
         table_name: str = "langchain_vearch",
         metadata_path: Optional[str] = None,
         **kwargs: Any,
@@ -82,8 +82,8 @@ class Vearch(VectorStore):
     def from_texts(
         cls: Type[Vearch],
         texts: List[str],
-        embedding: Optional[Embeddings] = None,
-        metadatas: Optional[List[dict]] = None,
+        embedding: Embeddings,
+        metadatas: List[dict],
         table_name: str = _DEFAULT_TABLE_NAME,
         metadata_path: Optional[str] = None,
         **kwargs: Any,
@@ -100,8 +100,8 @@ class Vearch(VectorStore):
 
     def _create_table(
         self,
-        dim,
-        filed_list=[
+        dim:int=1024,
+        filed_list:List[dict]=[
             {"filed": "text", "type": "str"},
             {"filed": "metadata", "type": "str"},
         ],
@@ -143,8 +143,8 @@ class Vearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: List[str],
+        metadatas: List[dict],
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -158,32 +158,32 @@ class Vearch(VectorStore):
             self.using_metapath, self.using_table_name + ".schema"
         )
         if not os.path.exists(table_path):
-            dim = len(embeddings[0])
+            if embeddings is not None:
+                dim = len(embeddings[0])
             response_code = self._create_table(dim)
             if response_code:
                 raise ValueError("create table failed!!!")
-        doc_items = []
-        for i in range(len(embeddings)):
-            profiles = {}
-            profiles["text"] = texts[i]
-            profiles["metadata"] = metadatas[i]["source"]
-            profiles["text_embedding"] = embeddings[i][:] / (
-                np.linalg.norm(embeddings[i][:])
-            )
-            doc_items.append(profiles)
-        docid = self.vearch_engine.add(doc_items)
-        t_time = 0
-        while len(docid) != len(embeddings):
-            time.sleep(0.5)
-            if t_time > 6:
-                break
-            t_time += 1
-       
-        self.vearch_engine.dump()
-
+        if embeddings is not None:
+            doc_items = []
+            for i in range(len(embeddings)):
+                profiles = {}
+                profiles["text"] = texts[i]
+                profiles["metadata"] = metadatas[i]["source"]
+                profiles["text_embedding"] = embeddings[i][:] / (
+                    np.linalg.norm(embeddings[i][:])
+                )
+                doc_items.append(profiles)
+            docid = self.vearch_engine.add(doc_items)
+            t_time = 0
+            while len(docid) != len(embeddings):
+                time.sleep(0.5)
+                if t_time > 6:
+                    break
+                t_time += 1
+            self.vearch_engine.dump()
         return docid
 
-    def _load(self):
+    def _load(self)->None:
         """
         load vearch engine
         """
@@ -192,7 +192,7 @@ class Vearch(VectorStore):
     @classmethod
     def load_local(
         cls,
-        embedding: Optional[Embeddings] = None,
+        embedding: Embeddings,
         table_name: str = _DEFAULT_TABLE_NAME,
         metadata_path: Optional[str] = None,
         **kwargs: Any,
@@ -228,14 +228,15 @@ class Vearch(VectorStore):
         """
         if self.vearch_engine is None:
             raise ValueError("Vearch engine is None!!!")
-
+        if self.embedding_func is None:
+            raise ValueError("embedding_func is None!!!")
         embeddings = self.embedding_func.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(embeddings, k)
         return docs
 
     def similarity_search_with_score_by_vector(
         self,
-        embeddings: Optional[List[float]] = None,
+        embeddings: List[float],
         k: int = DEFAULT_TOPN,
         min_score: float = 0.0,
         **kwargs: Any,
@@ -280,7 +281,7 @@ class Vearch(VectorStore):
 
     def delete(
         self,
-        ids: Optional[List[str]] = None,
+        ids: List[str],
         **kwargs: Any,
     ) -> Optional[bool]:
         """Delete the documents which have the specified ids.
@@ -306,7 +307,7 @@ class Vearch(VectorStore):
 
     def get(
         self,
-        ids: Optional[List[str]] = None,
+        ids: List[str],
         **kwargs: Any,
     ) -> Dict[str, Document]:
         """Return docs according ids.
