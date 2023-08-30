@@ -1,16 +1,13 @@
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-from langchain.callbacks.base import Callbacks
+from langchain.retrievers import MultiVectorRetriever
 from langchain.schema.document import Document
-from langchain.schema.retriever import BaseRetriever
-from langchain.schema.storage import BaseStore
 from langchain.text_splitter import TextSplitter
-from langchain.vectorstores.base import VectorStore
 
 
-class ParentDocumentRetriever(BaseRetriever):
-    """Fetches small chunks, then fetches their parent documents.
+class ParentDocumentRetriever(MultiVectorRetriever):
+    """Retrieve small chunks then retrieve their parent documents.
 
     When splitting documents for retrieval, there are often conflicting desires:
 
@@ -58,42 +55,19 @@ class ParentDocumentRetriever(BaseRetriever):
             )
     """
 
-    vectorstore: VectorStore
-    """The underlying vectorstore to use to store small chunks
-    and their embedding vectors"""
-    docstore: BaseStore[str, Document]
-    """The storage layer for the parent documents"""
     child_splitter: TextSplitter
     """The text splitter to use to create child documents."""
-    id_key: str = "doc_id"
+
     """The key to use to track the parent id. This will be stored in the
     metadata of child documents."""
     parent_splitter: Optional[TextSplitter] = None
     """The text splitter to use to create parent documents.
     If none, then the parent documents will be the raw documents passed in."""
 
-    def get_relevant_documents(
-        self,
-        query: str,
-        *,
-        callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> List[Document]:
-        sub_docs = self.vectorstore.similarity_search(query)
-        # We do this to maintain the order of the ids that are returned
-        ids = []
-        for d in sub_docs:
-            if d.metadata[self.id_key] not in ids:
-                ids.append(d.metadata[self.id_key])
-        docs = self.docstore.mget(ids)
-        return [d for d in docs if d is not None]
-
     def add_documents(
         self,
         documents: List[Document],
-        ids: Optional[List[str]],
+        ids: Optional[List[str]] = None,
         add_to_docstore: bool = True,
     ) -> None:
         """Adds documents to the docstore and vectorstores.

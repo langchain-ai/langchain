@@ -1,4 +1,3 @@
-"""Loads data from JSON."""
 import json
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -8,7 +7,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class JSONLoader(BaseLoader):
-    """Loads a JSON file using a jq schema.
+    """Load a `JSON` file using a `jq` schema.
 
     Example:
         [{"text": ...}, {"text": ...}, {"text": ...}] -> schema = .[].text

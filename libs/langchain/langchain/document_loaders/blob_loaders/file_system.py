@@ -37,7 +37,7 @@ def _make_iterator(
 
 
 class FileSystemBlobLoader(BlobLoader):
-    """Blob loader for the local file system.
+    """Load blobs in the local file system.
 
     Example:
 
@@ -58,7 +58,7 @@ class FileSystemBlobLoader(BlobLoader):
         suffixes: Optional[Sequence[str]] = None,
         show_progress: bool = False,
     ) -> None:
-        """Initialize with path to directory and how to glob over it.
+        """Initialize with a path to directory and how to glob over it.
 
         Args:
             path: Path to directory to load from

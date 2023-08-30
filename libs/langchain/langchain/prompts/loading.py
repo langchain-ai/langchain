@@ -2,7 +2,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Union
+from typing import Callable, Dict, Union
 
 import yaml
 
@@ -145,8 +145,7 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     return load_prompt_from_config(config)
 
 
-type_to_loader_dict = {
+type_to_loader_dict: Dict[str, Callable[[dict], BasePromptTemplate]] = {
     "prompt": _load_prompt,
     "few_shot": _load_few_shot_prompt,
-    # "few_shot_with_templates": _load_few_shot_with_templates_prompt,
 }

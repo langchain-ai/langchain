@@ -15,10 +15,10 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities import PythonREPL
-from pydantic import Extra, Field
 
 from langchain_experimental.pal_chain.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain_experimental.pal_chain.math_prompt import MATH_PROMPT
+from langchain_experimental.pydantic_v1 import Extra, Field
 
 COMMAND_EXECUTION_FUNCTIONS = ["system", "exec", "execfile", "eval"]
 
@@ -90,6 +90,15 @@ class PALChain(Chain):
     This class implements the Program-Aided Language Models (PAL) for generating code
     solutions. PAL is a technique described in the paper "Program-Aided Language Models"
     (https://arxiv.org/pdf/2211.10435.pdf).
+
+    *Security note*: This class implements an AI technique that generates and evaluates
+        Python code, which can be dangerous and requires a specially sandboxed
+        environment to be safely used. While this class implements some basic guardrails
+        by limiting available locals/globals and by parsing and inspecting
+        the generated Python AST using `PALValidation`, those guardrails will not
+        deter sophisticated attackers and are not a replacement for a proper sandbox.
+        Do not use this class on untrusted inputs, with elevated permissions,
+        or without consulting your security team about proper sandboxing!
     """
 
     llm_chain: LLMChain
