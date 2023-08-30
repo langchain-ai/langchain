@@ -14,6 +14,13 @@ class PromptValue(Serializable, ABC):
         ChatModel inputs.
     """
 
+    @property
+    def lc_serializable(self) -> bool:
+        """
+        Return whether or not the class is serializable.
+        """
+        return True
+
     @abstractmethod
     def to_string(self) -> str:
         """Return prompt value as string."""

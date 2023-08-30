@@ -40,6 +40,8 @@ from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.milvus import MilvusRetriever
 from langchain.retrievers.multi_query import MultiQueryRetriever
+from langchain.retrievers.multi_vector import MultiVectorRetriever
+from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
 from langchain.retrievers.pubmed import PubMedRetriever
 from langchain.retrievers.re_phraser import RePhraseQueryRetriever
@@ -90,4 +92,6 @@ __all__ = [
     "RePhraseQueryRetriever",
     "WebResearchRetriever",
     "EnsembleRetriever",
+    "ParentDocumentRetriever",
+    "MultiVectorRetriever",
 ]

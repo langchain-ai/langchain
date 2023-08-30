@@ -1,4 +1,3 @@
-"""Wrapper around LanceDB vector database"""
 from __future__ import annotations
 
 import uuid
@@ -10,7 +9,7 @@ from langchain.vectorstores.base import VectorStore
 
 
 class LanceDB(VectorStore):
-    """Wrapper around LanceDB vector database.
+    """`LanceDB` vector store.
 
     To use, you should have ``lancedb`` python package installed.
 
@@ -36,7 +35,7 @@ class LanceDB(VectorStore):
         try:
             import lancedb
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import lancedb python package. "
                 "Please install it with `pip install lancedb`."
             )
