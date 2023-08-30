@@ -9,8 +9,10 @@ class XMLOutputParser(BaseOutputParser):
     """Parse an output using xml format."""
 
     tags: Optional[List[str]] = None
-    encoding_matcher: re.Pattern = re.compile(r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL)
-    
+    encoding_matcher: re.Pattern = re.compile(
+        r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
+    )
+
     def get_format_instructions(self) -> str:
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
@@ -19,9 +21,8 @@ class XMLOutputParser(BaseOutputParser):
         encoding_match = self.encoding_matcher.search(text)
         if encoding_match:
             text = encoding_match.group(2)
-        if (
-            (text.startswith("<") or text.startswith("\n<")) and 
-            (text.endswith(">") or text.endswith(">\n"))
+        if (text.startswith("<") or text.startswith("\n<")) and (
+            text.endswith(">") or text.endswith(">\n")
         ):
             return text
         else:
