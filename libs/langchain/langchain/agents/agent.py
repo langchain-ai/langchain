@@ -14,7 +14,7 @@ import yaml
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
-from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     AsyncCallbackManagerForToolRun,
@@ -686,15 +686,13 @@ s
         cls,
         agent: Union[BaseSingleActionAgent, BaseMultiActionAgent],
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
-        callbacks: Optional[List[BaseCallbackHandler]] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> AgentExecutor:
         """Create from agent and tools."""
         return cls(
             agent=agent,
             tools=tools,
-            callback_manager=callback_manager,
             callbacks=callbacks,
             **kwargs,
         )
