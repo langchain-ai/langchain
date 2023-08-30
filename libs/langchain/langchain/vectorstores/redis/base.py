@@ -991,7 +991,7 @@ class Redis(VectorStore):
         self,
         k: int,
         filter: Optional[RedisFilterExpression] = None,
-        return_fields: List[str] = [],
+        return_fields: Optional[List[str]] = None,
     ) -> "Query":
         try:
             from redis.commands.search.query import Query
@@ -1000,6 +1000,7 @@ class Redis(VectorStore):
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             ) from e
+        return_fields = return_fields or []
         vector_key = self._schema.content_vector_key
         base_query = f"@{vector_key}:[VECTOR_RANGE $distance_threshold $vector]"
 
@@ -1020,7 +1021,7 @@ class Redis(VectorStore):
         self,
         k: int,
         filter: Optional[RedisFilterExpression] = None,
-        return_fields: List[str] = [],
+        return_fields: Optional[List[str]] = None,
     ) -> "Query":
         """Prepare query for vector search.
 
@@ -1038,6 +1039,7 @@ class Redis(VectorStore):
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             ) from e
+        return_fields = return_fields or []
         query_prefix = "*"
         if filter:
             query_prefix = f"{str(filter)}"
