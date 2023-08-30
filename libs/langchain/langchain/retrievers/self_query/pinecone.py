@@ -15,13 +15,14 @@ class PineconeTranslator(Visitor):
 
     allowed_comparators = (
         Comparator.EQ,
+        Comparator.NE,
         Comparator.LT,
         Comparator.LTE,
         Comparator.GT,
         Comparator.GTE,
     )
     """Subset of allowed logical comparators."""
-    allowed_operators = (Operator.AND, Operator.OR, Operator.NOT)
+    allowed_operators = (Operator.AND, Operator.OR)
     """Subset of allowed logical operators."""
 
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
