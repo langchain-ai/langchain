@@ -3,22 +3,20 @@ from __future__ import annotations
 import logging
 import uuid
 import warnings
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.utils.iter import batch_iterate
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
+if TYPE_CHECKING:
+    from pinecone import Index
+
 logger = logging.getLogger(__name__)
-
-
-def get_batches(sequence: Sequence, batch_size: int = 100) -> Iterable[Sequence]:
-    """A helper function to break a sequence into chunks of size batch_size."""
-    for i in range(0, len(sequence), batch_size):
-        yield sequence[i : i + batch_size]
 
 
 class Pinecone(VectorStore):
@@ -126,8 +124,7 @@ class Pinecone(VectorStore):
         texts = list(texts)
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         metadatas = metadatas or [{} for _ in texts]
-        for index, text in enumerate(texts):
-            metadata = metadatas[index]
+        for metadata, text in zip(metadatas, texts):
             metadata[self._text_key] = text
 
         # For loops to avoid memory issues and optimize when using HTTP based embeddings
@@ -140,14 +137,13 @@ class Pinecone(VectorStore):
             embeddings = self._embed_documents(chunk_texts)
             async_res = [
                 self._index.upsert(
-                    vectors=list(batch),
+                    vectors=batch,
                     namespace=namespace,
-                    **(kwargs or {}),
                     async_req=True,
+                    **kwargs,
                 )
-                for batch in get_batches(
-                    list(zip(chunk_ids, embeddings, chunk_metadatas)),
-                    batch_size=batch_size,
+                for batch in batch_iterate(
+                    batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
                 )
             ]
             [res.get() for res in async_res]
@@ -334,27 +330,18 @@ class Pinecone(VectorStore):
         )
 
     @classmethod
-    def get_pinecone(
+    def get_pinecone_index(
         cls,
         index_name: Optional[str],
-        embedding: Union[Embeddings, Callable],
-        text_key: str,
-        namespace: Optional[str] = None,
-        distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
         pool_threads: int = 4,
-        **kwargs: Any,
-    ) -> Pinecone:
-        """Return a Pinecone instance.
+    ) -> Index:
+        """Return a Pinecone Index instance.
 
         Args:
             index_name: Name of the index to use.
-            embedding: Embedding to use for similarity search.
-            text_key: Key in metadata to use as page content.
-            namespace: Namespace to search in. Default will search in '' namespace.
             pool_threads: Number of threads to use for index upsert.
-            distance_strategy: Distance strategy to use for similarity search.
         Returns:
-            Pinecone instance."""
+            Pinecone Index instance."""
 
         try:
             import pinecone
@@ -379,8 +366,7 @@ class Pinecone(VectorStore):
                 f"Index '{index_name}' not found in your Pinecone project. "
                 f"Did you mean one of the following indexes: {', '.join(indexes)}"
             )
-
-        return cls(index, embedding, text_key, namespace, distance_strategy)
+        return index
 
     @classmethod
     def from_texts(
@@ -424,19 +410,14 @@ class Pinecone(VectorStore):
                     index_name="langchain-demo"
                 )
         """
-        pinecone = cls.get_pinecone(
-            index_name,
-            embedding,
-            text_key,
-            namespace,
-            pool_threads=pool_threads,
-            **kwargs,
-        )
+        pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
+        pinecone = cls(pinecone_index, embedding, text_key, namespace, **kwargs)
+
         pinecone.add_texts(
             texts,
-            metadatas,
-            ids,
-            namespace,
+            metadatas=metadatas,
+            ids=ids,
+            namespace=namespace,
             batch_size=batch_size,
             embedding_chunk_size=embeddings_chunk_size,
             **(upsert_kwargs or {}),
@@ -453,9 +434,8 @@ class Pinecone(VectorStore):
         pool_threads: int = 4,
     ) -> Pinecone:
         """Load pinecone vectorstore from index name."""
-        return cls.get_pinecone(
-            index_name, embedding, text_key, namespace, pool_threads=pool_threads
-        )
+        pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
+        return cls(pinecone_index, embedding, text_key, namespace)
 
     def delete(
         self,
