@@ -1,6 +1,6 @@
 import logging
 from string import Template
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -106,11 +106,12 @@ class NebulaGraph:
         """Returns the schema of the NebulaGraph database"""
         return self.schema
 
-    def execute(self, query: str, params: dict = {}, retry: int = 0) -> Any:
+    def execute(self, query: str, params: Optional[dict] = None, retry: int = 0) -> Any:
         """Query NebulaGraph database."""
         from nebula3.Exception import IOErrorException, NoValidSessionException
         from nebula3.fbthrift.transport.TTransport import TTransportException
 
+        params = params or {}
         try:
             result = self.session_pool.execute_parameter(query, params)
             if not result.is_succeeded():

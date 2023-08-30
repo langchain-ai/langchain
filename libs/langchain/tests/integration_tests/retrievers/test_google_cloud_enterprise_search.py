@@ -24,6 +24,9 @@ def test_google_cloud_enterprise_search_get_relevant_documents() -> None:
     """Test the get_relevant_documents() method."""
     retriever = GoogleCloudEnterpriseSearchRetriever()
     documents = retriever.get_relevant_documents("What are Alphabet's Other Bets?")
+    assert len(documents) > 0
     for doc in documents:
         assert isinstance(doc, Document)
         assert doc.page_content
+        assert doc.metadata["id"]
+        assert doc.metadata["source"]

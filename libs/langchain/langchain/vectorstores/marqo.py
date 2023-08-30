@@ -372,10 +372,10 @@ class Marqo(VectorStore):
         index_name: str = "",
         url: str = "http://localhost:8882",
         api_key: str = "",
-        add_documents_settings: Optional[Dict[str, Any]] = {},
+        add_documents_settings: Optional[Dict[str, Any]] = None,
         searchable_attributes: Optional[List[str]] = None,
         page_content_builder: Optional[Callable[[Dict[str, str]], str]] = None,
-        index_settings: Optional[Dict[str, Any]] = {},
+        index_settings: Optional[Dict[str, Any]] = None,
         verbose: bool = True,
         **kwargs: Any,
     ) -> Marqo:
@@ -435,7 +435,7 @@ class Marqo(VectorStore):
         client = marqo.Client(url=url, api_key=api_key)
 
         try:
-            client.create_index(index_name, settings_dict=index_settings)
+            client.create_index(index_name, settings_dict=index_settings or {})
             if verbose:
                 print(f"Created {index_name} successfully.")
         except Exception:
@@ -446,7 +446,7 @@ class Marqo(VectorStore):
             client,
             index_name,
             searchable_attributes=searchable_attributes,
-            add_documents_settings=add_documents_settings,
+            add_documents_settings=add_documents_settings or {},
             page_content_builder=page_content_builder,
         )
         instance.add_texts(texts, metadatas)
