@@ -42,6 +42,7 @@ class EnsembleRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         """
         Get the relevant documents for a given query.

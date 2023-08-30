@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -18,6 +18,7 @@ class MergerRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         """
         Get the relevant documents for a given query.
@@ -30,7 +31,9 @@ class MergerRetriever(BaseRetriever):
         """
 
         # Merge the results of the retrievers.
-        merged_documents = self.merge_documents(query, run_manager)
+        merged_documents = self.merge_documents(
+            query, run_manager, retrievers_kwargs=kwargs
+        )
 
         return merged_documents
 
@@ -56,22 +59,33 @@ class MergerRetriever(BaseRetriever):
         return merged_documents
 
     def merge_documents(
-        self, query: str, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        run_manager: CallbackManagerForRetrieverRun,
+        retrievers_kwargs: Any | None = None,
     ) -> List[Document]:
         """
         Merge the results of the retrievers.
 
         Args:
             query: The query to search for.
+            retrievers_kwargs: List containing the kwargs to pass to each retriever.
 
         Returns:
             A list of merged documents.
         """
 
         # Get the results of all retrievers.
+        if retrievers_kwargs:
+            if not isinstance(retrievers_kwargs, list):
+                retrievers_kwargs_list = [retrievers_kwargs] * len(self.retrievers)
+        else:
+            retrievers_kwargs_list = [{}] * len(self.retrievers)
         retriever_docs = [
             retriever.get_relevant_documents(
-                query, callbacks=run_manager.get_child("retriever_{}".format(i + 1))
+                query,
+                callbacks=run_manager.get_child("retriever_{}".format(i + 1)),
+                **retrievers_kwargs_list[i],
             )
             for i, retriever in enumerate(self.retrievers)
         ]
