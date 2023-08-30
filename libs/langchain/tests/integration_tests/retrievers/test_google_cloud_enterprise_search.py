@@ -11,16 +11,22 @@ PROJECT_ID - set to your Google Cloud project ID
 SEARCH_ENGINE_ID - the ID of the search engine to use for the test
 """
 
+import pytest
+
 from langchain.retrievers.google_cloud_enterprise_search import (
     GoogleCloudEnterpriseSearchRetriever,
 )
 from langchain.schema import Document
 
 
+@pytest.mark.requires("google_api_core")
 def test_google_cloud_enterprise_search_get_relevant_documents() -> None:
     """Test the get_relevant_documents() method."""
     retriever = GoogleCloudEnterpriseSearchRetriever()
     documents = retriever.get_relevant_documents("What are Alphabet's Other Bets?")
+    assert len(documents) > 0
     for doc in documents:
         assert isinstance(doc, Document)
         assert doc.page_content
+        assert doc.metadata["id"]
+        assert doc.metadata["source"]

@@ -16,7 +16,8 @@ class InMemoryStore(BaseStore[str, Any]):
             the key-value pairs.
 
     Examples:
-        ... code-block:: python
+
+        .. code-block:: python
 
             from langchain.storage import InMemoryStore
 

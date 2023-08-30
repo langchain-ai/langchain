@@ -14,8 +14,6 @@ from typing import (
     cast,
 )
 
-from pydantic import Field, root_validator
-
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -28,6 +26,7 @@ from langchain.callbacks.manager import (
 from langchain.load.dump import dumpd, dumps
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -51,6 +50,8 @@ def _get_verbosity() -> bool:
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
+    """Base class for Chat models."""
+
     cache: Optional[bool] = None
     """Whether to cache the response."""
     verbose: bool = Field(default_factory=_get_verbosity)
@@ -103,12 +104,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> BaseMessageChunk:
+        config = config or {}
         return cast(
             BaseMessageChunk,
             cast(
                 ChatGeneration,
                 self.generate_prompt(
-                    [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
+                    [self._convert_input(input)],
+                    stop=stop,
+                    callbacks=config.get("callbacks"),
+                    tags=config.get("tags"),
+                    metadata=config.get("metadata"),
+                    **kwargs,
                 ).generations[0][0],
             ).message,
         )
@@ -127,8 +134,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 None, partial(self.invoke, input, config, stop=stop, **kwargs)
             )
 
+        config = config or {}
         llm_result = await self.agenerate_prompt(
-            [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
+            [self._convert_input(input)],
+            stop=stop,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
         )
         return cast(
             BaseMessageChunk, cast(ChatGeneration, llm_result.generations[0][0]).message
@@ -163,22 +176,22 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 dumpd(self), [messages], invocation_params=params, options=options
             )
             try:
-                message: Optional[BaseMessageChunk] = None
+                generation: Optional[ChatGenerationChunk] = None
                 for chunk in self._stream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
                     yield chunk.message
-                    if message is None:
-                        message = chunk.message
+                    if generation is None:
+                        generation = chunk
                     else:
-                        message += chunk.message
-                assert message is not None
+                        generation += chunk
+                assert generation is not None
             except (KeyboardInterrupt, Exception) as e:
                 run_manager.on_llm_error(e)
                 raise e
             else:
                 run_manager.on_llm_end(
-                    LLMResult(generations=[[ChatGeneration(message=message)]]),
+                    LLMResult(generations=[[generation]]),
                 )
 
     async def astream(
@@ -210,22 +223,22 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 dumpd(self), [messages], invocation_params=params, options=options
             )
             try:
-                message: Optional[BaseMessageChunk] = None
+                generation: Optional[ChatGenerationChunk] = None
                 async for chunk in self._astream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
                     yield chunk.message
-                    if message is None:
-                        message = chunk.message
+                    if generation is None:
+                        generation = chunk
                     else:
-                        message += chunk.message
-                assert message is not None
+                        generation += chunk
+                assert generation is not None
             except (KeyboardInterrupt, Exception) as e:
                 await run_manager.on_llm_error(e)
                 raise e
             else:
                 await run_manager.on_llm_end(
-                    LLMResult(generations=[[ChatGeneration(message=message)]]),
+                    LLMResult(generations=[[generation]]),
                 )
 
     # --- Custom methods ---

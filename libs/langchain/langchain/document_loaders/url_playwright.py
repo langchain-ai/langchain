@@ -100,7 +100,8 @@ class UnstructuredHtmlEvaluator(PlaywrightEvaluator):
 
 
 class PlaywrightURLLoader(BaseLoader):
-    """Loader that uses Playwright and PlaywrightEvaluator to load the html.
+    """Load `HTML` pages with `Playwright` and parse with `Unstructured`.
+
     This is useful for loading pages that require javascript to render.
 
     Attributes:

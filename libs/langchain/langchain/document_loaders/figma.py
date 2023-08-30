@@ -1,4 +1,3 @@
-"""Loads Figma files json dump."""
 import json
 import urllib.request
 from typing import Any, List
@@ -9,7 +8,7 @@ from langchain.utils import stringify_dict
 
 
 class FigmaFileLoader(BaseLoader):
-    """Loads Figma file json."""
+    """Load `Figma` file."""
 
     def __init__(self, access_token: str, ids: str, key: str):
         """Initialize with access token, ids, and key.

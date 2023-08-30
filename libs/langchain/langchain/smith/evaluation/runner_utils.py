@@ -8,8 +8,10 @@ import inspect
 import itertools
 import logging
 import uuid
+import warnings
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Coroutine,
@@ -43,6 +45,9 @@ from langchain.schema.runnable import Runnable, RunnableConfig, RunnableLambda
 from langchain.smith.evaluation.config import EvalConfig, RunEvalConfig
 from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 
+if TYPE_CHECKING:
+    import pandas as pd
+
 logger = logging.getLogger(__name__)
 
 MODEL_OR_CHAIN_FACTORY = Union[
@@ -60,6 +65,31 @@ class InputFormatError(Exception):
 
 
 ## Shared Utilities
+
+
+class TestResult(dict):
+    """A dictionary of the results of a single test run."""
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert the results to a dataframe."""
+        try:
+            import pandas as pd
+        except ImportError as e:
+            raise ImportError(
+                "Pandas is required to convert the results to a dataframe."
+                " to install pandas, run `pip install pandas`."
+            ) from e
+
+        indices = []
+        records = []
+        for example_id, result in self["results"].items():
+            feedback = result["feedback"]
+            records.append(
+                {**{f.key: f.score for f in feedback}, "output": result["output"]}
+            )
+            indices.append(example_id)
+
+        return pd.DataFrame(records, index=indices)
 
 
 def _get_eval_project_url(api_url: str, project_id: str) -> str:
@@ -462,7 +492,7 @@ def _determine_reference_key(
 
 
 def _construct_run_evaluator(
-    eval_config: Union[EvaluatorType, EvalConfig],
+    eval_config: Union[EvaluatorType, str, EvalConfig],
     eval_llm: BaseLanguageModel,
     run_type: str,
     data_type: DataType,
@@ -471,7 +501,9 @@ def _construct_run_evaluator(
     input_key: Optional[str],
     prediction_key: Optional[str],
 ) -> RunEvaluator:
-    if isinstance(eval_config, EvaluatorType):
+    if isinstance(eval_config, (EvaluatorType, str)):
+        if not isinstance(eval_config, EvaluatorType):
+            eval_config = EvaluatorType(eval_config)
         evaluator_ = load_evaluator(eval_config, llm=eval_llm)
         eval_type_tag = eval_config.value
     else:
@@ -502,6 +534,18 @@ def _construct_run_evaluator(
     return run_evaluator
 
 
+def _get_keys(
+    config: RunEvalConfig,
+    run_inputs: Optional[List[str]],
+    run_outputs: Optional[List[str]],
+    example_outputs: Optional[List[str]],
+) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    input_key = _determine_input_key(config, run_inputs)
+    prediction_key = _determine_prediction_key(config, run_outputs)
+    reference_key = _determine_reference_key(config, example_outputs)
+    return input_key, prediction_key, reference_key
+
+
 def _load_run_evaluators(
     config: RunEvalConfig,
     run_type: str,
@@ -521,9 +565,18 @@ def _load_run_evaluators(
     """
     eval_llm = config.eval_llm or ChatOpenAI(model="gpt-4", temperature=0.0)
     run_evaluators = []
-    input_key = _determine_input_key(config, run_inputs)
-    prediction_key = _determine_prediction_key(config, run_outputs)
-    reference_key = _determine_reference_key(config, example_outputs)
+    input_key, prediction_key, reference_key = None, None, None
+    if (
+        config.evaluators
+        or any([isinstance(e, EvaluatorType) for e in config.evaluators])
+        or (
+            config.custom_evaluators
+            and any([isinstance(e, StringEvaluator) for e in config.custom_evaluators])
+        )
+    ):
+        input_key, prediction_key, reference_key = _get_keys(
+            config, run_inputs, run_outputs, example_outputs
+        )
     for eval_config in config.evaluators:
         run_evaluator = _construct_run_evaluator(
             eval_config,
@@ -644,18 +697,16 @@ async def _arun_chain(
 async def _arun_llm_or_chain(
     example: Example,
     llm_or_chain_factory: MCF,
-    n_repetitions: int,
     *,
     tags: Optional[List[str]] = None,
     callbacks: Optional[List[BaseCallbackHandler]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
-) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
+) -> Union[dict, str, LLMResult, ChatResult]:
     """Asynchronously run the Chain or language model.
 
     Args:
         example: The example to run.
         llm_or_chain_factory: The Chain or language model constructor to run.
-        n_repetitions: The number of times to run the model on each example.
         tags: Optional tags to add to the run.
         callbacks: Optional callbacks to use during the run.
         input_mapper: Optional function to map the input to the expected format.
@@ -672,40 +723,37 @@ async def _arun_llm_or_chain(
                 tracer.example_id = example.id
     else:
         previous_example_ids = None
-    outputs = []
     chain_or_llm = (
         "LLM" if isinstance(llm_or_chain_factory, BaseLanguageModel) else "Chain"
     )
-    for _ in range(n_repetitions):
-        try:
-            if isinstance(llm_or_chain_factory, BaseLanguageModel):
-                output: Any = await _arun_llm(
-                    llm_or_chain_factory,
-                    example.inputs,
-                    tags=tags,
-                    callbacks=callbacks,
-                    input_mapper=input_mapper,
-                )
-            else:
-                chain = llm_or_chain_factory()
-                output = await _arun_chain(
-                    chain,
-                    example.inputs,
-                    tags=tags,
-                    callbacks=callbacks,
-                    input_mapper=input_mapper,
-                )
-            outputs.append(output)
-        except Exception as e:
-            logger.warning(
-                f"{chain_or_llm} failed for example {example.id}. Error: {e}"
+    result = None
+    try:
+        if isinstance(llm_or_chain_factory, BaseLanguageModel):
+            output: Any = await _arun_llm(
+                llm_or_chain_factory,
+                example.inputs,
+                tags=tags,
+                callbacks=callbacks,
+                input_mapper=input_mapper,
             )
-            outputs.append({"Error": str(e)})
+        else:
+            chain = llm_or_chain_factory()
+            output = await _arun_chain(
+                chain,
+                example.inputs,
+                tags=tags,
+                callbacks=callbacks,
+                input_mapper=input_mapper,
+            )
+        result = output
+    except Exception as e:
+        logger.warning(f"{chain_or_llm} failed for example {example.id}. Error: {e}")
+        result = {"Error": str(e)}
     if callbacks and previous_example_ids:
         for example_id, tracer in zip(previous_example_ids, callbacks):
             if hasattr(tracer, "example_id"):
                 tracer.example_id = example_id
-    return outputs
+    return result
 
 
 async def _gather_with_concurrency(
@@ -804,7 +852,6 @@ async def _arun_on_examples(
     *,
     evaluation: Optional[RunEvalConfig] = None,
     concurrency_level: int = 5,
-    num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
     tags: Optional[List[str]] = None,
@@ -823,9 +870,6 @@ async def _arun_on_examples(
             independent calls on each example without carrying over state.
         evaluation: Optional evaluation configuration to use when evaluating
         concurrency_level: The number of async tasks to run concurrently.
-        num_repetitions: Number of times to run the model on each example.
-            This is useful when testing success rates or generating confidence
-            intervals.
         project_name: Project name to use when tracing runs.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
@@ -846,7 +890,7 @@ async def _arun_on_examples(
         wrapped_model, examples, evaluation, data_type
     )
     examples = _validate_example_inputs(examples, wrapped_model, input_mapper)
-    results: Dict[str, List[Any]] = {}
+    results: Dict[str, dict] = {}
 
     async def process_example(
         example: Example, callbacks: List[BaseCallbackHandler], job_state: dict
@@ -855,12 +899,11 @@ async def _arun_on_examples(
         result = await _arun_llm_or_chain(
             example,
             wrapped_model,
-            num_repetitions,
             tags=tags,
             callbacks=callbacks,
             input_mapper=input_mapper,
         )
-        results[str(example.id)] = result
+        results[str(example.id)] = {"output": result}
         job_state["num_processed"] += 1
         if verbose:
             print(
@@ -881,8 +924,14 @@ async def _arun_on_examples(
         ),
         *(functools.partial(process_example, e) for e in examples),
     )
+    all_feedback = {}
     for handler in evaluation_handlers:
         handler.wait_for_futures()
+        all_feedback.update(handler.logged_feedback)
+    # join the results and feedback on the example id
+    for example_id, output_dict in results.items():
+        feedback = all_feedback.get(example_id, [])
+        output_dict["feedback"] = feedback
     return results
 
 
@@ -965,19 +1014,17 @@ def _run_chain(
 def _run_llm_or_chain(
     example: Example,
     llm_or_chain_factory: MCF,
-    n_repetitions: int,
     *,
     tags: Optional[List[str]] = None,
     callbacks: Optional[List[BaseCallbackHandler]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
-) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
+) -> Union[dict, str, LLMResult, ChatResult]:
     """
     Run the Chain or language model synchronously.
 
     Args:
         example: The example to run.
         llm_or_chain_factory: The Chain or language model constructor to run.
-        n_repetitions: The number of times to run the model on each example.
         tags: Optional tags to add to the run.
         callbacks: Optional callbacks to use during the run.
 
@@ -994,41 +1041,40 @@ def _run_llm_or_chain(
                 tracer.example_id = example.id
     else:
         previous_example_ids = None
-    outputs = []
     chain_or_llm = (
         "LLM" if isinstance(llm_or_chain_factory, BaseLanguageModel) else "Chain"
     )
-    for _ in range(n_repetitions):
-        try:
-            if isinstance(llm_or_chain_factory, BaseLanguageModel):
-                output: Any = _run_llm(
-                    llm_or_chain_factory,
-                    example.inputs,
-                    callbacks,
-                    tags=tags,
-                    input_mapper=input_mapper,
-                )
-            else:
-                chain = llm_or_chain_factory()
-                output = _run_chain(
-                    chain,
-                    example.inputs,
-                    callbacks,
-                    tags=tags,
-                    input_mapper=input_mapper,
-                )
-            outputs.append(output)
-        except Exception as e:
-            logger.warning(
-                f"{chain_or_llm} failed for example {example.id} with inputs:"
-                f" {example.inputs}.\nError: {e}",
+    result = None
+    try:
+        if isinstance(llm_or_chain_factory, BaseLanguageModel):
+            output: Any = _run_llm(
+                llm_or_chain_factory,
+                example.inputs,
+                callbacks,
+                tags=tags,
+                input_mapper=input_mapper,
             )
-            outputs.append({"Error": str(e)})
+        else:
+            chain = llm_or_chain_factory()
+            output = _run_chain(
+                chain,
+                example.inputs,
+                callbacks,
+                tags=tags,
+                input_mapper=input_mapper,
+            )
+        result = output
+    except Exception as e:
+        logger.warning(
+            f"{chain_or_llm} failed for example {example.id} with inputs:"
+            f" {example.inputs}.\nError: {e}",
+        )
+        result = {"Error": str(e)}
     if callbacks and previous_example_ids:
         for example_id, tracer in zip(previous_example_ids, callbacks):
             if hasattr(tracer, "example_id"):
                 tracer.example_id = example_id
-    return outputs
+    return result
 
 
 def _run_on_examples(
@@ -1037,7 +1083,6 @@ def _run_on_examples(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
     evaluation: Optional[RunEvalConfig] = None,
-    num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
     tags: Optional[List[str]] = None,
@@ -1055,9 +1100,6 @@ def _run_on_examples(
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
         evaluation: Optional evaluation configuration to use when evaluating
-        num_repetitions: Number of times to run the model on each example.
-            This is useful when testing success rates or generating confidence
-            intervals.
         project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
@@ -1073,35 +1115,39 @@ def _run_on_examples(
     Returns:
         A dictionary mapping example ids to the model outputs.
     """
-    results: Dict[str, Any] = {}
-    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
-    project_name = _get_project_name(project_name, llm_or_chain_factory)
+    results: Dict[str, dict] = {}
+    wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
+    project_name = _get_project_name(project_name, wrapped_model)
     tracer = LangChainTracer(
         project_name=project_name, client=client, use_threading=False
     )
     run_evaluators, examples = _setup_evaluation(
-        llm_or_chain_factory, examples, evaluation, data_type
+        wrapped_model, examples, evaluation, data_type
     )
-    examples = _validate_example_inputs(examples, llm_or_chain_factory, input_mapper)
-    evalution_handler = EvaluatorCallbackHandler(
+    examples = _validate_example_inputs(examples, wrapped_model, input_mapper)
+    evaluation_handler = EvaluatorCallbackHandler(
         evaluators=run_evaluators or [],
         client=client,
     )
-    callbacks: List[BaseCallbackHandler] = [tracer, evalution_handler]
+    callbacks: List[BaseCallbackHandler] = [tracer, evaluation_handler]
     for i, example in enumerate(examples):
         result = _run_llm_or_chain(
             example,
-            llm_or_chain_factory,
-            num_repetitions,
+            wrapped_model,
             tags=tags,
             callbacks=callbacks,
             input_mapper=input_mapper,
         )
         if verbose:
             print(f"{i+1} processed", flush=True, end="\r")
-        results[str(example.id)] = result
+        results[str(example.id)] = {"output": result}
     tracer.wait_for_futures()
-    evalution_handler.wait_for_futures()
+    evaluation_handler.wait_for_futures()
+    all_feedback = evaluation_handler.logged_feedback
+    # join the results and feedback on the example id
+    for example_id, output_dict in results.items():
+        feedback = all_feedback.get(example_id, [])
+        output_dict["feedback"] = feedback
     return results
 
 
@@ -1114,8 +1160,8 @@ def _prepare_eval_run(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     project_name: Optional[str],
 ) -> Tuple[MCF, str, Dataset, Iterator[Example]]:
-    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
-    project_name = _get_project_name(project_name, llm_or_chain_factory)
+    wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
+    project_name = _get_project_name(project_name, wrapped_model)
     try:
         project = client.create_project(project_name)
     except ValueError as e:
@@ -1130,7 +1176,7 @@ def _prepare_eval_run(
     )
     dataset = client.read_dataset(dataset_name=dataset_name)
     examples = client.list_examples(dataset_id=str(dataset.id))
-    return llm_or_chain_factory, project_name, dataset, examples
+    return wrapped_model, project_name, dataset, examples
 
 
 async def arun_on_dataset(
@@ -1140,11 +1186,11 @@ async def arun_on_dataset(
     *,
     evaluation: Optional[RunEvalConfig] = None,
     concurrency_level: int = 5,
-    num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
     tags: Optional[List[str]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """
     Asynchronously run the Chain or language model on a dataset
@@ -1159,9 +1205,6 @@ async def arun_on_dataset(
             independent calls on each example without carrying over state.
         evaluation: Optional evaluation configuration to use when evaluating
         concurrency_level: The number of async tasks to run concurrently.
-        num_repetitions: Number of times to run the model on each example.
-            This is useful when testing success rates or generating confidence
-            intervals.
         project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
@@ -1256,15 +1299,21 @@ async def arun_on_dataset(
             evaluation=evaluation_config,
         )
     """  # noqa: E501
-    llm_or_chain_factory, project_name, dataset, examples = _prepare_eval_run(
+    if kwargs:
+        warnings.warn(
+            "The following arguments are deprecated and will "
+            "be removed in a future release: "
+            f"{kwargs.keys()}.",
+            DeprecationWarning,
+        )
+    wrapped_model, project_name, dataset, examples = _prepare_eval_run(
         client, dataset_name, llm_or_chain_factory, project_name
     )
     results = await _arun_on_examples(
         client,
         examples,
-        llm_or_chain_factory,
+        wrapped_model,
         concurrency_level=concurrency_level,
-        num_repetitions=num_repetitions,
         project_name=project_name,
         verbose=verbose,
         tags=tags,
@@ -1272,10 +1321,10 @@ async def arun_on_dataset(
         input_mapper=input_mapper,
         data_type=dataset.data_type,
     )
-    return {
-        "project_name": project_name,
-        "results": results,
-    }
+    return TestResult(
+        project_name=project_name,
+        results=results,
+    )
 
 
 def _handle_coroutine(coro: Coroutine) -> Any:
@@ -1294,7 +1343,7 @@ def _handle_coroutine(coro: Coroutine) -> Any:
     except RuntimeError:  # No event loop
         return asyncio.run(coro)
     if loop.is_running():
-        return loop.create_task(coro)
+        return loop.run_until_complete(coro)
     else:
         return asyncio.run(coro)
 
@@ -1305,12 +1354,12 @@ def run_on_dataset(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
     evaluation: Optional[RunEvalConfig] = None,
-    num_repetitions: int = 1,
     concurrency_level: int = 5,
     project_name: Optional[str] = None,
     verbose: bool = False,
     tags: Optional[List[str]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """
     Run the Chain or language model on a dataset and store traces
@@ -1326,9 +1375,6 @@ def run_on_dataset(
         evaluation: Configuration for evaluators to run on the
             results of the chain
         concurrency_level: The number of async tasks to run concurrently.
-        num_repetitions: Number of times to run the model on each example.
-            This is useful when testing success rates or generating confidence
-            intervals.
         project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
@@ -1423,15 +1469,21 @@ def run_on_dataset(
             evaluation=evaluation_config,
         )
     """  # noqa: E501
-    llm_or_chain_factory, project_name, dataset, examples = _prepare_eval_run(
+    if kwargs:
+        warnings.warn(
+            "The following arguments are deprecated and "
+            "will be removed in a future release: "
+            f"{kwargs.keys()}.",
+            DeprecationWarning,
+        )
+    wrapped_model, project_name, dataset, examples = _prepare_eval_run(
         client, dataset_name, llm_or_chain_factory, project_name
     )
     if concurrency_level in (0, 1):
         results = _run_on_examples(
             client,
             examples,
-            llm_or_chain_factory,
-            num_repetitions=num_repetitions,
+            wrapped_model,
             project_name=project_name,
             verbose=verbose,
             tags=tags,
@@ -1444,9 +1496,8 @@ def run_on_dataset(
         coro = _arun_on_examples(
             client,
             examples,
-            llm_or_chain_factory,
+            wrapped_model,
             concurrency_level=concurrency_level,
-            num_repetitions=num_repetitions,
             project_name=project_name,
             verbose=verbose,
             tags=tags,
@@ -1455,7 +1506,7 @@ def run_on_dataset(
             data_type=dataset.data_type,
         )
         results = _handle_coroutine(coro)
-    return {
-        "project_name": project_name,
-        "results": results,
-    }
+    return TestResult(
+        project_name=project_name,
+        results=results,
+    )

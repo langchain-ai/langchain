@@ -2,21 +2,12 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import warnings
 from abc import abstractmethod
 from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
-
-from pydantic import (
-    BaseModel,
-    Extra,
-    Field,
-    create_model,
-    root_validator,
-    validate_arguments,
-)
-from pydantic.main import ModelMetaclass
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -26,45 +17,19 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    create_model,
+    root_validator,
+    validate_arguments,
+)
 from langchain.schema.runnable import Runnable, RunnableConfig
 
 
 class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
-
-
-class ToolMetaclass(ModelMetaclass):
-    """Metaclass for BaseTool to ensure the provided args_schema
-
-    doesn't silently ignore."""
-
-    def __new__(
-        cls: Type[ToolMetaclass], name: str, bases: Tuple[Type, ...], dct: dict
-    ) -> ToolMetaclass:
-        """Create the definition of the new tool class."""
-        schema_type: Optional[Type[BaseModel]] = dct.get("args_schema")
-        if schema_type is not None:
-            schema_annotations = dct.get("__annotations__", {})
-            args_schema_type = schema_annotations.get("args_schema", None)
-            if args_schema_type is None or args_schema_type == BaseModel:
-                # Throw errors for common mis-annotations.
-                # TODO: Use get_args / get_origin and fully
-                # specify valid annotations.
-                typehint_mandate = """
-class ChildTool(BaseTool):
-    ...
-    args_schema: Type[BaseModel] = SchemaClass
-    ..."""
-                raise SchemaAnnotationError(
-                    f"Tool definition for {name} must include valid type annotations"
-                    f" for argument 'args_schema' to behave as expected.\n"
-                    f"Expected annotation of 'Type[BaseModel]'"
-                    f" but got '{args_schema_type}'.\n"
-                    f"Expected class looks like:\n"
-                    f"{typehint_mandate}"
-                )
-        # Pass through to Pydantic's metaclass
-        return super().__new__(cls, name, bases, dct)
 
 
 def _create_subset_model(
@@ -91,8 +56,8 @@ def _get_filtered_args(
 class _SchemaConfig:
     """Configuration for the pydantic model."""
 
-    extra = Extra.forbid
-    arbitrary_types_allowed = True
+    extra: Any = Extra.forbid
+    arbitrary_types_allowed: bool = True
 
 
 def create_schema_from_function(
@@ -132,8 +97,34 @@ class ToolException(Exception):
     pass
 
 
-class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetaclass):
+class BaseTool(BaseModel, Runnable[Union[str, Dict], Any]):
     """Interface LangChain tools must implement."""
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Create the definition of the new tool class."""
+        super().__init_subclass__(**kwargs)
+
+        args_schema_type = cls.__annotations__.get("args_schema", None)
+
+        if args_schema_type is not None:
+            if args_schema_type is None or args_schema_type == BaseModel:
+                # Throw errors for common mis-annotations.
+                # TODO: Use get_args / get_origin and fully
+                # specify valid annotations.
+                typehint_mandate = """
+class ChildTool(BaseTool):
+    ...
+    args_schema: Type[BaseModel] = SchemaClass
+    ..."""
+                name = cls.__name__
+                raise SchemaAnnotationError(
+                    f"Tool definition for {name} must include valid type annotations"
+                    f" for argument 'args_schema' to behave as expected.\n"
+                    f"Expected annotation of 'Type[BaseModel]'"
+                    f" but got '{args_schema_type}'.\n"
+                    f"Expected class looks like:\n"
+                    f"{typehint_mandate}"
+                )
 
     name: str
     """The unique name of the tool that clearly communicates its purpose."""
@@ -203,7 +194,13 @@ class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetacla
         **kwargs: Any,
     ) -> Any:
         config = config or {}
-        return self.run(input, **config, **kwargs)
+        return self.run(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     async def ainvoke(
         self,
@@ -216,7 +213,13 @@ class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetacla
             return super().ainvoke(input, config, **kwargs)
 
         config = config or {}
-        return await self.arun(input, **config, **kwargs)
+        return await self.arun(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     # --- Tool ---
 
@@ -435,7 +438,7 @@ class Tool(BaseTool):
     """Tool that takes in function or coroutine directly."""
 
     description: str = ""
-    func: Callable[..., str]
+    func: Optional[Callable[..., str]]
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
@@ -486,16 +489,18 @@ class Tool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Use the tool."""
-        new_argument_supported = signature(self.func).parameters.get("callbacks")
-        return (
-            self.func(
-                *args,
-                callbacks=run_manager.get_child() if run_manager else None,
-                **kwargs,
+        if self.func:
+            new_argument_supported = signature(self.func).parameters.get("callbacks")
+            return (
+                self.func(
+                    *args,
+                    callbacks=run_manager.get_child() if run_manager else None,
+                    **kwargs,
+                )
+                if new_argument_supported
+                else self.func(*args, **kwargs)
             )
-            if new_argument_supported
-            else self.func(*args, **kwargs)
-        )
+        raise NotImplementedError("Tool does not support sync")
 
     async def _arun(
         self,
@@ -521,7 +526,7 @@ class Tool(BaseTool):
 
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
-        self, name: str, func: Callable, description: str, **kwargs: Any
+        self, name: str, func: Optional[Callable], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
         super(Tool, self).__init__(
@@ -531,17 +536,23 @@ class Tool(BaseTool):
     @classmethod
     def from_function(
         cls,
-        func: Callable,
+        func: Optional[Callable],
         name: str,  # We keep these required to support backwards compatibility
         description: str,
         return_direct: bool = False,
         args_schema: Optional[Type[BaseModel]] = None,
+        coroutine: Optional[
+            Callable[..., Awaitable[Any]]
+        ] = None,  # This is last for compatibility, but should be after func
         **kwargs: Any,
     ) -> Tool:
         """Initialize tool from a function."""
+        if func is None and coroutine is None:
+            raise ValueError("Function and/or coroutine must be provided")
         return cls(
             name=name,
             func=func,
+            coroutine=coroutine,
             description=description,
             return_direct=return_direct,
             args_schema=args_schema,
@@ -555,7 +566,7 @@ class StructuredTool(BaseTool):
     description: str = ""
     args_schema: Type[BaseModel] = Field(..., description="The tool schema.")
     """The input arguments' schema."""
-    func: Callable[..., Any]
+    func: Optional[Callable[..., Any]]
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
@@ -590,16 +601,18 @@ class StructuredTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Use the tool."""
-        new_argument_supported = signature(self.func).parameters.get("callbacks")
-        return (
-            self.func(
-                *args,
-                callbacks=run_manager.get_child() if run_manager else None,
-                **kwargs,
+        if self.func:
+            new_argument_supported = signature(self.func).parameters.get("callbacks")
+            return (
+                self.func(
+                    *args,
+                    callbacks=run_manager.get_child() if run_manager else None,
+                    **kwargs,
+                )
+                if new_argument_supported
+                else self.func(*args, **kwargs)
             )
-            if new_argument_supported
-            else self.func(*args, **kwargs)
-        )
+        raise NotImplementedError("Tool does not support sync")
 
     async def _arun(
         self,
@@ -626,7 +639,8 @@ class StructuredTool(BaseTool):
     @classmethod
     def from_function(
         cls,
-        func: Callable,
+        func: Optional[Callable] = None,
+        coroutine: Optional[Callable[..., Awaitable[Any]]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         return_direct: bool = False,
@@ -640,6 +654,7 @@ class StructuredTool(BaseTool):
 
         Args:
             func: The function from which to create a tool
+            coroutine: The async function from which to create a tool
             name: The name of the tool. Defaults to the function name
             description: The description of the tool. Defaults to the function docstring
             return_direct: Whether to return the result directly or as a callback
@@ -651,28 +666,40 @@ class StructuredTool(BaseTool):
             The tool
 
         Examples:
-            ... code-block:: python
+
+            .. code-block:: python
+
                 def add(a: int, b: int) -> int:
                     \"\"\"Add two numbers\"\"\"
                     return a + b
                 tool = StructuredTool.from_function(add)
                 tool.run(1, 2) # 3
         """
-        name = name or func.__name__
-        description = description or func.__doc__
-        assert (
-            description is not None
-        ), "Function must have a docstring if description not provided."
+
+        if func is not None:
+            source_function = func
+        elif coroutine is not None:
+            source_function = coroutine
+        else:
+            raise ValueError("Function and/or coroutine must be provided")
+        name = name or source_function.__name__
+        description = description or source_function.__doc__
+        if description is None:
+            raise ValueError(
+                "Function must have a docstring if description not provided."
+            )
 
         # Description example:
         # search_api(query: str) - Searches the API for the query.
-        description = f"{name}{signature(func)} - {description.strip()}"
+        sig = signature(source_function)
+        description = f"{name}{sig} - {description.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
-            _args_schema = create_schema_from_function(f"{name}Schema", func)
+            _args_schema = create_schema_from_function(f"{name}Schema", source_function)
         return cls(
             name=name,
             func=func,
+            coroutine=coroutine,
             args_schema=_args_schema,
             description=description,
             return_direct=return_direct,
@@ -716,10 +743,18 @@ def tool(
     """
 
     def _make_with_name(tool_name: str) -> Callable:
-        def _make_tool(func: Callable) -> BaseTool:
+        def _make_tool(dec_func: Callable) -> BaseTool:
+            if inspect.iscoroutinefunction(dec_func):
+                coroutine = dec_func
+                func = None
+            else:
+                coroutine = None
+                func = dec_func
+
             if infer_schema or args_schema is not None:
                 return StructuredTool.from_function(
                     func,
+                    coroutine,
                     name=tool_name,
                     return_direct=return_direct,
                     args_schema=args_schema,
@@ -727,12 +762,17 @@ def tool(
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
-            assert func.__doc__ is not None, "Function must have a docstring"
+            if func.__doc__ is None:
+                raise ValueError(
+                    "Function must have a docstring if "
+                    "description not provided and infer_schema is False."
+                )
             return Tool(
                 name=tool_name,
                 func=func,
                 description=f"{tool_name} tool",
                 return_direct=return_direct,
+                coroutine=coroutine,
             )
 
         return _make_tool

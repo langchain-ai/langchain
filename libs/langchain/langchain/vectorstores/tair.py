@@ -1,4 +1,3 @@
-"""Wrapper around Tair Vector."""
 from __future__ import annotations
 
 import json
@@ -19,7 +18,7 @@ def _uuid_key() -> str:
 
 
 class Tair(VectorStore):
-    """Wrapper around Tair Vector store."""
+    """`Tair` vector store."""
 
     def __init__(
         self,
@@ -86,6 +85,10 @@ class Tair(VectorStore):
         """Add texts data to an existing index."""
         ids = []
         keys = kwargs.get("keys", None)
+        use_hybrid_search = False
+        index = self.client.tvs_get_index(self.index_name)
+        if index is not None and index.get("lexical_algorithm") == "bm25":
+            use_hybrid_search = True
         # Write data to tair
         pipeline = self.client.pipeline(transaction=False)
         embeddings = self.embedding_function.embed_documents(list(texts))
@@ -93,16 +96,30 @@ class Tair(VectorStore):
             # Use provided key otherwise use default key
             key = keys[i] if keys else _uuid_key()
             metadata = metadatas[i] if metadatas else {}
-            pipeline.tvs_hset(
-                self.index_name,
-                key,
-                embeddings[i],
-                False,
-                **{
-                    self.content_key: text,
-                    self.metadata_key: json.dumps(metadata),
-                },
-            )
+            if use_hybrid_search:
+                # tair use TEXT attr hybrid search
+                pipeline.tvs_hset(
+                    self.index_name,
+                    key,
+                    embeddings[i],
+                    False,
+                    **{
+                        "TEXT": text,
+                        self.content_key: text,
+                        self.metadata_key: json.dumps(metadata),
+                    },
+                )
+            else:
+                pipeline.tvs_hset(
+                    self.index_name,
+                    key,
+                    embeddings[i],
+                    False,
+                    **{
+                        self.content_key: text,
+                        self.metadata_key: json.dumps(metadata),
+                    },
+                )
             ids.append(key)
         pipeline.execute()
         return ids
@@ -166,7 +183,7 @@ class Tair(VectorStore):
 
         distance_type = tairvector.DistanceMetric.InnerProduct
         if "distance_type" in kwargs:
-            distance_type = kwargs.pop("distance_typ")
+            distance_type = kwargs.pop("distance_type")
         index_type = tairvector.IndexType.HNSW
         if "index_type" in kwargs:
             index_type = kwargs.pop("index_type")
