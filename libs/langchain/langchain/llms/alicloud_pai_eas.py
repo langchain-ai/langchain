@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import requests
 
@@ -8,12 +8,13 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import root_validator
+from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
-class AliCloudPaiEAS(LLM):
+class AliCloudPaiEas(LLM):
     """PAI-EAS Service URL"""
 
     eas_service_url: str
@@ -27,6 +28,9 @@ class AliCloudPaiEAS(LLM):
     top_p: Optional[float] = 0.1
     top_k: Optional[int] = 0
     stop_sequences: Optional[List[str]] = None
+
+    """Enable stream chat mode."""
+    streaming: bool = False
 
     """Key/value arguments to pass to the model. Reserved for future use"""
     model_kwargs: Optional[dict] = None
@@ -56,6 +60,7 @@ class AliCloudPaiEAS(LLM):
             "temperature": self.temperature,
             "top_k": self.top_k,
             "top_p": self.top_p,
+            "stop_sequences": [],
         }
 
     @property
@@ -98,14 +103,19 @@ class AliCloudPaiEAS(LLM):
         prompt = prompt.strip()
         response = None
         try:
-            response = self._call_eas_service(prompt, params)
+            if self.streaming:
+                completion = ""
+                for chunk in self._stream(prompt, stop, run_manager, **params):
+                    completion += chunk.text
+                return completion
+            else:
+                response = self._call_eas(prompt, params)
+                _stop = params.get("stop_sequences")
+                return self._process_response(response, _stop)
         except Exception as error:
             raise ValueError(f"Error raised by the service: {error}")
 
-        _stop = params.get("stop_sequences")
-        return self._process_response(response, _stop)
-
-    def _call_eas_service(self, prompt: str = "", params: Dict = {}) -> Any:
+    def _call_eas(self, prompt: str = "", params: Dict = {}) -> Any:
         """Generate text from the eas service."""
         headers = {
             "Content-Type": "application/json",
@@ -113,7 +123,7 @@ class AliCloudPaiEAS(LLM):
         }
 
         body = {
-            "input_ids": f"{prompt}",
+            "prompt": f"{prompt}",
         }
 
         # add params to body
@@ -130,3 +140,52 @@ class AliCloudPaiEAS(LLM):
             )
 
         return json.loads(response.text)
+
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        invocation_params = self._invocation_params(stop, **kwargs)
+
+        headers = {
+            "User-Agent": "Test Client",
+            "Authorization": f"{self.eas_service_token}",
+        }
+
+        pload = {"prompt": prompt, "use_stream_chat": True, **invocation_params}
+        response = requests.post(
+            self.eas_service_url, headers=headers, json=pload, stream=True
+        )
+
+        for chunk in response.iter_lines(
+            chunk_size=8192, decode_unicode=False, delimiter=b"\0"
+        ):
+            if chunk:
+                data = json.loads(chunk.decode("utf-8"))
+                output = data["response"]
+                # identify stop sequence in generated text, if any
+                stop_seq_found: Optional[str] = None
+                for stop_seq in invocation_params["stop_sequences"]:
+                    if stop_seq in output:
+                        stop_seq_found = stop_seq
+
+                # identify text to yield
+                text: Optional[str] = None
+                if stop_seq_found:
+                    text = output[: output.index(stop_seq_found)]
+                else:
+                    text = output
+
+                # yield text, if any
+                if text:
+                    res = GenerationChunk(text=text)
+                    yield res
+                    if run_manager:
+                        run_manager.on_llm_new_token(res.text)
+
+                # break if stop sequence found
+                if stop_seq_found:
+                    break
