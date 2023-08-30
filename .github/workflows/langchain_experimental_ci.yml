@@ -81,3 +81,35 @@ jobs:
 
       - name: Run tests
         run: make test
+  extended-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    name: Python ${{ matrix.python-version }} extended tests
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: libs/experimental
+          cache-key: extended
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          echo "Running extended tests, installing dependencies with poetry..."
+          poetry install -E extended_testing
+
+      - name: Run extended tests
+        run: make extended_tests
