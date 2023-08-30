@@ -92,19 +92,6 @@ class TestResult(dict):
         return pd.DataFrame(records, index=indices)
 
 
-def _get_eval_project_url(api_url: str, project_id: str) -> str:
-    """Get the project url from the api url."""
-    parsed = urlparse(api_url)
-    hostname = parsed.hostname or ""
-    if "api." in hostname:
-        hostname = hostname.replace("api.", "", 1)
-    if "localhost" in hostname:
-        # Remove the port
-        hostname = "localhost"
-    url = urlunparse(parsed._replace(netloc=hostname))
-    return f"{url}/projects/p/{project_id}?eval=true"
-
-
 def _wrap_in_chain_factory(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     dataset_name: str = "<my_dataset>",
@@ -1165,7 +1152,7 @@ def _prepare_eval_run(
         raise ValueError(
             f"Project {project_name} already exists. Please use a different name."
         )
-    project_url = _get_eval_project_url(client.api_url, project.id)
+    project_url = f"{project.url}?eval=true"
     print(
         f"View the evaluation results for project '{project_name}' at:\n{project_url}"
     )
