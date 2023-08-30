@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -28,7 +28,7 @@ class EdenaiTool(BaseTool):
     edenai_api_key: Optional[str] = None
     is_async: bool = False
 
-    providers: list[str]
+    providers: List[str]
     """provider to use for the API call."""
 
     @root_validator(allow_reuse=True)
