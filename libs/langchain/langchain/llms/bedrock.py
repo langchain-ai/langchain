@@ -36,7 +36,7 @@ class LLMInputOutputAdapter:
 
     @classmethod
     def prepare_output_stream(
-        self, provider: str, response: Any
+        cls, provider: str, response: Any
     ) -> Iterator[GenerationChunk]:
         stream = response.get("body")
         if stream:
