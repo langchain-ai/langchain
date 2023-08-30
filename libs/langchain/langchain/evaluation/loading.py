@@ -119,7 +119,8 @@ def load_evaluator(
             llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
         except Exception as e:
             raise ValueError(
-                f"Evaluation with the {evaluator_cls} requires a language model to function."
+                f"Evaluation with the {evaluator_cls} requires a "
+                "language model to function."
                 " Failed to create the default 'gpt-4' model."
                 " Please manually provide an evaluation LLM"
                 " or check your openai credentials."

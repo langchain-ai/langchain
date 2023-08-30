@@ -35,7 +35,6 @@ from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.evaluation import EvaluatorCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
-from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.schema import ChatResult, LLMResult
