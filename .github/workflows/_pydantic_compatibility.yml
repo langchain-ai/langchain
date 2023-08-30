@@ -48,8 +48,8 @@ jobs:
           REGULAR_VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1)
 
           if [[ "$REGULAR_VERSION" == "1" ]]; then
-            PYDANTIC_DEP="<2"
-            TEST_WITH_VERSION="1"
+            PYDANTIC_DEP=">=2.1,<3"
+            TEST_WITH_VERSION="2"
           elif [[ "$REGULAR_VERSION" == "2" ]]; then
             PYDANTIC_DEP="<2"
             TEST_WITH_VERSION="1"
