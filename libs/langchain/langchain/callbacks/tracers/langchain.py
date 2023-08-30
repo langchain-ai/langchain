@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 _LOGGED = set()
 _TRACERS: weakref.WeakSet[LangChainTracer] = weakref.WeakSet()
 _CLIENT: Optional[Client] = None
+_MAX_EXECUTORS = 10  # TODO: Remove once write queue is implemented
+_EXECUTORS: List[ThreadPoolExecutor] = []
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -70,10 +72,15 @@ class LangChainTracer(BaseTracer):
             "LANGCHAIN_PROJECT", os.getenv("LANGCHAIN_SESSION", "default")
         )
         if use_threading:
-            # set max_workers to 1 to process tasks in order
-            self.executor: Optional[ThreadPoolExecutor] = ThreadPoolExecutor(
-                max_workers=1
-            )
+            global _MAX_EXECUTORS
+            if len(_EXECUTORS) < _MAX_EXECUTORS:
+                self.executor: Optional[ThreadPoolExecutor] = ThreadPoolExecutor(
+                    max_workers=1
+                )
+                _EXECUTORS.append(self.executor)
+            else:
+                self.executor = _EXECUTORS.pop(0)
+                _EXECUTORS.append(self.executor)
         else:
             self.executor = None
         self.client = client or _get_client()
