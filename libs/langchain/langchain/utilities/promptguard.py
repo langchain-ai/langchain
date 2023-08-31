@@ -1,4 +1,3 @@
-import json
 from typing import Dict, Union
 
 
@@ -41,9 +40,9 @@ def sanitize(
 
     if isinstance(input, str):
         # the input could be a string, so we sanitize the string
-        sanitize_response: pg.SanitizeResponse = pg.sanitize(input)
+        sanitize_response: pg.SanitizeResponse = pg.sanitize([input])
         return {
-            "sanitized_input": sanitize_response.sanitized_text,
+            "sanitized_input": sanitize_response.sanitized_texts[0],
             "secure_context": sanitize_response.secure_context,
         }
 
@@ -54,13 +53,12 @@ def sanitize(
         # get the values from the dict
         for key in input:
             values.append(input[key])
-        input_value_str = json.dumps(values)
 
         # sanitize the values
-        sanitize_values_response: pg.SanitizeResponse = pg.sanitize(input_value_str)
+        sanitize_values_response: pg.SanitizeResponse = pg.sanitize(values)
 
         # reconstruct the dict with the sanitized values
-        sanitized_input_values = json.loads(sanitize_values_response.sanitized_text)
+        sanitized_input_values = sanitize_values_response.sanitized_texts
         idx = 0
         sanitized_input = dict()
         for key in input:

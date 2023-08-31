@@ -736,6 +736,8 @@ class FAISS(VectorStore):
         elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             # Default behavior is to use euclidean distance relevancy
             return self._euclidean_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.COSINE:
+            return self._cosine_relevance_score_fn
         else:
             raise ValueError(
                 "Unknown distance strategy, must be cosine, max_inner_product,"

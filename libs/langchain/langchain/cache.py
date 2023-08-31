@@ -26,15 +26,14 @@ import inspect
 import json
 import logging
 import warnings
-from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,
@@ -45,25 +44,24 @@ from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
-from langchain.utils import get_from_env
-
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+
 from langchain.embeddings.base import Embeddings
 from langchain.load.dump import dumps
 from langchain.load.load import loads
 from langchain.schema import ChatGeneration, Generation
+from langchain.schema.cache import RETURN_VAL_TYPE, BaseCache
+from langchain.utils import get_from_env
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
 
 if TYPE_CHECKING:
     import momento
-
-RETURN_VAL_TYPE = Sequence[Generation]
 
 
 def _hash(_input: str) -> str:
@@ -102,22 +100,6 @@ def _load_generations_from_json(generations_json: str) -> RETURN_VAL_TYPE:
         raise ValueError(
             f"Could not decode json to list of generations: {generations_json}"
         )
-
-
-class BaseCache(ABC):
-    """Base interface for cache."""
-
-    @abstractmethod
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
-
-    @abstractmethod
-    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
-
-    @abstractmethod
-    def clear(self, **kwargs: Any) -> None:
-        """Clear cache that can take additional keyword arguments."""
 
 
 class InMemoryCache(BaseCache):
@@ -302,6 +284,14 @@ class RedisSemanticCache(BaseCache):
 
     # TODO - implement a TTL policy in Redis
 
+    DEFAULT_SCHEMA = {
+        "content_key": "prompt",
+        "text": [
+            {"name": "prompt"},
+        ],
+        "extra": [{"name": "return_val"}, {"name": "llm_string"}],
+    }
+
     def __init__(
         self, redis_url: str, embedding: Embeddings, score_threshold: float = 0.2
     ):
@@ -349,12 +339,14 @@ class RedisSemanticCache(BaseCache):
                 embedding=self.embedding,
                 index_name=index_name,
                 redis_url=self.redis_url,
+                schema=cast(Dict, self.DEFAULT_SCHEMA),
             )
         except ValueError:
             redis = RedisVectorstore(
-                embedding_function=self.embedding.embed_query,
+                embedding=self.embedding,
                 index_name=index_name,
                 redis_url=self.redis_url,
+                index_schema=cast(Dict, self.DEFAULT_SCHEMA),
             )
             _embedding = self.embedding.embed_query(text="test")
             redis._create_index(dim=len(_embedding))
@@ -374,17 +366,18 @@ class RedisSemanticCache(BaseCache):
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
         llm_cache = self._get_llm_cache(llm_string)
-        generations = []
+        generations: List = []
         # Read from a Hash
-        results = llm_cache.similarity_search_limit_score(
+        results = llm_cache.similarity_search(
             query=prompt,
             k=1,
-            score_threshold=self.score_threshold,
+            distance_threshold=self.score_threshold,
         )
         if results:
             for document in results:
-                for text in document.metadata["return_val"]:
-                    generations.append(Generation(text=text))
+                generations.extend(
+                    _load_generations_from_json(document.metadata["return_val"])
+                )
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -402,11 +395,11 @@ class RedisSemanticCache(BaseCache):
                 )
                 return
         llm_cache = self._get_llm_cache(llm_string)
-        # Write to vectorstore
+        _dump_generations_to_json([g for g in return_val])
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
-            "return_val": [generation.text for generation in return_val],
+            "return_val": _dump_generations_to_json([g for g in return_val]),
         }
         llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
 
