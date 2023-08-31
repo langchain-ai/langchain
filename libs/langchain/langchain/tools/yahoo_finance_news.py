@@ -1,10 +1,11 @@
-from typing import Optional
+from typing import Iterable, Optional
 
 from requests.exceptions import HTTPError, ReadTimeout
 from urllib3.exceptions import ConnectionError
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.document_loaders.web_base import WebBaseLoader
+from langchain.schema import Document
 from langchain.tools.base import BaseTool
 
 
@@ -57,7 +58,7 @@ class YahooFinanceNewsTool(BaseTool):
         return result
 
     @staticmethod
-    def _format_results(docs, query):
+    def _format_results(docs: Iterable[Document], query: str) -> str:
         doc_strings = [
             "\n".join([doc.metadata["title"], doc.metadata["description"]])
             for doc in docs
