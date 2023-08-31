@@ -129,7 +129,7 @@ class ThinkActPromptGenerator(PromptValue):
         """The string variant of the prompt."""
         finalized = []
         messages = self.to_messages()
-        for message in messages:
+        for idx, message in enumerate(messages):
             if isinstance(message, FunctionResult):
                 component = f"Observation: {message.result}"
             elif isinstance(
@@ -140,16 +140,14 @@ class ThinkActPromptGenerator(PromptValue):
             elif isinstance(message, HumanMessage):
                 component = f"Question: {message.content}"
             elif isinstance(message, (AIMessage, SystemMessage)):
-                component = message.content
+                if idx > 0 and isinstance(messages[idx], (HumanMessage, FunctionCall)):
+                    # Priming the LLM with the word" Thought"
+                    component = f"Thought: {message.content}"
+                else:
+                    component = message.content
             else:
                 raise NotImplementedError()
-
             finalized.append(component)
-
-        if messages and isinstance(messages[-1], (HumanMessage, FunctionCall)):
-            # Prime the AI to think
-            finalized.append("Thought:")
-
         return "\n".join(finalized)
 
     def to_messages(self) -> List[BaseMessage]:
