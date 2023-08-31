@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional
+import json
+from pathlib import Path
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from langchain_experimental.data_anonymizer.base import (
     AnonymizerBase,
@@ -10,6 +12,7 @@ from langchain_experimental.data_anonymizer.base import (
 from langchain_experimental.data_anonymizer.faker_presidio_mapping import (
     get_pseudoanonymizer_mapping,
 )
+import yaml
 
 try:
     from presidio_analyzer import AnalyzerEngine
@@ -215,3 +218,60 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             for anonymized, original in self._deanonymizer_mapping[entity_type].items():
                 text_to_deanonymize = text_to_deanonymize.replace(anonymized, original)
         return text_to_deanonymize
+
+    def save_deanonymizer_mapping(self, file_path: Union[Path, str]) -> None:
+        """Save the deanonymizer mapping to a JSON or YAML file.
+
+        Args:
+            file_path: Path to file to save the mapping to.
+
+        Example:
+        .. code-block:: python
+
+            anonymizer.save_deanonymizer_mapping(file_path="path/mapping.json")
+        """
+
+        # Convert file to Path object.
+        save_path = Path(file_path) if isinstance(file_path, str) else file_path
+
+        # Check file extension
+        if save_path.suffix not in [".json", ".yaml"]:
+            raise ValueError(f"{save_path} must have an extension of .json or .yaml")
+
+        # Make sure parent directories exist
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Save the file
+        if save_path.suffix == ".json":
+            with open(save_path, "w") as f:
+                json.dump(self.deanonymizer_mapping, f, indent=2)
+        elif save_path.suffix == ".yaml":
+            with open(save_path, "w") as f:
+                yaml.dump(self.deanonymizer_mapping, f, default_flow_style=False)
+
+    def load_deanonymizer_mapping(self, file_path: Union[Path, str]) -> None:
+        """Load the deanonymizer mapping from a JSON or YAML file.
+
+        Args:
+            file_path: Path to file to load the mapping from.
+
+        Example:
+        .. code-block:: python
+
+            anonymizer.load_deanonymizer_mapping(file_path="path/mapping.json")
+        """
+
+        # Convert file to Path object.
+        load_path = Path(file_path) if isinstance(file_path, str) else file_path
+
+        # Check file extension
+        if load_path.suffix not in [".json", ".yaml"]:
+            raise ValueError(f"{load_path} must have an extension of .json or .yaml")
+
+        # Load the file
+        if load_path.suffix == ".json":
+            with open(load_path, "r") as f:
+                self._deanonymizer_mapping = json.load(f)
+        elif load_path.suffix == ".yaml":
+            with open(load_path, "r") as f:
+                self._deanonymizer_mapping = yaml.load(f, Loader=yaml.FullLoader)
