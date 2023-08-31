@@ -13,7 +13,7 @@ class BaseModeration:
     def __init__(
         self,
         client: Any,
-        config: Optional[Dict[str, Any]] = None,
+        config: Optional[Any] = None,
         moderation_callback: Optional[Any] = None,
         unique_id: Optional[str] = None,
         run_manager: Optional[CallbackManagerForChainRun] = None,
