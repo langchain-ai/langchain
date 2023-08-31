@@ -285,6 +285,7 @@ def _get_dataforseo_api_search(**kwargs: Any) -> BaseTool:
 def _get_dataforseo_api_search_json(**kwargs: Any) -> BaseTool:
     return DataForSeoAPISearchResults(api_wrapper=DataForSeoAPIWrapper(**kwargs))
 
+
 def _get_eleven_labs_text2speech() -> BaseTool:
     return ElevenLabsText2SpeechTool()
 
@@ -344,9 +345,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_dataforseo_api_search_json,
         ["api_login", "api_password", "aiosession"],
     ),
-    "eleven_labs_text2speech": (
-        _get_eleven_labs_text2speech, ["eleven_api_key"]
-    )
+    "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
 }
 
 
