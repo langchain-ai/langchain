@@ -183,9 +183,10 @@ def make_request(
     instruction: str,
     conversation: str,
     url: str = f"{DEFAULT_NEBULA_SERVICE_URL}{DEFAULT_NEBULA_SERVICE_PATH}",
-    params: Dict = {},
+    params: Optional[Dict] = None,
 ) -> Any:
     """Generate text from the model."""
+    params = params or {}
     headers = {
         "Content-Type": "application/json",
         "ApiKey": f"{self.nebula_api_key}",

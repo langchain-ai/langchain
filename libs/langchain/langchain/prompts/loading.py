@@ -2,7 +2,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Union
+from typing import Callable, Dict, Union
 
 import yaml
 
@@ -26,10 +26,7 @@ def load_prompt_from_config(config: dict) -> BasePromptTemplate:
         raise ValueError(f"Loading {config_type} prompt not supported")
 
     prompt_loader = type_to_loader_dict[config_type]
-    # Unclear why type error is being thrown here.
-    # Incompatible return value type (got "Runnable[Dict[Any, Any], PromptValue]",
-    # expected "BasePromptTemplate")  [return-value]
-    return prompt_loader(config)  # type: ignore[return-value]
+    return prompt_loader(config)
 
 
 def _load_template(var_name: str, config: dict) -> dict:
@@ -148,8 +145,7 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     return load_prompt_from_config(config)
 
 
-type_to_loader_dict = {
+type_to_loader_dict: Dict[str, Callable[[dict], BasePromptTemplate]] = {
     "prompt": _load_prompt,
     "few_shot": _load_few_shot_prompt,
-    # "few_shot_with_templates": _load_few_shot_with_templates_prompt,
 }
