@@ -8,9 +8,9 @@ from langchain.memory.prompt import (
 )
 from langchain.prompts.prompt import PromptTemplate
 
-DEFAULT_TEMPLATE = """The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+DEFAULT_TEMPLATE = """Ниже приводится дружеский разговор между человеком и AI. AI разговорчив и предоставляет множество конкретных деталей из своего контекста. Если AI не знает ответа на вопрос, он честно говорит, что не знает.
 
-Current conversation:
+Текущий разговор:
 {history}
 Human: {input}
 AI:"""
