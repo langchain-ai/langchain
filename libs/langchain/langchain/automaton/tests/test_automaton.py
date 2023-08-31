@@ -3,15 +3,12 @@ from __future__ import annotations
 from typing import Sequence, List
 
 from langchain.agents.structured_chat.output_parser import StructuredChatOutputParser
-from langchain.automaton.chat_automaton import ChatAutomaton
-from langchain.automaton.executor import Executor
-from langchain.automaton.mrkl_automaton import ActionParser
+# from langchain.automaton.chat_automaton import ChatAutomaton
+from langchain.automaton.mrkl_agent import ActionParser
 from langchain.automaton.tests.utils import (
     FakeChatOpenAI,
     construct_func_invocation_message,
 )
-from langchain.automaton.typedefs import Memory
-from langchain.automaton.well_known_states import create_llm_program
 from langchain.schema import PromptValue
 from langchain.schema.messages import (
     AIMessage,
@@ -76,12 +73,13 @@ class MessageBasedPromptValue(PromptValue):
         return "\n".join([message.content for message in self.messages])
 
 
-def prompt_generator(memory: Memory) -> PromptValue:
-    """Generate a prompt."""
-    if not memory.messages:
-        raise AssertionError("Memory is empty")
-    return MessageBasedPromptValue.from_messages(messages=memory.messages)
 
+# def prompt_generator(memory: Memory) -> PromptValue:
+#     """Generate a prompt."""
+#     if not memory.messages:
+#         raise AssertionError("Memory is empty")
+#     return MessageBasedPromptValue.from_messages(messages=memory.messages)
+#
 
 def test_automaton() -> None:
     """Run the automaton."""

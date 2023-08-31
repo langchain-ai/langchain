@@ -64,7 +64,7 @@ Thought: I know what to respond
 
 Begin:
 
-Reminder to ALWAYS respond with a valid json blob of a single action. \
+Reminder to ALWAYS respond with a valid blob of a single action. \
 Use tools if necessary. \
 Respond directly if appropriate. \
 Format is <action>$BLOB</action> then Observation. \
@@ -76,7 +76,7 @@ def _generate_tools_descriptions(tools: Sequence[Tool]) -> str:
     return "\n".join([f"{tool_.name}: {tool_.description}" for tool_ in tools]) + "\n"
 
 
-def _generate_mrkl_memory(tools: Sequence[Tool]) -> MessageLog:
+def generate_mrkl_memory(tools: Sequence[Tool]) -> MessageLog:
     """Set up memory to act as a MRKL agent."""
     tools_description = _generate_tools_descriptions(tools)
     tool_names = ", ".join([tool_.name for tool_ in tools])
@@ -107,7 +107,6 @@ class ActionParser:
             name = data["action"]
             if name == "Final Answer":
                 return typedefs.AgentFinish(result=data["action_input"])
-
             return typedefs.FunctionCall(
                 name=data["action"], arguments=data["action_input"] or {}
             )
