@@ -9,7 +9,7 @@ class ModerationPiiConfig(BaseModel):
     threshold: Optional[float] = 0.5
     """List of PII Universal Labels. Refer - https://docs.aws.amazon.com/comprehend/latest/dg/how-pii.html#how-pii-types. Defaults to `list[]`"""
     labels: Optional[List[str]] = []
-    """Whether to perfrom redaction of detected PII entities"""
+    """Whether to perform redaction of detected PII entities"""
     redact: Optional[bool] = False
     """Redaction mask character in case redact=True, defaults to asterisk (*)"""
     mask_character: Optional[str] = "*"
