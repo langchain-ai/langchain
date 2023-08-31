@@ -66,10 +66,6 @@ class ComprehendIntent:
             Text=prompt_value, EndpointArn=endpoint_arn
         )
 
-        response = self.client.classify_document(
-            Text=prompt_value, EndpointArn=endpoint_arn
-        )
-
         if self.callback and self.callback.intent_callback:
             self.moderation_beacon["moderation_input"] = prompt_value
             self.moderation_beacon["moderation_output"] = response
@@ -82,7 +78,7 @@ class ComprehendIntent:
                 intent_found = True
                 break
 
-        if self.callback and self.callback:
+        if self.callback and self.callback.intent_callback:
             if intent_found:
                 self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
             asyncio.create_task(

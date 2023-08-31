@@ -36,7 +36,6 @@ class ComprehendPII:
         Checks for Personally Identifiable Information (PII) labels above a
         specified threshold. Uses Amazon Comprehend Contains PII Entities API. See -
         https://docs.aws.amazon.com/comprehend/latest/APIReference/API_ContainsPiiEntities.html
-
         Args:
             prompt_value (str): The input text to be checked for PII labels.
             config (Dict[str, Any]): Configuration for PII check and actions.

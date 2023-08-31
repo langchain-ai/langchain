@@ -86,7 +86,6 @@ class ComprehendToxicity:
 
         for sentence in sentences:
             sentence_size = len(sentence.encode("utf-8"))
-
             # If adding a new sentence exceeds max_size or current_chunk has 10 sentences, start a new chunk
             if (current_size + sentence_size > max_size) or (len(current_chunk) >= 10):
                 if current_chunk:  # Avoid appending empty chunks
@@ -105,7 +104,6 @@ class ComprehendToxicity:
     def validate(self, prompt_value: str, config: Any = None) -> str:
         """
         Check the toxicity of a given text prompt using AWS Comprehend service and apply actions based on configuration.
-
         Args:
             prompt_value (str): The text content to be checked for toxicity.
             config (Dict[str, Any]): Configuration for toxicity checks and actions.
