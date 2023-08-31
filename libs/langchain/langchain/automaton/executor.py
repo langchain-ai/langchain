@@ -36,3 +36,5 @@ class Executor:
             state = self.automaton.get_next_state(executed_state)
 
         return state, executed_states
+
+

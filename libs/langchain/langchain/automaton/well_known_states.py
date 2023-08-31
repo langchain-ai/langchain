@@ -1,96 +1,77 @@
 from __future__ import annotations
 
-import dataclasses
-from typing import Sequence
+from typing import Sequence, Callable, Union, List, Optional
 
-from langchain.automaton.automaton import State, ExecutedState
-from langchain.automaton.open_ai_functions import create_action_taking_llm_2
 from langchain.automaton.typedefs import (
-    Memory,
-    PromptGenerator,
-    infer_message_type,
-    MessageType,
+    MessageLike, PromptGenerator, MessageLog, FunctionResult,
+    FunctionCall
 )
-from langchain.schema import HumanMessage, FunctionMessage, AIMessage
+from langchain.schema import BaseMessage, AIMessage
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.runnable.base import RunnableLambda, Runnable
 from langchain.tools import BaseTool
 
 
+def create_tool_invoker(
+    tools: Sequence[BaseTool],
+) -> Runnable[FunctionCall, FunctionResult]:
+    """Re-write with router."""
+    tools_by_name = {tool.name: tool for tool in tools}
+
+    def func(input: FunctionCall) -> FunctionResult:
+        """A function that can invoke a tool using .run"""
+        tool = tools_by_name[input.name]
+        try:
+            result = tool.run(input.arguments)
+            error = None
+        except Exception as e:
+            result = None
+            error = repr(e)
+        return FunctionResult(result=result, error=error)
+
+    return RunnableLambda(func=func)
+
+
 def create_llm_program(
     llm: BaseLanguageModel,
-    tools: Sequence[BaseTool],
     prompt_generator: PromptGenerator,
-) -> Runnable:
-    """Create LLM Program."""
+    *,
+    stop: Optional[Sequence[str]] = None,
+    parser: Union[Runnable, Callable] = None,
+) -> Runnable[MessageLog, List[MessageLike]]:
+    """Create a runnable that can update memory."""
 
-    def _bound(memory: Memory):
-        prompt_value = prompt_generator(memory)
-        action_taking_llm = create_action_taking_llm_2(llm, tools=tools)
-        result = action_taking_llm.invoke(prompt_value)
-        # Memory is mutable
-        message = result["message"]
-        if not isinstance(message, AIMessage):
-            raise AssertionError(
-                f"LLM program should return an AI message. Got a {type(message)}."
-            )
-        memory.add_message(message)
+    def _bound(event_log: MessageLog):
+        messages = []
+        prompt_value = prompt_generator(event_log)
+        llm_chain = llm
+        if stop:
+            llm_chain = llm_chain.bind(stop=stop)
 
-        if infer_message_type(message) == MessageType.AI_INVOKE:
-            function_call = result["function_call"]
-            function_message = FunctionMessage(
-                name=function_call["name"],
-                content=function_call["result"],
-            )
-            memory.add_message(function_message)
-            routing_message = function_message
+        result = llm_chain.invoke(prompt_value)
+
+        if isinstance(result, BaseMessage):
+            messages.append(result)
+        elif isinstance(result, str):
+            messages.append(AIMessage(content=result))
         else:
-            routing_message = message
+            raise NotImplementedError(f"Unsupported type {result}")
 
-        # What information should the state return in this case.
-        # Does it matter, folks can use it or not...
-        return {
-            "id": "llm_program",
-            "data": {
-                "message": routing_message,  # Last message
-            },
-        }
+        if parser:
+            if not isinstance(parser, Runnable):
+                _parser = RunnableLambda(parser)
+            else:
+                _parser = parser
+            parsed_result = _parser.invoke(result)
+            if parsed_result:
+                if not isinstance(parsed_result, MessageLike):
+                    raise TypeError(
+                        f"Expected a MessageLike type got: {type(parsed_result)}"
+                    )
+                messages.append(parsed_result)
+
+        return messages
 
     return RunnableLambda(
         func=_bound,
     )
-
-
-@dataclasses.dataclass
-class LLMProgram(State):
-    """A state that executes an LLM program."""
-
-    llm: BaseLanguageModel
-    tools: Sequence[BaseTool]
-    prompt_generator: PromptGenerator
-
-    def execute(self, memory: Memory) -> ExecutedState:
-        """Execute LLM program."""
-        llm_program = create_llm_program(self.llm, self.tools, self.prompt_generator)
-        return llm_program.invoke(memory)
-
-
-@dataclasses.dataclass
-class UserInputState(State):
-    """A state that prompts the user for input from stdin.
-
-    This is primarily useful for interactive development.
-    """
-
-    def execute(self, memory: Memory) -> ExecutedState:
-        """Execute user input state."""
-        user_input = input("Enter your input: ")
-        message = HumanMessage(content=user_input)
-        memory.add_message(message)
-
-        return {
-            "id": "user_input",
-            "data": {
-                "message": message,
-            },
-        }

@@ -1,61 +1,66 @@
 from __future__ import annotations
 
-import enum
-from typing import Callable
+import dataclasses
+from typing import Callable, Any, Optional, Sequence, List, Mapping
 
 from langchain.schema import (
     BaseMessage,
-    FunctionMessage,
-    AIMessage,
-    SystemMessage,
-    HumanMessage,
-    BaseChatMessageHistory,
     PromptValue,
 )
 
 
-class MessageType(enum.Enum):
-    """The type of message."""
-
-    SYSTEM = enum.auto()
-    USER = enum.auto()
-    FUNCTION = enum.auto()
-    AI = enum.auto()
-    AI_INVOKE = enum.auto()
-    AI_SELF = enum.auto()
+@dataclasses.dataclass(frozen=True)
+class FunctionCall:
+    name: str
+    arguments: Optional[Mapping[str, Any]]
 
 
-def infer_message_type(message: BaseMessage) -> MessageType:
-    """Infer the message type."""
-    if isinstance(message, FunctionMessage):
-        return MessageType.FUNCTION
-    elif isinstance(message, AIMessage):
-        if message.additional_kwargs:
-            return MessageType.AI_INVOKE
-        else:
-            return MessageType.AI
-    elif isinstance(message, SystemMessage):
-        return MessageType.SYSTEM
-    elif isinstance(message, HumanMessage):
-        return MessageType.USER
-    else:
-        raise ValueError(f"Unknown message type: {type(message)}")
+@dataclasses.dataclass(frozen=True)
+class FunctionResult:
+    result: Any
+    error: Optional[str]
 
 
-class Memory(BaseChatMessageHistory):
-    """A memory for the automaton."""
+InternalMessages = FunctionCall | FunctionResult
+MessageLike = BaseMessage | InternalMessages
 
-    def __init__(self, messages):
-        self.messages = messages
 
-    def add_message(self, message: BaseMessage) -> None:
-        """Add a message to the memory."""
-        self.messages.append(message)
+class MessageLog:
+    def __init__(self, messages: Sequence[MessageLike]):
+        self.messages = list(messages)
 
-    def clear(self) -> None:
-        """Clear the memory."""
-        self.messages = []
+    def add_messages(self, messages: Sequence[MessageLike]):
+        self.messages.extend(messages)
 
 
 # Interface that takes memory and returns a prompt value
-PromptGenerator = Callable[[Memory], PromptValue]
+PromptGenerator = Callable[[MessageLog], PromptValue]
+
+
+class MessageLogPromptValue(PromptValue):
+    """Base abstract class for inputs to any language model.
+
+    PromptValues can be converted to both LLM (pure text-generation) inputs and
+        ChatModel inputs.
+    """
+
+    message_log: MessageLog
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def to_string(self) -> str:
+        """Return prompt value as string."""
+        finalized = []
+        for message in self.to_messages():
+            prefix = message.type
+            finalized.append(f"{prefix}: {message.content}")
+        return "\n".join(finalized) + "\n" + "ai:"
+
+    def to_messages(self) -> List[BaseMessage]:
+        """Return prompt as a list of Messages."""
+        return [
+            message
+            for message in self.message_log.messages
+            if isinstance(message, BaseMessage)
+        ]
