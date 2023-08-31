@@ -110,7 +110,7 @@ class ErnieBotChat(BaseChatModel):
             url = f"{base_url}/{model_paths[self.model_name]}"
         else:
             raise ValueError(f"Got unknown model_name {self.model_name}")
-       
+
         resp = requests.post(
             url,
             timeout=self.request_timeout,
