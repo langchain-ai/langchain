@@ -1,4 +1,4 @@
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Dict
 
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import ChatResult
@@ -14,27 +14,24 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 
+from langchain.pydantic_v1 import Field, root_validator
+from transformers.pipelines import TextGenerationPipeline
+
 B_INST, E_INST = "[INST]", "[/INST]"
 B_SYS, E_SYS = "<<SYS>>", "<</SYS>>"
 
 
 class ChatLlama2(BaseChatModel):
-    _pipeline: Any #: :meta private:
+    pipeline: TextGenerationPipeline
 
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "llama-2-chat-hf"
 
-    @property
-    def pipeline(self) -> Any:
-        """Getter for the pipeline."""
-        return self._pipeline
-
-    @pipeline.setter
-    def pipeline(self, value: Any):
-        """Setter for the pipeline."""
-        if not hasattr(value, "task") or value.task != "text-generation":
+    @root_validator(pre=True)
+    def validate_environment(cls, values: Dict) -> Dict:
+        if not hasattr(values["pipeline"], "task") or values["pipeline"].task != "text-generation":
             raise ValueError("The pipeline task should be 'text-generation'.")
 
         valid_models = (
@@ -43,10 +40,10 @@ class ChatLlama2(BaseChatModel):
             "meta-llama/Llama-2-70b-chat-hf",
         )
 
-        if not hasattr(value, "model") or value.model.name_or_path not in valid_models:
+        if not hasattr(values["pipeline"], "model") or values["pipeline"].model.name_or_path not in valid_models:
             raise ValueError(f"The pipeline model name or path should be one of {valid_models}.")
-
-        self._pipeline = value
+        
+        return values
 
     def _format_messages_as_text(self, messages: List[BaseMessage]) -> str:
         """ https://huggingface.co/blog/llama2 """
@@ -79,11 +76,11 @@ class ChatLlama2(BaseChatModel):
 
         pipeline_params = kwargs
         # ensure that:
-        kwargs["return_text"] = True
+        # kwargs["return_text"] = True
         kwargs["return_full_text"] = False
         # num_return_sequences ? ~ is it possible to pass multiple conversations ?
 
-        response = self.pipeline(prompt, **pipeline_params)["generated_text"]
+        response = self.pipeline(prompt, **pipeline_params)[0]['generated_text']
         print(response)
         ...
         return response
