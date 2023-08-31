@@ -31,6 +31,7 @@ from langchain.chat_models.ollama import ChatOllama
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.vertexai import ChatVertexAI
+from langchain.chat_models.llama_2 import ChatLlama2
 
 __all__ = [
     "ChatOpenAI",
@@ -41,6 +42,7 @@ __all__ = [
     "ChatGooglePalm",
     "ChatMLflowAIGateway",
     "ChatOllama",
+    "ChatLlama2",
     "ChatVertexAI",
     "JinaChat",
     "HumanInputChatModel",
