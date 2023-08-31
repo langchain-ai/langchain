@@ -3,27 +3,14 @@ from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
-from langchain.evaluation.comparison import PairwiseStringEvalChain
-from langchain.evaluation.comparison.eval_chain import LabeledPairwiseStringEvalChain
-from langchain.evaluation.criteria.eval_chain import (
-    CriteriaEvalChain,
-    LabeledCriteriaEvalChain,
-)
-from langchain.evaluation.embedding_distance.base import (
-    EmbeddingDistanceEvalChain,
-    PairwiseEmbeddingDistanceEvalChain,
-)
-from langchain.evaluation.parsing.base import (
-    JsonEqualityEvaluator,
-    JsonValidityEvaluator,
-)
-from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
+from langchain.evaluation import qa
+from langchain.evaluation.agents import trajectory_eval_chain
+from langchain.evaluation.comparison import eval_chain as comparison
+from langchain.evaluation.criteria import eval_chain as criteria
+from langchain.evaluation.embedding_distance import base as embedding
+from langchain.evaluation.parsing import base as json_parsing
 from langchain.evaluation.schema import EvaluatorType, LLMEvalChain, StringEvaluator
-from langchain.evaluation.string_distance.base import (
-    PairwiseStringDistanceEvalChain,
-    StringDistanceEvalChain,
-)
+from langchain.evaluation.string_distance import base as string_distance
 from langchain.schema.language_model import BaseLanguageModel
 
 
@@ -64,20 +51,25 @@ def load_dataset(uri: str) -> List[Dict]:
 _EVALUATOR_MAP: Dict[
     EvaluatorType, Union[Type[LLMEvalChain], Type[Chain], Type[StringEvaluator]]
 ] = {
-    EvaluatorType.QA: QAEvalChain,
-    EvaluatorType.COT_QA: CotQAEvalChain,
-    EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
-    EvaluatorType.PAIRWISE_STRING: PairwiseStringEvalChain,
-    EvaluatorType.LABELED_PAIRWISE_STRING: LabeledPairwiseStringEvalChain,
-    EvaluatorType.AGENT_TRAJECTORY: TrajectoryEvalChain,
-    EvaluatorType.CRITERIA: CriteriaEvalChain,
-    EvaluatorType.LABELED_CRITERIA: LabeledCriteriaEvalChain,
-    EvaluatorType.STRING_DISTANCE: StringDistanceEvalChain,
-    EvaluatorType.PAIRWISE_STRING_DISTANCE: PairwiseStringDistanceEvalChain,
-    EvaluatorType.EMBEDDING_DISTANCE: EmbeddingDistanceEvalChain,
-    EvaluatorType.PAIRWISE_EMBEDDING_DISTANCE: PairwiseEmbeddingDistanceEvalChain,
-    EvaluatorType.JSON_VALIDITY: JsonValidityEvaluator,
-    EvaluatorType.JSON_EQUALITY: JsonEqualityEvaluator,
+    EvaluatorType.QA: qa.QAEvalChain,
+    EvaluatorType.COT_QA: qa.CotQAEvalChain,
+    EvaluatorType.CONTEXT_QA: qa.ContextQAEvalChain,
+    EvaluatorType.PAIRWISE_STRING: comparison.PairwiseStringEvalChain,
+    EvaluatorType.LABELED_PAIRWISE_STRING: comparison.LabeledPairwiseStringEvalChain,
+    EvaluatorType.AGENT_TRAJECTORY: trajectory_eval_chain.TrajectoryEvalChain,
+    EvaluatorType.CRITERIA: criteria.CriteriaEvalChain,
+    EvaluatorType.LABELED_CRITERIA: criteria.LabeledCriteriaEvalChain,
+    EvaluatorType.STRING_DISTANCE: string_distance.StringDistanceEvalChain,
+    EvaluatorType.PAIRWISE_STRING_DISTANCE: string_distance.PairwiseStringDistanceEvalChain,  # noqa: E501
+    EvaluatorType.EMBEDDING_DISTANCE: embedding.EmbeddingDistanceEvalChain,
+    EvaluatorType.PAIRWISE_EMBEDDING_DISTANCE: embedding.PairwiseEmbeddingDistanceEvalChain,  # noqa: E501
+    EvaluatorType.JSON_VALIDITY: json_parsing.JsonValidityEvaluator,
+    EvaluatorType.JSON_EQUALITY: json_parsing.JsonEqualityEvaluator,
+    EvaluatorType.JSON_ACCURACY: json_parsing.JsonAccuracyEvaluator,
+    EvaluatorType.JSON_PRECISION: json_parsing.JsonPrecisionEvaluator,
+    EvaluatorType.JSON_RECALL: json_parsing.JsonRecallEvaluator,
+    EvaluatorType.JSON_IOU: json_parsing.JsonIoUEvaluator,
+    EvaluatorType.JSON_F1: json_parsing.JsonF1Evaluator,
 }
 
 

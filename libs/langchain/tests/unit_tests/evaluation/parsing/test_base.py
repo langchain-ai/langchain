@@ -3,7 +3,12 @@ import random
 import pytest
 
 from langchain.evaluation.parsing.base import (
+    JsonAccuracyEvaluator,
     JsonEqualityEvaluator,
+    JsonF1Evaluator,
+    JsonIoUEvaluator,
+    JsonPrecisionEvaluator,
+    JsonRecallEvaluator,
     JsonValidityEvaluator,
 )
 
@@ -175,3 +180,164 @@ def test_json_equality_evaluator_evaluate_lists_permutation_invariant() -> None:
     )
     result = evaluator.evaluate_strings(prediction=prediction, reference=reference)
     assert result == {"score": False}
+
+
+def test_json_recall_evaluator() -> None:
+    evaluator = JsonRecallEvaluator()
+
+    # Test 1: Exact match
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 2}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 1.0}
+
+    # Test 2: Missing field
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 0.5}
+
+    # Test 3: Extra field but irrelevant for recall
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 2, "c": 3}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 1.0}
+
+    # Test 4: Completely different
+    result = evaluator.evaluate_strings(
+        prediction='{"x": 5}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 0.0}
+
+    # Test 5: Empty reference
+    result = evaluator.evaluate_strings(prediction='{"a": 1}', reference="{}")
+    assert result == {"score": 0}
+
+
+def test_json_equality_evaluator() -> None:
+    evaluator = JsonEqualityEvaluator()
+
+    # Test 1: Exact match
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 2}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": True}
+
+    # Test 2: One missing key
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": False}
+
+    # Test 3: Different values for a key
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 3}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": False}
+
+    # Test 4: Extra field
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 2, "c": 3}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": False}
+
+
+def test_json_accuracy_evaluator() -> None:
+    evaluator = JsonAccuracyEvaluator()
+
+    # Test 1: Exact match
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 2}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 1.0}
+
+    # Test 2: One incorrect value
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 3}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 0.5}
+
+    # Test 3: Additional keys don't affect accuracy
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 2, "c": 3}', reference='{"a": 1, "b": 2}'
+    )
+    assert result["score"] == pytest.approx(0.6667, abs=1e-4)
+
+
+def test_json_precision_evaluator() -> None:
+    evaluator = JsonPrecisionEvaluator()
+
+    # Test 1: Exact match
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 2}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 1.0}
+
+    # Test 2: One incorrect value
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 3}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 0.5}
+
+    # Test 3: Additional key reduces precision
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 2, "c": 3}', reference='{"a": 1, "b": 2}'
+    )
+    assert result["score"] == pytest.approx(0.6667, abs=1e-4)
+
+
+def test_json_iou_evaluator() -> None:
+    evaluator = JsonIoUEvaluator()
+
+    # Test 1: Exact match
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 2}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 1.0}
+
+    # Test 2: Partial overlap
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 0.5}
+
+    # Test 3: No overlap
+    result = evaluator.evaluate_strings(
+        prediction='{"x": 5}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 0.0}
+
+
+def test_json_f1_evaluator() -> None:
+    evaluator = JsonF1Evaluator()
+
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 2}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 1.0}
+
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1}', reference='{"a": 1, "b": 2}'
+    )
+    assert result["score"] == pytest.approx(0.6667, 0.001)
+
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 3}', reference='{"a": 1, "b": 2}'
+    )
+    assert result["score"] == 0.5
+
+    result = evaluator.evaluate_strings(
+        prediction='{"a": 1, "b": 2, "c": 3}', reference='{"a": 1, "b": 2}'
+    )
+    assert result["score"] == 0.8
+
+    result = evaluator.evaluate_strings(
+        prediction='{"c": 3}', reference='{"a": 1, "b": 2}'
+    )
+    assert result == {"score": 0}
+
+    result = evaluator.evaluate_strings(prediction="{}", reference='{"a": 1, "b": 2}')
+    assert result == {"score": 0}
+
+    result = evaluator.evaluate_strings(prediction='{"a": 1, "b": 2}', reference="{}")
+    assert result == {"score": 0}

@@ -54,6 +54,20 @@ class EvaluatorType(str, Enum):
     """Check if a prediction is valid JSON."""
     JSON_EQUALITY = "json_equality"
     """Check if a prediction is equal to a reference JSON."""
+    JSON_ACCURACY = "json_accuracy"
+    """Check the mean equivalence of a prediction to a reference JSON across keys."""
+    JSON_PRECISION = "json_precision"
+    """Check the mean proportion of keys in the prediction that are
+    also in the reference JSON."""
+    JSON_RECALL = "json_recall"
+    """Check the mean proportion of keys in the reference JSON that
+    are also in the prediction."""
+    JSON_IOU = "json_iou"
+    """Check the mean intersection over union of keys between the
+    prediction and reference JSON."""
+    JSON_F1 = "json_f1"
+    """Check the mean harmonic mean of precision and recall of keys
+    between the prediction and reference JSON."""
 
 
 class LLMEvalChain(Chain):

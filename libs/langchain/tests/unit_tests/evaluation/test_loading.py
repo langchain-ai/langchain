@@ -40,7 +40,14 @@ def test_load_evaluators(evaluator_type: EvaluatorType) -> None:
             EvaluatorType.LABELED_CRITERIA,
             EvaluatorType.LABELED_PAIRWISE_STRING,
         ],
-        [EvaluatorType.JSON_EQUALITY],
+        [
+            EvaluatorType.JSON_EQUALITY,
+            EvaluatorType.JSON_ACCURACY,
+            EvaluatorType.JSON_F1,
+            EvaluatorType.JSON_IOU,
+            EvaluatorType.JSON_PRECISION,
+            EvaluatorType.JSON_RECALL,
+        ],
     ],
 )
 def test_eval_chain_requires_references(evaluator_types: List[EvaluatorType]) -> None:
