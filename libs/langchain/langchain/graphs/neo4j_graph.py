@@ -121,8 +121,10 @@ class Neo4jGraph:
             self.query(
                 """
             UNWIND $data AS row
-            MATCH (source {id:row.source})
-            MATCH (target {id:row.target})
+            CALL apoc.merge.node([row.source_label], {id: row.source},
+                       {}, {}) YIELD node as source
+            CALL apoc.merge.node([row.target_label], {id: row.target},
+                       {}, {}) YIELD node as target
             CALL apoc.merge.relationship(source, row.type, {}, row.properties, target) YIELD rel
             RETURN distinct 'done'    
             """,
@@ -130,7 +132,9 @@ class Neo4jGraph:
                     "data": [
                         {
                             "source": el.source.id,
+                            "source_label": el.source.type,
                             "target": el.target.id,
+                            "target_label": el.target.type,
                             "type": el.type.replace(" ", "_").upper(),
                             "properties": el.properties,
                         }
