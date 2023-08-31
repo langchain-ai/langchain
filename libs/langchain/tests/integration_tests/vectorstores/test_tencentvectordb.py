@@ -83,11 +83,3 @@ def test_tencent_vector_db_no_drop() -> None:
     time.sleep(3)
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6
-
-
-# if __name__ == "__main__":
-# test_tencent_vector_db()
-# test_tencent_vector_db_with_score()
-# test_tencent_vector_db_max_marginal_relevance_search()
-# test_tencent_vector_db_add_extra()
-# test_tencent_vector_db_no_drop()

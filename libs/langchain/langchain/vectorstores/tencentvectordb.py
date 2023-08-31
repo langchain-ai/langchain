@@ -78,7 +78,7 @@ class TencentVectorDB(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Embeddings,
+        embedding: Embeddings,
         connection_params: ConnectionParams,
         index_params: IndexParams = IndexParams(128),
         database_name: str = "LangChainDatabase",
@@ -87,7 +87,7 @@ class TencentVectorDB(VectorStore):
     ):
         self.document = guard_import("tcvectordb.model.document")
         tcvectordb = guard_import("tcvectordb")
-        self.embedding_func = embedding_function
+        self.embedding_func = embedding
         self.index_params = index_params
         self.vdb_client = tcvectordb.VectorDBClient(
             url=connection_params.url,
@@ -193,7 +193,7 @@ class TencentVectorDB(VectorStore):
         else:
             index_params.dimension = dimension
         vector_db = cls(
-            embedding_function=embedding,
+            embedding=embedding,
             connection_params=connection_params,
             index_params=index_params,
             database_name=database_name,
