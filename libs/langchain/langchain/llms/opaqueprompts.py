@@ -26,7 +26,7 @@ class OpaquePrompts(LLM):
             from langchain.llms import OpaquePrompts
             from langchain.chat_models import ChatOpenAI
 
-            prompt_guard_llm = OpaquePrompts(base_llm=ChatOpenAI())
+            op_llm = OpaquePrompts(base_llm=ChatOpenAI())
     """
 
     base_llm: BaseLanguageModel
@@ -83,7 +83,7 @@ class OpaquePrompts(LLM):
         Example:
             .. code-block:: python
 
-                response = prompt_guard_llm("Tell me a joke.")
+                response = op_llm("Tell me a joke.")
         """
         import opaqueprompts as op
 
