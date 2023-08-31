@@ -43,6 +43,7 @@ class PresidioAnonymizerBase(AnonymizerBase):
         analyzed_fields: Optional[List[str]] = None,
         language: str = "en",
         operators: Optional[Dict[str, OperatorConfig]] = None,
+        faker_seed: Optional[int] = None,
     ):
         """
         Args:
@@ -53,6 +54,9 @@ class PresidioAnonymizerBase(AnonymizerBase):
                 Operators allow for custom anonymization of detected PII.
                 Learn more:
                 https://microsoft.github.io/presidio/tutorial/10_simple_anonymization/
+            faker_seed: Seed used to initialize faker.
+                Defaults to None, in which case faker will be seeded randomly
+                and provide random values.
         """
         self.analyzed_fields = (
             analyzed_fields
@@ -67,7 +71,9 @@ class PresidioAnonymizerBase(AnonymizerBase):
                 field: OperatorConfig(
                     operator_name="custom", params={"lambda": faker_function}
                 )
-                for field, faker_function in get_pseudoanonymizer_mapping().items()
+                for field, faker_function in get_pseudoanonymizer_mapping(
+                    faker_seed
+                ).items()
             }
         )
         self._analyzer = AnalyzerEngine()
@@ -108,8 +114,9 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         analyzed_fields: Optional[List[str]] = None,
         language: str = "en",
         operators: Optional[Dict[str, OperatorConfig]] = None,
+        faker_seed: Optional[int] = None,
     ):
-        super().__init__(analyzed_fields, language, operators)
+        super().__init__(analyzed_fields, language, operators, faker_seed)
         self._deanonymizer_mapping: Dict[str, Dict[str, str]] = defaultdict(
             lambda: defaultdict(str)
         )
