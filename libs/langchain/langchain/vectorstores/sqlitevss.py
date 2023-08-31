@@ -5,7 +5,6 @@ import logging
 import sqlite3
 import warnings
 from typing import (
-    TYPE_CHECKING,
     Any,
     Iterable,
     List,
@@ -18,8 +17,6 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
-if TYPE_CHECKING:
-    import sqlite_vss  # noqa  # pylint: disable=unused-import
 
 logger = logging.getLogger(__name__)
 
@@ -67,10 +64,10 @@ class SQLiteVSS(VectorStore):
             f"""
             CREATE TABLE IF NOT EXISTS {self._table}
             (
-              text_id INT PRIMARY KEY AUTOINCREMENT,
-              text text,
-              metadata blob,
-              text_embedding blob
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              text TEXT,
+              metadata BLOB,
+              text_embedding BLOB
             )
             ;
             """
@@ -108,8 +105,11 @@ class SQLiteVSS(VectorStore):
             kwargs: vectorstore specific parameters
         """
         max_id = self._connection.execute(
-            f"SELECT max(text_id) as text_id FROM {self._table}"
-        ).fetchone()["text_id"]
+            f"SELECT max(rowid) as rowid FROM {self._table}"
+        ).fetchone()["rowid"]
+        if max_id is None:  # no text added yet
+            max_id = 0
+
         embeds = self._embedding.embed_documents(list(texts))
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -123,12 +123,11 @@ class SQLiteVSS(VectorStore):
             data_input,
         )
         self._connection.commit()
-
         # pulling every ids we just inserted
         results = self._connection.execute(
-            f"SELECT text_id FROM {self._table} WHERE text_id > {max_id}"
+            f"SELECT rowid FROM {self._table} WHERE rowid > {max_id}"
         )
-        return [row["text_id"] for row in results]
+        return [row["rowid"] for row in results]
 
     def similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -139,7 +138,7 @@ class SQLiteVSS(VectorStore):
                 metadata,
                 distance
             FROM {self._table} e
-            INNER JOIN vss_{self._table} v on v.text_id = e.text_id  
+            INNER JOIN vss_{self._table} v on v.rowid = e.rowid  
             WHERE vss_search(
               v.text_embedding,
               vss_search_params('{json.dumps(embedding)}', {k})
@@ -151,8 +150,10 @@ class SQLiteVSS(VectorStore):
 
         documents = []
         for row in results:
+            metadata = json.loads(row["metadata"]) or {}
             doc = Document(
-                page_content=row["text"], metadata=json.loads(row["metadata"])
+                page_content=row["text"],
+                metadata=metadata
             )
             score = self._euclidean_relevance_score_fn(row["distance"])
             documents.append((doc, score))
@@ -207,6 +208,7 @@ class SQLiteVSS(VectorStore):
 
     @staticmethod
     def create_connection(db_file: str) -> sqlite3.Connection:
+        import sqlite_vss
         connection = sqlite3.connect(db_file)
         connection.row_factory = sqlite3.Row
         connection.enable_load_extension(True)

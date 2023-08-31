@@ -27,7 +27,7 @@ def test_sqlitevss() -> None:
     """Test end to end construction and search."""
     docsearch = _sqlite_vss_from_texts()
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", metadata=None)]
+    assert output == [Document(page_content="foo", metadata={})]
 
 
 @pytest.mark.requires("sqlite-vss")
@@ -44,7 +44,7 @@ def test_sqlitevss_with_score() -> None:
         Document(page_content="bar", metadata={"page": 1}),
         Document(page_content="baz", metadata={"page": 2}),
     ]
-    assert scores[0] < scores[1] < scores[2]
+    assert scores[0] > scores[1] > scores[2]
 
 
 @pytest.mark.requires("sqlite-vss")
@@ -53,8 +53,6 @@ def test_sqlitevss_add_extra() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = _sqlite_vss_from_texts(metadatas=metadatas)
-
     docsearch.add_texts(texts, metadatas)
-
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6
