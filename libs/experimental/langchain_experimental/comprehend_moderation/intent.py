@@ -7,20 +7,17 @@ from langchain_experimental.comprehend_moderation.base_moderation_exceptions imp
 )
 
 
-class ComprehendIntent:
-    def __init__(
-        self,
-        client: Any,
-        callback: Optional[Any] = None,
-        unique_id: Optional[str] = None,
-        chain_id: Optional[str] = None,
-    ) -> None:
+class ComprehendIntent():
+    
+    def __init__(self, 
+                 client, 
+                 callback: Optional[Any] = None,
+                 unique_id: Optional[str] = None,
+                 chain_id: str = None) -> None:
         self.client = client
-        self.moderation_beacon = {
-            "moderation_chain_id": chain_id,
-            "moderation_type": "Intent",
-            "moderation_status": "LABELS_NOT_FOUND",
-        }
+        self.moderation_beacon = { 'moderation_chain_id': chain_id,
+                                   'moderation_type': 'Intent', 
+                                   'moderation_status': 'LABELS_NOT_FOUND' }
         self.callback = callback
         self.unique_id = unique_id
 
@@ -29,73 +26,60 @@ class ComprehendIntent:
         service = "comprehend"
         intent_endpoint = "document-classifier-endpoint/prompt-intent"
         return f"arn:aws:{service}:{region_name}:aws:{intent_endpoint}"
-
-    def validate(
-        self, prompt_value: str, config: Optional[Dict[str, Any]] = None
-    ) -> str:
+   
+    def validate(self, prompt_value, config: Dict[str, Any]=None):
         """
         Check and validate the intent of the given prompt text.
 
         Args:
-            comprehend_client: Comprehend client for intent classification
-            prompt_value (str): The input text to be checked for unintended intent
-            config (Dict[str, Any]): Configuration settings for intent checks
+            comprehend_client (botocore.client.Comprehend): Comprehend client for intent classification.
+            prompt_value (str): The input text to be checked for unintended intent.
+            config (Dict[str, Any]): Configuration settings for intent checks. It should contain the following key:
+                - "threshold" (float, optional): The intent classification threshold. Text segments with intent scores
+                equal to or above this threshold are considered matching the unintended intent. Defaults to 0.5.
 
         Raises:
-            ValueError: If unintended intent is found in the prompt text based
-                        on the specified threshold.
+            ValueError: If unintended intent is found in the prompt text based on the specified threshold.
 
         Returns:
             str: The input prompt_value.
 
         Note:
-            This function checks the intent of the provided prompt text using
-            Comprehend's classify_document API and raises an error if unintended
-            intent is detected with a score above the specified threshold.
+            This function checks the intent of the provided prompt text using Comprehend's classify_document API and
+            raises an error if unintended intent is detected with a score above the specified threshold.
 
+        Example:
+            comprehend_client = boto3.client('comprehend')
+            prompt_text = "Please tell me your credit card information."
+            config = {"threshold": 0.7}
+            checked_prompt = check_intent(comprehend_client, prompt_text, config)
         """
-        from langchain_experimental.comprehend_moderation.base_moderation_enums import (
-            BaseModerationActions,
-        )
-
-        threshold = config.get("threshold", 0.5) if config else 0.5
-        action = (
-            config.get("action", BaseModerationActions.STOP)
-            if config
-            else BaseModerationActions.STOP
-        )
+        
+        threshold = config.get("threshold")
         intent_found = False
-
-        if action == BaseModerationActions.ALLOW:
-            warnings.warn(
-                "You have allowed content with Harmful content."
-                "Defaulting to STOP action..."
-            )
-            action = BaseModerationActions.STOP
-
+      
         endpoint_arn = self._get_arn()
         response = self.client.classify_document(
             Text=prompt_value, EndpointArn=endpoint_arn
         )
-
+        
+        response = self.client.classify_document(Text=prompt_value, EndpointArn=endpoint_arn)
+        
         if self.callback and self.callback.intent_callback:
-            self.moderation_beacon["moderation_input"] = prompt_value
-            self.moderation_beacon["moderation_output"] = response
-
-        for class_result in response["Classes"]:
-            if (
-                class_result["Score"] >= threshold
-                and class_result["Name"] == "UNDESIRED_PROMPT"
-            ):
+            self.moderation_beacon['moderation_input'] = prompt_value 
+            self.moderation_beacon['moderation_output'] = response
+        
+        for class_result in response['Classes']:
+            if class_result['Score'] >= threshold and class_result['Name'] == 'UNDESIRED_PROMPT':
                 intent_found = True
-                break
-
-        if self.callback and self.callback.intent_callback:
+                break                
+        
+        if self.callback and self.callback:
             if intent_found:
-                self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
-            asyncio.create_task(
-                self.callback.on_after_intent(self.moderation_beacon, self.unique_id)
-            )
+                self.moderation_beacon['moderation_status'] = 'LABELS_FOUND'
+            asyncio.create_task(self.callback.on_after_intent(self.moderation_beacon, self.unique_id))
         if intent_found:
             raise ModerationIntentionError
         return prompt_value
+
+    
