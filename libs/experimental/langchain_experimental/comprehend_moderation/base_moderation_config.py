@@ -28,16 +28,17 @@ class ModerationToxicityConfig(BaseModel):
 
 class ModerationIntentConfig(BaseModel):
     """
-    Threshold for Intent classification 
+    Threshold for Intent classification
     confidence score, defaults to 0.5 i.e. 50%
     """
+
     threshold: Optional[float] = 0.5
 
 
 class BaseModerationConfig(BaseModel):
     """
-    Filters applied to the moderation chain, defaults to 
-    `[ModerationPiiConfig(), ModerationToxicityConfig(), 
+    Filters applied to the moderation chain, defaults to
+    `[ModerationPiiConfig(), ModerationToxicityConfig(),
     ModerationIntentConfig()]`
     """
 

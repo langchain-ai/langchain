@@ -38,15 +38,15 @@ class ComprehendIntent:
             config (Dict[str, Any]): Configuration settings for intent checks.
 
         Raises:
-            ValueError: If unintended intent is found in the prompt text based 
+            ValueError: If unintended intent is found in the prompt text based
             on the specified threshold.
 
         Returns:
             str: The input prompt_value.
 
         Note:
-            This function checks the intent of the provided prompt text using 
-            Comprehend's classify_document API and raises an error if unintended 
+            This function checks the intent of the provided prompt text using
+            Comprehend's classify_document API and raises an error if unintended
             intent is detected with a score above the specified threshold.
 
         Example:

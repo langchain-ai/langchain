@@ -29,14 +29,14 @@ class ComprehendToxicity:
         Validate and initialize toxicity processing configuration.
 
         Args:
-            max_size (int): Maximum sentence size defined in the 
+            max_size (int): Maximum sentence size defined in the
             configuration object.
 
         Raises:
             Exception: If the maximum sentence size exceeds the 5KB limit.
 
         Note:
-            This function ensures that the NLTK punkt tokenizer is downloaded 
+            This function ensures that the NLTK punkt tokenizer is downloaded
             if not already present.
 
         Returns:
@@ -64,20 +64,20 @@ class ComprehendToxicity:
 
         Args:
             paragraph (str): The input paragraph to be split into chunks.
-            max_size (int, optional): The maximum size limit in bytes for 
+            max_size (int, optional): The maximum size limit in bytes for
             each chunk. Defaults to 1024.
 
         Returns:
-            List[List[str]]: A list of chunks, where each chunk is a list 
+            List[List[str]]: A list of chunks, where each chunk is a list
             of sentences.
 
         Note:
-            This function validates the maximum sentence size based on service 
-            limits using the 'toxicity_init_validate' function. It uses the NLTK 
+            This function validates the maximum sentence size based on service
+            limits using the 'toxicity_init_validate' function. It uses the NLTK
             sentence tokenizer to split the paragraph into sentences.
 
         Example:
-            paragraph = "This is a sample paragraph. It 
+            paragraph = "This is a sample paragraph. It
             contains multiple sentences. ..."
             chunks = split_paragraph(paragraph, max_size=2048)
         """
@@ -90,10 +90,8 @@ class ComprehendToxicity:
         current_size = 0
 
         for sentence in sentences:
-            sentence_size = len(
-                sentence.encode("utf-8")
-                )
-            # If adding a new sentence exceeds max_size 
+            sentence_size = len(sentence.encode("utf-8"))
+            # If adding a new sentence exceeds max_size
             # or current_chunk has 10 sentences, start a new chunk
             if (current_size + sentence_size > max_size) or (len(current_chunk) >= 10):
                 if current_chunk:  # Avoid appending empty chunks
@@ -109,11 +107,9 @@ class ComprehendToxicity:
             chunks.append(current_chunk)
         return chunks
 
-    def validate(
-            self, prompt_value: str, config: Any = None
-            ) -> str:
+    def validate(self, prompt_value: str, config: Any = None) -> str:
         """
-        Check the toxicity of a given text prompt using AWS 
+        Check the toxicity of a given text prompt using AWS
         Comprehend service and apply actions based on configuration.
         Args:
             prompt_value (str): The text content to be checked for toxicity.
@@ -123,7 +119,7 @@ class ComprehendToxicity:
             str: The original prompt_value if allowed or no toxicity found.
 
         Raises:
-            ValueError: If the prompt contains toxic labels and cannot be 
+            ValueError: If the prompt contains toxic labels and cannot be
             processed based on the configuration.
         """
 
