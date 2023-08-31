@@ -1,16 +1,9 @@
-from typing import Any, Dict, List, Optional
-
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from typing import Optional, List, Dict, Any, Callable
+from typing import List
 from langchain.chains.base import Chain
-
-from langchain_experimental.comprehend_moderation.base_moderation import (
-    BaseModeration,
-)
-from langchain_experimental.comprehend_moderation.base_moderation_callbacks import (
-    BaseModerationCallbackHandler,
-)
-from langchain_experimental.pydantic_v1 import root_validator
-
+from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.pydantic_v1 import root_validator
+from langchain_experimental.comprehend_moderation import BaseModeration, BaseModerationCallbackHandler, BaseModerationConfig
 
 class AmazonComprehendModerationChain(Chain):
     """A subclass of Chain, designed to apply moderation to LLMs."""
@@ -21,8 +14,8 @@ class AmazonComprehendModerationChain(Chain):
     input_key: str = "input"  #: :meta private:
     """Key used to fetch/store the input in data containers. Defaults to `input`"""
 
-    moderation_config: Optional[Dict[str, Any]] = None
-    """Configuration settings for moderation"""
+    moderation_config: Optional[BaseModerationConfig] = BaseModerationConfig()
+    """Configuration settings for moderation, defaults to BaseModerationConfig with default values"""
 
     client: Optional[Any]
     """boto3 client object for connection to Amazon Comprehend"""
