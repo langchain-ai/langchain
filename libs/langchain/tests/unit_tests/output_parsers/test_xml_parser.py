@@ -36,10 +36,6 @@ def test_xml_output_parser_fail(result: str) -> None:
 
     xml_parser = XMLOutputParser()
 
-    try:
+    with pytest.raises(ValueError) as e:
         xml_parser.parse(result)
-    except ValueError as e:
-        print("parse_result:", e)
-        assert "Could not parse output" in str(e)
-    else:
-        assert False, "Expected ValueError"
+    assert "Could not parse output" in str(e)
