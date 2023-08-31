@@ -4,19 +4,19 @@ from langchain import PromptTemplate
 SONG_DATA_SOURCE = """\
 ```json
 {
-    "content": "Lyrics of a song",
+    "content": "Текст песни",
     "attributes": {
         "artist": {
             "type": "string",
-            "description": "Name of the song artist"
+            "description": "Имя исполнителя песни"
         },
         "length": {
             "type": "integer",
-            "description": "Length of the song in seconds"
+            "description": "Длительность песни в секундах"
         },
         "genre": {
             "type": "string",
-            "description": "The song genre, one of \"pop\", \"rock\" or \"rap\""
+            "description": "Жанр песни, один из \"pop\", \"rock\" или \"rap\""
         }
     }
 }
@@ -60,13 +60,13 @@ DEFAULT_EXAMPLES = [
     {
         "i": 1,
         "data_source": SONG_DATA_SOURCE,
-        "user_query": "What are songs by Taylor Swift or Katy Perry about teenage romance under 3 minutes long in the dance pop genre",
+        "user_query": "Какие песни Тейлор Свифт или Кэти Перри о подростковой любви длительностью менее 3 минут в жанре поп?",
         "structured_request": FULL_ANSWER,
     },
     {
         "i": 2,
         "data_source": SONG_DATA_SOURCE,
-        "user_query": "What are songs that were not published on Spotify",
+        "user_query": "Какие песни не были опубликованы на Spotify",
         "structured_request": NO_FILTER_ANSWER,
     },
 ]
@@ -75,32 +75,32 @@ EXAMPLES_WITH_LIMIT = [
     {
         "i": 1,
         "data_source": SONG_DATA_SOURCE,
-        "user_query": "What are songs by Taylor Swift or Katy Perry about teenage romance under 3 minutes long in the dance pop genre",
+        "user_query": "Какие песни Тейлор Свифт или Кэти Перри о подростковой любви длительностью менее 3 минут в жанре поп?",
         "structured_request": FULL_ANSWER,
     },
     {
         "i": 2,
         "data_source": SONG_DATA_SOURCE,
-        "user_query": "What are songs that were not published on Spotify",
+        "user_query": "Какие песни не были опубликованы на Spotify",
         "structured_request": NO_FILTER_ANSWER,
     },
     {
         "i": 3,
         "data_source": SONG_DATA_SOURCE,
-        "user_query": "What are three songs about love",
+        "user_query": "Какие три песни о любви",
         "structured_request": WITH_LIMIT_ANSWER,
     },
 ]
 
 EXAMPLE_PROMPT_TEMPLATE = """\
-<< Example {i}. >>
-Data Source:
+<< Пример {i}. >>
+Источник данных:
 {data_source}
 
-User Query:
+Запрос пользователя:
 {user_query}
 
-Structured Request:
+Структурированный запрос:
 {structured_request}
 """
 
@@ -111,94 +111,80 @@ EXAMPLE_PROMPT = PromptTemplate(
 
 
 DEFAULT_SCHEMA = """\
-<< Structured Request Schema >>
-When responding use a markdown code snippet with a JSON object formatted in the \
-following schema:
+<< Схема структурированного запроса >>
+При ответе используйте фрагмент кода markdown с объектом JSON, отформатированным по следующей схеме:
 
 ```json
 {{{{
-    "query": string \\ text string to compare to document contents
-    "filter": string \\ logical condition statement for filtering documents
+    "query": string \\ текстовая строка для сравнения с содержимым документа
+    "filter": string \\ логическое условие для фильтрации документов
 }}}}
 ```
 
-The query string should contain only text that is expected to match the contents of \
-documents. Any conditions in the filter should not be mentioned in the query as well.
+Строка запроса должна содержать только текст, который ожидается в содержимом документов. Любые условия в фильтре не должны упоминаться в запросе.
 
-A logical condition statement is composed of one or more comparison and logical \
-operation statements.
+Логическое условие состоит из одного или нескольких операторов сравнения и логических операций.
 
-A comparison statement takes the form: `comp(attr, val)`:
-- `comp` ({allowed_comparators}): comparator
-- `attr` (string):  name of attribute to apply the comparison to
-- `val` (string): is the comparison value
+Оператор сравнения имеет форму: `comp(attr, val)`:
+- `comp` ({allowed_comparators}): оператор сравнения
+- `attr` (string):  имя атрибута, к которому применяется сравнение
+- `val` (string): значение для сравнения
 
-A logical operation statement takes the form `op(statement1, statement2, ...)`:
-- `op` ({allowed_operators}): logical operator
-- `statement1`, `statement2`, ... (comparison statements or logical operation \
-statements): one or more statements to apply the operation to
+Логическая операция имеет форму `op(statement1, statement2, ...)`:
+- `op` ({allowed_operators}): логический оператор
+- `statement1`, `statement2`, ... (операторы сравнения или логические операции): одно или несколько утверждений, к которым применяется операция
 
-Make sure that you only use the comparators and logical operators listed above and \
-no others.
-Make sure that filters only refer to attributes that exist in the data source.
-Make sure that filters only use the attributed names with its function names if there are functions applied on them.
-Make sure that filters only use format `YYYY-MM-DD` when handling timestamp data typed values.
-Make sure that filters take into account the descriptions of attributes and only make \
-comparisons that are feasible given the type of data being stored.
-Make sure that filters are only used as needed. If there are no filters that should be \
-applied return "NO_FILTER" for the filter value.\
+Убедитесь, что вы используете только перечисленные выше операторы сравнения и логические операторы и никакие другие.
+Убедитесь, что фильтры относятся только к атрибутам, которые существуют в источнике данных.
+Убедитесь, что фильтры используют только имена атрибутов с их именами функций, если на них применяются функции.
+Убедитесь, что фильтры используют только формат `YYYY-MM-DD` при обработке значений типа данных временной метки.
+Убедитесь, что фильтры учитывают описания атрибутов и делают только те сравнения, которые возможны с учетом типа хранимых данных.
+Убедитесь, что фильтры используются только по мере необходимости. Если нет фильтров, которые следует применить, верните "NO_FILTER" для значения фильтра.\
 """
 
 SCHEMA_WITH_LIMIT = """\
-<< Structured Request Schema >>
-When responding use a markdown code snippet with a JSON object formatted in the \
-following schema:
+<< Схема структурированного запроса >>
+При ответе используйте фрагмент кода markdown с объектом JSON, отформатированным по следующей схеме:
 
 ```json
 {{{{
-    "query": string \\ text string to compare to document contents
-    "filter": string \\ logical condition statement for filtering documents
-    "limit": int \\ the number of documents to retrieve
+    "query": string \\ текстовая строка для сравнения с содержимым документа
+    "filter": string \\ логическое условие для фильтрации документов
+    "limit": int \\ количество документов для извлечения
 }}}}
 ```
 
-The query string should contain only text that is expected to match the contents of \
-documents. Any conditions in the filter should not be mentioned in the query as well.
+Строка запроса должна содержать только текст, который ожидается в содержимом документов. Любые условия в фильтре не должны упоминаться в запросе.
 
-A logical condition statement is composed of one or more comparison and logical \
-operation statements.
+Логическое условие состоит из одного или нескольких операторов сравнения и логических операций.
 
-A comparison statement takes the form: `comp(attr, val)`:
-- `comp` ({allowed_comparators}): comparator
-- `attr` (string):  name of attribute to apply the comparison to
-- `val` (string): is the comparison value
+Оператор сравнения имеет форму: `comp(attr, val)`:
+- `comp` ({allowed_comparators}): оператор сравнения
+- `attr` (string):  имя атрибута, к которому применяется сравнение
+- `val` (string): значение для сравнения
 
-A logical operation statement takes the form `op(statement1, statement2, ...)`:
-- `op` ({allowed_operators}): logical operator
-- `statement1`, `statement2`, ... (comparison statements or logical operation \
-statements): one or more statements to apply the operation to
+Логическая операция имеет форму `op(statement1, statement2, ...)`:
+- `op` ({allowed_operators}): логический оператор
+- `statement1`, `statement2`, ... (операторы сравнения или логические операции): одно или несколько утверждений, к которым применяется операция
 
-Make sure that you only use the comparators and logical operators listed above and \
-no others.
-Make sure that filters only refer to attributes that exist in the data source.
-Make sure that filters only use the attributed names with its function names if there are functions applied on them.
-Make sure that filters only use format `YYYY-MM-DD` when handling timestamp data typed values.
-Make sure that filters take into account the descriptions of attributes and only make \
-comparisons that are feasible given the type of data being stored.
-Make sure that filters are only used as needed. If there are no filters that should be \
-applied return "NO_FILTER" for the filter value.
-Make sure the `limit` is always an int value. It is an optional parameter so leave it blank if it is does not make sense.
+Убедитесь, что вы используете только перечисленные выше операторы сравнения и логические операторы и никакие другие.
+Убедитесь, что фильтры относятся только к атрибутам, которые существуют в источнике данных.
+Убедитесь, что фильтры используют только имена атрибутов с их именами функций, если на них применяются функции.
+Убедитесь, что фильтры используют только формат `YYYY-MM-DD` при обработке значений типа данных временной метки.
+Убедитесь, что фильтры учитывают описания атрибутов и делают только те сравнения, которые возможны с учетом типа хранимых данных.
+Убедитесь, что фильтры используются только по мере необходимости. Если нет фильтров, которые следует применить, верните "NO_FILTER" для значения фильтра.
+Убедитесь, что `limit` всегда является целым числом. Это необязательный параметр, поэтому оставьте его пустым, если он не имеет смысла.
 """
 
 DEFAULT_PREFIX = """\
-Your goal is to structure the user's query to match the request schema provided below.
+Твоя задача - структурировать запрос пользователя, чтобы он соответствовал схеме запроса, представленной ниже.
 
 {schema}\
 """
 
 DEFAULT_SUFFIX = """\
-<< Example {i}. >>
-Data Source:
+<< Пример {i}. >>
+Источник данных:
 ```json
 {{{{
     "content": "{content}",
@@ -206,8 +192,8 @@ Data Source:
 }}}}
 ```
 
-User Query:
+Запрос пользователя:
 {{query}}
 
-Structured Request:
+Структурированный запрос:
 """

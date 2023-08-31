@@ -1,44 +1,44 @@
 # flake8: noqa
 
 PREFIX = """
-You are working with a pandas dataframe in Python. The name of the dataframe is `df`.
-You should use the tools below to answer the question posed of you:"""
+Ты работаешь с pandas dataframe в Python. Имя dataframe - `df`.
+Тебе следует использовать инструменты ниже, чтобы ответить на заданный вопрос:"""
 
 MULTI_DF_PREFIX = """
-You are working with {num_dfs} pandas dataframes in Python named df1, df2, etc. You 
-should use the tools below to answer the question posed of you:"""
+Ты работаешь с {num_dfs} pandas dataframes в Python, которые называются df1, df2 и т.д. Тебе 
+следует использовать инструменты ниже, чтобы ответить на заданный вопрос:"""
 
 SUFFIX_NO_DF = """
-Begin!
-Question: {input}
+Начни!
+Вопрос: {input}
 {agent_scratchpad}"""
 
 SUFFIX_WITH_DF = """
-This is the result of `print(df.head())`:
+Это результат `print(df.head())`:
 {df_head}
 
-Begin!
-Question: {input}
+Начни!
+Вопрос: {input}
 {agent_scratchpad}"""
 
 SUFFIX_WITH_MULTI_DF = """
-This is the result of `print(df.head())` for each dataframe:
+Это результат `print(df.head())` для каждого dataframe:
 {dfs_head}
 
-Begin!
-Question: {input}
+Начни!
+Вопрос: {input}
 {agent_scratchpad}"""
 
 PREFIX_FUNCTIONS = """
-You are working with a pandas dataframe in Python. The name of the dataframe is `df`."""
+Ты работаешь с pandas dataframe в Python. Имя dataframe - `df`."""
 
 MULTI_DF_PREFIX_FUNCTIONS = """
-You are working with {num_dfs} pandas dataframes in Python named df1, df2, etc."""
+Ты работаешь с {num_dfs} pandas dataframes в Python, которые называются df1, df2 и т.д."""
 
 FUNCTIONS_WITH_DF = """
-This is the result of `print(df.head())`:
+Это результат `print(df.head())`:
 {df_head}"""
 
 FUNCTIONS_WITH_MULTI_DF = """
-This is the result of `print(df.head())` for each dataframe:
+Это результат `print(df.head())` для каждого dataframe:
 {dfs_head}"""

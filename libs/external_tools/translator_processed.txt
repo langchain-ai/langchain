@@ -141,3 +141,23 @@ No prompts:
 ./libs/langchain/langchain/tools/steamship_image_generation/tool.py
 ./libs/langchain/langchain/tools/amadeus/closest_airport.py
 ./libs/langchain/langchain/tools/human/tool.py
+./libs/langchain/langchain/chains/query_constructor/prompt.py
+./libs/langchain/langchain/agents/chat/prompt.py
+./libs/langchain/langchain/agents/mrkl/prompt.py
+./libs/langchain/langchain/agents/structured_chat/prompt.py
+./libs/langchain/langchain/agents/conversational_chat/prompt.py
+./libs/langchain/langchain/agents/agent_toolkits/spark_sql/prompt.py
+./libs/langchain/langchain/agents/agent_toolkits/python/prompt.py
+./libs/langchain/langchain/agents/agent_toolkits/openapi/prompt.py
+./libs/langchain/langchain/agents/agent_toolkits/json/prompt.py
+./libs/langchain/langchain/agents/agent_toolkits/powerbi/prompt.py
+./libs/langchain/langchain/agents/agent_toolkits/xorbits/prompt.py
+./libs/langchain/langchain/agents/agent_toolkits/spark/prompt.py
+./libs/langchain/langchain/agents/agent_toolkits/pandas/prompt.py
+./libs/langchain/langchain/agents/agent_toolkits/vectorstore/prompt.py
+./libs/langchain/langchain/agents/agent_toolkits/sql/prompt.py
+./libs/langchain/langchain/agents/conversational/prompt.py
+No prompts:
+./libs/experimental/langchain_experimental/comprehend_moderation/base_moderation.py
+No prompts:
+./libs/experimental/langchain_experimental/comprehend_moderation/amazon_comprehend_moderation.py

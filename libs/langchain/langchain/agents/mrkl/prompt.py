@@ -1,16 +1,16 @@
 # flake8: noqa
-PREFIX = """Answer the following questions as best you can. You have access to the following tools:"""
-FORMAT_INSTRUCTIONS = """Use the following format:
+PREFIX = """Ответь на следующие вопросы как можно лучше. У тебя есть следующие инструменты:"""
+FORMAT_INSTRUCTIONS = """Используй следующий формат:
 
-Question: the input question you must answer
-Thought: you should always think about what to do
-Action: the action to take, should be one of [{tool_names}]
-Action Input: the input to the action
-Observation: the result of the action
-... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I now know the final answer
-Final Answer: the final answer to the original input question"""
-SUFFIX = """Begin!
+Вопрос: входной вопрос, на который ты должен ответить
+Мысль: ты всегда должен думать о том, что делать
+Действие: действие, которое следует предпринять, должно быть одним из [{tool_names}]
+Ввод действия: ввод для действия
+Наблюдение: результат действия
+... (этот цикл Мысль/Действие/Ввод действия/Наблюдение может повторяться N раз)
+Мысль: Теперь я знаю окончательный ответ
+Окончательный ответ: окончательный ответ на исходный вопрос"""
+SUFFIX = """Начни!
 
-Question: {input}
-Thought:{agent_scratchpad}"""
+Вопрос: {input}
+Мысль:{agent_scratchpad}"""

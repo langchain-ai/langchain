@@ -1,13 +1,13 @@
 # flake8: noqa
 
 PREFIX = """
-You are working with a spark dataframe in Python. The name of the dataframe is `df`.
-You should use the tools below to answer the question posed of you:"""
+Ты работаешь со spark dataframe в Python. Имя dataframe - `df`.
+Тебе следует использовать инструменты ниже, чтобы ответить на заданный тебе вопрос:"""
 
 SUFFIX = """
-This is the result of `print(df.first())`:
+Это результат `print(df.first())`:
 {df}
 
-Begin!
-Question: {input}
+Начни!
+Вопрос: {input}
 {agent_scratchpad}"""

@@ -10,6 +10,10 @@ import tiktoken
 IGNORED_DIRS = {
     "venv",
     ".venv",
+    "hub",
+    ".github",
+    ".mypy_cache",
+    ".ruff_cache",
     "build",
     ".git",
     "__pycache__",
@@ -110,6 +114,7 @@ def process_file(file_path):
             ("prompt" in source)
             or file_path.endswith(".txt")
             or "template = " in source.lower()
+            or "PREFIX = " in source
         ):
             print(f"Found file: {file_path}")
             print(f"Source: {source}\n\n")
@@ -141,9 +146,8 @@ def main(directory):
     for root, dirs, files in os.walk(directory):
         # Игнорируем ненужные директории
         dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
-
         for file in files:
-            if file.endswith(".py") or file.endswith(".txt"):
+            if file.endswith("n.py") or file.endswith(".txt"):
                 if process_file(os.path.join(root, file)):
                     total += 1
     print(f"Total files: {total}")
