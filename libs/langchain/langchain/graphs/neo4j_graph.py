@@ -125,13 +125,14 @@ class Neo4jGraph:
             MATCH (target {id:row.target})
             CALL apoc.merge.relationship(source, row.type, {}, row.properties, target) YIELD rel
             RETURN distinct 'done'    
-""",
+            """,
                 {
                     "data": [
                         {
                             "source": el.source.id,
                             "target": el.target.id,
                             "type": el.type.replace(" ", "_").upper(),
+                            "properties": el.properties,
                         }
                         for el in document.relationships
                     ]

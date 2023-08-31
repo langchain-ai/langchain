@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence, Union, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import requests
 
@@ -11,16 +11,28 @@ from langchain.schema.graph_document import (
 )
 from langchain.utils import get_from_env
 
-class NodesList():
+
+def format_property_key(s):
+    words = s.split()
+    if not words:
+        return s
+    first_word = words[0].lower()
+    capitalized_words = [word.capitalize() for word in words[1:]]
+    return "".join([first_word] + capitalized_words)
+
+
+class NodesList:
     def __init__(self) -> None:
         self.nodes = dict()
-    
-    def add_node_property(self, node: Tuple[Union[str, int], str], properties:Dict[str,Any]) -> None:
+
+    def add_node_property(
+        self, node: Tuple[Union[str, int], str], properties: Dict[str, Any]
+    ) -> None:
         if not node in self.nodes:
             self.nodes[node] = properties
         else:
             self.nodes[node].update(properties)
-    
+
     def return_node_list(self):
         nodes = [
             Node(id=key[0], type=key[1], properties=self.nodes[key])
@@ -29,16 +41,20 @@ class NodesList():
         return nodes
 
 
-
-
 class DiffbotNLPGraphTransformer(BaseGraphDocumentTransformer):
     def __init__(
-        self, diffbot_api_key: Optional[str] = None, threshold_confidence: float = 0.7
+        self,
+        diffbot_api_key: Optional[str] = None,
+        fact_confidence_threshold: float = 0.7,
+        qualifier_confidence_threshold: float = 0.0,
+        include_evidence: bool = True,
     ) -> None:
         self.diffbot_api_key = diffbot_api_key or get_from_env(
             "diffbot_api_key", "DIFFBOT_API_KEY"
         )
-        self.threshold_confidence = threshold_confidence
+        self.fact_threshold_confidence = fact_confidence_threshold
+        self.qualifier_confidence_threshold = qualifier_confidence_threshold
+        self.include_evidence = include_evidence
 
     def nlp_request(self, text) -> Dict[str, Any]:
         """Make an API request to Diffbot NLP endpoint"""
@@ -70,11 +86,14 @@ class DiffbotNLPGraphTransformer(BaseGraphDocumentTransformer):
         # Relationships are a list because we don't deduplicate nor anything else
         relationships = list()
         for record in payload["facts"]:
+            # Skip if the fact is below the threshold confidence
+            if record["confidence"] < self.fact_threshold_confidence:
+                continue
 
             # TODO: It should probably be treated as a property
             if not record["value"]["allTypes"]:
                 continue
-            
+
             # Define source node
             source_id = (
                 record["entity"]["allUris"][0]
@@ -84,7 +103,9 @@ class DiffbotNLPGraphTransformer(BaseGraphDocumentTransformer):
             source_label = record["entity"]["allTypes"][0]["name"].capitalize()
             source_name = record["entity"]["name"]
             source_node = Node(id=source_id, type=source_label)
-            nodes_list.add_node_property((source_id, source_label), {"name": source_name})
+            nodes_list.add_node_property(
+                (source_id, source_label), {"name": source_name}
+            )
 
             # Define target node
             target_id = (
@@ -95,15 +116,37 @@ class DiffbotNLPGraphTransformer(BaseGraphDocumentTransformer):
             target_label = record["value"]["allTypes"][0]["name"].capitalize()
             target_name = record["value"]["name"]
             target_node = Node(id=target_id, type=target_label)
-            nodes_list.add_node_property((target_id, target_label), {"name": target_name})
-            #Define relationship and its type
+            nodes_list.add_node_property(
+                (target_id, target_label), {"name": target_name}
+            )
+            # Define relationship and its type
             rel_type = record["property"]["name"].replace(" ", "_").upper()
+
+            # Relationship properties
+            rel_properties = dict()
+            relationship_evidence = [el["passage"] for el in record["evidence"]][0]
+            if self.include_evidence:
+                rel_properties.update({"evidence": relationship_evidence})
+            if record.get("qualifiers"):
+                for property in record["qualifiers"]:
+                    if property["confidence"] < self.qualifier_confidence_threshold:
+                        continue
+                    prop_key = format_property_key(property["property"]["name"])
+                    rel_properties[prop_key] = property["value"]["name"]
+
             relationship = Relationship(
-                source=source_node, target=target_node, type=rel_type
+                source=source_node,
+                target=target_node,
+                type=rel_type,
+                properties=rel_properties,
             )
             relationships.append(relationship)
 
-        return GraphDocument(nodes=nodes_list.return_node_list(), relationships=relationships, source=document)
+        return GraphDocument(
+            nodes=nodes_list.return_node_list(),
+            relationships=relationships,
+            source=document,
+        )
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
