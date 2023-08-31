@@ -11,6 +11,13 @@ from langchain.schema.graph_document import (
 )
 from langchain.utils import get_from_env
 
+# Properties that should be treated as node properties instead of relationships
+FACT_TO_PROPERTY_TYPE = [
+    "Date",
+    "Number",
+    "Job title",
+    "Cause of death"
+]
 
 def format_property_key(s):
     words = s.split()
@@ -115,32 +122,39 @@ class DiffbotNLPGraphTransformer(BaseGraphDocumentTransformer):
             )
             target_label = record["value"]["allTypes"][0]["name"].capitalize()
             target_name = record["value"]["name"]
-            target_node = Node(id=target_id, type=target_label)
-            nodes_list.add_node_property(
-                (target_id, target_label), {"name": target_name}
-            )
-            # Define relationship and its type
-            rel_type = record["property"]["name"].replace(" ", "_").upper()
+            # Some facts are better suited as node properties
+            if target_label in FACT_TO_PROPERTY_TYPE:
+                nodes_list.add_node_property(
+                    (source_id, source_label), {format_property_key(record["property"]["name"]) : target_name}
+                )
+            else:
+                # Define relationship
+                target_node = Node(id=target_id, type=target_label)
+                nodes_list.add_node_property(
+                    (target_id, target_label), {"name": target_name}
+                )
+                # Define relationship and its type
+                rel_type = record["property"]["name"].replace(" ", "_").upper()
 
-            # Relationship properties
-            rel_properties = dict()
-            relationship_evidence = [el["passage"] for el in record["evidence"]][0]
-            if self.include_evidence:
-                rel_properties.update({"evidence": relationship_evidence})
-            if record.get("qualifiers"):
-                for property in record["qualifiers"]:
-                    if property["confidence"] < self.qualifier_confidence_threshold:
-                        continue
-                    prop_key = format_property_key(property["property"]["name"])
-                    rel_properties[prop_key] = property["value"]["name"]
+                # Relationship properties
+                rel_properties = dict()
+                relationship_evidence = [el["passage"] for el in record["evidence"]][0]
+                if self.include_evidence:
+                    rel_properties.update({"evidence": relationship_evidence})
+                if record.get("qualifiers"):
+                    for property in record["qualifiers"]:
+                        if property["confidence"] < self.qualifier_confidence_threshold:
+                            continue
+                        prop_key = format_property_key(property["property"]["name"])
+                        rel_properties[prop_key] = property["value"]["name"]
 
-            relationship = Relationship(
-                source=source_node,
-                target=target_node,
-                type=rel_type,
-                properties=rel_properties,
-            )
-            relationships.append(relationship)
+                relationship = Relationship(
+                    source=source_node,
+                    target=target_node,
+                    type=rel_type,
+                    properties=rel_properties,
+                )
+                relationships.append(relationship)
 
         return GraphDocument(
             nodes=nodes_list.return_node_list(),
