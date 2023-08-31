@@ -836,7 +836,7 @@ class CassandraSemanticCache(BaseCache):
 
     def __init__(
         self,
-        session: Session,
+        session: CassandraSession,
         keyspace: str,
         embedding: Embeddings,
         table_name: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME,
