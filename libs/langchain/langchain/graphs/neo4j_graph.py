@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
-from langchain.schema.graph_document import GraphDocument
 
+from langchain.schema.graph_document import GraphDocument
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -118,10 +118,22 @@ class Neo4jGraph:
                 {"data": [el.__dict__ for el in document.nodes]},
             )
             # Import relationships
-            self.query("""
+            self.query(
+                """
             UNWIND $data AS row
             MATCH (source {id:row.source})
             MATCH (target {id:row.target})
             CALL apoc.merge.relationship(source, row.type, {}, row.properties, target) YIELD rel
             RETURN distinct 'done'    
-""", {"data": [{"source": el.source.id, "target": el.target.id, "type": el.type} for el in document.relationships]})
+""",
+                {
+                    "data": [
+                        {
+                            "source": el.source.id,
+                            "target": el.target.id,
+                            "type": el.type.replace(" ", "_").upper(),
+                        }
+                        for el in document.relationships
+                    ]
+                },
+            )
