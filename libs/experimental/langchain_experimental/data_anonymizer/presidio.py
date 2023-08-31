@@ -11,7 +11,7 @@ from langchain_experimental.data_anonymizer.base import (
     AnonymizerBase,
     ReversibleAnonymizerBase,
 )
-from langchain_experimental.data_anonymizer.deanonymizer_text_matching_strategies import (
+from langchain_experimental.data_anonymizer.deanonymizer_matching_strategies import (
     default_matching_strategy,
 )
 from langchain_experimental.data_anonymizer.faker_presidio_mapping import (
