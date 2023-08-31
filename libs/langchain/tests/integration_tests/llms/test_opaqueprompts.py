@@ -1,4 +1,4 @@
-import langchain.utilities.opaqueprompts as opf
+import langchain.utilities.opaqueprompts as op
 from langchain import LLMChain, PromptTemplate
 from langchain.llms import OpenAI
 from langchain.llms.opaqueprompts import OpaquePrompts
@@ -62,7 +62,7 @@ def test_opaqueprompts_functions() -> None:
     prompt = (PromptTemplate.from_template(prompt_template),)
     llm = OpenAI()
     pg_chain = (
-        opf.sanitize
+        op.sanitize
         | RunnableMap(
             {
                 "response": (lambda x: x["sanitized_input"])  # type: ignore
@@ -72,7 +72,7 @@ def test_opaqueprompts_functions() -> None:
                 "secure_context": lambda x: x["secure_context"],
             }
         )
-        | (lambda x: opf.desanitize(x["response"], x["secure_context"]))
+        | (lambda x: op.desanitize(x["response"], x["secure_context"]))
     )
 
     pg_chain.invoke(
