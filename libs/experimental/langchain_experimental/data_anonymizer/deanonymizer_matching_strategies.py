@@ -3,7 +3,7 @@ from typing import Dict
 
 def default_matching_strategy(
     text: str, deanonymizer_mapping: Dict[str, Dict[str, str]]
-):
+) -> str:
     """
     Default matching strategy for deanonymization.
     It replaces all the anonymized entities with the original ones.
