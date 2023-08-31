@@ -242,7 +242,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self,
         name: Optional[str] = "langchainrun-%",
         experiment: Optional[str] = "langchain",
-        tags: Optional[Dict] = {},
+        tags: Optional[Dict] = None,
         tracking_uri: Optional[str] = None,
     ) -> None:
         """Initialize callback handler."""
@@ -254,7 +254,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self.name = name
         self.experiment = experiment
-        self.tags = tags
+        self.tags = tags or {}
         self.tracking_uri = tracking_uri
 
         self.temp_dir = tempfile.TemporaryDirectory()
