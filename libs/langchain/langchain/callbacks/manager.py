@@ -1799,6 +1799,9 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(open_ai, True)
-    if run_collector_ is not None:
+    if run_collector_ is not None and not any(
+        handler is run_collector_  # direct pointer comparison
+        for handler in callback_manager.handlers
+    ):
         callback_manager.add_handler(run_collector_, False)
     return callback_manager

@@ -1,10 +1,10 @@
-# Pydantic Compatibility
+# Pydantic compatibility
 
 - Pydantic v2 was released in June, 2023 (https://docs.pydantic.dev/2.0/blog/pydantic-v2-final/)
 - v2 contains has a number of breaking changes (https://docs.pydantic.dev/2.0/migration/)
 - Pydantic v2 and v1 are under the same package name, so both versions cannot be installed at the same time
 
-## LangChain Pydantic Migration Plan
+## LangChain Pydantic migration plan
 
 As of `langchain>=0.0.267`, LangChain will allow users to install either Pydantic V1 or V2. 
    * Internally LangChain will continue to [use V1](https://docs.pydantic.dev/latest/migration/#continue-using-pydantic-v1-features).
