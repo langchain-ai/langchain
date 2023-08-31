@@ -17,7 +17,6 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -151,10 +150,7 @@ class SQLiteVSS(VectorStore):
         documents = []
         for row in results:
             metadata = json.loads(row["metadata"]) or {}
-            doc = Document(
-                page_content=row["text"],
-                metadata=metadata
-            )
+            doc = Document(page_content=row["text"], metadata=metadata)
             score = self._euclidean_relevance_score_fn(row["distance"])
             documents.append((doc, score))
 
@@ -209,6 +205,7 @@ class SQLiteVSS(VectorStore):
     @staticmethod
     def create_connection(db_file: str) -> sqlite3.Connection:
         import sqlite_vss
+
         connection = sqlite3.connect(db_file)
         connection.row_factory = sqlite3.Row
         connection.enable_load_extension(True)
