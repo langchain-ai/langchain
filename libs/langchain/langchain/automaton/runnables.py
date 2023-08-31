@@ -15,7 +15,6 @@ from langchain.schema.runnable.base import RunnableLambda, Runnable
 from langchain.tools import BaseTool
 
 
-
 def create_tool_invoker(
     tools: Sequence[BaseTool],
 ) -> Runnable[FunctionCall, FunctionResult]:
@@ -26,11 +25,11 @@ def create_tool_invoker(
         """A function that can invoke a tool using .run"""
         tool = tools_by_name[input.name]
         try:
-            result = tool.run(input.arguments)
+            result = tool.run(input.arguments or {})
             error = None
         except Exception as e:
             result = None
-            error = repr(e)
+            error = repr(e) + repr(input.arguments)
         return FunctionResult(result=result, error=error)
 
     return RunnableLambda(func=func)
@@ -45,9 +44,9 @@ def create_llm_program(
 ) -> Runnable[MessageLog, List[MessageLike]]:
     """Create a runnable that can update memory."""
 
-    def _bound(event_log: MessageLog):
+    def _bound(message_log: MessageLog):
         messages = []
-        prompt_value = prompt_generator(event_log)
+        prompt_value = prompt_generator(message_log)
         llm_chain = llm
         if stop:
             llm_chain = llm_chain.bind(stop=stop)

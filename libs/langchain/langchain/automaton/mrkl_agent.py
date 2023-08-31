@@ -4,7 +4,6 @@ import ast
 import re
 from typing import Sequence, Optional, Union, List
 
-from langchain.automaton import typedefs
 from langchain.automaton.runnables import (
     create_llm_program,
     create_tool_invoker,
@@ -14,6 +13,7 @@ from langchain.automaton.typedefs import (
     MessageLike,
     FunctionCall,
     FunctionResult,
+    AgentFinish,
 )
 from langchain.prompts import SystemMessagePromptTemplate
 from langchain.schema import (
@@ -25,6 +25,7 @@ from langchain.schema import (
 )
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.runnable import Runnable
+from langchain.automaton.typedefs import PrimingMessage
 from langchain.tools import BaseTool, Tool
 
 TEMPLATE_ = """\
@@ -105,9 +106,9 @@ class ActionParser:
             action_blob = match.group("action_blob")
             data = ast.literal_eval(action_blob)
             name = data["action"]
-            if name == "Final Answer":
-                return typedefs.AgentFinish(result=data["action_input"])
-            return typedefs.FunctionCall(
+            if name == "Final Answer":  # Special cased "tool" for final answer
+                return AgentFinish(result=data["action_input"])
+            return FunctionCall(
                 name=data["action"], arguments=data["action_input"] or {}
             )
         else:
@@ -115,7 +116,7 @@ class ActionParser:
 
 
 class ThinkActPromptGenerator(PromptValue):
-    """use think act paradaigm.
+    """think-act paradigm
 
     prompt value can do additional priming of the LLM, used in to_string method right now.
     """
@@ -128,27 +129,29 @@ class ThinkActPromptGenerator(PromptValue):
     def to_string(self) -> str:
         """The string variant of the prompt."""
         finalized = []
-        messages = self.to_messages()
+        messages = self.message_log.messages
         for idx, message in enumerate(messages):
             if isinstance(message, FunctionResult):
                 component = f"Observation: {message.result}"
-            elif isinstance(
-                message, FunctionCall
-            ):  # Used LLMs that do not support a FunctionCallMessage
+            elif isinstance(message, HumanMessage):
+                component = f"Question: {message.content.strip()}"
+            elif isinstance(message, (AIMessage, SystemMessage)):
+                component = message.content.strip()
+            elif isinstance(message, FunctionCall):
                 # This is an internal message, and should not be returned to the user.
                 continue
-            elif isinstance(message, HumanMessage):
-                component = f"Question: {message.content}"
-            elif isinstance(message, (AIMessage, SystemMessage)):
-                if idx > 0 and isinstance(messages[idx], (HumanMessage, FunctionCall)):
-                    # Priming the LLM with the word" Thought"
-                    component = f"Thought: {message.content}"
-                else:
-                    component = message.content
+            elif isinstance(message, AgentFinish):
+                component = f"Answer: {message.result}"
+            elif isinstance(message, PrimingMessage):
+                component = message.content
+                finalized.append(component)
+                continue
+            elif isinstance(message, FunctionCall):
+                continue
             else:
                 raise NotImplementedError()
-            finalized.append(component)
-        return "\n".join(finalized)
+            finalized.extend([component, "\n"])
+        return "".join(finalized).strip()
 
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as a list of Messages."""
@@ -196,18 +199,20 @@ class MRKLAgent:
         while True:
             if iteration_num > max_iterations:
                 break
-
-            match last_message:
-                case typedefs.AgentFinish:
-                    break
-                case typedefs.FunctionCall:
-                    messages = self.tool_invoker.invoke(last_message)
-                case _:
-                    messages = self.think_act.invoke(message_log)
+            if isinstance(last_message, AgentFinish):
+                break
+            elif isinstance(last_message, FunctionCall):
+                messages = [
+                    self.tool_invoker.invoke(last_message),
+                    # After we have a function result, we want to prime the LLM with the word "
+                    # Thought"
+                    PrimingMessage(content="Thought:"),
+                ]
+            else:
+                messages = self.think_act.invoke(message_log)
 
             if not messages:
                 raise AssertionError(f"No messages returned from last step")
-
             message_log.add_messages(messages)
             last_message = messages[-1]
             iteration_num += 1

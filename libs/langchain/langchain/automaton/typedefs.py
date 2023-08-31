@@ -26,7 +26,16 @@ class AgentFinish:
     result: Any
 
 
-MessageLike = Union[BaseMessage, FunctionCall, FunctionResult, AgentFinish]
+@dataclasses.dataclass(frozen=True)
+class PrimingMessage:
+    """A message that is used to prime the language model."""
+
+    content: str
+
+
+MessageLike = Union[
+    BaseMessage, FunctionCall, FunctionResult, AgentFinish, PrimingMessage
+]
 
 
 class MessageLog:
