@@ -9,15 +9,19 @@ from langchain_experimental.comprehend_moderation.base_moderation_exceptions imp
 
 
 class ComprehendToxicity:
-    def __init__(self, 
-                 client, 
-                 callback: Optional[Any] = None,
-                 unique_id: Optional[str] = None,
-                 chain_id: str = None) -> None:
+    def __init__(
+        self,
+        client: Any,
+        callback: Optional[Any] = None,
+        unique_id: Optional[str] = None,
+        chain_id: Optional[str] = None,
+    ) -> None:
         self.client = client
-        self.moderation_beacon = { 'moderation_chain_id': chain_id,
-                                   'moderation_type': 'Toxicity', 
-                                   'moderation_status': 'LABELS_NOT_FOUND' }
+        self.moderation_beacon = {
+            "moderation_chain_id": chain_id,
+            "moderation_type": "Toxicity",
+            "moderation_status": "LABELS_NOT_FOUND",
+        }
         self.callback = callback
         self.unique_id = unique_id
 
@@ -37,11 +41,11 @@ class ComprehendToxicity:
         Returns:
             None
         """
-        if(max_size > 1024 * 5):
+        if max_size > 1024 * 5:
             raise Exception("The sentence length should not exceed 5KB.")
         try:
             nltk = importlib.import_module("nltk")
-            nltk.data.find('tokenizers/punkt')
+            nltk.data.find("tokenizers/punkt")
             return nltk
         except ImportError:
             raise ModuleNotFoundError(
@@ -49,9 +53,11 @@ class ComprehendToxicity:
                 "Please install it with `pip install nltk`."
             )
         except LookupError:
-            nltk.download('punkt')
-    
-    def _split_paragraph(self, prompt_value: str, max_size: int = 1024 * 4) -> List[List[str]]:
+            nltk.download("punkt")
+
+    def _split_paragraph(
+        self, prompt_value: str, max_size: int = 1024 * 4
+    ) -> List[List[str]]:
         """
         Split a paragraph into chunks of sentences, respecting the maximum size limit.
 
@@ -70,35 +76,33 @@ class ComprehendToxicity:
             paragraph = "This is a sample paragraph. It contains multiple sentences. ..."
             chunks = split_paragraph(paragraph, max_size=2048)
         """
-    
+
         # validate max. sentence size based on Service limits
-        nltk = self._toxicity_init_validate(max_size)                
+        nltk = self._toxicity_init_validate(max_size)
         sentences = nltk.sent_tokenize(prompt_value)
-        chunks = []
-        current_chunk = []
+        chunks = list()  # type: ignore
+        current_chunk = list()  # type: ignore
         current_size = 0
-        
+
         for sentence in sentences:
-            sentence_size = len(sentence.encode('utf-8'))
-            
+            sentence_size = len(sentence.encode("utf-8"))
+
             # If adding a new sentence exceeds max_size or current_chunk has 10 sentences, start a new chunk
             if (current_size + sentence_size > max_size) or (len(current_chunk) >= 10):
                 if current_chunk:  # Avoid appending empty chunks
                     chunks.append(current_chunk)
                 current_chunk = []
                 current_size = 0
-            
+
             current_chunk.append(sentence)
             current_size += sentence_size
 
         # Add any remaining sentences
         if current_chunk:
-            chunks.append(current_chunk)        
+            chunks.append(current_chunk)
         return chunks
 
-
-    def validate(self, prompt_value, config: Dict[str, Any]=None) -> str:  
-        
+    def validate(self, prompt_value: str, config: Any = None) -> str:
         """
         Check the toxicity of a given text prompt using AWS Comprehend service and apply actions based on configuration.
 
@@ -112,18 +116,20 @@ class ComprehendToxicity:
         Raises:
             ValueError: If the prompt contains toxic labels and cannot be processed based on the configuration.
         """
-        
+
         chunks = self._split_paragraph(prompt_value=prompt_value)
         for sentence_list in chunks:
-            segments = [ {"Text": sentence} for sentence in sentence_list ]            
-            response = self.client.detect_toxic_content(TextSegments=segments, LanguageCode='en')    
+            segments = [{"Text": sentence} for sentence in sentence_list]
+            response = self.client.detect_toxic_content(
+                TextSegments=segments, LanguageCode="en"
+            )
             if self.callback and self.callback.toxicity_callback:
-                self.moderation_beacon['moderation_input'] = segments 
-                self.moderation_beacon['moderation_output'] = response
+                self.moderation_beacon["moderation_input"] = segments  # type: ignore
+                self.moderation_beacon["moderation_output"] = response
             toxicity_found = False
-            threshold = config.get("threshold") 
+            threshold = config.get("threshold")
             toxicity_labels = config.get("labels")
-            
+
             if not toxicity_labels:
                 for item in response["ResultList"]:
                     for label in item["Labels"]:
@@ -133,15 +139,21 @@ class ComprehendToxicity:
             else:
                 for item in response["ResultList"]:
                     for label in item["Labels"]:
-                        if label["Name"] in toxicity_labels and label["Score"] >= threshold:
+                        if (
+                            label["Name"] in toxicity_labels
+                            and label["Score"] >= threshold
+                        ):
                             toxicity_found = True
                             break
 
             if self.callback and self.callback.toxicity_callback:
                 if toxicity_found:
-                    self.moderation_beacon['moderation_status'] = 'LABELS_FOUND' 
-                asyncio.create_task(self.callback.on_after_toxicity(self.moderation_beacon, self.unique_id))
+                    self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
+                asyncio.create_task(
+                    self.callback.on_after_toxicity(
+                        self.moderation_beacon, self.unique_id
+                    )
+                )
             if toxicity_found:
                 raise ModerationToxicityError
-        return prompt_value       
-
+        return prompt_value

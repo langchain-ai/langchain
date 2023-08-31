@@ -1,13 +1,15 @@
 import uuid
-from typing import Optional, Dict, Any, Callable
+from typing import Any, Callable, Dict, Optional
+
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
-from langchain.schema import HumanMessage, AIMessage
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.schema import AIMessage, HumanMessage
 
-from langchain_experimental.comprehend_moderation import (ComprehendPII,
-                                                        ComprehendToxicity, 
-                                                        ComprehendIntent)
+from langchain_experimental.comprehend_moderation.intent import ComprehendIntent
+from langchain_experimental.comprehend_moderation.pii import ComprehendPII
+from langchain_experimental.comprehend_moderation.toxicity import ComprehendToxicity
+
 
 class BaseModeration:
     def __init__(
@@ -90,7 +92,7 @@ class BaseModeration:
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
 
-    def _moderation_class(self, moderation_class: Any) -> Callable:        
+    def _moderation_class(self, moderation_class: Any) -> Callable:
         return moderation_class(
             client=self.client,
             callback=self.moderation_callback,
@@ -103,33 +105,46 @@ class BaseModeration:
             self.run_manager.on_text(message)
 
     def moderate(self, prompt: Any) -> str:
+        from langchain_cm.chains.comprehend_moderation import (  # noqa: E501
+            ModerationIntentConfig,
+            ModerationPiiConfig,
+            ModerationToxicityConfig,
+        )
+
         from langchain_experimental.comprehend_moderation.base_moderation_exceptions import (  # noqa: E501
             ModerationIntentionError,
             ModerationPiiError,
             ModerationToxicityError,
         )
-        from langchain_cm.chains.comprehend_moderation import (   # noqa: E501
-            ModerationPiiConfig,
-            ModerationToxicityConfig,
-            ModerationIntentConfig)
 
         try:
             # convert prompt to text
             input_text = self._convert_prompt_to_text(prompt=prompt)
             output_text = str()
-            
+
             # perform moderation
             filter_functions = {
-                    "pii": ComprehendPII,
-                    "toxicity": ComprehendToxicity,
-                    "intent": ComprehendIntent,
-                }
-            filters = self.config.filters
+                "pii": ComprehendPII,
+                "toxicity": ComprehendToxicity,
+                "intent": ComprehendIntent,
+            }
+
+            filters = self.config.filters  # type: ignore
 
             for _filter in filters:
-                filter_name = "pii" if isinstance(_filter, ModerationPiiConfig) \
-                      else("toxicity" if isinstance(_filter, ModerationToxicityConfig) \
-                      else ("intent" if isinstance(_filter, ModerationIntentConfig) else None))
+                filter_name = (
+                    "pii"
+                    if isinstance(_filter, ModerationPiiConfig)
+                    else (
+                        "toxicity"
+                        if isinstance(_filter, ModerationToxicityConfig)
+                        else (
+                            "intent"
+                            if isinstance(_filter, ModerationIntentConfig)
+                            else None
+                        )
+                    )
+                )
                 if filter_name in filter_functions:
                     self._log_message_for_verbose(
                         f"Running {filter_name} Validation...\n"
@@ -142,7 +157,7 @@ class BaseModeration:
                         prompt_value=input_text,
                         config=_filter.model_dump(),
                     )
-                    
+
             # convert text to prompt and return
             return self._convert_text_to_prompt(prompt=prompt, text=output_text)
 
@@ -161,4 +176,3 @@ class BaseModeration:
             raise e
         except Exception as e:
             raise e
-

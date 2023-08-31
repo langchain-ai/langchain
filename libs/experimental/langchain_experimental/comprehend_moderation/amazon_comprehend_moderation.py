@@ -1,9 +1,19 @@
-from typing import Optional, List, Dict, Any, Callable
-from typing import List
-from langchain.chains.base import Chain
+from typing import Any, Dict, List, Optional
+
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.pydantic_v1 import root_validator
-from langchain_experimental.comprehend_moderation import BaseModeration, BaseModerationCallbackHandler, BaseModerationConfig
+from langchain.chains.base import Chain
+
+from langchain_experimental.comprehend_moderation.base_moderation import (
+    BaseModeration,
+)
+from langchain_experimental.comprehend_moderation.base_moderation_callbacks import (
+    BaseModerationCallbackHandler,
+)
+from langchain_experimental.comprehend_moderation.base_moderation_config import (
+    BaseModerationConfig,
+)
+from langchain_experimental.pydantic_v1 import root_validator
+
 
 class AmazonComprehendModerationChain(Chain):
     """A subclass of Chain, designed to apply moderation to LLMs."""

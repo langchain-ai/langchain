@@ -23,9 +23,7 @@ class ComprehendPII:
         self.callback = callback
         self.unique_id = unique_id
 
-    def validate(
-        self, prompt_value: str, config: Optional[Dict[str, Any]] = None
-    ) -> str:        
+    def validate(self, prompt_value: str, config: Any = None) -> str:
         redact = config.get("redact")
         return (
             self._contains_pii(prompt_value=prompt_value, config=config)
@@ -33,12 +31,10 @@ class ComprehendPII:
             else self._detect_pii(prompt_value=prompt_value, config=config)
         )
 
-    def _contains_pii(
-        self, prompt_value: str, config: Optional[Dict[str, Any]] = None
-    ) -> str:
+    def _contains_pii(self, prompt_value: str, config: Any = None) -> str:
         """
         Checks for Personally Identifiable Information (PII) labels above a
-        specified threshold. Uses Amazon Comprehend Contains PII Entities API. See - 
+        specified threshold. Uses Amazon Comprehend Contains PII Entities API. See -
         https://docs.aws.amazon.com/comprehend/latest/APIReference/API_ContainsPiiEntities.html
 
         Args:
@@ -84,7 +80,7 @@ class ComprehendPII:
         Detects and handles Personally Identifiable Information (PII) entities in the
         given prompt text using Amazon Comprehend's detect_pii_entities API. The
         function provides options to redact or stop processing based on the identified
-        PII entities and a provided configuration. Uses Amazon Comprehend Detect PII 
+        PII entities and a provided configuration. Uses Amazon Comprehend Detect PII
         Entities API. See - https://docs.aws.amazon.com/comprehend/latest/APIReference/API_DetectPiiEntities.html
 
         Args:
@@ -153,7 +149,11 @@ class ComprehendPII:
                     mask_length = char_offset_end - char_offset_begin + 1
                     masked_part = mask_marker * mask_length
 
-                    prompt_value = prompt_value[:char_offset_begin] + masked_part + prompt_value[char_offset_end+1:]
+                    prompt_value = (
+                        prompt_value[:char_offset_begin]
+                        + masked_part
+                        + prompt_value[char_offset_end + 1 :]
+                    )
 
             if self.callback and self.callback.pii_callback:
                 if pii_found:
@@ -163,4 +163,3 @@ class ComprehendPII:
                 )
 
         return prompt_value
-
