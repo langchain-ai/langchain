@@ -7,7 +7,10 @@ class ModerationPiiConfig(BaseModel):
     """Threshold for PII confidence score, defaults to 0.5 i.e. 50%"""
 
     threshold: Optional[float] = 0.5
-    """List of PII Universal Labels. Refer - https://docs.aws.amazon.com/comprehend/latest/dg/how-pii.html#how-pii-types. Defaults to `list[]`"""
+    """
+    List of PII Universal Labels. 
+    Defaults to `list[]`
+    """
     labels: Optional[List[str]] = []
     """Whether to perform redaction of detected PII entities"""
     redact: Optional[bool] = False
@@ -24,13 +27,19 @@ class ModerationToxicityConfig(BaseModel):
 
 
 class ModerationIntentConfig(BaseModel):
-    """Threshold for Intent classification confidence score, defaults to 0.5 i.e. 50%"""
-
+    """
+    Threshold for Intent classification 
+    confidence score, defaults to 0.5 i.e. 50%
+    """
     threshold: Optional[float] = 0.5
 
 
 class BaseModerationConfig(BaseModel):
-    """Filters applied to the moderation chain, defaults to `[ModerationPiiConfig(), ModerationToxicityConfig(), ModerationIntentConfig()]`"""
+    """
+    Filters applied to the moderation chain, defaults to 
+    `[ModerationPiiConfig(), ModerationToxicityConfig(), 
+    ModerationIntentConfig()]`
+    """
 
     filters: Optional[List[Any]] = [
         ModerationPiiConfig(),

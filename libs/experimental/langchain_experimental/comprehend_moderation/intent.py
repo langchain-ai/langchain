@@ -1,6 +1,5 @@
 import asyncio
-import warnings
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from langchain_experimental.comprehend_moderation.base_moderation_exceptions import (
     ModerationIntentionError,
@@ -35,21 +34,20 @@ class ComprehendIntent:
         Check and validate the intent of the given prompt text.
 
         Args:
-            comprehend_client (botocore.client.Comprehend): Comprehend client for intent classification.
             prompt_value (str): The input text to be checked for unintended intent.
-            config (Dict[str, Any]): Configuration settings for intent checks. It should contain the following key:
-                - "threshold" (float, optional): The intent classification threshold. Text segments with intent scores
-                equal to or above this threshold are considered matching the unintended intent. Defaults to 0.5.
+            config (Dict[str, Any]): Configuration settings for intent checks.
 
         Raises:
-            ValueError: If unintended intent is found in the prompt text based on the specified threshold.
+            ValueError: If unintended intent is found in the prompt text based 
+            on the specified threshold.
 
         Returns:
             str: The input prompt_value.
 
         Note:
-            This function checks the intent of the provided prompt text using Comprehend's classify_document API and
-            raises an error if unintended intent is detected with a score above the specified threshold.
+            This function checks the intent of the provided prompt text using 
+            Comprehend's classify_document API and raises an error if unintended 
+            intent is detected with a score above the specified threshold.
 
         Example:
             comprehend_client = boto3.client('comprehend')

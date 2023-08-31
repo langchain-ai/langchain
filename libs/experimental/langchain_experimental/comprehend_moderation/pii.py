@@ -80,7 +80,7 @@ class ComprehendPII:
         given prompt text using Amazon Comprehend's detect_pii_entities API. The
         function provides options to redact or stop processing based on the identified
         PII entities and a provided configuration. Uses Amazon Comprehend Detect PII
-        Entities API. See - https://docs.aws.amazon.com/comprehend/latest/APIReference/API_DetectPiiEntities.html
+        Entities API.
 
         Args:
             prompt_value (str): The input text to be checked for PII entities.

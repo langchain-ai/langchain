@@ -9,11 +9,9 @@ from langchain_experimental.comprehend_moderation.base_moderation import (
 from langchain_experimental.comprehend_moderation.base_moderation_callbacks import (
     BaseModerationCallbackHandler,
 )
-
 from langchain_experimental.comprehend_moderation.base_moderation_config import (
     BaseModerationConfig,
 )
-
 from langchain_experimental.pydantic_v1 import root_validator
 
 
@@ -27,7 +25,10 @@ class AmazonComprehendModerationChain(Chain):
     """Key used to fetch/store the input in data containers. Defaults to `input`"""
 
     moderation_config: Optional[BaseModerationConfig] = BaseModerationConfig()
-    """Configuration settings for moderation, defaults to BaseModerationConfig with default values"""
+    """
+    Configuration settings for moderation, 
+    defaults to BaseModerationConfig with default values
+    """
 
     client: Optional[Any]
     """boto3 client object for connection to Amazon Comprehend"""
