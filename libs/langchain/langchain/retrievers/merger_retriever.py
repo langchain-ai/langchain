@@ -65,7 +65,7 @@ class MergerRetriever(BaseRetriever):
         self,
         query: str,
         run_manager: CallbackManagerForRetrieverRun,
-        retrievers_kwargs: Any | None = None,
+        retrievers_kwargs: Any = None,
     ) -> List[Document]:
         """
         Merge the results of the retrievers.
@@ -108,7 +108,7 @@ class MergerRetriever(BaseRetriever):
         self,
         query: str,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        retrievers_kwargs: Any | None = None,
+        retrievers_kwargs: Any = None,
     ) -> List[Document]:
         """
         Asynchronously merge the results of the retrievers.

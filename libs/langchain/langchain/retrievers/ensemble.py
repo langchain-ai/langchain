@@ -87,7 +87,7 @@ class EnsembleRetriever(BaseRetriever):
         self,
         query: str,
         run_manager: CallbackManagerForRetrieverRun,
-        retrievers_kwargs: Any | None = None,
+        retrievers_kwargs: Any = None,
     ) -> List[Document]:
         """
         Retrieve the results of the retrievers and use rank_fusion_func to get
@@ -127,7 +127,7 @@ class EnsembleRetriever(BaseRetriever):
         self,
         query: str,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        retrievers_kwargs: Any | None = None,
+        retrievers_kwargs: Any = None,
     ) -> List[Document]:
         """
         Asynchronously retrieve the results of the retrievers
@@ -135,6 +135,9 @@ class EnsembleRetriever(BaseRetriever):
 
         Args:
             query: The query to search for.
+            retrievers_kwargs: List containing the kwargs to pass to each retriever.
+                Must be in the same order as the list of retrievers passed to the
+                class constructor
 
         Returns:
             A list of reranked documents.
