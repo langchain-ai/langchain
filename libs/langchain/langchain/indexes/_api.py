@@ -332,9 +332,9 @@ def index(
         uids_to_delete = record_manager.list_keys(before=index_start_dt)
 
         if uids_to_delete:
-            # Then delete from vector store.
-            vector_store.delete(uids_to_delete)
             # First delete from record store.
+            vector_store.delete(uids_to_delete)
+            # Then delete from record manager.
             record_manager.delete_keys(uids_to_delete)
             num_deleted = len(uids_to_delete)
 
