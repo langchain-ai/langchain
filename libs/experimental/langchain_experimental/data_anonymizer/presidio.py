@@ -1,18 +1,22 @@
 from __future__ import annotations
 
-from collections import defaultdict
 import json
+from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
+
+import yaml
 
 from langchain_experimental.data_anonymizer.base import (
     AnonymizerBase,
     ReversibleAnonymizerBase,
 )
+from langchain_experimental.data_anonymizer.deanonymizer_text_matching_strategies import (
+    default_matching_strategy,
+)
 from langchain_experimental.data_anonymizer.faker_presidio_mapping import (
     get_pseudoanonymizer_mapping,
 )
-import yaml
 
 try:
     from presidio_analyzer import AnalyzerEngine
@@ -80,12 +84,20 @@ class PresidioAnonymizerBase(AnonymizerBase):
         self._anonymizer = AnonymizerEngine()
 
     def add_recognizer(self, recognizer: EntityRecognizer) -> None:
-        """Add a recognizer to the analyzer"""
+        """Add a recognizer to the analyzer
+
+        Args:
+            recognizer: Recognizer to add to the analyzer.
+        """
         self._analyzer.registry.add_recognizer(recognizer)
         self.analyzed_fields.extend(recognizer.supported_entities)
 
     def add_operators(self, operators: Dict[str, OperatorConfig]) -> None:
-        """Add operators to the anonymizer"""
+        """Add operators to the anonymizer
+
+        Args:
+            operators: Operators to add to the anonymizer.
+        """
         self.operators.update(operators)
 
 
@@ -94,6 +106,9 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
         """Anonymize text.
         Each PII entity is replaced with a fake value.
         Each time fake values will be different, as they are generated randomly.
+
+        Args:
+            text: text to anonymize
         """
         results = self._analyzer.analyze(
             text,
@@ -185,6 +200,9 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         Each time fake values will be different, as they are generated randomly.
         At the same time, we will create a mapping from each anonymized entity
         back to its original text value.
+
+        Args:
+            text: text to anonymize
         """
         analyzer_results = self._analyzer.analyze(
             text,
@@ -210,10 +228,21 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
 
         return anonymizer_results.text
 
-    def _deanonymize(self, text_to_deanonymize: str) -> str:
+    def _deanonymize(
+        self,
+        text_to_deanonymize: str,
+        deanonymizer_matching_strategy: Callable[
+            [str, Dict[str, Dict[str, str]]], str
+        ] = default_matching_strategy,
+    ) -> str:
         """Deanonymize text.
         Each anonymized entity is replaced with its original value.
         This method exploits the mapping created during the anonymization process.
+
+        Args:
+            text_to_deanonymize: text to deanonymize
+            deanonymizer_matching_strategy: function to use to match
+                anonymized entities with their original values and replace them.
         """
         if not self._deanonymizer_mapping:
             raise ValueError(
@@ -221,9 +250,10 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
                 "Please call anonymize() and anonymize some text first.",
             )
 
-        for entity_type in self._deanonymizer_mapping:
-            for anonymized, original in self._deanonymizer_mapping[entity_type].items():
-                text_to_deanonymize = text_to_deanonymize.replace(anonymized, original)
+        text_to_deanonymize = deanonymizer_matching_strategy(
+            text_to_deanonymize, self.deanonymizer_mapping
+        )
+
         return text_to_deanonymize
 
     def save_deanonymizer_mapping(self, file_path: Union[Path, str]) -> None:
