@@ -387,7 +387,9 @@ class AzureSearch(VectorStore):
                     page_content=result.pop(FIELDS_CONTENT),
                     metadata=json.loads(result[FIELDS_METADATA])
                     if FIELDS_METADATA in result
-                    else result,
+                    else {
+                        k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR
+                    },
                 ),
                 float(result["@search.score"]),
             )
@@ -446,7 +448,9 @@ class AzureSearch(VectorStore):
                     page_content=result.pop(FIELDS_CONTENT),
                     metadata=json.loads(result[FIELDS_METADATA])
                     if FIELDS_METADATA in result
-                    else result,
+                    else {
+                        k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR
+                    },
                 ),
                 float(result["@search.score"]),
             )
@@ -520,7 +524,7 @@ class AzureSearch(VectorStore):
                     page_content=result.pop(FIELDS_CONTENT),
                     metadata=json.loads(result[FIELDS_METADATA])
                     if FIELDS_METADATA in result
-                    else result
+                    else {k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR}
                     | {
                         "captions": {
                             "text": result.get("@search.captions", [{}])[0].text,
