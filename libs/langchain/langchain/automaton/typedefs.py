@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Callable, Any, Optional, Sequence, List, Mapping
+from typing import Any, Optional, Sequence, List, Mapping
 
 from langchain.schema import (
     BaseMessage,
@@ -21,20 +21,22 @@ class FunctionResult:
     error: Optional[str]
 
 
-InternalMessages = FunctionCall | FunctionResult
-MessageLike = BaseMessage | InternalMessages
+@dataclasses.dataclass(frozen=True)
+class AgentFinish:
+    result: Any
+
+
+MessageLike = BaseMessage | FunctionCall | FunctionResult | AgentFinish
 
 
 class MessageLog:
+    """A generalized message log for message like items."""
+
     def __init__(self, messages: Sequence[MessageLike]):
         self.messages = list(messages)
 
     def add_messages(self, messages: Sequence[MessageLike]):
         self.messages.extend(messages)
-
-
-# Interface that takes memory and returns a prompt value
-PromptGenerator = Callable[[MessageLog], PromptValue]
 
 
 class MessageLogPromptValue(PromptValue):

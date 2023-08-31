@@ -1,15 +1,19 @@
+"""Module contains well known runnables for agents."""
 from __future__ import annotations
 
 from typing import Sequence, Callable, Union, List, Optional
 
 from langchain.automaton.typedefs import (
-    MessageLike, PromptGenerator, MessageLog, FunctionResult,
-    FunctionCall
+    MessageLike,
+    MessageLog,
+    FunctionResult,
+    FunctionCall,
 )
-from langchain.schema import BaseMessage, AIMessage
+from langchain.schema import BaseMessage, AIMessage, PromptValue
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.runnable.base import RunnableLambda, Runnable
 from langchain.tools import BaseTool
+
 
 
 def create_tool_invoker(
@@ -34,7 +38,7 @@ def create_tool_invoker(
 
 def create_llm_program(
     llm: BaseLanguageModel,
-    prompt_generator: PromptGenerator,
+    prompt_generator: Callable[[MessageLog], PromptValue],
     *,
     stop: Optional[Sequence[str]] = None,
     parser: Union[Runnable, Callable] = None,
