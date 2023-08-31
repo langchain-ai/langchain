@@ -10,7 +10,8 @@ class TaskCreationChain(LLMChain):
     def from_llm(cls, llm: BaseLanguageModel, verbose: bool = True) -> LLMChain:
         """Get the response parser."""
         task_creation_template = (
-            "Ты - AI, создающий задачи, который использует результат работы исполнительного агента"
+            "Ты - AI, создающий задачи,"
+            " который использует результат работы исполнительного агента"
             " для создания новых задач с следующей целью: {objective},"
             " Последняя выполненная задача имеет результат: {result}."
             " Этот результат был основан на этом описании задачи: {task_description}."

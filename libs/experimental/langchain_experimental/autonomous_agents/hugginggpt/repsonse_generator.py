@@ -11,7 +11,8 @@ class ResponseGenerationChain(LLMChain):
     @classmethod
     def from_llm(cls, llm: BaseLanguageModel, verbose: bool = True) -> LLMChain:
         execution_template = (
-            "AI-ассистент проанализировал ввод пользователя, разбил его на несколько задач"
+            "AI-ассистент проанализировал ввод пользователя,"
+            " разбил его на несколько задач"
             "и выполнил их. Результаты следующие:\n"
             "{task_execution}"
             "\nПожалуйста, суммируй результаты и сформулируй ответ."

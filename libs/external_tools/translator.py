@@ -59,7 +59,7 @@ def translate_to_russian(text):
             return text
         return translated_text
     except Exception as ex:
-        print("Exception occured: ", ex)
+        print("Exception occurred: ", ex)
         print("Rate limit error. Restarting in (30s)...")
         time.sleep(30)
         return translate_to_russian(text)

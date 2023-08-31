@@ -49,8 +49,8 @@ class GigaChat(SimpleChatModel):
     @classmethod
     def transform_output(cls, response: Any) -> Tuple[str, str]:
         """Transforms API response to extract desired output."""
-        choise = response.json()["choices"][0]
-        return choise["message"]["content"], choise["finish_reason"]
+        choice = response.json()["choices"][0]
+        return choice["message"]["content"], choice["finish_reason"]
 
     @classmethod
     def convert_message_to_dict(cls, message: BaseMessage) -> dict:
