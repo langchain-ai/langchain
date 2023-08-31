@@ -156,8 +156,14 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
             _id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
     except Exception:
         pass
-    return {
+
+    result = {
         "lc": 1,
         "type": "not_implemented",
         "id": _id,
     }
+    try:
+        result["repr"] = repr(obj)
+    except Exception:
+        pass
+    return result
