@@ -5,8 +5,15 @@ from pathlib import Path
 from typing import Iterator
 
 from langchain.output_parsers import RegexParser
+from langchain.prompts.chat import (
+    AIMessagePromptTemplate,
+    ChatMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+)
 from langchain.prompts.few_shot import FewShotPromptTemplate
-from langchain.prompts.loading import load_prompt
+from langchain.prompts.loading import load_message_prompt, load_prompt
 from langchain.prompts.prompt import PromptTemplate
 
 EXAMPLE_DIR = Path("tests/unit_tests/examples").absolute()
@@ -175,3 +182,40 @@ def test_loading_with_output_parser() -> None:
             template=expected_template,
         )
         assert prompt == expected_prompt
+
+
+def test_loading_message_prompt_from_dict() -> None:
+    """Test loading message prompt from dict"""
+    messages = [
+        SystemMessagePromptTemplate(
+            prompt=PromptTemplate(
+                template="Here's some context: {context}",
+                input_variables=["context"],
+            ),
+            additional_kwargs={"foo": "bar"},
+        ),
+        HumanMessagePromptTemplate(
+            prompt=PromptTemplate(
+                template="Hello {foo}, I'm {bar}. Thanks for the {context}",
+                input_variables=["foo", "bar", "context"],
+            )
+        ),
+        AIMessagePromptTemplate(
+            prompt=PromptTemplate(
+                template="I'm an AI. I'm {foo}. I'm {bar}.",
+                input_variables=["foo", "bar"],
+            )
+        ),
+        ChatMessagePromptTemplate(
+            role="test",
+            prompt=PromptTemplate(
+                template="I'm a generic message. I'm {foo}. I'm {bar}.",
+                input_variables=["foo", "bar"],
+            ),
+        ),
+        MessagesPlaceholder(variable_name="foo"),
+    ]
+    for message in messages:
+        message_dict = message.dict()
+        message_reloaded = load_message_prompt(message_dict)
+        assert message == message_reloaded

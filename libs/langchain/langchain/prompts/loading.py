@@ -7,6 +7,14 @@ from typing import Callable, Dict, Union
 import yaml
 
 from langchain.output_parsers.regex import RegexParser
+from langchain.prompts.chat import (
+    AIMessagePromptTemplate,
+    BaseMessagePromptTemplate,
+    ChatMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+)
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, StrOutputParser
@@ -113,6 +121,35 @@ def _load_prompt(config: dict) -> PromptTemplate:
     config = _load_template("template", config)
     config = _load_output_parser(config)
     return PromptTemplate(**config)
+
+
+def load_message_prompt(config: dict) -> BaseMessagePromptTemplate:
+    msg_type = config["_msg_type"]
+    if msg_type == "ai":
+        return AIMessagePromptTemplate(
+            prompt=load_prompt_from_config(config["prompt"]),
+            additional_kwargs=config.get("additional_kwargs", {}),
+        )
+    elif msg_type == "system":
+        return SystemMessagePromptTemplate(
+            prompt=load_prompt_from_config(config["prompt"]),
+            additional_kwargs=config.get("additional_kwargs", {}),
+        )
+    elif msg_type == "human":
+        return HumanMessagePromptTemplate(
+            prompt=load_prompt_from_config(config["prompt"]),
+            additional_kwargs=config.get("additional_kwargs", {}),
+        )
+    elif msg_type == "chat":
+        return ChatMessagePromptTemplate(
+            role=config["role"],
+            prompt=load_prompt_from_config(config["prompt"]),
+            additional_kwargs=config.get("additional_kwargs", {}),
+        )
+    elif msg_type == "placeholder":
+        return MessagesPlaceholder(**config)
+    else:
+        raise ValueError(f"Unsupported msg type: {msg_type}")
 
 
 def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:

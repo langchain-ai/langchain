@@ -40,6 +40,23 @@ class BaseMessagePromptTemplate(Serializable, ABC):
     """Base class for message prompt templates."""
 
     @property
+    def _prompt_type(self) -> str:
+        """Return the prompt type key."""
+        return "message"
+
+    @property
+    def _msg_type(self) -> str:
+        """Return the msg type key."""
+        raise NotImplementedError
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of prompt."""
+        prompt = super().dict(**kwargs)
+        prompt["_type"] = self._prompt_type
+        prompt["_msg_type"] = self._msg_type
+        return prompt
+
+    @property
     def lc_serializable(self) -> bool:
         """Whether this object should be serialized.
 
@@ -86,6 +103,11 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
 
     variable_name: str
     """Name of variable to use as messages."""
+
+    @property
+    def _msg_type(self) -> str:
+        """Return the msg type key."""
+        return "placeholder"
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
@@ -213,6 +235,11 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
     role: str
     """Role of the message."""
 
+    @property
+    def _msg_type(self) -> str:
+        """Return the msg type key."""
+        return "chat"
+
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
 
@@ -231,6 +258,11 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
 class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
     """Human message prompt template. This is a message that is sent to the user."""
 
+    @property
+    def _msg_type(self) -> str:
+        """Return the msg type key."""
+        return "human"
+
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
 
@@ -246,6 +278,11 @@ class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
     """AI message prompt template. This is a message that is not sent to the user."""
+
+    @property
+    def _msg_type(self) -> str:
+        """Return the msg type key."""
+        return "ai"
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -264,6 +301,11 @@ class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
     """System message prompt template.
     This is a message that is not sent to the user.
     """
+
+    @property
+    def _msg_type(self) -> str:
+        """Return the msg type key."""
+        return "system"
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.

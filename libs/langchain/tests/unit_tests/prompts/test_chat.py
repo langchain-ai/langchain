@@ -12,6 +12,7 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     ChatPromptValue,
     HumanMessagePromptTemplate,
+    MessagesPlaceholder,
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
@@ -349,3 +350,52 @@ def test_chat_message_partial() -> None:
     ]
     assert res == expected
     assert template2.format(input="hello") == get_buffer_string(expected)
+
+
+def test_base_message_template_to_dict() -> None:
+    # system message
+    system_msg = SystemMessagePromptTemplate(
+        prompt=PromptTemplate(
+            template="Here's some context: {context}",
+            input_variables=["context"],
+        ),
+        additional_kwargs={"foo": "bar"},
+    )
+    system_msg_dict = system_msg.dict()
+    assert system_msg_dict["_msg_type"] == "system"
+
+    # human message
+    human_msg = HumanMessagePromptTemplate(
+        prompt=PromptTemplate(
+            template="Hello {foo}, I'm {bar}. Thanks for the {context}",
+            input_variables=["foo", "bar", "context"],
+        )
+    )
+    human_msg_dict = human_msg.dict()
+    assert human_msg_dict["_msg_type"] == "human"
+
+    # ai message
+    ai_msg = AIMessagePromptTemplate(
+        prompt=PromptTemplate(
+            template="I'm an AI. I'm {foo}. I'm {bar}.",
+            input_variables=["foo", "bar"],
+        )
+    )
+    ai_msg_dict = ai_msg.dict()
+    assert ai_msg_dict["_msg_type"] == "ai"
+
+    # chat message
+    chat_msg = ChatMessagePromptTemplate(
+        role="test",
+        prompt=PromptTemplate(
+            template="I'm a generic message. I'm {foo}. I'm {bar}.",
+            input_variables=["foo", "bar"],
+        ),
+    )
+    chat_msg_dict = chat_msg.dict()
+    assert chat_msg_dict["_msg_type"] == "chat"
+
+    # placeholder
+    placeholder_msg = MessagesPlaceholder(variable_name="foo")
+    placeholder_msg_dict = placeholder_msg.dict()
+    assert placeholder_msg_dict["_msg_type"] == "placeholder"
