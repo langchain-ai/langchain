@@ -8,7 +8,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import ChatResult
 from langchain.schema.messages import (
     AIMessage,
@@ -66,12 +66,14 @@ class ChatLlama2(BaseChatModel):
         {{ system_prompt }}
         <</SYS>>
 
-        {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s><s>[INST] {{ user_msg_2 }} [/INST]
+        {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
+        <s>[INST] {{ user_msg_2 }} [/INST]
         ```
 
         Prompt template without System Message:
         ```
-        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s><s>[INST] {{ user_msg_2 }} [/INST]
+        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
+        <s>[INST] {{ user_msg_2 }} [/INST] {{ model_answer_2}} </s>
         ```
         """
         prompt = ""
@@ -90,7 +92,8 @@ class ChatLlama2(BaseChatModel):
             elif isinstance(message, AIMessage):
                 prompt += f"{message.content} </s><s>{B_INST} "
             elif isinstance(message, ChatMessage) and i == 0:
-                prompt += f"<s>{B_INST} {message.role.capitalize()}: {message.content} {E_INST} "
+                prompt += f"<s>{B_INST} {message.role.capitalize()}:\
+{message.content} {E_INST} "
             elif isinstance(message, ChatMessage) and i > 0:
                 prompt += f"{message.role.capitalize()}: {message.content} {E_INST} "
 
