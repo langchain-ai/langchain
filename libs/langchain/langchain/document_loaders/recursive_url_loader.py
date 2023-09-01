@@ -173,7 +173,6 @@ class RecursiveUrlLoader(BaseLoader):
             "asp",
         }:
             url += "/"
-        directory_url  = url
         # Exclude the root and parent from a list
         visited = set() if visited is None else visited
 
