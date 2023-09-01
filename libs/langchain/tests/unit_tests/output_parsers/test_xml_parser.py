@@ -7,27 +7,30 @@ DEF_RESULT_ENCODING = """<?xml version="1.0" encoding="UTF-8"?>
 <foo>
     <bar>
         <baz></baz>
-        <baz></baz>
-    </bar>  
+        <baz>slim.shady</baz>
+    </bar>
+    <baz>tag</baz>
 </foo>"""
 
-DEF_RESULT_EXPECTED = """<foo>
-    <bar>
-        <baz></baz>
-        <baz></baz>
-    </bar>  
-</foo>"""
+DEF_RESULT_EXPECTED = {
+    "foo": [
+        {"bar": [{"baz": None}, {"baz": "slim.shady"}]},
+        {"baz": "tag"},
+    ],
+}
 
 
-@pytest.mark.parametrize("result", [DEF_RESULT_ENCODING, DEF_RESULT_EXPECTED])
+@pytest.mark.parametrize(
+    "result",
+    [DEF_RESULT_ENCODING, DEF_RESULT_ENCODING[DEF_RESULT_ENCODING.find("\n") :]],
+)
 def test_xml_output_parser(result: str) -> None:
     """Test XMLOutputParser."""
 
     xml_parser = XMLOutputParser()
 
-    result = xml_parser.parse(result)
-    print("parse_result:", result)
-    assert DEF_RESULT_EXPECTED == result
+    xml_result = xml_parser.parse(result)
+    assert DEF_RESULT_EXPECTED == xml_result
 
 
 @pytest.mark.parametrize("result", ["foo></foo>", "<foo></foo", "foo></foo", "foofoo"])

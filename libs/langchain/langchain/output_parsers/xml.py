@@ -1,5 +1,6 @@
 import re
-from typing import List, Optional
+import xml.etree.ElementTree as ET
+from typing import Any, Dict, List, Optional
 
 from langchain.output_parsers.format_instructions import XML_FORMAT_INSTRUCTIONS
 from langchain.schema import BaseOutputParser
@@ -16,7 +17,7 @@ class XMLOutputParser(BaseOutputParser):
     def get_format_instructions(self) -> str:
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
-    def parse(self, text: str) -> str:
+    def parse(self, text: str) -> Dict[str, Any]:
         text = text.strip("`").strip("xml")
         encoding_match = self.encoding_matcher.search(text)
         if encoding_match:
@@ -24,9 +25,20 @@ class XMLOutputParser(BaseOutputParser):
         if (text.startswith("<") or text.startswith("\n<")) and (
             text.endswith(">") or text.endswith(">\n")
         ):
-            return text
+            root = ET.fromstring(text)
+            return self._root_to_dict(root)
         else:
             raise ValueError(f"Could not parse output: {text}")
+
+    def _root_to_dict(self, root: ET.Element) -> Dict[str, Any]:
+        """Converts xml tree to python dictionary."""
+        result = {root.tag: []}
+        for child in root:
+            if len(child) == 0:
+                result[root.tag].append({child.tag: child.text})
+            else:
+                result[root.tag].append(self._root_to_dict(child))
+        return result
 
     @property
     def _type(self) -> str:
