@@ -169,7 +169,7 @@ def index(
     vector_store: VectorStore,
     *,
     batch_size: int = 100,
-    delete_mode: Literal["incremental", "full", None] = None,
+    cleanup: Literal["incremental", "full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
@@ -195,7 +195,7 @@ def index(
                          updated.
         vector_store: Vector store to index the documents into.
         batch_size: Batch size to use when indexing.
-        delete_mode: How to handle clean up of documents.
+        cleanup: How to handle clean up of documents.
             - Incremental: Cleans up all documents that haven't been updated AND
                            that are associated with source ids that were seen
                            during indexing.
@@ -213,14 +213,14 @@ def index(
         Indexing result which contains information about how many documents
         were added, updated, deleted, or skipped.
     """
-    if delete_mode not in {"incremental", "full", None}:
+    if cleanup not in {"incremental", "full", None}:
         raise ValueError(
-            f"delete_mode should be one of 'incremental', 'full' or None. "
-            f"Got {delete_mode}."
+            f"cleanup should be one of 'incremental', 'full' or None. "
+            f"Got {cleanup}."
         )
 
-    if delete_mode == "incremental" and source_id_key is None:
-        raise ValueError("Source id key is required when delete mode is incremental.")
+    if cleanup == "incremental" and source_id_key is None:
+        raise ValueError("Source id key is required when cleanup mode is incremental.")
 
     # Check that the Vectorstore has required methods implemented
     methods = ["delete", "add_documents"]
@@ -264,12 +264,12 @@ def index(
             source_id_assigner(doc) for doc in hashed_docs
         ]
 
-        if delete_mode == "incremental":
-            # If the delete mode is incremental, source ids are required.
+        if cleanup == "incremental":
+            # If the cleanup mode is incremental, source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:
                     raise ValueError(
-                        "Source ids are required when delete mode is incremental. "
+                        "Source ids are required when cleanup mode is incremental. "
                         f"Document that starts with "
                         f"content: {hashed_doc.page_content[:100]} was not assigned "
                         f"as source id."
@@ -307,7 +307,7 @@ def index(
         )
 
         # If source IDs are provided, we can do the deletion incrementally!
-        if delete_mode == "incremental":
+        if cleanup == "incremental":
             # Get the uids of the documents that were not returned by the loader.
 
             # mypy isn't good enough to determine that source ids cannot be None
@@ -328,7 +328,7 @@ def index(
                 record_manager.delete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
 
-    if delete_mode == "full":
+    if cleanup == "full":
         uids_to_delete = record_manager.list_keys(before=index_start_dt)
 
         if uids_to_delete:
