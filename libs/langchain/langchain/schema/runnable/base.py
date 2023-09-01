@@ -1823,7 +1823,7 @@ class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
     async def ainvoke(
         self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Output]:
-        return await self._call_with_config(self._ainvoke, input, config)
+        return await self._acall_with_config(self._ainvoke, input, config)
 
 
 class RunnableBinding(Serializable, Runnable[Input, Output]):
