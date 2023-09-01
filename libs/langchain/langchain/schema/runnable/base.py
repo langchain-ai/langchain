@@ -1697,6 +1697,9 @@ class RunnableLambda(Runnable[Input, Output]):
         else:
             return False
 
+    def __repr__(self) -> str:
+        return "RunnableLambda(...)"
+
     def _invoke(
         self,
         input: Input,
