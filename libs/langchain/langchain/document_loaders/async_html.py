@@ -128,8 +128,9 @@ class AsyncHtmlLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load text from the url(s) in web_path."""
-
-        results = asyncio.run(self.fetch_all(self.web_paths))
+        
+        loop = asyncio.get_event_loop()
+        results = loop.run_until_complete(self.fetch_all(self.web_paths))
         docs = []
         for i, text in enumerate(results):
             metadata = {"source": self.web_paths[i]}
