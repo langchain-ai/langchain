@@ -4,7 +4,7 @@ from test_utils import MockEncoder
 import langchain.chains.rl_chain.base as rl_chain
 import langchain.chains.rl_chain.pick_best_chain as pick_best_chain
 
-encoded_text = "[ e n c o d e d ] "
+encoded_keyword = "[encoded]"
 
 
 @pytest.mark.requires("vowpal_wabbit_next")
@@ -80,12 +80,12 @@ def test_pickbest_textembedder_w_full_label_w_emb() -> None:
     str1 = "0"
     str2 = "1"
     str3 = "2"
-    encoded_str1 = encoded_text + " ".join(char for char in str1)
-    encoded_str2 = encoded_text + " ".join(char for char in str2)
-    encoded_str3 = encoded_text + " ".join(char for char in str3)
+    encoded_str1 = rl_chain.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str2 = rl_chain.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = rl_chain.stringify_embedding(list(encoded_keyword + str3))
 
     ctx_str_1 = "context1"
-    encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
+    encoded_ctx_str_1 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_1))
 
     named_actions = {"action1": rl_chain.Embed([str1, str2, str3])}
     context = {"context": rl_chain.Embed(ctx_str_1)}
@@ -104,12 +104,12 @@ def test_pickbest_textembedder_w_full_label_w_embed_and_keep() -> None:
     str1 = "0"
     str2 = "1"
     str3 = "2"
-    encoded_str1 = encoded_text + " ".join(char for char in str1)
-    encoded_str2 = encoded_text + " ".join(char for char in str2)
-    encoded_str3 = encoded_text + " ".join(char for char in str3)
+    encoded_str1 = rl_chain.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str2 = rl_chain.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = rl_chain.stringify_embedding(list(encoded_keyword + str3))
 
     ctx_str_1 = "context1"
-    encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
+    encoded_ctx_str_1 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_1))
 
     named_actions = {"action1": rl_chain.EmbedAndKeep([str1, str2, str3])}
     context = {"context": rl_chain.EmbedAndKeep(ctx_str_1)}
@@ -170,14 +170,14 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_full_emb() -> None
     str1 = "0"
     str2 = "1"
     str3 = "2"
-    encoded_str1 = encoded_text + " ".join(char for char in str1)
-    encoded_str2 = encoded_text + " ".join(char for char in str2)
-    encoded_str3 = encoded_text + " ".join(char for char in str3)
+    encoded_str1 = rl_chain.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str2 = rl_chain.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = rl_chain.stringify_embedding(list(encoded_keyword + str3))
 
     ctx_str_1 = "context1"
     ctx_str_2 = "context2"
-    encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
-    encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
+    encoded_ctx_str_1 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_1))
+    encoded_ctx_str_2 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_2))
 
     named_actions = {"action1": rl_chain.Embed([{"a": str1, "b": str1}, str2, str3])}
     context = {
@@ -203,14 +203,14 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_full_embed_and_kee
     str1 = "0"
     str2 = "1"
     str3 = "2"
-    encoded_str1 = encoded_text + " ".join(char for char in str1)
-    encoded_str2 = encoded_text + " ".join(char for char in str2)
-    encoded_str3 = encoded_text + " ".join(char for char in str3)
+    encoded_str1 = rl_chain.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str2 = rl_chain.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = rl_chain.stringify_embedding(list(encoded_keyword + str3))
 
     ctx_str_1 = "context1"
     ctx_str_2 = "context2"
-    encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
-    encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
+    encoded_ctx_str_1 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_1))
+    encoded_ctx_str_2 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_2))
 
     named_actions = {
         "action1": rl_chain.EmbedAndKeep([{"a": str1, "b": str1}, str2, str3])
@@ -236,14 +236,12 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_emb() -> N
     str1 = "0"
     str2 = "1"
     str3 = "2"
-    encoded_str1 = encoded_text + " ".join(char for char in str1)
-    encoded_text + " ".join(char for char in str2)
-    encoded_str3 = encoded_text + " ".join(char for char in str3)
+    encoded_str1 = rl_chain.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str3 = rl_chain.stringify_embedding(list(encoded_keyword + str3))
 
     ctx_str_1 = "context1"
     ctx_str_2 = "context2"
-    encoded_text + " ".join(char for char in ctx_str_1)
-    encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
+    encoded_ctx_str_2 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_2))
 
     named_actions = {
         "action1": [
@@ -270,14 +268,12 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_emakeep() 
     str1 = "0"
     str2 = "1"
     str3 = "2"
-    encoded_str1 = encoded_text + " ".join(char for char in str1)
-    encoded_text + " ".join(char for char in str2)
-    encoded_str3 = encoded_text + " ".join(char for char in str3)
+    encoded_str1 = rl_chain.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str3 = rl_chain.stringify_embedding(list(encoded_keyword + str3))
 
     ctx_str_1 = "context1"
     ctx_str_2 = "context2"
-    encoded_text + " ".join(char for char in ctx_str_1)
-    encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
+    encoded_ctx_str_2 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_2))
 
     named_actions = {
         "action1": [
@@ -305,11 +301,11 @@ def test_raw_features_underscored() -> None:
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     str1 = "this is a long string"
     str1_underscored = str1.replace(" ", "_")
-    encoded_str1 = encoded_text + " ".join(char for char in str1)
+    encoded_str1 = rl_chain.stringify_embedding(list(encoded_keyword + str1))
 
     ctx_str = "this is a long context"
     ctx_str_underscored = ctx_str.replace(" ", "_")
-    encoded_ctx_str = encoded_text + " ".join(char for char in ctx_str)
+    encoded_ctx_str = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str))
 
     # No embeddings
     named_actions = {"action": [str1]}
