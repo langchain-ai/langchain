@@ -38,13 +38,13 @@ def test_sqlitevss_with_score() -> None:
     docsearch = _sqlite_vss_from_texts(metadatas=metadatas)
     output = docsearch.similarity_search_with_score("foo", k=3)
     docs = [o[0] for o in output]
-    scores = [o[1] for o in output]
+    distances = [o[1] for o in output]
     assert docs == [
         Document(page_content="foo", metadata={"page": 0}),
         Document(page_content="bar", metadata={"page": 1}),
         Document(page_content="baz", metadata={"page": 2}),
     ]
-    assert scores[0] > scores[1] > scores[2]
+    assert distances[0] < distances[1] < distances[2]
 
 
 @pytest.mark.requires("sqlite-vss")

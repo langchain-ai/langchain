@@ -42,8 +42,8 @@ class SQLiteVSS(VectorStore):
             import sqlite_vss  # noqa  # pylint: disable=unused-import
         except ImportError:
             raise ImportError(
-                "Could not import sqlite_vss python package. "
-                "Please install it with `pip install sqlite_vss`."
+                "Could not import sqlite-vss python package. "
+                "Please install it with `pip install sqlite-vss`."
             )
 
         if not connection:
@@ -151,8 +151,7 @@ class SQLiteVSS(VectorStore):
         for row in results:
             metadata = json.loads(row["metadata"]) or {}
             doc = Document(page_content=row["text"], metadata=metadata)
-            score = self._euclidean_relevance_score_fn(row["distance"])
-            documents.append((doc, score))
+            documents.append((doc, row["distance"]))
 
         return documents
 
