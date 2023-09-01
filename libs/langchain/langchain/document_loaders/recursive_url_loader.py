@@ -1,7 +1,7 @@
 import asyncio
 import re
 from typing import Callable, Iterator, List, Optional, Set, Union
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlsplit
 
 import requests
 
@@ -42,6 +42,29 @@ class RecursiveUrlLoader(BaseLoader):
         self.max_depth = max_depth if max_depth is not None else 2
         self.timeout = timeout if timeout is not None else 10
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
+    
+    @staticmethod
+    def get_directory_url(url: str) -> str:
+        """Get the parent directory URL from a given URL.
+        
+        Args:
+            url (str): The URL to extract the parent directory from.
+        
+        Returns:
+            str: The parent directory URL.
+        """
+        parsed_url = urlsplit(url)
+        path = parsed_url.path
+        if path.endswith("/"):
+            directory_url = url
+        else:
+            suffix = path.rsplit(".", 1)[-1]
+            if suffix in {"html", "htm", "xml", "php", "aspx", "jsp", "asp"}:
+                directory_url = url.rsplit("/", 1)[0] + "/"
+            else:
+                directory_url = url + "/"
+        
+        return directory_url
 
     def _get_sub_links(self, raw_html: str, base_url: str) -> List[str]:
         """This function extracts all the links from the raw html,
@@ -93,13 +116,14 @@ class RecursiveUrlLoader(BaseLoader):
                 continue
         # Remove duplicates
         # also do another filter to prevent outside links
+        directory_url = self.get_directory_url(base_url)
         absolute_paths = list(
             set(
                 [
                     path
                     for path in absolute_paths
                     if not self.prevent_outside
-                    or path.startswith(base_url)
+                    or path.startswith(directory_url)
                     and path != base_url
                 ]
             )
@@ -138,9 +162,18 @@ class RecursiveUrlLoader(BaseLoader):
             return []
 
         # Add a trailing slash if not present
-        if not url.endswith("/"):
+        suffix = url.rsplit(".", 1)[-1]
+        if not url.endswith("/") and not suffix in {
+            "html",
+            "htm",
+            "xml",
+            "php",
+            "aspx",
+            "jsp",
+            "asp",
+        }:
             url += "/"
-
+        directory_url  = url
         # Exclude the root and parent from a list
         visited = set() if visited is None else visited
 
