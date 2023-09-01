@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import os
 import tempfile
-from typing import List, Union, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
+
+if TYPE_CHECKING:
+    import botocore
 
 
 class S3FileLoader(BaseLoader):
@@ -14,6 +19,7 @@ class S3FileLoader(BaseLoader):
         self,
         bucket: str,
         key: str,
+        *,
         region_name: Optional[str] = None,
         api_version: Optional[str] = None,
         use_ssl: Optional[bool] = True,
@@ -22,7 +28,7 @@ class S3FileLoader(BaseLoader):
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
-        boto_config=None,
+        boto_config: Optional[botocore.client.Config] = None,
     ):
         """Initialize with bucket and key name.
 

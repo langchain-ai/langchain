@@ -1,8 +1,13 @@
-from typing import List, Optional, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.s3_file import S3FileLoader
+
+if TYPE_CHECKING:
+    import botocore
 
 
 class S3DirectoryLoader(BaseLoader):
@@ -12,6 +17,7 @@ class S3DirectoryLoader(BaseLoader):
         self,
         bucket: str,
         prefix: str = "",
+        *,
         region_name: Optional[str] = None,
         api_version: Optional[str] = None,
         use_ssl: Optional[bool] = True,
@@ -20,7 +26,7 @@ class S3DirectoryLoader(BaseLoader):
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
-        boto_config=None,
+        boto_config: Optional[botocore.client.Config] = None,
     ):
         """Initialize with bucket and key name.
 
@@ -35,10 +41,10 @@ class S3DirectoryLoader(BaseLoader):
             to specify this parameter if you want to use a previous API version
             of the client.
 
-        :param use_ssl: Whether or not to use SSL.  By default, SSL is used.
+        :param use_ssl: Whether to use SSL.  By default, SSL is used.
             Note that not all services support non-ssl connections.
 
-        :param verify: Whether or not to verify SSL certificates.
+        :param verify: Whether to verify SSL certificates.
             By default SSL certificates are verified.  You can provide the
             following values:
 
@@ -128,6 +134,3 @@ class S3DirectoryLoader(BaseLoader):
             )
             docs.extend(loader.load())
         return docs
-
-
-S3DirectoryLoader()
