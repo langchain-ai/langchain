@@ -153,7 +153,8 @@ class BaseModeration:
                     )
                     input_text = input_text if not output_text else output_text
                     output_text = validation_fn(
-                        prompt_value=input_text, config=_filter.model_dump(),
+                        prompt_value=input_text,
+                        config=_filter.model_dump(),
                     )
 
             # convert text to prompt and return

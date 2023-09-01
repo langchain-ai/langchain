@@ -27,9 +27,9 @@ class ComprehendPII:
         redact = config.get("redact")
         return (
             self._detect_pii(prompt_value=prompt_value, config=config)
-            if redact 
+            if redact
             else self._contains_pii(prompt_value=prompt_value, config=config)
-       )
+        )
 
     def _contains_pii(self, prompt_value: str, config: Any = None) -> str:
         """
