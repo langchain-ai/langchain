@@ -3,7 +3,9 @@ from __future__ import annotations
 from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union
+
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from langchain.callbacks.base import BaseCallbackManager, Callbacks
@@ -31,6 +33,11 @@ class RunnableConfig(TypedDict, total=False):
     Tags are passed to all callbacks, metadata is passed to handle*Start callbacks.
     """
 
+    run_name: str
+    """
+    Name for the tracer run for this call. Defaults to the name of the class.
+    """
+
     _locals: Dict[str, Any]
     """
     Local variables
@@ -48,7 +55,7 @@ class RunnableConfig(TypedDict, total=False):
     """
 
 
-def ensure_config(config: Optional[RunnableConfig]) -> RunnableConfig:
+def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     empty = RunnableConfig(
         tags=[],
         metadata={},
@@ -61,20 +68,52 @@ def ensure_config(config: Optional[RunnableConfig]) -> RunnableConfig:
     return empty
 
 
+def get_config_list(
+    config: Optional[Union[RunnableConfig, List[RunnableConfig]]], length: int
+) -> List[RunnableConfig]:
+    """
+    Helper method to get a list of configs from a single config or a list of
+    configs, useful for subclasses overriding batch() or abatch().
+    """
+    if length < 1:
+        raise ValueError(f"length must be >= 1, but got {length}")
+    if isinstance(config, list) and len(config) != length:
+        raise ValueError(
+            f"config must be a list of the same length as inputs, "
+            f"but got {len(config)} configs for {length} inputs"
+        )
+
+    return (
+        list(map(ensure_config, config))
+        if isinstance(config, list)
+        else [patch_config(config, deep_copy_locals=True) for _ in range(length)]
+    )
+
+
 def patch_config(
     config: Optional[RunnableConfig],
     *,
     deep_copy_locals: bool = False,
     callbacks: Optional[BaseCallbackManager] = None,
     recursion_limit: Optional[int] = None,
+    max_concurrency: Optional[int] = None,
+    run_name: Optional[str] = None,
 ) -> RunnableConfig:
     config = ensure_config(config)
     if deep_copy_locals:
         config["_locals"] = deepcopy(config["_locals"])
     if callbacks is not None:
+        # If we're replacing callbacks we need to unset run_name
+        # As that should apply only to the same run as the original callbacks
         config["callbacks"] = callbacks
+        if "run_name" in config:
+            del config["run_name"]
     if recursion_limit is not None:
         config["recursion_limit"] = recursion_limit
+    if max_concurrency is not None:
+        config["max_concurrency"] = max_concurrency
+    if run_name is not None:
+        config["run_name"] = run_name
     return config
 
 
