@@ -2953,43 +2953,43 @@
       "destination": "/docs/integrations/llms/writer"
     },
     {
-      "source": "/docs/modules/model_io/models/llms/integrations/amazon_api_gateway_example",
+      "source": "/docs/integrations/llms/amazon_api_gateway_example",
       "destination": "/docs/integrations/llms/amazon_api_gateway"
     },
     {
-      "source": "/docs/modules/model_io/models/llms/integrations/azureml_endpoint_example",
+      "source": "/docs/integrations/llms/azureml_endpoint_example",
       "destination": "/docs/integrations/llms/azure_ml"
     },
     {
-      "source": "/docs/modules/model_io/models/llms/integrations/azure_openai_example",
+      "source": "/docs/integrations/llms/azure_openai_example",
       "destination": "/docs/integrations/llms/azure_openai"
     },
     {
-      "source": "/docs/modules/model_io/models/llms/integrations/cerebriumai_example",
+      "source": "/docs/integrations/llms/cerebriumai_example",
       "destination": "/docs/integrations/llms/cerebriumai"
     },
     {
-      "source": "/docs/modules/model_io/models/llms/integrations/deepinfra_example",
+      "source": "/docs/integrations/llms/deepinfra_example",
       "destination": "/docs/integrations/llms/deepinfra"
     },
     {
-      "source": "/docs/modules/model_io/models/llms/integrations/Fireworks",
+      "source": "/docs/integrations/llms/Fireworks",
       "destination": "/docs/integrations/llms/fireworks"
     },
     {
-      "source": "/docs/modules/model_io/models/llms/integrations/forefrontai_example",
+      "source": "/docs/integrations/llms/forefrontai_example",
       "destination": "/docs/integrations/llms/forefrontai"
     },
     {
-      "source": "/docs/modules/model_io/models/llms/integrations/gooseai_example",
+      "source": "/docs/integrations/llms/gooseai_example",
       "destination": "/docs/integrations/llms/gooseai"
     },
     {
-      "source": "/docs/modules/model_io/models/llms/integrations/petals_example",
+      "source": "/docs/integrations/llms/petals_example",
       "destination": "/docs/integrations/llms/petals"
     },
     {
-      "source": "/docs/modules/model_io/models/llms/integrations/pipelineai_example",
+      "source": "/docs/integrations/llms/pipelineai_example",
       "destination": "/docs/integrations/llms/pipelineai"
     },
     {
