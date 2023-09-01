@@ -66,8 +66,8 @@ def create_llm_program(
         llm_chain = llm
         if stop:
             llm_chain = llm_chain.bind(stop=stop)
-        if tools:
-            llm_chain = llm_chain.bind(tools=openai_funcs)
+        if tools:  # Should this be done here?
+            llm_chain = llm_chain.bind(functions=openai_funcs)
 
         result = llm_chain.invoke(prompt_value)
 

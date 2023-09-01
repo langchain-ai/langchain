@@ -1,24 +1,16 @@
 from __future__ import annotations
 
-import json
-from typing import List
+from typing import List, Callable
 
-from langchain.automaton.typedefs import MessageLog, FunctionResult
-from langchain.schema import PromptValue, BaseMessage, FunctionMessage
+from langchain.automaton.typedefs import MessageLog, MessageLike
+from langchain.schema import PromptValue, BaseMessage
 
 
 class MessageLogPromptValue(PromptValue):
-    """Base abstract class for inputs to any language model.
-
-    PromptValues can be converted to both LLM (pure text-generation) inputs and
-        ChatModel inputs.
-    """
+    """Base abstract class for inputs to any language model."""
 
     message_log: MessageLog
-    # If True will use the OpenAI function method
-    use_function_message: bool = (
-        False  # TODO(Eugene): replace with adapter, should be generic
-    )
+    message_adapter: Callable[[MessageLike], List[BaseMessage]]
 
     class Config:
         arbitrary_types_allowed = True
@@ -35,21 +27,14 @@ class MessageLogPromptValue(PromptValue):
         """Return prompt as a list of Messages."""
         messages = []
         for message in self.message_log.messages:
-            if isinstance(message, BaseMessage):
-                messages.append(message)
-            elif isinstance(message, FunctionResult):
-                if self.use_function_message:
-                    messages.append(
-                        FunctionMessage(
-                            name=message.name, content=json.dumps(message.result)
-                        )
-                    )
-            else:
-                # Ignore internal messages
-                pass
+            messages.extend(self.message_adapter(message))
         return messages
 
     @classmethod
-    def from_message_log(cls, message_log: MessageLog) -> MessageLogPromptValue:
+    def from_message_log(
+        cls,
+        message_log: MessageLog,
+        adapter: Callable[[MessageLike], List[BaseMessage]],
+    ) -> MessageLogPromptValue:
         """Create a PromptValue from a MessageLog."""
-        return cls(message_log=message_log)
+        return cls(message_log=message_log, adapter=adapter)

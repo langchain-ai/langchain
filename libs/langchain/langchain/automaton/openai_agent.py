@@ -1,18 +1,21 @@
 from __future__ import annotations
 
+import json
 from typing import Sequence, List
 
 from langchain.automaton.prompt_generators import MessageLogPromptValue
 from langchain.automaton.runnables import create_llm_program
 from langchain.automaton.typedefs import (
+    MessageLike,
     MessageLog,
     AgentFinish,
     FunctionCall,
+    FunctionResult,
 )
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.schema import Generation
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import AIMessage
+from langchain.schema.messages import BaseMessage, FunctionMessage, AIMessage
 from langchain.schema.output_parser import BaseGenerationOutputParser
 from langchain.tools import BaseTool
 
@@ -38,6 +41,15 @@ class OpenAIFunctionsParser(BaseGenerationOutputParser):
             name=function_request["name"],
             arguments=function_request["arguments"],
         )
+
+
+def message_adapter(message: MessageLike) -> List[BaseMessage]:
+    if isinstance(message, BaseMessage):
+        return [message]
+    elif isinstance(message, FunctionResult):
+        return [FunctionMessage(name=message.name, content=json.dumps(message.result))]
+    else:
+        return []
 
 
 class OpenAIAgent:

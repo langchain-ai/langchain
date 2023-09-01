@@ -8,6 +8,7 @@ from langchain.automaton.runnables import (
     create_llm_program,
 )
 from langchain.automaton.typedefs import (
+    Agent,
     MessageLog,
     MessageLike,
     FunctionCall,
@@ -169,7 +170,7 @@ class ThinkActPromptGenerator(PromptValue):
         return cls(message_log=message_log)
 
 
-class MRKLAgent:
+class MRKLAgent(Agent):
     def __init__(
         self,
         llm: BaseLanguageModel,

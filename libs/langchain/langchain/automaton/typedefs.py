@@ -9,13 +9,13 @@ from langchain.schema import (
 
 
 @dataclasses.dataclass(frozen=True)
-class FunctionCall:
+class FunctionCall:  # Probably makes sense to keep distinct from AIMessage
     name: str
     arguments: Optional[Mapping[str, Any]]
 
 
 @dataclasses.dataclass(frozen=True)
-class FunctionResult:
+class FunctionResult:  # Probably makes sense to keep distinct from FunctionMessage
     name: str
     result: Any
     error: Optional[str]
