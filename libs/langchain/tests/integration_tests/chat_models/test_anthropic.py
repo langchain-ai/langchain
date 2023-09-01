@@ -4,11 +4,11 @@ from typing import List
 import pytest
 
 from langchain.callbacks.manager import CallbackManager
-from langchain.chat_models.anthropic import ChatAnthropic
-from langchain.schema import (
-    ChatGeneration,
-    LLMResult,
+from langchain.chat_models.anthropic import (
+    ChatAnthropic,
+    convert_messages_to_prompt_anthropic,
 )
+from langchain.schema import ChatGeneration, LLMResult
 from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
@@ -86,14 +86,12 @@ async def test_anthropic_async_streaming_callback() -> None:
 
 
 def test_formatting() -> None:
-    chat = ChatAnthropic()
-
-    chat_messages: List[BaseMessage] = [HumanMessage(content="Hello")]
-    result = chat._convert_messages_to_prompt(chat_messages)
+    messages: List[BaseMessage] = [HumanMessage(content="Hello")]
+    result = convert_messages_to_prompt_anthropic(messages)
     assert result == "\n\nHuman: Hello\n\nAssistant:"
 
-    chat_messages = [HumanMessage(content="Hello"), AIMessage(content="Answer:")]
-    result = chat._convert_messages_to_prompt(chat_messages)
+    messages = [HumanMessage(content="Hello"), AIMessage(content="Answer:")]
+    result = convert_messages_to_prompt_anthropic(messages)
     assert result == "\n\nHuman: Hello\n\nAssistant: Answer:"
 
 
