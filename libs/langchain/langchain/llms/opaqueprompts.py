@@ -10,23 +10,23 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-class PromptGuard(LLM):
-    """An LLM wrapper that uses PromptGuard to sanitize prompts.
+class OpaquePrompts(LLM):
+    """An LLM wrapper that uses OpaquePrompts to sanitize prompts.
 
     Wraps another LLM and sanitizes prompts before passing it to the LLM, then
         de-sanitizes the response.
 
-    To use, you should have the ``promptguard`` python package installed,
-    and the environment variable ``PROMPTGUARD_API_KEY`` set with
+    To use, you should have the ``opaqueprompts`` python package installed,
+    and the environment variable ``OPAQUEPROMPTS_API_KEY`` set with
     your API key, or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
-            from langchain.llms import PromptGuard
+            from langchain.llms import OpaquePrompts
             from langchain.chat_models import ChatOpenAI
 
-            prompt_guard_llm = PromptGuard(base_llm=ChatOpenAI())
+            op_llm = OpaquePrompts(base_llm=ChatOpenAI())
     """
 
     base_llm: BaseLanguageModel
@@ -39,29 +39,29 @@ class PromptGuard(LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validates that the PromptGuard API key and the Python package exist."""
+        """Validates that the OpaquePrompts API key and the Python package exist."""
         try:
-            import promptguard as pg
+            import opaqueprompts as op
         except ImportError:
             raise ImportError(
-                "Could not import the `promptguard` Python package, "
-                "please install it with `pip install promptguard`."
+                "Could not import the `opaqueprompts` Python package, "
+                "please install it with `pip install opaqueprompts`."
             )
-        if pg.__package__ is None:
+        if op.__package__ is None:
             raise ValueError(
-                "Could not properly import `promptguard`, "
-                "promptguard.__package__ is None."
+                "Could not properly import `opaqueprompts`, "
+                "opaqueprompts.__package__ is None."
             )
 
         api_key = get_from_dict_or_env(
-            values, "promptguard_api_key", "PROMPTGUARD_API_KEY", default=""
+            values, "opaqueprompts_api_key", "OPAQUEPROMPTS_API_KEY", default=""
         )
         if not api_key:
             raise ValueError(
-                "Could not find PROMPTGUARD_API_KEY in the environment. "
-                "Please set it to your PromptGuard API key."
-                "You can get it by creating an account on the PromptGuard website: "
-                "https://promptguard.opaque.co/ ."
+                "Could not find OPAQUEPROMPTS_API_KEY in the environment. "
+                "Please set it to your OpaquePrompts API key."
+                "You can get it by creating an account on the OpaquePrompts website: "
+                "https://opaqueprompts.opaque.co/ ."
             )
         return values
 
@@ -83,14 +83,14 @@ class PromptGuard(LLM):
         Example:
             .. code-block:: python
 
-                response = prompt_guard_llm("Tell me a joke.")
+                response = op_llm("Tell me a joke.")
         """
-        import promptguard as pg
+        import opaqueprompts as op
 
         _run_manager = run_manager or CallbackManagerForLLMRun.get_noop_manager()
 
         # sanitize the prompt by replacing the sensitive information with a placeholder
-        sanitize_response: pg.SanitizeResponse = pg.sanitize([prompt])
+        sanitize_response: op.SanitizeResponse = op.sanitize([prompt])
         sanitized_prompt_value_str = sanitize_response.sanitized_texts[0]
 
         # TODO: Add in callbacks once child runs for LLMs are supported by LangSmith.
@@ -101,7 +101,7 @@ class PromptGuard(LLM):
         )
 
         # desanitize the response by restoring the original sensitive information
-        desanitize_response: pg.DesanitizeResponse = pg.desanitize(
+        desanitize_response: op.DesanitizeResponse = op.desanitize(
             llm_response,
             secure_context=sanitize_response.secure_context,
         )
@@ -113,4 +113,4 @@ class PromptGuard(LLM):
 
         This is an override of the base class method.
         """
-        return "promptguard"
+        return "opaqueprompts"

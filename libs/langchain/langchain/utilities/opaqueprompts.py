@@ -31,16 +31,16 @@ def sanitize(
         The `secure_context` needs to be passed to the `desanitize` function.
     """
     try:
-        import promptguard as pg
+        import opaqueprompts as op
     except ImportError:
         raise ImportError(
-            "Could not import the `promptguard` Python package, "
-            "please install it with `pip install promptguard`."
+            "Could not import the `opaqueprompts` Python package, "
+            "please install it with `pip install opaqueprompts`."
         )
 
     if isinstance(input, str):
         # the input could be a string, so we sanitize the string
-        sanitize_response: pg.SanitizeResponse = pg.sanitize([input])
+        sanitize_response: op.SanitizeResponse = op.sanitize([input])
         return {
             "sanitized_input": sanitize_response.sanitized_texts[0],
             "secure_context": sanitize_response.secure_context,
@@ -55,7 +55,7 @@ def sanitize(
             values.append(input[key])
 
         # sanitize the values
-        sanitize_values_response: pg.SanitizeResponse = pg.sanitize(values)
+        sanitize_values_response: op.SanitizeResponse = op.sanitize(values)
 
         # reconstruct the dict with the sanitized values
         sanitized_input_values = sanitize_values_response.sanitized_texts
@@ -85,13 +85,13 @@ def desanitize(sanitized_text: str, secure_context: bytes) -> str:
         De-sanitized text.
     """
     try:
-        import promptguard as pg
+        import opaqueprompts as op
     except ImportError:
         raise ImportError(
-            "Could not import the `promptguard` Python package, "
-            "please install it with `pip install promptguard`."
+            "Could not import the `opaqueprompts` Python package, "
+            "please install it with `pip install opaqueprompts`."
         )
-    desanitize_response: pg.DesanitizeResponse = pg.desanitize(
+    desanitize_response: op.DesanitizeResponse = op.desanitize(
         sanitized_text, secure_context
     )
     return desanitize_response.desanitized_text

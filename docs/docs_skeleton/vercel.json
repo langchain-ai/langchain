@@ -3547,6 +3547,18 @@
     {
       "source": "/en/latest/integrations/:path*",
       "destination": "/docs/integrations/providers/:path*"
+    },
+    {
+      "source": "/docs/guides/expression_language(/?)",
+      "destination": "/docs/expression_language/"
+    },
+    {
+      "source": "/docs/guides/expression_language/:path*",
+      "destination": "/docs/expression_language/:path*"
+    },
+    {
+      "source": "/docs/ecosystem/dependents",
+      "destination": "/docs/additional_resources/dependents"
     }
   ]
 }

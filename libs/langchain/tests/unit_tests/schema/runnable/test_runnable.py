@@ -11,6 +11,7 @@ from langchain import PromptTemplate
 from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
+from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
@@ -110,6 +111,124 @@ class FakeRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         return [Document(page_content="foo"), Document(page_content="bar")]
+
+
+@pytest.mark.asyncio
+async def test_with_config(mocker: MockerFixture) -> None:
+    fake = FakeRunnable()
+    spy = mocker.spy(fake, "invoke")
+
+    assert fake.with_config(tags=["a-tag"]).invoke("hello") == 5
+    assert spy.call_args_list == [
+        mocker.call("hello", dict(tags=["a-tag"])),
+    ]
+    spy.reset_mock()
+
+    fake_1: Runnable = RunnablePassthrough()
+    fake_2: Runnable = RunnablePassthrough()
+    spy_seq_step = mocker.spy(fake_1.__class__, "invoke")
+
+    sequence = fake_1.with_config(tags=["a-tag"]) | fake_2.with_config(
+        tags=["b-tag"], max_concurrency=5
+    )
+    assert sequence.invoke("hello") == "hello"
+    assert len(spy_seq_step.call_args_list) == 2
+    for i, call in enumerate(spy_seq_step.call_args_list):
+        assert call.args[1] == "hello"
+        if i == 0:
+            assert call.args[2].get("tags") == ["a-tag"]
+            assert call.args[2].get("max_concurrency") is None
+        else:
+            assert call.args[2].get("tags") == ["b-tag"]
+            assert call.args[2].get("max_concurrency") == 5
+    mocker.stop(spy_seq_step)
+
+    assert [
+        *fake.with_config(tags=["a-tag"]).stream(
+            "hello", dict(metadata={"key": "value"})
+        )
+    ] == [5]
+    assert spy.call_args_list == [
+        mocker.call("hello", dict(tags=["a-tag"], metadata={"key": "value"})),
+    ]
+    spy.reset_mock()
+
+    assert fake.with_config(recursion_limit=5).batch(
+        ["hello", "wooorld"], [dict(tags=["a-tag"]), dict(metadata={"key": "value"})]
+    ) == [5, 7]
+
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(spy.call_args_list):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        if i == 0:
+            assert call.args[1].get("recursion_limit") == 5
+            assert call.args[1].get("tags") == ["a-tag"]
+            assert call.args[1].get("metadata") == {}
+        else:
+            assert call.args[1].get("recursion_limit") == 5
+            assert call.args[1].get("tags") == []
+            assert call.args[1].get("metadata") == {"key": "value"}
+
+    spy.reset_mock()
+
+    assert fake.with_config(metadata={"a": "b"}).batch(
+        ["hello", "wooorld"], dict(tags=["a-tag"])
+    ) == [5, 7]
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(spy.call_args_list):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        assert call.args[1].get("tags") == ["a-tag"]
+        assert call.args[1].get("metadata") == {"a": "b"}
+    spy.reset_mock()
+
+    handler = ConsoleCallbackHandler()
+    assert (
+        await fake.with_config(metadata={"a": "b"}).ainvoke(
+            "hello", config={"callbacks": [handler]}
+        )
+        == 5
+    )
+    assert spy.call_args_list == [
+        mocker.call("hello", dict(callbacks=[handler], metadata={"a": "b"})),
+    ]
+    spy.reset_mock()
+
+    assert [
+        part async for part in fake.with_config(metadata={"a": "b"}).astream("hello")
+    ] == [5]
+    assert spy.call_args_list == [
+        mocker.call("hello", dict(metadata={"a": "b"})),
+    ]
+    spy.reset_mock()
+
+    assert await fake.with_config(recursion_limit=5, tags=["c"]).abatch(
+        ["hello", "wooorld"], dict(metadata={"key": "value"})
+    ) == [
+        5,
+        7,
+    ]
+    assert spy.call_args_list == [
+        mocker.call(
+            "hello",
+            dict(
+                metadata={"key": "value"},
+                tags=["c"],
+                callbacks=None,
+                _locals={},
+                recursion_limit=5,
+            ),
+        ),
+        mocker.call(
+            "wooorld",
+            dict(
+                metadata={"key": "value"},
+                tags=["c"],
+                callbacks=None,
+                _locals={},
+                recursion_limit=5,
+            ),
+        ),
+    ]
 
 
 @pytest.mark.asyncio
@@ -1125,6 +1244,14 @@ async def test_map_astream_iterator_input() -> None:
     assert final_value.get("passthrough") == llm_res
 
 
+def test_with_config_with_config() -> None:
+    llm = FakeListLLM(responses=["i'm a textbot"])
+
+    assert dumpd(
+        llm.with_config({"metadata": {"a": "b"}}).with_config(tags=["a-tag"])
+    ) == dumpd(llm.with_config({"metadata": {"a": "b"}, "tags": ["a-tag"]}))
+
+
 def test_bind_bind() -> None:
     llm = FakeListLLM(responses=["i'm a textbot"])
 
@@ -1296,3 +1423,365 @@ def test_recursive_lambda() -> None:
 
     with pytest.raises(RecursionError):
         runnable.invoke(0, {"recursion_limit": 9})
+
+
+def test_retrying(mocker: MockerFixture) -> None:
+    def _lambda(x: int) -> Union[int, Runnable]:
+        if x == 1:
+            raise ValueError("x is 1")
+        elif x == 2:
+            raise RuntimeError("x is 2")
+        else:
+            return x
+
+    _lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(_lambda_mock)
+
+    with pytest.raises(ValueError):
+        runnable.invoke(1)
+
+    assert _lambda_mock.call_count == 1
+    _lambda_mock.reset_mock()
+
+    with pytest.raises(ValueError):
+        runnable.with_retry(
+            stop_after_attempt=2,
+            retry_if_exception_type=(ValueError,),
+        ).invoke(1)
+
+    assert _lambda_mock.call_count == 2  # retried
+    _lambda_mock.reset_mock()
+
+    with pytest.raises(RuntimeError):
+        runnable.with_retry(
+            stop_after_attempt=2,
+            retry_if_exception_type=(ValueError,),
+        ).invoke(2)
+
+    assert _lambda_mock.call_count == 1  # did not retry
+    _lambda_mock.reset_mock()
+
+    with pytest.raises(ValueError):
+        runnable.with_retry(
+            stop_after_attempt=2,
+            retry_if_exception_type=(ValueError,),
+        ).batch([1, 2, 0])
+
+    # 3rd input isn't retried because it succeeded
+    assert _lambda_mock.call_count == 3 + 2
+    _lambda_mock.reset_mock()
+
+    output = runnable.with_retry(
+        stop_after_attempt=2,
+        retry_if_exception_type=(ValueError,),
+    ).batch([1, 2, 0], return_exceptions=True)
+
+    # 3rd input isn't retried because it succeeded
+    assert _lambda_mock.call_count == 3 + 2
+    assert len(output) == 3
+    assert isinstance(output[0], ValueError)
+    assert isinstance(output[1], RuntimeError)
+    assert output[2] == 0
+    _lambda_mock.reset_mock()
+
+
+@pytest.mark.asyncio
+async def test_async_retrying(mocker: MockerFixture) -> None:
+    def _lambda(x: int) -> Union[int, Runnable]:
+        if x == 1:
+            raise ValueError("x is 1")
+        elif x == 2:
+            raise RuntimeError("x is 2")
+        else:
+            return x
+
+    _lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(_lambda_mock)
+
+    with pytest.raises(ValueError):
+        await runnable.ainvoke(1)
+
+    assert _lambda_mock.call_count == 1
+    _lambda_mock.reset_mock()
+
+    with pytest.raises(ValueError):
+        await runnable.with_retry(
+            stop_after_attempt=2,
+            retry_if_exception_type=(ValueError,),
+        ).ainvoke(1)
+
+    assert _lambda_mock.call_count == 2  # retried
+    _lambda_mock.reset_mock()
+
+    with pytest.raises(RuntimeError):
+        await runnable.with_retry(
+            stop_after_attempt=2,
+            retry_if_exception_type=(ValueError,),
+        ).ainvoke(2)
+
+    assert _lambda_mock.call_count == 1  # did not retry
+    _lambda_mock.reset_mock()
+
+    with pytest.raises(ValueError):
+        await runnable.with_retry(
+            stop_after_attempt=2,
+            retry_if_exception_type=(ValueError,),
+        ).abatch([1, 2, 0])
+
+    # 3rd input isn't retried because it succeeded
+    assert _lambda_mock.call_count == 3 + 2
+    _lambda_mock.reset_mock()
+
+    output = await runnable.with_retry(
+        stop_after_attempt=2,
+        retry_if_exception_type=(ValueError,),
+    ).abatch([1, 2, 0], return_exceptions=True)
+
+    # 3rd input isn't retried because it succeeded
+    assert _lambda_mock.call_count == 3 + 2
+    assert len(output) == 3
+    assert isinstance(output[0], ValueError)
+    assert isinstance(output[1], RuntimeError)
+    assert output[2] == 0
+    _lambda_mock.reset_mock()
+
+
+@freeze_time("2023-01-01")
+def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
+    class ControlledExceptionRunnable(Runnable[str, str]):
+        def __init__(self, fail_starts_with: str) -> None:
+            self.fail_starts_with = fail_starts_with
+
+        def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+            raise NotImplementedError()
+
+        def _batch(
+            self,
+            inputs: List[str],
+        ) -> List:
+            outputs: List[Any] = []
+            for input in inputs:
+                if input.startswith(self.fail_starts_with):
+                    outputs.append(ValueError())
+                else:
+                    outputs.append(input + "a")
+            return outputs
+
+        def batch(
+            self,
+            inputs: List[str],
+            config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+            *,
+            return_exceptions: bool = False,
+            **kwargs: Any,
+        ) -> List[str]:
+            return self._batch_with_config(
+                self._batch,
+                inputs,
+                config,
+                return_exceptions=return_exceptions,
+                **kwargs,
+            )
+
+    chain = (
+        ControlledExceptionRunnable("bux")
+        | ControlledExceptionRunnable("bar")
+        | ControlledExceptionRunnable("baz")
+        | ControlledExceptionRunnable("foo")
+    )
+
+    assert isinstance(chain, RunnableSequence)
+
+    # Test batch
+    with pytest.raises(ValueError):
+        chain.batch(["foo", "bar", "baz", "qux"])
+
+    spy = mocker.spy(ControlledExceptionRunnable, "batch")
+    tracer = FakeTracer()
+    inputs = ["foo", "bar", "baz", "qux"]
+    outputs = chain.batch(inputs, dict(callbacks=[tracer]), return_exceptions=True)
+    assert len(outputs) == 4
+    assert isinstance(outputs[0], ValueError)
+    assert isinstance(outputs[1], ValueError)
+    assert isinstance(outputs[2], ValueError)
+    assert outputs[3] == "quxaaaa"
+    assert spy.call_count == 4
+    inputs_to_batch = [c[0][1] for c in spy.call_args_list]
+    assert inputs_to_batch == [
+        # inputs to sequence step 0
+        # same as inputs to sequence.batch()
+        ["foo", "bar", "baz", "qux"],
+        # inputs to sequence step 1
+        # == outputs of sequence step 0 as no exceptions were raised
+        ["fooa", "bara", "baza", "quxa"],
+        # inputs to sequence step 2
+        # 'bar' was dropped as it raised an exception in step 1
+        ["fooaa", "bazaa", "quxaa"],
+        # inputs to sequence step 3
+        # 'baz' was dropped as it raised an exception in step 2
+        ["fooaaa", "quxaaa"],
+    ]
+    parent_runs = sorted(
+        (r for r in tracer.runs if r.parent_run_id is None),
+        key=lambda run: inputs.index(run.inputs["input"]),
+    )
+    assert len(parent_runs) == 4
+
+    parent_run_foo = parent_runs[0]
+    assert parent_run_foo.inputs["input"] == "foo"
+    assert parent_run_foo.error == repr(ValueError())
+    assert len(parent_run_foo.child_runs) == 4
+    assert [r.error for r in parent_run_foo.child_runs] == [
+        None,
+        None,
+        None,
+        repr(ValueError()),
+    ]
+
+    parent_run_bar = parent_runs[1]
+    assert parent_run_bar.inputs["input"] == "bar"
+    assert parent_run_bar.error == repr(ValueError())
+    assert len(parent_run_bar.child_runs) == 2
+    assert [r.error for r in parent_run_bar.child_runs] == [
+        None,
+        repr(ValueError()),
+    ]
+
+    parent_run_baz = parent_runs[2]
+    assert parent_run_baz.inputs["input"] == "baz"
+    assert parent_run_baz.error == repr(ValueError())
+    assert len(parent_run_baz.child_runs) == 3
+    assert [r.error for r in parent_run_baz.child_runs] == [
+        None,
+        None,
+        repr(ValueError()),
+    ]
+
+    parent_run_qux = parent_runs[3]
+    assert parent_run_qux.inputs["input"] == "qux"
+    assert parent_run_qux.error is None
+    assert parent_run_qux.outputs["output"] == "quxaaaa"
+    assert len(parent_run_qux.child_runs) == 4
+    assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
+
+
+@pytest.mark.asyncio
+@freeze_time("2023-01-01")
+async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
+    class ControlledExceptionRunnable(Runnable[str, str]):
+        def __init__(self, fail_starts_with: str) -> None:
+            self.fail_starts_with = fail_starts_with
+
+        def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+            raise NotImplementedError()
+
+        async def _abatch(
+            self,
+            inputs: List[str],
+        ) -> List:
+            outputs: List[Any] = []
+            for input in inputs:
+                if input.startswith(self.fail_starts_with):
+                    outputs.append(ValueError())
+                else:
+                    outputs.append(input + "a")
+            return outputs
+
+        async def abatch(
+            self,
+            inputs: List[str],
+            config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+            *,
+            return_exceptions: bool = False,
+            **kwargs: Any,
+        ) -> List[str]:
+            return await self._abatch_with_config(
+                self._abatch,
+                inputs,
+                config,
+                return_exceptions=return_exceptions,
+                **kwargs,
+            )
+
+    chain = (
+        ControlledExceptionRunnable("bux")
+        | ControlledExceptionRunnable("bar")
+        | ControlledExceptionRunnable("baz")
+        | ControlledExceptionRunnable("foo")
+    )
+
+    assert isinstance(chain, RunnableSequence)
+
+    # Test abatch
+    with pytest.raises(ValueError):
+        await chain.abatch(["foo", "bar", "baz", "qux"])
+
+    spy = mocker.spy(ControlledExceptionRunnable, "abatch")
+    tracer = FakeTracer()
+    inputs = ["foo", "bar", "baz", "qux"]
+    outputs = await chain.abatch(
+        inputs, dict(callbacks=[tracer]), return_exceptions=True
+    )
+    assert len(outputs) == 4
+    assert isinstance(outputs[0], ValueError)
+    assert isinstance(outputs[1], ValueError)
+    assert isinstance(outputs[2], ValueError)
+    assert outputs[3] == "quxaaaa"
+    assert spy.call_count == 4
+    inputs_to_batch = [c[0][1] for c in spy.call_args_list]
+    assert inputs_to_batch == [
+        # inputs to sequence step 0
+        # same as inputs to sequence.batch()
+        ["foo", "bar", "baz", "qux"],
+        # inputs to sequence step 1
+        # == outputs of sequence step 0 as no exceptions were raised
+        ["fooa", "bara", "baza", "quxa"],
+        # inputs to sequence step 2
+        # 'bar' was dropped as it raised an exception in step 1
+        ["fooaa", "bazaa", "quxaa"],
+        # inputs to sequence step 3
+        # 'baz' was dropped as it raised an exception in step 2
+        ["fooaaa", "quxaaa"],
+    ]
+    parent_runs = sorted(
+        (r for r in tracer.runs if r.parent_run_id is None),
+        key=lambda run: inputs.index(run.inputs["input"]),
+    )
+    assert len(parent_runs) == 4
+
+    parent_run_foo = parent_runs[0]
+    assert parent_run_foo.inputs["input"] == "foo"
+    assert parent_run_foo.error == repr(ValueError())
+    assert len(parent_run_foo.child_runs) == 4
+    assert [r.error for r in parent_run_foo.child_runs] == [
+        None,
+        None,
+        None,
+        repr(ValueError()),
+    ]
+
+    parent_run_bar = parent_runs[1]
+    assert parent_run_bar.inputs["input"] == "bar"
+    assert parent_run_bar.error == repr(ValueError())
+    assert len(parent_run_bar.child_runs) == 2
+    assert [r.error for r in parent_run_bar.child_runs] == [
+        None,
+        repr(ValueError()),
+    ]
+
+    parent_run_baz = parent_runs[2]
+    assert parent_run_baz.inputs["input"] == "baz"
+    assert parent_run_baz.error == repr(ValueError())
+    assert len(parent_run_baz.child_runs) == 3
+    assert [r.error for r in parent_run_baz.child_runs] == [
+        None,
+        None,
+        repr(ValueError()),
+    ]
+
+    parent_run_qux = parent_runs[3]
+    assert parent_run_qux.inputs["input"] == "qux"
+    assert parent_run_qux.error is None
+    assert parent_run_qux.outputs["output"] == "quxaaaa"
+    assert len(parent_run_qux.child_runs) == 4
+    assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
