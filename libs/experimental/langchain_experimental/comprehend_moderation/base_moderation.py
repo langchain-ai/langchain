@@ -110,7 +110,6 @@ class BaseModeration:
             ModerationPiiConfig,
             ModerationToxicityConfig,
         )
-
         from langchain_experimental.comprehend_moderation.base_moderation_exceptions import (  # noqa: E501
             ModerationIntentionError,
             ModerationPiiError,
