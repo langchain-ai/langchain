@@ -3,7 +3,6 @@
 from typing import Any, Dict, List, Optional, Union
 
 from langsmith import RunEvaluator
-from pydantic import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
@@ -14,6 +13,7 @@ from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.evaluation.string_distance.base import (
     StringDistance as StringDistanceEnum,
 )
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 
@@ -47,6 +47,8 @@ class EvalConfig(BaseModel):
         kwargs = {}
         for field, val in self:
             if field == "evaluator_type":
+                continue
+            elif val is None:
                 continue
             kwargs[field] = val
         return kwargs
@@ -83,7 +85,9 @@ class RunEvalConfig(BaseModel):
         The language model to pass to any evaluators that use a language model.
     """  # noqa: E501
 
-    evaluators: List[Union[EvaluatorType, EvalConfig]] = Field(default_factory=list)
+    evaluators: List[Union[EvaluatorType, str, EvalConfig]] = Field(
+        default_factory=list
+    )
     """Configurations for which evaluators to apply to the dataset run.
     Each can be the string of an
     :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
@@ -238,5 +242,23 @@ class RunEvalConfig(BaseModel):
         evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
         llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
+
+    class JsonValidity(EvalConfig):
+        """Configuration for a json validity evaluator.
+
+        Parameters
+        ----------
+        """
+
+        evaluator_type: EvaluatorType = EvaluatorType.JSON_VALIDITY
+
+    class JsonEqualityEvaluator(EvalConfig):
+        """Configuration for a json equality evaluator.
+
+        Parameters
+        ----------
+        """
+
+        evaluator_type: EvaluatorType = EvaluatorType.JSON_EQUALITY
 
     # TODO: Trajectory

@@ -1,4 +1,3 @@
-"""Loads GitBook."""
 from typing import Any, List, Optional
 from urllib.parse import urljoin, urlparse
 
@@ -7,7 +6,7 @@ from langchain.document_loaders.web_base import WebBaseLoader
 
 
 class GitbookLoader(WebBaseLoader):
-    """Load GitBook data.
+    """Load `GitBook` data.
 
     1. load from either a single page, or
     2. load all (relative) paths in the navbar.

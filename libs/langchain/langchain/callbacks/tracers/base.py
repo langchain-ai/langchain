@@ -13,7 +13,12 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run
 from langchain.load.dump import dumpd
 from langchain.schema.document import Document
-from langchain.schema.output import ChatGeneration, LLMResult
+from langchain.schema.output import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    GenerationChunk,
+    LLMResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +128,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self,
         token: str,
         *,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
@@ -135,11 +141,14 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or llm_run.run_type != "llm":
             raise TracerException(f"No LLM Run found to be traced for {run_id}")
+        event_kwargs: Dict[str, Any] = {"token": token}
+        if chunk:
+            event_kwargs["chunk"] = chunk
         llm_run.events.append(
             {
                 "name": "new_token",
                 "time": datetime.utcnow(),
-                "kwargs": {"token": token},
+                "kwargs": event_kwargs,
             },
         )
 
@@ -231,6 +240,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_type: Optional[str] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a chain run."""
@@ -243,7 +253,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
-            inputs=inputs,
+            inputs=inputs if isinstance(inputs, dict) else {"input": inputs},
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
@@ -251,6 +261,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             child_runs=[],
             run_type=run_type or "chain",
+            name=name,
             tags=tags or [],
         )
         self._start_trace(chain_run)
@@ -271,11 +282,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if chain_run is None:
             raise TracerException(f"No chain Run found to be traced for {run_id}")
 
-        chain_run.outputs = outputs
+        chain_run.outputs = (
+            outputs if isinstance(outputs, dict) else {"output": outputs}
+        )
         chain_run.end_time = datetime.utcnow()
         chain_run.events.append({"name": "end", "time": chain_run.end_time})
         if inputs is not None:
-            chain_run.inputs = inputs
+            chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
         self._end_trace(chain_run)
         self._on_chain_end(chain_run)
 
@@ -298,7 +311,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         chain_run.end_time = datetime.utcnow()
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
-            chain_run.inputs = inputs
+            chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
         self._end_trace(chain_run)
         self._on_chain_error(chain_run)
 

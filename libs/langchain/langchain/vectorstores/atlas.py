@@ -1,4 +1,3 @@
-"""Wrapper around Atlas by Nomic."""
 from __future__ import annotations
 
 import logging
@@ -15,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class AtlasDB(VectorStore):
-    """Wrapper around Atlas: Nomic's neural database and rhizomatic instrument.
+    """`Atlas` vector store.
+
+     Atlas is the `Nomic's` neural database and `rhizomatic` instrument.
 
     To use, you should have the ``nomic`` python package installed.
 
@@ -61,7 +62,7 @@ class AtlasDB(VectorStore):
             import nomic
             from nomic import AtlasProject
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import nomic python package. "
                 "Please install it with `pip install nomic`."
             )
