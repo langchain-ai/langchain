@@ -44,11 +44,6 @@ def sanitize_input(query: str) -> str:
     return query
 
 
-class AstArgSchema(BaseModel):
-    """A schema for the ast argument."""
-    query: str = Field(description="A string formatted plain python script with imports and variables to execute.")
-
-
 class PythonREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 
@@ -61,7 +56,6 @@ class PythonREPLTool(BaseTool):
     )
     python_repl: PythonREPL = Field(default_factory=_get_default_python_repl)
     sanitize_input: bool = True
-    args_schema: Type[BaseModel] = AstArgSchema
 
     def _run(
         self,
@@ -89,7 +83,7 @@ class PythonREPLTool(BaseTool):
 
 
 class PythonInputs(BaseModel):
-    query: str = Field(description="code snippet to run")
+    query: str = Field(description="A string formatted plain python script with imports and variables to execute.")
 
 
 class PythonAstREPLTool(BaseTool):
