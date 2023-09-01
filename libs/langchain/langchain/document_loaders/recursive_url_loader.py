@@ -42,14 +42,14 @@ class RecursiveUrlLoader(BaseLoader):
         self.max_depth = max_depth if max_depth is not None else 2
         self.timeout = timeout if timeout is not None else 10
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
-    
+
     @staticmethod
     def get_directory_url(url: str) -> str:
         """Get the parent directory URL from a given URL.
-        
+
         Args:
             url (str): The URL to extract the parent directory from.
-        
+
         Returns:
             str: The parent directory URL.
         """
@@ -63,7 +63,7 @@ class RecursiveUrlLoader(BaseLoader):
                 directory_url = url.rsplit("/", 1)[0] + "/"
             else:
                 directory_url = url + "/"
-        
+
         return directory_url
 
     def _get_sub_links(self, raw_html: str, base_url: str) -> List[str]:
@@ -163,7 +163,7 @@ class RecursiveUrlLoader(BaseLoader):
 
         # Add a trailing slash if not present
         suffix = url.rsplit(".", 1)[-1]
-        if not url.endswith("/") and not suffix in {
+        if not url.endswith("/") and suffix not in {
             "html",
             "htm",
             "xml",
