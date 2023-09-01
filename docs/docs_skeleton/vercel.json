@@ -1873,15 +1873,15 @@
       "destination": "/docs/integrations/document_loaders/youtube_transcript"
     },
     {
-      "source": "/docs/modules/data_connection/document_loaders/integrations/Etherscan",
+      "source": "/docs/integrations/document_loaders/Etherscan",
       "destination": "/docs/integrations/document_loaders/etherscan"
     },
     {
-      "source": "/docs/modules/data_connection/document_loaders/integrations/merge_doc_loader",
+      "source": "/docs/integrations/document_loaders/merge_doc_loader",
       "destination": "/docs/integrations/document_loaders/merge_doc"
     },
     {
-      "source": "/docs/modules/data_connection/document_loaders/integrations/recursive_url_loader",
+      "source": "/docs/integrations/document_loaders/recursive_url_loader",
       "destination": "/docs/integrations/document_loaders/recursive_url"
     },
     {
