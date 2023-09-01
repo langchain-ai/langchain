@@ -44,7 +44,9 @@ def create_tool_invoker(
 
 def create_llm_program(
     llm: BaseLanguageModel,
-    prompt_generator: Callable[[MessageLog], PromptValue],
+    prompt_generator: Callable[
+        [MessageLog], Union[str, PromptValue, Sequence[BaseMessage]]
+    ],
     *,
     tools: Optional[Sequence[BaseTool]] = None,
     stop: Optional[Sequence[str]] = None,
@@ -91,6 +93,8 @@ def create_llm_program(
                     )
                 messages.append(parsed_result)
 
+        if not messages:
+            raise AssertionError(f"Expected at least one message")
         last_message = messages[-1]
 
         if tool_invoker and isinstance(last_message, FunctionCall):

@@ -3,10 +3,8 @@ from __future__ import annotations
 import json
 from typing import Sequence, List
 
-from langchain.automaton.prompt_generators import MessageLogPromptValue
 from langchain.automaton.runnables import create_llm_program
 from langchain.automaton.typedefs import (
-    MessageLike,
     MessageLog,
     AgentFinish,
     FunctionCall,
@@ -43,13 +41,19 @@ class OpenAIFunctionsParser(BaseGenerationOutputParser):
         )
 
 
-def message_adapter(message: MessageLike) -> List[BaseMessage]:
-    if isinstance(message, BaseMessage):
-        return [message]
-    elif isinstance(message, FunctionResult):
-        return [FunctionMessage(name=message.name, content=json.dumps(message.result))]
-    else:
-        return []
+def prompt_generator(log: MessageLog) -> List[BaseMessage]:
+    """Generate a prompt from a log of message like objects."""
+    messages = []
+    for message in log.messages:
+        if isinstance(message, BaseMessage):
+            messages.append(message)
+        elif isinstance(message, FunctionResult):
+            messages.append(
+                FunctionMessage(name=message.name, content=json.dumps(message.result))
+            )
+        else:
+            pass
+    return messages
 
 
 class OpenAIAgent:
@@ -63,7 +67,7 @@ class OpenAIAgent:
         """Initialize the chat automaton."""
         self.llm_program = create_llm_program(
             llm,
-            prompt_generator=MessageLogPromptValue.from_message_log,
+            prompt_generator=prompt_generator,
             tools=tools,
             parser=OpenAIFunctionsParser(),
         )
