@@ -263,9 +263,9 @@ class Runnable(Generic[Input, Output], ABC):
             bound=self,
             kwargs={},
             config={},
-            retry_if_exception_type=retry_if_exception_type,
+            retry_exception_types=retry_if_exception_type,
             wait_exponential_jitter=wait_exponential_jitter,
-            stop_after_attempt=stop_after_attempt,
+            max_attempt_number=stop_after_attempt,
         )
 
     def map(self) -> Runnable[List[Input], List[Output]]:
@@ -388,6 +388,7 @@ class Runnable(Generic[Input, Output], ABC):
         ],
         input: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
         return_exceptions: bool = False,
         run_type: Optional[str] = None,
     ) -> List[Output]:
@@ -456,6 +457,7 @@ class Runnable(Generic[Input, Output], ABC):
         ],
         input: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
         return_exceptions: bool = False,
         run_type: Optional[str] = None,
     ) -> List[Output]:
@@ -1057,9 +1059,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 # If an input has failed it will be present in this map,
                 # and the value will be the exception that was raised.
                 failed_inputs_map: Dict[int, Exception] = {}
-                stepidx = -1
                 for step in self.steps:
-                    stepidx += 1
                     # Assemble the original indexes of the remaining inputs
                     # (i.e. the ones that haven't failed yet)
                     remaining_idxs = [
@@ -1176,9 +1176,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 # If an input has failed it will be present in this map,
                 # and the value will be the exception that was raised.
                 failed_inputs_map: Dict[int, Exception] = {}
-                stepidx = -1
                 for step in self.steps:
-                    stepidx += 1
                     # Assemble the original indexes of the remaining inputs
                     # (i.e. the ones that haven't failed yet)
                     remaining_idxs = [
