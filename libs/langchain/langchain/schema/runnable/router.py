@@ -23,7 +23,7 @@ from langchain.schema.runnable.base import (
     RunnableSequence,
     coerce_to_runnable,
 )
-from langchain.schema.runnable.config import RunnableConfig
+from langchain.schema.runnable.config import RunnableConfig, get_config_list
 from langchain.schema.runnable.utils import gather_with_concurrency
 
 
@@ -131,7 +131,7 @@ class RouterRunnable(
             raise ValueError("One or more keys do not have a corresponding runnable")
 
         runnables = [self.runnables[key] for key in keys]
-        configs = self._get_config_list(config, len(inputs))
+        configs = get_config_list(config, len(inputs))
         with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
             return list(
                 executor.map(
@@ -156,7 +156,7 @@ class RouterRunnable(
             raise ValueError("One or more keys do not have a corresponding runnable")
 
         runnables = [self.runnables[key] for key in keys]
-        configs = self._get_config_list(config, len(inputs))
+        configs = get_config_list(config, len(inputs))
         return await gather_with_concurrency(
             max_concurrency,
             *(

@@ -60,6 +60,7 @@ from langchain.schema.language_model import BaseLanguageModel, LanguageModelInpu
 from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
 from langchain.schema.output import GenerationChunk
 from langchain.schema.runnable import RunnableConfig
+from langchain.schema.runnable.config import get_config_list
 
 logger = logging.getLogger(__name__)
 
@@ -265,7 +266,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         max_concurrency: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
-        config = self._get_config_list(config, len(inputs))
+        config = get_config_list(config, len(inputs))
 
         if max_concurrency is None:
             llm_result = self.generate_prompt(
@@ -300,7 +301,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 None, self.batch, inputs, config, max_concurrency
             )
 
-        config = self._get_config_list(config, len(inputs))
+        config = get_config_list(config, len(inputs))
 
         if max_concurrency is None:
             llm_result = await self.agenerate_prompt(
