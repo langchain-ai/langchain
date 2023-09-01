@@ -80,7 +80,7 @@ class HuggingFaceTextGenInference(LLM):
     typical_p: Optional[float] = 0.95
     temperature: float = 0.8
     repetition_penalty: Optional[float] = None
-    return_full_text: Optional[bool] = False
+    return_full_text: bool = False
     truncate: Optional[int] = None
     stop_sequences: List[str] = Field(default_factory=list)
     seed: Optional[int] = None
@@ -88,8 +88,8 @@ class HuggingFaceTextGenInference(LLM):
     timeout: int = 120
     server_kwargs: Dict[str, Any] = Field(default_factory=dict)
     streaming: bool = False
-    do_sample: Optional[bool] = False
-    watermark: Optional[bool] = False
+    do_sample: bool = False
+    watermark: bool = False
     client: Any
     async_client: Any
 
