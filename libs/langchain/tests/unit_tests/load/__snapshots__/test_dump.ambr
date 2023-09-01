@@ -229,7 +229,8 @@
               "api_resources",
               "completion",
               "Completion"
-            ]
+            ],
+            "repr": "<class 'openai.api_resources.completion.Completion'>"
           }
         }
       },
