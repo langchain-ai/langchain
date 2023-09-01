@@ -16,7 +16,9 @@ class PromptValue(Serializable, ABC):
 
     @property
     def lc_serializable(self) -> bool:
-        """Return whether or not the class is serializable."""
+        """
+        Return whether or not the class is serializable.
+        """
         return True
 
     @abstractmethod
