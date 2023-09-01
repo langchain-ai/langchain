@@ -62,6 +62,7 @@ from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.ollama import Ollama
+from langchain.llms.opaqueprompts import OpaquePrompts
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
@@ -69,7 +70,6 @@ from langchain.llms.petals import Petals
 from langchain.llms.pipelineai import PipelineAI
 from langchain.llms.predibase import Predibase
 from langchain.llms.predictionguard import PredictionGuard
-from langchain.llms.promptguard import PromptGuard
 from langchain.llms.promptlayer_openai import PromptLayerOpenAI, PromptLayerOpenAIChat
 from langchain.llms.replicate import Replicate
 from langchain.llms.rwkv import RWKV
@@ -142,7 +142,7 @@ __all__ = [
     "PredictionGuard",
     "PromptLayerOpenAI",
     "PromptLayerOpenAIChat",
-    "PromptGuard",
+    "OpaquePrompts",
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
@@ -207,7 +207,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "petals": Petals,
     "pipelineai": PipelineAI,
     "predibase": Predibase,
-    "promptguard": PromptGuard,
+    "opaqueprompts": OpaquePrompts,
     "replicate": Replicate,
     "rwkv": RWKV,
     "sagemaker_endpoint": SagemakerEndpoint,
