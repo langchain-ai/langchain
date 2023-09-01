@@ -47,7 +47,8 @@ class ChatLlama2(BaseChatModel):
         
         return values
 
-    def _format_messages_as_text(self, messages: List[BaseMessage]) -> str:
+    @staticmethod
+    def format_messages_as_text(messages: List[BaseMessage]) -> str:
         """
         Transform List of Chat Messages to text following Meta's prompt guidelines.
 
@@ -92,7 +93,7 @@ class ChatLlama2(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        prompt = self._format_messages_as_text(messages)
+        prompt = self.format_messages_as_text(messages)
 
         # make sure that `return_full_text` is set to False
         # otherwise, pipeline will return prompt + generation
@@ -137,6 +138,3 @@ class ChatLlama2(BaseChatModel):
             message=AIMessage(content=response),
         )
         return ChatResult(generations=[chat_generation])
-
-# TODO:
-# tests for prompt generation
