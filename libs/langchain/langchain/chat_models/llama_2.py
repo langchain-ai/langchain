@@ -4,7 +4,6 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.schema import ChatResult
 from langchain.schema.messages import (
     AIMessage,
-    AIMessageChunk,
     BaseMessage,
     ChatMessage,
     HumanMessage,
@@ -47,20 +46,27 @@ class ChatLlama2(BaseChatModel):
         return values
 
     def _format_messages_as_text(self, messages: List[BaseMessage]) -> str:
-        """ https://huggingface.co/blog/llama2 """
+        """ 
+        # TODO: docstring
+        https://huggingface.co/blog/llama2
+        """
         prompt = ""
 
         for i, message in enumerate(messages):
-            if i != 0 and isinstance(message, SystemMessage):
-                raise ...
-            elif i == 0 and isinstance(message, SystemMessage):
+            if isinstance(message, SystemMessage) and i != 0:
+                raise ValueError("SystemMessage can only appear as the first message in the list.")
+            elif isinstance(message, SystemMessage) and i == 0:
                 prompt += f"<s>{B_INST} {B_SYS}\n{message.content}\n{E_SYS}\n\n"
             elif isinstance(message, HumanMessage) and i > 0:
                 prompt += f"{message.content} {E_INST} "
-            elif i == 0 and isinstance(message, HumanMessage):
+            elif isinstance(message, HumanMessage) and i == 0:
                 prompt += f"<s>{B_INST} {message.content} {E_INST} "
             elif isinstance(message, AIMessage):
                 prompt += f"{message.content} </s><s>{B_INST} "
+            elif isinstance(message, ChatMessage) and i == 0:
+                prompt += f"<s>{B_INST} {message.role.capitalize()}: {message.content} {E_INST} "
+            elif isinstance(message, ChatMessage) and i > 0:
+                prompt += f"{message.role.capitalize()}: {message.content} {E_INST} "
         
         return prompt
 
@@ -73,12 +79,12 @@ class ChatLlama2(BaseChatModel):
     ) -> ChatResult:
         prompt = self._format_messages_as_text(messages)
 
-        pipeline_params = kwargs
         # make sure that `return_full_text` is set to False
         # otherwise, pipeline will return prompt + generation
         kwargs["return_full_text"] = False
+        kwargs["num_return_sequences"] = 1
 
-        response = self.pipeline(prompt, **pipeline_params)[0]['generated_text']
+        response = self.pipeline(prompt, **kwargs)[0]['generated_text']
         chat_generation = ChatGeneration(
             message=AIMessage(content=response),
         )
@@ -86,9 +92,6 @@ class ChatLlama2(BaseChatModel):
 
 
 # TODO:
-# generation kwargs
-# try to add stopping criteria
-# handle batch requests
-    # num_return_sequences ? ~ is it possible to pass multiple conversations ?
-# handle ChatMessage
-# AIMessageChunk ?
+# try adding stopping criteria
+# tests for prompt generation
+# streaming ?
