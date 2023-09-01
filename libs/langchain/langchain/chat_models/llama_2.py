@@ -46,9 +46,22 @@ class ChatLlama2(BaseChatModel):
         return values
 
     def _format_messages_as_text(self, messages: List[BaseMessage]) -> str:
-        """ 
-        # TODO: docstring
-        https://huggingface.co/blog/llama2
+        """
+        Transform List of Chat Messages to text following Meta's prompt guidelines.
+
+        Prompt template with System Message:
+        ```
+        <s>[INST] <<SYS>>
+        {{ system_prompt }}
+        <</SYS>>
+
+        {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s><s>[INST] {{ user_msg_2 }} [/INST]
+        ```
+
+        Prompt template without System Message:
+        ```
+        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s><s>[INST] {{ user_msg_2 }} [/INST]
+        ```        
         """
         prompt = ""
 
@@ -94,4 +107,3 @@ class ChatLlama2(BaseChatModel):
 # TODO:
 # try adding stopping criteria
 # tests for prompt generation
-# streaming ?
