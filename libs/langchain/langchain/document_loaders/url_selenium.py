@@ -74,6 +74,7 @@ class SeleniumURLLoader(BaseLoader):
         if self.browser.lower() == "chrome":
             from selenium.webdriver import Chrome
             from selenium.webdriver.chrome.options import Options as ChromeOptions
+            from selenium.webdriver.chrome.service import Service
 
             chrome_options = ChromeOptions()
 
@@ -87,10 +88,14 @@ class SeleniumURLLoader(BaseLoader):
                 chrome_options.binary_location = self.binary_location
             if self.executable_path is None:
                 return Chrome(options=chrome_options)
-            return Chrome(executable_path=self.executable_path, options=chrome_options)
+            return Chrome(
+                options=chrome_options,
+                service=Service(executable_path=self.executable_path),
+            )
         elif self.browser.lower() == "firefox":
             from selenium.webdriver import Firefox
             from selenium.webdriver.firefox.options import Options as FirefoxOptions
+            from selenium.webdriver.firefox.service import Service
 
             firefox_options = FirefoxOptions()
 
@@ -104,7 +109,8 @@ class SeleniumURLLoader(BaseLoader):
             if self.executable_path is None:
                 return Firefox(options=firefox_options)
             return Firefox(
-                executable_path=self.executable_path, options=firefox_options
+                options=firefox_options,
+                service=Service(executable_path=self.executable_path),
             )
         else:
             raise ValueError("Invalid browser specified. Use 'chrome' or 'firefox'.")
