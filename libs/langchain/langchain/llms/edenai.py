@@ -49,7 +49,7 @@ class EdenAI(LLM):
     available models are shown on https://docs.edenai.co/ under 'available providers'
     """
 
-    # Optional parameters to add depending of choosen feature
+    # Optional parameters to add depending of chosen feature
     # see api reference for more infos
     temperature: Optional[float] = Field(default=None, ge=0, le=1)  # for text
     max_tokens: Optional[int] = Field(default=None, ge=0)  # for text
