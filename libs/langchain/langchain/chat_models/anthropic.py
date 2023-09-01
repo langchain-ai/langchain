@@ -17,8 +17,27 @@ from langchain.schema.messages import (
 from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
 
 
+def _convert_one_message_to_text(
+    message: BaseMessage,
+    human_prompt: str,
+    ai_prompt: str,
+) -> str:
+    if isinstance(message, ChatMessage):
+        message_text = f"\n\n{message.role.capitalize()}: {message.content}"
+    elif isinstance(message, HumanMessage):
+        message_text = f"{human_prompt} {message.content}"
+    elif isinstance(message, AIMessage):
+        message_text = f"{ai_prompt} {message.content}"
+    elif isinstance(message, SystemMessage):
+        message_text = f"{human_prompt} <admin>{message.content}</admin>"
+    else:
+        raise ValueError(f"Got unknown type {message}")
+    return message_text
+
+
 def convert_messages_to_prompt_anthropic(
     messages: List[BaseMessage],
+    *,
     human_prompt: str = "\n\nHuman:",
     ai_prompt: str = "\n\nAssistant:",
 ) -> str:
@@ -36,24 +55,13 @@ def convert_messages_to_prompt_anthropic(
     if not isinstance(messages[-1], AIMessage):
         messages.append(AIMessage(content=""))
 
-    def _convert_one_message_to_text(message: BaseMessage) -> str:
-        if isinstance(message, ChatMessage):
-            message_text = f"\n\n{message.role.capitalize()}: {message.content}"
-        elif isinstance(message, HumanMessage):
-            message_text = f"{human_prompt} {message.content}"
-        elif isinstance(message, AIMessage):
-            message_text = f"{ai_prompt} {message.content}"
-        elif isinstance(message, SystemMessage):
-            message_text = f"{human_prompt} <admin>{message.content}</admin>"
-        else:
-            raise ValueError(f"Got unknown type {message}")
-        return message_text
+    text = "".join(
+        _convert_one_message_to_text(message, human_prompt, ai_prompt)
+        for message in messages
+    )
 
-    text = "".join(_convert_one_message_to_text(message) for message in messages)
-
-    return (
-        text.rstrip()
-    )  # trim off the trailing ' ' that might come from the "Assistant: "
+    # trim off the trailing ' ' that might come from the "Assistant: "
+    return text.rstrip()
 
 
 class ChatAnthropic(BaseChatModel, _AnthropicCommon):
@@ -111,7 +119,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        prompt = self._convert_messages_to_prompt(messages=messages)
+        prompt = self._convert_messages_to_prompt(messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
@@ -130,7 +138,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        prompt = self._convert_messages_to_prompt(messages=messages)
+        prompt = self._convert_messages_to_prompt(messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
@@ -155,7 +163,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                 completion += chunk.text
         else:
             prompt = self._convert_messages_to_prompt(
-                messages=messages,
+                messages,
             )
             params: Dict[str, Any] = {
                 "prompt": prompt,
@@ -182,7 +190,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                 completion += chunk.text
         else:
             prompt = self._convert_messages_to_prompt(
-                messages=messages,
+                messages,
             )
             params: Dict[str, Any] = {
                 "prompt": prompt,
