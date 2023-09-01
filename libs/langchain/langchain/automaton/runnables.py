@@ -13,7 +13,6 @@ from langchain.schema import BaseMessage, AIMessage, PromptValue
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.runnable.base import RunnableLambda, Runnable
 from langchain.tools import BaseTool
-from langchain.tools.convert_to_openai import format_tool_to_openai_function
 
 
 # PUBLIC API
@@ -60,7 +59,7 @@ def create_llm_program(
     """Create a runnable that can update memory."""
 
     tool_invoker = create_tool_invoker(tools) if invoke_tools else None
-    openai_funcs = [format_tool_to_openai_function(tool_) for tool_ in tools]
+    # openai_funcs = [format_tool_to_openai_function(tool_) for tool_ in tools]
 
     def _bound(message_log: MessageLog):
         messages = []
@@ -68,8 +67,8 @@ def create_llm_program(
         llm_chain = llm
         if stop:
             llm_chain = llm_chain.bind(stop=stop)
-        if tools:  # Should this be done here?
-            llm_chain = llm_chain.bind(functions=openai_funcs)
+        # if tools:  # Should this be done here?
+        #     llm_chain = llm_chain.bind(functions=openai_funcs)
 
         result = llm_chain.invoke(prompt_value)
 

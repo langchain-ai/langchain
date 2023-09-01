@@ -1,33 +1,36 @@
 from __future__ import annotations
 
-import dataclasses
 from typing import Any, Optional, Sequence, Mapping, overload, Union
 
+from langchain.load.serializable import Serializable
 from langchain.schema import (
     BaseMessage,
 )
 
 
-@dataclasses.dataclass(frozen=True)
-class FunctionCall:  # Probably makes sense to keep distinct from AIMessage
+class InternalMessage(Serializable):
+    @property
+    def lc_serializable(self) -> bool:
+        """Indicate whether the class is serializable."""
+        return True
+
+
+class FunctionCall(InternalMessage):
     name: str
     arguments: Optional[Mapping[str, Any]]
 
 
-@dataclasses.dataclass(frozen=True)
-class FunctionResult:  # Probably makes sense to keep distinct from FunctionMessage
+class FunctionResult(InternalMessage):
     name: str
     result: Any
-    error: Optional[str]
+    error: Optional[str] = None
 
 
-@dataclasses.dataclass(frozen=True)
-class AgentFinish:
+class AgentFinish(InternalMessage):
     result: Any
 
 
-@dataclasses.dataclass(frozen=True)
-class PrimingMessage:
+class PrimingMessage(InternalMessage):
     """A message that is used to prime the language model."""
 
     content: str

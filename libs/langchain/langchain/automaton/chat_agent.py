@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import Sequence, Union, Optional, List
+from typing import Sequence, Union, List, Optional
 
-from langchain.automaton.prompt_generators import MessageLogPromptValue
 from langchain.automaton.runnables import create_llm_program
 from langchain.automaton.typedefs import (
     MessageLog,
@@ -15,7 +14,8 @@ from langchain.automaton.typedefs import (
     FunctionResult,
 )
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import SystemMessage, BaseMessage
+from langchain.schema.messages import BaseMessage, HumanMessage
+from langchain.schema.runnable import RunnableConfig
 from langchain.tools import BaseTool
 
 
@@ -24,11 +24,12 @@ class ActionEncoder:
         """Initialize the ActionParser."""
         self.pattern = re.compile(r"<action>(?P<action_blob>.*?)<\/action>", re.DOTALL)
 
-    def decode(self, text: Union[BaseMessage, str]) -> Optional[MessageLike]:
+    def decode(self, text: Union[BaseMessage, str]) -> MessageLike:
         """Decode the action."""
-        if isinstance(text, BaseMessage):
-            text = text.content
-        match = self.pattern.search(text)
+        if not isinstance(text, BaseMessage):
+            raise NotImplementedError()
+        _text = text.content
+        match = self.pattern.search(_text)
         if match:
             action_blob = match.group("action_blob")
             data = ast.literal_eval(action_blob)
@@ -39,7 +40,7 @@ class ActionEncoder:
                 name=data["action"], arguments=data["action_input"] or {}
             )
         else:
-            return None
+            return AgentFinish(result=text)
 
     def encode_as_str(self, function_call: FunctionCall) -> str:
         """Encode the action."""
@@ -56,7 +57,7 @@ def prompt_generator(log: MessageLog) -> List[BaseMessage]:
             messages.append(message)
         elif isinstance(message, FunctionResult):
             messages.append(
-                SystemMessage(
+                HumanMessage(
                     content=f"Observation: {message.result}",
                 )
             )
@@ -79,7 +80,7 @@ class ChatAgent:
         action_encoder = ActionEncoder()
         self.llm_program = create_llm_program(
             llm,
-            prompt_generator=MessageLogPromptValue.from_message_log,
+            prompt_generator=prompt_generator,
             tools=tools,
             parser=action_encoder.decode,
         )
@@ -96,5 +97,5 @@ class ChatAgent:
             if isinstance(last_message, AgentFinish):
                 break
 
-            messages = self.llm_program.invoke(message_log)
+            messages = self.llm_program.invoke(message_log, config=config)
             message_log.add_messages(messages)

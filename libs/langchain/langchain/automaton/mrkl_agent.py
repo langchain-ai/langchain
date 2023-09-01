@@ -7,6 +7,7 @@ from typing import Sequence, Optional, Union, List
 from langchain.automaton.runnables import (
     create_llm_program,
 )
+from langchain.automaton.tool_utils import generate_tool_info
 from langchain.automaton.typedefs import (
     Agent,
     MessageLog,
@@ -35,7 +36,7 @@ Use a blob to specify a tool by providing an action key (tool name) and an actio
 
 Valid "action" values: "Final Answer" or {tool_names}
 
-Provide only ONE action per $BLOB, as shown:
+You can only use a single tool at a time.
 
 <action>
 {{
@@ -71,20 +72,13 @@ Format is <action>$BLOB</action> then Observation. \
 """
 
 
-def _generate_tools_descriptions(tools: Sequence[Tool]) -> str:
-    """Generate a description of the tools."""
-    return "\n".join([f"{tool_.name}: {tool_.description}" for tool_ in tools]) + "\n"
-
-
 def generate_mrkl_memory(tools: Sequence[Tool]) -> MessageLog:
     """Set up memory to act as a MRKL agent."""
-    tools_description = _generate_tools_descriptions(tools)
-    tool_names = ", ".join([tool_.name for tool_ in tools])
+    tools_info = generate_tool_info(tools)
+
     return MessageLog(
         messages=[
-            SystemMessagePromptTemplate.from_template(TEMPLATE_).format(
-                tools=tools_description, tool_names=tool_names
-            )
+            SystemMessagePromptTemplate.from_template(TEMPLATE_).format(**tools_info)
         ]
     )
 
