@@ -10,8 +10,8 @@ from langchain.schema.output import GenerationChunk
 
 
 class TitanTakeoff(LLM):
-    port: int = 8000
-    """Specifies the port to use for the Titan Takeoff API. Default = 8000."""
+    baseURL: str = "http://localhost:8000"
+    """Specifies the baseURL to use for the Titan Takeoff API. Default = http://localhost:8000."""
 
     generate_max_length: int = 128
     """Maximum generation length. Default = 128."""
@@ -92,7 +92,7 @@ class TitanTakeoff(LLM):
                     text_output += chunk.text
                 return text_output
 
-            url = f"http://localhost:{self.port}/generate"
+            url = f"{self.baseURL}/generate"
             params = {"text": prompt, **self._default_params}
 
             response = requests.post(url, json=params)
@@ -139,7 +139,7 @@ class TitanTakeoff(LLM):
                 response = model(prompt)
 
         """
-        url = f"http://localhost:{self.port}/generate_stream"
+        url = f"{self.baseURL}/generate_stream"
         params = {"text": prompt, **self._default_params}
 
         response = requests.post(url, json=params, stream=True)
@@ -154,4 +154,4 @@ class TitanTakeoff(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {"port": self.port, **{}, **self._default_params}
+        return {"baseURL": self.baseURL, **{}, **self._default_params}
