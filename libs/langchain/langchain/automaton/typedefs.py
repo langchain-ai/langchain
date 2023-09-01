@@ -36,9 +36,7 @@ class AgentFinish(InternalMessage):
     result: Any
 
 
-MessageLike = Union[
-    BaseMessage, FunctionCall, FunctionResult, AgentFinish, PrimingMessage
-]
+MessageLike = Union[BaseMessage, InternalMessage]
 
 
 class MessageLog:
