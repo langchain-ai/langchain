@@ -1,5 +1,5 @@
 """Agent for working with pandas objects."""
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Callable, Union
 
 from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.agent_toolkits.pandas.prompt import (
@@ -267,6 +267,7 @@ def _get_functions_prompt_and_tools(
 def create_pandas_dataframe_agent(
     llm: BaseLanguageModel,
     df: Any,
+    handle_parsing_errors: Union[bool, str, Callable[..., Any]],
     agent_type: AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: Optional[str] = None,
@@ -332,5 +333,6 @@ def create_pandas_dataframe_agent(
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
+        handle_parsing_errors=handle_parsing_errors,
         **(agent_executor_kwargs or {}),
     )
