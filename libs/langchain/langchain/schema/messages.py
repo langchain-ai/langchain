@@ -79,6 +79,15 @@ class BaseMessage(Serializable):
         """Whether this class is LangChain serializable."""
         return True
 
+    def __repr__(self):
+        if self.additional_kwargs:
+            return f"{self.type}: {self.additional_kwargs}"
+        else:
+            return f"{self.type}: {self.content}"
+
+    def __str__(self):
+        return self.__repr__()
+
     def __add__(self, other: Any) -> ChatPromptTemplate:
         from langchain.prompts.chat import ChatPromptTemplate
 

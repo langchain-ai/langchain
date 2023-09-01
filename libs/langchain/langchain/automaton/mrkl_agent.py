@@ -6,7 +6,6 @@ from typing import Sequence, Optional, Union, List
 
 from langchain.automaton.runnables import (
     create_llm_program,
-    create_tool_invoker,
 )
 from langchain.automaton.typedefs import (
     MessageLog,
@@ -14,6 +13,7 @@ from langchain.automaton.typedefs import (
     FunctionCall,
     FunctionResult,
     AgentFinish,
+    PrimingMessage,
 )
 from langchain.prompts import SystemMessagePromptTemplate
 from langchain.schema import (
@@ -24,8 +24,6 @@ from langchain.schema import (
     SystemMessage,
 )
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.runnable import Runnable
-from langchain.automaton.typedefs import PrimingMessage
 from langchain.tools import BaseTool, Tool
 
 TEMPLATE_ = """\
@@ -155,11 +153,15 @@ class ThinkActPromptGenerator(PromptValue):
 
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as a list of Messages."""
-        return [
-            message
-            for message in self.message_log.messages
-            if isinstance(message, BaseMessage)
-        ]
+        messages = []
+        for message in self.message_log.messages:
+            if isinstance(message, BaseMessage):
+                messages.append(message)
+            elif isinstance(message, FunctionResult):
+                messages.append(
+                    SystemMessage(content=f"Observation: `{message.result}`")
+                )
+        return messages
 
     @classmethod
     def from_message_log(cls, message_log: MessageLog):
@@ -172,47 +174,34 @@ class MRKLAgent:
         self,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
+        *,
+        max_iterations: int = 10,
     ) -> None:
         """Initialize the chat automaton."""
-        self.think_act: Runnable[
-            MessageLog, Sequence[MessageLike]
-        ] = create_llm_program(
+        self.think_act = create_llm_program(
             llm,
             prompt_generator=ThinkActPromptGenerator.from_message_log,
             stop=["Observation:", "observation:"],
             parser=ActionParser().decode,
+            tools=tools,
+            invoke_tools=True,
         )
-        self.tool_invoker: Runnable[FunctionCall, FunctionResult] = create_tool_invoker(
-            tools
-        )
+        self.max_iterations = max_iterations
 
     def run(self, message_log: MessageLog) -> None:
         """Run the agent."""
-        if not message_log.messages:
-            raise AssertionError()
+        if not message_log:
+            raise AssertionError(f"Expected at least one message in message_log")
 
-        last_message = message_log.messages[-1]
+        for _ in range(self.max_iterations):
+            last_message = message_log[-1]
 
-        max_iterations = 10
-        iteration_num = 0
-
-        while True:
-            if iteration_num > max_iterations:
-                break
             if isinstance(last_message, AgentFinish):
                 break
-            elif isinstance(last_message, FunctionCall):
-                messages = [
-                    self.tool_invoker.invoke(last_message),
-                    # After we have a function result, we want to prime the LLM with the word "
-                    # Thought"
-                    PrimingMessage(content="Thought:"),
-                ]
-            else:
-                messages = self.think_act.invoke(message_log)
 
-            if not messages:
-                raise AssertionError(f"No messages returned from last step")
+            messages = self.think_act.invoke(message_log)
+            # Prime the LLM to start with "Thought: " after an observation
+            if isinstance(messages[-1], FunctionResult):
+                messages.append(PrimingMessage(content="Thought:"))
+
             message_log.add_messages(messages)
-            last_message = messages[-1]
-            iteration_num += 1

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Optional, Sequence, List, Mapping, overload, Union
+from typing import Any, Optional, Sequence, Mapping, overload, Union
 
 from langchain.schema import (
     BaseMessage,
-    PromptValue,
 )
 
 
@@ -17,6 +16,7 @@ class FunctionCall:
 
 @dataclasses.dataclass(frozen=True)
 class FunctionResult:
+    name: str
     result: Any
     error: Optional[str]
 
@@ -41,7 +41,7 @@ MessageLike = Union[
 class MessageLog:
     """A generalized message log for message like items."""
 
-    def __init__(self, messages: Sequence[MessageLike]) -> None:
+    def __init__(self, messages: Sequence[MessageLike] = ()) -> None:
         """Initialize the message log."""
         self.messages = list(messages)
 
@@ -66,35 +66,15 @@ class MessageLog:
         else:
             return self.messages[index]
 
+    def __bool__(self):
+        return bool(self.messages)
+
     def __len__(self) -> int:
         """Get the length of the chat template."""
         return len(self.messages)
 
 
-class MessageLogPromptValue(PromptValue):
-    """Base abstract class for inputs to any language model.
-
-    PromptValues can be converted to both LLM (pure text-generation) inputs and
-        ChatModel inputs.
-    """
-
-    message_log: MessageLog
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    def to_string(self) -> str:
-        """Return prompt value as string."""
-        finalized = []
-        for message in self.to_messages():
-            prefix = message.type
-            finalized.append(f"{prefix}: {message.content}")
-        return "\n".join(finalized) + "\n" + "ai:"
-
-    def to_messages(self) -> List[BaseMessage]:
-        """Return prompt as a list of Messages."""
-        return [
-            message
-            for message in self.message_log.messages
-            if isinstance(message, BaseMessage)
-        ]
+class Agent:
+    def run(self, message_log: MessageLog) -> None:
+        """Run the agent on a message."""
+        raise NotImplementedError

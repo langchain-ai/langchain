@@ -1,7 +1,7 @@
-"""Module contains well known runnables for agents."""
+"""Module contains useful runnables for agents."""
 from __future__ import annotations
 
-from typing import Sequence, Callable, Union, List, Optional
+from typing import Sequence, Callable, List, Optional, Union
 
 from langchain.automaton.typedefs import (
     MessageLike,
@@ -13,6 +13,10 @@ from langchain.schema import BaseMessage, AIMessage, PromptValue
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.runnable.base import RunnableLambda, Runnable
 from langchain.tools import BaseTool
+from langchain.tools.convert_to_openai import format_tool_to_openai_function
+
+
+# PUBLIC API
 
 
 def create_tool_invoker(
@@ -21,16 +25,19 @@ def create_tool_invoker(
     """Re-write with router."""
     tools_by_name = {tool.name: tool for tool in tools}
 
-    def func(input: FunctionCall) -> FunctionResult:
+    def func(function_call: FunctionCall) -> FunctionResult:
         """A function that can invoke a tool using .run"""
-        tool = tools_by_name[input.name]
         try:
-            result = tool.run(input.arguments or {})
+            tool = tools_by_name[function_call.name]
+        except KeyError:
+            raise AssertionError(f"No such tool: {function_call.name}")
+        try:
+            result = tool.run(function_call.arguments or {})
             error = None
         except Exception as e:
             result = None
-            error = repr(e) + repr(input.arguments)
-        return FunctionResult(result=result, error=error)
+            error = repr(e) + repr(function_call.arguments)
+        return FunctionResult(name=function_call.name, result=result, error=error)
 
     return RunnableLambda(func=func)
 
@@ -39,10 +46,19 @@ def create_llm_program(
     llm: BaseLanguageModel,
     prompt_generator: Callable[[MessageLog], PromptValue],
     *,
+    tools: Optional[Sequence[BaseTool]] = None,
     stop: Optional[Sequence[str]] = None,
-    parser: Union[Runnable, Callable] = None,
+    parser: Union[
+        Runnable[Union[BaseMessage, str], MessageLike],
+        Callable[[Union[BaseMessage, str]], MessageLike],
+        None,
+    ] = None,
+    invoke_tools: bool = True,
 ) -> Runnable[MessageLog, List[MessageLike]]:
     """Create a runnable that can update memory."""
+
+    tool_invoker = create_tool_invoker(tools) if invoke_tools else None
+    openai_funcs = [format_tool_to_openai_function(tool_) for tool_ in tools]
 
     def _bound(message_log: MessageLog):
         messages = []
@@ -50,6 +66,8 @@ def create_llm_program(
         llm_chain = llm
         if stop:
             llm_chain = llm_chain.bind(stop=stop)
+        if tools:
+            llm_chain = llm_chain.bind(tools=openai_funcs)
 
         result = llm_chain.invoke(prompt_value)
 
@@ -58,7 +76,7 @@ def create_llm_program(
         elif isinstance(result, str):
             messages.append(AIMessage(content=result))
         else:
-            raise NotImplementedError(f"Unsupported type {result}")
+            raise NotImplementedError(f"Unsupported type {type(result)}")
 
         if parser:
             if not isinstance(parser, Runnable):
@@ -72,6 +90,12 @@ def create_llm_program(
                         f"Expected a MessageLike type got: {type(parsed_result)}"
                     )
                 messages.append(parsed_result)
+
+        last_message = messages[-1]
+
+        if tool_invoker and isinstance(last_message, FunctionCall):
+            function_result = tool_invoker.invoke(last_message)
+            messages.append(function_result)
 
         return messages
 
