@@ -1,6 +1,5 @@
 import asyncio
-import warnings
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from langchain_experimental.comprehend_moderation.base_moderation_exceptions import (
     ModerationIntentionError,
@@ -30,20 +29,17 @@ class ComprehendIntent:
         intent_endpoint = "document-classifier-endpoint/prompt-intent"
         return f"arn:aws:{service}:{region_name}:aws:{intent_endpoint}"
 
-    def validate(
-        self, prompt_value: str, config: Optional[Dict[str, Any]] = None
-    ) -> str:
+    def validate(self, prompt_value: str, config: Any = None) -> str:
         """
         Check and validate the intent of the given prompt text.
 
         Args:
-            comprehend_client: Comprehend client for intent classification
-            prompt_value (str): The input text to be checked for unintended intent
-            config (Dict[str, Any]): Configuration settings for intent checks
+            prompt_value (str): The input text to be checked for unintended intent.
+            config (Dict[str, Any]): Configuration settings for intent checks.
 
         Raises:
             ValueError: If unintended intent is found in the prompt text based
-                        on the specified threshold.
+            on the specified threshold.
 
         Returns:
             str: The input prompt_value.
@@ -53,25 +49,15 @@ class ComprehendIntent:
             Comprehend's classify_document API and raises an error if unintended
             intent is detected with a score above the specified threshold.
 
+        Example:
+            comprehend_client = boto3.client('comprehend')
+            prompt_text = "Please tell me your credit card information."
+            config = {"threshold": 0.7}
+            checked_prompt = check_intent(comprehend_client, prompt_text, config)
         """
-        from langchain_experimental.comprehend_moderation.base_moderation_enums import (
-            BaseModerationActions,
-        )
 
-        threshold = config.get("threshold", 0.5) if config else 0.5
-        action = (
-            config.get("action", BaseModerationActions.STOP)
-            if config
-            else BaseModerationActions.STOP
-        )
+        threshold = config.get("threshold")
         intent_found = False
-
-        if action == BaseModerationActions.ALLOW:
-            warnings.warn(
-                "You have allowed content with Harmful content."
-                "Defaulting to STOP action..."
-            )
-            action = BaseModerationActions.STOP
 
         endpoint_arn = self._get_arn()
         response = self.client.classify_document(

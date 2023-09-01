@@ -28,19 +28,19 @@ class BaseModerationCallbackHandler:
         self, moderation_beacon: Dict[str, Any], unique_id: str, **kwargs: Any
     ) -> None:
         """Run after PII validation is complete."""
-        raise NotImplementedError("Subclasses should implement this async method.")
+        pass
 
     async def on_after_toxicity(
         self, moderation_beacon: Dict[str, Any], unique_id: str, **kwargs: Any
     ) -> None:
         """Run after Toxicity validation is complete."""
-        raise NotImplementedError("Subclasses should implement this async method.")
+        pass
 
     async def on_after_intent(
         self, moderation_beacon: Dict[str, Any], unique_id: str, **kwargs: Any
     ) -> None:
         """Run after Toxicity validation is complete."""
-        raise NotImplementedError("Subclasses should implement this async method.")
+        pass
 
     @property
     def pii_callback(self) -> bool:
