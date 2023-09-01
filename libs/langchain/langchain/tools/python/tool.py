@@ -31,12 +31,22 @@ def sanitize_input(query: str) -> str:
     Returns:
         str: The sanitized query
     """
+    # Extract the value inside '{"query": "..."}'
+    match = re.search(r'{\s*"query":\s?"(.*?)".*}', query, re.DOTALL)
+    if match:
+        query = match.group(1)
+        query = ast.literal_eval(f'"{query}"')
 
     # Removes `, whitespace & python from start
     query = re.sub(r"^(\s|`)*(?i:python)?\s*", "", query)
     # Removes whitespace & ` from end
     query = re.sub(r"(\s|`)*$", "", query)
     return query
+
+
+class AstArgSchema(BaseModel):
+    """A schema for the ast argument."""
+    query: str = Field(description="A string formatted plain python script with imports and variables to execute.")
 
 
 class PythonREPLTool(BaseTool):
@@ -51,6 +61,7 @@ class PythonREPLTool(BaseTool):
     )
     python_repl: PythonREPL = Field(default_factory=_get_default_python_repl)
     sanitize_input: bool = True
+    args_schema: Type[BaseModel] = AstArgSchema
 
     def _run(
         self,
