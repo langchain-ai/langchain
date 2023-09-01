@@ -11,7 +11,9 @@ from langchain.schema.output import GenerationChunk
 
 class TitanTakeoff(LLM):
     baseURL: str = "http://localhost:8000"
-    """Specifies the baseURL to use for the Titan Takeoff API. Default = http://localhost:8000."""
+    """Specifies the baseURL to use for the Titan Takeoff API. 
+    Default = http://localhost:8000.
+    """
 
     generate_max_length: int = 128
     """Maximum generation length. Default = 128."""
