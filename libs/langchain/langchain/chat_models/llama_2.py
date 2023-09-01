@@ -10,6 +10,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain.schema.output import ChatGeneration
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
@@ -71,23 +72,23 @@ class ChatLlama2(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         prompt = self._format_messages_as_text(messages)
-        # TODO: remove
-        print(prompt)
 
         pipeline_params = kwargs
-        # ensure that:
-        # kwargs["return_text"] = True
+        # make sure that `return_full_text` is set to False
+        # otherwise, pipeline will return prompt + generation
         kwargs["return_full_text"] = False
-        # num_return_sequences ? ~ is it possible to pass multiple conversations ?
 
         response = self.pipeline(prompt, **pipeline_params)[0]['generated_text']
-        print(response)
-        ...
-        return response
+        chat_generation = ChatGeneration(
+            message=AIMessage(content=response),
+        )
+        return ChatResult(generations=[chat_generation])
+
 
 # TODO:
-# fix problem with getter
-# correct output from _generate
+# generation kwargs
 # try to add stopping criteria
 # handle batch requests
-# handle ChatMessage, AIMessageChunk ?
+    # num_return_sequences ? ~ is it possible to pass multiple conversations ?
+# handle ChatMessage
+# AIMessageChunk ?
