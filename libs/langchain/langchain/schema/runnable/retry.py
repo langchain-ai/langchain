@@ -24,31 +24,32 @@ U = TypeVar("U")
 class RunnableRetry(RunnableBinding[Input, Output]):
     """Retry a Runnable if it fails."""
 
-    retry_if_exception_type: Tuple[Type[BaseException]] = (Exception,)
+    retry_exception_types: Tuple[Type[BaseException]] = (Exception,)
 
     wait_exponential_jitter: bool = True
 
-    stop_after_attempt: int = 3
+    max_attempt_number: int = 3
 
+    @property
     def _kwargs_retrying(self) -> Dict[str, Any]:
         kwargs: Dict[str, Any] = dict()
 
-        if self.stop_after_attempt:
-            kwargs["stop"] = stop_after_attempt(self.stop_after_attempt)
+        if self.max_attempt_number:
+            kwargs["stop"] = stop_after_attempt(self.max_attempt_number)
 
         if self.wait_exponential_jitter:
             kwargs["wait"] = wait_exponential_jitter()
 
-        if self.retry_if_exception_type:
-            kwargs["retry"] = retry_if_exception_type(self.retry_if_exception_type)
+        if self.retry_exception_types:
+            kwargs["retry"] = retry_if_exception_type(self.retry_exception_types)
 
         return kwargs
 
     def _sync_retrying(self, **kwargs: Any) -> Retrying:
-        return Retrying(**self._kwargs_retrying(), **kwargs)
+        return Retrying(**self._kwargs_retrying, **kwargs)
 
     def _async_retrying(self, **kwargs: Any) -> AsyncRetrying:
-        return AsyncRetrying(**self._kwargs_retrying(), **kwargs)
+        return AsyncRetrying(**self._kwargs_retrying, **kwargs)
 
     def _patch_config(
         self,
@@ -56,15 +57,9 @@ class RunnableRetry(RunnableBinding[Input, Output]):
         run_manager: T,
         retry_state: RetryCallState,
     ) -> RunnableConfig:
-        config = config or {}
-        return patch_config(
-            config,
-            callbacks=run_manager.get_child(
-                "retry:attempt:{}".format(retry_state.attempt_number)
-                if retry_state.attempt_number > 1
-                else None
-            ),
-        )
+        attempt = retry_state.attempt_number
+        tag = "retry:attempt:{}".format(attempt) if attempt > 1 else None
+        return patch_config(config, callbacks=run_manager.get_child(tag))
 
     def _patch_config_list(
         self,
