@@ -5,7 +5,7 @@ from test_utils import MockEncoder
 
 import langchain.chains.rl_chain.base as base
 
-encoded_text = "[ e n c o d e d ] "
+encoded_keyword = "[encoded]"
 
 
 @pytest.mark.requires("vowpal_wabbit_next")
@@ -17,12 +17,10 @@ def test_simple_context_str_no_emb() -> None:
 @pytest.mark.requires("vowpal_wabbit_next")
 def test_simple_context_str_w_emb() -> None:
     str1 = "test"
-    encoded_str1 = " ".join(char for char in str1)
-    expected = [{"a_namespace": encoded_text + encoded_str1}]
+    encoded_str1 = base.stringify_embedding(list(encoded_keyword + str1))
+    expected = [{"a_namespace": encoded_str1}]
     assert base.embed(base.Embed(str1), MockEncoder(), "a_namespace") == expected
-    expected_embed_and_keep = [
-        {"a_namespace": str1 + " " + encoded_text + encoded_str1}
-    ]
+    expected_embed_and_keep = [{"a_namespace": str1 + " " + encoded_str1}]
     assert (
         base.embed(base.EmbedAndKeep(str1), MockEncoder(), "a_namespace")
         == expected_embed_and_keep
@@ -33,14 +31,14 @@ def test_simple_context_str_w_emb() -> None:
 def test_simple_context_str_w_nested_emb() -> None:
     # nested embeddings, innermost wins
     str1 = "test"
-    encoded_str1 = " ".join(char for char in str1)
-    expected = [{"a_namespace": encoded_text + encoded_str1}]
+    encoded_str1 = base.stringify_embedding(list(encoded_keyword + str1))
+    expected = [{"a_namespace": encoded_str1}]
     assert (
         base.embed(base.EmbedAndKeep(base.Embed(str1)), MockEncoder(), "a_namespace")
         == expected
     )
 
-    expected2 = [{"a_namespace": str1 + " " + encoded_text + encoded_str1}]
+    expected2 = [{"a_namespace": str1 + " " + encoded_str1}]
     assert (
         base.embed(base.Embed(base.EmbedAndKeep(str1)), MockEncoder(), "a_namespace")
         == expected2
@@ -56,12 +54,10 @@ def test_context_w_namespace_no_emb() -> None:
 @pytest.mark.requires("vowpal_wabbit_next")
 def test_context_w_namespace_w_emb() -> None:
     str1 = "test"
-    encoded_str1 = " ".join(char for char in str1)
-    expected = [{"test_namespace": encoded_text + encoded_str1}]
+    encoded_str1 = base.stringify_embedding(list(encoded_keyword + str1))
+    expected = [{"test_namespace": encoded_str1}]
     assert base.embed({"test_namespace": base.Embed(str1)}, MockEncoder()) == expected
-    expected_embed_and_keep = [
-        {"test_namespace": str1 + " " + encoded_text + encoded_str1}
-    ]
+    expected_embed_and_keep = [{"test_namespace": str1 + " " + encoded_str1}]
     assert (
         base.embed({"test_namespace": base.EmbedAndKeep(str1)}, MockEncoder())
         == expected_embed_and_keep
@@ -71,12 +67,10 @@ def test_context_w_namespace_w_emb() -> None:
 @pytest.mark.requires("vowpal_wabbit_next")
 def test_context_w_namespace_w_emb2() -> None:
     str1 = "test"
-    encoded_str1 = " ".join(char for char in str1)
-    expected = [{"test_namespace": encoded_text + encoded_str1}]
+    encoded_str1 = base.stringify_embedding(list(encoded_keyword + str1))
+    expected = [{"test_namespace": encoded_str1}]
     assert base.embed(base.Embed({"test_namespace": str1}), MockEncoder()) == expected
-    expected_embed_and_keep = [
-        {"test_namespace": str1 + " " + encoded_text + encoded_str1}
-    ]
+    expected_embed_and_keep = [{"test_namespace": str1 + " " + encoded_str1}]
     assert (
         base.embed(base.EmbedAndKeep({"test_namespace": str1}), MockEncoder())
         == expected_embed_and_keep
@@ -87,10 +81,8 @@ def test_context_w_namespace_w_emb2() -> None:
 def test_context_w_namespace_w_some_emb() -> None:
     str1 = "test1"
     str2 = "test2"
-    encoded_str2 = " ".join(char for char in str2)
-    expected = [
-        {"test_namespace": str1, "test_namespace2": encoded_text + encoded_str2}
-    ]
+    encoded_str2 = base.stringify_embedding(list(encoded_keyword + str2))
+    expected = [{"test_namespace": str1, "test_namespace2": encoded_str2}]
     assert (
         base.embed(
             {"test_namespace": str1, "test_namespace2": base.Embed(str2)}, MockEncoder()
@@ -100,7 +92,7 @@ def test_context_w_namespace_w_some_emb() -> None:
     expected_embed_and_keep = [
         {
             "test_namespace": str1,
-            "test_namespace2": str2 + " " + encoded_text + encoded_str2,
+            "test_namespace2": str2 + " " + encoded_str2,
         }
     ]
     assert (
@@ -127,22 +119,22 @@ def test_simple_action_strlist_w_emb() -> None:
     str1 = "test1"
     str2 = "test2"
     str3 = "test3"
-    encoded_str1 = " ".join(char for char in str1)
-    encoded_str2 = " ".join(char for char in str2)
-    encoded_str3 = " ".join(char for char in str3)
+    encoded_str1 = base.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str2 = base.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = base.stringify_embedding(list(encoded_keyword + str3))
     expected = [
-        {"a_namespace": encoded_text + encoded_str1},
-        {"a_namespace": encoded_text + encoded_str2},
-        {"a_namespace": encoded_text + encoded_str3},
+        {"a_namespace": encoded_str1},
+        {"a_namespace": encoded_str2},
+        {"a_namespace": encoded_str3},
     ]
     assert (
         base.embed(base.Embed([str1, str2, str3]), MockEncoder(), "a_namespace")
         == expected
     )
     expected_embed_and_keep = [
-        {"a_namespace": str1 + " " + encoded_text + encoded_str1},
-        {"a_namespace": str2 + " " + encoded_text + encoded_str2},
-        {"a_namespace": str3 + " " + encoded_text + encoded_str3},
+        {"a_namespace": str1 + " " + encoded_str1},
+        {"a_namespace": str2 + " " + encoded_str2},
+        {"a_namespace": str3 + " " + encoded_str3},
     ]
     assert (
         base.embed(base.EmbedAndKeep([str1, str2, str3]), MockEncoder(), "a_namespace")
@@ -155,12 +147,12 @@ def test_simple_action_strlist_w_some_emb() -> None:
     str1 = "test1"
     str2 = "test2"
     str3 = "test3"
-    encoded_str2 = " ".join(char for char in str2)
-    encoded_str3 = " ".join(char for char in str3)
+    encoded_str2 = base.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = base.stringify_embedding(list(encoded_keyword + str3))
     expected = [
         {"a_namespace": str1},
-        {"a_namespace": encoded_text + encoded_str2},
-        {"a_namespace": encoded_text + encoded_str3},
+        {"a_namespace": encoded_str2},
+        {"a_namespace": encoded_str3},
     ]
     assert (
         base.embed(
@@ -170,8 +162,8 @@ def test_simple_action_strlist_w_some_emb() -> None:
     )
     expected_embed_and_keep = [
         {"a_namespace": str1},
-        {"a_namespace": str2 + " " + encoded_text + encoded_str2},
-        {"a_namespace": str3 + " " + encoded_text + encoded_str3},
+        {"a_namespace": str2 + " " + encoded_str2},
+        {"a_namespace": str3 + " " + encoded_str3},
     ]
     assert (
         base.embed(
@@ -211,13 +203,13 @@ def test_action_w_namespace_w_emb() -> None:
     str1 = "test1"
     str2 = "test2"
     str3 = "test3"
-    encoded_str1 = " ".join(char for char in str1)
-    encoded_str2 = " ".join(char for char in str2)
-    encoded_str3 = " ".join(char for char in str3)
+    encoded_str1 = base.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str2 = base.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = base.stringify_embedding(list(encoded_keyword + str3))
     expected = [
-        {"test_namespace": encoded_text + encoded_str1},
-        {"test_namespace": encoded_text + encoded_str2},
-        {"test_namespace": encoded_text + encoded_str3},
+        {"test_namespace": encoded_str1},
+        {"test_namespace": encoded_str2},
+        {"test_namespace": encoded_str3},
     ]
     assert (
         base.embed(
@@ -231,9 +223,9 @@ def test_action_w_namespace_w_emb() -> None:
         == expected
     )
     expected_embed_and_keep = [
-        {"test_namespace": str1 + " " + encoded_text + encoded_str1},
-        {"test_namespace": str2 + " " + encoded_text + encoded_str2},
-        {"test_namespace": str3 + " " + encoded_text + encoded_str3},
+        {"test_namespace": str1 + " " + encoded_str1},
+        {"test_namespace": str2 + " " + encoded_str2},
+        {"test_namespace": str3 + " " + encoded_str3},
     ]
     assert (
         base.embed(
@@ -253,13 +245,13 @@ def test_action_w_namespace_w_emb2() -> None:
     str1 = "test1"
     str2 = "test2"
     str3 = "test3"
-    encoded_str1 = " ".join(char for char in str1)
-    encoded_str2 = " ".join(char for char in str2)
-    encoded_str3 = " ".join(char for char in str3)
+    encoded_str1 = base.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str2 = base.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = base.stringify_embedding(list(encoded_keyword + str3))
     expected = [
-        {"test_namespace1": encoded_text + encoded_str1},
-        {"test_namespace2": encoded_text + encoded_str2},
-        {"test_namespace3": encoded_text + encoded_str3},
+        {"test_namespace1": encoded_str1},
+        {"test_namespace2": encoded_str2},
+        {"test_namespace3": encoded_str3},
     ]
     assert (
         base.embed(
@@ -275,9 +267,9 @@ def test_action_w_namespace_w_emb2() -> None:
         == expected
     )
     expected_embed_and_keep = [
-        {"test_namespace1": str1 + " " + encoded_text + encoded_str1},
-        {"test_namespace2": str2 + " " + encoded_text + encoded_str2},
-        {"test_namespace3": str3 + " " + encoded_text + encoded_str3},
+        {"test_namespace1": str1 + " " + encoded_str1},
+        {"test_namespace2": str2 + " " + encoded_str2},
+        {"test_namespace3": str3 + " " + encoded_str3},
     ]
     assert (
         base.embed(
@@ -299,12 +291,12 @@ def test_action_w_namespace_w_some_emb() -> None:
     str1 = "test1"
     str2 = "test2"
     str3 = "test3"
-    encoded_str2 = " ".join(char for char in str2)
-    encoded_str3 = " ".join(char for char in str3)
+    encoded_str2 = base.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = base.stringify_embedding(list(encoded_keyword + str3))
     expected = [
         {"test_namespace": str1},
-        {"test_namespace": encoded_text + encoded_str2},
-        {"test_namespace": encoded_text + encoded_str3},
+        {"test_namespace": encoded_str2},
+        {"test_namespace": encoded_str3},
     ]
     assert (
         base.embed(
@@ -319,8 +311,8 @@ def test_action_w_namespace_w_some_emb() -> None:
     )
     expected_embed_and_keep = [
         {"test_namespace": str1},
-        {"test_namespace": str2 + " " + encoded_text + encoded_str2},
-        {"test_namespace": str3 + " " + encoded_text + encoded_str3},
+        {"test_namespace": str2 + " " + encoded_str2},
+        {"test_namespace": str3 + " " + encoded_str3},
     ]
     assert (
         base.embed(
@@ -340,13 +332,13 @@ def test_action_w_namespace_w_emb_w_more_than_one_item_in_first_dict() -> None:
     str1 = "test1"
     str2 = "test2"
     str3 = "test3"
-    encoded_str1 = " ".join(char for char in str1)
-    encoded_str2 = " ".join(char for char in str2)
-    encoded_str3 = " ".join(char for char in str3)
+    encoded_str1 = base.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str2 = base.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = base.stringify_embedding(list(encoded_keyword + str3))
     expected = [
-        {"test_namespace": encoded_text + encoded_str1, "test_namespace2": str1},
-        {"test_namespace": encoded_text + encoded_str2, "test_namespace2": str2},
-        {"test_namespace": encoded_text + encoded_str3, "test_namespace2": str3},
+        {"test_namespace": encoded_str1, "test_namespace2": str1},
+        {"test_namespace": encoded_str2, "test_namespace2": str2},
+        {"test_namespace": encoded_str3, "test_namespace2": str3},
     ]
     assert (
         base.embed(
@@ -361,15 +353,15 @@ def test_action_w_namespace_w_emb_w_more_than_one_item_in_first_dict() -> None:
     )
     expected_embed_and_keep = [
         {
-            "test_namespace": str1 + " " + encoded_text + encoded_str1,
+            "test_namespace": str1 + " " + encoded_str1,
             "test_namespace2": str1,
         },
         {
-            "test_namespace": str2 + " " + encoded_text + encoded_str2,
+            "test_namespace": str2 + " " + encoded_str2,
             "test_namespace2": str2,
         },
         {
-            "test_namespace": str3 + " " + encoded_text + encoded_str3,
+            "test_namespace": str3 + " " + encoded_str3,
             "test_namespace2": str3,
         },
     ]
@@ -398,8 +390,8 @@ def test_one_namespace_w_list_of_features_no_emb() -> None:
 def test_one_namespace_w_list_of_features_w_some_emb() -> None:
     str1 = "test1"
     str2 = "test2"
-    encoded_str2 = " ".join(char for char in str2)
-    expected = [{"test_namespace": [str1, encoded_text + encoded_str2]}]
+    encoded_str2 = base.stringify_embedding(list(encoded_keyword + str2))
+    expected = [{"test_namespace": [str1, encoded_str2]}]
     assert (
         base.embed({"test_namespace": [str1, base.Embed(str2)]}, MockEncoder())
         == expected
