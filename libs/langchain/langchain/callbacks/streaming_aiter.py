@@ -35,6 +35,9 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
             self.queue.put_nowait(token)
 
     async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        # Keeps the asynchronous iterator (aiter) running if text is not generated.
+        # This ensures that aiter does not terminate at the first occurrence of
+        # on_llm_end when using function calling.
         if (
             response.generations[0][0].text is not None
             and response.generations[0][0].text != ""
