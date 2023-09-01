@@ -1,56 +1,9 @@
 """Quick and dirty representation for OpenAPI specs."""
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple, Union
+from typing import List, Tuple
 
-
-def dereference_refs(spec_obj: dict, full_spec: dict) -> Union[dict, list]:
-    """Try to substitute $refs.
-
-    The goal is to get the complete docs for each endpoint in context for now.
-
-    In the few OpenAPI specs I studied, $refs referenced models
-    (or in OpenAPI terms, components) and could be nested. This code most
-    likely misses lots of cases.
-    """
-
-    def _retrieve_ref_path(path: str, full_spec: dict) -> dict:
-        components = path.split("/")
-        if components[0] != "#":
-            raise RuntimeError(
-                "All $refs I've seen so far are uri fragments (start with hash)."
-            )
-        out = full_spec
-        for component in components[1:]:
-            out = out[component]
-        return out
-
-    def _dereference_refs(
-        obj: Union[dict, list], stop: bool = False
-    ) -> Union[dict, list]:
-        if stop:
-            return obj
-        obj_out: Dict[str, Any] = {}
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                if k == "$ref":
-                    # stop=True => don't dereference recursively.
-                    return _dereference_refs(
-                        _retrieve_ref_path(v, full_spec), stop=True
-                    )
-                elif isinstance(v, list):
-                    obj_out[k] = [_dereference_refs(el) for el in v]
-                elif isinstance(v, dict):
-                    obj_out[k] = _dereference_refs(v)
-                else:
-                    obj_out[k] = v
-            return obj_out
-        elif isinstance(obj, list):
-            return [_dereference_refs(el) for el in obj]
-        else:
-            return obj
-
-    return _dereference_refs(spec_obj)
+from langchain.utils.json_schema import dereference_refs
 
 
 @dataclass(frozen=True)
@@ -90,7 +43,7 @@ def reduce_openapi_spec(spec: dict, dereference: bool = True) -> ReducedOpenAPIS
     # Note: probably want to do this post-retrieval, it blows up the size of the spec.
     if dereference:
         endpoints = [
-            (name, description, dereference_refs(docs, spec))
+            (name, description, dereference_refs(docs, full_schema=spec))
             for name, description, docs in endpoints
         ]
 
