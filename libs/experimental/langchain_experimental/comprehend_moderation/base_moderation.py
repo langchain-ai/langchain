@@ -105,7 +105,7 @@ class BaseModeration:
             self.run_manager.on_text(message)
 
     def moderate(self, prompt: Any) -> str:
-        from langchain_cm.chains.comprehend_moderation import (  # noqa: E501
+        from langchain_experimental.comprehend_moderation.base_moderation_config import (  # noqa: E501
             ModerationIntentConfig,
             ModerationPiiConfig,
             ModerationToxicityConfig,
