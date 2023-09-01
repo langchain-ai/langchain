@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import Sequence, Union, List, Optional
+from typing import Sequence, Union, List
 
 from langchain.automaton.runnables import create_llm_program
 from langchain.automaton.typedefs import (
@@ -15,7 +15,6 @@ from langchain.automaton.typedefs import (
 )
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, HumanMessage
-from langchain.schema.runnable import RunnableConfig
 from langchain.tools import BaseTool
 
 
@@ -41,12 +40,6 @@ class ActionEncoder:
             )
         else:
             return AgentFinish(result=text)
-
-    def encode_as_str(self, function_call: FunctionCall) -> str:
-        """Encode the action."""
-        if function_call.name == "Final Answer":
-            return f"<action>{{'action': 'Final Answer', 'action_input': '{function_call.arguments}'}}</action>"
-        return f"<action>{{'action': '{function_call.name}', 'action_input': {function_call.arguments}}}</action>"
 
 
 def prompt_generator(log: MessageLog) -> List[BaseMessage]:
@@ -97,5 +90,5 @@ class ChatAgent:
             if isinstance(last_message, AgentFinish):
                 break
 
-            messages = self.llm_program.invoke(message_log, config=config)
+            messages = self.llm_program.invoke(message_log)
             message_log.add_messages(messages)
