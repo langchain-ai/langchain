@@ -9,8 +9,14 @@ from langchain.chains.rl_chain.base import (
     SelectionScorer,
     ToSelectFrom,
     VwPolicy,
+    embed,
+    stringify_embedding,
 )
-from langchain.chains.rl_chain.pick_best_chain import PickBest
+from langchain.chains.rl_chain.pick_best_chain import (
+    PickBest,
+    PickBestEvent,
+    PickBestSelected,
+)
 
 
 def configure_logger() -> None:
@@ -29,6 +35,8 @@ configure_logger()
 
 __all__ = [
     "PickBest",
+    "PickBestEvent",
+    "PickBestSelected",
     "Embed",
     "BasedOn",
     "ToSelectFrom",
@@ -37,4 +45,6 @@ __all__ = [
     "Embedder",
     "Policy",
     "VwPolicy",
+    "embed",
+    "stringify_embedding",
 ]

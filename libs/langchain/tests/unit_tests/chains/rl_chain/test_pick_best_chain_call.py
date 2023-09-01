@@ -8,7 +8,7 @@ import langchain.chains.rl_chain.pick_best_chain as pick_best_chain
 from langchain.chat_models import FakeListChatModel
 from langchain.prompts.prompt import PromptTemplate
 
-encoded_text = "[ e n c o d e d ] "
+encoded_keyword = "[encoded]"
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
@@ -176,15 +176,13 @@ def test_auto_embeddings_on() -> None:
     str1 = "0"
     str2 = "1"
     str3 = "2"
-    encoded_str1 = encoded_text + " ".join(char for char in str1)
-    encoded_str2 = encoded_text + " ".join(char for char in str2)
-    encoded_str3 = encoded_text + " ".join(char for char in str3)
+    encoded_str1 = rl_chain.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str2 = rl_chain.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = rl_chain.stringify_embedding(list(encoded_keyword + str3))
 
     ctx_str_1 = "context1"
-    ctx_str_2 = "context2"
 
-    encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
-    encoded_text + " ".join(char for char in ctx_str_2)
+    encoded_ctx_str_1 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_1))
 
     expected = f"""shared |User {ctx_str_1 + " " + encoded_ctx_str_1} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {str3 + " " + encoded_str3} """  # noqa
 
@@ -262,15 +260,15 @@ def test_default_embeddings_mixed_w_explicit_user_embeddings() -> None:
     str1 = "0"
     str2 = "1"
     str3 = "2"
-    encoded_str1 = encoded_text + " ".join(char for char in str1)
-    encoded_str2 = encoded_text + " ".join(char for char in str2)
-    encoded_str3 = encoded_text + " ".join(char for char in str3)
+    encoded_str1 = rl_chain.stringify_embedding(list(encoded_keyword + str1))
+    encoded_str2 = rl_chain.stringify_embedding(list(encoded_keyword + str2))
+    encoded_str3 = rl_chain.stringify_embedding(list(encoded_keyword + str3))
 
     ctx_str_1 = "context1"
     ctx_str_2 = "context2"
 
-    encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
-    encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
+    encoded_ctx_str_1 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_1))
+    encoded_ctx_str_2 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_2))
 
     expected = f"""shared |User {encoded_ctx_str_1} |User2 {ctx_str_2 + " " + encoded_ctx_str_2} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {encoded_str3} """  # noqa
 

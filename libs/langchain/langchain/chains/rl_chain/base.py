@@ -19,7 +19,10 @@ from typing import (
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.chains.rl_chain.metrics import MetricsTracker
+from langchain.chains.rl_chain.metrics import (
+    MetricsTrackerAverage,
+    MetricsTrackerRollingWindow,
+)
 from langchain.chains.rl_chain.model_repository import ModelRepository
 from langchain.chains.rl_chain.vw_logger import VwLogger
 from langchain.prompts import (
@@ -96,6 +99,10 @@ def EmbedAndKeep(anything: Any) -> Any:
 
 
 # helper functions
+
+
+def stringify_embedding(embedding: List) -> str:
+    return " ".join([f"{i}:{e}" for i, e in enumerate(embedding)])
 
 
 def parse_lines(parser: "vw.TextFormatParser", input_str: str) -> List["vw.Example"]:
@@ -346,7 +353,7 @@ class RLChain(Chain, Generic[TEvent]):
     selection_scorer_activated: bool = True
     selected_input_key = "rl_chain_selected"
     selected_based_on_input_key = "rl_chain_selected_based_on"
-    metrics: Optional[MetricsTracker] = None
+    metrics: Optional[Union[MetricsTrackerRollingWindow, MetricsTrackerAverage]] = None
 
     def __init__(
         self,
@@ -357,6 +364,7 @@ class RLChain(Chain, Generic[TEvent]):
         policy: Type[Policy] = VwPolicy,
         vw_logs: Optional[Union[str, os.PathLike]] = None,
         metrics_step: int = -1,
+        metrics_window_size: int = -1,
         *args: Any,
         **kwargs: Any,
     ):
@@ -378,7 +386,12 @@ class RLChain(Chain, Generic[TEvent]):
                 vw_logger=VwLogger(vw_logs),
             )
 
-        self.metrics = MetricsTracker(step=metrics_step)
+        if metrics_window_size > 0:
+            self.metrics = MetricsTrackerRollingWindow(
+                step=metrics_step, window_size=metrics_window_size
+            )
+        else:
+            self.metrics = MetricsTrackerAverage(step=metrics_step)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -523,8 +536,9 @@ class RLChain(Chain, Generic[TEvent]):
                 f"The selection scorer was not able to score, \
                 and the chain was not able to adjust to this response, error: {e}"
             )
-        if self.metrics:
+        if self.metrics and score is not None:
             self.metrics.on_feedback(score)
+
         event = self._call_after_scoring_before_learning(score=score, event=event)
         self.active_policy.learn(event=event)
         self.active_policy.log(event=event)
@@ -547,16 +561,13 @@ def embed_string_type(
     item: Union[str, _Embed], model: Any, namespace: Optional[str] = None
 ) -> Dict[str, Union[str, List[str]]]:
     """Helper function to embed a string or an _Embed object."""
-    join_char = ""
     keep_str = ""
     if isinstance(item, _Embed):
-        encoded = model.encode(item.value)
-        join_char = " "
+        encoded = stringify_embedding(model.encode(item.value))
         if item.keep:
             keep_str = item.value.replace(" ", "_") + " "
     elif isinstance(item, str):
         encoded = item.replace(" ", "_")
-        join_char = ""
     else:
         raise ValueError(f"Unsupported type {type(item)} for embedding")
 
@@ -566,7 +577,7 @@ def embed_string_type(
                 provided when embedding a string or _Embed object."
         )
 
-    return {namespace: keep_str + join_char.join(map(str, encoded))}
+    return {namespace: keep_str + encoded}
 
 
 def embed_dict_type(item: Dict, model: Any) -> Dict[str, Any]:
