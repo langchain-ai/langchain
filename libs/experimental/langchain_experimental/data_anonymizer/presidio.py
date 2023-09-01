@@ -49,7 +49,6 @@ class PresidioAnonymizerBase(AnonymizerBase):
     def __init__(
         self,
         analyzed_fields: Optional[List[str]] = None,
-        language: str = "en",
         operators: Optional[Dict[str, OperatorConfig]] = None,
         faker_seed: Optional[int] = None,
     ):
@@ -57,7 +56,6 @@ class PresidioAnonymizerBase(AnonymizerBase):
         Args:
             analyzed_fields: List of fields to detect and then anonymize.
                 Defaults to all entities supported by Microsoft Presidio.
-            language: Language to use for analysis. Defaults to english.
             operators: Operators to use for anonymization.
                 Operators allow for custom anonymization of detected PII.
                 Learn more:
@@ -71,7 +69,6 @@ class PresidioAnonymizerBase(AnonymizerBase):
             if analyzed_fields is not None
             else list(get_pseudoanonymizer_mapping().keys())
         )
-        self.language = language
         self.operators = (
             operators
             if operators is not None
@@ -117,7 +114,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
         results = self._analyzer.analyze(
             text,
             entities=self.analyzed_fields,
-            language=self.language,
+            language="en",
         )
 
         return self._anonymizer.anonymize(
@@ -131,11 +128,10 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
     def __init__(
         self,
         analyzed_fields: Optional[List[str]] = None,
-        language: str = "en",
         operators: Optional[Dict[str, OperatorConfig]] = None,
         faker_seed: Optional[int] = None,
     ):
-        super().__init__(analyzed_fields, language, operators, faker_seed)
+        super().__init__(analyzed_fields, operators, faker_seed)
         self._deanonymizer_mapping = DeanonymizerMapping()
 
     @property
@@ -208,7 +204,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         analyzer_results = self._analyzer.analyze(
             text,
             entities=self.analyzed_fields,
-            language=self.language,
+            language="en",
         )
 
         filtered_analyzer_results = (
