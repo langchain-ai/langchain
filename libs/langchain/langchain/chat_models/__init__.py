@@ -26,12 +26,12 @@ from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.human import HumanInputChatModel
 from langchain.chat_models.jinachat import JinaChat
 from langchain.chat_models.litellm import ChatLiteLLM
+from langchain.chat_models.llama_2 import ChatLlama2
 from langchain.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
 from langchain.chat_models.ollama import ChatOllama
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.vertexai import ChatVertexAI
-from langchain.chat_models.llama_2 import ChatLlama2
 
 __all__ = [
     "ChatOpenAI",

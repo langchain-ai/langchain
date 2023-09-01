@@ -7,6 +7,7 @@ from langchain.schema.messages import (
     SystemMessage,
 )
 
+
 def test_format_messages_as_text_with_system() -> None:
     messages = [
         SystemMessage(content="System Prompt."),
@@ -33,4 +34,3 @@ def test_format_messages_as_text_without_system() -> None:
 
     messages_as_str = ChatLlama2.format_messages_as_text(messages=messages)
     assert messages_as_str == ground_truth
-    
