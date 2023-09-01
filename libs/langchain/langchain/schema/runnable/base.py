@@ -1592,15 +1592,15 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        configs = cast(
-            List[RunnableConfig],
-            [self._merge_config(conf) for conf in config]
-            if isinstance(config, list)
-            else [
+        if isinstance(config, list):
+            configs = cast(
+                List[RunnableConfig], [self._merge_config(conf) for conf in config]
+            )
+        else:
+            configs = [
                 patch_config(self._merge_config(config), deep_copy_locals=True)
                 for _ in range(len(inputs))
-            ],
-        )
+            ]
         return await self.bound.abatch(inputs, configs, **{**self.kwargs, **kwargs})
 
     def stream(
