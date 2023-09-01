@@ -98,9 +98,10 @@ def test_deanonymizer_mapping() -> None:
 
     # ["PERSON", "PHONE_NUMBER"]
     assert len(anonymizer.deanonymizer_mapping.keys()) == 2
-    assert "John Doe" in anonymizer.deanonymizer_mapping.get("PERSON").values()
+    assert "John Doe" in anonymizer.deanonymizer_mapping.get("PERSON", {}).values()
     assert (
-        "444 555 6666" in anonymizer.deanonymizer_mapping.get("PHONE_NUMBER").values()
+        "444 555 6666"
+        in anonymizer.deanonymizer_mapping.get("PHONE_NUMBER", {}).values()
     )
 
     text_to_anonymize = (
@@ -111,14 +112,14 @@ def test_deanonymizer_mapping() -> None:
 
     # ["PERSON", "PHONE_NUMBER", "EMAIL_ADDRESS", "CREDIT_CARD"]
     assert len(anonymizer.deanonymizer_mapping.keys()) == 4
-    assert "Jane Doe" in anonymizer.deanonymizer_mapping.get("PERSON").values()
+    assert "Jane Doe" in anonymizer.deanonymizer_mapping.get("PERSON", {}).values()
     assert (
         "jane@gmail.com"
-        in anonymizer.deanonymizer_mapping.get("EMAIL_ADDRESS").values()
+        in anonymizer.deanonymizer_mapping.get("EMAIL_ADDRESS", {}).values()
     )
     assert (
         "4929 5319 6292 5362"
-        in anonymizer.deanonymizer_mapping.get("CREDIT_CARD").values()
+        in anonymizer.deanonymizer_mapping.get("CREDIT_CARD", {}).values()
     )
 
 
@@ -147,7 +148,7 @@ def test_save_load_deanonymizer_mapping() -> None:
         anonymizer = PresidioReversibleAnonymizer()
         anonymizer.load_deanonymizer_mapping("test_file.json")
 
-        assert "John Doe" in anonymizer.deanonymizer_mapping.get("PERSON").values()
+        assert "John Doe" in anonymizer.deanonymizer_mapping.get("PERSON", {}).values()
 
     finally:
         os.remove("test_file.json")

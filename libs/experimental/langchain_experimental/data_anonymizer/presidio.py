@@ -11,6 +11,10 @@ from langchain_experimental.data_anonymizer.base import (
     AnonymizerBase,
     ReversibleAnonymizerBase,
 )
+from langchain_experimental.data_anonymizer.deanonymizer_mapping import (
+    DeanonymizerMapping,
+    MappingDataType,
+)
 from langchain_experimental.data_anonymizer.deanonymizer_matching_strategies import (
     default_matching_strategy,
 )
@@ -132,16 +136,14 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         faker_seed: Optional[int] = None,
     ):
         super().__init__(analyzed_fields, language, operators, faker_seed)
-        self._deanonymizer_mapping: Dict[str, Dict[str, str]] = defaultdict(
-            lambda: defaultdict(str)
-        )
+        self._deanonymizer_mapping = DeanonymizerMapping()
 
     @property
-    def deanonymizer_mapping(self) -> Dict[str, Dict[str, str]]:
+    def deanonymizer_mapping(self) -> MappingDataType:
         """Return the deanonymizer mapping"""
-        return {k: dict(v) for k, v in self._deanonymizer_mapping.items()}
+        return self._deanonymizer_mapping.data
 
-    def _create_update_deanonymizer_mapping(
+    def _update_deanonymizer_mapping(
         self,
         original_text: str,
         analyzer_results: List[RecognizerResult],
@@ -181,7 +183,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             anonymizer_results.items, key=lambda d: d.start
         )
 
-        new_deanonymizer_mapping: defaultdict[str, Dict[str, str]] = defaultdict(dict)
+        new_deanonymizer_mapping: MappingDataType = defaultdict(dict)
 
         for analyzed_entity, anonymized_entity in zip(
             analyzer_results, anonymizer_results.items
@@ -191,8 +193,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
                 anonymized_entity.text
             ] = original_value
 
-        for entity_type, values in new_deanonymizer_mapping.items():
-            self._deanonymizer_mapping[entity_type].update(values)
+        self._deanonymizer_mapping.update(new_deanonymizer_mapping)
 
     def _anonymize(self, text: str) -> str:
         """Anonymize text.
@@ -222,7 +223,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             operators=self.operators,
         )
 
-        self._create_update_deanonymizer_mapping(
+        self._update_deanonymizer_mapping(
             text, filtered_analyzer_results, anonymizer_results
         )
 
@@ -232,7 +233,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         self,
         text_to_deanonymize: str,
         deanonymizer_matching_strategy: Callable[
-            [str, Dict[str, Dict[str, str]]], str
+            [str, MappingDataType], str
         ] = default_matching_strategy,
     ) -> str:
         """Deanonymize text.
@@ -268,17 +269,14 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             anonymizer.save_deanonymizer_mapping(file_path="path/mapping.json")
         """
 
-        # Convert file to Path object.
-        save_path = Path(file_path) if isinstance(file_path, str) else file_path
+        save_path = Path(file_path)
 
-        # Check file extension
         if save_path.suffix not in [".json", ".yaml"]:
             raise ValueError(f"{save_path} must have an extension of .json or .yaml")
 
         # Make sure parent directories exist
         save_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Save the file
         if save_path.suffix == ".json":
             with open(save_path, "w") as f:
                 json.dump(self.deanonymizer_mapping, f, indent=2)
@@ -298,17 +296,16 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             anonymizer.load_deanonymizer_mapping(file_path="path/mapping.json")
         """
 
-        # Convert file to Path object.
-        load_path = Path(file_path) if isinstance(file_path, str) else file_path
+        load_path = Path(file_path)
 
-        # Check file extension
         if load_path.suffix not in [".json", ".yaml"]:
             raise ValueError(f"{load_path} must have an extension of .json or .yaml")
 
-        # Load the file
         if load_path.suffix == ".json":
             with open(load_path, "r") as f:
-                self._deanonymizer_mapping = json.load(f)
+                loaded_mapping = json.load(f)
         elif load_path.suffix == ".yaml":
             with open(load_path, "r") as f:
-                self._deanonymizer_mapping = yaml.load(f, Loader=yaml.FullLoader)
+                loaded_mapping = yaml.load(f, Loader=yaml.FullLoader)
+
+        self._deanonymizer_mapping.update(loaded_mapping)
