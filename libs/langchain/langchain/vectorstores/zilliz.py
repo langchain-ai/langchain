@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.milvus import Milvus
@@ -140,7 +140,7 @@ class Zilliz(Milvus):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         collection_name: str = "LangChainCollection",
-        connection_args: dict[str, Any] = {},
+        connection_args: Optional[Dict[str, Any]] = None,
         consistency_level: str = "Session",
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
@@ -173,7 +173,7 @@ class Zilliz(Milvus):
         vector_db = cls(
             embedding_function=embedding,
             collection_name=collection_name,
-            connection_args=connection_args,
+            connection_args=connection_args or {},
             consistency_level=consistency_level,
             index_params=index_params,
             search_params=search_params,

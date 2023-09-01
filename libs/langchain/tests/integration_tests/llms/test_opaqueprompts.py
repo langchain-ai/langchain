@@ -1,7 +1,7 @@
-import langchain.utilities.promptguard as pgf
+import langchain.utilities.opaqueprompts as op
 from langchain import LLMChain, PromptTemplate
 from langchain.llms import OpenAI
-from langchain.llms.promptguard import PromptGuard
+from langchain.llms.opaqueprompts import OpaquePrompts
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableMap
@@ -42,10 +42,10 @@ Question: ```{question}```
 """
 
 
-def test_promptguard() -> None:
+def test_opaqueprompts() -> None:
     chain = LLMChain(
         prompt=PromptTemplate.from_template(prompt_template),
-        llm=PromptGuard(llm=OpenAI()),
+        llm=OpaquePrompts(llm=OpenAI()),
         memory=ConversationBufferWindowMemory(k=2),
     )
 
@@ -58,11 +58,11 @@ def test_promptguard() -> None:
     assert isinstance(output, str)
 
 
-def test_promptguard_functions() -> None:
+def test_opaqueprompts_functions() -> None:
     prompt = (PromptTemplate.from_template(prompt_template),)
     llm = OpenAI()
     pg_chain = (
-        pgf.sanitize
+        op.sanitize
         | RunnableMap(
             {
                 "response": (lambda x: x["sanitized_input"])  # type: ignore
@@ -72,7 +72,7 @@ def test_promptguard_functions() -> None:
                 "secure_context": lambda x: x["secure_context"],
             }
         )
-        | (lambda x: pgf.desanitize(x["response"], x["secure_context"]))
+        | (lambda x: op.desanitize(x["response"], x["secure_context"]))
     )
 
     pg_chain.invoke(

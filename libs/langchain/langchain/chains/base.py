@@ -68,6 +68,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
             **kwargs,
         )
 
@@ -89,6 +90,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
             **kwargs,
         )
 
@@ -136,6 +138,12 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     def raise_callback_manager_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
+            if values.get("callbacks") is not None:
+                raise ValueError(
+                    "Cannot specify both callback_manager and callbacks. "
+                    "callback_manager is deprecated, callbacks is the preferred "
+                    "parameter to pass in."
+                )
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
@@ -229,6 +237,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Execute the chain.
@@ -270,6 +279,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
             inputs,
+            name=run_name,
         )
         try:
             outputs = (
@@ -296,6 +306,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Asynchronously execute the chain.
@@ -337,6 +348,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
             inputs,
+            name=run_name,
         )
         try:
             outputs = (

@@ -1,4 +1,3 @@
-import json
 from typing import Dict, Union
 
 
@@ -32,18 +31,18 @@ def sanitize(
         The `secure_context` needs to be passed to the `desanitize` function.
     """
     try:
-        import promptguard as pg
+        import opaqueprompts as op
     except ImportError:
         raise ImportError(
-            "Could not import the `promptguard` Python package, "
-            "please install it with `pip install promptguard`."
+            "Could not import the `opaqueprompts` Python package, "
+            "please install it with `pip install opaqueprompts`."
         )
 
     if isinstance(input, str):
         # the input could be a string, so we sanitize the string
-        sanitize_response: pg.SanitizeResponse = pg.sanitize(input)
+        sanitize_response: op.SanitizeResponse = op.sanitize([input])
         return {
-            "sanitized_input": sanitize_response.sanitized_text,
+            "sanitized_input": sanitize_response.sanitized_texts[0],
             "secure_context": sanitize_response.secure_context,
         }
 
@@ -54,13 +53,12 @@ def sanitize(
         # get the values from the dict
         for key in input:
             values.append(input[key])
-        input_value_str = json.dumps(values)
 
         # sanitize the values
-        sanitize_values_response: pg.SanitizeResponse = pg.sanitize(input_value_str)
+        sanitize_values_response: op.SanitizeResponse = op.sanitize(values)
 
         # reconstruct the dict with the sanitized values
-        sanitized_input_values = json.loads(sanitize_values_response.sanitized_text)
+        sanitized_input_values = sanitize_values_response.sanitized_texts
         idx = 0
         sanitized_input = dict()
         for key in input:
@@ -87,13 +85,13 @@ def desanitize(sanitized_text: str, secure_context: bytes) -> str:
         De-sanitized text.
     """
     try:
-        import promptguard as pg
+        import opaqueprompts as op
     except ImportError:
         raise ImportError(
-            "Could not import the `promptguard` Python package, "
-            "please install it with `pip install promptguard`."
+            "Could not import the `opaqueprompts` Python package, "
+            "please install it with `pip install opaqueprompts`."
         )
-    desanitize_response: pg.DesanitizeResponse = pg.desanitize(
+    desanitize_response: op.DesanitizeResponse = op.desanitize(
         sanitized_text, secure_context
     )
     return desanitize_response.desanitized_text
