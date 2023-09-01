@@ -1,9 +1,9 @@
 from typing import Sequence, TypedDict
 
-from langchain.tools import Tool
+from langchain.tools import BaseTool
 
 
-def _generate_tools_descriptions(tools: Sequence[Tool]) -> str:
+def _generate_tools_descriptions(tools: Sequence[BaseTool]) -> str:
     """Generate a description of the tools."""
     return "\n".join([f"{tool_.name}: {tool_.description}" for tool_ in tools]) + "\n"
 
@@ -15,7 +15,7 @@ class ToolInfo(TypedDict):
     tools_description: str
 
 
-def generate_tool_info(tools: Sequence[Tool]) -> ToolInfo:
+def generate_tool_info(tools: Sequence[BaseTool]) -> ToolInfo:
     """Generate a string containing the names of the tools and their descriptions."""
     tools_description = _generate_tools_descriptions(tools)
     tool_names = ", ".join([tool_.name for tool_ in tools])

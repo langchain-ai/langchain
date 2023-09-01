@@ -1,3 +1,7 @@
+"""Implementation of a think act agent.
+
+Uses priming messages with text based LLM.
+"""
 from __future__ import annotations
 
 import ast
@@ -31,7 +35,7 @@ from langchain.tools import BaseTool, Tool
 TEMPLATE_ = """\
 Respond to the human as helpfully and accurately as 
 possible. You have access to the following tools:
-{tools}
+{tools_description}
 Use a blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
 
 Valid "action" values: "Final Answer" or {tool_names}
@@ -72,8 +76,8 @@ Format is <action>$BLOB</action> then Observation. \
 """
 
 
-def generate_mrkl_memory(tools: Sequence[Tool]) -> MessageLog:
-    """Set up memory to act as a MRKL agent."""
+def generate_memory(tools: Sequence[Tool]) -> MessageLog:
+    """Set up basic memory for agent."""
     tools_info = generate_tool_info(tools)
 
     return MessageLog(
@@ -124,6 +128,11 @@ class ThinkActPromptGenerator(PromptValue):
         finalized = []
         messages = self.message_log.messages
         for idx, message in enumerate(messages):
+            if isinstance(message, PrimingMessage):
+                component = message.content
+                finalized.append(component)
+                continue
+
             if isinstance(message, FunctionResult):
                 component = f"Observation: {message.result}"
             elif isinstance(message, HumanMessage):
@@ -135,12 +144,6 @@ class ThinkActPromptGenerator(PromptValue):
                 continue
             elif isinstance(message, AgentFinish):
                 component = f"Answer: {message.result}"
-            elif isinstance(message, PrimingMessage):
-                component = message.content
-                finalized.append(component)
-                continue
-            elif isinstance(message, FunctionCall):
-                continue
             else:
                 raise NotImplementedError()
             finalized.extend([component, "\n"])
@@ -164,7 +167,7 @@ class ThinkActPromptGenerator(PromptValue):
         return cls(message_log=message_log)
 
 
-class MRKLAgent(Agent):
+class ThinkActAgent(Agent):
     def __init__(
         self,
         llm: BaseLanguageModel,
@@ -194,9 +197,8 @@ class MRKLAgent(Agent):
             if isinstance(last_message, AgentFinish):
                 break
 
-            messages = self.think_act.invoke(message_log)
             # Prime the LLM to start with "Thought: " after an observation
-            if isinstance(messages[-1], FunctionResult):
-                messages.append(PrimingMessage(content="Thought:"))
+            if isinstance(last_message, (FunctionResult, HumanMessage)):
+                message_log.add_messages([PrimingMessage(content="Thought:")])
 
-            message_log.add_messages(messages)
+            message_log.add_messages(self.think_act.invoke(message_log))

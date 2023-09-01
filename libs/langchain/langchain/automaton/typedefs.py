@@ -75,7 +75,7 @@ class MessageLog:
         return len(self.messages)
 
 
-class Agent:
+class Agent:  # This is just approximate still
     def run(self, message_log: MessageLog) -> None:
         """Run the agent on a message."""
         raise NotImplementedError

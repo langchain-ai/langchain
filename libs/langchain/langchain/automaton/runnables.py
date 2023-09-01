@@ -41,10 +41,13 @@ def create_tool_invoker(
     return RunnableLambda(func=func)
 
 
+LogOrMessages = Union[MessageLog, Sequence[MessageLike]]
+
+
 def create_llm_program(
     llm: BaseLanguageModel,
     prompt_generator: Callable[
-        [MessageLog], Union[str, PromptValue, Sequence[BaseMessage]]
+        [LogOrMessages], Union[str, PromptValue, Sequence[BaseMessage]]
     ],
     *,
     tools: Optional[Sequence[BaseTool]] = None,
@@ -60,14 +63,15 @@ def create_llm_program(
 
     tool_invoker = create_tool_invoker(tools) if invoke_tools else None
 
-    def _bound(message_log: MessageLog):
+    def _bound(message_log: MessageLog) -> List[MessageLike]:
+        """A function that can be invoked with a message log."""
         messages = []
-        prompt_value = prompt_generator(message_log)
+        prompt = prompt_generator(message_log)
         llm_chain = llm
         if stop:
             llm_chain = llm_chain.bind(stop=stop)
 
-        result = llm_chain.invoke(prompt_value)
+        result = llm_chain.invoke(prompt)
 
         if isinstance(result, BaseMessage):
             messages.append(result)
