@@ -36,7 +36,7 @@ class MRKLOutputParser(AgentOutputParser):
                 )
             action = action_match.group(1).strip()
             action_input = action_match.group(2)
-            tool_input = action_input.strip(" ")
+            tool_input = action_input.strip(" '")
             # ensure if its a well formed SQL query we don't remove any trailing " chars
             if tool_input.startswith("SELECT ") is False:
                 tool_input = tool_input.strip('"')
