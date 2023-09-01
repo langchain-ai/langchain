@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, List, Sequence, Union
 
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field

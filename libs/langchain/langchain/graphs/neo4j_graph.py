@@ -102,32 +102,44 @@ class Neo4jGraph:
         {[el['output'] for el in relationships]}
         """
 
-    def add_graph_documents(self, graph_documents: List[GraphDocument]) -> None:
+    def add_graph_documents(
+        self, graph_documents: List[GraphDocument], include_source: bool = False
+    ) -> None:
         """
         Take GraphDocument as input as uses it to construct a graph.
         """
         for document in graph_documents:
+            include_docs_query = (
+                "CREATE (d:Document) "
+                "SET d.text = $document.page_content "
+                "SET d += $document.metadata "
+                "WITH d "
+            )
             # Import nodes
             self.query(
-                """
-            UNWIND $data AS row
-            CALL apoc.merge.node([row.type], {id: row.id},
-                       row.properties, {}) YIELD node
-            RETURN distinct 'done' AS result
-                       """,
-                {"data": [el.__dict__ for el in document.nodes]},
+                (
+                    f"{include_docs_query if include_source else ''}"
+                    "UNWIND $data AS row "
+                    "CALL apoc.merge.node([row.type], {id: row.id}, "
+                    "row.properties, {}) YIELD node "
+                    f"{'MERGE (d)-[:MENTIONS]->(node) ' if include_source else ''}"
+                    "RETURN distinct 'done' AS result"
+                ),
+                {
+                    "data": [el.__dict__ for el in document.nodes],
+                    "document": document.source.__dict__,
+                },
             )
             # Import relationships
             self.query(
-                """
-            UNWIND $data AS row
-            CALL apoc.merge.node([row.source_label], {id: row.source},
-                       {}, {}) YIELD node as source
-            CALL apoc.merge.node([row.target_label], {id: row.target},
-                       {}, {}) YIELD node as target
-            CALL apoc.merge.relationship(source, row.type, {}, row.properties, target) YIELD rel
-            RETURN distinct 'done'    
-            """,
+                "UNWIND $data AS row "
+                "CALL apoc.merge.node([row.source_label], {id: row.source},"
+                "{}, {}) YIELD node as source "
+                "CALL apoc.merge.node([row.target_label], {id: row.target},"
+                "{}, {}) YIELD node as target "
+                "CALL apoc.merge.relationship(source, row.type, "
+                "{}, row.properties, target) YIELD rel "
+                "RETURN distinct 'done'",
                 {
                     "data": [
                         {

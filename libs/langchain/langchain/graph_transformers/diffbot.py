@@ -12,14 +12,10 @@ from langchain.schema.graph_document import (
 from langchain.utils import get_from_env
 
 # Properties that should be treated as node properties instead of relationships
-FACT_TO_PROPERTY_TYPE = [
-    "Date",
-    "Number",
-    "Job title",
-    "Cause of death"
-]
+FACT_TO_PROPERTY_TYPE = ["Date", "Number", "Job title", "Cause of death"]
 
-def format_property_key(s):
+
+def format_property_key(s) -> str:
     words = s.split()
     if not words:
         return s
@@ -35,12 +31,12 @@ class NodesList:
     def add_node_property(
         self, node: Tuple[Union[str, int], str], properties: Dict[str, Any]
     ) -> None:
-        if not node in self.nodes:
+        if node not in self.nodes:
             self.nodes[node] = properties
         else:
             self.nodes[node].update(properties)
 
-    def return_node_list(self):
+    def return_node_list(self) -> List[Node]:
         nodes = [
             Node(id=key[0], type=key[1], properties=self.nodes[key])
             for key in self.nodes
@@ -48,19 +44,19 @@ class NodesList:
         return nodes
 
 
-class DiffbotNLPGraphTransformer(BaseGraphDocumentTransformer):
+class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
     def __init__(
         self,
         diffbot_api_key: Optional[str] = None,
         fact_confidence_threshold: float = 0.7,
-        qualifier_confidence_threshold: float = 0.0,
+        include_qualifiers: bool = True,
         include_evidence: bool = True,
     ) -> None:
         self.diffbot_api_key = diffbot_api_key or get_from_env(
             "diffbot_api_key", "DIFFBOT_API_KEY"
         )
         self.fact_threshold_confidence = fact_confidence_threshold
-        self.qualifier_confidence_threshold = qualifier_confidence_threshold
+        self.include_qualifiers = include_qualifiers
         self.include_evidence = include_evidence
 
     def nlp_request(self, text) -> Dict[str, Any]:
@@ -74,7 +70,10 @@ class DiffbotNLPGraphTransformer(BaseGraphDocumentTransformer):
 
         FIELDS = "facts"
         HOST = "nl.diffbot.com"
-        url = f"https://{HOST}/v1/?fields={FIELDS}&token={self.diffbot_api_key}&language=en"
+        url = (
+            f"https://{HOST}/v1/?fields={FIELDS}&"
+            f"token={self.diffbot_api_key}&language=en"
+        )
         result = requests.post(url, data=payload)
         return result.json()
 
@@ -82,10 +81,9 @@ class DiffbotNLPGraphTransformer(BaseGraphDocumentTransformer):
         self, payload: Dict[str, Any], document: Document
     ) -> GraphDocument:
         """Transform the Diffbot NLP response into a list of graph documents"""
-        result = []
 
         # Return empty result if there are no facts
-        if not "facts" in payload or not payload["facts"]:
+        if "facts" not in payload or not payload["facts"]:
             return GraphDocument(nodes=[], relationships=[], source=document)
 
         # Nodes are a dictionary because we need to deduplicate
@@ -125,15 +123,16 @@ class DiffbotNLPGraphTransformer(BaseGraphDocumentTransformer):
             # Some facts are better suited as node properties
             if target_label in FACT_TO_PROPERTY_TYPE:
                 nodes_list.add_node_property(
-                    (source_id, source_label), {format_property_key(record["property"]["name"]) : target_name}
+                    (source_id, source_label),
+                    {format_property_key(record["property"]["name"]): target_name},
                 )
-            else:
-                # Define relationship
+            else:  # Define relationship
+                # Define target node
                 target_node = Node(id=target_id, type=target_label)
                 nodes_list.add_node_property(
                     (target_id, target_label), {"name": target_name}
                 )
-                # Define relationship and its type
+                # Define relationship type
                 rel_type = record["property"]["name"].replace(" ", "_").upper()
 
                 # Relationship properties
@@ -141,10 +140,8 @@ class DiffbotNLPGraphTransformer(BaseGraphDocumentTransformer):
                 relationship_evidence = [el["passage"] for el in record["evidence"]][0]
                 if self.include_evidence:
                     rel_properties.update({"evidence": relationship_evidence})
-                if record.get("qualifiers"):
+                if self.include_qualifiers and record.get("qualifiers"):
                     for property in record["qualifiers"]:
-                        if property["confidence"] < self.qualifier_confidence_threshold:
-                            continue
                         prop_key = format_property_key(property["property"]["name"])
                         rel_properties[prop_key] = property["value"]["name"]
 
