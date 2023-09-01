@@ -220,7 +220,7 @@ def index(
         )
 
     if cleanup == "incremental" and source_id_key is None:
-        raise ValueError("Source id key is required when delete mode is incremental.")
+        raise ValueError("Source id key is required when cleanup mode is incremental.")
 
     # Check that the Vectorstore has required methods implemented
     methods = ["delete", "add_documents"]
@@ -265,11 +265,11 @@ def index(
         ]
 
         if cleanup == "incremental":
-            # If the delete mode is incremental, source ids are required.
+            # If the cleanup mode is incremental, source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:
                     raise ValueError(
-                        "Source ids are required when delete mode is incremental. "
+                        "Source ids are required when cleanup mode is incremental. "
                         f"Document that starts with "
                         f"content: {hashed_doc.page_content[:100]} was not assigned "
                         f"as source id."
