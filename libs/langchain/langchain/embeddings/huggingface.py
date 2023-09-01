@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional
+from chromadb.utils import embedding_functions
 
 from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, Field
@@ -266,3 +267,27 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             self.query_instruction + text, **self.encode_kwargs
         )
         return embedding.tolist()
+
+# TODO: This function is made compatible with text_splitter mechanism for langchain
+class HuggingFaceInferenceAPI(BaseModel):
+
+    """
+    Hugging face inference API: Utilizes the inference API for a particular model to embed
+    Uses ChromaDB Hugging Face Embeddings interface
+    """
+
+    def __init__(self,
+                 api_key :str,
+                 model_name: Optional[str] = 'BAAI/bge-large-en', 
+                 **kwargs):
+
+        """
+        api_key : (str) : Enter your API key from Hugging Face
+        model_name: (str) : Enter the model name (default : BAAI/bge-large-en)
+        """
+
+        super().__init__(**kwargs)
+
+        self._api_key = api_key
+        self._model_name = model_name
+        self._model = embedding_functions.HuggingFaceEmbeddingFunction(api_key=self._api_key, model_name= self._model_name)

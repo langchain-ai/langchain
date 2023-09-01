@@ -21,6 +21,8 @@ from langchain.embeddings.base import Embeddings
 from langchain.utils import xor_args
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
+from chromadb.api.types import EmbeddingFunction
+from chromadb.utils import embedding_functions
 
 if TYPE_CHECKING:
     import chromadb
@@ -68,7 +70,7 @@ class Chroma(VectorStore):
     def __init__(
         self,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        embedding_function: Optional[Embeddings] = None,
+        embedding_function: Optional[Embeddings or EmbeddingFunction] = None,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
@@ -84,6 +86,15 @@ class Chroma(VectorStore):
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
+        # Validating which Embedding function will be used
+        if embedding_function is not None:
+            if isinstance(embedding_function, Embeddings):
+                self._langchain_hugging_face_embedding = True
+                self._embedding_function = embedding_function.embed_documents
+            else:
+                self._embedding_function = embedding_function
+                self._langchain_hugging_face_embedding = False
+
 
         if client is not None:
             self._client_settings = client_settings
@@ -124,7 +135,7 @@ class Chroma(VectorStore):
         self._embedding_function = embedding_function
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=self._embedding_function.embed_documents
+            embedding_function=self._embedding_function
             if self._embedding_function is not None
             else None,
             metadata=collection_metadata,
@@ -183,7 +194,7 @@ class Chroma(VectorStore):
         embeddings = None
         texts = list(texts)
         if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(texts)
+            embeddings = self._embedding_function(texts)
         if metadatas:
             # fill metadatas with empty dicts if somebody
             # did not specify metadata for all texts
@@ -522,7 +533,7 @@ class Chroma(VectorStore):
             raise ValueError(
                 "For update, you must specify an embedding function on creation."
             )
-        embeddings = self._embedding_function.embed_documents([text])
+        embeddings = self._embedding_function([text])
 
         self._collection.update(
             ids=[document_id],
