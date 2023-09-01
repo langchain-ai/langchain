@@ -26,14 +26,14 @@ class FunctionResult(InternalMessage):
     error: Optional[str] = None
 
 
-class AgentFinish(InternalMessage):
-    result: Any
-
-
 class PrimingMessage(InternalMessage):
     """A message that is used to prime the language model."""
 
     content: str
+
+
+class AgentFinish(InternalMessage):
+    result: Any
 
 
 MessageLike = Union[
