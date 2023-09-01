@@ -1184,7 +1184,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 # If an input has failed it will be present in this map,
                 # and the value will be the exception that was raised.
                 failed_inputs_map: Dict[int, Exception] = {}
-                for stpeidx, step in enumerate(self.steps):
+                for stepidx, step in enumerate(self.steps):
                     # Assemble the original indexes of the remaining inputs
                     # (i.e. the ones that haven't failed yet)
                     remaining_idxs = [
