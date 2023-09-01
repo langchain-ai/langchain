@@ -41,6 +41,11 @@ DEF_RESULT_FAIL = """{
     "additional_fields": null
 }"""
 
+JSON_AS_LIST_INPUT = """[
+"Some value"
+]
+"""
+
 DEF_EXPECTED_RESULT = TestModel(
     action=Actions.UPDATE,
     action_input="The PydanticOutputParser class is powerful",
@@ -70,6 +75,22 @@ def test_pydantic_output_parser_fail() -> None:
 
     try:
         pydantic_parser.parse(DEF_RESULT_FAIL)
+    except OutputParserException as e:
+        print("parse_result:", e)
+        assert "Failed to parse TestModel from completion" in str(e)
+    else:
+        assert False, "Expected OutputParserException"
+
+
+def test_pydantic_parser_json_as_list() -> None:
+    """Test PydanticOutputParser where JSON input is a list."""
+
+    pydantic_parser: PydanticOutputParser[TestModel] = PydanticOutputParser(
+        pydantic_object=TestModel
+    )
+
+    try:
+        pydantic_parser.parse(JSON_AS_LIST_INPUT)
     except OutputParserException as e:
         print("parse_result:", e)
         assert "Failed to parse TestModel from completion" in str(e)
