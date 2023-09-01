@@ -1362,7 +1362,7 @@ class RunnableLambda(Runnable[Input, Output]):
             return False
 
     def __repr__(self) -> str:
-        return f"RunnableLambda(...)"
+        return "RunnableLambda(...)"
 
     def _invoke(
         self,
