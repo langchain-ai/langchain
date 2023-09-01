@@ -2953,6 +2953,46 @@
       "destination": "/docs/integrations/llms/writer"
     },
     {
+      "source": "/docs/integrations/llms/amazon_api_gateway_example",
+      "destination": "/docs/integrations/llms/amazon_api_gateway"
+    },
+    {
+      "source": "/docs/integrations/llms/azureml_endpoint_example",
+      "destination": "/docs/integrations/llms/azure_ml"
+    },
+    {
+      "source": "/docs/integrations/llms/azure_openai_example",
+      "destination": "/docs/integrations/llms/azure_openai"
+    },
+    {
+      "source": "/docs/integrations/llms/cerebriumai_example",
+      "destination": "/docs/integrations/llms/cerebriumai"
+    },
+    {
+      "source": "/docs/integrations/llms/deepinfra_example",
+      "destination": "/docs/integrations/llms/deepinfra"
+    },
+    {
+      "source": "/docs/integrations/llms/Fireworks",
+      "destination": "/docs/integrations/llms/fireworks"
+    },
+    {
+      "source": "/docs/integrations/llms/forefrontai_example",
+      "destination": "/docs/integrations/llms/forefrontai"
+    },
+    {
+      "source": "/docs/integrations/llms/gooseai_example",
+      "destination": "/docs/integrations/llms/gooseai"
+    },
+    {
+      "source": "/docs/integrations/llms/petals_example",
+      "destination": "/docs/integrations/llms/petals"
+    },
+    {
+      "source": "/docs/integrations/llms/pipelineai_example",
+      "destination": "/docs/integrations/llms/pipelineai"
+    },
+    {
       "source": "/en/latest/modules/prompts.html",
       "destination": "/docs/modules/model_io/prompts"
     },
