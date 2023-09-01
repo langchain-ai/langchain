@@ -47,7 +47,6 @@
 ./libs/langchain/langchain/chains/summarize/stuff_prompt.py
 ./libs/langchain/langchain/chains/retrieval_qa/prompt.py
 ./libs/langchain/langchain/chains/qa_with_sources/refine_prompts.py
-./libs/langchain/langchain/chains/qa_with_sources/stuff_prompt.py
 ./libs/langchain/langchain/chains/llm_symbolic_math/prompt.py
 ./libs/langchain/langchain/chains/qa_generation/prompt.py
 ./libs/langchain/langchain/chains/constitutional_ai/prompts.py
@@ -161,3 +160,19 @@ No prompts:
 ./libs/experimental/langchain_experimental/comprehend_moderation/base_moderation.py
 No prompts:
 ./libs/experimental/langchain_experimental/comprehend_moderation/amazon_comprehend_moderation.py
+No prompts:
+./libs/langchain/langchain/evaluation/agents/trajectory_eval_chain.py
+No prompts:
+./libs/langchain/langchain/evaluation/qa/eval_chain.py
+No prompts:
+./libs/langchain/langchain/evaluation/qa/generate_chain.py
+No prompts:
+./libs/langchain/langchain/evaluation/comparison/eval_chain.py
+No prompts:
+./libs/langchain/langchain/evaluation/criteria/eval_chain.py
+No prompts:
+./libs/langchain/langchain/document_loaders/joplin.py
+No prompts:
+./libs/langchain/langchain/llms/human.py
+No prompts:
+./libs/langchain/langchain/llms/baseten.py

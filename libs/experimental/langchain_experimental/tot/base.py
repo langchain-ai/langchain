@@ -102,7 +102,7 @@ class ToTChain(Chain):
                 ThoughtValidity.VALID_INTERMEDIATE: "yellow",
                 ThoughtValidity.INVALID: "red",
             }
-            text = indent(f"Thought: {thought.text}\n", prefix="    " * level)
+            text = indent(f"Мысль: {thought.text}\n", prefix="    " * level)
             run_manager.on_text(
                 text=text, color=colors[thought.validity], verbose=self.verbose
             )

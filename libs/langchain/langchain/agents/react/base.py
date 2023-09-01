@@ -50,16 +50,16 @@ class ReActDocstoreAgent(Agent):
     @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
-        return "Observation: "
+        return "Наблюдение: "
 
     @property
     def _stop(self) -> List[str]:
-        return ["\nObservation:"]
+        return ["\nНаблюдение:"]
 
     @property
     def llm_prefix(self) -> str:
         """Prefix to append the LLM call with."""
-        return "Thought:"
+        return "Мысль:"
 
 
 class DocstoreExplorer:

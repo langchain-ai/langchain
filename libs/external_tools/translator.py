@@ -110,8 +110,8 @@ def process_file(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             source = f.read()
 
-        if (
-            ("prompt" in source)
+        if (file_path.endswith("stuff_prompt.py")) and (
+            "prompt" in source
             or file_path.endswith(".txt")
             or "template = " in source.lower()
             or "PREFIX = " in source
@@ -147,7 +147,7 @@ def main(directory):
         # Игнорируем ненужные директории
         dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
         for file in files:
-            if file.endswith("n.py") or file.endswith(".txt"):
+            if file.endswith(".py") or file.endswith(".txt"):
                 if process_file(os.path.join(root, file)):
                     total += 1
     print(f"Total files: {total}")

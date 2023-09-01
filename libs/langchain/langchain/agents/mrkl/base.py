@@ -48,12 +48,12 @@ class ZeroShotAgent(Agent):
     @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
-        return "Observation: "
+        return "Наблюдение: "
 
     @property
     def llm_prefix(self) -> str:
         """Prefix to append the llm call with."""
-        return "Thought:"
+        return "Мысль:"
 
     @classmethod
     def create_prompt(

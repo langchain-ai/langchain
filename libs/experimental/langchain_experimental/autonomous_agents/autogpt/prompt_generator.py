@@ -25,14 +25,14 @@ class PromptGenerator:
         self.resources: List[str] = []
         self.performance_evaluation: List[str] = []
         self.response_format = {
-            "thoughts": {
+            "мысли": {
                 "text": "мысль",
                 "reasoning": "рассуждение",
                 "plan": "- короткий пунктирный\n- список, который передает\n- долгосрочный план",
                 "criticism": "конструктивная самокритика",
                 "speak": "сумма мыслей для передачи пользователю",
             },
-            "command": {"name": "имя команды", "args": {"arg name": "значение"}},
+            "комманда": {"name": "имя команды", "args": {"arg name": "значение"}},
         }
 
     def add_constraint(self, constraint: str) -> None:

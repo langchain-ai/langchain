@@ -6,7 +6,7 @@ from langchain.agents.agent import AgentOutputParser
 from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS
 from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
-FINAL_ANSWER_ACTION = "Final Answer:"
+FINAL_ANSWER_ACTION = "FINAL ANSWER:"
 
 
 class ChatOutputParser(AgentOutputParser):
