@@ -18,14 +18,12 @@ class PresidioAnonymizer(AnonymizerBase):
     def __init__(
         self,
         analyzed_fields: Optional[List[str]] = None,
-        language: str = "en",
         operators: Optional[Dict[str, OperatorConfig]] = None,
     ):
         """
         Args:
             analyzed_fields: List of fields to detect and then anonymize.
                 Defaults to all entities supported by Microsoft Presidio.
-            language: Language to use for analysis. Defaults to english.
             operators: Operators to use for anonymization.
                 Operators allow for custom anonymization of detected PII.
                 Learn more:
@@ -54,7 +52,6 @@ class PresidioAnonymizer(AnonymizerBase):
             if analyzed_fields is not None
             else list(get_pseudoanonymizer_mapping().keys())
         )
-        self.language = language
         self.operators = (
             operators
             if operators is not None
@@ -72,7 +69,7 @@ class PresidioAnonymizer(AnonymizerBase):
         results = self._analyzer.analyze(
             text,
             entities=self.analyzed_fields,
-            language=self.language,
+            language="en",
         )
 
         return self._anonymizer.anonymize(
