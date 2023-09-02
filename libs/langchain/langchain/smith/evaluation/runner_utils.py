@@ -1075,80 +1075,6 @@ def _run_llm_or_chain(
     return result
 
 
-def _run_on_examples(
-    client: Client,
-    examples: Iterator[Example],
-    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
-    *,
-    evaluation: Optional[RunEvalConfig] = None,
-    project_name: Optional[str] = None,
-    verbose: bool = False,
-    tags: Optional[List[str]] = None,
-    input_mapper: Optional[Callable[[Dict], Any]] = None,
-    data_type: DataType = DataType.kv,
-) -> Dict[str, Any]:
-    """
-    Run the Chain or language model on examples and store
-    traces to the specified project name.
-
-    Args:
-        client: LangSmith client to use to log feedback and runs.
-        examples: Examples to run the model or chain over.
-        llm_or_chain_factory: Language model or Chain constructor to run
-            over the dataset. The Chain constructor is used to permit
-            independent calls on each example without carrying over state.
-        evaluation: Optional evaluation configuration to use when evaluating
-        project_name: Name of the project to store the traces in.
-            Defaults to {dataset_name}-{chain class name}-{datetime}.
-        verbose: Whether to print progress.
-        tags: Tags to add to each run in the project.
-        input_mapper: A function to map to the inputs dictionary from an Example
-            to the format expected by the model to be evaluated. This is useful if
-            your model needs to deserialize more complex schema or if your dataset
-            has inputs with keys that differ from what is expected by your chain
-            or agent.
-        data_type: The dataset's data type. This is used to determine determine
-            how to deserialize the reference data and model compatibility.
-
-    Returns:
-        A dictionary mapping example ids to the model outputs.
-    """
-    results: Dict[str, dict] = {}
-    wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
-    project_name = _get_project_name(project_name, wrapped_model)
-    tracer = LangChainTracer(
-        project_name=project_name, client=client, use_threading=False
-    )
-    run_evaluators, examples = _setup_evaluation(
-        wrapped_model, examples, evaluation, data_type
-    )
-    examples = _validate_example_inputs(examples, wrapped_model, input_mapper)
-    evaluation_handler = EvaluatorCallbackHandler(
-        evaluators=run_evaluators or [],
-        client=client,
-    )
-    callbacks: List[BaseCallbackHandler] = [tracer, evaluation_handler]
-    for i, example in enumerate(examples):
-        result = _run_llm_or_chain(
-            example,
-            wrapped_model,
-            tags=tags,
-            callbacks=callbacks,
-            input_mapper=input_mapper,
-        )
-        if verbose:
-            print(f"{i+1} processed", flush=True, end="\r")
-        results[str(example.id)] = {"output": result}
-    tracer.wait_for_futures()
-    evaluation_handler.wait_for_futures()
-    all_feedback = evaluation_handler.logged_feedback
-    # join the results and feedback on the example id
-    for example_id, output_dict in results.items():
-        feedback = all_feedback.get(example_id, [])
-        output_dict["feedback"] = feedback
-    return results
-
-
 ## Public API
 
 
@@ -1325,27 +1251,6 @@ async def arun_on_dataset(
     )
 
 
-def _handle_coroutine(coro: Coroutine) -> Any:
-    """
-    Handles a coroutine from a sync context.
-
-    Args:
-        coro (asyncio.coroutine): The coroutine to be handled.
-
-    Returns:
-        any: The result of the executed coroutine.
-    """
-    # Check if there's a running event loop
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:  # No event loop
-        return asyncio.run(coro)
-    if loop.is_running():
-        return loop.run_until_complete(coro)
-    else:
-        return asyncio.run(coro)
-
-
 def run_on_dataset(
     client: Client,
     dataset_name: str,
@@ -1477,33 +1382,39 @@ def run_on_dataset(
     wrapped_model, project_name, dataset, examples = _prepare_eval_run(
         client, dataset_name, llm_or_chain_factory, project_name
     )
-    if concurrency_level in (0, 1):
-        results = _run_on_examples(
-            client,
-            examples,
+    results: Dict[str, dict] = {}
+    wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
+    project_name = _get_project_name(project_name, wrapped_model)
+    tracer = LangChainTracer(
+        project_name=project_name, client=client, use_threading=False
+    )
+    run_evaluators, examples = _setup_evaluation(
+        wrapped_model, examples, evaluation, dataset.data_type
+    )
+    examples = _validate_example_inputs(examples, wrapped_model, input_mapper)
+    evaluation_handler = EvaluatorCallbackHandler(
+        evaluators=run_evaluators or [],
+        client=client,
+    )
+    callbacks: List[BaseCallbackHandler] = [tracer, evaluation_handler]
+    for i, example in enumerate(examples):
+        result = _run_llm_or_chain(
+            example,
             wrapped_model,
-            project_name=project_name,
-            verbose=verbose,
             tags=tags,
-            evaluation=evaluation,
+            callbacks=callbacks,
             input_mapper=input_mapper,
-            data_type=dataset.data_type,
         )
-    else:
-        # TODO: Use runnables and the batch method
-        coro = _arun_on_examples(
-            client,
-            examples,
-            wrapped_model,
-            concurrency_level=concurrency_level,
-            project_name=project_name,
-            verbose=verbose,
-            tags=tags,
-            evaluation=evaluation,
-            input_mapper=input_mapper,
-            data_type=dataset.data_type,
-        )
-        results = _handle_coroutine(coro)
+        if verbose:
+            print(f"{i+1} processed", flush=True, end="\r")
+        results[str(example.id)] = {"output": result}
+    tracer.wait_for_futures()
+    evaluation_handler.wait_for_futures()
+    all_feedback = evaluation_handler.logged_feedback
+    # join the results and feedback on the example id
+    for example_id, output_dict in results.items():
+        feedback = all_feedback.get(example_id, [])
+        output_dict["feedback"] = feedback
     return TestResult(
         project_name=project_name,
         results=results,
