@@ -20,7 +20,7 @@ class BlockchainType(Enum):
 
 
 class BlockchainDocumentLoader(BaseLoader):
-    """Loads elements from a blockchain smart contract into Langchain documents.
+    """Load elements from a blockchain smart contract.
 
     The supported blockchains are: Ethereum mainnet, Ethereum Goerli testnet,
     Polygon mainnet, and Polygon Mumbai testnet.

@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
-from pydantic import BaseModel, root_validator
 
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
@@ -27,6 +26,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import (
     AgentAction,
     AgentFinish,
@@ -475,7 +475,8 @@ class Agent(BaseSingleActionAgent):
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
         full_output = await self.llm_chain.apredict(callbacks=callbacks, **full_inputs)
-        return self.output_parser.parse(full_output)
+        agent_output = await self.output_parser.aparse(full_output)
+        return agent_output
 
     def get_full_inputs(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
@@ -614,9 +615,9 @@ class Agent(BaseSingleActionAgent):
 class ExceptionTool(BaseTool):
     """Tool that just returns the query."""
 
-    name = "_Exception"
+    name: str = "_Exception"
     """Name of the tool."""
-    description = "Exception tool"
+    description: str = "Exception tool"
     """Description of the tool."""
 
     def _run(
@@ -685,12 +686,15 @@ s
         cls,
         agent: Union[BaseSingleActionAgent, BaseMultiActionAgent],
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> AgentExecutor:
         """Create from agent and tools."""
         return cls(
-            agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
+            agent=agent,
+            tools=tools,
+            callbacks=callbacks,
+            **kwargs,
         )
 
     @root_validator()
@@ -897,7 +901,10 @@ s
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 observation = InvalidTool().run(
-                    agent_action.tool,
+                    {
+                        "requested_tool_name": agent_action.tool,
+                        "available_tool_names": list(name_to_tool_map.keys()),
+                    },
                     verbose=self.verbose,
                     color=None,
                     callbacks=run_manager.get_child() if run_manager else None,
@@ -992,7 +999,10 @@ s
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 observation = await InvalidTool().arun(
-                    agent_action.tool,
+                    {
+                        "requested_tool_name": agent_action.tool,
+                        "available_tool_names": list(name_to_tool_map.keys()),
+                    },
                     verbose=self.verbose,
                     color=None,
                     callbacks=run_manager.get_child() if run_manager else None,

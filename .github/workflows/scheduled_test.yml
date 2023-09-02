@@ -1,0 +1,49 @@
+name: Scheduled tests
+
+on:
+  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
+  schedule:
+    - cron:  '0 13 * * *'
+
+env:
+  POETRY_VERSION: "1.5.1"
+
+jobs:
+  build:
+    defaults:
+      run:
+        working-directory: libs/langchain
+    runs-on: ubuntu-latest
+    environment: Scheduled testing
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    name: Python ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: libs/langchain
+          cache-key: scheduled
+
+      - name: Install dependencies
+        working-directory: libs/langchain
+        shell: bash
+        run: |
+          echo "Running scheduled tests, installing dependencies with poetry..."
+          poetry install --with=test_integration
+
+      - name: Run tests
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          make scheduled_tests

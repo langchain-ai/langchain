@@ -1,5 +1,7 @@
 from typing import List
 
+import pytest
+
 from langchain.document_loaders.arxiv import ArxivLoader
 from langchain.schema import Document
 
@@ -53,3 +55,29 @@ def test_load_returns_full_set_of_metadata() -> None:
         )
         print(doc.metadata)
         assert len(set(doc.metadata)) > 4
+
+
+@pytest.mark.skip(reason="test could be flaky")
+def test_load_issue_9046() -> None:
+    """Test for the fixed issue 9046"""
+    expected_docs = 3
+
+    # ":" character could not be an issue
+    loader = ArxivLoader(
+        query="MetaGPT: Meta Programming for Multi-Agent Collaborative Framework",
+        load_max_docs=expected_docs,
+    )
+    docs = loader.load()
+
+    assert_docs(docs)
+    assert "MetaGPT" in docs[0].metadata["Title"]
+
+    # "-" character could not be an issue
+    loader = ArxivLoader(
+        query="MetaGPT - Meta Programming for Multi-Agent Collaborative Framework",
+        load_max_docs=expected_docs,
+    )
+    docs = loader.load()
+
+    assert_docs(docs)
+    assert "MetaGPT" in docs[0].metadata["Title"]

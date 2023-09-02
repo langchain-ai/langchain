@@ -60,6 +60,41 @@ JSON_WITH_MARKDOWN_CODE_BLOCK = """```json
 }
 ```"""
 
+JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES = """```json
+{
+    "action": "Final Answer",
+    "action_input": "```bar\n<div id="1" class=\"value\">\n\ttext\n</div>```"
+}
+```"""
+
+JSON_WITH_UNESCAPED_QUOTES_IN_NESTED_JSON = """```json
+{
+    "action": "Final Answer",
+    "action_input": "{"foo": "bar", "bar": "foo"}"
+}
+```"""
+
+JSON_WITH_ESCAPED_QUOTES_IN_NESTED_JSON = """```json
+{
+    "action": "Final Answer",
+    "action_input": "{\"foo\": \"bar\", \"bar\": \"foo\"}"
+}
+```"""
+
+JSON_WITH_PYTHON_DICT = """```json
+{
+    "action": "Final Answer",
+    "action_input": {"foo": "bar", "bar": "foo"}
+}
+```"""
+
+JSON_WITH_ESCAPED_DOUBLE_QUOTES_IN_NESTED_JSON = """```json
+{
+    "action": "Final Answer",
+    "action_input": "{\\"foo\\": \\"bar\\", \\"bar\\": \\"foo\\"}"
+}
+```"""
+
 NO_TICKS = """{
     "foo": "bar"
 }"""
@@ -114,6 +149,37 @@ def test_parse_json(json_string: str) -> None:
     assert parsed == {"foo": "bar"}
 
 
-def test_parse_json_with_code_block() -> None:
+def test_parse_json_with_code_blocks() -> None:
     parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK)
     assert parsed == {"foo": "```bar```"}
+
+    parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES)
+
+    assert parsed == {
+        "action": "Final Answer",
+        "action_input": '```bar\n<div id="1" class="value">\n\ttext\n</div>```',
+    }
+
+
+TEST_CASES_ESCAPED_QUOTES = [
+    JSON_WITH_UNESCAPED_QUOTES_IN_NESTED_JSON,
+    JSON_WITH_ESCAPED_QUOTES_IN_NESTED_JSON,
+    JSON_WITH_ESCAPED_DOUBLE_QUOTES_IN_NESTED_JSON,
+]
+
+
+@pytest.mark.parametrize("json_string", TEST_CASES_ESCAPED_QUOTES)
+def test_parse_nested_json_with_escaped_quotes(json_string: str) -> None:
+    parsed = parse_json_markdown(json_string)
+    assert parsed == {
+        "action": "Final Answer",
+        "action_input": '{"foo": "bar", "bar": "foo"}',
+    }
+
+
+def test_parse_json_with_python_dict() -> None:
+    parsed = parse_json_markdown(JSON_WITH_PYTHON_DICT)
+    assert parsed == {
+        "action": "Final Answer",
+        "action_input": {"foo": "bar", "bar": "foo"},
+    }

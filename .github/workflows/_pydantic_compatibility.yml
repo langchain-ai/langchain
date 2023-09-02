@@ -1,0 +1,81 @@
+name: pydantic v1/v2 compatibility
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "From which folder this pipeline executes"
+
+env:
+  POETRY_VERSION: "1.5.1"
+
+jobs:
+  build:
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    name: Pydantic v1/v2 compatibility - Python ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: pydantic-cross-compat
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install
+
+      - name: Install the opposite major version of pydantic
+        # If normal tests use pydantic v1, here we'll use v2, and vice versa.
+        shell: bash
+        run: |
+          # Determine the major part of pydantic version
+          REGULAR_VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1)
+
+          if [[ "$REGULAR_VERSION" == "1" ]]; then
+            PYDANTIC_DEP=">=2.1,<3"
+            TEST_WITH_VERSION="2"
+          elif [[ "$REGULAR_VERSION" == "2" ]]; then
+            PYDANTIC_DEP="<2"
+            TEST_WITH_VERSION="1"
+          else
+            echo "Unexpected pydantic major version '$REGULAR_VERSION', cannot determine which version to use for cross-compatibility test."
+            exit 1
+          fi
+
+          # Install via `pip` instead of `poetry add` to avoid changing lockfile,
+          # which would prevent caching from working: the cache would get saved
+          # to a different key than where it gets loaded from.
+          poetry run pip install "pydantic${PYDANTIC_DEP}"
+
+          # Ensure that the correct pydantic is installed now.
+          echo "Checking pydantic version... Expecting ${TEST_WITH_VERSION}"
+
+          # Determine the major part of pydantic version
+          CURRENT_VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1)
+
+          # Check that the major part of pydantic version is as expected, if not
+          # raise an error
+          if [[ "$CURRENT_VERSION" != "$TEST_WITH_VERSION" ]]; then
+            echo "Error: expected pydantic version ${CURRENT_VERSION} to have been installed, but found: ${TEST_WITH_VERSION}"
+            exit 1
+          fi
+          echo "Found pydantic version ${CURRENT_VERSION}, as expected"
+      - name: Run pydantic compatibility tests
+        shell: bash
+        run: make test

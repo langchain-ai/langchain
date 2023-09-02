@@ -9,8 +9,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class EtherscanLoader(BaseLoader):
-    """
-    Load transactions from an account on Ethereum mainnet.
+    """Load transactions from `Ethereum` mainnet.
 
     The Loader use Etherscan API to interact with Ethereum mainnet.
 

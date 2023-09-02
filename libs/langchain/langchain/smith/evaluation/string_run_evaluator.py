@@ -313,17 +313,30 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
         """Evaluate an example."""
-        result = self({"run": run, "example": example}, include_run_info=True)
-        return self._prepare_evaluator_output(result)
+        try:
+            result = self({"run": run, "example": example}, include_run_info=True)
+            return self._prepare_evaluator_output(result)
+        except Exception as e:
+            return EvaluationResult(
+                key=self.string_evaluator.evaluation_name,
+                comment=f"Error evaluating run {run.id}: {e}",
+                # TODO: Add run ID once we can declare it via callbacks
+            )
 
     async def aevaluate_run(
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
         """Evaluate an example."""
-        result = await self.acall(
-            {"run": run, "example": example}, include_run_info=True
-        )
-        return self._prepare_evaluator_output(result)
+        try:
+            result = await self.acall(
+                {"run": run, "example": example}, include_run_info=True
+            )
+            return self._prepare_evaluator_output(result)
+        except Exception as e:
+            return EvaluationResult(
+                key=self.string_evaluator.evaluation_name,
+                comment=f"Error evaluating run {run.id}: {e}",
+            )
 
     @classmethod
     def from_run_and_data_type(
@@ -375,7 +388,11 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             )
 
         # Configure how example rows are fed as a reference string to the evaluator
-        if reference_key is not None or data_type in (DataType.llm, DataType.chat):
+        if (
+            reference_key is not None
+            or data_type in (DataType.llm, DataType.chat)
+            or evaluator.requires_reference
+        ):
             example_mapper = StringExampleMapper(reference_key=reference_key)
         elif evaluator.requires_reference:
             raise ValueError(

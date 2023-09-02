@@ -18,7 +18,7 @@ except ImportError:
     gptcache_installed = False
 
 
-def init_gptcache_map(cache_obj: Cache) -> None:
+def init_gptcache_map(cache_obj: Any) -> None:
     i = getattr(init_gptcache_map, "_i", 0)
     cache_path = f"data_map_{i}.txt"
     if os.path.isfile(cache_path):
@@ -30,7 +30,7 @@ def init_gptcache_map(cache_obj: Cache) -> None:
     init_gptcache_map._i = i + 1  # type: ignore
 
 
-def init_gptcache_map_with_llm(cache_obj: Cache, llm: str) -> None:
+def init_gptcache_map_with_llm(cache_obj: Any, llm: str) -> None:
     cache_path = f"data_map_{llm}.txt"
     if os.path.isfile(cache_path):
         os.remove(cache_path)

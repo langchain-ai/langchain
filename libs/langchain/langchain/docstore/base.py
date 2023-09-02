@@ -1,6 +1,6 @@
 """Interface to access to place that stores documents."""
 from abc import ABC, abstractmethod
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 from langchain.docstore.document import Document
 
@@ -15,6 +15,10 @@ class Docstore(ABC):
         If page exists, return the page summary, and a Document object.
         If page does not exist, return similar entries.
         """
+
+    def delete(self, ids: List) -> None:
+        """Deleting IDs from in memory dictionary."""
+        raise NotImplementedError
 
 
 class AddableMixin(ABC):

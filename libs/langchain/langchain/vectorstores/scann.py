@@ -1,4 +1,3 @@
-"""Wrapper around ScaNN vector database."""
 from __future__ import annotations
 
 import operator
@@ -18,13 +17,14 @@ from langchain.vectorstores.utils import DistanceStrategy
 
 
 def normalize(x: np.ndarray) -> np.ndarray:
+    """Normalize vectors to unit length."""
     x /= np.clip(np.linalg.norm(x, axis=-1, keepdims=True), 1e-12, None)
     return x
 
 
 def dependable_scann_import() -> Any:
     """
-    Import scann if available, otherwise raise error.
+    Import `scann` if available, otherwise raise error.
     """
     try:
         import scann
@@ -37,7 +37,7 @@ def dependable_scann_import() -> Any:
 
 
 class ScaNN(VectorStore):
-    """Wrapper around ScaNN vector database.
+    """`ScaNN` vector store.
 
     To use, you should have the ``scann`` python package installed.
 

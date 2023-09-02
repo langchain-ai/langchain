@@ -7,8 +7,8 @@ import sys
 from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
-from pydantic import BaseModel, Extra, Field, root_validator
 
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env
 
 
@@ -129,7 +129,7 @@ class SerpAPIWrapper(BaseModel):
         """Process response from SerpAPI."""
         if "error" in res.keys():
             raise ValueError(f"Got error from SerpAPI: {res['error']}")
-        if "answer_box" in res.keys() and type(res["answer_box"]) == list:
+        if "answer_box" in res.keys() and isinstance(res["answer_box"], list):
             res["answer_box"] = res["answer_box"][0]
         if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
             toret = res["answer_box"]["answer"]

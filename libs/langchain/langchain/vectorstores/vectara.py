@@ -1,4 +1,3 @@
-"""Wrapper around Vectara vector database."""
 from __future__ import annotations
 
 import json
@@ -8,9 +7,9 @@ from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
-from pydantic import Field
 
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import Field
 from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class Vectara(VectorStore):
-    """Implementation of Vector Store using Vectara.
+    """`Vectara API` vector store.
 
      See (https://vectara.com).
 
@@ -39,6 +38,7 @@ class Vectara(VectorStore):
         vectara_customer_id: Optional[str] = None,
         vectara_corpus_id: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
+        vectara_api_timeout: int = 60,
     ):
         """Initialize with Vectara API."""
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
@@ -62,6 +62,7 @@ class Vectara(VectorStore):
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("http://", adapter)
+        self.vectara_api_timeout = vectara_api_timeout
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -96,6 +97,7 @@ class Vectara(VectorStore):
             data=json.dumps(body),
             verify=True,
             headers=self._get_post_headers(),
+            timeout=self.vectara_api_timeout,
         )
         if response.status_code != 200:
             logger.error(
@@ -114,9 +116,9 @@ class Vectara(VectorStore):
 
         response = self._session.post(
             headers=self._get_post_headers(),
-            url="https://api.vectara.io/v1/core/index",
+            url="https://api.vectara.io/v1/index",
             data=json.dumps(request),
-            timeout=30,
+            timeout=self.vectara_api_timeout,
             verify=True,
         )
 
@@ -168,6 +170,7 @@ class Vectara(VectorStore):
                 files=files,
                 verify=True,
                 headers=headers,
+                timeout=self.vectara_api_timeout,
             )
 
             if response.status_code == 409:
@@ -198,12 +201,12 @@ class Vectara(VectorStore):
             doc_metadata: optional metadata for the document
 
         This function indexes all the input text strings in the Vectara corpus as a
-        single Vectara document, where each input text is considered a "part" and the
-        metadata are associated with each part.
+        single Vectara document, where each input text is considered a "section" and the
+        metadata are associated with each section.
         if 'doc_metadata' is provided, it is associated with the Vectara document.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
+            document ID of the document added
 
         """
         doc_hash = md5()
@@ -219,11 +222,12 @@ class Vectara(VectorStore):
         doc = {
             "document_id": doc_id,
             "metadataJson": json.dumps(doc_metadata),
-            "parts": [
+            "section": [
                 {"text": text, "metadataJson": json.dumps(md)}
                 for text, md in zip(texts, metadatas)
             ],
         }
+
         success_str = self._index_doc(doc)
         if success_str == "E_ALREADY_EXISTS":
             self._delete_doc(doc_id)
@@ -241,7 +245,8 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 0,
+        score_threshold: Optional[float] = None,
+        n_sentence_context: int = 2,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return Vectara documents most similar to query, along with scores.
@@ -254,8 +259,11 @@ class Vectara(VectorStore):
                 filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview
                 for more details.
+            score_threshold: minimal score threshold for the result.
+                If defined, results with score less than this value will be
+                filtered out.
             n_sentence_context: number of sentences before/after the matching segment
-                to add
+                to add, defaults to 2
 
         Returns:
             List of Documents most similar to the query and score for each.
@@ -288,7 +296,7 @@ class Vectara(VectorStore):
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
             data=data,
-            timeout=10,
+            timeout=self.vectara_api_timeout,
         )
 
         if response.status_code != 200:
@@ -300,23 +308,37 @@ class Vectara(VectorStore):
             return []
 
         result = response.json()
-        responses = result["responseSet"][0]["response"]
-        vectara_default_metadata = ["lang", "len", "offset"]
-        docs = [
+
+        if score_threshold:
+            responses = [
+                r
+                for r in result["responseSet"][0]["response"]
+                if r["score"] > score_threshold
+            ]
+        else:
+            responses = result["responseSet"][0]["response"]
+        documents = result["responseSet"][0]["document"]
+
+        metadatas = []
+        for x in responses:
+            md = {m["name"]: m["value"] for m in x["metadata"]}
+            doc_num = x["documentIndex"]
+            doc_md = {m["name"]: m["value"] for m in documents[doc_num]["metadata"]}
+            md.update(doc_md)
+            metadatas.append(md)
+
+        docs_with_score = [
             (
                 Document(
                     page_content=x["text"],
-                    metadata={
-                        m["name"]: m["value"]
-                        for m in x["metadata"]
-                        if m["name"] not in vectara_default_metadata
-                    },
+                    metadata=md,
                 ),
                 x["score"],
             )
-            for x in responses
+            for x, md in zip(responses, metadatas)
         ]
-        return docs
+
+        return docs_with_score
 
     def similarity_search(
         self,
@@ -324,7 +346,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 0,
+        n_sentence_context: int = 2,
         **kwargs: Any,
     ) -> List[Document]:
         """Return Vectara documents most similar to query, along with scores.
@@ -337,7 +359,7 @@ class Vectara(VectorStore):
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview for more
                 details.
             n_sentence_context: number of sentences before/after the matching segment
-                to add
+                to add, defaults to 2
 
         Returns:
             List of Documents most similar to the query
@@ -347,6 +369,7 @@ class Vectara(VectorStore):
             k=k,
             lambda_val=lambda_val,
             filter=filter,
+            score_threshold=None,
             n_sentence_context=n_sentence_context,
             **kwargs,
         )
@@ -414,7 +437,7 @@ class Vectara(VectorStore):
 
 
 class VectaraRetriever(VectorStoreRetriever):
-    """Retriever class for Vectara."""
+    """Retriever class for `Vectara`."""
 
     vectorstore: Vectara
     """Vectara vectorstore."""
@@ -423,7 +446,7 @@ class VectaraRetriever(VectorStoreRetriever):
             "lambda_val": 0.025,
             "k": 5,
             "filter": "",
-            "n_sentence_context": "0",
+            "n_sentence_context": "2",
         }
     )
     """Search params.
@@ -440,7 +463,7 @@ class VectaraRetriever(VectorStoreRetriever):
         self,
         texts: List[str],
         metadatas: Optional[List[dict]] = None,
-        doc_metadata: Optional[dict] = {},
+        doc_metadata: Optional[dict] = None,
     ) -> None:
         """Add text to the Vectara vectorstore.
 
@@ -448,4 +471,4 @@ class VectaraRetriever(VectorStoreRetriever):
             texts (List[str]): The text
             metadatas (List[dict]): Metadata dicts, must line up with existing store
         """
-        self.vectorstore.add_texts(texts, metadatas, doc_metadata)
+        self.vectorstore.add_texts(texts, metadatas, doc_metadata or {})

@@ -20,16 +20,16 @@ from typing import (
     Union,
 )
 
-from pydantic import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -142,8 +142,8 @@ class BaseOpenAI(BaseLLM):
     def lc_serializable(self) -> bool:
         return True
 
-    client: Any  #: :meta private:
-    model_name: str = Field("text-davinci-003", alias="model")
+    client: Any = None  #: :meta private:
+    model_name: str = Field(default="text-davinci-003", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -215,25 +215,9 @@ class BaseOpenAI(BaseLLM):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
-        for field_name in list(values):
-            if field_name in extra:
-                raise ValueError(f"Found {field_name} supplied twice.")
-            if field_name not in all_required_field_names:
-                warnings.warn(
-                    f"""WARNING! {field_name} is not default parameter.
-                    {field_name} was transferred to model_kwargs.
-                    Please confirm that {field_name} is what you intended."""
-                )
-                extra[field_name] = values.pop(field_name)
-
-        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
-        if invalid_model_kwargs:
-            raise ValueError(
-                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
-                f"Instead they were passed in as part of `model_kwargs` parameter."
-            )
-
-        values["model_kwargs"] = extra
+        values["model_kwargs"] = build_extra_kwargs(
+            extra, values, all_required_field_names
+        )
         return values
 
     @root_validator()
@@ -313,6 +297,7 @@ class BaseOpenAI(BaseLLM):
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
+                    chunk=chunk,
                     verbose=self.verbose,
                     logprobs=chunk.generation_info["logprobs"]
                     if chunk.generation_info
@@ -336,6 +321,7 @@ class BaseOpenAI(BaseLLM):
             if run_manager:
                 await run_manager.on_llm_new_token(
                     chunk.text,
+                    chunk=chunk,
                     verbose=self.verbose,
                     logprobs=chunk.generation_info["logprobs"]
                     if chunk.generation_info
@@ -841,9 +827,10 @@ class OpenAIChat(BaseLLM):
             self, messages=messages, run_manager=run_manager, **params
         ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
-            yield GenerationChunk(text=token)
+            chunk = GenerationChunk(text=token)
+            yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(token)
+                run_manager.on_llm_new_token(token, chunk=chunk)
 
     async def _astream(
         self,
@@ -858,9 +845,10 @@ class OpenAIChat(BaseLLM):
             self, messages=messages, run_manager=run_manager, **params
         ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
-            yield GenerationChunk(text=token)
+            chunk = GenerationChunk(text=token)
+            yield chunk
             if run_manager:
-                await run_manager.on_llm_new_token(token)
+                await run_manager.on_llm_new_token(token, chunk=chunk)
 
     def _generate(
         self,

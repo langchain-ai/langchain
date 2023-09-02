@@ -2,8 +2,6 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import Extra, Field, root_validator
-
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
@@ -11,6 +9,7 @@ from langchain.chains.combine_documents.base import (
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema import BasePromptTemplate, format_document
 
 
@@ -99,6 +98,13 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
                     f"not found in llm_chain input_variables: {llm_chain_variables}"
                 )
         return values
+
+    @property
+    def input_keys(self) -> List[str]:
+        extra_keys = [
+            k for k in self.llm_chain.input_keys if k != self.document_variable_name
+        ]
+        return super().input_keys + extra_keys
 
     def _get_inputs(self, docs: List[Document], **kwargs: Any) -> dict:
         """Construct inputs from kwargs and docs.

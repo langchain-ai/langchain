@@ -1,10 +1,9 @@
+# ruff: noqa: E402
 """Main entrypoint into package."""
-
 from importlib import metadata
 from typing import Optional
 
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
-from langchain.cache import BaseCache
 from langchain.chains import (
     ConversationChain,
     LLMBashChain,
@@ -40,6 +39,7 @@ from langchain.prompts import (
     Prompt,
     PromptTemplate,
 )
+from langchain.schema.cache import BaseCache
 from langchain.schema.prompt_template import BasePromptTemplate
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.golden_query import GoldenQueryAPIWrapper
@@ -66,6 +66,7 @@ llm_cache: Optional[BaseCache] = None
 
 # For backwards compatibility
 SerpAPIChain = SerpAPIWrapper
+
 
 __all__ = [
     "LLMChain",

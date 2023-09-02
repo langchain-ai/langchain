@@ -406,6 +406,10 @@ Not a comment
         ".. This is a",
         "comment",
     ]
+    # Special test for special characters
+    code = "harry\n***\nbabylon is"
+    chunks = splitter.split_text(code)
+    assert chunks == ["harry", "***\nbabylon is"]
 
 
 def test_proto_file_splitter() -> None:
@@ -680,6 +684,22 @@ This is a code block
         "block",
         "```",
     ]
+    # Special test for special characters
+    code = "harry\n***\nbabylon is"
+    chunks = splitter.split_text(code)
+    assert chunks == ["harry", "***\nbabylon is"]
+
+
+def test_latex_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.LATEX, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+Hi Harrison!
+\\chapter{1}
+"""
+    chunks = splitter.split_text(code)
+    assert chunks == ["Hi Harrison!", "\\chapter{1}"]
 
 
 def test_html_code_splitter() -> None:

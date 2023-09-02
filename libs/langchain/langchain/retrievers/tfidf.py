@@ -9,7 +9,7 @@ from langchain.schema import BaseRetriever, Document
 
 
 class TFIDFRetriever(BaseRetriever):
-    """TF-IDF Retriever.
+    """`TF-IDF` retriever.
 
     Largely based on
     https://github.com/asvskartheek/Text-Retrieval/blob/master/TF-IDF%20Search%20Engine%20(SKLEARN).ipynb

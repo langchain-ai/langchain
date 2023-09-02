@@ -5,7 +5,7 @@ In this tutorial, we'll create a custom example selector that selects every alte
 An `ExampleSelector` must implement two methods:
 
 1. An `add_example` method which takes in an example and adds it into the ExampleSelector
-2. A `select_examples` method which takes in input variables (which are meant to be user input) and returns a list of examples to use in the few shot prompt.
+2. A `select_examples` method which takes in input variables (which are meant to be user input) and returns a list of examples to use in the few-shot prompt.
 
 Let's implement a custom `ExampleSelector` that just selects two examples at random.
 

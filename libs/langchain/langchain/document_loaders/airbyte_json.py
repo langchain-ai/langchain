@@ -1,4 +1,3 @@
-"""Loads local airbyte json files."""
 import json
 from typing import List
 
@@ -8,7 +7,7 @@ from langchain.utils import stringify_dict
 
 
 class AirbyteJSONLoader(BaseLoader):
-    """Loads local airbyte json files."""
+    """Load local `Airbyte` json files."""
 
     def __init__(self, file_path: str):
         """Initialize with a file path. This should start with '/tmp/airbyte_local/'."""

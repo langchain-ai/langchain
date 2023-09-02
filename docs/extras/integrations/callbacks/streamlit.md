@@ -71,3 +71,6 @@ or any other local ENV management tool.
 
 Currently `StreamlitCallbackHandler` is geared towards use with a LangChain Agent Executor. Support for additional agent types,
 use directly with Chains, etc will be added in the future.
+
+You may also be interested in using
+[StreamlitChatMessageHistory](/docs/integrations/memory/streamlit_chat_message_history) for LangChain.

@@ -1,4 +1,4 @@
-## Using PyPDF
+# Using PyPDF
 
 Load PDF using `pypdf` into array of documents, where each document contains the page content and metadata with `page` number.
 
@@ -389,3 +389,17 @@ data[0]
 ```
 
 </CodeOutputBlock>
+
+## Using AmazonTextractPDFParser
+
+The AmazonTextractPDFLoader calls the [Amazon Textract Service](https://aws.amazon.com/textract/) to convert PDFs into a Document structure. The loader does pure OCR at the moment, with more features like layout support planned, depending on demand.  Single and multi-page documents are supported with up to 3000 pages and 512 MB of size.
+
+For the call to be successful an AWS account is required, similar to the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) requirements.
+
+Besides the AWS configuration, it is very similar to the other PDF loaders, while also supporting JPEG, PNG and TIFF and non-native PDF formats.
+
+```python
+from langchain.document_loaders import AmazonTextractPDFLoader
+loader = AmazonTextractPDFLoader("example_data/alejandro_rosalez_sample-small.jpeg")
+documents = loader.load()
+```

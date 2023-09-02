@@ -1,8 +1,8 @@
+import copy
 import json
 from typing import Any, Dict, List, Type, Union
 
-from pydantic import BaseModel, root_validator
-
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import (
     ChatGeneration,
     Generation,
@@ -25,8 +25,8 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
             )
         message = generation.message
         try:
-            func_call = message.additional_kwargs["function_call"]
-        except ValueError as exc:
+            func_call = copy.deepcopy(message.additional_kwargs["function_call"])
+        except KeyError as exc:
             raise OutputParserException(f"Could not parse function call: {exc}")
 
         if self.args_only:
@@ -37,12 +37,33 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
 class JsonOutputFunctionsParser(OutputFunctionsParser):
     """Parse an output as the Json object."""
 
+    strict: bool = False
+    """Whether to allow non-JSON-compliant strings.
+    
+    See: https://docs.python.org/3/library/json.html#encoders-and-decoders
+    
+    Useful when the parsed output may include unicode characters or new lines.
+    """
+
     def parse_result(self, result: List[Generation]) -> Any:
-        func = super().parse_result(result)
+        function_call_info = super().parse_result(result)
         if self.args_only:
-            return json.loads(func)
-        func["arguments"] = json.loads(func["arguments"])
-        return func
+            try:
+                return json.loads(function_call_info, strict=self.strict)
+            except (json.JSONDecodeError, TypeError) as exc:
+                raise OutputParserException(
+                    f"Could not parse function call data: {exc}"
+                )
+        else:
+            try:
+                function_call_info["arguments"] = json.loads(
+                    function_call_info["arguments"], strict=self.strict
+                )
+            except (json.JSONDecodeError, TypeError) as exc:
+                raise OutputParserException(
+                    f"Could not parse function call data: {exc}"
+                )
+            return function_call_info
 
 
 class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):

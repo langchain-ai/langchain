@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema.messages import BaseMessage
 
 
 class StreamingStdOutCallbackHandler(BaseCallbackHandler):
@@ -11,6 +12,14 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> None:
+        """Run when LLM starts running."""
+
+    def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        **kwargs: Any
     ) -> None:
         """Run when LLM starts running."""
 

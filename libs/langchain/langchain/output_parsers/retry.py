@@ -79,6 +79,26 @@ class RetryOutputParser(BaseOutputParser[T]):
 
         return parsed_completion
 
+    async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
+        """Parse the output of an LLM call using a wrapped parser.
+
+        Args:
+            completion: The chain completion to parse.
+            prompt_value: The prompt to use to parse the completion.
+
+        Returns:
+            The parsed completion.
+        """
+        try:
+            parsed_completion = self.parser.parse(completion)
+        except OutputParserException:
+            new_completion = await self.retry_chain.arun(
+                prompt=prompt_value.to_string(), completion=completion
+            )
+            parsed_completion = self.parser.parse(new_completion)
+
+        return parsed_completion
+
     def parse(self, completion: str) -> T:
         raise NotImplementedError(
             "This OutputParser can only be called by the `parse_with_prompt` method."
@@ -130,6 +150,17 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
             parsed_completion = self.parser.parse(completion)
         except OutputParserException as e:
             new_completion = self.retry_chain.run(
+                prompt=prompt_value.to_string(), completion=completion, error=repr(e)
+            )
+            parsed_completion = self.parser.parse(new_completion)
+
+        return parsed_completion
+
+    async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
+        try:
+            parsed_completion = self.parser.parse(completion)
+        except OutputParserException as e:
+            new_completion = await self.retry_chain.arun(
                 prompt=prompt_value.to_string(), completion=completion, error=repr(e)
             )
             parsed_completion = self.parser.parse(new_completion)

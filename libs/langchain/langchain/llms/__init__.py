@@ -31,6 +31,7 @@ from langchain.llms.base import BaseLLM
 from langchain.llms.baseten import Baseten
 from langchain.llms.beam import Beam
 from langchain.llms.bedrock import Bedrock
+from langchain.llms.bittensor import NIBittensorLLM
 from langchain.llms.cerebriumai import CerebriumAI
 from langchain.llms.chatglm import ChatGLM
 from langchain.llms.clarifai import Clarifai
@@ -38,6 +39,7 @@ from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
 from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
+from langchain.llms.deepsparse import DeepSparse
 from langchain.llms.edenai import EdenAI
 from langchain.llms.fake import FakeListLLM
 from langchain.llms.fireworks import Fireworks, FireworksChat
@@ -59,6 +61,8 @@ from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.octoai_endpoint import OctoAIEndpoint
+from langchain.llms.ollama import Ollama
+from langchain.llms.opaqueprompts import OpaquePrompts
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
@@ -73,9 +77,12 @@ from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
+from langchain.llms.symblai_nebula import Nebula
 from langchain.llms.textgen import TextGen
+from langchain.llms.titan_takeoff import TitanTakeoff
 from langchain.llms.tongyi import Tongyi
-from langchain.llms.vertexai import VertexAI
+from langchain.llms.vertexai import VertexAI, VertexAIModelGarden
+from langchain.llms.vllm import VLLM, VLLMOpenAI
 from langchain.llms.writer import Writer
 from langchain.llms.xinference import Xinference
 
@@ -99,6 +106,7 @@ __all__ = [
     "Cohere",
     "Databricks",
     "DeepInfra",
+    "DeepSparse",
     "EdenAI",
     "FakeListLLM",
     "Fireworks",
@@ -120,7 +128,10 @@ __all__ = [
     "MlflowAIGateway",
     "Modal",
     "MosaicML",
+    "Nebula",
+    "NIBittensorLLM",
     "NLPCloud",
+    "Ollama",
     "OpenAI",
     "OpenAIChat",
     "OpenLLM",
@@ -131,14 +142,19 @@ __all__ = [
     "PredictionGuard",
     "PromptLayerOpenAI",
     "PromptLayerOpenAIChat",
+    "OpaquePrompts",
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "StochasticAI",
+    "TitanTakeoff",
     "Tongyi",
     "VertexAI",
+    "VertexAIModelGarden",
+    "VLLM",
+    "VLLMOpenAI",
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
@@ -164,6 +180,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ctransformers": CTransformers,
     "databricks": Databricks,
     "deepinfra": DeepInfra,
+    "deepsparse": DeepSparse,
     "edenai": EdenAI,
     "fake-list": FakeListLLM,
     "forefrontai": ForefrontAI,
@@ -182,12 +199,16 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "mlflow-ai-gateway": MlflowAIGateway,
     "modal": Modal,
     "mosaic": MosaicML,
+    "nebula": Nebula,
+    "nibittensor": NIBittensorLLM,
     "nlpcloud": NLPCloud,
+    "ollama": Ollama,
     "openai": OpenAI,
     "openlm": OpenLM,
     "petals": Petals,
     "pipelineai": PipelineAI,
     "predibase": Predibase,
+    "opaqueprompts": OpaquePrompts,
     "replicate": Replicate,
     "rwkv": RWKV,
     "sagemaker_endpoint": SagemakerEndpoint,
@@ -195,9 +216,13 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "self_hosted_hugging_face": SelfHostedHuggingFaceLLM,
     "stochasticai": StochasticAI,
     "tongyi": Tongyi,
+    "titan_takeoff": TitanTakeoff,
     "vertexai": VertexAI,
+    "vertexai_model_garden": VertexAIModelGarden,
     "openllm": OpenLLM,
     "openllm_client": OpenLLM,
+    "vllm": VLLM,
+    "vllm_openai": VLLMOpenAI,
     "writer": Writer,
     "xinference": Xinference,
 }

@@ -20,6 +20,7 @@ from langchain.embeddings.aleph_alpha import (
 )
 from langchain.embeddings.awa import AwaEmbeddings
 from langchain.embeddings.bedrock import BedrockEmbeddings
+from langchain.embeddings.cache import CacheBackedEmbeddings
 from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.dashscope import DashScopeEmbeddings
@@ -27,10 +28,12 @@ from langchain.embeddings.deepinfra import DeepInfraEmbeddings
 from langchain.embeddings.edenai import EdenAiEmbeddings
 from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
 from langchain.embeddings.embaas import EmbaasEmbeddings
+from langchain.embeddings.ernie import ErnieEmbeddings
 from langchain.embeddings.fake import DeterministicFakeEmbedding, FakeEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.gpt4all import GPT4AllEmbeddings
 from langchain.embeddings.huggingface import (
+    HuggingFaceBgeEmbeddings,
     HuggingFaceEmbeddings,
     HuggingFaceInstructEmbeddings,
 )
@@ -61,10 +64,11 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "OpenAIEmbeddings",
-    "HuggingFaceEmbeddings",
-    "CohereEmbeddings",
+    "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
+    "CohereEmbeddings",
     "ElasticsearchEmbeddings",
+    "HuggingFaceEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
     "HuggingFaceHubEmbeddings",
@@ -97,6 +101,8 @@ __all__ = [
     "XinferenceEmbeddings",
     "LocalAIEmbeddings",
     "AwaEmbeddings",
+    "HuggingFaceBgeEmbeddings",
+    "ErnieEmbeddings",
 ]
 
 

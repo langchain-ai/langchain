@@ -2,15 +2,17 @@ import importlib
 import os
 import time
 import uuid
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import numpy as np
-import pinecone
 import pytest
 
 from langchain.docstore.document import Document
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores.pinecone import Pinecone
+
+if TYPE_CHECKING:
+    import pinecone
 
 index_name = "langchain-test-index"  # name of the index
 namespace_name = "langchain-test-namespace"  # name of the namespace
@@ -32,10 +34,12 @@ def reset_pinecone() -> None:
 
 
 class TestPinecone:
-    index: pinecone.Index
+    index: "pinecone.Index"
 
     @classmethod
     def setup_class(cls) -> None:
+        import pinecone
+
         reset_pinecone()
 
         cls.index = pinecone.Index(index_name)

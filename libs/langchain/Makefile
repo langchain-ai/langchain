@@ -59,6 +59,9 @@ test_watch:
 integration_tests:
 	poetry run pytest tests/integration_tests
 
+scheduled_tests:
+	poetry run pytest -m scheduled tests/integration_tests
+
 docker_tests:
 	docker build -t my-langchain-image:test .
 	docker run --rm my-langchain-image:test
@@ -73,9 +76,10 @@ lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
 
 lint lint_diff:
-	poetry run mypy $(PYTHON_FILES)
-	poetry run black $(PYTHON_FILES) --check
+	./scripts/check_pydantic.sh .
 	poetry run ruff .
+	poetry run black $(PYTHON_FILES) --check
+	poetry run mypy $(PYTHON_FILES)
 
 format format_diff:
 	poetry run black $(PYTHON_FILES)
@@ -92,15 +96,24 @@ spell_fix:
 ######################
 
 help:
-	@echo '----'
-	@echo 'coverage                     - run unit tests and generate coverage report'
+	@echo '===================='
+	@echo '-- DOCUMENTATION --'
+	@echo 'clean                        - run docs_clean and api_docs_clean'
 	@echo 'docs_build                   - build the documentation'
 	@echo 'docs_clean                   - clean the documentation build artifacts'
 	@echo 'docs_linkcheck               - run linkchecker on the documentation'
+	@echo 'api_docs_build               - build the API Reference documentation'
+	@echo 'api_docs_clean               - clean the API Reference documentation build artifacts'
+	@echo 'api_docs_linkcheck           - run linkchecker on the API Reference documentation'
+	@echo '-- LINTING --'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
+	@echo 'spell_check               	- run codespell on the project'
+	@echo 'spell_fix               		- run codespell on the project and fix the errors'
+	@echo '-- TESTS --'
+	@echo 'coverage                     - run unit tests and generate coverage report'
 	@echo 'test                         - run unit tests'
-	@echo 'tests                        - run unit tests'
+	@echo 'tests                        - run unit tests (alias for "make test")'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
 	@echo 'extended_tests               - run only extended unit tests'
 	@echo 'test_watch                   - run unit tests in watch mode'

@@ -10,9 +10,11 @@ from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.evaluation import EvaluatorType
 from langchain.llms.openai import OpenAI
+from langchain.prompts.chat import ChatPromptTemplate
 from langchain.schema.messages import BaseMessage, HumanMessage
 from langchain.smith import RunEvalConfig, run_on_dataset
 from langchain.smith.evaluation import InputFormatError
+from langchain.smith.evaluation.runner_utils import arun_on_dataset
 
 
 def _check_all_feedback_passed(_project_name: str, client: Client) -> None:
@@ -422,6 +424,50 @@ def test_chain_on_kv_singleio_dataset(
         client,
         kv_singleio_dataset_name,
         lambda: chain,
+        evaluation=eval_config,
+        project_name=eval_project_name,
+        tags=["shouldpass"],
+    )
+    _check_all_feedback_passed(eval_project_name, client)
+
+
+@pytest.mark.asyncio
+async def test_runnable_on_kv_singleio_dataset(
+    kv_singleio_dataset_name: str, eval_project_name: str, client: Client
+) -> None:
+    runnable = (
+        ChatPromptTemplate.from_messages([("human", "{the wackiest input}")])
+        | ChatOpenAI()
+    )
+    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    await arun_on_dataset(
+        client,
+        kv_singleio_dataset_name,
+        runnable,
+        evaluation=eval_config,
+        project_name=eval_project_name,
+        tags=["shouldpass"],
+    )
+    _check_all_feedback_passed(eval_project_name, client)
+
+
+@pytest.mark.asyncio
+async def test_arb_func_on_kv_singleio_dataset(
+    kv_singleio_dataset_name: str, eval_project_name: str, client: Client
+) -> None:
+    runnable = (
+        ChatPromptTemplate.from_messages([("human", "{the wackiest input}")])
+        | ChatOpenAI()
+    )
+
+    def my_func(x: dict) -> str:
+        return runnable.invoke(x).content
+
+    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    await arun_on_dataset(
+        client,
+        kv_singleio_dataset_name,
+        my_func,
         evaluation=eval_config,
         project_name=eval_project_name,
         tags=["shouldpass"],

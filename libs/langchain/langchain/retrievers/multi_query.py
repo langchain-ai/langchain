@@ -1,13 +1,12 @@
 import logging
 from typing import List
 
-from pydantic import BaseModel, Field
-
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseRetriever, Document
 
 logger = logging.getLogger(__name__)
@@ -45,9 +44,10 @@ DEFAULT_QUERY_PROMPT = PromptTemplate(
 
 
 class MultiQueryRetriever(BaseRetriever):
+    """Given a query, use an LLM to write a set of queries.
 
-    """Given a user query, use an LLM to write a set of queries.
-    Retrieve docs for each query. Rake the unique union of all retrieved docs."""
+    Retrieve docs for each query. Rake the unique union of all retrieved docs.
+    """
 
     retriever: BaseRetriever
     llm_chain: LLMChain

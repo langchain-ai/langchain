@@ -6,17 +6,6 @@
   {%- set top_container_cls = "sk-landing-container" %}
 {%- endif %}
 
-{% if theme_link_to_live_contributing_page|tobool %}
-{# Link to development page for live builds #}
-  {%- set development_link = "https://scikit-learn.org/dev/developers/index.html" %}
-{# Open on a new development page in new window/tab for live builds #}
-  {%- set development_attrs = 'target="_blank" rel="noopener noreferrer"' %}
-{%- else %}
-  {%- set development_link = pathto('developers/index') %}
-  {%- set development_attrs = '' %}
-{%- endif %}
-
-
 <nav id="navbar" class="{{ nav_bar_class }} navbar navbar-expand-md navbar-light bg-light py-0">
   <div class="container-fluid {{ top_container_cls }} px-0">
     {%- if logo_url %}

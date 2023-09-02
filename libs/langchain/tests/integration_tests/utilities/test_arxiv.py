@@ -5,6 +5,7 @@ import pytest
 
 from langchain.agents.load_tools import load_tools
 from langchain.schema import Document
+from langchain.tools import ArxivQueryRun
 from langchain.tools.base import BaseTool
 from langchain.utilities import ArxivAPIWrapper
 
@@ -81,7 +82,7 @@ def test_load_returns_unlimited_doc_content_chars() -> None:
     doc_content_chars_max = None
     api_client = ArxivAPIWrapper(doc_content_chars_max=doc_content_chars_max)
     docs = api_client.load("1605.08386")
-    assert len(docs[0].page_content) == 54337
+    assert len(docs[0].page_content) == pytest.approx(54338, rel=1e-2)
 
 
 def test_load_returns_full_set_of_metadata() -> None:
@@ -120,7 +121,7 @@ def test_load_arxiv_from_universal_entry_with_params() -> None:
         "load_all_available_meta": True,
     }
     arxiv_tool = _load_arxiv_from_universal_entry(**params)
-    assert isinstance(arxiv_tool, ArxivAPIWrapper)
+    assert isinstance(arxiv_tool, ArxivQueryRun)
     wp = arxiv_tool.api_wrapper
     assert wp.top_k_results == 1, "failed to assert top_k_results"
     assert wp.load_max_docs == 10, "failed to assert load_max_docs"

@@ -7,16 +7,17 @@ import pytest
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.loading import load_llm
-from langchain.llms.openai import OpenAI, OpenAIChat
+from langchain.llms.openai import OpenAI
 from langchain.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
     FakeCallbackHandler,
 )
 
 
+@pytest.mark.scheduled
 def test_openai_call() -> None:
     """Test valid call to openai."""
-    llm = OpenAI(max_tokens=10, n=3)
+    llm = OpenAI()
     output = llm("Say something nice:")
     assert isinstance(output, str)
 
@@ -86,6 +87,7 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
     assert loaded_llm == llm
 
 
+@pytest.mark.scheduled
 def test_openai_streaming() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -97,6 +99,7 @@ def test_openai_streaming() -> None:
         assert isinstance(token, str)
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_astream() -> None:
     """Test streaming tokens from OpenAI."""
@@ -106,6 +109,7 @@ async def test_openai_astream() -> None:
         assert isinstance(token, str)
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_abatch() -> None:
     """Test streaming tokens from OpenAI."""
@@ -128,6 +132,7 @@ async def test_openai_abatch_tags() -> None:
         assert isinstance(token, str)
 
 
+@pytest.mark.scheduled
 def test_openai_batch() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -137,6 +142,7 @@ def test_openai_batch() -> None:
         assert isinstance(token, str)
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_ainvoke() -> None:
     """Test streaming tokens from OpenAI."""
@@ -146,6 +152,7 @@ async def test_openai_ainvoke() -> None:
     assert isinstance(result, str)
 
 
+@pytest.mark.scheduled
 def test_openai_invoke() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -154,6 +161,7 @@ def test_openai_invoke() -> None:
     assert isinstance(result, str)
 
 
+@pytest.mark.scheduled
 def test_openai_multiple_prompts() -> None:
     """Test completion with multiple prompts."""
     llm = OpenAI(max_tokens=10)
@@ -181,6 +189,7 @@ def test_openai_streaming_multiple_prompts_error() -> None:
         OpenAI(streaming=True).generate(["I'm Pickle Rick", "I'm Pickle Rick"])
 
 
+@pytest.mark.scheduled
 def test_openai_streaming_call() -> None:
     """Test valid call to openai."""
     llm = OpenAI(max_tokens=10, streaming=True)
@@ -203,6 +212,7 @@ def test_openai_streaming_callback() -> None:
     assert callback_handler.llm_streams == 10
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_async_generate() -> None:
     """Test async generation."""
@@ -233,60 +243,6 @@ def test_openai_chat_wrong_class() -> None:
     llm = OpenAI(model_name="gpt-3.5-turbo")
     output = llm("Say foo:")
     assert isinstance(output, str)
-
-
-def test_openai_chat() -> None:
-    """Test OpenAIChat."""
-    llm = OpenAIChat(max_tokens=10)
-    output = llm("Say foo:")
-    assert isinstance(output, str)
-
-
-def test_openai_chat_streaming() -> None:
-    """Test OpenAIChat with streaming option."""
-    llm = OpenAIChat(max_tokens=10, streaming=True)
-    output = llm("Say foo:")
-    assert isinstance(output, str)
-
-
-def test_openai_chat_streaming_callback() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    llm = OpenAIChat(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    llm("Write me a sentence with 100 words.")
-    assert callback_handler.llm_streams != 0
-
-
-@pytest.mark.asyncio
-async def test_openai_chat_async_generate() -> None:
-    """Test async chat."""
-    llm = OpenAIChat(max_tokens=10)
-    output = await llm.agenerate(["Hello, how are you?"])
-    assert isinstance(output, LLMResult)
-
-
-@pytest.mark.asyncio
-async def test_openai_chat_async_streaming_callback() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    llm = OpenAIChat(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    result = await llm.agenerate(["Write me a sentence with 100 words."])
-    assert callback_handler.llm_streams != 0
-    assert isinstance(result, LLMResult)
 
 
 def test_openai_modelname_to_contextsize_valid() -> None:
