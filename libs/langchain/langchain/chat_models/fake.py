@@ -53,7 +53,8 @@ class FakeListChatModel(SimpleChatModel):
         for c in response:
             if self.sleep is not None:
                 time.sleep(self.sleep)
-            yield ChatGenerationChunk(message=AIMessageChunk(content=c))
+            message = c if isinstance(c, BaseMessage) else AIMessageChunk(content=c)
+            yield ChatGenerationChunk(message=message)
 
     async def _astream(
         self,

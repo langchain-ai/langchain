@@ -652,8 +652,10 @@ class SimpleChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        output_str = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
-        message = AIMessage(content=output_str)
+        output = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
+        message = (
+            output if isinstance(output, BaseMessage) else AIMessage(content=output)
+        )
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
 
