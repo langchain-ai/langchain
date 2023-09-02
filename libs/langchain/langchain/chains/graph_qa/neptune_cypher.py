@@ -9,8 +9,10 @@ from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import (
     CYPHER_QA_PROMPT,
     NEPTUNE_OPENCYPHER_GENERATION_PROMPT,
+    NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT,
 )
 from langchain.chains.llm import LLMChain
+from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.graphs import NeptuneGraph
 from langchain.prompts.base import BasePromptTemplate
 from langchain.pydantic_v1 import Field
@@ -28,6 +30,9 @@ def trim_query(query: str) -> str:
         "RETURN",
         "DELETE",
         "OPTIONAL",
+        "WHERE",
+        "LIMIT",
+        "ORDER",
         "CALL",
         "//",
     )
@@ -51,6 +56,17 @@ def extract_cypher(text: str) -> str:
     matches = re.findall(pattern, text, re.DOTALL)
 
     return matches[0] if matches else text
+
+
+def use_simple_prompt(llm: BaseLanguageModel) -> bool:
+    """Decides whether to use the simple prompt"""
+    return llm._llm_type and "anthropic" in llm._llm_type  # type: noqa
+
+
+PROMPT_SELECTOR = ConditionalPromptSelector(
+    default_prompt=NEPTUNE_OPENCYPHER_GENERATION_PROMPT,
+    conditionals=[(use_simple_prompt, NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT)],
+)
 
 
 class NeptuneOpenCypherQAChain(Chain):
@@ -101,12 +117,14 @@ class NeptuneOpenCypherQAChain(Chain):
         llm: BaseLanguageModel,
         *,
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
-        cypher_prompt: BasePromptTemplate = NEPTUNE_OPENCYPHER_GENERATION_PROMPT,
+        cypher_prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> NeptuneOpenCypherQAChain:
         """Initialize from LLM."""
         qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
-        cypher_generation_chain = LLMChain(llm=llm, prompt=cypher_prompt)
+
+        _cypher_prompt = cypher_prompt or PROMPT_SELECTOR.get_prompt(llm)
+        cypher_generation_chain = LLMChain(llm=llm, prompt=_cypher_prompt)
 
         return cls(
             qa_chain=qa_chain,

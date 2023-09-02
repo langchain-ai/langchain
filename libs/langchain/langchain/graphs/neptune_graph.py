@@ -28,7 +28,7 @@ class NeptuneGraph:
         use_https: whether to use secure connection, default is True
         client: optional boto3 Neptune client
         credentials_profile_name: optional AWS profile name
-        region_name: optional AWS region, e.g., us-west-2 
+        region_name: optional AWS region, e.g., us-west-2
         service: optional service name, default is neptunedata
 
     Example:
@@ -80,7 +80,7 @@ class NeptuneGraph:
                 "Please install it with `pip install boto3`."
             )
         except Exception as e:
-            if type(e).__name__ == 'UnknownServiceError':
+            if type(e).__name__ == "UnknownServiceError":
                 raise ModuleNotFoundError(
                     "NeptuneGraph requires a boto3 version 1.28.38 or greater."
                     "Please install it with `pip install -U boto3`."
@@ -121,7 +121,7 @@ class NeptuneGraph:
                         "Summary API is not available for this instance of Neptune,"
                         "ensure the engine version is >=1.2.1.0"
                     ),
-                    "details": e.message,
+                    "details": str(e),
                 }
             )
 
