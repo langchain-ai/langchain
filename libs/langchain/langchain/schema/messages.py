@@ -11,14 +11,24 @@ if TYPE_CHECKING:
 
 
 def get_buffer_string(
-    messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
+    messages: Sequence[BaseMessage],
+    human_prefix: str = "Human: ",
+    human_suffix: str = "",
+    ai_prefix: str = "AI: ",
+    ai_suffix: str = "",
+    system_prefix: str = "System: ",
+    system_suffix: str = "",
 ) -> str:
     """Convert sequence of Messages to strings and concatenate them into one string.
 
     Args:
         messages: Messages to be converted to strings.
         human_prefix: The prefix to prepend to contents of HumanMessages.
-        ai_prefix: THe prefix to prepend to contents of AIMessages.
+        human_suffix: The suffix to append to contents of HumanMessages.
+        ai_prefix: The prefix to prepend to contents of AIMessages.
+        ai_suffix: The suffix to append to contents of AIMessages.
+        system_prefx: The prefux to prepend to contents of SystemMessages.
+        system_suffix: The suffix to append to contents of SystemMessages.
 
     Returns:
         A single string concatenation of all input messages.
@@ -36,20 +46,24 @@ def get_buffer_string(
             # -> "Human: Hi, how are you?\nAI: Good, how are you?"
     """
     string_messages = []
+    suffix = ""
     for m in messages:
         if isinstance(m, HumanMessage):
-            role = human_prefix
+            prefix = human_prefix
+            suffix = human_suffix
         elif isinstance(m, AIMessage):
-            role = ai_prefix
+            prefix = ai_prefix
+            suffix = ai_suffix
         elif isinstance(m, SystemMessage):
-            role = "System"
+            prefix = system_prefix
+            suffix = system_suffix
         elif isinstance(m, FunctionMessage):
-            role = "Function"
+            prefix = "Function: "
         elif isinstance(m, ChatMessage):
-            role = m.role
+            prefix = m.role
         else:
             raise ValueError(f"Got unsupported message type: {m}")
-        message = f"{role}: {m.content}"
+        message = f"{prefix}{m.content}{suffix}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"
         string_messages.append(message)
