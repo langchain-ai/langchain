@@ -13,7 +13,7 @@ from langchain.llms import EdenAI
 
 def test_edenai_call() -> None:
     """Test simple call to edenai."""
-    llm = EdenAI(provider="openai", params={"temperature": 0.2, "max_tokens": 250})
+    llm = EdenAI(provider="openai", temperature=0.2, max_tokens=250)
     output = llm("Say foo:")
 
     assert llm._llm_type == "edenai"
@@ -24,8 +24,22 @@ def test_edenai_call() -> None:
 
 async def test_edenai_acall() -> None:
     """Test simple call to edenai."""
-    llm = EdenAI(provider="openai", params={"temperature": 0.2, "max_tokens": 250})
+    llm = EdenAI(provider="openai", temperature=0.2, max_tokens=250)
     output = await llm.agenerate(["Say foo:"])
+    assert llm._llm_type == "edenai"
+    assert llm.feature == "text"
+    assert llm.subfeature == "generation"
+    assert isinstance(output, str)
+
+
+def test_edenai_call_with_old_params() -> None:
+    """
+    Test simple call to edenai with using `params`
+    to pass optional parameters to api
+    """
+    llm = EdenAI(provider="openai", params={"temperature": 0.2, "max_tokens": 250})
+    output = llm("Say foo:")
+
     assert llm._llm_type == "edenai"
     assert llm.feature == "text"
     assert llm.subfeature == "generation"

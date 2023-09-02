@@ -546,7 +546,7 @@ def test_tool_with_kwargs() -> None:
 def test_missing_docstring() -> None:
     """Test error is raised when docstring is missing."""
     # expect to throw a value error if there's no docstring
-    with pytest.raises(AssertionError, match="Function must have a docstring"):
+    with pytest.raises(ValueError, match="Function must have a docstring"):
 
         @tool
         def search_api(query: str) -> str:

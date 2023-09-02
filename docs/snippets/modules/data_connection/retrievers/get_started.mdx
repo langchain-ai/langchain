@@ -33,7 +33,7 @@ class BaseRetriever(ABC):
         ...
 ```
 
-It's that simple! You can call `get_relevant_documents` or the async `get_relevant_documents` methods to retrieve documents relevant to a query, where "relevance" is defined by
+It's that simple! You can call `get_relevant_documents` or the async `aget_relevant_documents` methods to retrieve documents relevant to a query, where "relevance" is defined by
 the specific retriever object you are calling.
 
 Of course, we also help construct what we think useful Retrievers are. The main type of Retriever that we focus on is a Vectorstore retriever. We will focus on that for the rest of this guide.
