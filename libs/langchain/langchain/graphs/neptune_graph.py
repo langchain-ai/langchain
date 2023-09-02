@@ -22,6 +22,15 @@ class NeptuneQueryException(Exception):
 class NeptuneGraph:
     """Neptune wrapper for graph operations.
 
+    Args:
+        host: endpoint for the database instance
+        port: port number for the database instance, default is 8182
+        use_https: whether to use secure connection, default is True
+        client: optional boto3 Neptune client
+        credentials_profile_name: optional AWS profile name
+        region_name: optional AWS region, e.g., us-west-2 
+        service: optional service name, default is neptunedata
+
     Example:
         .. code-block:: python
 
@@ -39,7 +48,7 @@ class NeptuneGraph:
         client: Any = None,
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
-        service: str = "neptune-db",
+        service: str = "neptunedata",
     ) -> None:
         """Create a new Neptune graph wrapper instance."""
 
@@ -70,13 +79,18 @@ class NeptuneGraph:
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
-
         except Exception as e:
-            raise ValueError(
-                "Could not load credentials to authenticate with AWS client. "
-                "Please check that credentials in the specified "
-                "profile name are valid."
-            ) from e
+            if type(e).__name__ == 'UnknownServiceError':
+                raise ModuleNotFoundError(
+                    "NeptuneGraph requires a boto3 version 1.28.38 or greater."
+                    "Please install it with `pip install -U boto3`."
+                ) from e
+            else:
+                raise ValueError(
+                    "Could not load credentials to authenticate with AWS client. "
+                    "Please check that credentials in the specified "
+                    "profile name are valid."
+                ) from e
 
         try:
             self._refresh_schema()
