@@ -52,9 +52,9 @@ class FalkorDBGraph:
     def refresh_schema(self) -> None:
         """Refreshes the schema of the FalkorDB database"""
         self.schema = (
-            f"Node properties: {node_properties_query}\n"
-            f"Relationships properties: {rel_properties_query}\n"
-            f"Relationships: {rel_query}\n"
+            f"Node properties: {self.query(node_properties_query)}\n"
+            f"Relationships properties: {self.query(rel_properties_query)}\n"
+            f"Relationships: {self.query(rel_query)}\n"
         )
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
