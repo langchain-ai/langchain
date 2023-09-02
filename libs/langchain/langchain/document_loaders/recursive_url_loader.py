@@ -1,6 +1,6 @@
 import asyncio
 import re
-from typing import Callable, Iterator, List, Optional, Set, Union
+from typing import Callable, Iterator, List, Optional, Set, Union, Dict
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -21,6 +21,8 @@ class RecursiveUrlLoader(BaseLoader):
         exclude_dirs: Optional[str] = None,
         timeout: Optional[int] = None,
         prevent_outside: Optional[bool] = None,
+        ensure_trailing_slash: Optional[bool] = True,
+        headers: Optional[Dict[str, str]] = {},
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
         Args:
@@ -33,6 +35,8 @@ class RecursiveUrlLoader(BaseLoader):
             when extract function returns empty string, the document will be ignored.
             max_depth: The max depth of the recursive loading.
             timeout: The timeout for the requests, in the unit of seconds.
+            ensure_trailing_slash: Ensure a trailing slash when requesting to the given url or a child link.
+            headers: Headers when requesting to the url.
         """
 
         self.url = url
@@ -42,6 +46,8 @@ class RecursiveUrlLoader(BaseLoader):
         self.max_depth = max_depth if max_depth is not None else 2
         self.timeout = timeout if timeout is not None else 10
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
+        self.ensure_trailing_slash = ensure_trailing_slash
+        self.headers = headers
 
     def _get_sub_links(self, raw_html: str, base_url: str) -> List[str]:
         """This function extracts all the links from the raw html,
@@ -138,7 +144,7 @@ class RecursiveUrlLoader(BaseLoader):
             return []
 
         # Add a trailing slash if not present
-        if not url.endswith("/"):
+        if not url.endswith("/") and self.ensure_trailing_slash:
             url += "/"
 
         # Exclude the root and parent from a list
@@ -152,7 +158,7 @@ class RecursiveUrlLoader(BaseLoader):
 
         # Get all links that can be accessed from the current URL
         try:
-            response = requests.get(url, timeout=self.timeout)
+            response = requests.get(url, timeout=self.timeout, headers=self.headers)
         except Exception:
             return []
 
@@ -165,7 +171,7 @@ class RecursiveUrlLoader(BaseLoader):
                 visited.add(link)
 
                 try:
-                    response = requests.get(link)
+                    response = requests.get(link, headers=self.headers)
                     text = response.text
                 except Exception:
                     # unreachable link, so just ignore it
@@ -176,7 +182,7 @@ class RecursiveUrlLoader(BaseLoader):
                 )
                 yield loaded_link
                 # If the link is a directory (w/ children) then visit it
-                if link.endswith("/"):
+                if link.endswith("/") or not self.ensure_trailing_slash:
                     yield from self._get_child_links_recursive(link, visited, depth + 1)
         return []
 
