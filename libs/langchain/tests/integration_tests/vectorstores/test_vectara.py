@@ -68,6 +68,19 @@ def test_vectara_add_documents() -> None:
     assert output2[0].page_content == "retrieval augmented generation"
     assert output2[0].metadata["abbr"] == "rag"
 
+    # test without filter but with similarity score
+    # this is similar to the first test, but given the score threshold
+    # we only get one result
+    output3 = docsearch.similarity_search_with_score(
+        "large language model",
+        k=2,
+        score_threshold=0.1,
+        n_sentence_context=0,
+    )
+    assert len(output3) == 1
+    assert output3[0][0].page_content == "large language model"
+    assert output3[0][0].metadata["abbr"] == "llm"
+
     for doc_id in doc_ids:
         docsearch._delete_doc(doc_id)
 
