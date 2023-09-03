@@ -20,6 +20,7 @@ from typing import (
 )
 
 import yaml
+import numpy as np
 
 from langchain._api import deprecated
 from langchain.callbacks.manager import (
@@ -39,6 +40,8 @@ from langchain.vectorstores.redis.constants import (
     REDIS_REQUIRED_MODULES,
     REDIS_TAG_SEPARATOR,
 )
+from langchain.vectorstores.utils import maximal_marginal_relevance
+
 
 logger = logging.getLogger(__name__)
 
@@ -544,9 +547,7 @@ class Redis(VectorStore):
             # check if redis has redisearch module installed
             check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
             # ensure that the index already exists
-            assert check_index_exists(
-                client, index_name
-            ), f"Index {index_name} does not exist"
+            assert check_index_exists(client, index_name), f"Index {index_name} does not exist"
         except Exception as e:
             raise ValueError(f"Redis failed to connect: {e}")
 
@@ -703,9 +704,7 @@ class Redis(VectorStore):
             key = keys_or_ids[i] if keys_or_ids else _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
             metadata = _prepare_metadata(metadata) if clean_metadata else metadata
-            embedding = (
-                embeddings[i] if embeddings else self._embeddings.embed_query(text)
-            )
+            embedding = embeddings[i] if embeddings else self._embeddings.embed_query(text)
             pipeline.hset(
                 key,
                 mapping={
@@ -756,9 +755,7 @@ class Redis(VectorStore):
             an empty list is returned.
 
         """
-        return self.similarity_search(
-            query, k=k, distance_threshold=score_threshold, **kwargs
-        )
+        return self.similarity_search(query, k=k, distance_threshold=score_threshold, **kwargs)
 
     def similarity_search_with_score(
         self,
@@ -915,40 +912,66 @@ class Redis(VectorStore):
                 metadata.update(self._collect_metadata(result))
 
             content_key = self._schema.content_key
-            docs.append(
-                Document(page_content=getattr(result, content_key), metadata=metadata)
-            )
+            docs.append(Document(page_content=getattr(result, content_key), metadata=metadata))
         return docs
 
-    def _collect_metadata(self, result: "Document") -> Dict[str, Any]:
-        """Collect metadata from Redis.
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[RedisFilterExpression] = None,
+        return_metadata: bool = True,
+        distance_threshold: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
 
-        Method ensures that there isn't a mismatch between the metadata
-        and the index schema passed to this class by the user or generated
-        by this class.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
 
         Args:
-            result (Document): redis.commands.search.Document object returned
-                from Redis.
+            query (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult (flaot): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (RedisFilterExpression, optional): Optional metadata filter.
+                Defaults to None.
+            return_metadata (bool, optional): Whether to return metadata.
+                Defaults to True.
+            distance_threshold (Optional[float], optional): Distance threshold
+                for vector distance from query vector. Defaults to None.
 
         Returns:
-            Dict[str, Any]: Collected metadata.
+            List[Document]: A list of Documents selected by maximal marginal relevance.
         """
-        # new metadata dict as modified by this method
-        meta = {}
-        for key in self._schema.metadata_keys:
-            try:
-                meta[key] = getattr(result, key)
-            except AttributeError:
-                # warning about attribute missing
-                logger.warning(
-                    f"Metadata key {key} not found in metadata. "
-                    + "Setting to None. \n"
-                    + "Metadata fields defined for this instance: "
-                    + f"{self._schema.metadata_keys}"
-                )
-                meta[key] = None
-        return meta
+        # Fetch the initial documents
+        prefetchDocs = self.similarity_search(
+            query=query,
+            k=fetch_k,
+            filter=filter,
+            return_metadata=return_metadata,
+            distance_threshold=distance_threshold,
+            **kwargs,
+        )
+
+        # Embed the query and the fetched documents
+        prefetchEmbeddings = [
+            self._embeddings.embed_query(doc.page_content) for doc in prefetchDocs
+        ]
+        prefetchEmbeddings = np.array(prefetchEmbeddings)
+        queryEmbedding = self._embeddings.embed_query(query)
+        queryEmbedding = np.array(queryEmbedding)
+
+        # Select documents using maximal marginal relevance
+        selectedDocs = maximal_marginal_relevance(
+            queryEmbedding, prefetchEmbeddings, lambda_mult=lambda_mult, k=k
+        )
+        return [prefetchDocs[i] for i in selectedDocs]
 
     def _prepare_query(
         self,
@@ -977,9 +1000,7 @@ class Redis(VectorStore):
         if distance_threshold:
             params_dict["distance_threshold"] = distance_threshold
             return (
-                self._prepare_range_query(
-                    k, filter=filter, return_fields=return_fields
-                ),
+                self._prepare_range_query(k, filter=filter, return_fields=return_fields),
                 params_dict,
             )
         return (
@@ -1223,9 +1244,7 @@ def _generate_field_schema(data: Dict[str, Any]) -> Dict[str, Any]:
                 result["tag"].append({"name": key})
             else:
                 name = type(value[0]).__name__
-                raise ValueError(
-                    f"List/tuple values should contain strings: '{key}': {name}"
-                )
+                raise ValueError(f"List/tuple values should contain strings: '{key}': {name}")
             continue
 
         # Check if value is string before processing further
@@ -1236,8 +1255,7 @@ def _generate_field_schema(data: Dict[str, Any]) -> Dict[str, Any]:
         # Unable to classify the field value
         name = type(value).__name__
         raise ValueError(
-            "Could not generate Redis index field type mapping "
-            + f"for metadata: '{key}': {name}"
+            "Could not generate Redis index field type mapping " + f"for metadata: '{key}': {name}"
         )
 
     return result
@@ -1337,10 +1355,8 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
 
         elif self.search_type == "similarity_score_threshold":
-            docs_and_similarities = (
-                self.vectorstore.similarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
-                )
+            docs_and_similarities = self.vectorstore.similarity_search_with_relevance_scores(
+                query, **self.search_kwargs
             )
             docs = [doc for doc, _ in docs_and_similarities]
         else:
@@ -1356,8 +1372,6 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
         """Add documents to vectorstore."""
         return self.vectorstore.add_documents(documents, **kwargs)
 
-    async def aadd_documents(
-        self, documents: List[Document], **kwargs: Any
-    ) -> List[str]:
+    async def aadd_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""
         return await self.vectorstore.aadd_documents(documents, **kwargs)
