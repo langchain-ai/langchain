@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Dict, List, Literal, TypedDict, Union, cast
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
 from langchain.pydantic_v1 import BaseModel, PrivateAttr
 
@@ -28,6 +28,7 @@ class SerializedNotImplemented(BaseSerialized):
     """Serialized not implemented."""
 
     type: Literal["not_implemented"]
+    repr: Optional[str]
 
 
 class Serializable(BaseModel, ABC):
@@ -156,8 +157,15 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
             _id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
     except Exception:
         pass
-    return {
+
+    result: SerializedNotImplemented = {
         "lc": 1,
         "type": "not_implemented",
         "id": _id,
+        "repr": None,
     }
+    try:
+        result["repr"] = repr(obj)
+    except Exception:
+        pass
+    return result

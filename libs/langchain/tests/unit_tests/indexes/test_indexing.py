@@ -158,7 +158,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
-        assert index(loader, record_manager, vector_store, delete_mode="full") == {
+        assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 2,
             "num_deleted": 0,
             "num_skipped": 0,
@@ -168,7 +168,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
-        assert index(loader, record_manager, vector_store, delete_mode="full") == {
+        assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 0,
             "num_deleted": 0,
             "num_skipped": 2,
@@ -189,7 +189,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
-        assert index(loader, record_manager, vector_store, delete_mode="full") == {
+        assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 1,
             "num_deleted": 1,
             "num_skipped": 1,
@@ -207,7 +207,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
-        assert index(loader, record_manager, vector_store, delete_mode="full") == {
+        assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 0,
             "num_deleted": 0,
             "num_skipped": 2,
@@ -238,7 +238,7 @@ def test_incremental_fails_with_bad_source_ids(
 
     with pytest.raises(ValueError):
         # Should raise an error because no source id function was specified
-        index(loader, record_manager, vector_store, delete_mode="incremental")
+        index(loader, record_manager, vector_store, cleanup="incremental")
 
     with pytest.raises(ValueError):
         # Should raise an error because no source id function was specified
@@ -246,7 +246,7 @@ def test_incremental_fails_with_bad_source_ids(
             loader,
             record_manager,
             vector_store,
-            delete_mode="incremental",
+            cleanup="incremental",
             source_id_key="source",
         )
 
@@ -275,7 +275,7 @@ def test_no_delete(
             loader,
             record_manager,
             vector_store,
-            delete_mode=None,
+            cleanup=None,
             source_id_key="source",
         ) == {
             "num_added": 2,
@@ -292,7 +292,7 @@ def test_no_delete(
             loader,
             record_manager,
             vector_store,
-            delete_mode=None,
+            cleanup=None,
             source_id_key="source",
         ) == {
             "num_added": 0,
@@ -322,7 +322,7 @@ def test_no_delete(
             loader,
             record_manager,
             vector_store,
-            delete_mode=None,
+            cleanup=None,
             source_id_key="source",
         ) == {
             "num_added": 1,
@@ -356,7 +356,7 @@ def test_incremental_delete(
             loader,
             record_manager,
             vector_store,
-            delete_mode="incremental",
+            cleanup="incremental",
             source_id_key="source",
         ) == {
             "num_added": 2,
@@ -380,7 +380,7 @@ def test_incremental_delete(
             loader,
             record_manager,
             vector_store,
-            delete_mode="incremental",
+            cleanup="incremental",
             source_id_key="source",
         ) == {
             "num_added": 0,
@@ -415,7 +415,7 @@ def test_incremental_delete(
             loader,
             record_manager,
             vector_store,
-            delete_mode="incremental",
+            cleanup="incremental",
             source_id_key="source",
         ) == {
             "num_added": 2,
@@ -442,7 +442,7 @@ def test_indexing_with_no_docs(
     """Check edge case when loader returns no new docs."""
     loader = ToyLoader(documents=[])
 
-    assert index(loader, record_manager, vector_store, delete_mode="full") == {
+    assert index(loader, record_manager, vector_store, cleanup="full") == {
         "num_added": 0,
         "num_deleted": 0,
         "num_skipped": 0,
@@ -466,7 +466,7 @@ def test_deduplication(
     ]
 
     # Should result in only a single document being added
-    assert index(docs, record_manager, vector_store, delete_mode="full") == {
+    assert index(docs, record_manager, vector_store, cleanup="full") == {
         "num_added": 1,
         "num_deleted": 0,
         "num_skipped": 0,

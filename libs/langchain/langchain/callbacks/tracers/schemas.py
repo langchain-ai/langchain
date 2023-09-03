@@ -120,6 +120,7 @@ class Run(BaseRunV2):
 
 ChainRun.update_forward_refs()
 ToolRun.update_forward_refs()
+Run.update_forward_refs()
 
 __all__ = [
     "BaseRun",

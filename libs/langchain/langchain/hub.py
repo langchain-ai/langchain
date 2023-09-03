@@ -30,7 +30,7 @@ def push(
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
     parent_commit_hash: Optional[str] = "latest",
-    new_repo_is_public: bool = False,
+    new_repo_is_public: bool = True,
     new_repo_description: str = "",
 ) -> str:
     """
@@ -45,7 +45,7 @@ def push(
     :param parent_commit_hash: The commit hash of the parent commit to push to. Defaults
         to the latest commit automatically.
     :param new_repo_is_public: Whether the repo should be public. Defaults to
-        False (Private by default).
+        True (Public by default).
     :param new_repo_description: The description of the repo. Defaults to an empty
         string.
     """

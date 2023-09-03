@@ -244,3 +244,36 @@ class AmazonTextractPDFParser(BaseBlobParser):
             page_content=current_text,
             metadata={"source": blob.source, "page": current_page},
         )
+
+
+class DocumentIntelligenceParser(BaseBlobParser):
+    """Loads a PDF with Azure Document Intelligence
+    (formerly Forms Recognizer) and chunks at character level."""
+
+    def __init__(self, client: Any, model: str):
+        self.client = client
+        self.model = model
+
+    def _generate_docs(self, blob: Blob, result: Any) -> Iterator[Document]:
+        for p in result.pages:
+            content = " ".join([line.content for line in p.lines])
+
+            d = Document(
+                page_content=content,
+                metadata={
+                    "source": blob.source,
+                    "page": p.page_number,
+                },
+            )
+            yield d
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        """Lazily parse the blob."""
+
+        with blob.as_bytes_io() as file_obj:
+            poller = self.client.begin_analyze_document(self.model, file_obj)
+            result = poller.result()
+
+            docs = self._generate_docs(blob, result)
+
+            yield from docs
