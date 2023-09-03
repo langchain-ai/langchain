@@ -6,7 +6,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 
 
-class OllamaEmbeddings(BaseModel, Embeddings, _OllamaCommon):
+class OllamaEmbeddings(BaseModel, Embeddings):
     """Ollama locally runs large language models.
 
     To use, follow the instructions at https://ollama.ai/.
@@ -30,7 +30,7 @@ class OllamaEmbeddings(BaseModel, Embeddings, _OllamaCommon):
 
     """
 
-    model: str = super().model
+    model: str = _OllamaCommon.model
     """Embeddings model to use."""
     embed_instruction: str = "passage: "
     """Instruction used to embed documents."""
