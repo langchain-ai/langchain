@@ -935,14 +935,13 @@ class Redis(VectorStore):
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
-        Maximal marginal relevance optimizes for similarity to query AND 
-            diversity among selected documents.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
 
         Args:
             query (str): Text to look up documents similar to.
             k (int): Number of Documents to return. Defaults to 4.
-            fetch_k (int): Number of Documents to fetch to pass to MMR 
-                algorithm.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult (flaot): Number between 0 and 1 that determines the degree
                 of diversity among the results with 0 corresponding
                 to maximum diversity and 1 to minimum diversity.
@@ -980,7 +979,6 @@ class Redis(VectorStore):
             queryEmbedding, prefetchEmbeddings, lambda_mult=lambda_mult, k=k
         )
         return [prefetchDocs[i] for i in selectedDocs]
-
 
     def _collect_metadata(self, result: "Document") -> Dict[str, Any]:
         """Collect metadata from Redis.
