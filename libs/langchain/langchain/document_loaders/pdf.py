@@ -639,7 +639,8 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         """
 
         try:
-            import azure.ai.formrecognizer
+            import azure.ai.formrecognizer # noqa: F401
+
         except ImportError:
             raise ImportError(
                 "azure-ai package not found, please install it with "
