@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 @lru_cache(maxsize=None)  # Cache the tokenizer
-def get_tokenizer():
+def get_tokenizer() -> Any:
     try:
         from transformers import GPT2TokenizerFast
     except ImportError:
