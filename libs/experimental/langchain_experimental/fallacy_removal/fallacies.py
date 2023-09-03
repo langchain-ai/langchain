@@ -4,7 +4,7 @@ from https://arxiv.org/pdf/2212.07425.pdf
 
 from typing import Dict
 
-from langchain.chains.fallacy_removal.models import LogicalFallacy
+from langchain_experimental.fallacy_removal.models import LogicalFallacy
 
 FALLACIES: Dict[str, LogicalFallacy] = {
     "adhominem": LogicalFallacy(
