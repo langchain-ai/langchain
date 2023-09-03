@@ -8,12 +8,12 @@ from langchain.prompts import PromptTemplate
 ```python
 # This is an LLMChain to write a synopsis given a title of a play.
 llm = OpenAI(temperature=.7)
-template = """You are a playwright. Given the title of play, it is your job to write a synopsis for that title.
+synopsis_template = """You are a playwright. Given the title of play, it is your job to write a synopsis for that title.
 
 Title: {title}
 Playwright: This is a synopsis for the above play:"""
-prompt_template = PromptTemplate(input_variables=["title"], template=template)
-synopsis_chain = LLMChain(llm=llm, prompt=prompt_template)
+synopsis_prompt_template = PromptTemplate(input_variables=["title"], template=synopsis_template)
+synopsis_chain = LLMChain(llm=llm, prompt=synopsis_prompt_template)
 ```
 
 
@@ -95,13 +95,13 @@ Of particular importance is how we name the input/output variable names. In the 
 ```python
 # This is an LLMChain to write a synopsis given a title of a play and the era it is set in.
 llm = OpenAI(temperature=.7)
-template = """You are a playwright. Given the title of play and the era it is set in, it is your job to write a synopsis for that title.
+synopsis_template = """You are a playwright. Given the title of play and the era it is set in, it is your job to write a synopsis for that title.
 
 Title: {title}
 Era: {era}
 Playwright: This is a synopsis for the above play:"""
-prompt_template = PromptTemplate(input_variables=["title", "era"], template=template)
-synopsis_chain = LLMChain(llm=llm, prompt=prompt_template, output_key="synopsis")
+synopsis_prompt_template = PromptTemplate(input_variables=["title", "era"], template=synopsis_template)
+synopsis_chain = LLMChain(llm=llm, prompt=synopsis_prompt_template, output_key="synopsis")
 ```
 
 
