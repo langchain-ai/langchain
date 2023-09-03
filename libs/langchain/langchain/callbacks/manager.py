@@ -1193,7 +1193,6 @@ class CallbackManager(BaseCallbackManager):
         """
         if run_id is None:
             run_id = uuid.uuid4()
-
         _handle_event(
             self.handlers,
             "on_chain_start",
