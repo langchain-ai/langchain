@@ -188,7 +188,6 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class ChatLiteLLM(BaseChatModel):
-
     client: Any  #: :meta private:
     model: str = "gpt-3.5-turbo"
     model_name: Optional[str] = None
