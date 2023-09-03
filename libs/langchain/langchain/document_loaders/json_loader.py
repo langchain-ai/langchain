@@ -64,7 +64,7 @@ class JSONLoader(BaseLoader):
                     if line:
                         self._parse(line, docs)
         else:
-            self._parse(self.file_path.read_text(), docs)
+            self._parse(self.file_path.read_text(encoding="utf-8"), docs)
         return docs
 
     def _parse(self, content: str, docs: List[Document]) -> None:
