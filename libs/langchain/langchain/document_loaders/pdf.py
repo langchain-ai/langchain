@@ -603,12 +603,15 @@ class AmazonTextractPDFLoader(BasePDFLoader):
 class DocumentIntelligenceLoader(BasePDFLoader):
     """Loads a PDF with Azure Document Intelligence"""
 
-    def __init__(self, file_path: str, model: str, endpoint: str, key: str) -> None:
+    def __init__(
+        self, file_path: str, client: Any, model: str = "prebuilt-document"
+    ) -> None:
         """
-        Initialize the object for file processing with Azure AI Form Recognizer.
+        Initialize the object for file processing with Azure Document Intelligence
+        (formerly Form Recognizer).
 
         This constructor initializes a DocumentIntelligenceParser object to be used
-        for parsing files using the Azure AI Form Recognizer API. The load method
+        for parsing files using the Azure Document Intelligence API. The load method
         generates a Document node including metadata (source blob and page number)
         for each page.
 
@@ -616,39 +619,21 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         -----------
         file_path : str
             The path to the file that needs to be parsed.
+        client: Any
+            A DocumentAnalysisClient to perform the analysis of the blob
         model : str
             The model name or ID to be used for form recognition in Azure.
-        endpoint : str
-            The endpoint URL for the Azure Form Recognizer API.
-        key : str
-            The API key for authentication with the Azure Form Recognizer API.
-
-        Raises:
-        -------
-        ImportError
-            If the 'azure-ai-formrecognizer' package is not installed.
 
         Examples:
         ---------
-        >>> obj = YourClassName(
+        >>> obj = DocumentIntelligenceLoader(
         ...     file_path="path/to/file",
-        ...     model="prebuilt-document",
-        ...     endpoint="https://your_endpoint.cognitiveservices.azure.com/",
-        ...     key="your_api_key"
+        ...     client=client,
+        ...     model="prebuilt-document"
         ... )
         """
 
-        try:
-            import azure.ai.formrecognizer # noqa: F401
-
-        except ImportError:
-            raise ImportError(
-                "azure-ai package not found, please install it with "
-                "`pip install azure-ai-formrecognizer`"
-            )
-        self.parser = DocumentIntelligenceParser(
-            model=model, endpoint=endpoint, key=key
-        )
+        self.parser = DocumentIntelligenceParser(client=client, model=model)
         super().__init__(file_path)
 
     def load(self) -> List[Document]:
