@@ -175,6 +175,68 @@ class DollyContentFormatter(ContentFormatterBase):
     def format_response_payload(self, output: bytes) -> str:
         return json.loads(output)[0]
 
+class LlamaChatContentFormatter(ContentFormatterBase):
+    """Content formatter for LLaMa Chat Models"""
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+        """Formats the request according the the chosen api"""
+        prompt = ContentFormatterBase.escape_special_characters(prompt)
+        # as per ConversationalRetrievalChain
+        # the default qa_format (combine_docs_chain_kwargs) format of the input as shown below
+        """ 
+        {context}.
+
+        Question: {question}
+        Helpful Answer:
+        """
+        # And the default condense question prompt format as shown below
+        """ Given the following conversation and a follow up question.
+        Chat History:
+        {chat_history}
+        Follow Up Input: {question}
+        Standalone question:
+        """
+        # based on the two prompt templates
+        # seperating the context and question in favour of chat model input requirement
+        delimiters = ["Question", "Follow Up Input:"]
+        try:
+            if any(delimiter in prompt for delimiter in delimiters):
+                delimiter = next(d for d in delimiters if d in prompt)
+                parts = prompt.split(delimiter)
+            else:
+                parts = [prompt]
+            
+            context = parts[0].strip() # taking out the context part
+            question = parts[1] # similarly for input question
+        except:
+            raise Exception("Error while parsing context and question on a prompt")
+        request_payload = json.dumps(
+            {
+                "input_data": {
+                    "input_string": [
+                        {
+                            "role": "user", # establishing an initially conversation with llama
+                            "content": "use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer."
+                        },
+                        {
+                            "role": "assistant", # giving an context to a model
+                            "content": context   
+                        },
+                        {
+                            "role": "user",
+                            "content": question # question to ask based on the context
+                        }
+                    ],
+                    "parameters": model_kwargs,
+                }
+            }
+        )
+        return str.encode(request_payload)
+
+    def format_response_payload(self, output: bytes) -> str:
+        """Formats response"""
+        return json.loads(output)["output"]
+
+
 
 class LlamaContentFormatter(ContentFormatterBase):
     """Content formatter for LLaMa"""
