@@ -20,7 +20,7 @@ from typing import (
 import sqlalchemy
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.orm import Query, Session, declarative_base
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -301,43 +301,51 @@ class PGVector(VectorStore):
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
 
-    def update_documents(
+    def upsert_documents(
         self,
         documents: List[Document],
+        ids: List[str],
         **kwargs: Any,
     ) -> None:
         """
-        Update documents in the collection, optimizing model calls for embeddings.
-        Remove collection documents that are not present in the input documents.
+        Update/Insert documents in collection, reducing model calls for embeddings.
+        Check if a document is already present, update it if it is, otherwise insert it.
 
         Args:
-            documents: Iterable of Documents to update.
+            documents: List of Documents to update/insert.
+            ids: List of identifiers associated to the documents.
             kwargs: vectorstore specific parameters
         """
-        if not documents:
-            raise ValueError("Invalid input documents")
+        if not documents or not ids or len(documents) != len(ids):
+            raise ValueError("Invalid input documents or ids")
 
         with Session(self._conn) as session:
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
 
-            filter_by = self.EmbeddingStore.collection_id == collection.uuid
-            results: List[Any] = session.query(self.EmbeddingStore).filter(filter_by)
+            filter_by_collection = self.EmbeddingStore.collection_id == collection.uuid
+            filter_by_ids = self.EmbeddingStore.custom_id.in_(ids)
+            query: Query[Any] = session.query(self.EmbeddingStore).filter(
+                filter_by_collection, filter_by_ids
+            )
+            query = query.order_by(self.EmbeddingStore.custom_id)
+            results: List[Any] = query.all()
 
-            present_documents_contents = set(res.document for res in results)
-            updated_documents_contents = set(doc.page_content for doc in documents)
+            existing_ids = set()
+            for result in results:
+                idx = ids.index(str(result.custom_id))
+                result.document = documents[idx].page_content
+                result.cmetadata = documents[idx].metadata
+                existing_ids.add(result.custom_id)
 
-            for res in results:
-                if res.document not in updated_documents_contents:
-                    session.delete(res)
-
-            new_docs, new_metadatas = [], []
-            for doc in documents:
-                if doc.page_content not in present_documents_contents:
+            new_docs, new_metadatas, new_ids = [], [], []
+            for id, doc in zip(ids, documents):
+                if id not in existing_ids:
+                    new_ids.append(id)
                     new_docs.append(doc.page_content)
                     new_metadatas.append(doc.metadata)
-            self.add_texts(new_docs, new_metadatas, **kwargs)
+            self.add_texts(new_docs, new_metadatas, new_ids, **kwargs)
 
             session.commit()
 
