@@ -34,10 +34,10 @@ class HuggingFaceTextGenInference(LLM):
                 repetition_penalty=1.03,
             )
             print(llm("What is Deep Learning?"))
-            
+
             # Streaming response example
             from langchain.callbacks import streaming_stdout
-            
+
             callbacks = [streaming_stdout.StreamingStdOutCallbackHandler()]
             llm = HuggingFaceTextGenInference(
                 inference_server_url="http://localhost:8010/",
@@ -51,7 +51,7 @@ class HuggingFaceTextGenInference(LLM):
                 streaming=True
             )
             print(llm("What is Deep Learning?"))
-            
+
     """
 
     max_new_tokens: int = 512
@@ -87,7 +87,8 @@ class HuggingFaceTextGenInference(LLM):
     do_sample: bool = False
     """Activate logits sampling"""
     watermark: bool = False
-    """Watermarking with [A Watermark for Large Language Models](https://arxiv.org/abs/2301.10226)"""
+    """Watermarking with [A Watermark for Large Language Models]
+    (https://arxiv.org/abs/2301.10226)"""
     server_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any text-generation-inference server parameters not explicitly specified"""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
