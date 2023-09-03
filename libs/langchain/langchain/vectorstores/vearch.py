@@ -99,8 +99,8 @@ class Vearch(VectorStore):
 
     def _create_table(
         self,
-        dim:int=1024,
-        filed_list:List[dict]=[
+        dim: int = 1024,
+        filed_list: List[dict] = [
             {"filed": "text", "type": "str"},
             {"filed": "metadata", "type": "str"},
         ],
@@ -186,10 +186,10 @@ class Vearch(VectorStore):
                     break
                 t_time += 1
             self.vearch_engine.dump()
-        
+
         return docid
 
-    def _load(self)->None:
+    def _load(self) -> None:
         """
         load vearch engine
         """
