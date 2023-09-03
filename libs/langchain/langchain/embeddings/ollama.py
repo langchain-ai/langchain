@@ -1,10 +1,8 @@
 import requests
-from langchain.llms.ollama import _OllamaCommon
 from typing import Dict, List, Optional
 
 from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-
 
 class OllamaEmbeddings(BaseModel, Embeddings):
     """Ollama locally runs large language models.
@@ -30,8 +28,10 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     """
 
-    model: str = _OllamaCommon.model
-    """Embeddings model to use."""
+    base_url: str = "http://localhost:11434"
+    """Base url the model is hosted under."""
+    model: str = "llama2"
+    """Model name to use."""
     embed_instruction: str = "passage: "
     """Instruction used to embed documents."""
     query_instruction: str = "query: "
@@ -65,7 +65,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
         try:
             res = requests.post(
-                f"{_OllamaCommon.base_url}/api/embeddings",
+                f"{self.base_url}/api/embeddings",
                 headers=headers,
                 json={
                     "model": self.model,
@@ -82,14 +82,14 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             )
         try:
             t = res.json()
-            return t["embeddings"]
+            return t["embedding"]
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
                 f"Error raised by inference API: {e}.\nResponse: {res.text}"
             )
 
     def _embed(self, input: List[str]) -> List[List[float]]:
-        embeddings_list = List[List[float]]
+        embeddings_list : List[List[float]] = []
         for prompt in input:
             embeddings = self._process_emb_response(prompt)
             embeddings_list.append(embeddings)
@@ -105,7 +105,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        instruction_pairs = [f"{self.query_instruction}{text}" for text in texts]
+        instruction_pairs = [f"{self.embed_instruction}{text}" for text in texts]
         embeddings = self._embed(instruction_pairs)
         return embeddings
 
