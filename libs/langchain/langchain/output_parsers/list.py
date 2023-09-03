@@ -36,6 +36,10 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         """Parse the output of an LLM call."""
         return text.strip().split(", ")
 
+    @property
+    def _type(self) -> str:
+        return "comma-separated-list"
+
 
 class NumberedListOutputParser(ListOutputParser):
     """Parse a numbered list."""
@@ -53,3 +57,7 @@ class NumberedListOutputParser(ListOutputParser):
         # Extract the text of each item
         matches = re.findall(pattern, text)
         return matches
+
+    @property
+    def _type(self) -> str:
+        return "numbered-list"
