@@ -1,6 +1,6 @@
 import asyncio
 import re
-from typing import Callable, Iterator, List, Optional, Set, Union, Dict
+from typing import Callable, Dict, Iterator, List, Optional, Set, Union
 from urllib.parse import urljoin, urlparse
 
 import requests
