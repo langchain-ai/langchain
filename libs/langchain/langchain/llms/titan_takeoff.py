@@ -141,7 +141,7 @@ class TitanTakeoff(LLM):
                 response = model(prompt)
 
         """
-        url = f"{self.baseURL}/generate_stream"
+        url = f"{self.base_url}/generate_stream"
         params = {"text": prompt, **self._default_params}
 
         response = requests.post(url, json=params, stream=True)
@@ -156,4 +156,4 @@ class TitanTakeoff(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {"baseURL": self.baseURL, **{}, **self._default_params}
+        return {"base_url": self.base_url, **{}, **self._default_params}
