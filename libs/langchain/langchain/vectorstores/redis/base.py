@@ -19,8 +19,8 @@ from typing import (
     Union,
 )
 
-import yaml
 import numpy as np
+import yaml
 
 from langchain._api import deprecated
 from langchain.callbacks.manager import (
@@ -942,7 +942,7 @@ class Redis(VectorStore):
             query (str): Text to look up documents similar to.
             k (int): Number of Documents to return. Defaults to 4.
             fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult (flaot): Number between 0 and 1 that determines the degree
+            lambda_mult (float): Number between 0 and 1 that determines the degree
                 of diversity among the results with 0 corresponding
                 to maximum diversity and 1 to minimum diversity.
                 Defaults to 0.5.
