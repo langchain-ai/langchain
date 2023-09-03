@@ -10,7 +10,7 @@ from langchain.schema.output import GenerationChunk
 
 
 class TitanTakeoff(LLM):
-    baseURL: str = "http://localhost:8000"
+    base_url: str = "http://localhost:8000"
     """Specifies the baseURL to use for the Titan Takeoff API. 
     Default = http://localhost:8000.
     """
@@ -94,7 +94,7 @@ class TitanTakeoff(LLM):
                     text_output += chunk.text
                 return text_output
 
-            url = f"{self.baseURL}/generate"
+            url = f"{self.base_url}/generate"
             params = {"text": prompt, **self._default_params}
 
             response = requests.post(url, json=params)
