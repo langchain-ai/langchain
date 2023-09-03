@@ -118,7 +118,7 @@ class PGVector(VectorStore):
         Initialize the store.
         """
         self._conn = self.connect()
-        # self.create_vector_extension()
+        self.create_vector_extension()
         from langchain.vectorstores._pgvector_data_models import (
             CollectionStore,
             EmbeddingStore,
