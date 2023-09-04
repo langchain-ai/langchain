@@ -67,7 +67,7 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
         self.auto_embed = auto_embed
 
     @staticmethod
-    def _str(embedding: List[float]):
+    def _str(embedding: List[float]) -> str:
         return " ".join([f"{i}:{e}" for i, e in enumerate(embedding)])
 
     def get_label(self, event: PickBestEvent) -> tuple:
