@@ -223,7 +223,7 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
             return self.format_auto_embed_off(event)
 
 
-class PickBestRandomPolicy(base.Policy):
+class PickBestRandomPolicy(base.Policy[PickBestEvent]):
     def __init__(self, feature_embedder: base.Embedder, **kwargs: Any):
         self.feature_embedder = feature_embedder
 
