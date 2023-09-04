@@ -42,14 +42,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     class Config:
         """Configuration for this pydantic object."""
         extra = Extra.forbid
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-
-        return values
     
-
     def _process_emb_response(self, input: str) -> List[float]:
         """Process a response from the API.
 
