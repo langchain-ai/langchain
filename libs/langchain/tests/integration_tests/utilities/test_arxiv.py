@@ -46,6 +46,7 @@ def test_run_success_multiple_arxiv_identifiers(api_client: ArxivAPIWrapper) -> 
         "Ultra-low mass PBHs in the early universe can explain the PTA signal" in output
     )
 
+
 def test_run_returns_several_docs(api_client: ArxivAPIWrapper) -> None:
     """Test that returns several docs"""
 
