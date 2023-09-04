@@ -134,7 +134,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             "userId": (metadata or {}).get("userId"),
             "runId": str(run_id),
             "parentRunId": str(parent_run_id) if parent_run_id else None,
-            "input": [_serialize_lc_message(message[0]) for message in messages],
+            "input": [_serialize_lc_message(message) for message in messages[0]],
             "name": kwargs.get("invocation_params", {}).get("model_name"),
             "tags": tags,
             "metadata": metadata,
@@ -192,6 +192,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> None:
+        print("TOOL START")
         event = {
             "event": "start",
             "type": "tool",
@@ -265,6 +266,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
+        print("CHAIN END")
         event = {
             "event": "end",
             "type": "chain",
@@ -298,6 +300,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
+        print("AGENT ACTION")
         event = {
             "event": "start",
             "type": "tool",
@@ -316,6 +319,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
+        print("AGENT FINISH")
         event = {
             "event": "end",
             "type": "agent",
