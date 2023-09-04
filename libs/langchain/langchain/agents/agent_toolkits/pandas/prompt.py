@@ -10,7 +10,7 @@ MULTI_DF_PREFIX = """
 
 SUFFIX_NO_DF = """
 Начни!
-Вопрос: {input}
+Question: {input}
 {agent_scratchpad}"""
 
 SUFFIX_WITH_DF = """
@@ -18,7 +18,7 @@ SUFFIX_WITH_DF = """
 {df_head}
 
 Начни!
-Вопрос: {input}
+Question: {input}
 {agent_scratchpad}"""
 
 SUFFIX_WITH_MULTI_DF = """
@@ -26,7 +26,7 @@ SUFFIX_WITH_MULTI_DF = """
 {dfs_head}
 
 Начни!
-Вопрос: {input}
+Question: {input}
 {agent_scratchpad}"""
 
 PREFIX_FUNCTIONS = """

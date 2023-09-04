@@ -5,7 +5,7 @@ prompt_template = """Используй следующие части конте
 
 {context}
 
-Вопрос: {question}
+Question: {question}
 Полезный ответ:"""
 PROMPT = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]

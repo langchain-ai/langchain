@@ -9,5 +9,5 @@ SUFFIX = """
 {df}
 
 Начни!
-Вопрос: {input}
+Question: {input}
 {agent_scratchpad}"""

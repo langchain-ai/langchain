@@ -10,7 +10,7 @@ to filter and read its format using regular expressions to identify specific fie
 such as:
 
 - Action: Search
-- Action Input: How to use this class?
+Action Input: How to use this class?
 - Additional Fields: "N/A"
 
 To assist us in this task, we use the regex_dict class. This class allows us to send a

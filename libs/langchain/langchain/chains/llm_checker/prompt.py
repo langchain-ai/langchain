@@ -22,7 +22,7 @@ CHECK_ASSERTIONS_PROMPT = PromptTemplate(
 
 _REVISED_ANSWER_TEMPLATE = """{checked_assertions}
 
-Вопрос: Учитывая вышеуказанные утверждения и проверки, как бы ты ответил на вопрос '{question}'?
+Question: Учитывая вышеуказанные утверждения и проверки, как бы ты ответил на вопрос '{question}'?
 
 Ответ:"""
 REVISED_ANSWER_PROMPT = PromptTemplate(

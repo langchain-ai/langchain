@@ -15,7 +15,7 @@ class AgentScratchPadChatPromptTemplate(ChatPromptTemplate):
         thoughts = ""
         for action, observation in intermediate_steps:
             thoughts += action.log
-            thoughts += f"\nНаблюдение: {observation}\nМысль: "
+            thoughts += f"\nObservation: {observation}\nThought: "
         return (
             f"This was your previous work "
             f"(but I haven't seen any of it! I only see what "

@@ -2,7 +2,7 @@
 from langchain.prompts.prompt import PromptTemplate
 
 web_search_template = """Пожалуйста, напиши текст, чтобы ответить на вопрос 
-Вопрос: {QUESTION}
+Question: {QUESTION}
 Текст:"""
 web_search = PromptTemplate(template=web_search_template, input_variables=["QUESTION"])
 sci_fact_template = """Пожалуйста, напиши отрывок из научной статьи, чтобы подтвердить/опровергнуть утверждение 
@@ -14,15 +14,15 @@ arguana_template = """Пожалуйста, напиши контраргуме�
 Контраргумент:"""
 arguana = PromptTemplate(template=arguana_template, input_variables=["PASSAGE"])
 trec_covid_template = """Пожалуйста, напиши отрывок из научной статьи, чтобы ответить на вопрос
-Вопрос: {QUESTION}
+Question: {QUESTION}
 Текст:"""
 trec_covid = PromptTemplate(template=trec_covid_template, input_variables=["QUESTION"])
 fiqa_template = """Пожалуйста, напиши отрывок из финансовой статьи, чтобы ответить на вопрос
-Вопрос: {QUESTION}
+Question: {QUESTION}
 Текст:"""
 fiqa = PromptTemplate(template=fiqa_template, input_variables=["QUESTION"])
 dbpedia_entity_template = """Пожалуйста, напиши текст, чтобы ответить на вопрос.
-Вопрос: {QUESTION}
+Question: {QUESTION}
 Текст:"""
 dbpedia_entity = PromptTemplate(
     template=dbpedia_entity_template, input_variables=["QUESTION"]
@@ -32,7 +32,7 @@ trec_news_template = """Пожалуйста, напиши новостной о
 Текст:"""
 trec_news = PromptTemplate(template=trec_news_template, input_variables=["TOPIC"])
 mr_tydi_template = """Пожалуйста, напиши текст на свахили/корейском/японском/бенгальском, чтобы подробно ответить на вопрос.
-Вопрос: {QUESTION}
+Question: {QUESTION}
 Текст:"""
 mr_tydi = PromptTemplate(template=mr_tydi_template, input_variables=["QUESTION"])
 PROMPT_MAP = {

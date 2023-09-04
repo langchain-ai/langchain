@@ -95,7 +95,7 @@ Relevant context:
             + "\nSummary of relevant context from {agent_name}'s memory:"
             + "\n{relevant_memories}"
             + "\nMost recent observations: {most_recent_memories}"
-            + "\nНаблюдение: {observation}"
+            + "\nObservation: {observation}"
             + "\n\n"
             + suffix
         )

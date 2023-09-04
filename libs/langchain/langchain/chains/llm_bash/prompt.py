@@ -9,7 +9,7 @@ from langchain.schema import BaseOutputParser, OutputParserException
 
 _PROMPT_TEMPLATE = """Если кто-то просит тебя выполнить задачу, твоя задача - придумать серию команд bash, которые выполнит эту задачу. Нет необходимости добавлять "#!/bin/bash" в свой ответ. Обязательно объясняй шаг за шагом, используя этот формат:
 
-Вопрос: "скопировать файлы из директории с именем 'target' в новую директорию на том же уровне, что и target, под названием 'myNewDirectory'"
+Question: "скопировать файлы из директории с именем 'target' в новую директорию на том же уровне, что и target, под названием 'myNewDirectory'"
 
 Мне нужно выполнить следующие действия:
 - Перечислить все файлы в директории
@@ -23,7 +23,7 @@ cp -r target/* myNewDirectory
 
 Вот и весь формат. Начинай!
 
-Вопрос: {question}"""
+Question: {question}"""
 
 
 class BashOutputParser(BaseOutputParser):

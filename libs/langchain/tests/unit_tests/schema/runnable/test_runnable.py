@@ -1004,7 +1004,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
         prompt
         | passthrough
         | {
-            "chat": chat.bind(stop=["Мысль:"]),
+            "chat": chat.bind(stop=["Thought:"]),
             "llm": llm,
             "passthrough": passthrough,
         }
@@ -1069,7 +1069,7 @@ def test_map_stream() -> None:
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
     chain: Runnable = prompt | {
-        "chat": chat.bind(stop=["Мысль:"]),
+        "chat": chat.bind(stop=["Thought:"]),
         "llm": llm,
         "passthrough": RunnablePassthrough(),
     }
@@ -1118,7 +1118,7 @@ def test_map_stream_iterator_input() -> None:
         prompt
         | llm
         | {
-            "chat": chat.bind(stop=["Мысль:"]),
+            "chat": chat.bind(stop=["Thought:"]),
             "llm": llm,
             "passthrough": RunnablePassthrough(),
         }
@@ -1164,7 +1164,7 @@ async def test_map_astream() -> None:
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
     chain: Runnable = prompt | {
-        "chat": chat.bind(stop=["Мысль:"]),
+        "chat": chat.bind(stop=["Thought:"]),
         "llm": llm,
         "passthrough": RunnablePassthrough(),
     }
@@ -1214,7 +1214,7 @@ async def test_map_astream_iterator_input() -> None:
         prompt
         | llm
         | {
-            "chat": chat.bind(stop=["Мысль:"]),
+            "chat": chat.bind(stop=["Thought:"]),
             "llm": llm,
             "passthrough": RunnablePassthrough(),
         }
@@ -1256,8 +1256,8 @@ def test_bind_bind() -> None:
     llm = FakeListLLM(responses=["i'm a textbot"])
 
     assert dumpd(
-        llm.bind(stop=["Мысль:"], one="two").bind(stop=["Наблюдение:"], hello="world")
-    ) == dumpd(llm.bind(stop=["Наблюдение:"], one="two", hello="world"))
+        llm.bind(stop=["Thought:"], one="two").bind(stop=["Observation:"], hello="world")
+    ) == dumpd(llm.bind(stop=["Observation:"], one="two", hello="world"))
 
 
 def test_deep_stream() -> None:

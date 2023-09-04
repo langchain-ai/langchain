@@ -5,12 +5,12 @@ from langchain.agents.agent import AgentOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
-FINAL_ANSWER_ACTION = "FINAL ANSWER"
+FINAL_ANSWER_ACTION = "Final Answer:"
 MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE = (
-    "Invalid Format: Missing 'Действие:' after 'Мысль:"
+    "Invalid Format: Missing 'Action:' after 'Thought:"
 )
 MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE = (
-    "Invalid Format: Missing 'Параметры действия:' after 'Действие:'"
+    "Invalid Format: Missing 'Action:' after 'Action:'"
 )
 FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE = (
     "Parsing LLM output produced both a final answer and a parse-able action:"
@@ -25,7 +25,9 @@ class MRKLOutputParser(AgentOutputParser):
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         includes_answer = FINAL_ANSWER_ACTION in text
-        regex = r"Действие\s*\d*\s*:[\s]*(.*?)[\s]*Действие\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
+        regex = (
+            r"Action\s*\d*\s*:[\s]*(.*?)[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
+        )
         action_match = re.search(regex, text, re.DOTALL)
         if action_match:
             if includes_answer:
@@ -46,7 +48,7 @@ class MRKLOutputParser(AgentOutputParser):
                 {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
             )
 
-        if not re.search(r"Действие\s*\d*\s*:[\s]*(.*?)", text, re.DOTALL):
+        if not re.search(r"Action\s*\d*\s*:[\s]*(.*?)", text, re.DOTALL):
             raise OutputParserException(
                 f"Could not parse LLM output: `{text}`",
                 observation=MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE,
@@ -54,7 +56,7 @@ class MRKLOutputParser(AgentOutputParser):
                 send_to_llm=True,
             )
         elif not re.search(
-            r"[\s]*Действие\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", text, re.DOTALL
+            r"[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", text, re.DOTALL
         ):
             raise OutputParserException(
                 f"Could not parse LLM output: `{text}`",

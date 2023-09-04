@@ -43,12 +43,12 @@ class ConversationalChatAgent(Agent):
     @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
-        return "Наблюдение: "
+        return "Observation: "
 
     @property
     def llm_prefix(self) -> str:
         """Prefix to append the llm call with."""
-        return "Мысль:"
+        return "Thought:"
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:

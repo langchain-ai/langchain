@@ -1,6 +1,6 @@
 input_variables: [question, summaries]
 output_parser: null
-template: "ВОПРОС: {question}
+template: "QUESTION: {question}
 =========
 {summaries}
 =========

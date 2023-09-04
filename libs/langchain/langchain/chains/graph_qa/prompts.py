@@ -27,7 +27,7 @@ _DEFAULT_GRAPH_QA_TEMPLATE = """Используйте следующие тро
 
 {context}
 
-Вопрос: {question}
+Question: {question}
 Полезный ответ:"""
 GRAPH_QA_PROMPT = PromptTemplate(
     template=_DEFAULT_GRAPH_QA_TEMPLATE, input_variables=["context", "question"]
@@ -43,7 +43,7 @@ CYPHER_GENERATION_TEMPLATE = """Задача: Сгенерировать выр�
 Не отвечайте на вопросы, которые могут просить о чем-то, кроме создания выражения Cypher.
 Не включайте в ответ никакой текст, кроме сгенерированного выражения Cypher.
 
-Вопрос:
+Question:
 {question}"""
 CYPHER_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
@@ -104,7 +104,7 @@ CYPHER_QA_TEMPLATE = """Вы - помощник, который помогает
 Информация:
 {context}
 
-Вопрос: {question}
+Question: {question}
 Полезный ответ:"""
 CYPHER_QA_PROMPT = PromptTemplate(
     input_variables=["context", "question"], template=CYPHER_QA_TEMPLATE
@@ -148,7 +148,7 @@ WHERE {{
 Не отвечайте на вопросы, которые просят о чем-то, кроме создания запроса SPARQL.
 Не включайте никакой текст, кроме сгенерированного запроса SPARQL.
 
-Вопрос:
+Question:
 {prompt}"""
 SPARQL_GENERATION_SELECT_PROMPT = PromptTemplate(
     input_variables=["schema", "prompt"], template=SPARQL_GENERATION_SELECT_TEMPLATE
@@ -191,7 +191,7 @@ SPARQL_QA_TEMPLATE = """Задача: Сгенерировать естеств�
 Информация:
 {context}
 
-Вопрос: {prompt}
+Question: {prompt}
 Полезный ответ:"""
 SPARQL_QA_PROMPT = PromptTemplate(
     input_variables=["context", "prompt"], template=SPARQL_QA_TEMPLATE

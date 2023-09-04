@@ -193,7 +193,7 @@ class SmartLLMChain(Chain):
         role_strings.append(
             (
                 HumanMessagePromptTemplate,
-                "Вопрос: {question}\nОтвет: Давай разберем это шаг за шагом, чтобы убедиться, что у нас правильный ответ:",  # noqa: E501
+                "Question: {question}\nОтвет: Давай разберем это шаг за шагом, чтобы убедиться, что у нас правильный ответ:",  # noqa: E501
             )
         )
         if stage == "ideation":

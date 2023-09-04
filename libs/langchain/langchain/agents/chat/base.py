@@ -31,12 +31,12 @@ class ChatAgent(Agent):
     @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
-        return "Наблюдение: "
+        return "Observation: "
 
     @property
     def llm_prefix(self) -> str:
         """Prefix to append the llm call with."""
-        return "Мысль:"
+        return "Thought:"
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
@@ -64,7 +64,7 @@ class ChatAgent(Agent):
 
     @property
     def _stop(self) -> List[str]:
-        return ["Наблюдение:"]
+        return ["Observation:"]
 
     @classmethod
     def create_prompt(

@@ -12,7 +12,7 @@ PD_SUFFIX = """
 {data}
 
 Начни!
-Вопрос: {input}
+Question: {input}
 {agent_scratchpad}"""
 
 NP_PREFIX = """
@@ -29,5 +29,5 @@ NP_SUFFIX = """
 {data}
 
 Начни!
-Вопрос: {input}
+Question: {input}
 {agent_scratchpad}"""
