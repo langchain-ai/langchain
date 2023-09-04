@@ -316,7 +316,7 @@ class RLChain(Chain, Generic[TEvent]):
         - selection_scorer (Union[SelectionScorer, None]): Scorer for the selection. Can be set to None.
         - policy (Optional[Policy]): The policy used by the chain to learn to populate a dynamic prompt.
         - auto_embed (bool): Determines if embedding should be automatic. Default is False.
-        - metrics (Optional[MetricsTracker]): Tracker for metrics, can be set to None.
+        - metrics (Optional[Union[MetricsTrackerRollingWindow, MetricsTrackerAverage]]): Tracker for metrics, can be set to None.
 
     Initialization Attributes:
         - feature_embedder (Embedder): Embedder used for the `BasedOn` and `ToSelectFrom` inputs.
@@ -325,7 +325,8 @@ class RLChain(Chain, Generic[TEvent]):
         - vw_cmd (List[str], optional): Command line arguments for the VW model.
         - policy (Type[VwPolicy]): Policy used by the chain.
         - vw_logs (Optional[Union[str, os.PathLike]]): Path for the VW logs.
-        - metrics_step (int): Step for the metrics tracker. Default is -1.
+        - metrics_step (int): Step for the metrics tracker. Default is -1. If set without metrics_window_size, average metrics will be tracked, otherwise rolling window metrics will be tracked.
+        - metrics_window_size (int): Window size for the metrics tracker. Default is -1. If set, rolling window metrics will be tracked.
 
     Notes:
         The class initializes the VW model using the provided arguments. If `selection_scorer` is not provided, a warning is logged, indicating that no reinforcement learning will occur unless the `update_with_delayed_score` method is called.
