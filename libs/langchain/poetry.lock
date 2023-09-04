@@ -1800,6 +1800,26 @@ files = [
 ]
 
 [[package]]
+name = "dashvector"
+version = "1.0.1"
+description = "DashVector Client Python Sdk Library"
+category = "main"
+optional = true
+python-versions = ">=3.7.0"
+files = [
+    {file = "dashvector-1.0.1-py3-none-any.whl", hash = "sha256:e2fc362c65979d55cf605fb90deca4a292c69e1c2101df22430c80db744591ad"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.1.0"
+grpcio = [
+    {version = ">=1.22.0", markers = "python_version < \"3.11\""},
+    {version = ">=1.49.1", markers = "python_version >= \"3.11\""},
+]
+numpy = "*"
+protobuf = ">=3.8.0,<4.0.0"
+
+[[package]]
 name = "dataclasses-json"
 version = "0.5.9"
 description = "Easily serialize dataclasses to and from JSON"
@@ -10897,7 +10917,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["amazon-textract-caller", "assemblyai", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "jq", "pdfminer-six", "pgvector", "pypdf", "pymupdf", "pypdfium2", "tqdm", "lxml", "atlassian-python-api", "mwparserfromhell", "mwxml", "pandas", "telethon", "psychicapi", "gql", "requests-toolbelt", "html2text", "py-trello", "scikit-learn", "streamlit", "pyspark", "openai", "sympy", "rapidfuzz", "openai", "rank-bm25", "geopandas", "jinja2", "gitpython", "newspaper3k", "feedparser", "xata", "xmltodict", "faiss-cpu", "openapi-schema-pydantic", "markdownify", "sqlite-vss"]
+extended-testing = ["amazon-textract-caller", "assemblyai", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "jq", "pdfminer-six", "pgvector", "pypdf", "pymupdf", "pypdfium2", "tqdm", "lxml", "atlassian-python-api", "mwparserfromhell", "mwxml", "pandas", "telethon", "psychicapi", "gql", "requests-toolbelt", "html2text", "py-trello", "scikit-learn", "streamlit", "pyspark", "openai", "sympy", "rapidfuzz", "openai", "rank-bm25", "geopandas", "jinja2", "gitpython", "newspaper3k", "feedparser", "xata", "xmltodict", "faiss-cpu", "openapi-schema-pydantic", "markdownify", "dashvector", "sqlite-vss"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -10907,4 +10927,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "47e048f7708139d5e5040c6d56ef4cb66153c3052a9237d6ea42eeb2565ad470"
+content-hash = "b63078268a80c07577b432114302f4f86d47be25b83a245affb0dbc999fb2c1f"
