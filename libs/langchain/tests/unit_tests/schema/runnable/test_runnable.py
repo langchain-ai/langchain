@@ -1256,7 +1256,9 @@ def test_bind_bind() -> None:
     llm = FakeListLLM(responses=["i'm a textbot"])
 
     assert dumpd(
-        llm.bind(stop=["Thought:"], one="two").bind(stop=["Observation:"], hello="world")
+        llm.bind(stop=["Thought:"], one="two").bind(
+            stop=["Observation:"], hello="world"
+        )
     ) == dumpd(llm.bind(stop=["Observation:"], one="two", hello="world"))
 
 
