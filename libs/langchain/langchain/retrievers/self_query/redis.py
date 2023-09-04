@@ -10,7 +10,7 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
-from langchain.vectorstores import Redis
+from langchain.vectorstores.redis import Redis
 from langchain.vectorstores.redis.filters import (
     RedisFilterExpression,
     RedisFilterField,
