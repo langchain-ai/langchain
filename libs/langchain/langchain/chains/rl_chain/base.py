@@ -118,8 +118,7 @@ def get_based_on_and_to_select_from(inputs: Dict[str, Any]) -> Tuple[Dict, Dict]
 
     if not to_select_from:
         raise ValueError(
-            "No variables using 'ToSelectFrom' found in the inputs. \
-                Please include at least one variable containing a list to select from."
+            "No variables using 'ToSelectFrom' found in the inputs. Please include at least one variable containing a list to select from."  # noqa: E501
         )
 
     based_on = {
@@ -303,9 +302,7 @@ class AutoSelectionScorer(SelectionScorer[Event], BaseModel):
             return resp
         except Exception as e:
             raise RuntimeError(
-                f"The auto selection scorer did not manage to score the response, \
-                    there is always the option to try again or tweak the reward prompt.\
-                         Error: {e}"
+                f"The auto selection scorer did not manage to score the response, there is always the option to try again or tweak the reward prompt. Error: {e}"  # noqa: E501
             )
 
 
@@ -426,8 +423,7 @@ class RLChain(Chain, Generic[TEvent]):
         """  # noqa: E501
         if self._can_use_selection_scorer() and not force_score:
             raise RuntimeError(
-                "The selection scorer is set, and force_score was not set to True. \
-                    Please set force_score=True to use this function."
+                "The selection scorer is set, and force_score was not set to True. Please set force_score=True to use this function."  # noqa: E501
             )
         if self.metrics:
             self.metrics.on_feedback(score)
@@ -461,9 +457,7 @@ class RLChain(Chain, Generic[TEvent]):
             or self.selected_based_on_input_key in inputs.keys()
         ):
             raise ValueError(
-                f"The rl chain does not accept '{self.selected_input_key}' \
-                    or '{self.selected_based_on_input_key}' as input keys, \
-                        they are reserved for internal use during auto reward."
+                f"The rl chain does not accept '{self.selected_input_key}' or '{self.selected_based_on_input_key}' as input keys, they are reserved for internal use during auto reward."  # noqa: E501
             )
 
     def _can_use_selection_scorer(self) -> bool:
@@ -500,9 +494,6 @@ class RLChain(Chain, Generic[TEvent]):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-
-        # if self.auto_embed:
-        #     inputs = prepare_inputs_for_autoembed(inputs=inputs)
 
         event: TEvent = self._call_before_predict(inputs=inputs)
         prediction = self.active_policy.predict(event=event)
@@ -576,8 +567,7 @@ def embed_string_type(
 
     if namespace is None:
         raise ValueError(
-            "The default namespace must be \
-                provided when embedding a string or _Embed object."
+            "The default namespace must be provided when embedding a string or _Embed object."  # noqa: E501
         )
 
     return {namespace: keep_str + encoded}

@@ -118,7 +118,7 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
                         unique_contexts.add(f"{ns}={ea}")
                 else:
                     unique_contexts.add(f"{ns}={ee}")
-                
+
         encoded_contexts = self.model.encode(list(unique_contexts))
         context_embeddings = dict(zip(unique_contexts, encoded_contexts))
 
@@ -144,9 +144,9 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
             indexed_dot_product[context_key] = {}
             for j, action_key in enumerate(action_embeddings.keys()):
                 indexed_dot_product[context_key][action_key] = dot_product_matrix[i, j]
-    
+
         return indexed_dot_product
-    
+
     def format_auto_embed_on(self, event: PickBestEvent) -> str:
         chosen_action, cost, prob = self.get_label(event)
         context_emb, action_embs = self.get_context_and_action_embeddings(event)
@@ -166,12 +166,12 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
                     line_parts.append(f"{elem}")
                     ns_a = f"{ns}={elem}"
                     nsa.append(ns_a)
-                    for k,v in indexed_dot_product.items():
+                    for k, v in indexed_dot_product.items():
                         dot_prods.append(v[ns_a])
                 nsa = " ".join(nsa)
                 line_parts.append(f"|# {nsa}")
 
-            line_parts.append(f"|embedding {self._str(dot_prods)}")
+            line_parts.append(f"|dotprod {self._str(dot_prods)}")
             action_lines.append(" ".join(line_parts))
 
         shared = []
@@ -186,9 +186,7 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
                 nsc = " ".join(nsc)
                 shared.append(f"|@ {nsc}")
 
-        r = "shared " + " ".join(shared) + "\n" + "\n".join(action_lines)
-        print(r)
-        return r
+        return "shared " + " ".join(shared) + "\n" + "\n".join(action_lines)
 
     def format_auto_embed_off(self, event: PickBestEvent) -> str:
         """
@@ -262,29 +260,35 @@ class PickBest(base.RLChain[PickBestEvent]):
         auto_embed = kwargs.get("auto_embed", False)
 
         vw_cmd = kwargs.get("vw_cmd", [])
-        if not vw_cmd:
+        if vw_cmd:
+            if "--cb_explore_adf" not in vw_cmd:
+                raise ValueError(
+                    "If vw_cmd is specified, it must include --cb_explore_adf"
+                )
+        else:
             interactions = ["--interactions=::"]
             if auto_embed:
                 interactions = [
                     "--interactions=@#",
                     "--ignore_linear=@",
                     "--ignore_linear=#",
-                    "--noconstant",
                 ]
             vw_cmd = interactions + [
                 "--cb_explore_adf",
                 "--coin",
                 "--squarecb",
+                "--quiet",
             ]
-        else:
-            if "--cb_explore_adf" not in vw_cmd:
-                raise ValueError(
-                    "If vw_cmd is specified, it must include --cb_explore_adf"
-                )
+
         kwargs["vw_cmd"] = vw_cmd
 
         feature_embedder = kwargs.get("feature_embedder", None)
-        if not feature_embedder:
+        if feature_embedder:
+            if "auto_embed" in kwargs:
+                logger.warning(
+                    "auto_embed will take no effect when explicit feature_embedder is provided"  # noqa E501
+                )
+        else:
             feature_embedder = PickBestFeatureEmbedder(auto_embed=auto_embed)
         kwargs["feature_embedder"] = feature_embedder
 
@@ -294,23 +298,17 @@ class PickBest(base.RLChain[PickBestEvent]):
         context, actions = base.get_based_on_and_to_select_from(inputs=inputs)
         if not actions:
             raise ValueError(
-                "No variables using 'ToSelectFrom' found in the inputs. \
-                    Please include at least one variable containing \
-                        a list to select from."
+                "No variables using 'ToSelectFrom' found in the inputs. Please include at least one variable containing a list to select from."  # noqa E501
             )
 
         if len(list(actions.values())) > 1:
             raise ValueError(
-                "Only one variable using 'ToSelectFrom' can be provided in the inputs \
-                    for the PickBest chain. Please provide only one variable \
-                        containing a list to select from."
+                "Only one variable using 'ToSelectFrom' can be provided in the inputs for the PickBest chain. Please provide only one variable containing a list to select from."  # noqa E501
             )
 
         if not context:
             raise ValueError(
-                "No variables using 'BasedOn' found in the inputs. \
-                    Please include at least one variable containing information \
-                        to base the selected of ToSelectFrom on."
+                "No variables using 'BasedOn' found in the inputs. Please include at least one variable containing information to base the selected of ToSelectFrom on."  # noqa E501
             )
 
         event = PickBestEvent(inputs=inputs, to_select_from=actions, based_on=context)
