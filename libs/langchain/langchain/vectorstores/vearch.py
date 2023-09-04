@@ -281,7 +281,7 @@ class Vearch(VectorStore):
 
     def delete(
         self,
-        ids: Iterable[str],
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Optional[bool]:
         """Delete the documents which have the specified ids.
@@ -297,7 +297,7 @@ class Vearch(VectorStore):
             raise ValueError("Verach Engine is None!!!")
         ret: Optional[bool] = None
         tmp_res = []
-        if ids is None:
+        if ids is None or ids.__len__()==0:
             return ret
         for _id in ids:
             ret = self.vearch_engine.del_doc(_id)
@@ -307,7 +307,7 @@ class Vearch(VectorStore):
 
     def get(
         self,
-        ids: Iterable[str],
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Dict[str, Document]:
         """Return docs according ids.
@@ -321,6 +321,8 @@ class Vearch(VectorStore):
         if self.vearch_engine is None:
             raise ValueError("vearch engine is None!!!")
         results: Dict[str, Document] = {}
+        if ids is None or ids.__len__()==0:
+            return results
         for id in ids:
             docs_detail = self.vearch_engine.get_doc_by_id(id)
             if docs_detail == {}:
