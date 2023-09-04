@@ -23,7 +23,7 @@ B_INST, E_INST = "[INST]", "[/INST]"
 B_SYS, E_SYS = "<<SYS>>", "<</SYS>>"
 
 
-class ChatLlama2(BaseChatModel):
+class ChatLlama2Hf(BaseChatModel):
     pipeline: TextGenerationPipeline
 
     @property
@@ -66,14 +66,12 @@ class ChatLlama2(BaseChatModel):
         {{ system_prompt }}
         <</SYS>>
 
-        {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
-        <s>[INST] {{ user_msg_2 }} [/INST]
+        {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s><s>[INST] {{ user_msg_2 }} [/INST]
         ```
 
         Prompt template without System Message:
         ```
-        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
-        <s>[INST] {{ user_msg_2 }} [/INST] {{ model_answer_2}} </s>
+        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s><s>[INST] {{ user_msg_2 }} [/INST] {{ model_answer_2}} </s>
         ```
         """
         prompt = ""
