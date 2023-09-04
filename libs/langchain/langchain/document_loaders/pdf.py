@@ -437,7 +437,10 @@ class PDFPlumberLoader(BasePDFLoader):
     """Load `PDF` files using `pdfplumber`."""
 
     def __init__(
-        self, file_path: str, text_kwargs: Optional[Mapping[str, Any]] = None
+        self,
+        file_path: str,
+        text_kwargs: Optional[Mapping[str, Any]] = None,
+        dedupe: bool = False,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -450,11 +453,12 @@ class PDFPlumberLoader(BasePDFLoader):
 
         super().__init__(file_path)
         self.text_kwargs = text_kwargs or {}
+        self.dedupe = dedupe
 
     def load(self) -> List[Document]:
         """Load file."""
 
-        parser = PDFPlumberParser(text_kwargs=self.text_kwargs)
+        parser = PDFPlumberParser(text_kwargs=self.text_kwargs, dedupe=self.dedupe)
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
