@@ -33,7 +33,7 @@ class AsyncHtmlLoader(BaseLoader):
         verify_ssl: Optional[bool] = True,
         proxies: Optional[dict] = None,
         requests_per_second: int = 2,
-        requests_kwargs: Dict[str, Any] = {},
+        requests_kwargs: Optional[Dict[str, Any]] = None,
         raise_for_status: bool = False,
     ):
         """Initialize with a webpage path."""
@@ -67,7 +67,7 @@ class AsyncHtmlLoader(BaseLoader):
             self.session.proxies.update(proxies)
 
         self.requests_per_second = requests_per_second
-        self.requests_kwargs = requests_kwargs
+        self.requests_kwargs = requests_kwargs or {}
         self.raise_for_status = raise_for_status
 
     async def _fetch(

@@ -37,7 +37,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         if not self.db_path.exists():
             raise FileNotFoundError(f"File {self.db_path} not found")
         try:
-            pass  # type: ignore
+            import sqlite3  # noqa: F401
         except ImportError as e:
             raise ImportError(
                 "The sqlite3 module is required to load iMessage chats.\n"
@@ -93,6 +93,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         Yields:
             ChatSession: Loaded chat session.
         """
+        import sqlite3
 
         try:
             conn = sqlite3.connect(self.db_path)
@@ -107,8 +108,13 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
             ) from e
         cursor = conn.cursor()
 
-        # Fetch the list of chat IDs
-        cursor.execute("SELECT ROWID FROM chat")
+        # Fetch the list of chat IDs sorted by time (most recent first)
+        query = """SELECT chat_id
+        FROM message
+        JOIN chat_message_join ON message.ROWID = chat_message_join.message_id
+        GROUP BY chat_id
+        ORDER BY MAX(date) DESC;"""
+        cursor.execute(query)
         chat_ids = [row[0] for row in cursor.fetchall()]
 
         for chat_id in chat_ids:
