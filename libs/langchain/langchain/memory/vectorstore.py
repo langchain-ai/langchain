@@ -73,4 +73,9 @@ class VectorStoreRetrieverMemory(BaseMemory):
         self.retriever.add_documents(documents)
 
     def clear(self) -> None:
-        """Nothing to clear."""
+        """Clear the chat_history in vector_store, which can clear the history in the same session."""
+        self.retriever.vectorstore.delete(self.check_history_id())
+
+    def check_history_id(self):
+        """Check the existed history memory in the retrieval VectorStore."""
+        return list(self.retriever.vectorstore.__dict__['index_to_docstore_id'].values())
