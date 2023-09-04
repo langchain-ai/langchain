@@ -26,7 +26,7 @@ def test_multiple_ToSelectFrom_throws() -> None:
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm,
         prompt=PROMPT,
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     actions = ["0", "1", "2"]
     with pytest.raises(ValueError):
@@ -43,7 +43,7 @@ def test_missing_basedOn_from_throws() -> None:
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm,
         prompt=PROMPT,
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     actions = ["0", "1", "2"]
     with pytest.raises(ValueError):
@@ -56,7 +56,7 @@ def test_ToSelectFrom_not_a_list_throws() -> None:
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm,
         prompt=PROMPT,
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     actions = {"actions": ["0", "1", "2"]}
     with pytest.raises(ValueError):
@@ -75,7 +75,7 @@ def test_update_with_delayed_score_with_auto_validator_throws() -> None:
         llm=llm,
         prompt=PROMPT,
         selection_scorer=rl_chain.AutoSelectionScorer(llm=auto_val_llm),
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     actions = ["0", "1", "2"]
     response = chain.run(
@@ -98,7 +98,7 @@ def test_update_with_delayed_score_force() -> None:
         llm=llm,
         prompt=PROMPT,
         selection_scorer=rl_chain.AutoSelectionScorer(llm=auto_val_llm),
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     actions = ["0", "1", "2"]
     response = chain.run(
@@ -121,7 +121,7 @@ def test_update_with_delayed_score() -> None:
         llm=llm,
         prompt=PROMPT,
         selection_scorer=None,
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     actions = ["0", "1", "2"]
     response = chain.run(
@@ -153,7 +153,7 @@ def test_user_defined_scorer() -> None:
         llm=llm,
         prompt=PROMPT,
         selection_scorer=CustomSelectionScorer(),
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     actions = ["0", "1", "2"]
     response = chain.run(
@@ -166,11 +166,11 @@ def test_user_defined_scorer() -> None:
 
 
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
-def test_auto_embeddings_on() -> None:
+def test_everything_embedded() -> None:
     llm, PROMPT = setup()
-    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
+    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder())
     chain = pick_best_chain.PickBest.from_llm(
-        llm=llm, prompt=PROMPT, feature_embedder=feature_embedder, auto_embed=True
+        llm=llm, prompt=PROMPT, feature_embedder=feature_embedder, auto_embed=False
     )
 
     str1 = "0"
@@ -189,8 +189,8 @@ def test_auto_embeddings_on() -> None:
     actions = [str1, str2, str3]
 
     response = chain.run(
-        User=rl_chain.BasedOn(ctx_str_1),
-        action=rl_chain.ToSelectFrom(actions),
+        User=rl_chain.EmbedAndKeep(rl_chain.BasedOn(ctx_str_1)),
+        action=rl_chain.EmbedAndKeep(rl_chain.ToSelectFrom(actions)),
     )
     selection_metadata = response["selection_metadata"]
     vw_str = feature_embedder.format(selection_metadata)
@@ -200,7 +200,7 @@ def test_auto_embeddings_on() -> None:
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_default_auto_embedder_is_off() -> None:
     llm, PROMPT = setup()
-    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
+    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder())
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm, prompt=PROMPT, feature_embedder=feature_embedder
     )
@@ -226,7 +226,7 @@ def test_default_auto_embedder_is_off() -> None:
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_default_embeddings_off() -> None:
     llm, PROMPT = setup()
-    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
+    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder())
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm, prompt=PROMPT, feature_embedder=feature_embedder, auto_embed=False
     )
@@ -252,7 +252,7 @@ def test_default_embeddings_off() -> None:
 @pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_default_embeddings_mixed_w_explicit_user_embeddings() -> None:
     llm, PROMPT = setup()
-    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
+    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(auto_embed=True, model=MockEncoder())
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm, prompt=PROMPT, feature_embedder=feature_embedder, auto_embed=True
     )
@@ -291,7 +291,7 @@ def test_default_no_scorer_specified() -> None:
     chain = pick_best_chain.PickBest.from_llm(
         llm=chain_llm,
         prompt=PROMPT,
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     response = chain.run(
         User=rl_chain.BasedOn("Context"),
@@ -310,7 +310,7 @@ def test_explicitly_no_scorer() -> None:
         llm=llm,
         prompt=PROMPT,
         selection_scorer=None,
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     response = chain.run(
         User=rl_chain.BasedOn("Context"),
@@ -330,7 +330,7 @@ def test_auto_scorer_with_user_defined_llm() -> None:
         llm=llm,
         prompt=PROMPT,
         selection_scorer=rl_chain.AutoSelectionScorer(llm=scorer_llm),
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     response = chain.run(
         User=rl_chain.BasedOn("Context"),
@@ -348,7 +348,7 @@ def test_calling_chain_w_reserved_inputs_throws() -> None:
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm,
         prompt=PROMPT,
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     with pytest.raises(ValueError):
         chain.run(
@@ -371,7 +371,7 @@ def test_activate_and_deactivate_scorer() -> None:
         llm=llm,
         prompt=PROMPT,
         selection_scorer=pick_best_chain.base.AutoSelectionScorer(llm=scorer_llm),
-        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder()),
+        feature_embedder=pick_best_chain.PickBestFeatureEmbedder(auto_embed=False, model=MockEncoder()),
     )
     response = chain.run(
         User=pick_best_chain.base.BasedOn("Context"),

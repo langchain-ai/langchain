@@ -53,21 +53,25 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
         model name (Any, optional): The type of embeddings to be used for feature representation. Defaults to BERT SentenceTransformer.
     """  # noqa E501
 
-    def __init__(self, model: Optional[Any] = None, *args: Any, **kwargs: Any):
+    def __init__(
+        self, auto_embed: bool, model: Optional[Any] = None, *args: Any, **kwargs: Any
+    ):
         super().__init__(*args, **kwargs)
 
         if model is None:
             from sentence_transformers import SentenceTransformer
 
-            model = SentenceTransformer("bert-base-nli-mean-tokens")
+            model = SentenceTransformer("all-mpnet-base-v2")
+            # model = SentenceTransformer("all-MiniLM-L6-v2")
 
         self.model = model
+        self.auto_embed = auto_embed
 
-    def format(self, event: PickBestEvent) -> str:
-        """
-        Converts the `BasedOn` and `ToSelectFrom` into a format that can be used by VW
-        """
+    @staticmethod
+    def _str(embedding):
+        return " ".join([f"{i}:{e}" for i, e in enumerate(embedding)])
 
+    def get_label(self, event: PickBestEvent) -> tuple:
         cost = None
         if event.selected:
             chosen_action = event.selected.index
@@ -77,7 +81,11 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
                 else None
             )
             prob = event.selected.probability
+            return chosen_action, cost, prob
+        else:
+            return None, None, None
 
+    def get_context_and_action_embeddings(self, event: PickBestEvent) -> tuple:
         context_emb = base.embed(event.based_on, self.model) if event.based_on else None
         to_select_from_var_name, to_select_from = next(
             iter(event.to_select_from.items()), (None, None)
@@ -97,6 +105,97 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
             raise ValueError(
                 "Context and to_select_from must be provided in the inputs dictionary"
             )
+        return context_emb, action_embs
+
+    def get_indexed_dot_product(self, context_emb: List, action_embs: List) -> Dict:
+        import numpy as np
+
+        unique_contexts = set()
+        for context_item in context_emb:
+            for ns, ee in context_item.items():
+                if isinstance(ee, list):
+                    for ea in ee:
+                        unique_contexts.add(f"{ns}={ea}")
+                else:
+                    unique_contexts.add(f"{ns}={ee}")
+                
+        encoded_contexts = self.model.encode(list(unique_contexts))
+        context_embeddings = dict(zip(unique_contexts, encoded_contexts))
+
+        unique_actions = set()
+        for action in action_embs:
+            for ns, e in action.items():
+                if isinstance(e, list):
+                    for ea in e:
+                        unique_actions.add(f"{ns}={ea}")
+                else:
+                    unique_actions.add(f"{ns}={e}")
+
+        encoded_actions = self.model.encode(list(unique_actions))
+        action_embeddings = dict(zip(unique_actions, encoded_actions))
+
+        action_matrix = np.stack([v for k, v in action_embeddings.items()])
+        context_matrix = np.stack([v for k, v in context_embeddings.items()])
+        dot_product_matrix = np.dot(context_matrix, action_matrix.T)
+
+        indexed_dot_product = {}
+
+        for i, context_key in enumerate(context_embeddings.keys()):
+            indexed_dot_product[context_key] = {}
+            for j, action_key in enumerate(action_embeddings.keys()):
+                indexed_dot_product[context_key][action_key] = dot_product_matrix[i, j]
+    
+        return indexed_dot_product
+    
+    def format_auto_embed_on(self, event: PickBestEvent) -> str:
+        chosen_action, cost, prob = self.get_label(event)
+        context_emb, action_embs = self.get_context_and_action_embeddings(event)
+        indexed_dot_product = self.get_indexed_dot_product(context_emb, action_embs)
+
+        action_lines = []
+        for i, action in enumerate(action_embs):
+            line_parts = []
+            dot_prods = []
+            if cost is not None and chosen_action == i:
+                line_parts.append(f"{chosen_action}:{cost}:{prob}")
+            for ns, action in action.items():
+                line_parts.append(f"|{ns}")
+                elements = action if isinstance(action, list) else [action]
+                nsa = []
+                for elem in elements:
+                    line_parts.append(f"{elem}")
+                    ns_a = f"{ns}={elem}"
+                    nsa.append(ns_a)
+                    for k,v in indexed_dot_product.items():
+                        dot_prods.append(v[ns_a])
+                nsa = " ".join(nsa)
+                line_parts.append(f"|# {nsa}")
+
+            line_parts.append(f"|embedding {self._str(dot_prods)}")
+            action_lines.append(" ".join(line_parts))
+
+        shared = []
+        for item in context_emb:
+            for ns, context in item.items():
+                shared.append(f"|{ns}")
+                elements = context if isinstance(context, list) else [context]
+                nsc = []
+                for elem in elements:
+                    shared.append(f"{elem}")
+                    nsc.append(f"{ns}={elem}")
+                nsc = " ".join(nsc)
+                shared.append(f"|@ {nsc}")
+
+        r = "shared " + " ".join(shared) + "\n" + "\n".join(action_lines)
+        print(r)
+        return r
+
+    def format_auto_embed_off(self, event: PickBestEvent) -> str:
+        """
+        Converts the `BasedOn` and `ToSelectFrom` into a format that can be used by VW
+        """
+        chosen_action, cost, prob = self.get_label(event)
+        context_emb, action_embs = self.get_context_and_action_embeddings(event)
 
         example_string = ""
         example_string += "shared "
@@ -119,6 +218,12 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
             example_string += "\n"
         # Strip the last newline
         return example_string[:-1]
+
+    def format(self, event: PickBestEvent) -> str:
+        if self.auto_embed:
+            return self.format_auto_embed_on(event)
+        else:
+            return self.format_auto_embed_off(event)
 
 
 class PickBest(base.RLChain[PickBestEvent]):
@@ -154,12 +259,20 @@ class PickBest(base.RLChain[PickBestEvent]):
         *args: Any,
         **kwargs: Any,
     ):
+        auto_embed = kwargs.get("auto_embed", False)
+
         vw_cmd = kwargs.get("vw_cmd", [])
         if not vw_cmd:
-            vw_cmd = [
+            interactions = ["--interactions=::"]
+            if auto_embed:
+                interactions = [
+                    "--interactions=@#",
+                    "--ignore_linear=@",
+                    "--ignore_linear=#",
+                    "--noconstant",
+                ]
+            vw_cmd = interactions + [
                 "--cb_explore_adf",
-                "--quiet",
-                "--interactions=::",
                 "--coin",
                 "--squarecb",
             ]
@@ -172,7 +285,7 @@ class PickBest(base.RLChain[PickBestEvent]):
 
         feature_embedder = kwargs.get("feature_embedder", None)
         if not feature_embedder:
-            feature_embedder = PickBestFeatureEmbedder()
+            feature_embedder = PickBestFeatureEmbedder(auto_embed=auto_embed)
         kwargs["feature_embedder"] = feature_embedder
 
         super().__init__(*args, **kwargs)
