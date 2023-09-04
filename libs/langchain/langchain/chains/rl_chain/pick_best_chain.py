@@ -60,6 +60,7 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
 
         if model is None:
             from sentence_transformers import SentenceTransformer
+
             model = SentenceTransformer("all-mpnet-base-v2")
 
         self.model = model
