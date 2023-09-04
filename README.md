@@ -7,10 +7,10 @@
 -->
 [![CI](https://github.com/ai-forever/gigachain/actions/workflows/langchain_ci.yml/badge.svg)](https://github.com/ai-forever/gigachain/actions/workflows/langchain_ci.yml)
 <!--
-[![Experimental CI](https://github.com/ai-forever/gigachain/actions/workflows/langchain_experimental_ci.yml/badge.svg)](https://github.com/ai-forever/gigachain/actions/workflows/langchain_experimental_ci.yml)
-[![Downloads](https://static.pepy.tech/badge/langchain/month)](https://pepy.tech/project/langchain)
+[![Experimental CI](https://github.com/ai-forever/gigachain/actions/workflows/langchain_experimental_ci.yml/badge.svg)](https://github.com/ai-forever/gigachain/actions/workflows/langchain_experimental_ci.yml)-->
+[![Downloads](https://static.pepy.tech/badge/gigachain/month)](https://pepy.tech/project/gigachain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
+<!--[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 [![](https://dcbadge.vercel.app/api/server/6adMQxSpJS?compact=true&style=flat)](https://discord.gg/6adMQxSpJS)
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/langchain-ai/langchain)
@@ -155,12 +155,13 @@ Please see [here](https://python.langchain.com) for full documentation on:
 
 ## 📚 Примеры использования, адаптированные для GigaChat
 
-- [Асинхронная работа с LLM](docs/extras/modules/model_io/models/llms/async_llm.ipynb)
 - [Ответы на вопросы по статьям из wikipedia](docs/extras/integrations/retrievers/wikipedia.ipynb)
 - [Суммаризация map-reduce](docs/extras/use_cases/summarization.ipynb) (см. раздел map/reduce)
 - [Игра Blade Runner: GPT-4 и GigaChat выясняют, кто из них бот](docs/extras/use_cases/more/fun/blade_runner.ipynb)
+- [Работа с хабом промптов, цепочками и парсером JSON](docs/extras/modules/model_io/output_parsers/json.ipynb)
 - [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/extras/use_cases/agent_simulations/multi_llm_thre_player_dnd.ipynb)
-- [Парсинг списков, содержащихся в ответе](libs/langchain/langchain/output_parsers/list.py)
+- [Парсинг списков, содержащихся в ответе](docs/extras/modules/model_io/output_parsers/list.ipynb)
+- [Асинхронная работа с LLM](docs/extras/modules/model_io/models/llms/async_llm.ipynb)
 
 ## Примеры использования, связанные с другими LLM
 - [Агент-менеджер по продажам с автоматическим поиском по каталогу и формированием заказа](docs/extras/modules/agents/how_to/add_memory_openai_functions.ipynb)

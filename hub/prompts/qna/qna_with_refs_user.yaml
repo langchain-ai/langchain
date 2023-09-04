@@ -6,3 +6,4 @@ template: "QUESTION: {question}
 =========
 FINAL ANSWER:"
 template_format: f-string
+_type: prompt

@@ -26,12 +26,10 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         return True
 
     def get_format_instructions(self) -> str:
-        return (
-            "Ответ должен быть списком, разделенным запятыми, "
-            "например: `foo, bar, baz`. Кроме списка в ответе \
-не должно быть никаких других слов."
-        )
+        return " ответ напиши через запятую одной строкой!"
 
     def parse(self, text: str) -> List[str]:
         """Parse the output of an LLM call."""
+        if ", " not in text and "\n" in text:
+            text = text.replace("\n", ", ")
         return text.strip().split(", ")

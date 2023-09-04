@@ -8,3 +8,4 @@ template: 'Ниже приведен набор фактов и мыслей. В
 
 Основные 7 фактов из текста:'
 template_format: f-string
+_type: prompt
