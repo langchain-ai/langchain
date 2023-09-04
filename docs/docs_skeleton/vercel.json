@@ -2953,6 +2953,46 @@
       "destination": "/docs/integrations/llms/writer"
     },
     {
+      "source": "/docs/integrations/llms/amazon_api_gateway_example",
+      "destination": "/docs/integrations/llms/amazon_api_gateway"
+    },
+    {
+      "source": "/docs/integrations/llms/azureml_endpoint_example",
+      "destination": "/docs/integrations/llms/azure_ml"
+    },
+    {
+      "source": "/docs/integrations/llms/azure_openai_example",
+      "destination": "/docs/integrations/llms/azure_openai"
+    },
+    {
+      "source": "/docs/integrations/llms/cerebriumai_example",
+      "destination": "/docs/integrations/llms/cerebriumai"
+    },
+    {
+      "source": "/docs/integrations/llms/deepinfra_example",
+      "destination": "/docs/integrations/llms/deepinfra"
+    },
+    {
+      "source": "/docs/integrations/llms/Fireworks",
+      "destination": "/docs/integrations/llms/fireworks"
+    },
+    {
+      "source": "/docs/integrations/llms/forefrontai_example",
+      "destination": "/docs/integrations/llms/forefrontai"
+    },
+    {
+      "source": "/docs/integrations/llms/gooseai_example",
+      "destination": "/docs/integrations/llms/gooseai"
+    },
+    {
+      "source": "/docs/integrations/llms/petals_example",
+      "destination": "/docs/integrations/llms/petals"
+    },
+    {
+      "source": "/docs/integrations/llms/pipelineai_example",
+      "destination": "/docs/integrations/llms/pipelineai"
+    },
+    {
       "source": "/en/latest/modules/prompts.html",
       "destination": "/docs/modules/model_io/prompts"
     },
@@ -3437,6 +3477,14 @@
       "destination": "/docs/use_cases/more/graph/graph_kuzu_qa"
     },
     {
+      "source": "/docs/use_cases/graph/graph_falkordb_qa",
+      "destination": "/docs/use_cases/more/graph/graph_falkordb_qa"
+    },
+    {
+      "source": "/docs/modules/chains/additional/graph_falkordb_qa",
+      "destination": "/docs/use_cases/more/graph/graph_falkordb_qa"
+    },
+    {
       "source": "/docs/use_cases/graph/graph_nebula_qa",
       "destination": "/docs/use_cases/more/graph/graph_nebula_qa"
     },
@@ -3547,6 +3595,18 @@
     {
       "source": "/en/latest/integrations/:path*",
       "destination": "/docs/integrations/providers/:path*"
+    },
+    {
+      "source": "/docs/guides/expression_language(/?)",
+      "destination": "/docs/expression_language/"
+    },
+    {
+      "source": "/docs/guides/expression_language/:path*",
+      "destination": "/docs/expression_language/:path*"
+    },
+    {
+      "source": "/docs/ecosystem/dependents",
+      "destination": "/docs/additional_resources/dependents"
     }
   ]
 }
