@@ -16,6 +16,7 @@ from langchain.retrievers.self_query.milvus import MilvusTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
+from langchain.retrievers.self_query.redis import RedisTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
@@ -28,6 +29,7 @@ from langchain.vectorstores import (
     MyScale,
     Pinecone,
     Qdrant,
+    Redis,
     VectorStore,
     Weaviate,
 )
@@ -47,16 +49,19 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         ElasticsearchStore: ElasticsearchTranslator,
         Milvus: MilvusTranslator,
     }
-    if vectorstore_cls not in BUILTIN_TRANSLATORS:
-        raise ValueError(
-            f"Self query retriever with Vector Store type {vectorstore_cls}"
-            f" not supported."
-        )
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
     elif isinstance(vectorstore, MyScale):
         return MyScaleTranslator(metadata_key=vectorstore.metadata_column)
-    return BUILTIN_TRANSLATORS[vectorstore_cls]()
+    elif isinstance(vectorstore, Redis):
+        return RedisTranslator.from_vectorstore(vectorstore)
+    elif vectorstore_cls in BUILTIN_TRANSLATORS:
+        return BUILTIN_TRANSLATORS[vectorstore_cls]()
+    else:
+        raise ValueError(
+            f"Self query retriever with Vector Store type {vectorstore_cls}"
+            f" not supported."
+        )
 
 
 class SelfQueryRetriever(BaseRetriever, BaseModel):
@@ -74,8 +79,9 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
     structured_query_translator: Visitor
     """Translator for turning internal query language into vectorstore search params."""
     verbose: bool = False
-    """Use original query instead of the revised new query from LLM"""
+
     use_original_query: bool = False
+    """Use original query instead of the revised new query from LLM"""
 
     class Config:
         """Configuration for this pydantic object."""

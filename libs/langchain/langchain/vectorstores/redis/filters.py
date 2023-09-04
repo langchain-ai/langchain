@@ -1,5 +1,6 @@
 from enum import Enum
 from functools import wraps
+from numbers import Number
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain.utilities.redis import TokenEscaper
@@ -56,14 +57,15 @@ class RedisFilterField:
         if operator not in self.OPERATORS:
             raise ValueError(
                 f"Operator {operator} not supported by {self.__class__.__name__}. "
-                + f"Supported operators are {self.OPERATORS.values()}"
+                + f"Supported operators are {self.OPERATORS.values()}."
             )
 
         if not isinstance(val, val_type):
             raise TypeError(
                 f"Right side argument passed to operator {self.OPERATORS[operator]} "
                 f"with left side "
-                f"argument {self.__class__.__name__} must be of type {val_type}"
+                f"argument {self.__class__.__name__} must be of type {val_type}, "
+                f"received value {val}"
             )
         self._value = val
         self._operator = operator
@@ -181,12 +183,12 @@ class RedisNum(RedisFilterField):
         RedisFilterOperator.GE: ">=",
     }
     OPERATOR_MAP: Dict[RedisFilterOperator, str] = {
-        RedisFilterOperator.EQ: "@%s:[%i %i]",
-        RedisFilterOperator.NE: "(-@%s:[%i %i])",
-        RedisFilterOperator.GT: "@%s:[(%i +inf]",
-        RedisFilterOperator.LT: "@%s:[-inf (%i]",
-        RedisFilterOperator.GE: "@%s:[%i +inf]",
-        RedisFilterOperator.LE: "@%s:[-inf %i]",
+        RedisFilterOperator.EQ: "@%s:[%f %f]",
+        RedisFilterOperator.NE: "(-@%s:[%f %f])",
+        RedisFilterOperator.GT: "@%s:[(%f +inf]",
+        RedisFilterOperator.LT: "@%s:[-inf (%f]",
+        RedisFilterOperator.GE: "@%s:[%f +inf]",
+        RedisFilterOperator.LE: "@%s:[-inf %f]",
     }
 
     def __str__(self) -> str:
@@ -210,83 +212,83 @@ class RedisNum(RedisFilterField):
             return self.OPERATOR_MAP[self._operator] % (self._field, self._value)
 
     @check_operator_misuse
-    def __eq__(self, other: int) -> "RedisFilterExpression":
+    def __eq__(self, other: Union[int, float]) -> "RedisFilterExpression":
         """Create a Numeric equality filter expression
 
         Args:
-            other (int): The value to filter on.
+            other (Number): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("zipcode") == 90210
         """
-        self._set_value(other, int, RedisFilterOperator.EQ)
+        self._set_value(other, Number, RedisFilterOperator.EQ)
         return RedisFilterExpression(str(self))
 
     @check_operator_misuse
-    def __ne__(self, other: int) -> "RedisFilterExpression":
+    def __ne__(self, other: Union[int, float]) -> "RedisFilterExpression":
         """Create a Numeric inequality filter expression
 
         Args:
-            other (int): The value to filter on.
+            other (Number): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("zipcode") != 90210
         """
-        self._set_value(other, int, RedisFilterOperator.NE)
+        self._set_value(other, Number, RedisFilterOperator.NE)
         return RedisFilterExpression(str(self))
 
-    def __gt__(self, other: int) -> "RedisFilterExpression":
+    def __gt__(self, other: Union[int, float]) -> "RedisFilterExpression":
         """Create a RedisNumeric greater than filter expression
 
         Args:
-            other (int): The value to filter on.
+            other (Number): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") > 18
         """
-        self._set_value(other, int, RedisFilterOperator.GT)
+        self._set_value(other, Number, RedisFilterOperator.GT)
         return RedisFilterExpression(str(self))
 
-    def __lt__(self, other: int) -> "RedisFilterExpression":
+    def __lt__(self, other: Union[int, float]) -> "RedisFilterExpression":
         """Create a Numeric less than filter expression
 
         Args:
-            other (int): The value to filter on.
+            other (Number): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") < 18
         """
-        self._set_value(other, int, RedisFilterOperator.LT)
+        self._set_value(other, Number, RedisFilterOperator.LT)
         return RedisFilterExpression(str(self))
 
-    def __ge__(self, other: int) -> "RedisFilterExpression":
+    def __ge__(self, other: Union[int, float]) -> "RedisFilterExpression":
         """Create a Numeric greater than or equal to filter expression
 
         Args:
-            other (int): The value to filter on.
+            other (Number): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") >= 18
         """
-        self._set_value(other, int, RedisFilterOperator.GE)
+        self._set_value(other, Number, RedisFilterOperator.GE)
         return RedisFilterExpression(str(self))
 
-    def __le__(self, other: int) -> "RedisFilterExpression":
+    def __le__(self, other: Union[int, float]) -> "RedisFilterExpression":
         """Create a Numeric less than or equal to filter expression
 
         Args:
-            other (int): The value to filter on.
+            other (Number): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") <= 18
         """
-        self._set_value(other, int, RedisFilterOperator.LE)
+        self._set_value(other, Number, RedisFilterOperator.LE)
         return RedisFilterExpression(str(self))
 
 
