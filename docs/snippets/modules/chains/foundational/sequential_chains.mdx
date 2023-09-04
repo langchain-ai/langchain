@@ -89,7 +89,7 @@ print(review)
 ## Sequential Chain
 Of course, not all sequential chains will be as simple as passing a single string as an argument and getting a single string as output for all steps in the chain. In this next example, we will experiment with more complex chains that involve multiple inputs, and where there also multiple final outputs. 
 
-Of particular importance is how we name the input/output variable names. In the above example we didn't have to think about that because we were just passing the output of one chain directly as input to the next, but here we do have worry about that because we have multiple inputs.
+Of particular importance is how we name the input/output variables. In the above example we didn't have to think about that because we were just passing the output of one chain directly as input to the next, but here we do have worry about that because we have multiple inputs.
 
 
 ```python
@@ -158,7 +158,7 @@ overall_chain({"title":"Tragedy at sunset on the beach", "era": "Victorian Engla
 ### Memory in Sequential Chains
 Sometimes you may want to pass along some context to use in each step of the chain or in a later part of the chain, but maintaining and chaining together the input/output variables can quickly get messy.  Using `SimpleMemory` is a convenient way to do manage this and clean up your chains.
 
-For example, using the previous playwright SequentialChain, lets say you wanted to include some context about date, time and location of the play, and using the generated synopsis and review, create some social media post text.  You could add these new context variables as `input_variables`, or we can add a `SimpleMemory` to the chain to manage this context:
+For example, using the previous playwright `SequentialChain`, lets say you wanted to include some context about date, time and location of the play, and using the generated synopsis and review, create some social media post text.  You could add these new context variables as `input_variables`, or we can add a `SimpleMemory` to the chain to manage this context:
 
 
 
