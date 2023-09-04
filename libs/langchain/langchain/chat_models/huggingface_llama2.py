@@ -22,6 +22,33 @@ B_INST, E_INST = "[INST]", "[/INST]"
 B_SYS, E_SYS = "<<SYS>>", "<</SYS>>"
 
 
+class StoppingCriteriaSub(StoppingCriteria):
+    """Subclass of StoppingCriteria to allow for custom stopping criteria"""
+
+    def __init__(
+        self,
+        stops: Optional[List[torch.Tensor]] = None,
+        device: Union[torch.device, str, None] = None,
+    ):
+        super().__init__()
+        stops = stops or []
+        if device:
+            self.stops = [stop.to(device) for stop in stops]
+        else:
+            self.stops = stops
+
+    def __call__(
+        self,
+        input_ids: torch.LongTensor,
+        scores: torch.FloatTensor,
+        **kwargs: Dict,
+    ) -> bool:
+        for stop_id in self.stops:
+            if (input_ids[0][-torch.numel(stop_id) :] == stop_id).all():
+                return True
+        return False
+
+
 class ChatLlama2Hf(BaseChatModel):
     pipeline: TextGenerationPipeline
 
@@ -108,33 +135,6 @@ class ChatLlama2Hf(BaseChatModel):
         kwargs["num_return_sequences"] = 1
 
         if stop:
-
-            class StoppingCriteriaSub(StoppingCriteria):
-                """Subclass of StoppingCriteria to allow for custom stopping criteria"""
-
-                def __init__(
-                    self,
-                    stops: Optional[List] = None,
-                    device: Union[torch.device, str, None] = None,
-                ):
-                    super().__init__()
-                    stops = stops or []
-                    if device:
-                        self.stops = [stop.to(device) for stop in stops]
-                    else:
-                        self.stops = stops
-
-                def __call__(
-                    self,
-                    input_ids: torch.LongTensor,
-                    scores: torch.FloatTensor,
-                    **kwargs: Dict,
-                ) -> bool:
-                    for stop_id in self.stops:
-                        if (input_ids[0][-torch.numel(stop_id) :] == stop_id).all():
-                            return True
-                    return False
-
             stopping_criteria_tokenized = [
                 self.pipeline.tokenizer(
                     stopping_criterion, return_tensors="pt", add_special_tokens=False
