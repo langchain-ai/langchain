@@ -91,7 +91,7 @@ class PipelineAI(LLM, BaseModel):
         try:
             from pipeline import PipelineCloud
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import pipeline-ai python package. "
                 "Please install it with `pip install pipeline-ai`."
             )
