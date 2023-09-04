@@ -223,6 +223,21 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
             return self.format_auto_embed_off(event)
 
 
+class PickBestRandomPolicy(base.Policy):
+    def __init__(self, feature_embedder: base.Embedder, **kwargs):
+        self.feature_embedder = feature_embedder
+
+    def predict(self, event: PickBestEvent):
+        num_items = len(event.to_select_from)
+        return [(i, 1.0 / num_items) for i in range(num_items)]
+
+    def learn(self, event):
+        pass
+
+    def log(self, event):
+        pass
+
+
 class PickBest(base.RLChain[PickBestEvent]):
     """
     `PickBest` is a class designed to leverage the Vowpal Wabbit (VW) model for reinforcement learning with a context, with the goal of modifying the prompt before the LLM call.
