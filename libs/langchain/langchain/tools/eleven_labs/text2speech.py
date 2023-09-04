@@ -1,9 +1,18 @@
 import tempfile
-from typing import Dict
+from typing import Dict, Union
 
 from langchain.pydantic_v1 import root_validator
 from langchain.tools.base import BaseTool
+from langchain.tools.eleven_labs.models import ElevenLabsModel
 from langchain.utils import get_from_dict_or_env
+
+try:
+    import elevenlabs
+
+except ImportError:
+    raise ImportError(
+        "elevenlabs is not installed. " "Run `pip install elevenlabs` to install."
+    )
 
 
 class ElevenLabsText2SpeechTool(BaseTool):
@@ -12,6 +21,8 @@ class ElevenLabsText2SpeechTool(BaseTool):
     In order to set this up, follow instructions at:
     https://docs.elevenlabs.io/welcome/introduction
     """
+
+    model: Union[ElevenLabsModel, str] = ElevenLabsModel.MULTI_LINGUAL
 
     name: str = "eleven_labs_text2speech"
     description: str = (
@@ -29,16 +40,7 @@ class ElevenLabsText2SpeechTool(BaseTool):
         return values
 
     def _text2speech(self, text: str) -> str:
-        try:
-            from elevenlabs import generate
-
-        except ImportError:
-            raise ImportError(
-                "elevenlabs is not installed. "
-                "Run `pip install elevenlabs` to install."
-            )
-
-        speech = generate(text=text, model="eleven_multilingual_v1")
+        speech = elevenlabs.generate(text=text, model=self.model)
         with tempfile.NamedTemporaryFile(mode="bx", suffix=".wav", delete=False) as f:
             f.write(speech)
         return f.name
@@ -53,32 +55,13 @@ class ElevenLabsText2SpeechTool(BaseTool):
 
     def play(self, speech_file: str) -> None:
         """Play the text as speech."""
-        try:
-            from elevenlabs import play
-
-        except ImportError:
-            raise ImportError(
-                "elevenlabs is not installed. "
-                "Run `pip install elevenlabs` to install."
-            )
         with open(speech_file, mode="rb") as f:
             speech = f.read()
 
-        play(speech)
+        elevenlabs.play(speech)
 
     def stream(self, query: str) -> None:
-        """Stream the text as speech."""
-
-        try:
-            from elevenlabs import generate, stream
-
-        except ImportError:
-            raise ImportError(
-                "elevenlabs is not installed. "
-                "Run `pip install elevenlabs` to install."
-            )
-
-        speech_stream = generate(
-            text=query, model="eleven_multilingual_v1", stream=True
-        )
-        stream(speech_stream)
+        """Stream the text as speech as it is generated.
+        Play the text in your speakers."""
+        speech_stream = elevenlabs.generate(text=query, model=self.model, stream=True)
+        elevenlabs.stream(speech_stream)
