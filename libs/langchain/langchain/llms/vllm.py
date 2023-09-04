@@ -66,7 +66,6 @@ class VLLM(BaseLLM):
     """Directory to download and load the weights. (Default to the default 
     cache dir of huggingface)"""
 
-
     client: Any  #: :meta private:
 
     @root_validator()
