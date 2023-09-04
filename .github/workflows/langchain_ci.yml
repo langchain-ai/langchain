@@ -3,7 +3,7 @@ name: libs/langchain CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, dev ]
   pull_request:
     paths:
       - '.github/workflows/_lint.yml'
