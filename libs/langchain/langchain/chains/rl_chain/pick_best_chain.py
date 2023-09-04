@@ -224,17 +224,17 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
 
 
 class PickBestRandomPolicy(base.Policy):
-    def __init__(self, feature_embedder: base.Embedder, **kwargs):
+    def __init__(self, feature_embedder: base.Embedder, **kwargs: Any):
         self.feature_embedder = feature_embedder
 
-    def predict(self, event: PickBestEvent):
+    def predict(self, event: PickBestEvent) -> List[Tuple[int, float]]:
         num_items = len(event.to_select_from)
         return [(i, 1.0 / num_items) for i in range(num_items)]
 
-    def learn(self, event):
+    def learn(self, event: PickBestEvent) -> None:
         pass
 
-    def log(self, event):
+    def log(self, event: PickBestEvent) -> None:
         pass
 
 
