@@ -146,12 +146,11 @@ class SerpAPIWrapper(BaseModel):
             else:
                 answer = {}
                 for key, value in answer_box.items():
-                    if (
-                        not isinstance(value, (list, dict))
-                        and not (type(value) == str and value.startswith("http"))
+                    if not isinstance(value, (list, dict)) and not (
+                        type(value) == str and value.startswith("http")
                     ):
                         answer[key] = value
-                return answer
+                return str(answer)
         elif "events_results" in res.keys():
             return res["events_results"][:10]
         elif "sports_results" in res.keys():
@@ -160,10 +159,7 @@ class SerpAPIWrapper(BaseModel):
             return res["top_stories"]
         elif "news_results" in res.keys():
             return res["news_results"]
-        elif (
-            "jobs_results" in res.keys()
-            and "jobs" in res["jobs_results"].keys()
-        ):
+        elif "jobs_results" in res.keys() and "jobs" in res["jobs_results"].keys():
             return res["jobs_results"]["jobs"]
         elif (
             "shopping_results" in res.keys()
@@ -177,17 +173,14 @@ class SerpAPIWrapper(BaseModel):
             and "destinations" in res["popular_destinations"].keys()
         ):
             return res["popular_destinations"]["destinations"]
-        elif (
-            "top_sights" in res.keys()
-            and "sights" in res["top_sights"].keys()
-        ):
+        elif "top_sights" in res.keys() and "sights" in res["top_sights"].keys():
             return res["top_sights"]["sights"]
         elif (
             "images_results" in res.keys()
             and "thumbnail" in res["images_results"][0].keys()
         ):
-            return [item["thumbnail"] for item in res["images_results"][:10]]
-        
+            return str([item["thumbnail"] for item in res["images_results"][:10]])
+
         snippets = []
         if "knowledge_graph" in res.keys():
             knowledge_graph = res["knowledge_graph"]
@@ -203,7 +196,7 @@ class SerpAPIWrapper(BaseModel):
                     and not key.endswith("_link")
                     and not value.startswith("http")
                 ):
-                    snippets.append(f"{title} {key}: {value}.")    
+                    snippets.append(f"{title} {key}: {value}.")
         if "organic_results" in res.keys():
             first_organic_result = res["organic_results"][0]
             if "snippet" in first_organic_result.keys():
@@ -218,13 +211,10 @@ class SerpAPIWrapper(BaseModel):
                 snippets.append(first_organic_result["link"])
         if "buying_guide" in res.keys():
             snippets.append(res["buying_guide"])
-        if (
-            "local_results" in res.keys()
-            and "places" in res["local_results"].keys()
-        ):
+        if "local_results" in res.keys() and "places" in res["local_results"].keys():
             snippets.append(res["local_results"]["places"])
 
         if len(snippets) > 0:
-            return snippets
+            return str(snippets)
         else:
-            "No good search result found"
+            return "No good search result found"
