@@ -25,6 +25,7 @@ from langchain.schema.output import ChatGenerationChunk
 
 LATEST_MODEL = "latest"
 
+
 class GigaChat(SimpleChatModel):
     api_url: str = "https://beta.saluteai.sberdevices.ru"
     model: str = LATEST_MODEL
@@ -103,7 +104,7 @@ class GigaChat(SimpleChatModel):
 
         self.token = response.json()["tok"]
         return
-    
+
     @retry(
         retry=retry_if_not_exception_type(PermissionError), stop=stop_after_attempt(3)
     )
@@ -132,8 +133,7 @@ class GigaChat(SimpleChatModel):
                 f"Can't get response from GigaChat. Error code: {response.status_code}"
             )
 
-        return [model['id'] for model in response.json()['data']]
-
+        return [model["id"] for model in response.json()["data"]]
 
     @retry(
         retry=retry_if_not_exception_type(PermissionError), stop=stop_after_attempt(3)
