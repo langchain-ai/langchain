@@ -440,7 +440,7 @@ class PDFPlumberLoader(BasePDFLoader):
         self,
         file_path: str,
         text_kwargs: Optional[Mapping[str, Any]] = None,
-        dedupe: bool = False
+        dedupe: bool = False,
     ) -> None:
         """Initialize with a file path."""
         try:
