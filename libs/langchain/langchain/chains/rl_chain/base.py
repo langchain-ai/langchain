@@ -229,6 +229,9 @@ class VwPolicy(Policy):
 
 
 class Embedder(Generic[TEvent], ABC):
+    def __init__(self, *args: Any, **kwargs: Any):
+        pass
+
     @abstractmethod
     def format(self, event: TEvent) -> str:
         ...
@@ -498,8 +501,8 @@ class RLChain(Chain, Generic[TEvent]):
     ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
 
-        if self.auto_embed:
-            inputs = prepare_inputs_for_autoembed(inputs=inputs)
+        # if self.auto_embed:
+        #     inputs = prepare_inputs_for_autoembed(inputs=inputs)
 
         event: TEvent = self._call_before_predict(inputs=inputs)
         prediction = self.active_policy.predict(event=event)
