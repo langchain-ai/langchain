@@ -65,12 +65,12 @@ class ChatLlama2Hf(BaseChatModel):
         {{ system_prompt }}
         <</SYS>>
 
-        {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s><s>[INST] {{ user_msg_2 }} [/INST]
+        {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
         ```
 
         Prompt template without System Message:
         ```
-        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s><s>[INST] {{ user_msg_2 }} [/INST]
+        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
         ```
         """
         prompt = ""
@@ -89,7 +89,7 @@ class ChatLlama2Hf(BaseChatModel):
             elif isinstance(message, AIMessage):
                 prompt += f"{message.content} </s><s>{B_INST} "
             else:
-                raise ValueError(f"Unsupported Message type:")
+                raise ValueError(f"Unsupported Message type: {type(message)}")
 
         return prompt
 
