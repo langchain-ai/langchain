@@ -2,8 +2,7 @@
 from __future__ import annotations
 
 import warnings
-from inspect import signature
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -13,25 +12,11 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
+from langchain.utilities.sql_database import SQLDatabase
 
-from langchain_experimental.pydantic_v1 import (
-    BaseModel,
-    Extra,
-    Field,
-    root_validator,
-    validator,
-)
-from langchain_experimental.sql.parser import SQLCommandOutputParser
-from langchain_experimental.utilities.sql_database import SQLDatabase
+from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
-
-
-class SQLCommand(BaseModel):
-    llm_out: str
-    """Raw output from LLM"""
-    sql_cmd: str
-    """SQL command parsed and ready to run"""
 
 
 class SQLDatabaseChain(Chain):
@@ -77,32 +62,12 @@ class SQLDatabaseChain(Chain):
     to fix the initial SQL from the LLM."""
     query_checker_prompt: Optional[BasePromptTemplate] = None
     """The prompt template that should be used by the query checker"""
-    native_format: bool = False
-    """If return_direct, controls whether to return in python native format"""
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
-
-    @validator("llm_chain")
-    def check_outputparser_type(cls, llm_chain: LLMChain) -> LLMChain:
-        sig = signature(llm_chain.output_parser.parse)  # type: ignore
-        if sig.return_annotation == Dict[str, Any]:
-            if isinstance(llm_chain.output_parser, SQLCommandOutputParser):
-                return llm_chain
-            else:
-                warnings.warn(
-                    "Accepting output parser that returns Dict[str, Any]."
-                    "Make sure the output must contain `sql_cmd`, `llm_out`."
-                )
-                return llm_chain
-        raise TypeError(
-            "SQLDatabaseChain only works with LLMChains with "
-            "parsers that returns `{'sql_cmd': '<SQL>', 'llm_out': '<SQL>'}` "
-            "or `langchain.chains.sql_database.parser.SQLCommandOutputParser`!"
-        )
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -160,65 +125,49 @@ class SQLDatabaseChain(Chain):
         intermediate_steps: List = []
         try:
             intermediate_steps.append(llm_inputs)  # input: sql generation
-            sql_cmd = cast(
-                Dict[str, Any],
-                self.llm_chain.predict_and_parse(
-                    callbacks=_run_manager.get_child(),
-                    **llm_inputs,
-                ),
-            )
+            sql_cmd = self.llm_chain.predict(
+                callbacks=_run_manager.get_child(),
+                **llm_inputs,
+            ).strip()
+            if self.return_sql:
+                return {self.output_key: sql_cmd}
             if not self.use_query_checker:
-                _run_manager.on_text(
-                    sql_cmd["llm_out"], color="green", verbose=self.verbose
-                )
+                _run_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
                 intermediate_steps.append(
-                    sql_cmd["llm_out"]
+                    sql_cmd
                 )  # output: sql generation (no checker)
-                intermediate_steps.append(
-                    {"sql_cmd": sql_cmd["llm_out"]}
-                )  # input: sql exec
-                result = self.database.run(
-                    sql_cmd["sql_cmd"],
-                    native_format=self.native_format if self.return_direct else False,
-                )
+                intermediate_steps.append({"sql_cmd": sql_cmd})  # input: sql exec
+                result = self.database.run(sql_cmd)
                 intermediate_steps.append(str(result))  # output: sql exec
             else:
                 query_checker_prompt = self.query_checker_prompt or PromptTemplate(
                     template=QUERY_CHECKER, input_variables=["query", "dialect"]
                 )
                 query_checker_chain = LLMChain(
-                    llm=self.llm_chain.llm,
-                    prompt=query_checker_prompt,
-                    output_parser=self.llm_chain.output_parser,
+                    llm=self.llm_chain.llm, prompt=query_checker_prompt
                 )
                 query_checker_inputs = {
-                    "query": sql_cmd["llm_out"],
+                    "query": sql_cmd,
                     "dialect": self.database.dialect,
                 }
-                checked_sql_command = cast(
-                    Dict[str, Any],
-                    query_checker_chain.predict_and_parse(
-                        callbacks=_run_manager.get_child(), **query_checker_inputs
-                    ),
-                )
+                checked_sql_command: str = query_checker_chain.predict(
+                    callbacks=_run_manager.get_child(), **query_checker_inputs
+                ).strip()
                 intermediate_steps.append(
-                    checked_sql_command["llm_out"]
+                    checked_sql_command
                 )  # output: sql generation (checker)
                 _run_manager.on_text(
-                    checked_sql_command["llm_out"], color="green", verbose=self.verbose
+                    checked_sql_command, color="green", verbose=self.verbose
                 )
                 intermediate_steps.append(
-                    {"sql_cmd": checked_sql_command["llm_out"]}
+                    {"sql_cmd": checked_sql_command}
                 )  # input: sql exec
-                result = self.database.run(
-                    checked_sql_command["sql_cmd"],
-                    native_format=self.native_format if self.return_direct else False,
-                )
+                result = self.database.run(checked_sql_command)
                 intermediate_steps.append(str(result))  # output: sql exec
                 sql_cmd = checked_sql_command
 
             _run_manager.on_text("\nSQLResult: ", verbose=self.verbose)
-            _run_manager.on_text(str(result), color="yellow", verbose=self.verbose)
+            _run_manager.on_text(result, color="yellow", verbose=self.verbose)
             # If return direct, we just set the final result equal to
             # the result of the sql query result, otherwise try to get a human readable
             # final answer
@@ -226,7 +175,7 @@ class SQLDatabaseChain(Chain):
                 final_result = result
             else:
                 _run_manager.on_text("\nAnswer:", verbose=self.verbose)
-                input_text += f"{sql_cmd['llm_out']}\nSQLResult: {result}\nAnswer:"
+                input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
                 llm_inputs["input"] = input_text
                 intermediate_steps.append(llm_inputs)  # input: final answer
                 final_result = self.llm_chain.predict(
@@ -255,13 +204,21 @@ class SQLDatabaseChain(Chain):
         llm: BaseLanguageModel,
         db: SQLDatabase,
         prompt: Optional[BasePromptTemplate] = None,
-        sql_cmd_parser: Optional[SQLCommandOutputParser] = None,
         **kwargs: Any,
     ) -> SQLDatabaseChain:
-        if not sql_cmd_parser:
-            sql_cmd_parser = SQLCommandOutputParser()
+        """Create a SQLDatabaseChain from an LLM and a database connection.
+
+        *Security note*: Make sure that the database connection uses credentials
+            that are narrowly-scoped to only include the permissions this chain needs.
+            Failure to do so may result in data corruption or loss, since this chain may
+            attempt commands like `DROP TABLE` or `INSERT` if appropriately prompted.
+            The best way to guard against such negative outcomes is to (as appropriate)
+            limit the permissions granted to the credentials used with this chain.
+            This issue shows an example negative outcome if these steps are not taken:
+            https://github.com/langchain-ai/langchain/issues/5923
+        """
         prompt = prompt or SQL_PROMPTS.get(db.dialect, PROMPT)
-        llm_chain = LLMChain(llm=llm, prompt=prompt, output_parser=sql_cmd_parser)
+        llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(llm_chain=llm_chain, database=db, **kwargs)
 
 

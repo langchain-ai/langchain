@@ -9,6 +9,7 @@ from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
+from sqlalchemy.types import NullType
 
 from langchain.utils import get_from_env
 
@@ -313,6 +314,11 @@ class SQLDatabase:
             if self._custom_table_info and table.name in self._custom_table_info:
                 tables.append(self._custom_table_info[table.name])
                 continue
+
+            # Ignore JSON datatyped columns
+            for k, v in table.columns.items():
+                if type(v.type) is NullType:
+                    table._columns.remove(v)
 
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
