@@ -1,10 +1,12 @@
 from collections import deque
+from itertools import islice
 from typing import (
     Any,
     ContextManager,
     Deque,
     Generator,
     Generic,
+    Iterable,
     Iterator,
     List,
     Optional,
@@ -161,3 +163,13 @@ class Tee(Generic[T]):
 
 # Why this is needed https://stackoverflow.com/a/44638570
 safetee = Tee
+
+
+def batch_iterate(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
+    """Utility batching function."""
+    it = iter(iterable)
+    while True:
+        chunk = list(islice(it, size))
+        if not chunk:
+            return
+        yield chunk

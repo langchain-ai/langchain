@@ -5,6 +5,7 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, root_validator
+from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -163,7 +164,7 @@ class Clarifai(LLM):
             logger.error(post_model_outputs_response.status)
             first_model_failure = (
                 post_model_outputs_response.outputs[0].status
-                if len(post_model_outputs_response.outputs[0])
+                if len(post_model_outputs_response.outputs)
                 else None
             )
             raise Exception(
@@ -178,3 +179,67 @@ class Clarifai(LLM):
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         return text
+
+    def _generate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+
+        try:
+            from clarifai_grpc.grpc.api import (
+                resources_pb2,
+                service_pb2,
+            )
+            from clarifai_grpc.grpc.api.status import status_code_pb2
+        except ImportError:
+            raise ImportError(
+                "Could not import clarifai python package. "
+                "Please install it with `pip install clarifai`."
+            )
+
+        # TODO: add caching here.
+        generations = []
+        batch_size = 32
+        for i in range(0, len(prompts), batch_size):
+            batch = prompts[i : i + batch_size]
+            post_model_outputs_request = service_pb2.PostModelOutputsRequest(
+                user_app_id=self.userDataObject,
+                model_id=self.model_id,
+                version_id=self.model_version_id,
+                inputs=[
+                    resources_pb2.Input(
+                        data=resources_pb2.Data(text=resources_pb2.Text(raw=prompt))
+                    )
+                    for prompt in batch
+                ],
+            )
+            post_model_outputs_response = self.stub.PostModelOutputs(
+                post_model_outputs_request
+            )
+
+            if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
+                logger.error(post_model_outputs_response.status)
+                first_model_failure = (
+                    post_model_outputs_response.outputs[0].status
+                    if len(post_model_outputs_response.outputs)
+                    else None
+                )
+                raise Exception(
+                    f"Post model outputs failed, status: "
+                    f"{post_model_outputs_response.status}, first output failure: "
+                    f"{first_model_failure}"
+                )
+
+            for output in post_model_outputs_response.outputs:
+                if stop is not None:
+                    text = enforce_stop_tokens(output.data.text.raw, stop)
+                else:
+                    text = output.data.text.raw
+
+                generations.append([Generation(text=text)])
+
+        return LLMResult(generations=generations)

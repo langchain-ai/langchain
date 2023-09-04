@@ -7,13 +7,9 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
-      test_type:
-        type: string
-        description: "Test types to run"
-        default: '["core", "extended", "core-pydantic-2"]'
 
 env:
-  POETRY_VERSION: "1.4.2"
+  POETRY_VERSION: "1.5.1"
 
 jobs:
   build:
@@ -28,61 +24,22 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-        test_type: ${{ fromJSON(inputs.test_type) }}
-    name: Python ${{ matrix.python-version }} ${{ matrix.test_type }}
+    name: Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
-          poetry-version: "1.4.2"
-          cache-key: ${{ matrix.test_type }}
-          install-command: |
-              if [ "${{ matrix.test_type }}" == "core" ]; then
-                echo "Running core tests, installing dependencies with poetry..."
-                poetry install
-              elif [ "${{ matrix.test_type }}" == "core-pydantic-2" ]; then
-                echo "Running core-pydantic-v2 tests, installing dependencies with poetry..."
-                poetry install
+          cache-key: core
 
-                # Install via `pip` instead of `poetry add` to avoid changing lockfile,
-                # which would prevent caching from working: the cache would get saved
-                # to a different key than where it gets loaded from.
-                poetry run pip install 'pydantic>=2.1,<3'
-              else
-                echo "Running extended tests, installing dependencies with poetry..."
-                poetry install -E extended_testing
-              fi
-      - name: Verify pydantic version
-        run: |
-          if [ "${{ matrix.test_type }}" == "core-pydantic-2" ]; then
-            EXPECTED_VERSION=2
-          else
-            EXPECTED_VERSION=1
-          fi
-          echo "Checking pydantic version... Expecting ${EXPECTED_VERSION}"
-
-          # Determine the major part of pydantic version
-          VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1)
-
-          # Check that the major part of pydantic version is as expected, if not
-          # raise an error
-          if [[ "$VERSION" -ne $EXPECTED_VERSION ]]; then
-            echo "Error: pydantic version must be equal to ${EXPECTED_VERSION}; Found: ${VERSION}"
-            exit 1
-          fi
-          echo "Found pydantic version ${VERSION}, as expected"
+      - name: Install dependencies
         shell: bash
-      - name: Run ${{matrix.test_type}} tests
-        run: |
-          case "${{ matrix.test_type }}" in
-              core | core-pydantic-2)
-                  make test
-                  ;;
-              *)
-                  make extended_tests
-                  ;;
-          esac
+        run: poetry install
+
+      - name: Run core tests
         shell: bash
+        run: make test

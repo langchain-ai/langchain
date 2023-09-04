@@ -1,4 +1,3 @@
-"""Wrapper around Typesense vector search"""
 from __future__ import annotations
 
 import uuid
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class Typesense(VectorStore):
-    """Wrapper around Typesense vector search.
+    """`Typesense` vector store.
 
     To use, you should have the ``typesense`` python package installed.
 
@@ -61,7 +60,7 @@ class Typesense(VectorStore):
         try:
             from typesense import Client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import typesense python package. "
                 "Please install it with `pip install typesense`."
             )

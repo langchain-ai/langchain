@@ -45,12 +45,14 @@ def test_extra_kwargs() -> None:
 def test_wrong_temperature_1() -> None:
     chat = ErnieBotChat()
     message = HumanMessage(content="Hello")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as e:
         chat([message], temperature=1.2)
+    assert "parameter check failed, temperature range is (0, 1.0]" in str(e)
 
 
 def test_wrong_temperature_2() -> None:
     chat = ErnieBotChat()
     message = HumanMessage(content="Hello")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as e:
         chat([message], temperature=0)
+    assert "parameter check failed, temperature range is (0, 1.0]" in str(e)

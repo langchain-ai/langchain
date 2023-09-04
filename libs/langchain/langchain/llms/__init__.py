@@ -62,6 +62,7 @@ from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.ollama import Ollama
+from langchain.llms.opaqueprompts import OpaquePrompts
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
@@ -80,7 +81,7 @@ from langchain.llms.symblai_nebula import Nebula
 from langchain.llms.textgen import TextGen
 from langchain.llms.titan_takeoff import TitanTakeoff
 from langchain.llms.tongyi import Tongyi
-from langchain.llms.vertexai import VertexAI
+from langchain.llms.vertexai import VertexAI, VertexAIModelGarden
 from langchain.llms.vllm import VLLM, VLLMOpenAI
 from langchain.llms.writer import Writer
 from langchain.llms.xinference import Xinference
@@ -141,6 +142,7 @@ __all__ = [
     "PredictionGuard",
     "PromptLayerOpenAI",
     "PromptLayerOpenAIChat",
+    "OpaquePrompts",
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
@@ -150,6 +152,7 @@ __all__ = [
     "TitanTakeoff",
     "Tongyi",
     "VertexAI",
+    "VertexAIModelGarden",
     "VLLM",
     "VLLMOpenAI",
     "Writer",
@@ -205,6 +208,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "petals": Petals,
     "pipelineai": PipelineAI,
     "predibase": Predibase,
+    "opaqueprompts": OpaquePrompts,
     "replicate": Replicate,
     "rwkv": RWKV,
     "sagemaker_endpoint": SagemakerEndpoint,
@@ -214,6 +218,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "tongyi": Tongyi,
     "titan_takeoff": TitanTakeoff,
     "vertexai": VertexAI,
+    "vertexai_model_garden": VertexAIModelGarden,
     "openllm": OpenLLM,
     "openllm_client": OpenLLM,
     "vllm": VLLM,
