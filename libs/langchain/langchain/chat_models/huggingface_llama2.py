@@ -13,7 +13,6 @@ from langchain.schema import ChatResult
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
-    ChatMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -71,7 +70,7 @@ class ChatLlama2Hf(BaseChatModel):
 
         Prompt template without System Message:
         ```
-        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s><s>[INST] {{ user_msg_2 }} [/INST] {{ model_answer_2}} </s>
+        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s><s>[INST] {{ user_msg_2 }} [/INST]
         ```
         """
         prompt = ""
@@ -89,11 +88,8 @@ class ChatLlama2Hf(BaseChatModel):
                 prompt += f"<s>{B_INST} {message.content} {E_INST} "
             elif isinstance(message, AIMessage):
                 prompt += f"{message.content} </s><s>{B_INST} "
-            elif isinstance(message, ChatMessage) and i == 0:
-                prompt += f"<s>{B_INST} {message.role.capitalize()}:\
-{message.content} {E_INST} "
-            elif isinstance(message, ChatMessage) and i > 0:
-                prompt += f"{message.role.capitalize()}: {message.content} {E_INST} "
+            else:
+                raise ValueError(f"Unsupported Message type:")
 
         return prompt
 
