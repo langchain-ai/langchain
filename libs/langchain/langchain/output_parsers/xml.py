@@ -17,7 +17,7 @@ class XMLOutputParser(BaseOutputParser):
     def get_format_instructions(self) -> str:
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
-    def parse(self, text: str) -> Dict[str, Any]:
+    def parse(self, text: str) -> Dict[str, List[Any]]:
         text = text.strip("`").strip("xml")
         encoding_match = self.encoding_matcher.search(text)
         if encoding_match:
@@ -30,9 +30,9 @@ class XMLOutputParser(BaseOutputParser):
         else:
             raise ValueError(f"Could not parse output: {text}")
 
-    def _root_to_dict(self, root: ET.Element) -> Dict[str, Any]:
+    def _root_to_dict(self, root: ET.Element) -> Dict[str, List[Any]]:
         """Converts xml tree to python dictionary."""
-        result = {root.tag: []}
+        result: Dict[str, List[Any]] = {root.tag: []}
         for child in root:
             if len(child) == 0:
                 result[root.tag].append({child.tag: child.text})
