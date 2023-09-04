@@ -147,6 +147,7 @@ class YoutubeLoader(BaseLoader):
         self,
         video_id: str,
         add_video_info: bool = False,
+        duration: Optional[float] = None,
         language: Union[str, Sequence[str]] = "en",
         translation: str = "en",
         continue_on_failure: bool = False,
@@ -155,6 +156,7 @@ class YoutubeLoader(BaseLoader):
         self.video_id = video_id
         self.add_video_info = add_video_info
         self.language = language
+        self.duration = duration
         if isinstance(language, str):
             self.language = [language]
         else:
@@ -178,7 +180,7 @@ class YoutubeLoader(BaseLoader):
         video_id = cls.extract_video_id(youtube_url)
         return cls(video_id, **kwargs)
 
-    def load(self, duration: Optional[float] = None) -> List[Document]:
+    def load(self) -> List[Document]:
         """Load documents."""
         try:
             from youtube_transcript_api import (
@@ -212,12 +214,12 @@ class YoutubeLoader(BaseLoader):
             transcript = en_transcript.translate(self.translation)
 
         transcript_pieces = transcript.fetch()
-
-        if duration == None:
+        
+        if self.duration == None:
             transcript = " ".join([t["text"].strip(" ") for t in transcript_pieces])
             return [Document(page_content=transcript, metadata=metadata)]
         else:
-            transcript_pieces = chunk_transcripts(transcript_pieces, duration=duration)
+            transcript_pieces = chunk_transcripts(transcript_pieces, duration=self.duration)
             docs = []
             for t in transcript_pieces:
                 dct = {
