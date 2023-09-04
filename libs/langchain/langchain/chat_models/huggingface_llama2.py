@@ -1,6 +1,13 @@
 from typing import Any, Dict, List, Optional, Union
 
-import torch
+try:
+    import torch
+except ImportError:
+    raise ImportError(
+        "torch package not found, please install it with " "`pip install torch`"
+    )
+
+from enum import Enum
 from transformers import StoppingCriteria, StoppingCriteriaList
 from transformers.pipelines import TextGenerationPipeline
 
@@ -18,8 +25,21 @@ from langchain.schema.messages import (
 )
 from langchain.schema.output import ChatGeneration
 
-B_INST, E_INST = "[INST]", "[/INST]"
-B_SYS, E_SYS = "<<SYS>>", "<</SYS>>"
+
+class InstructionTokens(Enum):
+    def __str__(self) -> str:
+        return self.value
+
+    B_INST = "[INST]"
+    E_INST = "[/INST]"
+
+
+class SystemTokens(Enum):
+    def __str__(self) -> str:
+        return self.value
+
+    B_SYS = "<<SYS>>"
+    E_SYS = "<</SYS>>"
 
 
 class StoppingCriteriaSub(StoppingCriteria):
@@ -44,7 +64,7 @@ class StoppingCriteriaSub(StoppingCriteria):
         **kwargs: Dict,
     ) -> bool:
         for stop_id in self.stops:
-            if (input_ids[0][-torch.numel(stop_id) :] == stop_id).all():
+            if (input_ids[0][-len(stop_id) :] == stop_id).all():
                 return True
         return False
 
@@ -64,20 +84,6 @@ class ChatLlama2Hf(BaseChatModel):
             or values["pipeline"].task != "text-generation"
         ):
             raise ValueError("The pipeline task should be 'text-generation'.")
-
-        valid_models = (
-            "meta-llama/Llama-2-7b-chat-hf",
-            "meta-llama/Llama-2-13b-chat-hf",
-            "meta-llama/Llama-2-70b-chat-hf",
-        )
-
-        if (
-            not hasattr(values["pipeline"], "model")
-            or values["pipeline"].model.name_or_path not in valid_models
-        ):
-            raise ValueError(
-                f"The pipeline model name or path should be one of {valid_models}."
-            )
 
         return values
 
@@ -108,13 +114,13 @@ class ChatLlama2Hf(BaseChatModel):
                     "SystemMessage can only appear as the first message in the list."
                 )
             elif isinstance(message, SystemMessage) and i == 0:
-                prompt += f"<s>{B_INST} {B_SYS}\n{message.content}\n{E_SYS}\n\n"
+                prompt += f"<s>{InstructionTokens.B_INST} {SystemTokens.B_SYS}\n{message.content}\n{SystemTokens.E_SYS}\n\n"
             elif isinstance(message, HumanMessage) and i > 0:
-                prompt += f"{message.content} {E_INST} "
+                prompt += f"{message.content} {InstructionTokens.E_INST} "
             elif isinstance(message, HumanMessage) and i == 0:
-                prompt += f"<s>{B_INST} {message.content} {E_INST} "
+                prompt += f"<s>{InstructionTokens.B_INST} {message.content} {InstructionTokens.E_INST} "
             elif isinstance(message, AIMessage):
-                prompt += f"{message.content} </s><s>{B_INST} "
+                prompt += f"{message.content} </s><s>{InstructionTokens.B_INST} "
             else:
                 raise ValueError(f"Unsupported Message type: {type(message)}")
 
@@ -153,9 +159,8 @@ class ChatLlama2Hf(BaseChatModel):
         else:
             stopping_criteria = None
 
-        response = self.pipeline(prompt, stopping_criteria=stopping_criteria, **kwargs)[
-            0
-        ]["generated_text"]
+        response = self.pipeline(prompt, stopping_criteria=stopping_criteria, **kwargs)
+        response = response[0]["generated_text"]
         chat_generation = ChatGeneration(
             message=AIMessage(content=response),
         )

@@ -1,12 +1,15 @@
 """Test Hugging Face Llama-2 Chat model."""
 
-from langchain.chat_models.huggingface_llama2 import ChatLlama2Hf
+from langchain.chat_models.huggingface_llama2 import (
+    InstructionTokens,
+    SystemTokens,
+    ChatLlama2Hf
+)
 from langchain.schema.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,
 )
-
 
 def test_format_messages_as_text_with_system() -> None:
     messages = [
@@ -17,10 +20,23 @@ def test_format_messages_as_text_with_system() -> None:
         AIMessage(content="AI response."),
     ]
 
-    ground_truth = "<s>[INST] <<SYS>>\nSystem Prompt.\n<</SYS>>\n\nHuman Message. [/INST] AI response. </s><s>[INST] Second Human Message. [/INST] AI response. </s><s>[INST] "  # noqa: E501
+    assert InstructionTokens.B_INST == "[INST]"
+    assert InstructionTokens.E_INST == "[/INST]"
+    assert SystemTokens.B_SYS == "<<SYS>>"
+    assert SystemTokens.E_SYS == "<</SYS>>"
+
+    ground_truth = (
+        "<s>[INST] <<SYS>>\nSystem Prompt.\n<</SYS>>\n\n"
+        "Human Message. [/INST] AI response. </s><s>"
+        "[INST] Second Human Message. [/INST] "
+        "AI response. </s><s>[INST] "
+    )
 
     messages_as_str = ChatLlama2Hf.format_messages_as_text(messages=messages)
-    assert messages_as_str == ground_truth
+    assert messages_as_str == ground_truth, (
+        f"Prediction:\n```{messages_as_str}\n"
+        "```\nExpected:\n```{ground_truth}\n```"
+    )
 
 
 def test_format_messages_as_text_without_system() -> None:
@@ -31,7 +47,20 @@ def test_format_messages_as_text_without_system() -> None:
         AIMessage(content="Second AI response."),
     ]
 
-    ground_truth = "<s>[INST] Human Message. [/INST] AI response. </s><s>[INST] Second Human Message. [/INST] Second AI response. </s><s>[INST] "  # noqa: E501
+    assert InstructionTokens.B_INST == "[INST]"
+    assert InstructionTokens.E_INST == "[/INST]"
+    assert SystemTokens.B_SYS == "<<SYS>>"
+    assert SystemTokens.E_SYS == "<</SYS>>"
+
+    ground_truth = (
+        "<s>[INST] Human Message. [/INST] "
+        "AI response. </s><s>[INST] "
+        "Second Human Message. [/INST] "
+        "Second AI response. </s><s>[INST] "
+    )
 
     messages_as_str = ChatLlama2Hf.format_messages_as_text(messages=messages)
-    assert messages_as_str == ground_truth
+    assert messages_as_str == ground_truth, (
+        f"Prediction:\n```{messages_as_str}\n"
+        "```\nExpected:\n```{ground_truth}\n```"
+    )
