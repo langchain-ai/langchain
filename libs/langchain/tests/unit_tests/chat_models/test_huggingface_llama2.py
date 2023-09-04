@@ -1,15 +1,16 @@
 """Test Hugging Face Llama-2 Chat model."""
 
 from langchain.chat_models.huggingface_llama2 import (
+    ChatLlama2Hf,
     InstructionTokens,
     SystemTokens,
-    ChatLlama2Hf
 )
 from langchain.schema.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,
 )
+
 
 def test_format_messages_as_text_with_system() -> None:
     messages = [
@@ -34,8 +35,7 @@ def test_format_messages_as_text_with_system() -> None:
 
     messages_as_str = ChatLlama2Hf.format_messages_as_text(messages=messages)
     assert messages_as_str == ground_truth, (
-        f"Prediction:\n```{messages_as_str}\n"
-        "```\nExpected:\n```{ground_truth}\n```"
+        f"Prediction:\n```{messages_as_str}\n" "```\nExpected:\n```{ground_truth}\n```"
     )
 
 
@@ -61,6 +61,5 @@ def test_format_messages_as_text_without_system() -> None:
 
     messages_as_str = ChatLlama2Hf.format_messages_as_text(messages=messages)
     assert messages_as_str == ground_truth, (
-        f"Prediction:\n```{messages_as_str}\n"
-        "```\nExpected:\n```{ground_truth}\n```"
+        f"Prediction:\n```{messages_as_str}\n" "```\nExpected:\n```{ground_truth}\n```"
     )
