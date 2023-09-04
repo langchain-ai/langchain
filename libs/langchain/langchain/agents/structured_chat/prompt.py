@@ -1,10 +1,10 @@
 # flake8: noqa
-PREFIX = """Respond to the human as helpfully and accurately as possible. You have access to the following tools:"""
-FORMAT_INSTRUCTIONS = """Use a json blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
+PREFIX = """Отвечай человеку как можно более полезно и точно. У тебя есть доступ к следующим инструментам:"""
+FORMAT_INSTRUCTIONS = """Используй json-объект для указания инструмента, предоставив ключ действия (имя инструмента) и ключ ввода действия (ввод инструмента).
 
-Valid "action" values: "Final Answer" or {tool_names}
+Допустимые значения "action": "Final Answer" или {tool_names}
 
-Provide only ONE action per $JSON_BLOB, as shown:
+Предоставь только ОДНО действие на $JSON_BLOB, как показано:
 
 ```
 {{{{
@@ -13,23 +13,23 @@ Provide only ONE action per $JSON_BLOB, as shown:
 }}}}
 ```
 
-Follow this format:
+Следуй этому формату:
 
-Question: input question to answer
-Thought: consider previous and subsequent steps
+Question: вводимый вопрос для ответа
+Thought: учитывай предыдущие и последующие шаги
 Action:
 ```
 $JSON_BLOB
 ```
-Observation: action result
-... (repeat Thought/Action/Observation N times)
-Thought: I know what to respond
+Observation: результат действия
+... (повторяй Thought/Action/Action Input/Observation can repeat N times)
+Thought: Я знаю, что отвечать
 Action:
 ```
 {{{{
   "action": "Final Answer",
-  "action_input": "Final response to human"
+  "action_input": "Окончательный ответ человеку"
 }}}}
 ```"""
-SUFFIX = """Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB```then Observation:.
+SUFFIX = """Начни! Напоминаю, что ВСЕГДА нужно отвечать действительным json-объектом одного действия. Используй инструменты, если это необходимо. Отвечай напрямую, если это уместно. Формат - Action:```$JSON_BLOB```затем Observation:.
 Thought:"""

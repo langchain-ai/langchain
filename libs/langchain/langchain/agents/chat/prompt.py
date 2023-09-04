@@ -25,6 +25,6 @@ $JSON_BLOB
 Observation: результат действия
 ... (этот цикл Thought/Action/Action Input/Observation can repeat N times)
 Thought: теперь я знаю окончательный ответ
-Окончательный ответ: окончательный ответ на исходный вопрос"""
+Final answer: окончательный ответ на исходный вопрос"""
 SYSTEM_MESSAGE_SUFFIX = """Начни! Напоминаю, что всегда нужно использовать точные символы `Окончательный ответ` при ответе."""
 HUMAN_MESSAGE = "{input}\n\n{agent_scratchpad}"

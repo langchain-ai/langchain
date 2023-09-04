@@ -1,0 +1,4 @@
+input_variables: [dataset_size_min, dataset_size_max, subject, examples]
+output_parser: null
+template: 'Сгенерируй от {dataset_size_min} до {dataset_size_max} фраз для интента "{subject}". Примеры фраз: {examples}. Результат верни в формате JSON списка без каких либо пояснений, например, ["фраза1", "фраза2", "фраза3", "фраза4"]. Не повторяй фразы из примера и не дублируй фразы.'
+template_format: f-string

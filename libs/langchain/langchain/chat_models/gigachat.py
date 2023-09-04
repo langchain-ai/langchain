@@ -23,10 +23,11 @@ from langchain.schema.messages import (
 )
 from langchain.schema.output import ChatGenerationChunk
 
+LATEST_MODEL = "latest"
 
 class GigaChat(SimpleChatModel):
     api_url: str = "https://beta.saluteai.sberdevices.ru"
-    model: str = "GigaChat:v1.13.0"
+    model: str = LATEST_MODEL
     profanity: bool = True
     temperature: float = 0
     token: str = os.environ.get("GIGA_TOKEN", "")
@@ -102,6 +103,37 @@ class GigaChat(SimpleChatModel):
 
         self.token = response.json()["tok"]
         return
+    
+    @retry(
+        retry=retry_if_not_exception_type(PermissionError), stop=stop_after_attempt(3)
+    )
+    def get_models(self) -> List[str]:
+        if not self.token:
+            self._authorize()
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.token}",
+        }
+
+        response = requests.get(
+            f"{self.api_url}/v1/models",
+            headers=headers,
+            timeout=600,
+        )
+        if not response.ok:
+            if self.verbose:
+                self.logger.warning(
+                    "Giga error: %i %s", response.status_code, response.text
+                )
+            if response.status_code == 401:
+                self.token = ""
+            raise ValueError(
+                f"Can't get response from GigaChat. Error code: {response.status_code}"
+            )
+
+        return [model['id'] for model in response.json()['data']]
+
 
     @retry(
         retry=retry_if_not_exception_type(PermissionError), stop=stop_after_attempt(3)
@@ -118,6 +150,9 @@ class GigaChat(SimpleChatModel):
         """
         if not self.token:
             self._authorize()
+
+        if self.model == LATEST_MODEL:
+            self.model = self.get_models()[0]
 
         headers = {
             "Content-Type": "application/json",

@@ -9,7 +9,7 @@ Action Input: ввод для действия
 Observation: результат действия
 ... (этот циклThought/Action/Action Input/Observation can repeat N times)
 Thought: Теперь я знаю окончательный ответ
-Окончательный ответ: окончательный ответ на исходный вопрос"""
+Final answer: окончательный ответ на исходный вопрос"""
 SUFFIX = """Начни!
 
 Question: {input}
