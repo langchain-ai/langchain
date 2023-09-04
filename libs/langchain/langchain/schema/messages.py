@@ -117,6 +117,14 @@ class BaseMessageChunk(BaseMessage):
             # If both are (subclasses of) BaseMessageChunk,
             # concat into a single BaseMessageChunk
 
+            if isinstance(self, ChatMessageChunk):
+                return self.__class__(
+                    role=self.role,
+                    content=self.content + other.content,
+                    additional_kwargs=self._merge_kwargs_dict(
+                        self.additional_kwargs, other.additional_kwargs
+                    ),
+                )
             return self.__class__(
                 content=self.content + other.content,
                 additional_kwargs=self._merge_kwargs_dict(
