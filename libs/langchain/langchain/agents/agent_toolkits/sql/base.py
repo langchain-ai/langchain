@@ -38,10 +38,11 @@ def create_sql_agent(
     early_stopping_method: str = "force",
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    extra_tools: Optional[List] = [],
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct an SQL agent from an LLM and tools."""
-    tools = toolkit.get_tools()
+    tools = toolkit.get_tools()  + extra_tools
     prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
     agent: BaseSingleActionAgent
 
