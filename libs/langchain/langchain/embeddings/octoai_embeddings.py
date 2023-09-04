@@ -87,4 +87,4 @@ class OctoAIEmbeddings(BaseModel, Embeddings):
     def embed_query(self, text: str) -> List[float]:
         """Compute query embedding using an OctoAI instruct model."""
         text = text.replace("\n", " ")
-        return self._compute_embeddings([text], self.embed_instruction)[0]
+        return self._compute_embeddings([text], self.query_instruction)[0]

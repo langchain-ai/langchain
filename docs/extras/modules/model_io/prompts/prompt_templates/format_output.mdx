@@ -1,6 +1,6 @@
 # Format template output
 
-The output of the format method is available as string, list of messages and `ChatPromptValue`
+The output of the format method is available as a string, list of messages and `ChatPromptValue`
 
 As string:
 
@@ -26,22 +26,7 @@ output_2 = chat_prompt.format_prompt(input_language="English", output_language="
 assert output == output_2
 ```
 
-As `ChatPromptValue`
-
-
-```python
-chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.")
-```
-
-<CodeOutputBlock lang="python">
-
-```
-    ChatPromptValue(messages=[SystemMessage(content='You are a helpful assistant that translates English to French.', additional_kwargs={}), HumanMessage(content='I love programming.', additional_kwargs={})])
-```
-
-</CodeOutputBlock>
-
-As list of Message objects
+As list of Message objects:
 
 
 ```python
@@ -57,3 +42,17 @@ chat_prompt.format_prompt(input_language="English", output_language="French", te
 
 </CodeOutputBlock>
 
+As `ChatPromptValue`:
+
+
+```python
+chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    ChatPromptValue(messages=[SystemMessage(content='You are a helpful assistant that translates English to French.', additional_kwargs={}), HumanMessage(content='I love programming.', additional_kwargs={})])
+```
+
+</CodeOutputBlock>

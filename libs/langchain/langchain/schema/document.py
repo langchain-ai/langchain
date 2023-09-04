@@ -17,6 +17,11 @@ class Document(Serializable):
         documents, etc.).
     """
 
+    @property
+    def lc_serializable(self) -> bool:
+        """Return whether or not the class is serializable."""
+        return True
+
 
 class BaseDocumentTransformer(ABC):
     """Abstract base class for document transformation systems.

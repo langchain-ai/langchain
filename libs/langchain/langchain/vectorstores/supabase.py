@@ -26,7 +26,9 @@ if TYPE_CHECKING:
 
 
 class SupabaseVectorStore(VectorStore):
-    """VectorStore for a Supabase postgres database. Assumes you have the `pgvector`
+    """`Supabase Postgres` vector store.
+
+    It assumes you have the `pgvector`
     extension installed and a `match_documents` (or similar) function. For more details:
     https://integrations.langchain.com/vectorstores?integration_name=SupabaseVectorStore
 
@@ -92,7 +94,7 @@ class SupabaseVectorStore(VectorStore):
         try:
             import supabase  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import supabase python package. "
                 "Please install it with `pip install supabase`."
             )

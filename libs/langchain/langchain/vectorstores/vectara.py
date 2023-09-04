@@ -1,4 +1,3 @@
-"""Wrapper around Vectara vector database."""
 from __future__ import annotations
 
 import json
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class Vectara(VectorStore):
-    """Implementation of Vector Store using Vectara.
+    """`Vectara API` vector store.
 
      See (https://vectara.com).
 
@@ -246,6 +245,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
+        score_threshold: Optional[float] = None,
         n_sentence_context: int = 2,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -259,6 +259,9 @@ class Vectara(VectorStore):
                 filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview
                 for more details.
+            score_threshold: minimal score threshold for the result.
+                If defined, results with score less than this value will be
+                filtered out.
             n_sentence_context: number of sentences before/after the matching segment
                 to add, defaults to 2
 
@@ -306,7 +309,14 @@ class Vectara(VectorStore):
 
         result = response.json()
 
-        responses = result["responseSet"][0]["response"]
+        if score_threshold:
+            responses = [
+                r
+                for r in result["responseSet"][0]["response"]
+                if r["score"] > score_threshold
+            ]
+        else:
+            responses = result["responseSet"][0]["response"]
         documents = result["responseSet"][0]["document"]
 
         metadatas = []
@@ -317,7 +327,7 @@ class Vectara(VectorStore):
             md.update(doc_md)
             metadatas.append(md)
 
-        docs = [
+        docs_with_score = [
             (
                 Document(
                     page_content=x["text"],
@@ -328,7 +338,7 @@ class Vectara(VectorStore):
             for x, md in zip(responses, metadatas)
         ]
 
-        return docs
+        return docs_with_score
 
     def similarity_search(
         self,
@@ -359,6 +369,7 @@ class Vectara(VectorStore):
             k=k,
             lambda_val=lambda_val,
             filter=filter,
+            score_threshold=None,
             n_sentence_context=n_sentence_context,
             **kwargs,
         )
@@ -426,7 +437,7 @@ class Vectara(VectorStore):
 
 
 class VectaraRetriever(VectorStoreRetriever):
-    """Retriever class for Vectara."""
+    """Retriever class for `Vectara`."""
 
     vectorstore: Vectara
     """Vectara vectorstore."""
@@ -452,7 +463,7 @@ class VectaraRetriever(VectorStoreRetriever):
         self,
         texts: List[str],
         metadatas: Optional[List[dict]] = None,
-        doc_metadata: Optional[dict] = {},
+        doc_metadata: Optional[dict] = None,
     ) -> None:
         """Add text to the Vectara vectorstore.
 
@@ -460,4 +471,4 @@ class VectaraRetriever(VectorStoreRetriever):
             texts (List[str]): The text
             metadatas (List[dict]): Metadata dicts, must line up with existing store
         """
-        self.vectorstore.add_texts(texts, metadatas, doc_metadata)
+        self.vectorstore.add_texts(texts, metadatas, doc_metadata or {})

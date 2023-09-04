@@ -1,5 +1,3 @@
-"""Wrapper around Xata as a vector database."""
-
 from __future__ import annotations
 
 import time
@@ -12,7 +10,9 @@ from langchain.vectorstores.base import VectorStore
 
 
 class XataVectorStore(VectorStore):
-    """VectorStore for a Xata database. Assumes you have a Xata database
+    """`Xata` vector store.
+
+    It assumes you have a Xata database
     created with the right schema. See the guide at:
     https://integrations.langchain.com/vectorstores?integration_name=XataVectorStore
 
@@ -29,7 +29,7 @@ class XataVectorStore(VectorStore):
         try:
             from xata.client import XataClient  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import xata python package. "
                 "Please install it with `pip install xata`."
             )

@@ -44,6 +44,15 @@ class SQLDatabaseChain(Chain):
             from langchain import OpenAI, SQLDatabase
             db = SQLDatabase(...)
             db_chain = SQLDatabaseChain.from_llm(OpenAI(), db)
+
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include the permissions this chain needs.
+        Failure to do so may result in data corruption or loss, since this chain may
+        attempt commands like `DROP TABLE` or `INSERT` if appropriately prompted.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this chain.
+        This issue shows an example negative outcome if these steps are not taken:
+        https://github.com/langchain-ai/langchain/issues/5923
     """
 
     llm_chain: LLMChain
@@ -64,7 +73,7 @@ class SQLDatabaseChain(Chain):
     return_direct: bool = False
     """Whether or not to return the result of querying the SQL table directly."""
     use_query_checker: bool = False
-    """Whether or not the query checker tool should be used to attempt 
+    """Whether or not the query checker tool should be used to attempt
     to fix the initial SQL from the LLM."""
     query_checker_prompt: Optional[BasePromptTemplate] = None
     """The prompt template that should be used by the query checker"""

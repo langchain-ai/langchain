@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class Clarifai(VectorStore):
-    """Wrapper around Clarifai AI platform's vector store.
+    """`Clarifai AI` vector store.
 
     To use, you should have the ``clarifai`` python package installed.
 
@@ -55,7 +55,7 @@ class Clarifai(VectorStore):
             from clarifai.auth.helper import DEFAULT_BASE, ClarifaiAuthHelper
             from clarifai.client import create_stub
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
             )

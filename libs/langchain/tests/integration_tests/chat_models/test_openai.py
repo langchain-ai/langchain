@@ -1,18 +1,22 @@
 """Test ChatOpenAI wrapper."""
-
-
-from typing import Any
+from typing import Any, List, Optional, Union
 
 import pytest
 
+from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.callbacks.manager import CallbackManager
+from langchain.chains.openai_functions import (
+    create_openai_fn_chain,
+)
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
     LLMResult,
 )
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -189,6 +193,108 @@ async def test_async_chat_openai_streaming() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
+
+
+@pytest.mark.scheduled
+@pytest.mark.asyncio
+async def test_async_chat_openai_streaming_with_function() -> None:
+    """Test ChatOpenAI wrapper with multiple completions."""
+
+    class MyCustomAsyncHandler(AsyncCallbackHandler):
+        def __init__(self) -> None:
+            super().__init__()
+            self._captured_tokens: List[str] = []
+            self._captured_chunks: List[
+                Optional[Union[ChatGenerationChunk, GenerationChunk]]
+            ] = []
+
+        def on_llm_new_token(
+            self,
+            token: str,
+            *,
+            chunk: Optional[Union[ChatGenerationChunk, GenerationChunk]] = None,
+            **kwargs: Any,
+        ) -> Any:
+            self._captured_tokens.append(token)
+            self._captured_chunks.append(chunk)
+
+    json_schema = {
+        "title": "Person",
+        "description": "Identifying information about a person.",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "description": "The person's name",
+                "type": "string",
+            },
+            "age": {
+                "title": "Age",
+                "description": "The person's age",
+                "type": "integer",
+            },
+            "fav_food": {
+                "title": "Fav Food",
+                "description": "The person's favorite food",
+                "type": "string",
+            },
+        },
+        "required": ["name", "age"],
+    }
+
+    callback_handler = MyCustomAsyncHandler()
+    callback_manager = CallbackManager([callback_handler])
+
+    chat = ChatOpenAI(
+        max_tokens=10,
+        n=1,
+        callback_manager=callback_manager,
+        streaming=True,
+    )
+
+    prompt_msgs = [
+        SystemMessage(
+            content="You are a world class algorithm for "
+            "extracting information in structured formats."
+        ),
+        HumanMessage(
+            content="Use the given format to extract "
+            "information from the following input:"
+        ),
+        HumanMessagePromptTemplate.from_template("{input}"),
+        HumanMessage(content="Tips: Make sure to answer in the correct format"),
+    ]
+    prompt = ChatPromptTemplate(messages=prompt_msgs)
+
+    function: Any = {
+        "name": "output_formatter",
+        "description": (
+            "Output formatter. Should always be used to format your response to the"
+            " user."
+        ),
+        "parameters": json_schema,
+    }
+    chain = create_openai_fn_chain(
+        [function],
+        chat,
+        prompt,
+        output_parser=None,
+    )
+
+    message = HumanMessage(content="Sally is 13 years old")
+    response = await chain.agenerate([{"input": message}])
+
+    assert isinstance(response, LLMResult)
+    assert len(response.generations) == 1
+    for generations in response.generations:
+        assert len(generations) == 1
+        for generation in generations:
+            assert isinstance(generation, ChatGeneration)
+            assert isinstance(generation.text, str)
+            assert generation.text == generation.message.content
+    assert len(callback_handler._captured_tokens) > 0
+    assert len(callback_handler._captured_chunks) > 0
+    assert all([chunk is not None for chunk in callback_handler._captured_chunks])
 
 
 def test_chat_openai_extra_kwargs() -> None:

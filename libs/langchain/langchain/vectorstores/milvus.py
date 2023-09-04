@@ -1,4 +1,3 @@
-"""Wrapper around the Milvus vector database."""
 from __future__ import annotations
 
 import logging
@@ -24,19 +23,18 @@ DEFAULT_MILVUS_CONNECTION = {
 
 
 class Milvus(VectorStore):
-    """Initialize wrapper around the milvus vector database.
+    """`Milvus` vector store.
 
-    In order to use this you need to have `pymilvus` installed and a
-    running Milvus
+    You need to install `pymilvus` and run Milvus.
 
     See the following documentation for how to run a Milvus instance:
     https://milvus.io/docs/install_standalone-docker.md
 
     If looking for a hosted Milvus, take a look at this documentation:
     https://zilliz.com/cloud and make use of the Zilliz vectorstore found in
-    this project,
+    this project.
 
-    IF USING L2/IP metric IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
+    IF USING L2/IP metric, IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
 
     Args:
         embedding_function (Embeddings): Function used to embed the text.

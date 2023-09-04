@@ -1,4 +1,3 @@
-"""Wrapper around OpenSearch vector database."""
 from __future__ import annotations
 
 import uuid
@@ -26,7 +25,7 @@ def _import_opensearch() -> Any:
     try:
         from opensearchpy import OpenSearch
     except ImportError:
-        raise ValueError(IMPORT_OPENSEARCH_PY_ERROR)
+        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
     return OpenSearch
 
 
@@ -35,7 +34,7 @@ def _import_bulk() -> Any:
     try:
         from opensearchpy.helpers import bulk
     except ImportError:
-        raise ValueError(IMPORT_OPENSEARCH_PY_ERROR)
+        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
     return bulk
 
 
@@ -44,7 +43,7 @@ def _import_not_found_error() -> Any:
     try:
         from opensearchpy.exceptions import NotFoundError
     except ImportError:
-        raise ValueError(IMPORT_OPENSEARCH_PY_ERROR)
+        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
     return NotFoundError
 
 
@@ -54,7 +53,7 @@ def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
         opensearch = _import_opensearch()
         client = opensearch(opensearch_url, **kwargs)
     except ValueError as e:
-        raise ValueError(
+        raise ImportError(
             f"OpenSearch client string provided is not in proper format. "
             f"Got error: {e} "
         )
@@ -315,7 +314,7 @@ def _get_kwargs_value(kwargs: Any, key: str, default_value: Any) -> Any:
 
 
 class OpenSearchVectorSearch(VectorStore):
-    """Wrapper around OpenSearch as a vector database.
+    """`Amazon OpenSearch Vector Engine` vector store.
 
     Example:
         .. code-block:: python

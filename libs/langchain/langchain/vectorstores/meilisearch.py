@@ -1,4 +1,3 @@
-"""Wrapper around Meilisearch vector database."""
 from __future__ import annotations
 
 import uuid
@@ -45,7 +44,7 @@ def _create_client(
 
 
 class Meilisearch(VectorStore):
-    """Initialize wrapper around Meilisearch vector database.
+    """`Meilisearch` vector store.
 
     To use this, you need to have `meilisearch` python package installed,
     and a running Meilisearch instance.

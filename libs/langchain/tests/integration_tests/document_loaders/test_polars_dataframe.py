@@ -1,12 +1,20 @@
-import polars as pl
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 
 from langchain.document_loaders import PolarsDataFrameLoader
 from langchain.schema import Document
 
+if TYPE_CHECKING:
+    import polars as pl
+
 
 @pytest.fixture
 def sample_data_frame() -> pl.DataFrame:
+    import polars as pl
+
     data = {
         "text": ["Hello", "World"],
         "author": ["Alice", "Bob"],
@@ -26,6 +34,8 @@ def test_load_returns_list_of_documents(sample_data_frame: pl.DataFrame) -> None
 def test_load_converts_dataframe_columns_to_document_metadata(
     sample_data_frame: pl.DataFrame,
 ) -> None:
+    import polars as pl
+
     loader = PolarsDataFrameLoader(sample_data_frame)
     docs = loader.load()
 

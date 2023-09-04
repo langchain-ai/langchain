@@ -54,7 +54,7 @@ if _PYDANTIC_MAJOR_VERSION == 1:
     try:
         from openapi_schema_pydantic import OpenAPI
     except ImportError:
-        OpenAPI = object
+        OpenAPI = object  # type: ignore
 
     class OpenAPISpec(OpenAPI):
         """OpenAPI Model that removes mis-formatted parts of the spec."""

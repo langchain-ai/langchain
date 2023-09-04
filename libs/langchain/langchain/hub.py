@@ -30,11 +30,11 @@ def push(
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
     parent_commit_hash: Optional[str] = "latest",
-    new_repo_is_public: bool = False,
+    new_repo_is_public: bool = True,
     new_repo_description: str = "",
 ) -> str:
     """
-    Pushes an object to the hub and returns the new commit hash.
+    Pushes an object to the hub and returns the URL it can be viewed at in a browser.
 
     :param repo_full_name: The full name of the repo to push to in the format of
         `owner/repo`.
@@ -45,21 +45,20 @@ def push(
     :param parent_commit_hash: The commit hash of the parent commit to push to. Defaults
         to the latest commit automatically.
     :param new_repo_is_public: Whether the repo should be public. Defaults to
-        False (Private by default).
+        True (Public by default).
     :param new_repo_description: The description of the repo. Defaults to an empty
         string.
     """
     client = _get_client(api_url=api_url, api_key=api_key)
     manifest_json = dumps(object)
-    resp = client.push(
+    message = client.push(
         repo_full_name,
         manifest_json,
         parent_commit_hash=parent_commit_hash,
         new_repo_is_public=new_repo_is_public,
         new_repo_description=new_repo_description,
     )
-    commit_hash: str = resp["commit"]["commit_hash"]
-    return commit_hash
+    return message
 
 
 def pull(
