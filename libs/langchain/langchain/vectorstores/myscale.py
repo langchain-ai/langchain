@@ -147,7 +147,12 @@ class MyScale(VectorStore):
         )
         for k in ["id", "vector", "text", "metadata"]:
             assert k in self.config.column_map
-        assert self.config.metric in ["ip", "cosine", "l2"]
+        assert self.config.metric.upper() in ["IP", "COSINE", "L2"]
+        if self.config.metric in ["ip", "cosine", "l2"]:
+            logger.warning(
+                "Lower case metric types will be deprecated "
+                "the future. Please use one of ('IP', 'Cosine', 'L2')"
+            )
 
         # initialize the schema
         dim = len(embedding.embed_query("try this out"))
@@ -174,7 +179,9 @@ class MyScale(VectorStore):
         self.BS = "\\"
         self.must_escape = ("\\", "'")
         self._embeddings = embedding
-        self.dist_order = "ASC" if self.config.metric in ["cosine", "l2"] else "DESC"
+        self.dist_order = (
+            "ASC" if self.config.metric.upper() in ["COSINE", "L2"] else "DESC"
+        )
 
         # Create a connection to myscale
         self.client = get_client(
