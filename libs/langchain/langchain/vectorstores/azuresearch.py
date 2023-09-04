@@ -522,21 +522,29 @@ class AzureSearch(VectorStore):
             (
                 Document(
                     page_content=result.pop(FIELDS_CONTENT),
-                    metadata=json.loads(result[FIELDS_METADATA])
-                    if FIELDS_METADATA in result
-                    else {k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR}
-                    | {
-                        "captions": {
-                            "text": result.get("@search.captions", [{}])[0].text,
-                            "highlights": result.get("@search.captions", [{}])[
-                                0
-                            ].highlights,
-                        }
-                        if result.get("@search.captions")
-                        else {},
-                        "answers": semantic_answers_dict.get(
-                            json.loads(result["metadata"]).get("key"), ""
+                    metadata={
+                        **(
+                            json.loads(result[FIELDS_METADATA])
+                            if FIELDS_METADATA in result
+                            else {
+                                k: v
+                                for k, v in result.items()
+                                if k != FIELDS_CONTENT_VECTOR
+                            }
                         ),
+                        **{
+                            "captions": {
+                                "text": result.get("@search.captions", [{}])[0].text,
+                                "highlights": result.get("@search.captions", [{}])[
+                                    0
+                                ].highlights,
+                            }
+                            if result.get("@search.captions")
+                            else {},
+                            "answers": semantic_answers_dict.get(
+                                json.loads(result["metadata"]).get("key"), ""
+                            ),
+                        },
                     },
                 ),
                 float(result["@search.score"]),
