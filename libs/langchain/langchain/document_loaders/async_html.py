@@ -128,7 +128,7 @@ class AsyncHtmlLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load text from the url(s) in web_path."""
-        
+
         loop = asyncio.get_event_loop()
         results = loop.run_until_complete(self.fetch_all(self.web_paths))
         docs = []
