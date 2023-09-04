@@ -15,6 +15,7 @@ class PineconeTranslator(Visitor):
 
     allowed_comparators = (
         Comparator.EQ,
+        Comparator.NE,
         Comparator.LT,
         Comparator.LTE,
         Comparator.GT,

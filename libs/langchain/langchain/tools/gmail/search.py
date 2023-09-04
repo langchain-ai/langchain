@@ -91,7 +91,16 @@ class GmailSearch(GmailBaseTool):
             subject = email_msg["Subject"]
             sender = email_msg["From"]
 
-            message_body = email_msg.get_payload()
+            message_body = ""
+            if email_msg.is_multipart():
+                for part in email_msg.walk():
+                    ctype = part.get_content_type()
+                    cdispo = str(part.get("Content-Disposition"))
+                    if ctype == "text/plain" and "attachment" not in cdispo:
+                        message_body = part.get_payload(decode=True).decode("utf-8")
+                        break
+            else:
+                message_body = email_msg.get_payload(decode=True).decode("utf-8")
 
             body = clean_email_body(message_body)
 
