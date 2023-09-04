@@ -137,7 +137,7 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
         context_matrix = np.stack([v for k, v in context_embeddings.items()])
         dot_product_matrix = np.dot(context_matrix, action_matrix.T)
 
-        indexed_dot_product: Dict[Dict] = {}
+        indexed_dot_product: Dict = {}
 
         for i, context_key in enumerate(context_embeddings.keys()):
             indexed_dot_product[context_key] = {}
@@ -258,6 +258,18 @@ class PickBest(base.RLChain[PickBestEvent]):
     ):
         auto_embed = kwargs.get("auto_embed", False)
 
+        feature_embedder = kwargs.get("feature_embedder", None)
+        if feature_embedder:
+            if "auto_embed" in kwargs:
+                logger.warning(
+                    "auto_embed will take no effect when explicit feature_embedder is provided"  # noqa E501
+                )
+            # turning auto_embed off for cli setting below
+            auto_embed = False
+        else:
+            feature_embedder = PickBestFeatureEmbedder(auto_embed=auto_embed)
+        kwargs["feature_embedder"] = feature_embedder
+
         vw_cmd = kwargs.get("vw_cmd", [])
         if vw_cmd:
             if "--cb_explore_adf" not in vw_cmd:
@@ -280,16 +292,6 @@ class PickBest(base.RLChain[PickBestEvent]):
             ]
 
         kwargs["vw_cmd"] = vw_cmd
-
-        feature_embedder = kwargs.get("feature_embedder", None)
-        if feature_embedder:
-            if "auto_embed" in kwargs:
-                logger.warning(
-                    "auto_embed will take no effect when explicit feature_embedder is provided"  # noqa E501
-                )
-        else:
-            feature_embedder = PickBestFeatureEmbedder(auto_embed=auto_embed)
-        kwargs["feature_embedder"] = feature_embedder
 
         super().__init__(*args, **kwargs)
 
