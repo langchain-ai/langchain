@@ -3,13 +3,14 @@ from __future__ import annotations
 import os
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Iterable, List, Optional, Type
 
 import numpy as np
-
+import vearch
+from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore
+from vearch import GammaFieldInfo, GammaVectorInfo
 
 DEFAULT_TOPN = 4
 
@@ -28,7 +29,7 @@ class Vearch(VectorStore):
         try:
             import vearch
         except ImportError:
-            raise ImportError(
+            raise ValueError(
                 "Could not import vearch python package. "
                 "Please install it with `pip install vearch`."
             )
@@ -82,7 +83,7 @@ class Vearch(VectorStore):
         cls: Type[Vearch],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: List[dict],
+        metadatas: Optional[List[dict]]=None,
         table_name: str = _DEFAULT_TABLE_NAME,
         metadata_path: Optional[str] = None,
         **kwargs: Any,
@@ -99,24 +100,20 @@ class Vearch(VectorStore):
 
     def _create_table(
         self,
-        dim: int = 1024,
-        filed_list: List[dict] = [
+        dim:int=1024,
+        filed_list:List[dict]=[
             {"filed": "text", "type": "str"},
             {"filed": "metadata", "type": "str"},
         ],
     ) -> int:
-        """Create VectorStore Table
-
+        """
+        Create VectorStore Table
         Args:
             dim:dimension of vector
             fileds_list: the filed you want to store
-
         Return:
             code,0 for success,1 for failed
         """
-        import vearch
-        from vearch import GammaFieldInfo, GammaVectorInfo
-
         type_dict = {"int": vearch.dataType.INT, "str": vearch.dataType.STRING}
         engine_info = {
             "index_size": 10000,
@@ -146,8 +143,8 @@ class Vearch(VectorStore):
 
     def add_texts(
         self,
-        texts: List[str],
-        metadatas: List[dict],
+        texts:Iterable[str],
+        metadatas: Optional[List[dict]]=None,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -167,17 +164,15 @@ class Vearch(VectorStore):
             response_code = self._create_table(dim)
             if response_code:
                 raise ValueError("create table failed!!!")
-
-        if embeddings is not None:
-            doc_items = []
-            for i in range(len(embeddings)):
-                profiles = {}
-                profiles["text"] = texts[i]
-                profiles["metadata"] = metadatas[i]["source"]
-                profiles["text_embedding"] = embeddings[i][:] / (
-                    np.linalg.norm(embeddings[i][:])
-                )
+        if embeddings is not None and metadatas is not None:
+            doc_items = [] 
+            for text,metadata,embed in zip(texts,metadatas,embeddings):
+                profiles:dict[str,Any] = {}
+                profiles["text"] = text
+                profiles["metadata"] = metadata["source"]
+                profiles["text_embedding"] = embed
                 doc_items.append(profiles)
+
             docid = self.vearch_engine.add(doc_items)
             t_time = 0
             while len(docid) != len(embeddings):
@@ -186,10 +181,9 @@ class Vearch(VectorStore):
                     break
                 t_time += 1
             self.vearch_engine.dump()
-
         return docid
 
-    def _load(self) -> None:
+    def _load(self)->None:
         """
         load vearch engine
         """
@@ -261,7 +255,7 @@ class Vearch(VectorStore):
             "vector": [
                 {
                     "field": "text_embedding",
-                    "feature": embeddings / (np.linalg.norm(embeddings[:])),
+                    "feature":np.array(embeddings),
                     "min_score": min_score,
                 }
             ],
@@ -287,7 +281,7 @@ class Vearch(VectorStore):
 
     def delete(
         self,
-        ids: List[str],
+        ids: Iterable[str],
         **kwargs: Any,
     ) -> Optional[bool]:
         """Delete the documents which have the specified ids.
@@ -303,7 +297,7 @@ class Vearch(VectorStore):
             raise ValueError("Verach Engine is None!!!")
         ret: Optional[bool] = None
         tmp_res = []
-        if ids is None or ids.__len__() == 0:
+        if ids is None:
             return ret
         for _id in ids:
             ret = self.vearch_engine.del_doc(_id)
@@ -313,7 +307,7 @@ class Vearch(VectorStore):
 
     def get(
         self,
-        ids: List[str],
+        ids: Iterable[str],
         **kwargs: Any,
     ) -> Dict[str, Document]:
         """Return docs according ids.
@@ -345,3 +339,4 @@ class Vearch(VectorStore):
                 page_content=content, metadata=meta_info
             )
         return results
+
