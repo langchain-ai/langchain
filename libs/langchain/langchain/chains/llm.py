@@ -137,7 +137,7 @@ class LLMChain(Chain):
             _colored_text = get_colored_text(prompt.to_string(), "green")
             _text = "Prompt after formatting:\n" + _colored_text
             if run_manager:
-                run_manager.on_text(_text, end="\n", verbose=self.verbose)
+                run_manager.on_text(_text, end="\n", verbose=self.verbose, verbose_hook = self.verbose_hook if self.verbose_hook else None)
             if "stop" in inputs and inputs["stop"] != stop:
                 raise ValueError(
                     "If `stop` is present in any inputs, should be present in all."
@@ -163,7 +163,7 @@ class LLMChain(Chain):
             _colored_text = get_colored_text(prompt.to_string(), "green")
             _text = "Prompt after formatting:\n" + _colored_text
             if run_manager:
-                await run_manager.on_text(_text, end="\n", verbose=self.verbose)
+                await run_manager.on_text(_text, end="\n", verbose=self.verbose, verbose_hook = self.verbose_hook if self.verbose_hook else None)
             if "stop" in inputs and inputs["stop"] != stop:
                 raise ValueError(
                     "If `stop` is present in any inputs, should be present in all."

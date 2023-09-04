@@ -95,6 +95,8 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when agent ends."""
         print_text(text, color=color or self.color, end=end)
+        if "hook" in kwargs and kwargs["hook"] is not None:
+            kwargs["hook"](text, event="on_text") 
 
     def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any

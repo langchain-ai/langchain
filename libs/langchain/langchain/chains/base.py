@@ -112,6 +112,9 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether or not run in verbose mode. In verbose mode, some intermediate logs
     will be printed to the console. Defaults to `langchain.verbose` value."""
+    verbose_hook: Optional[Any] = None
+    """Function hook to be used in verbose mode, send verbose output to hook so it wont just be printed to the console.
+    Defaults to None."""
     tags: Optional[List[str]] = None
     """Optional list of tags associated with the chain. Defaults to None.
     These tags will be associated with each call to this chain,
