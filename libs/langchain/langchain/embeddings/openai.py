@@ -87,7 +87,7 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
 
 
 # https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
-def _check_response(response: dict, skip_empty=False) -> dict:
+def _check_response(response: dict, skip_empty: bool = False) -> dict:
     if any(len(d["embedding"]) == 1 for d in response["data"]) and not skip_empty:
         import openai
 
@@ -197,7 +197,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     skip_empty: bool = False
-    """Whether to skip empty strings when embedding or raise an error. Defaults to not skipping."""
+    """Whether to skip empty strings when embedding or raise an error.
+    Defaults to not skipping."""
 
     class Config:
         """Configuration for this pydantic object."""
