@@ -9,9 +9,9 @@ from langchain.schema import Document
 from langchain.vectorstores import FAISS
 ```
 
-## Low Decay Rate
+## Low decay rate
 
-A low `decay rate` (in this, to be extreme, we will set close to 0) means memories will be "remembered" for longer. A `decay rate` of 0 means memories never be forgotten, making this retriever equivalent to the vector lookup.
+A low `decay rate` (in this, to be extreme, we will set it close to 0) means memories will be "remembered" for longer. A `decay rate` of 0 means memories never be forgotten, making this retriever equivalent to the vector lookup.
 
 
 ```python
@@ -53,7 +53,7 @@ retriever.get_relevant_documents("hello world")
 
 </CodeOutputBlock>
 
-## High Decay Rate
+## High decay rate
 
 With a high `decay rate` (e.g., several 9's), the `recency score` quickly goes to 0! If you set this all the way to 1, `recency` is 0 for all objects, once again making this equivalent to a vector lookup.
 
@@ -98,9 +98,9 @@ retriever.get_relevant_documents("hello world")
 
 </CodeOutputBlock>
 
-## Virtual Time
+## Virtual time
 
-Using some utils in LangChain, you can mock out the time component
+Using some utils in LangChain, you can mock out the time component.
 
 
 ```python
