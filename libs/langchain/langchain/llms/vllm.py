@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
 from langchain.llms.openai import BaseOpenAI
-from langchain.pydantic_v1 import root_validator
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema.output import Generation, LLMResult
 
 
@@ -66,6 +66,9 @@ class VLLM(BaseLLM):
     """Directory to download and load the weights. (Default to the default 
     cache dir of huggingface)"""
 
+    vllm_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for `vllm.LLM` call not explicitly specified."""
+
     client: Any  #: :meta private:
 
     @root_validator()
@@ -86,6 +89,7 @@ class VLLM(BaseLLM):
             trust_remote_code=values["trust_remote_code"],
             dtype=values["dtype"],
             download_dir=values["download_dir"],
+            **values["vllm_kwargs"],
         )
 
         return values

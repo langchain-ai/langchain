@@ -1,10 +1,11 @@
 import json
+from abc import ABC
 from typing import Any, Dict, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 
 
 class LLMInputOutputAdapter:
@@ -47,33 +48,7 @@ class LLMInputOutputAdapter:
             return response_body.get("results")[0].get("outputText")
 
 
-class Bedrock(LLM):
-    """Bedrock models.
-
-    To authenticate, the AWS client uses the following methods to
-    automatically load credentials:
-    https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
-
-    If a specific credential profile should be used, you must pass
-    the name of the profile from the ~/.aws/credentials file that is to be used.
-
-    Make sure the credentials / roles used have the required policies to
-    access the Bedrock service.
-    """
-
-    """
-    Example:
-        .. code-block:: python
-
-            from bedrock_langchain.bedrock_llm import BedrockLLM
-
-            llm = BedrockLLM(
-                credentials_profile_name="default", 
-                model_id="amazon.titan-tg1-large"
-            )
-
-    """
-
+class BedrockBase(BaseModel, ABC):
     client: Any  #: :meta private:
 
     region_name: Optional[str] = None
@@ -98,11 +73,6 @@ class Bedrock(LLM):
 
     endpoint_url: Optional[str] = None
     """Needed if you don't want to default to us-east-1 endpoint"""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -151,10 +121,76 @@ class Bedrock(LLM):
             **{"model_kwargs": _model_kwargs},
         }
 
+    def _get_provider(self) -> str:
+        return self.model_id.split(".")[0]
+
+    def _prepare_input_and_invoke(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        _model_kwargs = self.model_kwargs or {}
+
+        provider = self._get_provider()
+        params = {**_model_kwargs, **kwargs}
+        input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
+        body = json.dumps(input_body)
+        accept = "application/json"
+        contentType = "application/json"
+
+        try:
+            response = self.client.invoke_model(
+                body=body, modelId=self.model_id, accept=accept, contentType=contentType
+            )
+            text = LLMInputOutputAdapter.prepare_output(provider, response)
+
+        except Exception as e:
+            raise ValueError(f"Error raised by bedrock service: {e}")
+
+        if stop is not None:
+            text = enforce_stop_tokens(text, stop)
+
+        return text
+
+
+class Bedrock(LLM, BedrockBase):
+    """Bedrock models.
+
+    To authenticate, the AWS client uses the following methods to
+    automatically load credentials:
+    https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
+
+    If a specific credential profile should be used, you must pass
+    the name of the profile from the ~/.aws/credentials file that is to be used.
+
+    Make sure the credentials / roles used have the required policies to
+    access the Bedrock service.
+    """
+
+    """
+    Example:
+        .. code-block:: python
+
+            from bedrock_langchain.bedrock_llm import BedrockLLM
+
+            llm = BedrockLLM(
+                credentials_profile_name="default", 
+                model_id="amazon.titan-tg1-large"
+            )
+
+    """
+
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "amazon_bedrock"
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
     def _call(
         self,
@@ -177,25 +213,7 @@ class Bedrock(LLM):
 
                 response = se("Tell me a joke.")
         """
-        _model_kwargs = self.model_kwargs or {}
 
-        provider = self.model_id.split(".")[0]
-        params = {**_model_kwargs, **kwargs}
-        input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
-        body = json.dumps(input_body)
-        accept = "application/json"
-        contentType = "application/json"
-
-        try:
-            response = self.client.invoke_model(
-                body=body, modelId=self.model_id, accept=accept, contentType=contentType
-            )
-            text = LLMInputOutputAdapter.prepare_output(provider, response)
-
-        except Exception as e:
-            raise ValueError(f"Error raised by bedrock service: {e}")
-
-        if stop is not None:
-            text = enforce_stop_tokens(text, stop)
+        text = self._prepare_input_and_invoke(prompt=prompt, stop=stop, **kwargs)
 
         return text

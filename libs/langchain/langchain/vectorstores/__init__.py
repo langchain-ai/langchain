@@ -63,9 +63,11 @@ from langchain.vectorstores.rocksetdb import Rockset
 from langchain.vectorstores.scann import ScaNN
 from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.sklearn import SKLearnVectorStore
+from langchain.vectorstores.sqlitevss import SQLiteVSS
 from langchain.vectorstores.starrocks import StarRocks
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
+from langchain.vectorstores.tencentvectordb import TencentVectorDB
 from langchain.vectorstores.tigris import Tigris
 from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.usearch import USearch
@@ -124,6 +126,7 @@ __all__ = [
     "ScaNN",
     "SingleStoreDB",
     "SingleStoreDB",
+    "SQLiteVSS",
     "StarRocks",
     "SupabaseVectorStore",
     "Tair",
@@ -136,4 +139,5 @@ __all__ = [
     "ZepVectorStore",
     "Zilliz",
     "Zilliz",
+    "TencentVectorDB",
 ]
