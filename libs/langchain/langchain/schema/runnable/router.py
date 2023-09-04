@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
 from typing import (
     Any,
     AsyncIterator,
@@ -12,6 +11,7 @@ from typing import (
     Optional,
     TypedDict,
     Union,
+    cast,
 )
 
 from langchain.load.serializable import Serializable
@@ -23,7 +23,11 @@ from langchain.schema.runnable.base import (
     RunnableSequence,
     coerce_to_runnable,
 )
-from langchain.schema.runnable.config import RunnableConfig
+from langchain.schema.runnable.config import (
+    RunnableConfig,
+    get_config_list,
+    get_executor_for_config,
+)
 from langchain.schema.runnable.utils import gather_with_concurrency
 
 
@@ -122,7 +126,7 @@ class RouterRunnable(
         inputs: List[RouterInput],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
-        max_concurrency: Optional[int] = None,
+        return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
         keys = [input["key"] for input in inputs]
@@ -130,16 +134,23 @@ class RouterRunnable(
         if any(key not in self.runnables for key in keys):
             raise ValueError("One or more keys do not have a corresponding runnable")
 
+        def invoke(
+            runnable: Runnable, input: Input, config: RunnableConfig
+        ) -> Union[Output, Exception]:
+            if return_exceptions:
+                try:
+                    return runnable.invoke(input, config, **kwargs)
+                except Exception as e:
+                    return e
+            else:
+                return runnable.invoke(input, config, **kwargs)
+
         runnables = [self.runnables[key] for key in keys]
-        configs = self._get_config_list(config, len(inputs))
-        with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
-            return list(
-                executor.map(
-                    lambda runnable, input, config: runnable.invoke(input, config),
-                    runnables,
-                    actual_inputs,
-                    configs,
-                )
+        configs = get_config_list(config, len(inputs))
+        with get_executor_for_config(configs[0]) as executor:
+            return cast(
+                List[Output],
+                list(executor.map(invoke, runnables, actual_inputs, configs)),
             )
 
     async def abatch(
@@ -147,7 +158,7 @@ class RouterRunnable(
         inputs: List[RouterInput],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
-        max_concurrency: Optional[int] = None,
+        return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
         keys = [input["key"] for input in inputs]
@@ -155,12 +166,23 @@ class RouterRunnable(
         if any(key not in self.runnables for key in keys):
             raise ValueError("One or more keys do not have a corresponding runnable")
 
+        async def ainvoke(
+            runnable: Runnable, input: Input, config: RunnableConfig
+        ) -> Union[Output, Exception]:
+            if return_exceptions:
+                try:
+                    return await runnable.ainvoke(input, config, **kwargs)
+                except Exception as e:
+                    return e
+            else:
+                return await runnable.ainvoke(input, config, **kwargs)
+
         runnables = [self.runnables[key] for key in keys]
-        configs = self._get_config_list(config, len(inputs))
+        configs = get_config_list(config, len(inputs))
         return await gather_with_concurrency(
-            max_concurrency,
+            configs[0].get("max_concurrency"),
             *(
-                runnable.ainvoke(input, config)
+                ainvoke(runnable, input, config)
                 for runnable, input, config in zip(runnables, actual_inputs, configs)
             ),
         )

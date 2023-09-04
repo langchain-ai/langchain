@@ -2,12 +2,10 @@ import os
 import tempfile
 from typing import List
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.document_loaders.unstructured import UnstructuredBaseLoader
 
 
-class S3FileLoader(BaseLoader):
+class S3FileLoader(UnstructuredBaseLoader):
     """Load from `Amazon AWS S3` file."""
 
     def __init__(self, bucket: str, key: str):
@@ -17,11 +15,14 @@ class S3FileLoader(BaseLoader):
             bucket: The name of the S3 bucket.
             key: The key of the S3 object.
         """
+        super().__init__()
         self.bucket = bucket
         self.key = key
 
-    def load(self) -> List[Document]:
-        """Load documents."""
+    def _get_elements(self) -> List:
+        """Get elements."""
+        from unstructured.partition.auto import partition
+
         try:
             import boto3
         except ImportError:
@@ -34,5 +35,7 @@ class S3FileLoader(BaseLoader):
             file_path = f"{temp_dir}/{self.key}"
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             s3.download_file(self.bucket, self.key, file_path)
-            loader = UnstructuredFileLoader(file_path)
-            return loader.load()
+            return partition(filename=file_path)
+
+    def _get_metadata(self) -> dict:
+        return {"source": f"s3://{self.bucket}/{self.key}"}
