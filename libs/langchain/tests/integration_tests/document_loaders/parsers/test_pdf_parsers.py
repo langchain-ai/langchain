@@ -65,7 +65,7 @@ def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> 
 def _assert_with_duplicate_parser(
     parser: BaseBlobParser, dedupe: bool = False
 ) -> None:
-    """PDFPlumber tests to verify that duplicate characters apear or not
+    """PDFPlumber tests to verify that duplicate characters appear or not
     Args:
         parser (BaseBlobParser): The parser to test.
         splits_by_page (bool): Whether the parser splits by page or not by default.
@@ -80,7 +80,7 @@ def _assert_with_duplicate_parser(
         # use dedupe avoid duplicate characters.
         assert "1000 Series" == docs[0].page_content.split("\n")[0]
     else:
-        # duplicate characters will apear in doc if not dedupe
+        # duplicate characters will appear in doc if not dedupe
         assert "11000000 SSeerriieess" == docs[0].page_content.split("\n")[0]
 
 
