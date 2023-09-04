@@ -35,7 +35,8 @@ class RecursiveUrlLoader(BaseLoader):
             when extract function returns empty string, the document will be ignored.
             max_depth: The max depth of the recursive loading.
             timeout: The timeout for the requests, in the unit of seconds.
-            ensure_trailing_slash: Ensure a trailing slash when requesting to the given url or a child link.
+            ensure_trailing_slash: Ensure a trailing slash
+                                   when requesting to the given url or a child link.
             headers: Headers when requesting to the url.
         """
 
