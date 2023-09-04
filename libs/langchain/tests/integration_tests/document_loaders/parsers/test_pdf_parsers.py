@@ -23,6 +23,7 @@ DUPLICATE_CHARS = (
     Path(__file__).parent.parent.parent / "examples" / "duplicate-chars.pdf"
 )
 
+
 def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> None:
     """Standard tests to verify that the given parser works.
 
@@ -62,9 +63,7 @@ def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> 
         assert metadata["page"] == 0
 
 
-def _assert_with_duplicate_parser(
-    parser: BaseBlobParser, dedupe: bool = False
-) -> None:
+def _assert_with_duplicate_parser(parser: BaseBlobParser, dedupe: bool = False) -> None:
     """PDFPlumber tests to verify that duplicate characters appear or not
     Args:
         parser (BaseBlobParser): The parser to test.

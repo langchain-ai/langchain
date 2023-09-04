@@ -1,10 +1,15 @@
 """Module contains common parsers for PDFs."""
-from typing import Any, Iterator, Mapping, Optional, Sequence, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence, Union
 from urllib.parse import urlparse
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.schema import Document
+
+if TYPE_CHECKING:
+    import pdfplumber.page
 
 
 class PyPDFParser(BaseBlobParser):
@@ -155,7 +160,7 @@ class PDFPlumberParser(BaseBlobParser):
                 for page in doc.pages
             ]
 
-    def _process_page_content(self, page) -> str:
+    def _process_page_content(self, page: pdfplumber.page.Page) -> str:
         """Process the page content based on dedupe."""
         if self.dedupe:
             return page.dedupe_chars().extract_text(**self.text_kwargs)
