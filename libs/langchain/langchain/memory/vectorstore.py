@@ -73,11 +73,14 @@ class VectorStoreRetrieverMemory(BaseMemory):
         self.retriever.add_documents(documents)
 
     def clear(self) -> None:
-        """Clear the chat_history in vector_store"""
-        self.retriever.vectorstore.delete(self.check_history_id())
-
+        """Only for faiss vectorstore """
+        """Clear the chat_history in faiss vector_store"""
+        if self.retriever.__dict__['tags'] == ['FAISS']:
+            self.retriever.vectorstore.delete(self.check_history_id())
+        else:
+            raise NotImplementedError("clear method must be implemented by faiss vector store.")
     def check_history_id(self) -> List[str]:
-        """Check the existed history memory in the retrieval VectorStore."""
+        """Check the existed history memory in the faiss retrieval VectorStore."""
         return list(
             self.retriever.vectorstore.__dict__["index_to_docstore_id"].values()
         )
