@@ -71,7 +71,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: libs/langchain
-          cache-key: extended
+          # cache-key: extended
 
       - name: Install dependencies
         shell: bash
