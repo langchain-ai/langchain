@@ -194,10 +194,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         chat = self._start_chat(history, params)
         responses = chat.send_message_streaming(question.content, **params)
         for response in responses:
-            text = self._enforce_stop_words(response.text, stop)
             if run_manager:
-                run_manager.on_llm_new_token(text)
-            yield ChatGenerationChunk(message=AIMessageChunk(content=text))
+                run_manager.on_llm_new_token(response.text)
+            yield ChatGenerationChunk(message=AIMessageChunk(content=response.text))
 
     def _start_chat(
         self, history: _ChatHistory, params: dict, stop: Optional[List[str]] = None
@@ -206,7 +205,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             return self.client.start_chat(
                 context=history.context,
                 message_history=history.history,
-                stop_sequences=stop,
+                stop_sequences=stop if stop else self.stop,
                 **params,
             )
         else:

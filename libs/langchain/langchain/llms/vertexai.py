@@ -132,7 +132,7 @@ class _VertexAICommon(_VertexAIBase):
     ) -> str:
         params = {**self._default_params, **kwargs}
         if stop:
-            params["stop_sequences"] = stop
+            params["stop_sequences"] = stop if stop else self.stop
         return completion_with_retry(self, prompt, **params).text
 
     @property
