@@ -157,6 +157,9 @@ class PlaywrightURLLoader(BaseLoader):
                 try:
                     page = browser.new_page()
                     response = page.goto(url)
+                    if response is None:
+                        raise ValueError(f"page.goto() returned None for url {url}")
+
                     text = self.evaluator.evaluate(page, browser, response)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
@@ -187,6 +190,9 @@ class PlaywrightURLLoader(BaseLoader):
                 try:
                     page = await browser.new_page()
                     response = await page.goto(url)
+                    if response is None:
+                        raise ValueError(f"page.goto() returned None for url {url}")
+
                     text = await self.evaluator.evaluate_async(page, browser, response)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
