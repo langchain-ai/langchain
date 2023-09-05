@@ -43,13 +43,27 @@ runs:
         # This step caches the poetry installation, so make sure it's keyed on the poetry version as well.
         key: bin-poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-${{ inputs.poetry-version }}
 
+    - shell: bash
+      run: |
+        set -eux
+        ls -alh /opt/pipx_bin/poetry
+        ls -alh /opt/pipx/venvs/poetry/bin/python
+
     - name: Install poetry
-      if: steps.cache-bin-poetry.outputs.cache-hit != 'true'
       shell: bash
       env:
         POETRY_VERSION: ${{ inputs.poetry-version }}
         PYTHON_VERSION: ${{ inputs.python-version }}
-      run: pipx install "poetry==$POETRY_VERSION" --python "python$PYTHON_VERSION" --verbose
+      run: |
+        rm -rf /opt/pipx/venvs/poetry
+        rm -rf /opt/pipx_bin/poetry
+        pipx install "poetry==$POETRY_VERSION" --python "python$PYTHON_VERSION" --verbose
+
+    - shell: bash
+      run: |
+        set -eux
+        ls -alh /opt/pipx_bin/poetry
+        ls -alh /opt/pipx/venvs/poetry/bin/python
 
     - name: Restore pip and poetry cached dependencies
       uses: actions/cache@v3
