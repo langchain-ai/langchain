@@ -674,18 +674,18 @@ def _create_template_from_message_type(
     Returns:
         a message prompt template of the appropriate type.
     """
-    if message_type == "human":
+    if message_type in ("human", "user"):
         message: BaseMessagePromptTemplate = HumanMessagePromptTemplate.from_template(
             template
         )
-    elif message_type == "ai":
+    elif message_type in ("ai", "assistant"):
         message = AIMessagePromptTemplate.from_template(template)
     elif message_type == "system":
         message = SystemMessagePromptTemplate.from_template(template)
     else:
         raise ValueError(
-            f"Unexpected message type: {message_type}. Use one of 'human', 'ai', "
-            f"or 'system'."
+            f"Unexpected message type: {message_type}. Use one of 'human',"
+            f" 'user', 'ai', 'assistant', or 'system'."
         )
     return message
 

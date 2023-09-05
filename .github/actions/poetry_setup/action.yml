@@ -27,7 +27,7 @@ runs:
   using: composite
   steps:
     - uses: actions/setup-python@v4
-      name: Setup python $${ inputs.python-version }}
+      name: Setup python ${{ inputs.python-version }}
       with:
         python-version: ${{ inputs.python-version }}
 
@@ -50,6 +50,16 @@ runs:
         POETRY_VERSION: ${{ inputs.poetry-version }}
         PYTHON_VERSION: ${{ inputs.python-version }}
       run: pipx install "poetry==$POETRY_VERSION" --python "python$PYTHON_VERSION" --verbose
+
+    - name: Refresh shell hashtable and show python/poetry binaries and versions
+      shell: bash
+      run: |
+        set -eux
+        hash -r
+        ls -alh /opt/pipx_bin/poetry
+        ls -alh /opt/pipx/venvs/poetry/bin/python
+        /opt/pipx/venvs/poetry/bin/python --version
+        /opt/pipx_bin/poetry --version
 
     - name: Restore pip and poetry cached dependencies
       uses: actions/cache@v3

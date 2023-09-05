@@ -1,6 +1,4 @@
 """Test Epsilla functionality."""
-from pyepsilla import vectordb
-
 from langchain.vectorstores import Epsilla
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
@@ -9,6 +7,8 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 
 
 def _test_from_texts() -> Epsilla:
+    from pyepsilla import vectordb
+
     embeddings = FakeEmbeddings()
     client = vectordb.Client()
     return Epsilla.from_texts(fake_texts, embeddings, client)
@@ -22,6 +22,8 @@ def test_epsilla() -> None:
 
 
 def test_epsilla_add_texts() -> None:
+    from pyepsilla import vectordb
+
     embeddings = FakeEmbeddings()
     client = vectordb.Client()
     db = Epsilla(client, embeddings)

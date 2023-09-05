@@ -61,7 +61,7 @@ class QuestionListOutputParser(PydanticOutputParser):
         super().__init__(pydantic_object=LineList)
 
     def parse(self, text: str) -> LineList:
-        lines = re.findall(r"\d+\..*?\n", text)
+        lines = re.findall(r"\d+\..*?(?:\n|$)", text)
         return LineList(lines=lines)
 
 
@@ -150,7 +150,7 @@ class WebResearchRetriever(BaseRetriever):
         return query.strip()
 
     def search_tool(self, query: str, num_search_results: int = 1) -> List[dict]:
-        """Returns num_serch_results pages per Google search."""
+        """Returns num_search_results pages per Google search."""
         query_clean = self.clean_search_query(query)
         result = self.search.results(query_clean, num_search_results)
         return result

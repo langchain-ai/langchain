@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import logging
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import Any, List, Optional, Sequence, Set, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Union
 from uuid import UUID
 
-from langsmith import Client, RunEvaluator
+import langsmith
+from langsmith import schemas as langsmith_schemas
 
 from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.callbacks.tracers.base import BaseTracer
@@ -62,13 +63,13 @@ class EvaluatorCallbackHandler(BaseTracer):
         The LangSmith project name to be organize eval chain runs under.
     """
 
-    name: str = "evaluator_callback_handler"
+    name = "evaluator_callback_handler"
 
     def __init__(
         self,
-        evaluators: Sequence[RunEvaluator],
+        evaluators: Sequence[langsmith.RunEvaluator],
         max_workers: Optional[int] = None,
-        client: Optional[Client] = None,
+        client: Optional[langsmith.Client] = None,
         example_id: Optional[Union[UUID, str]] = None,
         skip_unfinished: bool = True,
         project_name: Optional[str] = "evaluators",
@@ -86,10 +87,11 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.futures: Set[Future] = set()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
+        self.logged_feedback: Dict[str, List[langsmith_schemas.Feedback]] = {}
         global _TRACERS
         _TRACERS.append(self)
 
-    def _evaluate_in_project(self, run: Run, evaluator: RunEvaluator) -> None:
+    def _evaluate_in_project(self, run: Run, evaluator: langsmith.RunEvaluator) -> None:
         """Evaluate the run in the project.
 
         Parameters
@@ -102,11 +104,11 @@ class EvaluatorCallbackHandler(BaseTracer):
         """
         try:
             if self.project_name is None:
-                self.client.evaluate_run(run, evaluator)
+                feedback = self.client.evaluate_run(run, evaluator)
             with tracing_v2_enabled(
                 project_name=self.project_name, tags=["eval"], client=self.client
             ):
-                self.client.evaluate_run(run, evaluator)
+                feedback = self.client.evaluate_run(run, evaluator)
         except Exception as e:
             logger.error(
                 f"Error evaluating run {run.id} with "
@@ -114,6 +116,8 @@ class EvaluatorCallbackHandler(BaseTracer):
                 exc_info=True,
             )
             raise e
+        example_id = str(run.reference_example_id)
+        self.logged_feedback.setdefault(example_id, []).append(feedback)
 
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.

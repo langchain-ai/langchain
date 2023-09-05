@@ -1,12 +1,12 @@
 This will go over how to get started building an agent.
 We will use a LangChain agent class, but show how to customize it to give it specific context.
-We will then define custom tools, and then run it all in the standard LangChain AgentExecutor.
+We will then define custom tools, and then run it all in the standard LangChain `AgentExecutor`.
 
 ### Set up the agent
 
-We will use the OpenAIFunctionsAgent.
+We will use the `OpenAIFunctionsAgent`.
 This is easiest and best agent to get started with.
-It does however require usage of ChatOpenAI models.
+It does however require usage of `ChatOpenAI` models.
 If you want to use a different language model, we would recommend using the [ReAct](/docs/modules/agents/agent_types/react) agent.
 
 For this guide, we will construct a custom agent that has access to a custom tool.
@@ -40,7 +40,7 @@ tools = [get_word_length]
 
 Now let us create the prompt.
 We can use the `OpenAIFunctionsAgent.create_prompt` helper function to create a prompt automatically.
-This allows for a few different ways to customize, including passing in a custom SystemMessage, which we will do.
+This allows for a few different ways to customize, including passing in a custom `SystemMessage`, which we will do.
 
 ```python
 from langchain.schema import SystemMessage
@@ -55,7 +55,7 @@ Putting those pieces together, we can now create the agent.
 agent = OpenAIFunctionsAgent(llm=llm, tools=tools, prompt=prompt)
 ```
 
-Finally, we create the AgentExecutor - the runtime for our agent.
+Finally, we create the `AgentExecutor` - the runtime for our agent.
 
 ```python
 from langchain.agents import AgentExecutor
@@ -97,7 +97,7 @@ Let's fix that by adding in memory.
 In order to do this, we need to do two things:
 
 1. Add a place for memory variables to go in the prompt
-2. Add memory to the AgentExecutor (note that we add it here, and NOT to the agent, as this is the outermost chain)
+2. Add memory to the `AgentExecutor` (note that we add it here, and NOT to the agent, as this is the outermost chain)
 
 First, let's add a place for memory in the prompt.
 We do this by adding a placeholder for messages with the key `"chat_history"`.

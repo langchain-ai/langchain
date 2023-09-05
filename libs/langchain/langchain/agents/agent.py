@@ -686,12 +686,15 @@ s
         cls,
         agent: Union[BaseSingleActionAgent, BaseMultiActionAgent],
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> AgentExecutor:
         """Create from agent and tools."""
         return cls(
-            agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
+            agent=agent,
+            tools=tools,
+            callbacks=callbacks,
+            **kwargs,
         )
 
     @root_validator()
