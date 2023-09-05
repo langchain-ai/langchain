@@ -26,18 +26,18 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import HuggingFaceEmbeddings
 
-            model_name = "sentence-transformers/all-mpnet-base-v2"
+            model_name_or_path = "sentence-transformers/all-mpnet-base-v2" or "path/to/model"
             model_kwargs = {'device': 'cpu'}
             encode_kwargs = {'normalize_embeddings': False}
             hf = HuggingFaceEmbeddings(
-                model_name=model_name,
+                model_name_or_path=model_name_or_path,
                 model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs
             )
     """
 
     client: Any  #: :meta private:
-    model_name: str = DEFAULT_MODEL_NAME
+    model_name_or_path: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models. 
@@ -60,10 +60,9 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                 "Could not import sentence_transformers python package. "
                 "Please install it with `pip install sentence_transformers`."
             ) from exc
-
         self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
-        )
+                self.model_name_or_path, cache_folder=self.cache_folder, **self.model_kwargs
+            )
 
     class Config:
         """Configuration for this pydantic object."""
@@ -114,18 +113,18 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import HuggingFaceInstructEmbeddings
 
-            model_name = "hkunlp/instructor-large"
+            model_name_or_path = "hkunlp/instructor-large" or "path/to/model"
             model_kwargs = {'device': 'cpu'}
             encode_kwargs = {'normalize_embeddings': True}
             hf = HuggingFaceInstructEmbeddings(
-                model_name=model_name,
+                model_name_or_path=model_name_or_path,
                 model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs
             )
     """
 
     client: Any  #: :meta private:
-    model_name: str = DEFAULT_INSTRUCT_MODEL
+    model_name_or_path: str = DEFAULT_INSTRUCT_MODEL
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models. 
@@ -146,7 +145,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             from InstructorEmbedding import INSTRUCTOR
 
             self.client = INSTRUCTOR(
-                self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+                self.model_name_or_path, cache_folder=self.cache_folder, **self.model_kwargs
             )
         except ImportError as e:
             raise ImportError("Dependencies for InstructorEmbedding not found.") from e
@@ -193,18 +192,18 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import HuggingFaceBgeEmbeddings
 
-            model_name = "BAAI/bge-large-en"
+            model_name_or_path = "BAAI/bge-large-en" or "path/to/model"
             model_kwargs = {'device': 'cpu'}
             encode_kwargs = {'normalize_embeddings': True}
             hf = HuggingFaceBgeEmbeddings(
-                model_name=model_name,
+                model_name_or_path=model_name_or_path,
                 model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs
             )
     """
 
     client: Any  #: :meta private:
-    model_name: str = DEFAULT_BGE_MODEL
+    model_name_or_path: str = DEFAULT_BGE_MODEL
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models.
@@ -229,9 +228,9 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             ) from exc
 
         self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+            self.model_name_or_path, cache_folder=self.cache_folder, **self.model_kwargs
         )
-        if "-zh" in self.model_name:
+        if "-zh" in self.model_name_or_path:
             self.query_instruction = DEFAULT_QUERY_BGE_INSTRUCTION_ZH
 
     class Config:
