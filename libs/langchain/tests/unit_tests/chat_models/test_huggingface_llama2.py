@@ -21,10 +21,10 @@ def test_format_messages_as_text_with_system() -> None:
         AIMessage(content="AI response."),
     ]
 
-    assert InstructionTokens.B_INST == "[INST]"
-    assert InstructionTokens.E_INST == "[/INST]"
-    assert SystemTokens.B_SYS == "<<SYS>>"
-    assert SystemTokens.E_SYS == "<</SYS>>"
+    assert str(InstructionTokens.B_INST) == "[INST]"
+    assert str(InstructionTokens.E_INST) == "[/INST]"
+    assert str(SystemTokens.B_SYS) == "<<SYS>>"
+    assert str(SystemTokens.E_SYS) == "<</SYS>>"
 
     ground_truth = (
         "<s>[INST] <<SYS>>\nSystem Prompt.\n<</SYS>>\n\n"
@@ -47,10 +47,10 @@ def test_format_messages_as_text_without_system() -> None:
         AIMessage(content="Second AI response."),
     ]
 
-    assert InstructionTokens.B_INST == "[INST]"
-    assert InstructionTokens.E_INST == "[/INST]"
-    assert SystemTokens.B_SYS == "<<SYS>>"
-    assert SystemTokens.E_SYS == "<</SYS>>"
+    assert str(InstructionTokens.B_INST) == "[INST]"
+    assert str(InstructionTokens.E_INST) == "[/INST]"
+    assert str(SystemTokens.B_SYS) == "<<SYS>>"
+    assert str(SystemTokens.E_SYS) == "<</SYS>>"
 
     ground_truth = (
         "<s>[INST] Human Message. [/INST] "
