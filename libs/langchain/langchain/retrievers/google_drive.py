@@ -1,12 +1,10 @@
 from typing import Any, Dict, List, Literal
 
-from pydantic.class_validators import root_validator
-from pydantic.config import Extra
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BaseRetriever, Document
 
 from ..utilities.google_drive import (

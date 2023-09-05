@@ -28,14 +28,15 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
-from pydantic import root_validator
-from pydantic.class_validators import validator
-from pydantic.config import Extra
-from pydantic.fields import Field
-from pydantic.main import BaseModel
-from pydantic.types import FilePath
-
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    FilePath,
+    root_validator,
+    validator,
+)
 from langchain.schema import Document
 
 # from langchain.document_loaders.base import BaseLoader
@@ -211,7 +212,7 @@ def default_conv_loader(
         logger.info("Ignore NotebookLoader for GDrive")
 
     try:
-        import pypandoc
+        import pypandoc  # type: ignore
 
         from langchain.document_loaders import UnstructuredRTFLoader
 
@@ -225,7 +226,7 @@ def default_conv_loader(
     except ImportError:
         logger.info("Ignore RTF for GDrive (use `pip install pypandoc_binary`)")
     try:
-        import unstructured  # noqa: F401
+        import unstructured  # noqa: F401 , type: ignore
 
         from langchain.document_loaders import (
             UnstructuredEPubLoader,
@@ -240,9 +241,9 @@ def default_conv_loader(
         )
 
         try:
-            import detectron2  # noqa: F401
-            import pdf2image  # noqa: F401
-            import pytesseract
+            import detectron2  # noqa: F401 , type: ignore
+            import pdf2image  # type: ignore
+            import pytesseract  # type: ignore
 
             mime_types_mapping.update(
                 {
@@ -728,8 +729,8 @@ class GoogleDriveUtilities(Serializable, BaseModel):
         try:
             from google.auth.transport.requests import Request
             from google.oauth2 import service_account
-            from google.oauth2.credentials import Credentials
-            from google_auth_oauthlib.flow import InstalledAppFlow
+            from google.oauth2.credentials import Credentials  # type: ignore
+            from google_auth_oauthlib.flow import InstalledAppFlow  # type: ignore
         except ImportError:
             raise ImportError(
                 "You must run "
@@ -846,7 +847,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
 
         self._creds = self._load_credentials(Path(self.gdrive_api_file), self.scopes)
 
-        from googleapiclient.discovery import build
+        from googleapiclient.discovery import build  # type: ignore
 
         # self._params_dict: Dict[str, Union[str, int, float]] = {}
 
@@ -877,7 +878,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
 
     def get_folder_name(self, file_id: str, **kwargs: Any) -> str:
         """Return folder name from file_id. Cache the result."""
-        from googleapiclient.errors import HttpError
+        from googleapiclient.errors import HttpError  # type: ignore
 
         try:
             name = self._folder_name_cache.get(file_id)
@@ -889,7 +890,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                 return name
         except HttpError:
             # Sometime, it's impossible to get the file name of a folder.
-            # It's because a shortcut reference an inacessible file.
+            # It's because a shortcut reference an inaccessible file.
             return "inaccessible-folder"
 
     def _get_file_by_id(self, file_id: str, **kwargs: Any) -> Dict:
@@ -906,8 +907,8 @@ class GoogleDriveUtilities(Serializable, BaseModel):
         Load document from GDrive.
         Use the `conv_mapping` dictionary to convert different kind of files.
         """
-        from googleapiclient.errors import HttpError
-        from googleapiclient.http import MediaIoBaseDownload
+        from googleapiclient.errors import HttpError  # type: ignore
+        from googleapiclient.http import MediaIoBaseDownload  # type: ignore
 
         suffix = mimetypes.guess_extension(file["mimeType"])
         if not suffix:
@@ -1413,7 +1414,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
             self._slides.close()
 
     def _extract_text(
-            self,
+        self,
         node: Any,
         *,
         key: str = "content",
@@ -1426,17 +1427,19 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                     result.append("- " if "bullet" in node["paragraphMarker"] else "")
                     return result
                 if "paragraph" in node:
-                    prefix=""
-                    named_style_type= node['paragraph']["paragraphStyle"]["namedStyleType"]
-                    level=re.match("HEADING_([1-9])",named_style_type)
+                    prefix = ""
+                    named_style_type = node["paragraph"]["paragraphStyle"][
+                        "namedStyleType"
+                    ]
+                    level = re.match("HEADING_([1-9])", named_style_type)
                     if level:
                         prefix = f"{'#' * int(level[1])} "
                     if "bullet" in node["paragraph"]:
-                        prefix +="- "
+                        prefix += "- "
                     result.append(prefix)
                 if "table" in node:
                     col_size = [0 for _ in range(node["table"]["columns"])]
-                    rows = [[] for _ in range(node["table"]["rows"])]
+                    rows: List[List[Any]] = [[] for _ in range(node["table"]["rows"])]
                     for row_idx, row in enumerate(node["table"]["tableRows"]):
                         for col_idx, cell in enumerate(row["tableCells"]):
                             body = "".join(
@@ -1449,7 +1452,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                             str_cell = re.sub(r"\n", r"<br />", "".join(body).strip())
                             rows[row_idx].append(str_cell)
                     # Reformate to markdown with extra space
-                    table_result = []
+
                     for row in rows:
                         for col_idx, cell in enumerate(row):
                             split_cell = re.split(r"(<br />|\n)", cell)
@@ -1507,7 +1510,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                     visitor(result, v, parent + "/[]")
             return result
 
-        result = []
+        result: List[str] = []
         visitor(result, node, "")
         # Clean the result:
         purge_result = []
@@ -1551,7 +1554,9 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                         content = []
                         for j, v in enumerate(row):
                             title = (
-                                str(headers[j]).strip() + ": " if len(headers) > j else ""
+                                str(headers[j]).strip() + ": "
+                                if len(headers) > j
+                                else ""
                             )
                             content.append(f"{title}{str(v).strip()}")
 
@@ -1599,15 +1604,15 @@ class GoogleDriveUtilities(Serializable, BaseModel):
 
     def _only_obj(
         self,
-        page_elements: Dict[str, Any],
+        page_elements: List[Dict[str, Any]],
         translateX: float = 0.0,
         translateY: float = 0.0,
-    ):
-        only_objets = []
+    ) -> List[Dict[str, Any]]:
+        only_objets: List[Any] = []
         for obj in page_elements:
             if "elementGroup" in obj:
-                group_translate_x = obj["transform"].get("translateX", 0)
-                group_translate_y = obj["transform"].get("translateY", 0)
+                group_translate_x = obj["transform"].get("translateX", translateX)
+                group_translate_y = obj["transform"].get("translateY", translateY)
                 only_objets.extend(
                     self._only_obj(
                         obj["elementGroup"]["children"],
@@ -1624,10 +1629,10 @@ class GoogleDriveUtilities(Serializable, BaseModel):
 
     def _sort_page_elements(
         self,
-        page_elements: Dict[str, Any],
+        page_elements: List[Dict[str, Any]],
         translateX: float = 0.0,
         translateY: float = 0.0,
-    ):
+    ) -> List[Dict[str, Any]]:
         only_obj = self._only_obj(page_elements, 0, 0)
         return sorted(
             only_obj,
@@ -1667,9 +1672,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                         source += f"#slide=id.{slide['objectId']}"
                     meta["source"] = source
                     yield Document(
-                        page_content="\n".join(
-                            self._extract_text(page_elements)
-                        ),
+                        page_content="\n".join(self._extract_text(page_elements)),
                         metadata=meta,
                     )
         elif self.gslide_mode == "elements":
@@ -1682,9 +1685,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                 for slide in gslide["slides"]:
                     if "pageElements" in slide:
                         page_elements = self._sort_page_elements(slide["pageElements"])
-                        for i, line in enumerate(
-                            self._extract_text(page_elements)
-                        ):
+                        for i, line in enumerate(self._extract_text(page_elements)):
                             if line.strip():
                                 m = metadata.copy()
                                 if "source" in m:

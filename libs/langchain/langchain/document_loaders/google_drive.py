@@ -13,10 +13,9 @@ from typing import (
     Sequence,
 )
 
-from pydantic import root_validator
-
 from langchain.base_language import BaseLanguageModel
 from langchain.document_loaders.base import BaseLoader
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import Document
 
 from ..utilities.google_drive import (
@@ -241,7 +240,7 @@ class GoogleDriveLoader(BaseLoader, GoogleDriveUtilities):
             query: If possible, the query request.
             kwargs: Others parameters for the template (verbose, prompt, etc).
         """
-        from googleapiclient.errors import HttpError
+        from googleapiclient.errors import HttpError  # type: ignore
 
         from langchain.chains.summarize import load_summarize_chain
 

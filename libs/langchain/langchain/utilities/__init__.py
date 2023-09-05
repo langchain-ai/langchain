@@ -13,7 +13,6 @@ from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.brave_search import BraveSearchWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.golden_query import GoldenQueryAPIWrapper
-from .google_drive import GoogleDriveAPIWrapper
 from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
@@ -37,6 +36,8 @@ from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.zapier import ZapierNLAWrapper
+
+from .google_drive import GoogleDriveAPIWrapper
 
 __all__ = [
     "AlphaVantageAPIWrapper",

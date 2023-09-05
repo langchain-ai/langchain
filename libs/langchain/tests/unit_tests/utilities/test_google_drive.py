@@ -6,22 +6,25 @@ from typing import Any, Callable, Dict, List, cast
 from unittest.mock import MagicMock
 
 import pytest
-from pydantic import BaseModel
 from pytest_mock import MockerFixture
 
 from langchain import PromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema import Document
-#from langchain_googledrive.utilities import GoogleDriveAPIWrapper
+
+# from langchain_googledrive.utilities import GoogleDriveAPIWrapper
 from langchain.utilities import GoogleDriveAPIWrapper
-#from langchain_googledrive.utilities.google_drive import TYPE_CONV_MAPPING, GoogleDriveUtilities
-from langchain.utilities.google_drive import TYPE_CONV_MAPPING, GoogleDriveUtilities
+from langchain.utilities.google_drive import (
+    TYPE_CONV_MAPPING,
+    GoogleDriveUtilities,
+)
 
 try:
     from google.auth.transport.requests import Request  # noqa: F401
     from google.oauth2 import service_account  # noqa: F401
     from google.oauth2.credentials import Credentials  # noqa: F401
-    from google_auth_oauthlib.flow import InstalledAppFlow  # noqa: F401
-    from googleapiclient.errors import HttpError
+    from google_auth_oauthlib.flow import InstalledAppFlow  # noqa: F401 , type: ignore
+    from googleapiclient.errors import HttpError  # noqa: F401 , type: ignore
 
     google_workspace_installed = True
 except ImportError:
@@ -318,7 +321,9 @@ def patch_google_workspace(
     import logging
 
     log_level = logging.DEBUG
-    logging.getLogger("langchain.document_loaders.google_drive").setLevel(log_level)
+    logging.getLogger("langchain_googledrive.document_loaders.google_drive").setLevel(
+        log_level
+    )
     logging.getLogger("langchain.utilities.google_drive").setLevel(log_level)
     logging.getLogger("langchain.tools.google_drive").setLevel(log_level)
 
