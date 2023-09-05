@@ -2,7 +2,6 @@ import importlib.util
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from transformers import StoppingCriteria, StoppingCriteriaList
 from transformers.pipelines import TextGenerationPipeline
 
 from langchain.callbacks.manager import (
@@ -116,6 +115,9 @@ class ChatLlama2Hf(BaseChatModel):
 
         if importlib.util.find_spec("torch") is not None:
             import torch
+
+        if importlib.util.find_spec("transformers") is not None:
+            from transformers import StoppingCriteria, StoppingCriteriaList
 
         device = self.pipeline.device.type
         if device == "cuda":
