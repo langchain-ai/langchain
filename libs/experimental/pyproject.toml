@@ -33,8 +33,6 @@ setuptools = "^67.6.1"
 # dependencies used for running tests (e.g., pytest, freezegun, response).
 # Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
-duckdb = "^0.8.1"
-duckdb-engine = "^0.9.2"
 
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without
