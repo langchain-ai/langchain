@@ -20,6 +20,7 @@ from langchain.output_parsers.fix import OutputFixingParser
 from langchain.output_parsers.list import (
     CommaSeparatedListOutputParser,
     ListOutputParser,
+    NumberedListOutputParser,
 )
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.output_parsers.rail_parser import GuardrailsOutputParser
@@ -36,6 +37,7 @@ __all__ = [
     "EnumOutputParser",
     "GuardrailsOutputParser",
     "ListOutputParser",
+    "NumberedListOutputParser",
     "OutputFixingParser",
     "PydanticOutputParser",
     "RegexDictParser",
