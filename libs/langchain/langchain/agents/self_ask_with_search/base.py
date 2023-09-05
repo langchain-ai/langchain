@@ -41,15 +41,15 @@ class SelfAskWithSearchAgent(Agent):
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
-        if tool_names != {"Intermediate Answer"}:
+        if tool_names != {"Промежуточный ответ"}:
             raise ValueError(
-                f"Tool name should be Intermediate Answer, got {tool_names}"
+                f"Tool name should be Промежуточный ответ, got {tool_names}"
             )
 
     @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
-        return "Intermediate answer: "
+        return "Промежуточный ответ: "
 
     @property
     def llm_prefix(self) -> str:
@@ -76,10 +76,10 @@ class SelfAskWithSearchChain(AgentExecutor):
     ):
         """Initialize only with an LLM and a search chain."""
         search_tool = Tool(
-            name="Intermediate Answer",
+            name="Промежуточный ответ",
             func=search_chain.run,
             coroutine=search_chain.arun,
-            description="Search",
+            description="Поиск",
         )
         agent = SelfAskWithSearchAgent.from_llm_and_tools(llm, [search_tool])
         super().__init__(agent=agent, tools=[search_tool], **kwargs)

@@ -7,8 +7,8 @@ from langchain.schema import AgentAction, AgentFinish, OutputParserException
 class SelfAskOutputParser(AgentOutputParser):
     """Output parser for the self-ask agent."""
 
-    followups: Sequence[str] = ("Follow up:", "Followup:")
-    finish_string: str = "So the final answer is: "
+    followups: Sequence[str] = ("Дополнительный вопрос: ", "Followup:")
+    finish_string: str = "Итак, окончательный ответ: "
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         last_line = text.split("\n")[-1]
@@ -18,7 +18,7 @@ class SelfAskOutputParser(AgentOutputParser):
             return AgentFinish({"output": last_line[len(self.finish_string) :]}, text)
 
         after_colon = text.split(":")[-1].strip()
-        return AgentAction("Intermediate Answer", after_colon, text)
+        return AgentAction("Промежуточный ответ", after_colon, text)
 
     @property
     def _type(self) -> str:

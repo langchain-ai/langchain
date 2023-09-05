@@ -23,7 +23,7 @@ Action:
 $JSON_BLOB
 ```
 Observation: результат действия
-... (этот цикл Thought/Action/Action Input/Observation can repeat N times)
+... (этот цикл Thought/Action/Action Input/Observation может повторяться N раз)
 Thought: теперь я знаю окончательный ответ
 Final answer: окончательный ответ на исходный вопрос"""
 SYSTEM_MESSAGE_SUFFIX = """Начни! Напоминаю, что всегда нужно использовать точные символы `Окончательный ответ` при ответе."""

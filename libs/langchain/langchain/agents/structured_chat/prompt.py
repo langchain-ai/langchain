@@ -22,7 +22,7 @@ Action:
 $JSON_BLOB
 ```
 Observation: результат действия
-... (повторяй Thought/Action/Action Input/Observation can repeat N times)
+... (повторяй Thought/Action/Action Input/Observation может повторяться N раз)
 Thought: Я знаю, что отвечать
 Action:
 ```
