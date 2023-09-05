@@ -111,7 +111,7 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        instruction_pairs = [f"{self.query_instruction}{text}" for text in texts]
+        instruction_pairs = [f"{self.embed_instruction}{text}" for text in texts]
         embeddings = self._embed(instruction_pairs)
         return embeddings
 

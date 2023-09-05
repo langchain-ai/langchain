@@ -1,4 +1,4 @@
-Under the hood, by default this uses the [UnstructuredLoader](/docs/integrations/document_loaders/unstructured_file.html)
+Under the hood, by default this uses the [UnstructuredLoader](/docs/integrations/document_loaders/unstructured_file.html).
 
 ```python
 from langchain.document_loaders import DirectoryLoader
@@ -121,7 +121,7 @@ len(docs)
 
 </CodeOutputBlock>
 
-## Auto detect file encodings with TextLoader
+## Auto-detect file encodings with TextLoader
 
 In this example we will see some strategies that can be useful when loading a big list of arbitrary files from a directory using the `TextLoader` class.
 
@@ -212,7 +212,7 @@ loader.load()
 
 </HTMLOutputBlock>
 
-The file `example-non-utf8.txt` uses a different encoding the `load()` function fails with a helpful message indicating which file failed decoding. 
+The file `example-non-utf8.txt` uses a different encoding, so the `load()` function fails with a helpful message indicating which file failed decoding. 
 
 With the default behavior of `TextLoader` any failure to load any of the documents will fail the whole loading process and no documents are loaded. 
 
