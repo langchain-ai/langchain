@@ -31,7 +31,7 @@ class Relationship(Serializable):
         source (Node): The source node of the relationship.
         target (Node): The target node of the relationship.
         type (str): The type of the relationship.
-        properties (dict): Additional properties and metadata associated with the relationship.
+        properties (dict): Additional properties associated with the relationship.
     """
 
     source: Node
@@ -47,7 +47,7 @@ class GraphDocument(Serializable):
     Attributes:
         nodes (List[Node]): A list of nodes in the graph.
         relationships (List[Relationship]): A list of relationships in the graph.
-        source (Document): The source document from which the graph information is derived.
+        source (Document): The document from which the graph information is derived.
     """
 
     nodes: List[Node]
