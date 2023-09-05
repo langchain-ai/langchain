@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import PromptTemplate
+from langchain.agents.react.prompt import ReActPromptTemplate
 
 EXAMPLES = [
     """Question: What is the elevation range for the area that the eastern sector of the Colorado orogeny extends into?
@@ -66,6 +66,6 @@ Action: Finish[yes]""",
 SUFFIX = """\nQuestion: {input}
 {agent_scratchpad}"""
 
-WIKI_PROMPT = PromptTemplate.from_examples(
+WIKI_PROMPT = ReActPromptTemplate.from_examples(
     EXAMPLES, SUFFIX, ["input", "agent_scratchpad"]
 )
