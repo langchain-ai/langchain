@@ -1,14 +1,16 @@
 """Unit tests for ReAct."""
 
+import re
 from typing import Union
 
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
+from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.fake import FakeListLLM
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AgentAction
+from langchain.schema import AgentAction, AIMessage, HumanMessage
 
 _PAGE_CONTENT = """This is a page about LangChain.
 
@@ -68,3 +70,17 @@ def test_react_chain_bad_action() -> None:
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
     output = react_chain.run("when was langchain made")
     assert output == "curses foiled again"
+
+
+def test_react_prompt_to_messages() -> None:
+    """Test converting prompt to message format."""
+    prefix_regex = re.compile(r"^.+?\b")
+    inputs = {"input": "Sample Question", "agent_scratchpad": "Thought: Sample thought"}
+    prompt = WIKI_PROMPT.format_prompt(**inputs)
+    messages = prompt.to_messages()
+    for message in messages:
+        prefix = prefix_regex.match(message.content)[0]
+        if isinstance(message, HumanMessage):
+            assert prefix in ["Question", "Observation"]
+        elif isinstance(message, AIMessage):
+            assert prefix in ["Thought", "Action"]
