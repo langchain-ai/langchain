@@ -8,7 +8,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 if TYPE_CHECKING:
-    from playwright.async_api import AsyncBrowser, AsyncPage, AsyncResponse
+    from playwright.async_api import Browser as AsyncBrowser, Page as AsyncPage, Response as AsyncResponse
     from playwright.sync_api import Browser, Page, Response
 
 

@@ -87,7 +87,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
-          cache-key: lint
+          cache-key: lint-with-extras
 
       - name: Check Poetry File
         shell: bash
@@ -102,9 +102,11 @@ jobs:
           poetry lock --check
 
       - name: Install dependencies
+        # Also installs dev/lint/test/typing dependencies, to ensure we have
+        # type hints for as many of our libraries as possible.
         working-directory: ${{ inputs.working-directory }}
         run: |
-          poetry install
+          poetry install --with dev,lint,test,typing
 
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
