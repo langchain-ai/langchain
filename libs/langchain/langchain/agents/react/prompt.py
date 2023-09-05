@@ -19,15 +19,14 @@ class ReActStringPromptValue(StringPromptValue):
             # Process only non-empty lines
             if line:
                 prefix = prefix_regex.match(line)[0]
-                match prefix:
-                    case "Question":
-                        messages.append(HumanMessage(content=line))
-                    case "Thought":
-                        thought = line
-                    case "Action":
-                        messages.append(AIMessage(content=f"{thought}\n{line}"))
-                    case "Observation":
-                        messages.append(HumanMessage(content=line))
+                if prefix == "Question":
+                    messages.append(HumanMessage(content=line))
+                elif prefix == "Thought":
+                    thought = line
+                elif prefix == "Action":
+                    messages.append(AIMessage(content=f"{thought}\n{line}"))
+                elif prefix == "Observation":
+                    messages.append(HumanMessage(content=line))
 
         return messages
 
