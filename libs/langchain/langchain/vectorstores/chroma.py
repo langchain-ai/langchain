@@ -309,6 +309,7 @@ class Chroma(VectorStore):
         query: str,
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with Chroma with distance.
@@ -325,12 +326,12 @@ class Chroma(VectorStore):
         """
         if self._embedding_function is None:
             results = self.__query_collection(
-                query_texts=[query], n_results=k, where=filter
+                query_texts=[query], n_results=k, where=filter, where_document=where_document
             )
         else:
             query_embedding = self._embedding_function.embed_query(query)
             results = self.__query_collection(
-                query_embeddings=[query_embedding], n_results=k, where=filter
+                query_embeddings=[query_embedding], n_results=k, where=filter, where_document=where_document
             )
 
         return _results_to_docs_and_scores(results)
@@ -419,6 +420,7 @@ class Chroma(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -445,7 +447,7 @@ class Chroma(VectorStore):
 
         embedding = self._embedding_function.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mult=lambda_mult, filter=filter
+            embedding, k, fetch_k, lambda_mult=lambda_mult, filter=filter, where_document=where_document
         )
         return docs
 
