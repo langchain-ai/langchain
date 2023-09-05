@@ -10,8 +10,9 @@ def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callab
             "Could not import faker, please install it with `pip install Faker`."
         ) from e
 
-    Faker.seed(seed)
-    fake = Faker()
+    # Faker.seed(seed)
+    fake = Faker(seed=seed)
+    fake.seed_instance(42)
 
     # Listed  entities supported by Microsoft Presidio (for now, global and US only)
     # Source: https://microsoft.github.io/presidio/supported_entities/
