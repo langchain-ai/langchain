@@ -79,7 +79,11 @@ def test_react_prompt_to_messages() -> None:
     prompt = WIKI_PROMPT.format_prompt(**inputs)
     messages = prompt.to_messages()
     for message in messages:
-        prefix = prefix_regex.match(message.content)[0]
+        prefix_match = prefix_regex.match(message.content)
+        if prefix_match:
+            prefix = prefix_match[0]
+        else:
+            prefix = ""
         if isinstance(message, HumanMessage):
             assert prefix in ["Question", "Observation"]
         elif isinstance(message, AIMessage):
