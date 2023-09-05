@@ -59,6 +59,7 @@ from langchain.embeddings.spacy_embeddings import SpacyEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain.embeddings.vertexai import VertexAIEmbeddings
 from langchain.embeddings.xinference import XinferenceEmbeddings
+from langchain.embeddings.ollama import OllamaEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,7 @@ __all__ = [
     "AwaEmbeddings",
     "HuggingFaceBgeEmbeddings",
     "ErnieEmbeddings",
+    "OllamaEmbeddings",
 ]
 
 
