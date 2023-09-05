@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 import aiohttp
@@ -129,7 +130,16 @@ class AsyncHtmlLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load text from the url(s) in web_path."""
 
-        results = asyncio.run(self.fetch_all(self.web_paths))
+        try:
+            # Raises RuntimeError if there is no current event loop.
+            asyncio.get_running_loop()
+            # If there is a current event loop, we need to run the async code
+            # in a separate loop, in a separate thread.
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(asyncio.run, self.fetch_all(self.web_paths))
+                results = future.result()
+        except RuntimeError:
+            results = asyncio.run(self.fetch_all(self.web_paths))
         docs = []
         for i, text in enumerate(results):
             metadata = {"source": self.web_paths[i]}
