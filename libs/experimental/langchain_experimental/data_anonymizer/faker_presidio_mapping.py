@@ -11,8 +11,8 @@ def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callab
         ) from e
 
     # Faker.seed(seed)
-    fake = Faker(seed=seed)
-    fake.seed_instance(42)
+    fake = Faker()
+    fake.seed_instance(seed)
 
     # Listed  entities supported by Microsoft Presidio (for now, global and US only)
     # Source: https://microsoft.github.io/presidio/supported_entities/
