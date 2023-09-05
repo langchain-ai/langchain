@@ -11,9 +11,6 @@ from langchain.schema.graph_document import (
 )
 from langchain.utils import get_from_env
 
-# Properties that should be treated as node properties instead of relationships
-FACT_TO_PROPERTY_TYPE = ["Date", "Number", "Job title", "Cause of death"]
-
 
 def format_property_key(s) -> str:
     words = s.split()
@@ -44,6 +41,40 @@ class NodesList:
         return nodes
 
 
+# Properties that should be treated as node properties instead of relationships
+FACT_TO_PROPERTY_TYPE = [
+    "Date",
+    "Number",
+    "Job title",
+    "Cause of death",
+    "Organization type",
+    "Academic degree",
+]
+
+
+schema_mapping = [
+    ("HEADQUARTERS", "ORGANIZATION_LOCATIONS"),
+    ("RESIDENCE", "PERSON_LOCATION"),
+    ("ALL_PERSON_LOCATIONS", "PERSON_LOCATION"),
+    ("CHILD", "HAS_CHILD"),
+    ("PARENT", "HAS_PARENT"),
+    ("CUSTOMERS", "HAS_CUSTOMER"),
+]
+
+
+class SimplifiedSchema:
+    def __init__(self) -> None:
+        self.schema = dict()
+        for row in schema_mapping:
+            self.schema[row[0]] = row[1]
+
+    def get_type(self, type):
+        try:
+            return self.schema[type]
+        except KeyError:
+            return type
+
+
 class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
     def __init__(
         self,
@@ -51,6 +82,7 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
         fact_confidence_threshold: float = 0.7,
         include_qualifiers: bool = True,
         include_evidence: bool = True,
+        simplified_schema: bool = True,
     ) -> None:
         self.diffbot_api_key = diffbot_api_key or get_from_env(
             "diffbot_api_key", "DIFFBOT_API_KEY"
@@ -58,6 +90,9 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
         self.fact_threshold_confidence = fact_confidence_threshold
         self.include_qualifiers = include_qualifiers
         self.include_evidence = include_evidence
+        self.simplified_schema = None
+        if simplified_schema:
+            self.simplified_schema = SimplifiedSchema()
 
     def nlp_request(self, text) -> Dict[str, Any]:
         """Make an API request to Diffbot NLP endpoint"""
@@ -134,6 +169,8 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
                 )
                 # Define relationship type
                 rel_type = record["property"]["name"].replace(" ", "_").upper()
+                if self.simplified_schema:
+                    rel_type = self.simplified_schema.get_type(rel_type)
 
                 # Relationship properties
                 rel_properties = dict()
