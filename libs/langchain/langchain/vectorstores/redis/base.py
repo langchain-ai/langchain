@@ -957,7 +957,7 @@ class Redis(VectorStore):
             List[Document]: A list of Documents selected by maximal marginal relevance.
         """
         # Fetch the initial documents
-        prefetchDocs = self.similarity_search(
+        prefetch_docs = self.similarity_search(
             query=query,
             k=fetch_k,
             filter=filter,
@@ -967,18 +967,18 @@ class Redis(VectorStore):
         )
 
         # Embed the query and the fetched documents
-        prefetchEmbeddings = [
-            self._embeddings.embed_query(doc.page_content) for doc in prefetchDocs
+        prefetch_embeddings = [
+            self._embeddings.embed_query(doc.page_content) for doc in prefetch_docs
         ]
-        prefetchEmbeddings = np.array(prefetchEmbeddings)
-        queryEmbedding = self._embeddings.embed_query(query)
-        queryEmbedding = np.array(queryEmbedding)
+        prefetch_embeddings = np.array(prefetch_embeddings)
+        query_embedding = self._embeddings.embed_query(query)
+        query_embedding = np.array(query_embedding)
 
         # Select documents using maximal marginal relevance
-        selectedDocs = maximal_marginal_relevance(
-            queryEmbedding, prefetchEmbeddings, lambda_mult=lambda_mult, k=k
+        selected_docs = maximal_marginal_relevance(
+            query_embedding, prefetch_embeddings, lambda_mult=lambda_mult, k=k
         )
-        return [prefetchDocs[i] for i in selectedDocs]
+        return [prefetch_docs[i] for i in selected_docs]
 
     def _collect_metadata(self, result: "Document") -> Dict[str, Any]:
         """Collect metadata from Redis.
