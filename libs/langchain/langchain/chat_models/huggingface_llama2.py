@@ -1,7 +1,6 @@
 import importlib.util
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
-
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
 from transformers import StoppingCriteria, StoppingCriteriaList
 from transformers.pipelines import TextGenerationPipeline
@@ -19,9 +18,6 @@ from langchain.schema.messages import (
     SystemMessage,
 )
 from langchain.schema.output import ChatGeneration
-
-if TYPE_CHECKING:
-    import torch
 
 
 class InstructionTokens(Enum):
@@ -145,9 +141,10 @@ class ChatLlama2Hf(BaseChatModel):
             ):
                 """
                 Args:
-                    stops: A list of tensor sequences with individual, tokenized stopping words.
-                    device: The device (e.g., 'cpu', 'cuda', 'cuda:0') on which to keep the
-                        stopping words tokens
+                    stops: A list of tensor sequences with individual,
+                        tokenized stopping words.
+                    device: The device (e.g., 'cpu', 'cuda', 'cuda:0')
+                        on which to keep the stopping words tokens
                 """
                 super().__init__()
                 stops = stops or []
