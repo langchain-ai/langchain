@@ -1,11 +1,5 @@
-from typing import Any, Dict, List, Optional, Union
-
-try:
-    import torch
-except ImportError:
-    raise ImportError(
-        "torch package not found, please install it with " "`pip install torch`"
-    )
+import importlib.util
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
 from enum import Enum
 from transformers import StoppingCriteria, StoppingCriteriaList
@@ -25,6 +19,9 @@ from langchain.schema.messages import (
 )
 from langchain.schema.output import ChatGeneration
 
+if TYPE_CHECKING:
+    import torch
+
 
 class InstructionTokens(Enum):
     def __str__(self) -> str:
@@ -40,33 +37,6 @@ class SystemTokens(Enum):
 
     B_SYS = "<<SYS>>"
     E_SYS = "<</SYS>>"
-
-
-class StoppingCriteriaSub(StoppingCriteria):
-    """Subclass of StoppingCriteria to allow for custom stopping criteria"""
-
-    def __init__(
-        self,
-        stops: Optional[List[torch.Tensor]] = None,
-        device: Union[torch.device, str, None] = None,
-    ):
-        super().__init__()
-        stops = stops or []
-        if device:
-            self.stops = [stop.to(device) for stop in stops]
-        else:
-            self.stops = stops
-
-    def __call__(
-        self,
-        input_ids: torch.LongTensor,
-        scores: torch.FloatTensor,
-        **kwargs: Dict,
-    ) -> bool:
-        for stop_id in self.stops:
-            if (input_ids[0][-len(stop_id) :] == stop_id).all():
-                return True
-        return False
 
 
 class ChatLlama2Hf(BaseChatModel):
@@ -140,21 +110,67 @@ class ChatLlama2Hf(BaseChatModel):
         kwargs["return_full_text"] = False
         kwargs["num_return_sequences"] = 1
 
+        if importlib.util.find_spec("torch") is not None:
+            import torch
+
+        device = self.pipeline.device.type
+        if device == "cuda":
+            # in the multi-gpu case, stopping criteria tokens
+            # need to be on the same device:
+            device = f"{device}:{self.pipeline.device.index}"
+
+        class StoppingCriteriaSub(StoppingCriteria):
+            """
+            A subclass of StoppingCriteria, used for defining custom stopping criteria
+            for the generation process, apart from the standard End Of Sentence (EOS)
+            token generation.
+
+            This class allows for generation to be halted based on a list of specified
+            token sequences, which might signify the end of a meaningful segment
+            or passage within the generated text.
+            """
+
+            def __init__(
+                self,
+                stops: Optional[List[torch.Tensor]] = None,
+                device: Union[torch.device, str, None] = None,
+            ):
+                """
+                Args:
+                    stops: A list of tensor sequences with individual, tokenized stopping words.
+                    device: The device (e.g., 'cpu', 'cuda', 'cuda:0') on which to keep the
+                        stopping words tokens
+                """
+                super().__init__()
+                stops = stops or []
+                if device:
+                    self.stops = [stop.to(device) for stop in stops]
+                else:
+                    self.stops = stops
+
+            def __call__(
+                self,
+                input_ids: torch.LongTensor,
+                scores: torch.FloatTensor,
+                **kwargs: Dict,
+            ) -> bool:
+                for stop_id in self.stops:
+                    if (input_ids[0][-len(stop_id) :] == stop_id).all():
+                        return True
+                return False
+
         if stop:
             stopping_criteria_tokenized = [
                 self.pipeline.tokenizer(
                     stopping_criterion, return_tensors="pt", add_special_tokens=False
-                )["input_ids"].squeeze()
+                )["input_ids"]
+                .squeeze()
+                .to(device)
                 for stopping_criterion in stop
             ]
 
             stopping_criteria = StoppingCriteriaList(
-                [
-                    StoppingCriteriaSub(
-                        stops=stopping_criteria_tokenized,
-                        device="cuda:0",
-                    )
-                ]
+                [StoppingCriteriaSub(stops=stopping_criteria_tokenized, device=device)]
             )
         else:
             stopping_criteria = None
