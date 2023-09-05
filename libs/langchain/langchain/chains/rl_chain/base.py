@@ -118,8 +118,7 @@ def get_based_on_and_to_select_from(inputs: Dict[str, Any]) -> Tuple[Dict, Dict]
 
     if not to_select_from:
         raise ValueError(
-            "No variables using 'ToSelectFrom' found in the inputs. \
-                Please include at least one variable containing a list to select from."
+            "No variables using 'ToSelectFrom' found in the inputs. Please include at least one variable containing a list to select from."  # noqa: E501
         )
 
     based_on = {
@@ -229,6 +228,9 @@ class VwPolicy(Policy):
 
 
 class Embedder(Generic[TEvent], ABC):
+    def __init__(self, *args: Any, **kwargs: Any):
+        pass
+
     @abstractmethod
     def format(self, event: TEvent) -> str:
         ...
@@ -300,9 +302,7 @@ class AutoSelectionScorer(SelectionScorer[Event], BaseModel):
             return resp
         except Exception as e:
             raise RuntimeError(
-                f"The auto selection scorer did not manage to score the response, \
-                    there is always the option to try again or tweak the reward prompt.\
-                         Error: {e}"
+                f"The auto selection scorer did not manage to score the response, there is always the option to try again or tweak the reward prompt. Error: {e}"  # noqa: E501
             )
 
 
@@ -316,7 +316,7 @@ class RLChain(Chain, Generic[TEvent]):
         - selection_scorer (Union[SelectionScorer, None]): Scorer for the selection. Can be set to None.
         - policy (Optional[Policy]): The policy used by the chain to learn to populate a dynamic prompt.
         - auto_embed (bool): Determines if embedding should be automatic. Default is False.
-        - metrics (Optional[MetricsTracker]): Tracker for metrics, can be set to None.
+        - metrics (Optional[Union[MetricsTrackerRollingWindow, MetricsTrackerAverage]]): Tracker for metrics, can be set to None.
 
     Initialization Attributes:
         - feature_embedder (Embedder): Embedder used for the `BasedOn` and `ToSelectFrom` inputs.
@@ -325,7 +325,8 @@ class RLChain(Chain, Generic[TEvent]):
         - vw_cmd (List[str], optional): Command line arguments for the VW model.
         - policy (Type[VwPolicy]): Policy used by the chain.
         - vw_logs (Optional[Union[str, os.PathLike]]): Path for the VW logs.
-        - metrics_step (int): Step for the metrics tracker. Default is -1.
+        - metrics_step (int): Step for the metrics tracker. Default is -1. If set without metrics_window_size, average metrics will be tracked, otherwise rolling window metrics will be tracked.
+        - metrics_window_size (int): Window size for the metrics tracker. Default is -1. If set, rolling window metrics will be tracked.
 
     Notes:
         The class initializes the VW model using the provided arguments. If `selection_scorer` is not provided, a warning is logged, indicating that no reinforcement learning will occur unless the `update_with_delayed_score` method is called.
@@ -423,8 +424,7 @@ class RLChain(Chain, Generic[TEvent]):
         """  # noqa: E501
         if self._can_use_selection_scorer() and not force_score:
             raise RuntimeError(
-                "The selection scorer is set, and force_score was not set to True. \
-                    Please set force_score=True to use this function."
+                "The selection scorer is set, and force_score was not set to True. Please set force_score=True to use this function."  # noqa: E501
             )
         if self.metrics:
             self.metrics.on_feedback(score)
@@ -458,9 +458,7 @@ class RLChain(Chain, Generic[TEvent]):
             or self.selected_based_on_input_key in inputs.keys()
         ):
             raise ValueError(
-                f"The rl chain does not accept '{self.selected_input_key}' \
-                    or '{self.selected_based_on_input_key}' as input keys, \
-                        they are reserved for internal use during auto reward."
+                f"The rl chain does not accept '{self.selected_input_key}' or '{self.selected_based_on_input_key}' as input keys, they are reserved for internal use during auto reward."  # noqa: E501
             )
 
     def _can_use_selection_scorer(self) -> bool:
@@ -497,9 +495,6 @@ class RLChain(Chain, Generic[TEvent]):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-
-        if self.auto_embed:
-            inputs = prepare_inputs_for_autoembed(inputs=inputs)
 
         event: TEvent = self._call_before_predict(inputs=inputs)
         prediction = self.active_policy.predict(event=event)
@@ -573,8 +568,7 @@ def embed_string_type(
 
     if namespace is None:
         raise ValueError(
-            "The default namespace must be \
-                provided when embedding a string or _Embed object."
+            "The default namespace must be provided when embedding a string or _Embed object."  # noqa: E501
         )
 
     return {namespace: keep_str + encoded}
