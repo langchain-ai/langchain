@@ -87,7 +87,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
-          cache-key: lint
+          # cache-key: lint
 
       - name: Check Poetry File
         shell: bash
