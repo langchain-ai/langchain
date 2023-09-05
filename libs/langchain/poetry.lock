@@ -5551,19 +5551,19 @@ test = ["pytest", "pytest-console-scripts", "pytest-jupyter", "pytest-tornasync"
 
 [[package]]
 name = "nuclia"
-version = "1.1.9"
+version = "1.1.10"
 description = ""
 optional = true
 python-versions = ">=3.7, <4"
 files = [
-    {file = "nuclia-1.1.9.tar.gz", hash = "sha256:edfbd877d6e40a65d7e6e02e5960ca62c89c4852c8db2a853b19330e001ff267"},
+    {file = "nuclia-1.1.10.tar.gz", hash = "sha256:66cff5961e238533f7ea809cc4af0143e44f52f41f3251639f9236ded7647fcd"},
 ]
 
 [package.dependencies]
 fire = "*"
 gnureadline = "*"
-nucliadb_models = ">=2.23.0"
-nucliadb_sdk = ">=2.23.0"
+nucliadb_models = ">=2.24.0"
+nucliadb_sdk = ">=2.24.0"
 pydantic = "<2.0.0"
 pyyaml = ">=5.4"
 requests = "*"
@@ -5571,26 +5571,26 @@ tqdm = "*"
 
 [[package]]
 name = "nucliadb-models"
-version = "2.24.0.post618"
+version = "2.24.0.post629"
 description = ""
 optional = true
 python-versions = ">=3.8, <4"
 files = [
-    {file = "nucliadb_models-2.24.0.post618-py3-none-any.whl", hash = "sha256:1f85e3a357866f1aa8540e04ae093463b039587d8057448729ce40abc1b69e37"},
+    {file = "nucliadb_models-2.24.0.post629-py3-none-any.whl", hash = "sha256:bbe8e104fabde0a10ec88cdbf7282bd5ca2e0d5894e4504e93c133dd1252a065"},
 ]
 
 [package.dependencies]
-nucliadb-protos = "2.24.0-post618"
+nucliadb-protos = "2.24.0-post629"
 pydantic = ">=1.8.2,<2.0"
 
 [[package]]
 name = "nucliadb-protos"
-version = "2.24.0.post618"
+version = "2.24.0.post629"
 description = "protos for nucliadb"
 optional = true
 python-versions = "*"
 files = [
-    {file = "nucliadb_protos-2.24.0.post618-py3-none-any.whl", hash = "sha256:696a1f6f88f1d1969fcbf3e4e8e20ff84106dabb3fbb5b2d262a8a722880296b"},
+    {file = "nucliadb_protos-2.24.0.post629-py3-none-any.whl", hash = "sha256:1abccb2c7f2d701fb281b52f82148bf9fe8435bb612247b31373ef411a541f97"},
 ]
 
 [package.dependencies]
@@ -5601,17 +5601,17 @@ protobuf = "4.22.3"
 
 [[package]]
 name = "nucliadb-sdk"
-version = "2.24.0.post618"
+version = "2.24.0.post629"
 description = ""
 optional = true
 python-versions = ">=3.8, <4"
 files = [
-    {file = "nucliadb_sdk-2.24.0.post618-py3-none-any.whl", hash = "sha256:4578b57c4ccdb8ff83b94841c4f767de6827b7500bf8e9504e24e3a546fb3faf"},
+    {file = "nucliadb_sdk-2.24.0.post629-py3-none-any.whl", hash = "sha256:53e0dc0b2993bfce26a1be7b7ccefd861eb5681c18b9b0c98fd1d631a2c4f668"},
 ]
 
 [package.dependencies]
 httpx = "*"
-nucliadb-models = "2.24.0-post618"
+nucliadb-models = "2.24.0-post629"
 orjson = "*"
 pydantic = ">=1.10.9,<2.0"
 requests = "*"
