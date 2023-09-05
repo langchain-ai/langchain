@@ -161,13 +161,13 @@ class PubMedAPIWrapper(BaseModel):
         ar = text_dict["PubmedArticleSet"]["PubmedArticle"]["MedlineCitation"][
             "Article"
         ]
-        summary = "\n".join(
-            [
-                f"{txt['@Label']}: {txt['#text']}"
-                for txt in ar.get("Abstract", {}).get("AbstractText", [])
-                if "#text" in txt and "@Label" in txt
-            ]
-        )
+        abstract_text = ar.get("Abstract", {}).get("AbstractText", [])
+        summaries = [
+            f"{txt['@Label']}: {txt['#text']}"
+            for txt in abstract_text
+            if "#text" in txt and "@Label" in txt
+        ]
+        summary = "\n".join(summaries) if summaries else abstract_text
         a_d = ar.get("ArticleDate", {})
         pub_date = "-".join(
             [a_d.get("Year", ""), a_d.get("Month", ""), a_d.get("Day", "")]
