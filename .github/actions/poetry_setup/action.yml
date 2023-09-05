@@ -31,20 +31,20 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - uses: actions/cache@v3
-      id: cache-bin-poetry
-      name: Cache Poetry binary - Python ${{ inputs.python-version }}
-      env:
-        SEGMENT_DOWNLOAD_TIMEOUT_MIN: "1"
-      with:
-        path: |
-          /opt/pipx/venvs/poetry
-          /opt/pipx_bin/poetry
-        # This step caches the poetry installation, so make sure it's keyed on the poetry version as well.
-        key: bin-poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-${{ inputs.poetry-version }}
+    # - uses: actions/cache@v3
+    #   id: cache-bin-poetry
+    #   name: Cache Poetry binary - Python ${{ inputs.python-version }}
+    #   env:
+    #     SEGMENT_DOWNLOAD_TIMEOUT_MIN: "1"
+    #   with:
+    #     path: |
+    #       /opt/pipx/venvs/poetry
+    #       /opt/pipx_bin/poetry
+    #     # This step caches the poetry installation, so make sure it's keyed on the poetry version as well.
+    #     key: bin-poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-${{ inputs.poetry-version }}
 
     - name: Install poetry
-      if: steps.cache-bin-poetry.outputs.cache-hit != 'true'
+      # if: steps.cache-bin-poetry.outputs.cache-hit != 'true'
       shell: bash
       env:
         POETRY_VERSION: ${{ inputs.poetry-version }}
