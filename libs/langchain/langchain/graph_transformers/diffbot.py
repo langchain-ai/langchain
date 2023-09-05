@@ -22,18 +22,44 @@ def format_property_key(s: str) -> str:
 
 
 class NodesList:
+    """
+    Manages a list of nodes with associated properties.
+
+    Attributes:
+        nodes (Dict[Tuple[Union[str, int], str], Any]): Stores nodes as keys and their properties as values.
+            Each key is a tuple where the first element is the node ID and the second is the node type.
+    """
+
     def __init__(self) -> None:
         self.nodes: Dict[Tuple[Union[str, int], str], Any] = dict()
 
     def add_node_property(
         self, node: Tuple[Union[str, int], str], properties: Dict[str, Any]
     ) -> None:
+        """
+        Adds or updates node properties.
+
+        If the node does not exist in the list, it's added along with its properties.
+        If the node already exists, its properties are updated with the new values.
+
+        Args:
+            node (Tuple[Union[str, int], str]): A tuple containing the node ID and node type.
+            properties (Dict[str, Any]): A dictionary of properties to add or update for the node.
+        """
         if node not in self.nodes:
             self.nodes[node] = properties
         else:
             self.nodes[node].update(properties)
 
     def return_node_list(self) -> List[Node]:
+        """
+        Returns the nodes as a list of Node objects.
+
+        Each Node object will have its ID, type, and properties populated.
+
+        Returns:
+            List[Node]: A list of Node objects.
+        """
         nodes = [
             Node(id=key[0], type=key[1], properties=self.nodes[key])
             for key in self.nodes
@@ -64,12 +90,29 @@ schema_mapping = [
 
 
 class SimplifiedSchema:
+    """
+    Provides functionality for working with a simplified schema mapping.
+
+    Attributes:
+        schema (Dict[str, str]): A dictionary containing the mapping from original to simplified schema types.
+    """
+
     def __init__(self) -> None:
+        """Initializes the schema dictionary based on the predefined list."""
         self.schema = dict()
         for row in schema_mapping:
             self.schema[row[0]] = row[1]
 
     def get_type(self, type: str) -> str:
+        """
+        Retrieves the simplified schema type for a given original type.
+
+        Args:
+            type (str): The original schema type to find the simplified type for.
+
+        Returns:
+            str: The simplified schema type if it exists; otherwise, returns the original type.
+        """
         try:
             return self.schema[type]
         except KeyError:
@@ -77,6 +120,10 @@ class SimplifiedSchema:
 
 
 class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
+    """
+    Transforms documents into graph documents using Diffbot's NLP API.
+    """
+
     def __init__(
         self,
         diffbot_api_key: Optional[str] = None,
@@ -85,6 +132,16 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
         include_evidence: bool = True,
         simplified_schema: bool = True,
     ) -> None:
+        """
+        Initialize the graph transformer with various options.
+
+        Args:
+            diffbot_api_key (str): The API key for Diffbot's NLP services. Can also be read from env variable
+            fact_confidence_threshold (float): Minimum confidence level for facts/relationships to be included.
+            include_qualifiers (bool): Whether or not to include qualifiers/properties in the relationships.
+            include_evidence (bool): Whether or not to include evidence for the relationships.
+            simplified_schema (bool): Whether or not to use a simplified schema for relationships.
+        """
         self.diffbot_api_key = diffbot_api_key or get_from_env(
             "diffbot_api_key", "DIFFBOT_API_KEY"
         )
@@ -96,7 +153,15 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
             self.simplified_schema = SimplifiedSchema()
 
     def nlp_request(self, text: str) -> Dict[str, Any]:
-        """Make an API request to Diffbot NLP endpoint"""
+        """
+        Make an API request to the Diffbot NLP endpoint.
+
+        Args:
+            text (str): The text to be processed.
+
+        Returns:
+            Dict[str, Any]: The JSON response from the API.
+        """
 
         # Relationship extraction only works for English
         payload = {
@@ -116,13 +181,22 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
     def process_response(
         self, payload: Dict[str, Any], document: Document
     ) -> GraphDocument:
-        """Transform the Diffbot NLP response into a list of graph documents"""
+        """
+        Transform the Diffbot NLP response into a GraphDocument.
+
+        Args:
+            payload (Dict[str, Any]): The JSON response from Diffbot's NLP API.
+            document (Document): The original document.
+
+        Returns:
+            GraphDocument: The transformed document as a graph.
+        """
 
         # Return empty result if there are no facts
         if "facts" not in payload or not payload["facts"]:
             return GraphDocument(nodes=[], relationships=[], source=document)
 
-        # Nodes are a dictionary because we need to deduplicate
+        # Nodes are a custom class because we need to deduplicate
         nodes_list = NodesList()
         # Relationships are a list because we don't deduplicate nor anything else
         relationships = list()
@@ -131,7 +205,7 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
             if record["confidence"] < self.fact_threshold_confidence:
                 continue
 
-            # TODO: It should probably be treated as a property
+            # TODO: It should probably be treated as a node property
             if not record["value"]["allTypes"]:
                 continue
 
@@ -163,7 +237,7 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
                     {format_property_key(record["property"]["name"]): target_name},
                 )
             else:  # Define relationship
-                # Define target node
+                # Define target node object
                 target_node = Node(id=target_id, type=target_label)
                 nodes_list.add_node_property(
                     (target_id, target_label), {"name": target_name}
@@ -173,7 +247,7 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
                 if self.simplified_schema:
                     rel_type = self.simplified_schema.get_type(rel_type)
 
-                # Relationship properties
+                # Relationship qualifiers/properties
                 rel_properties = dict()
                 relationship_evidence = [el["passage"] for el in record["evidence"]][0]
                 if self.include_evidence:
@@ -200,6 +274,16 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[GraphDocument]:
+        """
+        Transform a sequence of documents into graph documents.
+
+        Args:
+            documents (Sequence[Document]): The original documents.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Sequence[GraphDocument]: The transformed documents as graphs.
+        """
         results = []
 
         for document in documents:
@@ -208,7 +292,7 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
             results.append(graph_document)
         return results
 
-    def atransform_documents(
+    async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[GraphDocument]:
         raise NotImplementedError()

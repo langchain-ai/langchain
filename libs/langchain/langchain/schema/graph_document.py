@@ -9,7 +9,14 @@ from langchain.schema import Document
 
 
 class Node(Serializable):
-    """Class for storing a piece of text and associated metadata."""
+    """
+    Represents a node in a graph with associated properties.
+
+    Attributes:
+        id (Union[str, int]): A unique identifier for the node.
+        type (str): The type or label of the node, default is "Node".
+        properties (dict): Additional properties and metadata associated with the node.
+    """
 
     id: Union[str, int]
     type: str = "Node"
@@ -17,7 +24,15 @@ class Node(Serializable):
 
 
 class Relationship(Serializable):
-    """Class for storing a piece of text and associated metadata."""
+    """
+    Represents a directed relationship between two nodes in a graph.
+
+    Attributes:
+        source (Node): The source node of the relationship.
+        target (Node): The target node of the relationship.
+        type (str): The type of the relationship.
+        properties (dict): Additional properties and metadata associated with the relationship.
+    """
 
     source: Node
     target: Node
@@ -26,45 +41,41 @@ class Relationship(Serializable):
 
 
 class GraphDocument(Serializable):
-    """Class for storing a piece of text and associated metadata."""
+    """
+    Represents a graph document consisting of nodes and relationships.
+
+    Attributes:
+        nodes (List[Node]): A list of nodes in the graph.
+        relationships (List[Relationship]): A list of relationships in the graph.
+        source (Document): The source document from which the graph information is derived.
+    """
 
     nodes: List[Node]
-    """String text."""
     relationships: List[Relationship]
     source: Document
-    """Arbitrary metadata about the page content (e.g., source, relationships to other
-        documents, etc.).
-    """
 
 
 class BaseGraphDocumentTransformer(ABC):
     """Abstract base class for graph document transformation systems.
 
-    A document transformation system takes a sequence of Documents and returns a
-    sequence of graph Documents.
+    A graph document transformation system takes a sequence of Documents and returns a
+    sequence of Graph Documents.
 
     Example:
         .. code-block:: python
 
-            class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
-                embeddings: Embeddings
-                similarity_fn: Callable = cosine_similarity
-                similarity_threshold: float = 0.95
-
-                class Config:
-                    arbitrary_types_allowed = True
+            class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
 
                 def transform_documents(
                     self, documents: Sequence[Document], **kwargs: Any
-                ) -> Sequence[Document]:
-                    stateful_documents = get_stateful_documents(documents)
-                    embedded_documents = _get_embeddings_from_stateful_docs(
-                        self.embeddings, stateful_documents
-                    )
-                    included_idxs = _filter_similar_embeddings(
-                        embedded_documents, self.similarity_fn, self.similarity_threshold
-                    )
-                    return [stateful_documents[i] for i in sorted(included_idxs)]
+                ) -> Sequence[GraphDocument]:
+                    results = []
+
+                    for document in documents:
+                        raw_results = self.nlp_request(document.page_content)
+                        graph_document = self.process_response(raw_results, document)
+                        results.append(graph_document)
+                    return results
 
                 async def atransform_documents(
                     self, documents: Sequence[Document], **kwargs: Any
@@ -83,7 +94,7 @@ class BaseGraphDocumentTransformer(ABC):
             documents: A sequence of Documents to be transformed.
 
         Returns:
-            A list of transformed Documents.
+            A list of generated Graph Documents.
         """
 
     @abstractmethod
@@ -96,5 +107,5 @@ class BaseGraphDocumentTransformer(ABC):
             documents: A sequence of Documents to be transformed.
 
         Returns:
-            A list of transformed Documents.
+            A list of generated Graph Documents.
         """

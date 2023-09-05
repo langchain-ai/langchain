@@ -30,6 +30,12 @@ from langchain.schema.output_parser import (
     OutputParserException,
     StrOutputParser,
 )
+from langchain.schema.graph_document import (
+    Node,
+    Relationship,
+    GraphDocument,
+    BaseGraphDocumentTransformer
+)
 from langchain.schema.prompt import PromptValue
 from langchain.schema.prompt_template import BasePromptTemplate, format_document
 from langchain.schema.retriever import BaseRetriever
@@ -73,4 +79,8 @@ __all__ = [
     "BaseLLMOutputParser",
     "BasePromptTemplate",
     "format_document",
+    "Node",
+    "Relationship",
+    "GraphDocument",
+    "BaseGraphDocumentTransformer"
 ]
