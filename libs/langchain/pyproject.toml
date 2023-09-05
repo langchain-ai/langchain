@@ -295,6 +295,7 @@ all = [
     "amadeus",
     "librosa",
     "python-arango",
+    "vowpal-wabbit-next",
 ]
 
 # An extra used to be able to add extended testing.
