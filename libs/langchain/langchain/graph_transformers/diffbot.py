@@ -138,12 +138,17 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
         Initialize the graph transformer with various options.
 
         Args:
-            diffbot_api_key (str): The API key for Diffbot's NLP services.
-                                   Can also be read from ENV variable
-            fact_confidence_threshold (float): Minimum confidence level for facts to be included.
-            include_qualifiers (bool): Whether to include qualifiers in the relationships.
-            include_evidence (bool): Whether to include evidence for the relationships.
-            simplified_schema (bool): Whether to use a simplified schema for relationships.
+            diffbot_api_key (str): 
+               The API key for Diffbot's NLP services.
+                                   
+            fact_confidence_threshold (float): 
+                Minimum confidence level for facts to be included.
+            include_qualifiers (bool): 
+                Whether to include qualifiers in the relationships.
+            include_evidence (bool): 
+                Whether to include evidence for the relationships.
+            simplified_schema (bool): 
+                Whether to use a simplified schema for relationships.
         """
         self.diffbot_api_key = diffbot_api_key or get_from_env(
             "diffbot_api_key", "DIFFBOT_API_KEY"
