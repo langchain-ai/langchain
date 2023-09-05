@@ -2,7 +2,7 @@ import asyncio
 import logging
 import warnings
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union, cast
 
 import aiohttp
 import requests
@@ -141,7 +141,7 @@ class AsyncHtmlLoader(BaseLoader):
         except RuntimeError:
             results = asyncio.run(self.fetch_all(self.web_paths))
         docs = []
-        for i, text in enumerate(results):
+        for i, text in enumerate(cast(List[str], results)):
             metadata = {"source": self.web_paths[i]}
             docs.append(Document(page_content=text, metadata=metadata))
 
