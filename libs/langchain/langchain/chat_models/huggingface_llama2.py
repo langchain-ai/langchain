@@ -2,8 +2,6 @@ import importlib.util
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from transformers.pipelines import TextGenerationPipeline
-
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
@@ -36,7 +34,7 @@ class SystemTokens(Enum):
 
 
 class ChatLlama2Hf(BaseChatModel):
-    pipeline: TextGenerationPipeline
+    pipeline: Any
 
     @property
     def _llm_type(self) -> str:
