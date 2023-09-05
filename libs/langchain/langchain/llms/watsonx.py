@@ -1,7 +1,9 @@
 import os
-from typing import Any, List, Mapping, Optional, Literal
-from langchain.llms.base import LLM
+from typing import Any, List, Literal, Mapping, Optional
+
 import genai
+
+from langchain.llms.base import LLM
 
 
 class WatsonxLLM(LLM):
