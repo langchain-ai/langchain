@@ -8,6 +8,7 @@ from langchain.output_parsers import RegexParser
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.loading import load_prompt
 from langchain.prompts.prompt import PromptTemplate
+import pytest
 
 EXAMPLE_DIR = Path("tests/unit_tests/examples").absolute()
 
@@ -41,6 +42,21 @@ def test_loading_from_JSON() -> None:
         template="Tell me a {adjective} joke about {content}.",
     )
     assert prompt == expected_prompt
+
+
+def test_loading_jinja_from_JSON() -> None:
+    """Test that loading jinja2 format prompts from JSON raises ValueError."""
+    prompt_path = EXAMPLE_DIR / "jinja_injection_prompt.json"
+    with pytest.raises(ValueError, match=".*can lead to arbitrary code execution.*"):
+        load_prompt(prompt_path)
+
+
+
+def test_loading_jinja_from_YAML() -> None:
+    """Test that loading jinja2 format prompts from YAML raises ValueError."""
+    prompt_path = EXAMPLE_DIR / "jinja_injection_prompt.yaml"
+    with pytest.raises(ValueError, match=".*can lead to arbitrary code execution.*"):
+        load_prompt(prompt_path)
 
 
 def test_saving_loading_round_trip(tmp_path: Path) -> None:
