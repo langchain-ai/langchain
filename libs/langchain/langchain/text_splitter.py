@@ -1037,7 +1037,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 class NLTKTextSplitter(TextSplitter):
     """Splitting text using NLTK package."""
 
-    def __init__(self, separator: str = "\n\n", language="english", **kwargs: Any) -> None:
+    def __init__(
+        self, separator: str = "\n\n", language="english", **kwargs: Any
+    ) -> None:
         """Initialize the NLTK splitter."""
         super().__init__(**kwargs)
         try:
