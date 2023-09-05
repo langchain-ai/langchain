@@ -59,6 +59,7 @@ schema_mapping = [
     ("CHILD", "HAS_CHILD"),
     ("PARENT", "HAS_PARENT"),
     ("CUSTOMERS", "HAS_CUSTOMER"),
+    ("SKILLED_AT", "INTERESTED_IN"),
 ]
 
 
