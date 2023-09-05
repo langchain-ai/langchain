@@ -3181,7 +3181,7 @@
       "destination": "/docs/use_cases/qa_structured"
     },
     {
-      "source": "/docs/use_cases/sql",
+      "source": "/docs/use_cases/sql(/?)",
       "destination": "/docs/use_cases/qa_structured/sql"
     },
     {
