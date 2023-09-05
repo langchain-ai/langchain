@@ -16,6 +16,7 @@ from langchain.chains.rl_chain.pick_best_chain import (
     PickBest,
     PickBestEvent,
     PickBestFeatureEmbedder,
+    PickBestRandomPolicy,
     PickBestSelected,
 )
 
@@ -39,6 +40,7 @@ __all__ = [
     "PickBestEvent",
     "PickBestSelected",
     "PickBestFeatureEmbedder",
+    "PickBestRandomPolicy",
     "Embed",
     "BasedOn",
     "ToSelectFrom",

@@ -166,7 +166,7 @@ class Event(Generic[TSelected], ABC):
 TEvent = TypeVar("TEvent", bound=Event)
 
 
-class Policy(ABC):
+class Policy(Generic[TEvent], ABC):
     def __init__(self, **kwargs: Any):
         pass
 
