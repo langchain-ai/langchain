@@ -3477,6 +3477,14 @@
       "destination": "/docs/use_cases/more/graph/graph_kuzu_qa"
     },
     {
+      "source": "/docs/use_cases/graph/graph_falkordb_qa",
+      "destination": "/docs/use_cases/more/graph/graph_falkordb_qa"
+    },
+    {
+      "source": "/docs/modules/chains/additional/graph_falkordb_qa",
+      "destination": "/docs/use_cases/more/graph/graph_falkordb_qa"
+    },
+    {
       "source": "/docs/use_cases/graph/graph_nebula_qa",
       "destination": "/docs/use_cases/more/graph/graph_nebula_qa"
     },
