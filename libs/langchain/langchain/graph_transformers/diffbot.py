@@ -12,7 +12,7 @@ from langchain.schema.graph_document import (
 from langchain.utils import get_from_env
 
 
-def format_property_key(s) -> str:
+def format_property_key(s: str) -> str:
     words = s.split()
     if not words:
         return s
@@ -23,7 +23,7 @@ def format_property_key(s) -> str:
 
 class NodesList:
     def __init__(self) -> None:
-        self.nodes = dict()
+        self.nodes: Dict[Tuple[Union[str, int], str], Any] = dict()
 
     def add_node_property(
         self, node: Tuple[Union[str, int], str], properties: Dict[str, Any]
@@ -69,7 +69,7 @@ class SimplifiedSchema:
         for row in schema_mapping:
             self.schema[row[0]] = row[1]
 
-    def get_type(self, type):
+    def get_type(self, type: str) -> str:
         try:
             return self.schema[type]
         except KeyError:
@@ -95,7 +95,7 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
         if simplified_schema:
             self.simplified_schema = SimplifiedSchema()
 
-    def nlp_request(self, text) -> Dict[str, Any]:
+    def nlp_request(self, text: str) -> Dict[str, Any]:
         """Make an API request to Diffbot NLP endpoint"""
 
         # Relationship extraction only works for English
