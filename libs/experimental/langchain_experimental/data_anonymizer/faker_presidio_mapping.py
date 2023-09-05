@@ -10,7 +10,6 @@ def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callab
             "Could not import faker, please install it with `pip install Faker`."
         ) from e
 
-    # Faker.seed(seed)
     fake = Faker()
     fake.seed_instance(seed)
 
