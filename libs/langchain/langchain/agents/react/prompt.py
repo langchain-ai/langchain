@@ -18,7 +18,11 @@ class ReActStringPromptValue(StringPromptValue):
         for line in self.text.split("\n"):
             # Process only non-empty lines
             if line:
-                prefix = prefix_regex.match(line)[0]
+                prefix_match = prefix_regex.match(line)
+                if prefix_match:
+                    prefix = prefix_match[0]
+                else:
+                    prefix = ""
                 if prefix == "Question":
                     messages.append(HumanMessage(content=line))
                 elif prefix == "Thought":
