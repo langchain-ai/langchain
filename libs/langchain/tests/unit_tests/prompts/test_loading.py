@@ -4,11 +4,12 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
+import pytest
+
 from langchain.output_parsers import RegexParser
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.loading import load_prompt
 from langchain.prompts.prompt import PromptTemplate
-import pytest
 
 EXAMPLE_DIR = Path("tests/unit_tests/examples").absolute()
 
@@ -49,7 +50,6 @@ def test_loading_jinja_from_JSON() -> None:
     prompt_path = EXAMPLE_DIR / "jinja_injection_prompt.json"
     with pytest.raises(ValueError, match=".*can lead to arbitrary code execution.*"):
         load_prompt(prompt_path)
-
 
 
 def test_loading_jinja_from_YAML() -> None:
