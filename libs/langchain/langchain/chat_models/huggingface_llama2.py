@@ -2,6 +2,7 @@ import importlib.util
 from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
 from enum import Enum
+
 from transformers import StoppingCriteria, StoppingCriteriaList
 from transformers.pipelines import TextGenerationPipeline
 
@@ -84,11 +85,18 @@ class ChatLlama2Hf(BaseChatModel):
                     "SystemMessage can only appear as the first message in the list."
                 )
             elif isinstance(message, SystemMessage) and i == 0:
-                prompt += f"<s>{InstructionTokens.B_INST} {SystemTokens.B_SYS}\n{message.content}\n{SystemTokens.E_SYS}\n\n"
+                prompt += (
+                    f"<s>{InstructionTokens.B_INST} "
+                    f"{SystemTokens.B_SYS}\n{message.content}\n"
+                    f"{SystemTokens.E_SYS}\n\n"
+                )
             elif isinstance(message, HumanMessage) and i > 0:
                 prompt += f"{message.content} {InstructionTokens.E_INST} "
             elif isinstance(message, HumanMessage) and i == 0:
-                prompt += f"<s>{InstructionTokens.B_INST} {message.content} {InstructionTokens.E_INST} "
+                prompt += (
+                    f"<s>{InstructionTokens.B_INST} "
+                    f"{message.content} {InstructionTokens.E_INST} "
+                )
             elif isinstance(message, AIMessage):
                 prompt += f"{message.content} </s><s>{InstructionTokens.B_INST} "
             else:

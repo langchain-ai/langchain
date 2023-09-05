@@ -1,9 +1,9 @@
 """Test Hugging Face Llama-2 Chat model."""
 
 from langchain.chat_models.huggingface_llama2 import (
+    ChatLlama2Hf,
     InstructionTokens,
     SystemTokens,
-    ChatLlama2Hf,
 )
 from langchain.schema.messages import (
     AIMessage,
