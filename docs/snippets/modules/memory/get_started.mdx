@@ -7,7 +7,7 @@ from langchain.memory import ConversationBufferMemory
 
 memory = ConversationBufferMemory()
 memory.chat_memory.add_user_message("hi!")
-memory.chat_memory.add_ai_message("whats up?")
+memory.chat_memory.add_ai_message("what's up?")
 ```
 
 When using memory in a chain, there are a few key concepts to understand.
@@ -28,7 +28,7 @@ memory.load_memory_variables({})
 <CodeOutputBlock lang="python">
 
 ```
-    {'history': "Human: hi!\nAI: whats up?"}
+    {'history': "Human: hi!\nAI: what's up?"}
 ```
 
 </CodeOutputBlock>
@@ -41,12 +41,12 @@ For example, if you want the memory variables to be returned in the key `chat_hi
 ```python
 memory = ConversationBufferMemory(memory_key="chat_history")
 memory.chat_memory.add_user_message("hi!")
-memory.chat_memory.add_ai_message("whats up?")
+memory.chat_memory.add_ai_message("what's up?")
 ```
 <CodeOutputBlock lang="python">
 
 ```
-    {'chat_history': "Human: hi!\nAI: whats up?"}
+    {'chat_history': "Human: hi!\nAI: what's up?"}
 ```
 
 </CodeOutputBlock>
@@ -65,13 +65,13 @@ In order to return as a list of messages, you can set `return_messages=True`
 ```python
 memory = ConversationBufferMemory(return_messages=True)
 memory.chat_memory.add_user_message("hi!")
-memory.chat_memory.add_ai_message("whats up?")
+memory.chat_memory.add_ai_message("what's up?")
 ```
 <CodeOutputBlock lang="python">
 
 ```
     {'history': [HumanMessage(content='hi!', additional_kwargs={}, example=False),
-  AIMessage(content='whats up?', additional_kwargs={}, example=False)]}
+  AIMessage(content='what's up?', additional_kwargs={}, example=False)]}
 ```
 
 </CodeOutputBlock>
