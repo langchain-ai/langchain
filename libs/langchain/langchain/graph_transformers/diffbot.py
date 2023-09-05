@@ -48,7 +48,7 @@ FACT_TO_PROPERTY_TYPE = [
     "Job title",
     "Cause of death",
     "Organization type",
-    "Academic degree",
+    "Academic title",
 ]
 
 
