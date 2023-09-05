@@ -76,7 +76,7 @@ class VectorStoreRetrieverMemory(BaseMemory):
         """Clear the chat_history in vector_store"""
         self.retriever.vectorstore.delete(self.check_history_id())
 
-    def check_history_id(self):
+    def check_history_id(self) -> List[str]:
         """Check the existed history memory in the retrieval VectorStore."""
         return list(
             self.retriever.vectorstore.__dict__["index_to_docstore_id"].values()
