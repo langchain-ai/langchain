@@ -112,9 +112,9 @@ class Banana(LLM):
         }
         model = Client(
             # Found in main dashboard
-            api_key=api_key,  
+            api_key=api_key,
             # Both found in model details page
-            model_key=model_key, 
+            model_key=model_key,
             url=f"https://{model_url_slug}.run.banana.dev",
         )
         response, meta = model.call("/", model_inputs)
