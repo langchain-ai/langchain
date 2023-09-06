@@ -1,7 +1,7 @@
 import tempfile
 
 
-def save_audio(audio) -> str:
+def save_audio(audio: bytes) -> str:
     with tempfile.NamedTemporaryFile(mode="bx", suffix=".wav", delete=False) as f:
         f.write(audio)
     return f.name

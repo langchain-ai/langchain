@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from IPython import display
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
-from langchain.tools.audio_utils import save_audio, load_audio
+from langchain.tools.audio_utils import load_audio, save_audio
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
 
@@ -51,23 +51,14 @@ class AzureCogsText2SpeechTool(BaseTool):
             values, "azure_cogs_region", "AZURE_COGS_REGION"
         )
 
-        try:
-            import azure.cognitiveservices.speech as speechsdk
-
-            values["speech_config"] = speechsdk.SpeechConfig(
-                subscription=azure_cogs_key, region=azure_cogs_region
-            )
-        except ImportError:
-            raise ImportError(
-                "azure-cognitiveservices-speech is not installed. "
-                "Run `pip install azure-cognitiveservices-speech` to install."
-            )
-
+        values["speech_config"] = speechsdk.SpeechConfig(
+            subscription=azure_cogs_key, region=azure_cogs_region
+        )
         return values
 
     def _text2speech(
         self, text: str, speech_language: str
-    ) -> Union[speechsdk.AudioDataStream, str]:
+    ) -> speechsdk.AudioDataStream:
         self.speech_config.speech_synthesis_language = speech_language
         speech_synthesizer = speechsdk.SpeechSynthesizer(
             speech_config=self.speech_config, audio_config=None
@@ -86,10 +77,10 @@ class AzureCogsText2SpeechTool(BaseTool):
                     f"Speech synthesis error: {cancellation_details.error_details}"
                 )
 
-            return "Speech synthesis canceled."
+            raise RuntimeError("Speech synthesis canceled.")
 
         else:
-            return f"Speech synthesis failed: {result.reason}"
+            raise RuntimeError(f"Speech synthesis failed: {result.reason}")
 
     def _run(
         self,
@@ -104,14 +95,14 @@ class AzureCogsText2SpeechTool(BaseTool):
         except Exception as e:
             raise RuntimeError(f"Error while running AzureCogsText2SpeechTool: {e}")
 
-    def play(self, speech):
+    def play(self, speech: speechsdk.AudioDataStream) -> None:
         """Play the speech."""
         audio = display.Audio(speech)
         display.display(audio)
 
     def generate_and_save(self, query: str) -> str:
         """Save the text as speech to a temporary file."""
-        speech = self._text2speech(query)
+        speech = self._text2speech(query, self.speech_language)
         path = save_audio(speech)
         return path
 

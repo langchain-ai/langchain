@@ -286,8 +286,8 @@ def _get_dataforseo_api_search_json(**kwargs: Any) -> BaseTool:
     return DataForSeoAPISearchResults(api_wrapper=DataForSeoAPIWrapper(**kwargs))
 
 
-def _get_eleven_labs_text2speech() -> BaseTool:
-    return ElevenLabsText2SpeechTool()
+def _get_eleven_labs_text2speech(**kwargs: Any) -> BaseTool:
+    return ElevenLabsText2SpeechTool(**kwargs)
 
 
 _EXTRA_LLM_TOOLS: Dict[
