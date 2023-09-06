@@ -1,13 +1,20 @@
 from __future__ import annotations
 
 import logging
-import tempfile
-from typing import Any, Dict, Optional
+from IPython import display
+from typing import Any, Dict, Optional, Union
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
+
+try:
+    import azure.cognitiveservices.speech as speechsdk
+except ImportError:
+    raise ImportError(
+        "azure.cognitiveservices.speech is not installed. " "Run `pip install azure-cognitiveservices-speech` to install."
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -55,11 +62,7 @@ class AzureCogsText2SpeechTool(BaseTool):
 
         return values
 
-    def _text2speech(self, text: str, speech_language: str) -> str:
-        try:
-            import azure.cognitiveservices.speech as speechsdk
-        except ImportError:
-            pass
+    def _text2speech(self, text: str, speech_language: str) -> Union[speechsdk.AudioDataStream, str]:
 
         self.speech_config.speech_synthesis_language = speech_language
         speech_synthesizer = speechsdk.SpeechSynthesizer(
@@ -69,12 +72,7 @@ class AzureCogsText2SpeechTool(BaseTool):
 
         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
             stream = speechsdk.AudioDataStream(result)
-            with tempfile.NamedTemporaryFile(
-                mode="wb", suffix=".wav", delete=False
-            ) as f:
-                stream.save_to_wav_file(f.name)
-
-            return f.name
+            return stream
 
         elif result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = result.cancellation_details
@@ -93,10 +91,16 @@ class AzureCogsText2SpeechTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> Union[speechsdk.AudioDataStream, str]:
         """Use the tool."""
         try:
-            speech_file = self._text2speech(query, self.speech_language)
-            return speech_file
+            speech = self._text2speech(query, self.speech_language)
+            self.play(speech)
+            return speech
         except Exception as e:
             raise RuntimeError(f"Error while running AzureCogsText2SpeechTool: {e}")
+        
+    def play(self, speech):
+
+        audio = display.Audio(speech)
+        display.display(audio)

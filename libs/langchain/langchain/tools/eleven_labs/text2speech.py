@@ -39,25 +39,21 @@ class ElevenLabsText2SpeechTool(BaseTool):
 
         return values
 
-    def _text2speech(self, text: str) -> str:
+    def _text2speech(self, text: str) -> bytes:
         speech = elevenlabs.generate(text=text, model=self.model)
-        with tempfile.NamedTemporaryFile(mode="bx", suffix=".wav", delete=False) as f:
-            f.write(speech)
-        return f.name
+        return speech
 
     def _run(self, query: str) -> str:
         """Use the tool."""
         try:
-            speech_file = self._text2speech(query)
-            return speech_file
+            speech = self._text2speech(query)
+            self.play(speech)
+            return "Speech has been generated"
         except Exception as e:
             raise RuntimeError(f"Error while running ElevenLabsText2SpeechTool: {e}")
 
-    def play(self, speech_file: str) -> None:
+    def play(self, speech) -> None:
         """Play the text as speech."""
-        with open(speech_file, mode="rb") as f:
-            speech = f.read()
-
         elevenlabs.play(speech)
 
     def stream(self, query: str) -> None:
