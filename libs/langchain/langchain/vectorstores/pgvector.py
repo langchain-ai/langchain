@@ -349,11 +349,11 @@ class PGVector(VectorStore):
 
     @property
     def distance_strategy(self) -> Any:
-        if self._distance_strategy == DistanceStrategy.EUCLIDEAN.value:
+        if self._distance_strategy == DistanceStrategy.EUCLIDEAN:
             return self.EmbeddingStore.embedding.l2_distance
-        elif self._distance_strategy == DistanceStrategy.COSINE.value:
+        elif self._distance_strategy == DistanceStrategy.COSINE:
             return self.EmbeddingStore.embedding.cosine_distance
-        elif self._distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT.value:
+        elif self._distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             return self.EmbeddingStore.embedding.max_inner_product
         else:
             raise ValueError(
