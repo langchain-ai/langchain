@@ -10,7 +10,7 @@ from langchain.text_splitter import (
     Language,
     MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
-    RecursiveCharacterTextSplitter,
+    RecursiveCharacterTextSplitter, SplittedText,
 )
 
 FAKE_PYTHON_TEXT = """
@@ -133,9 +133,9 @@ def test_character_text_splitting_args() -> None:
 def test_merge_splits() -> None:
     """Test merging splits with a given separator."""
     splitter = CharacterTextSplitter(separator=" ", chunk_size=9, chunk_overlap=2)
-    splits = ["foo", "bar", "baz"]
+    splits = [SplittedText(text=text) for text in ["foo", "bar", "baz"]]
     expected_output = ["foo bar", "baz"]
-    output = splitter._merge_splits(splits, separator=" ")
+    output = splitter._merge_splits(splits)
     assert output == expected_output
 
 

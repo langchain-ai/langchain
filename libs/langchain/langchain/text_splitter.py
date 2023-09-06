@@ -156,6 +156,14 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         return text
 
     def _merge_splits(self, splits: List[SplittedText]) -> List[str]:
+        """Merge splits into chunks.
+
+        Args:
+            splits: List of splits to merge
+
+        Returns:
+            List of chunks
+        """
         if not self._keep_separator:
             # remove separators from the beginning
             while splits and splits[0].is_separator:
@@ -178,7 +186,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 docs.append("".join([s.text for s in current_doc[:doc_end]]))
 
         while splits:
-            if current_doc_total + len(splits[0]) > self._chunk_size:
+            if current_doc and current_doc_total + len(splits[0]) > self._chunk_size:
                 if current_doc_total > self._chunk_size:
                     logger.warning(
                         f"Created a chunk of size {current_doc_total}, "
@@ -187,13 +195,14 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
                 _append_doc(current_doc)
 
-                while len(current_doc) > self._chunk_overlap:
+                while current_doc_total > self._chunk_overlap:
                     current_doc_total -= len(current_doc[0])
                     current_doc.pop(0)
 
+            current_doc_total += len(splits[0])
             current_doc.append(splits.pop(0))
             if not self._keep_separator:
-                while current_doc[0].is_separator:
+                while current_doc and current_doc[0].is_separator:
                     current_doc_total -= len(current_doc[0])
                     current_doc.pop(0)
 
