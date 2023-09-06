@@ -91,16 +91,16 @@ class AzureCogsText2SpeechTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Union[speechsdk.AudioDataStream, str]:
+    ) -> str:
         """Use the tool."""
         try:
             speech = self._text2speech(query, self.speech_language)
             self.play(speech)
-            return speech
+            return "Speech has been generated"
         except Exception as e:
             raise RuntimeError(f"Error while running AzureCogsText2SpeechTool: {e}")
         
     def play(self, speech):
-
+        """Play the speech."""
         audio = display.Audio(speech)
         display.display(audio)
