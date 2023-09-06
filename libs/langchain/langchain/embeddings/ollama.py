@@ -1,8 +1,10 @@
+from typing import Any, Dict, List, Mapping, Optional
+
 import requests
-from typing import Dict, List, Optional, Any, Mapping
 
 from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra
+
 
 class OllamaEmbeddings(BaseModel, Embeddings):
     """Ollama locally runs large language models.
@@ -37,7 +39,6 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """Instruction used to embed documents."""
     query_instruction: str = "query: "
     """Instruction used to embed the query."""
-
 
     mirostat: Optional[int]
     """Enable Mirostat sampling for controlling perplexity.
@@ -120,7 +121,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
                 "top_p": self.top_p,
             },
         }
-    
+
     model_kwargs: Optional[dict] = None
     """Other model keyword args"""
 
@@ -131,8 +132,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     class Config:
         """Configuration for this pydantic object."""
+
         extra = Extra.forbid
-    
+
     def _process_emb_response(self, input: str) -> List[float]:
         """Process a response from the API.
 
@@ -150,11 +152,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             res = requests.post(
                 f"{self.base_url}/api/embeddings",
                 headers=headers,
-                json={
-                    "model": self.model,
-                    "prompt": input,
-                    **self._default_params
-                },
+                json={"model": self.model, "prompt": input, **self._default_params},
             )
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
@@ -173,7 +171,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             )
 
     def _embed(self, input: List[str]) -> List[List[float]]:
-        embeddings_list : List[List[float]] = []
+        embeddings_list: List[List[float]] = []
         for prompt in input:
             embeddings = self._process_emb_response(prompt)
             embeddings_list.append(embeddings)
