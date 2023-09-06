@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
-from IPython import display
 from typing import Any, Dict, Optional, Union
+
+from IPython import display
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
+from langchain.tools.audio_utils import save_audio, load_audio
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
 
@@ -13,7 +15,8 @@ try:
     import azure.cognitiveservices.speech as speechsdk
 except ImportError:
     raise ImportError(
-        "azure.cognitiveservices.speech is not installed. " "Run `pip install azure-cognitiveservices-speech` to install."
+        "azure.cognitiveservices.speech is not installed. "
+        "Run `pip install azure-cognitiveservices-speech` to install."
     )
 
 logger = logging.getLogger(__name__)
@@ -62,8 +65,9 @@ class AzureCogsText2SpeechTool(BaseTool):
 
         return values
 
-    def _text2speech(self, text: str, speech_language: str) -> Union[speechsdk.AudioDataStream, str]:
-
+    def _text2speech(
+        self, text: str, speech_language: str
+    ) -> Union[speechsdk.AudioDataStream, str]:
         self.speech_config.speech_synthesis_language = speech_language
         speech_synthesizer = speechsdk.SpeechSynthesizer(
             speech_config=self.speech_config, audio_config=None
@@ -99,8 +103,19 @@ class AzureCogsText2SpeechTool(BaseTool):
             return "Speech has been generated"
         except Exception as e:
             raise RuntimeError(f"Error while running AzureCogsText2SpeechTool: {e}")
-        
+
     def play(self, speech):
         """Play the speech."""
         audio = display.Audio(speech)
         display.display(audio)
+
+    def generate_and_save(self, query: str) -> str:
+        """Save the text as speech to a temporary file."""
+        speech = self._text2speech(query)
+        path = save_audio(speech)
+        return path
+
+    def load_and_play(self, path: str) -> None:
+        """Load the text as speech from a temporary file."""
+        speech = load_audio(path)
+        self.play(speech)

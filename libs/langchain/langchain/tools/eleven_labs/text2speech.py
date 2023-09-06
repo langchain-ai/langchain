@@ -1,7 +1,7 @@
-import tempfile
 from typing import Dict, Union
 
 from langchain.pydantic_v1 import root_validator
+from langchain.tools.audio_utils import save_audio, load_audio
 from langchain.tools.base import BaseTool
 from langchain.tools.eleven_labs.models import ElevenLabsModel
 from langchain.utils import get_from_dict_or_env
@@ -61,3 +61,14 @@ class ElevenLabsText2SpeechTool(BaseTool):
         Play the text in your speakers."""
         speech_stream = elevenlabs.generate(text=query, model=self.model, stream=True)
         elevenlabs.stream(speech_stream)
+        
+    def generate_and_save(self, query: str) -> str:
+        """Save the text as speech to a temporary file."""
+        speech = self._text2speech(query)
+        path = save_audio(speech)
+        return path
+
+    def load_and_play(self, path: str) -> None:
+        """Load the text as speech from a temporary file."""
+        speech = load_audio(path)
+        self.play(speech)
