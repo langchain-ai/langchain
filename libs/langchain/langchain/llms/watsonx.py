@@ -1,12 +1,15 @@
-import os
-from typing import Any, Dict, List, Literal, Mapping, Optional
-
-import genai
+from typing import Any, Dict, List, Mapping, Optional
 
 from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Field
+from langchain.utils import get_from_env
+
+
+def _get_api_key() -> str:
+    return get_from_env("api_key", "WATSONX_API_KEY")
 
 
 class WatsonxLLM(LLM):
@@ -15,20 +18,8 @@ class WatsonxLLM(LLM):
     WIP: is lacking some functions
     """
 
-    model_name: Literal[
-        "salesforce/codegen-16b-mono",
-        "prakharz/dial-flant5-xl",
-        "tiiuae/falcon-40b",
-        "google/flan-t5-xl",
-        "google/flan-t5-xxl",
-        "google/flan-ul2",
-        "togethercomputer/gpt-jt-6b-v1",
-        "eleutherai/gpt-neox-20b",
-        "ibm/mpt-7b-instruct",
-        "bigscience/mt0-xxl",
-        "google/ul2",
-    ] | str = "tiiuae/falcon-40b"
-    api_key: str = os.environ["WATSONX_API_KEY"]
+    model_name: str = "tiiuae/falcon-40b"
+    api_key: str = Field(default_factory=_get_api_key)
     decoding_method: str = "sample"
     temperature: float = 0.05
     top_p: float = 1
@@ -55,6 +46,13 @@ class WatsonxLLM(LLM):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
+        try:
+            import genai
+        except ImportError as e:
+            raise ImportError(
+                "Cannot import genai, please install with `pip install genai`."
+            ) from e
+
         creds = genai.credentials.Credentials(api_key=self.api_key)
         gen_params = genai.schemas.generate_params.GenerateParams(
             decoding_method=self.decoding_method,
