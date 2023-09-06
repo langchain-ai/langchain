@@ -537,7 +537,9 @@ class Runnable(Generic[Input, Output], ABC):
                 )
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
-            iterator = transformer(input_for_transform, **kwargs)  # type: ignore[call-arg]
+            iterator = transformer(
+                input_for_transform, **kwargs
+            )  # type: ignore[call-arg]
             for chunk in iterator:
                 yield chunk
                 if final_output_supported:
@@ -613,7 +615,9 @@ class Runnable(Generic[Input, Output], ABC):
                 )
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
-            iterator = transformer(input_for_transform, **kwargs)  # type: ignore[call-arg]
+            iterator = transformer(
+                input_for_transform, **kwargs
+            )  # type: ignore[call-arg]
             async for chunk in iterator:
                 yield chunk
                 if final_output_supported:
