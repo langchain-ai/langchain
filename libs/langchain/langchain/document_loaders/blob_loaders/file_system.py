@@ -99,7 +99,7 @@ class FileSystemBlobLoader(BlobLoader):
         else:
             raise TypeError(f"Expected str or Path, got {type(path)}")
 
-        self.path = _path
+        self.path = _path.expanduser()  # Expand user to handle ~
         self.glob = glob
         self.suffixes = set(suffixes or [])
         self.show_progress = show_progress
