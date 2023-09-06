@@ -3178,7 +3178,11 @@
     },
     {
       "source": "/en/latest/use_cases/tabular.html",
-      "destination": "/docs/use_cases/tabular"
+      "destination": "/docs/use_cases/qa_structured"
+    },
+    {
+      "source": "/docs/use_cases/sql(/?)",
+      "destination": "/docs/use_cases/qa_structured/sql"
     },
     {
       "source": "/en/latest/youtube.html",
@@ -3370,7 +3374,7 @@
     },
     {
       "source": "/docs/modules/chains/popular/sqlite",
-      "destination": "/docs/use_cases/tabular/sqlite"
+      "destination": "/docs/use_cases/qa_structured/sql"
     },
     {
       "source": "/docs/modules/chains/popular/openai_functions",
@@ -3582,7 +3586,7 @@
     },
     {
       "source": "/docs/modules/chains/additional/elasticsearch_database",
-      "destination": "/docs/use_cases/tabular/elasticsearch_database"
+      "destination": "/docs/use_cases/qa_structured/integrations/elasticsearch"
     },
     {
       "source": "/docs/modules/chains/additional/tagging",
