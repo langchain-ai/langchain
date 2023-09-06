@@ -1,8 +1,11 @@
 import os
-from typing import Any, List, Literal, Mapping, Optional
+from typing import Any, Dict, List, Literal, Mapping, Optional
 
 import genai
 
+from langchain.callbacks.manager import (
+    Callbacks,
+)
 from langchain.llms.base import LLM
 
 
@@ -42,15 +45,16 @@ class WatsonxLLM(LLM):
     def _llm_type(self) -> str:
         return "custom"
 
-    def _call(
+    def __call__(
         self,
-        prompts: List[str] | str,
+        prompt: str,
         stop: Optional[List[str]] = None,
-        # stop: Optional[List[str]] = None,
-        # run_manager: Optional[CallbackManagerForLLMRun] = None,
-    ) -> List[str] | str:
-        if isinstance(prompts, str):
-            prompts = [prompts]
+        callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> str:
         creds = genai.credentials.Credentials(api_key=self.api_key)
         gen_params = genai.schemas.generate_params.GenerateParams(
             decoding_method=self.decoding_method,
@@ -67,10 +71,8 @@ class WatsonxLLM(LLM):
         model = genai.model.Model(
             model=self.model_name, params=gen_params, credentials=creds
         )
-        out = model.generate(prompts=prompts)
-        if len(out) == 1:
-            return out[0].generated_text
-        return [elem.generated_text for elem in out]
+        out = model.generate(prompts=[prompt])
+        return out[0].generated_text
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
