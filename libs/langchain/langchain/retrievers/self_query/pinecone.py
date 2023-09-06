@@ -20,6 +20,8 @@ class PineconeTranslator(Visitor):
         Comparator.LTE,
         Comparator.GT,
         Comparator.GTE,
+        Comparator.IN,
+        Comparator.NIN,
     )
     """Subset of allowed logical comparators."""
     allowed_operators = (Operator.AND, Operator.OR)
