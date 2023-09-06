@@ -377,8 +377,25 @@ class MarkdownHeaderTextSplitter:
         header_stack: List[HeaderType] = []
         initial_metadata: Dict[str, str] = {}
 
+        in_code_block = False
+
         for line in lines:
             stripped_line = line.strip()
+
+            if stripped_line.startswith("```"):
+                if not in_code_block:  # code block starts
+                    in_code_block = True
+                elif in_code_block:  # code block ends
+                    in_code_block = False
+                
+                # code block in one row
+                if stripped_line.count("```") >= 2:
+                    in_code_block = False
+
+            if in_code_block:
+                current_content.append(stripped_line)
+                continue
+
             # Check each line against each of the header types (e.g., #, ##)
             for sep, name in self.headers_to_split_on:
                 # Check if line starts with a header that we intend to split on
