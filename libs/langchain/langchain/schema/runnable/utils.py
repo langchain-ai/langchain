@@ -35,10 +35,3 @@ def accepts_config(callable: Callable[..., Any]) -> bool:
         return signature(callable).parameters.get("config") is not None
     except ValueError:
         return False
-
-
-def accepts_run_manager_and_config(callable: Callable[..., Any]) -> bool:
-    return (
-        accepts_run_manager(callable)
-        and signature(callable).parameters.get("config") is not None
-    )

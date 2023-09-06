@@ -51,8 +51,8 @@ from langchain.schema.runnable.config import (
 from langchain.schema.runnable.utils import (
     Input,
     Output,
+    accepts_config,
     accepts_run_manager,
-    accepts_run_manager_and_config,
     gather_with_concurrency,
 )
 from langchain.utils.aiter import atee, py_anext
@@ -390,16 +390,15 @@ class Runnable(Generic[Input, Output], ABC):
             )
         ]
         try:
-            if accepts_run_manager_and_config(func):
-                output = func(
-                    input,
-                    run_manager=run_managers,
-                    config=configs,
-                )  # type: ignore[call-arg]
-            elif accepts_run_manager(func):
-                output = func(input, run_manager=run_managers)  # type: ignore[call-arg]
-            else:
-                output = func(input)  # type: ignore[call-arg]
+            kwargs: Dict[str, Any] = {}
+            if accepts_config(func):
+                kwargs["config"] = [
+                    patch_config(c, callbacks=rm.get_child())
+                    for c, rm in zip(configs, run_managers)
+                ]
+            if accepts_run_manager(func):
+                kwargs["run_manager"] = run_managers
+            output = func(input, **kwargs)  # type: ignore[call-arg]
         except Exception as e:
             for run_manager in run_managers:
                 run_manager.on_chain_error(e)
@@ -461,16 +460,15 @@ class Runnable(Generic[Input, Output], ABC):
             )
         )
         try:
-            if accepts_run_manager_and_config(func):
-                output = await func(
-                    input,
-                    run_manager=run_managers,
-                    config=configs,
-                )  # type: ignore[call-arg]
-            elif accepts_run_manager(func):
-                output = await func(input, run_manager=run_managers)  # type: ignore
-            else:
-                output = await func(input)  # type: ignore[call-arg]
+            kwargs: Dict[str, Any] = {}
+            if accepts_config(func):
+                kwargs["config"] = [
+                    patch_config(c, callbacks=rm.get_child())
+                    for c, rm in zip(configs, run_managers)
+                ]
+            if accepts_run_manager(func):
+                kwargs["run_manager"] = run_managers
+            output = await func(input, **kwargs)  # type: ignore[call-arg]
         except Exception as e:
             await asyncio.gather(
                 *(run_manager.on_chain_error(e) for run_manager in run_managers)
@@ -532,19 +530,14 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name"),
         )
         try:
-            if accepts_run_manager_and_config(transformer):
-                iterator = transformer(
-                    input_for_transform,
-                    run_manager=run_manager,
-                    config=config,
-                )  # type: ignore[call-arg]
-            elif accepts_run_manager(transformer):
-                iterator = transformer(
-                    input_for_transform,
-                    run_manager=run_manager,
-                )  # type: ignore[call-arg]
-            else:
-                iterator = transformer(input_for_transform)  # type: ignore[call-arg]
+            kwargs: Dict[str, Any] = {}
+            if accepts_config(transformer):
+                kwargs["config"] = patch_config(
+                    config, callbacks=run_manager.get_child()
+                )
+            if accepts_run_manager(transformer):
+                kwargs["run_manager"] = run_manager
+            iterator = transformer(input_for_transform, **kwargs)  # type: ignore[call-arg]
             for chunk in iterator:
                 yield chunk
                 if final_output_supported:
@@ -613,21 +606,14 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name"),
         )
         try:
-            # mypy can't quite work out thew type guard here, but this is safe,
-            # check implementations of the accepts_* functions
-            if accepts_run_manager_and_config(transformer):
-                iterator = transformer(
-                    input_for_transform,
-                    run_manager=run_manager,
-                    config=config,
-                )  # type: ignore[call-arg]
-            elif accepts_run_manager(transformer):
-                iterator = transformer(
-                    input_for_transform,
-                    run_manager=run_manager,
-                )  # type: ignore[call-arg]
-            else:
-                iterator = transformer(input_for_transform)  # type: ignore[call-arg]
+            kwargs: Dict[str, Any] = {}
+            if accepts_config(transformer):
+                kwargs["config"] = patch_config(
+                    config, callbacks=run_manager.get_child()
+                )
+            if accepts_run_manager(transformer):
+                kwargs["run_manager"] = run_manager
+            iterator = transformer(input_for_transform, **kwargs)  # type: ignore[call-arg]
             async for chunk in iterator:
                 yield chunk
                 if final_output_supported:
