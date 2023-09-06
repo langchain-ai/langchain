@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import requests
-
 from langchain.schema import Document
 from langchain.schema.graph_document import (
     BaseGraphDocumentTransformer,
@@ -27,7 +26,7 @@ class NodesList:
 
     Attributes:
         nodes (Dict[Tuple, Any]): Stores nodes as keys and their properties as values.
-            Each key is a tuple where the first element is the 
+            Each key is a tuple where the first element is the
             node ID and the second is the node type.
     """
 
@@ -112,7 +111,7 @@ class SimplifiedSchema:
             type (str): The original schema type to find the simplified type for.
 
         Returns:
-            str: The simplified schema type if it exists; 
+            str: The simplified schema type if it exists;
                  otherwise, returns the original type.
         """
         try:
@@ -138,16 +137,16 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
         Initialize the graph transformer with various options.
 
         Args:
-            diffbot_api_key (str): 
+            diffbot_api_key (str):
                The API key for Diffbot's NLP services.
-                                   
-            fact_confidence_threshold (float): 
+
+            fact_confidence_threshold (float):
                 Minimum confidence level for facts to be included.
-            include_qualifiers (bool): 
+            include_qualifiers (bool):
                 Whether to include qualifiers in the relationships.
-            include_evidence (bool): 
+            include_evidence (bool):
                 Whether to include evidence for the relationships.
-            simplified_schema (bool): 
+            simplified_schema (bool):
                 Whether to use a simplified schema for relationships.
         """
         self.diffbot_api_key = diffbot_api_key or get_from_env(
