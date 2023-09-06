@@ -142,6 +142,7 @@ class Chroma(VectorStore):
         query_embeddings: Optional[List[List[float]]] = None,
         n_results: int = 4,
         where: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Query the chroma collection."""
@@ -157,6 +158,7 @@ class Chroma(VectorStore):
             query_embeddings=query_embeddings,
             n_results=n_results,
             where=where,
+            where_document=where_document,
             **kwargs,
         )
 
@@ -264,6 +266,7 @@ class Chroma(VectorStore):
         embedding: List[float],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -275,7 +278,7 @@ class Chroma(VectorStore):
             List of Documents most similar to the query vector.
         """
         results = self.__query_collection(
-            query_embeddings=embedding, n_results=k, where=filter
+            query_embeddings=embedding, n_results=k, where=filter, where_document=where_document
         )
         return _results_to_docs(results)
 
@@ -284,6 +287,7 @@ class Chroma(VectorStore):
         embedding: List[float],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
@@ -300,7 +304,7 @@ class Chroma(VectorStore):
             Lower score represents more similarity.
         """
         results = self.__query_collection(
-            query_embeddings=embedding, n_results=k, where=filter
+            query_embeddings=embedding, n_results=k, where=filter, where_document=where_document
         )
         return _results_to_docs_and_scores(results)
 
@@ -375,6 +379,7 @@ class Chroma(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -399,6 +404,7 @@ class Chroma(VectorStore):
             query_embeddings=embedding,
             n_results=fetch_k,
             where=filter,
+            where_document=where_document,
             include=["metadatas", "documents", "distances", "embeddings"],
         )
         mmr_selected = maximal_marginal_relevance(
@@ -474,7 +480,7 @@ class Chroma(VectorStore):
             offset: The offset to start returning results from.
                     Useful for paging results with limit. Optional.
             where_document: A WhereDocument type dict used to filter by the documents.
-                            E.g. `{$contains: {"text": "hello"}}`. Optional.
+                            E.g. `{$contains: "hello"}`. Optional.
             include: A list of what to include in the results.
                      Can contain `"embeddings"`, `"metadatas"`, `"documents"`.
                      Ids are always included.
