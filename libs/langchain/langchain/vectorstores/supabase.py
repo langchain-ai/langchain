@@ -203,7 +203,7 @@ class SupabaseVectorStore(VectorStore):
     def match_args(
         self, query: List[float], filter: Optional[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        ret = dict(query_embedding=query)
+        ret: Dict[str, Any] = dict(query_embedding=query)
         if filter:
             ret["filter"] = filter
         return ret

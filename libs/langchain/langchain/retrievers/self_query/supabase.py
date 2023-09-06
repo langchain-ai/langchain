@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Union
+from typing import Any, Dict, Tuple
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -8,8 +8,6 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
-from urllib.parse import quote
-from numbers import Number
 
 
 class SupabaseVectorTranslator(Visitor):
@@ -31,13 +29,13 @@ class SupabaseVectorTranslator(Visitor):
 
     metadata_column = "metadata"
 
-    def _format_value(self, value, comparator: Comparator):
+    def _format_value(self, value: Any, comparator: Comparator) -> str:
         if comparator == Comparator.CONTAIN:
             return f"%{value}%"
 
         return value
 
-    def _map_comparator(self, comparator: str):
+    def _map_comparator(self, comparator: Comparator) -> str:
         """
         Maps Langchain comparator to PostgREST comparator:
 
@@ -54,17 +52,32 @@ class SupabaseVectorTranslator(Visitor):
             Comparator.LIKE: "like",
         }.get(comparator, comparator)
 
-    def _get_json_operator(self, value):
+    def _get_json_operator(self, value: Any) -> str:
         if isinstance(value, str):
             return "->>"
         else:
             return "->"
 
-    def visit_operation(self, operation: Operation) -> Dict:
+    def visit_operation(self, operation: Operation) -> str:
         args = [arg.accept(self) for arg in operation.arguments]
         return f"{operation.operator}({','.join(args)})"
 
-    def visit_comparison(self, comparison: Comparison) -> Dict:
+    def visit_comparison(self, comparison: Comparison) -> str:
+        if isinstance(comparison.value, list):
+            return self.visit_operation(
+                Operation(
+                    operator=Operator.AND,
+                    arguments=(
+                        Comparison(
+                            comparator=comparison.comparator,
+                            attribute=comparison.attribute,
+                            value=value,
+                        )
+                        for value in comparison.value
+                    ),
+                )
+            )
+
         return ".".join(
             [
                 f"{self.metadata_column}{self._get_json_operator(comparison.value)}{comparison.attribute}",
@@ -75,7 +88,7 @@ class SupabaseVectorTranslator(Visitor):
 
     def visit_structured_query(
         self, structured_query: StructuredQuery
-    ) -> Tuple[str, dict]:
+    ) -> Tuple[str, Dict[str, str]]:
         if structured_query.filter is None:
             kwargs = {}
         else:
