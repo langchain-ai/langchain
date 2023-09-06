@@ -384,6 +384,8 @@ class SQLDatabase:
                     connection.exec_driver_sql(f"SET @@dataset_id='{self._schema}'")
                 elif self.dialect == "mssql":
                     pass
+                elif self.dialect == "trino":
+                    connection.exec_driver_sql(f"USE {self._schema}")
                 else:  # postgresql and compatible dialects
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.execute(text(command))
