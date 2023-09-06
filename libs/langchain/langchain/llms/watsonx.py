@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import (
     Callbacks,
@@ -12,11 +12,8 @@ def _get_api_key() -> str:
     return get_from_env("api_key", "WATSONX_API_KEY")
 
 
-class WatsonxLLM(LLM):
-    """
-    BAM LLM connector class to langchain
-    WIP: is lacking some functions
-    """
+class Watsonx(LLM):
+    """WatsonX LLM wrapper."""
 
     model_name: str = "tiiuae/falcon-40b"
     api_key: str = Field(default_factory=_get_api_key)
@@ -29,12 +26,12 @@ class WatsonxLLM(LLM):
     api_endpoint: str = "https://workbench-api.res.ibm.com/v1"
     repetition_penalty: Optional[float] = None
     random_seed: Optional[int] = None
-    stop_sequences: Optional[list[str]] = None
+    stop_sequences: Optional[List[str]] = None
     truncate_input_tokens: Optional[int] = None
 
     @property
     def _llm_type(self) -> str:
-        return "custom"
+        return "watsonx"
 
     def __call__(
         self,
@@ -55,17 +52,10 @@ class WatsonxLLM(LLM):
             ) from e
 
         creds = genai.credentials.Credentials(api_key=self.api_key)
+        params = self._identifying_params.copy()
+        params["stop_sequences"] = stop or params["stop_sequences"]
         gen_params = genai.schemas.generate_params.GenerateParams(
-            decoding_method=self.decoding_method,
-            temperature=self.temperature,
-            top_p=self.top_p,
-            top_k=self.top_k,
-            min_new_tokens=self.min_new_tokens,
-            max_new_tokens=self.max_new_tokens,
-            repetition_penalty=self.repetition_penalty,
-            random_seed=self.random_seed,
-            stop_sequences=self.stop_sequences,
-            truncate_input_tokens=self.truncate_input_tokens,
+            **params,
         )
         model = genai.model.Model(
             model=self.model_name, params=gen_params, credentials=creds
@@ -74,7 +64,7 @@ class WatsonxLLM(LLM):
         return out[0].generated_text
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "decoding_method": self.decoding_method,
