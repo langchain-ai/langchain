@@ -1,10 +1,15 @@
 """Module contains common parsers for PDFs."""
-from typing import Any, Iterator, Mapping, Optional, Sequence, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence, Union
 from urllib.parse import urlparse
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.schema import Document
+
+if TYPE_CHECKING:
+    import pdfplumber.page
 
 
 class PyPDFParser(BaseBlobParser):
@@ -116,13 +121,17 @@ class PyPDFium2Parser(BaseBlobParser):
 class PDFPlumberParser(BaseBlobParser):
     """Parse `PDF` with `PDFPlumber`."""
 
-    def __init__(self, text_kwargs: Optional[Mapping[str, Any]] = None) -> None:
+    def __init__(
+        self, text_kwargs: Optional[Mapping[str, Any]] = None, dedupe: bool = False
+    ) -> None:
         """Initialize the parser.
 
         Args:
             text_kwargs: Keyword arguments to pass to ``pdfplumber.Page.extract_text()``
+            dedupe: Avoiding the error of duplicate characters if `dedupe=True`.
         """
         self.text_kwargs = text_kwargs or {}
+        self.dedupe = dedupe
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -133,7 +142,7 @@ class PDFPlumberParser(BaseBlobParser):
 
             yield from [
                 Document(
-                    page_content=page.extract_text(**self.text_kwargs),
+                    page_content=self._process_page_content(page),
                     metadata=dict(
                         {
                             "source": blob.source,
@@ -150,6 +159,12 @@ class PDFPlumberParser(BaseBlobParser):
                 )
                 for page in doc.pages
             ]
+
+    def _process_page_content(self, page: pdfplumber.page.Page) -> str:
+        """Process the page content based on dedupe."""
+        if self.dedupe:
+            return page.dedupe_chars().extract_text(**self.text_kwargs)
+        return page.extract_text(**self.text_kwargs)
 
 
 class AmazonTextractPDFParser(BaseBlobParser):
