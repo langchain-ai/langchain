@@ -10,6 +10,7 @@ repository = "https://www.github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
+ibm-generative-ai = {version = "^0.2.5", optional = true, python = "3.9"}
 
 [tool.poetry.group.docs.dependencies]
 langchain = { path = "libs/langchain/", develop = true }
