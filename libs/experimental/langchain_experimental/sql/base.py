@@ -130,7 +130,7 @@ class SQLDatabaseChain(Chain):
                 **llm_inputs,
             ).strip()
             if self.return_sql:
-                return {self.output_key: sql_cmd}
+                return {self.output_key: sql_cmd, 'final_answer': final_result}
             if not self.use_query_checker:
                 _run_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
                 intermediate_steps.append(
@@ -170,7 +170,7 @@ class SQLDatabaseChain(Chain):
             _run_manager.on_text(result, color="yellow", verbose=self.verbose)
             # If return direct, we just set the final result equal to
             # the result of the sql query result, otherwise try to get a human readable
-            # final answer
+            # final answer  
             if self.return_direct:
                 final_result = result
             else:
