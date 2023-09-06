@@ -19,10 +19,10 @@ def _serialize(obj):
         return obj.to_json()
 
     if isinstance(obj, dict):
-        return {key: serialize(value) for key, value in obj.items()}
+        return {key: _serialize(value) for key, value in obj.items()}
 
     if isinstance(obj, list):
-        return [serialize(element) for element in obj]
+        return [_serialize(element) for element in obj]
 
     return obj
 
@@ -32,7 +32,7 @@ def _parse_input(raw_input) -> str:
         return None
 
     if not isinstance(raw_input, dict):
-        return serialize(raw_input)
+        return _serialize(raw_input)
 
     input_value = raw_input.get("input")
     inputs_value = raw_input.get("inputs")
@@ -48,7 +48,7 @@ def _parse_input(raw_input) -> str:
     if query_value:
         return query_value
 
-    return serialize(raw_input)
+    return _serialize(raw_input)
 
 
 def _parse_output(raw_output: dict) -> str:
@@ -56,7 +56,7 @@ def _parse_output(raw_output: dict) -> str:
         return None
 
     if not isinstance(raw_output, dict):
-        return serialize(raw_output)
+        return _serialize(raw_output)
 
     text_value = raw_output.get("text")
     output_value = raw_output.get("output")
@@ -75,7 +75,7 @@ def _parse_output(raw_output: dict) -> str:
     if result_value:
         return result_value
 
-    return serialize(raw_output)
+    return _serialize(raw_output)
 
 
 def _parse_lc_role(
@@ -232,7 +232,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             "type": "llm",
             "runId": str(run_id),
             "parent_run_id": str(parent_run_id) if parent_run_id else None,
-            "output": {"text": response.generations[0][0].text, "role": "ai"},  # TODO
+            "output": {"text": response.generations[0][0].text, "role": "ai"},
             "tokensUsage": {
                 "prompt": token_usage.get("prompt_tokens", 0),
                 "completion": token_usage.get("completion_tokens", 0),
