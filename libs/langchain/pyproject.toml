@@ -129,6 +129,7 @@ markdownify = {version = "^0.11.6", optional = true}
 assemblyai = {version = "^0.17.0", optional = true}
 dashvector = {version = "^1.0.1", optional = true}
 sqlite-vss = {version = "^0.1.2", optional = true}
+nuclia = {version = "^1.1.10", optional = true}
 
 
 [tool.poetry.group.test.dependencies]
@@ -345,6 +346,7 @@ extended_testing = [
  "markdownify",
  "dashvector",
  "sqlite-vss",
+ "nuclia",
 ]
 
 [tool.ruff]
