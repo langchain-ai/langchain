@@ -396,10 +396,10 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
     def on_tool_error(
         self,
-        error: Exception | KeyboardInterrupt,
+        error: Union[Exception, KeyboardInterrupt],
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
         event = {
