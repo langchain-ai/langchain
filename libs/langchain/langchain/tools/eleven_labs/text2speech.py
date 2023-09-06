@@ -1,6 +1,7 @@
 import tempfile
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
 from langchain.tools.base import BaseTool
 from langchain.tools.eleven_labs.models import ElevenLabsModel
@@ -45,7 +46,9 @@ class ElevenLabsText2SpeechTool(BaseTool):
             f.write(speech)
         return f.name
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
         """Use the tool."""
         try:
             speech_file = self._text2speech(query)
@@ -60,7 +63,7 @@ class ElevenLabsText2SpeechTool(BaseTool):
 
         elevenlabs.play(speech)
 
-    def stream(self, query: str) -> None:
+    def stream_speech(self, query: str) -> None:
         """Stream the text as speech as it is generated.
         Play the text in your speakers."""
         speech_stream = elevenlabs.generate(text=query, model=self.model, stream=True)
