@@ -111,7 +111,7 @@ class JavelinAIGateway(LLM):
             resp = self.client.query_route(self.route, query_body=data)
         else:
             raise ValueError("Javelin client is not initialized.")
-        
+
         print(resp.dict())
 
         return resp.dict()["llm_response"]["choices"][0]["text"]

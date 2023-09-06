@@ -1,5 +1,5 @@
 from __future__ import annotations
-import json
+
 from typing import Any, Iterator, List, Optional
 
 from langchain.embeddings.base import Embeddings
@@ -78,12 +78,13 @@ class JavelinAIGatewayEmbeddings(Embeddings, BaseModel):
 
         return embeddings
 
-
     async def _aquery(self, texts: List[str]) -> List[List[float]]:
         embeddings = []
         for txt in _chunk(texts, 20):
             try:
-                resp = await self.client.aquery_route(self.route, query_body={"text": txt})
+                resp = await self.client.aquery_route(
+                    self.route, query_body={"text": txt}
+                )
                 embeddings.append(resp["embeddings"])
             except ValueError as e:
                 print("Failed to query route: " + str(e))

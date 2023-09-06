@@ -32,6 +32,7 @@ class ChatParams(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     stop: Optional[List[str]] = None
     max_tokens: Optional[int] = None
 
+
 class ChatJavelinAIGateway(BaseChatModel):
     """`Javelin AI Gateway` chat models API.
 
