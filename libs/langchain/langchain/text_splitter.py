@@ -110,7 +110,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             length_function: Function that measures the length of given chunks
             keep_separator: Whether to keep the separator in the chunks
             add_start_index: If `True`, includes chunk's start index in metadata
-            strip_whitespace: If `True`, strips whitespace from the start and end of every document
+            strip_whitespace: If `True`, strips whitespace from the start and end of
+                every document
         """
         if chunk_overlap > chunk_size:
             raise ValueError(
