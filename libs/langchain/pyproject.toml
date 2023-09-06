@@ -345,7 +345,6 @@ extended_testing = [
  "markdownify",
  "dashvector",
  "sqlite-vss",
- "ibm-generative-ai",
 ]
 
 [tool.ruff]

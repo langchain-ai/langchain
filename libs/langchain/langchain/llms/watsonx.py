@@ -50,7 +50,8 @@ class WatsonxLLM(LLM):
             import genai
         except ImportError as e:
             raise ImportError(
-                "Cannot import genai, please install with `pip install genai`."
+                "Cannot import genai, please install with "
+                "`pip install ibm-generative-ai`."
             ) from e
 
         creds = genai.credentials.Credentials(api_key=self.api_key)
