@@ -31,6 +31,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utilities.redis import (
     _array_to_buffer,
+    _buffer_to_array,
     check_redis_module_exist,
     get_client,
 )
@@ -881,7 +882,7 @@ class Redis(VectorStore):
             
     def similarity_search_by_vector(
         self,
-        query_vector: List[float],
+        embedding: List[float],
         k: int = 4,
         filter: Optional[RedisFilterExpression] = None,
         return_metadata: bool = True,
@@ -891,7 +892,7 @@ class Redis(VectorStore):
         """Run similarity search between a query vector and the indexed vectors.
 
         Args:
-            query_vector (List[float]): The query vector for which to find similar
+            embedding (List[float]): The query vector for which to find similar
                 documents.
             k (int): The number of documents to return. Default is 4.
             filter (RedisFilterExpression, optional): Optional metadata filter.
@@ -923,7 +924,7 @@ class Redis(VectorStore):
             )
 
         redis_query, params_dict = self._prepare_query(
-            query_vector,
+            embedding,
             k=k,
             filter=filter,
             distance_threshold=distance_threshold,
@@ -1009,7 +1010,7 @@ class Redis(VectorStore):
 
         # Get the embeddings for the fetched documents
         prefetch_embeddings = [
-            np.frombuffer(
+            _buffer_to_array(
                 self.client.hget(prefetch_id, self._schema.content_vector_key),
                 dtype=self._schema.vector_dtype,
             )
@@ -1017,10 +1018,12 @@ class Redis(VectorStore):
         ]
 
         # Select documents using maximal marginal relevance
-        selected_docs = maximal_marginal_relevance(
+        selected_indices = maximal_marginal_relevance(
             np.array(query_embedding), prefetch_embeddings, lambda_mult=lambda_mult, k=k
         )
-        return [prefetch_docs[i] for i in selected_docs]
+        selected_docs = [prefetch_docs[i] for i in selected_indices]
+
+        return selected_docs
 
     def _collect_metadata(self, result: "Document") -> Dict[str, Any]:
         """Collect metadata from Redis.
