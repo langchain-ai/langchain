@@ -11,6 +11,7 @@ from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
 from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
+from langchain.retrievers.self_query.milvus import MilvusTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
@@ -21,6 +22,7 @@ from langchain.vectorstores import (
     Chroma,
     DeepLake,
     ElasticsearchStore,
+    Milvus,
     MyScale,
     Pinecone,
     Qdrant,
@@ -40,6 +42,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         MyScale: MyScaleTranslator,
         DeepLake: DeepLakeTranslator,
         ElasticsearchStore: ElasticsearchTranslator,
+        Milvus: MilvusTranslator,
     }
     if vectorstore_cls not in BUILTIN_TRANSLATORS:
         raise ValueError(

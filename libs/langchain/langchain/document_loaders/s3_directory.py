@@ -27,7 +27,18 @@ class S3DirectoryLoader(BaseLoader):
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
-        s3 = boto3.resource("s3")
+        s3 = boto3.resource(
+            "s3",
+            region_name=self.region_name,
+            api_version=self.api_version,
+            use_ssl=self.use_ssl,
+            verify=self.verify,
+            endpoint_url=self.endpoint_url,
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            aws_session_token=self.aws_session_token,
+            config=self.boto_config,
+        )
         bucket = s3.Bucket(self.bucket)
         docs = []
         for obj in bucket.objects.filter(Prefix=self.prefix):
