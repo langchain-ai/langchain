@@ -1,10 +1,9 @@
 from __future__ import annotations
-
-from typing import Any, Dict, Iterator, List, Optional
+import json
+from typing import Any, Iterator, List, Optional
 
 from langchain.embeddings.base import Embeddings
-from langchain.pydantic_v1 import BaseModel, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import BaseModel
 
 
 def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
@@ -30,24 +29,17 @@ class JavelinAIGatewayEmbeddings(Embeddings, BaseModel):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any
     """javelin client."""
+
     route: str
     """The route to use for the Javelin AI Gateway API."""
+
     gateway_uri: Optional[str] = None
     """The URI for the Javelin AI Gateway API."""
 
     javelin_api_key: Optional[str] = None
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-
-        values["javelin_api_key"] = get_from_dict_or_env(
-            values, "javelin_api_key", "JAVELIN_API_KEY"
-        )
-
-        return values
+    """The API key for the Javelin AI Gateway API."""
 
     def __init__(self, **kwargs: Any):
         try:
@@ -74,18 +66,24 @@ class JavelinAIGatewayEmbeddings(Embeddings, BaseModel):
         embeddings = []
         for txt in _chunk(texts, 20):
             try:
-                resp = self.client.query_route(self.route, data={"text": txt})
-                embeddings.append(resp["embeddings"])
+                resp = self.client.query_route(self.route, query_body={"input": txt})
+                embeddings_chunk = resp.llm_response["data"]
+                for item in embeddings_chunk:
+                    if "embedding" in item:
+                        embeddings.append(item["embedding"])
+                    else:
+                        print("No embedding key found in this item")
             except ValueError as e:
                 print("Failed to query route: " + str(e))
 
         return embeddings
 
+
     async def _aquery(self, texts: List[str]) -> List[List[float]]:
         embeddings = []
         for txt in _chunk(texts, 20):
             try:
-                resp = await self.client.aquery_route(self.route, data={"text": txt})
+                resp = await self.client.aquery_route(self.route, query_body={"text": txt})
                 embeddings.append(resp["embeddings"])
             except ValueError as e:
                 print("Failed to query route: " + str(e))

@@ -7,8 +7,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import BaseModel, Extra
 
 
 # Ignoring type because below is valid pydantic code
@@ -17,8 +16,6 @@ class Params(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """Parameters for the Javelin AI Gateway LLM."""
 
     temperature: float = 0.0
-    candidate_count: int = 1
-    """The number of candidates to return."""
     stop: Optional[List[str]] = None
     max_tokens: Optional[int] = None
 
@@ -58,16 +55,6 @@ class JavelinAIGateway(LLM):
 
     javelin_api_key: Optional[str] = None
     """The API key for the Javelin AI Gateway API."""
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-
-        values["javelin_api_key"] = get_from_dict_or_env(
-            values, "javelin_api_key", "JAVELIN_API_KEY"
-        )
-
-        return values
 
     def __init__(self, **kwargs: Any):
         try:
@@ -121,11 +108,13 @@ class JavelinAIGateway(LLM):
             data["stop"] = s
 
         if self.client is not None:
-            resp = self.client.query_route(self.route, data=data)
+            resp = self.client.query_route(self.route, query_body=data)
         else:
             raise ValueError("Javelin client is not initialized.")
+        
+        print(resp.dict())
 
-        return resp["llm_response"][0]["text"]
+        return resp.dict()["llm_response"]["choices"][0]["text"]
 
     async def _acall(
         self,
@@ -143,11 +132,11 @@ class JavelinAIGateway(LLM):
             data["stop"] = s
 
         if self.client is not None:
-            resp = await self.client.aquery_route(self.route, data=data)
+            resp = await self.client.aquery_route(self.route, query_body=data)
         else:
             raise ValueError("Javelin client is not initialized.")
 
-        return resp["llm_response"][0]["text"]
+        return resp.dict()["llm_response"]["choices"][0]["text"]
 
     @property
     def _llm_type(self) -> str:

@@ -6,7 +6,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.pydantic_v1 import BaseModel, Extra
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -19,7 +19,6 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +29,8 @@ class ChatParams(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """Parameters for the `Javelin AI Gateway` LLM."""
 
     temperature: float = 0.0
-    candidate_count: int = 1
-    """The number of candidates to return."""
     stop: Optional[List[str]] = None
     max_tokens: Optional[int] = None
-
 
 class ChatJavelinAIGateway(BaseChatModel):
     """`Javelin AI Gateway` chat models API.
@@ -65,21 +61,11 @@ class ChatJavelinAIGateway(BaseChatModel):
     params: Optional[ChatParams] = None
     """Parameters for the Javelin AI Gateway LLM."""
 
-    client: Any  #: :meta private:
+    client: Any
     """javelin client."""
 
     javelin_api_key: Optional[str] = None
     """The API key for the Javelin AI Gateway."""
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-
-        values["javelin_api_key"] = get_from_dict_or_env(
-            values, "javelin_api_key", "JAVELIN_API_KEY"
-        )
-
-        return values
 
     def __init__(self, **kwargs: Any):
         try:
@@ -128,9 +114,9 @@ class ChatJavelinAIGateway(BaseChatModel):
             **(self.params.dict() if self.params else {}),
         }
 
-        resp = self.client.query_route(self.route, data=data)
+        resp = self.client.query_route(self.route, query_body=data)
 
-        return ChatJavelinAIGateway._create_chat_result(resp)
+        return ChatJavelinAIGateway._create_chat_result(resp.dict())
 
     async def _agenerate(
         self,
@@ -148,7 +134,7 @@ class ChatJavelinAIGateway(BaseChatModel):
             **(self.params.dict() if self.params else {}),
         }
 
-        resp = await self.client.aquery_route(self.route, data=data)
+        resp = await self.client.aquery_route(self.route, query_body=data)
 
         return ChatJavelinAIGateway._create_chat_result(resp)
 
@@ -221,7 +207,7 @@ class ChatJavelinAIGateway(BaseChatModel):
     @staticmethod
     def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
         generations = []
-        for candidate in response["llm_response"]:
+        for candidate in response["llm_response"]["choices"]:
             message = ChatJavelinAIGateway._convert_dict_to_message(
                 candidate["message"]
             )
