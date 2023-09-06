@@ -226,7 +226,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         cls: Type[TS],
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
-        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        allowed_special: Optional[Union[Literal["all"], AbstractSet[str]]] = None,
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
     ) -> TS:
@@ -239,6 +239,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 "This is needed in order to calculate max_tokens_for_prompt. "
                 "Please install it with `pip install tiktoken`."
             )
+
+        allowed_special = allowed_special or set()
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -490,7 +492,7 @@ class TokenTextSplitter(TextSplitter):
         self,
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
-        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        allowed_special: Optional[Union[Literal["all"], AbstractSet[str]]] = None,
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
     ) -> None:
@@ -504,6 +506,8 @@ class TokenTextSplitter(TextSplitter):
                 "This is needed in order to for TokenTextSplitter. "
                 "Please install it with `pip install tiktoken`."
             )
+
+        allowed_special = allowed_special or set()
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
