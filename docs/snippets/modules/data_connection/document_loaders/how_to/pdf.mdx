@@ -1,4 +1,4 @@
-## Using PyPDF
+# Using PyPDF
 
 Load PDF using `pypdf` into array of documents, where each document contains the page content and metadata with `page` number.
 
@@ -139,9 +139,9 @@ data[0]
 
 ### Fetching remote PDFs using Unstructured
 
-This covers how to load online pdfs into a document format that we can use downstream. This can be used for various online pdf sites such as https://open.umn.edu/opentextbooks/textbooks/ and https://arxiv.org/archive/
+This covers how to load online PDFs into a document format that we can use downstream. This can be used for various online PDF sites such as https://open.umn.edu/opentextbooks/textbooks/ and https://arxiv.org/archive/
 
-Note: all other pdf loaders can also be used to fetch remote PDFs, but `OnlinePDFLoader` is a legacy function, and works specifically with `UnstructuredPDFLoader`.
+Note: all other PDF loaders can also be used to fetch remote PDFs, but `OnlinePDFLoader` is a legacy function, and works specifically with `UnstructuredPDFLoader`.
 
 
 
@@ -208,7 +208,7 @@ data = loader.load()
 
 ### Using PDFMiner to generate HTML text
 
-This can be helpful for chunking texts semantically into sections as the output html content can be parsed via `BeautifulSoup` to get more structured and rich information about font size, page numbers, pdf headers/footers, etc.
+This can be helpful for chunking texts semantically into sections as the output html content can be parsed via `BeautifulSoup` to get more structured and rich information about font size, page numbers, PDF headers/footers, etc.
 
 
 ```python
@@ -222,7 +222,7 @@ loader = PDFMinerPDFasHTMLLoader("example_data/layout-parser-paper.pdf")
 
 
 ```python
-data = loader.load()[0]   # entire pdf is loaded as a single Document
+data = loader.load()[0]   # entire PDF is loaded as a single Document
 ```
 
 
@@ -259,7 +259,7 @@ for c in content:
         cur_text = c.text
 snippets.append((cur_text,cur_fs))
 # Note: The above logic is very straightforward. One can also add more strategies such as removing duplicate snippets (as
-# headers/footers in a PDF appear on multiple pages so if we find duplicatess safe to assume that it is redundant info)
+# headers/footers in a PDF appear on multiple pages so if we find duplicates it's safe to assume that it is redundant info)
 ```
 
 
@@ -285,7 +285,7 @@ for s in snippets:
         continue
     
     # if current snippet's font size > previous section's content but less than previous section's heading than also make a new 
-    # section (e.g. title of a pdf will have the highest font size but we don't want it to subsume all sections)
+    # section (e.g. title of a PDF will have the highest font size but we don't want it to subsume all sections)
     metadata={'heading':s[0], 'content_font': 0, 'heading_font': s[1]}
     metadata.update(data.metadata)
     semantic_snippets.append(Document(page_content='',metadata=metadata))
@@ -358,7 +358,7 @@ loader = PyPDFDirectoryLoader("example_data/")
 docs = loader.load()
 ```
 
-## Using pdfplumber
+## Using PDFPlumber
 
 Like PyMuPDF, the output Documents contain detailed metadata about the PDF and its pages, and returns one document per page.
 
@@ -389,3 +389,17 @@ data[0]
 ```
 
 </CodeOutputBlock>
+
+## Using AmazonTextractPDFParser
+
+The AmazonTextractPDFLoader calls the [Amazon Textract Service](https://aws.amazon.com/textract/) to convert PDFs into a Document structure. The loader does pure OCR at the moment, with more features like layout support planned, depending on demand.  Single and multi-page documents are supported with up to 3000 pages and 512 MB of size.
+
+For the call to be successful an AWS account is required, similar to the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) requirements.
+
+Besides the AWS configuration, it is very similar to the other PDF loaders, while also supporting JPEG, PNG and TIFF and non-native PDF formats.
+
+```python
+from langchain.document_loaders import AmazonTextractPDFLoader
+loader = AmazonTextractPDFLoader("example_data/alejandro_rosalez_sample-small.jpeg")
+documents = loader.load()
+```

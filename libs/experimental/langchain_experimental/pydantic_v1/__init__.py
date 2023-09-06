@@ -1,3 +1,4 @@
+import typing
 from importlib import metadata
 
 ## Create namespaces for pydantic v1 and v2.
@@ -11,11 +12,19 @@ from importlib import metadata
 #   unambiguously uses either v1 or v2 API.
 # * This change is easier to roll out and roll back.
 
-try:
-    from pydantic.v1 import *  # noqa: F403
-except ImportError:
+# It's currently impossible to support mypy for both pydantic v1 and v2 at once:
+# https://github.com/pydantic/pydantic/issues/6022
+#
+# In the lint environment, pydantic is currently v1.
+# When we upgrade it to pydantic v2, we'll need
+# to replace this with `from pydantic.v1 import *`.
+if typing.TYPE_CHECKING:
     from pydantic import *  # noqa: F403
-
+else:
+    try:
+        from pydantic.v1 import *  # noqa: F403
+    except ImportError:
+        from pydantic import *  # noqa: F403
 
 try:
     _PYDANTIC_MAJOR_VERSION: int = int(metadata.version("pydantic").split(".")[0])

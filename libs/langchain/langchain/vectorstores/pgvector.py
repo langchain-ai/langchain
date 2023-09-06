@@ -1,6 +1,6 @@
-"""VectorStore wrapper around a Postgres/PGVector database."""
 from __future__ import annotations
 
+import contextlib
 import enum
 import logging
 import uuid
@@ -9,6 +9,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generator,
     Iterable,
     List,
     Optional,
@@ -17,6 +18,7 @@ from typing import (
 )
 
 import sqlalchemy
+from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Session, declarative_base
 
@@ -46,12 +48,14 @@ _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
 
 class BaseModel(Base):
+    """Base model for the SQL stores."""
+
     __abstract__ = True
     uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 
 class PGVector(VectorStore):
-    """VectorStore implementation using Postgres and pgvector.
+    """`Postgres`/`PGVector` vector store.
 
     To use, you should have the ``pgvector`` python package installed.
 
@@ -167,6 +171,33 @@ class PGVector(VectorStore):
                 self.logger.warning("Collection not found")
                 return
             session.delete(collection)
+            session.commit()
+
+    @contextlib.contextmanager
+    def _make_session(self) -> Generator[Session, None, None]:
+        """Create a context manager for the session, bind to _conn string."""
+        yield Session(self._conn)
+
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Delete vectors by ids or uuids.
+
+        Args:
+            ids: List of ids to delete.
+        """
+        with Session(self._conn) as session:
+            if ids is not None:
+                self.logger.debug(
+                    "Trying to delete vectors by ids (represented by the model "
+                    "using the custom ids field)"
+                )
+                stmt = delete(self.EmbeddingStore).where(
+                    self.EmbeddingStore.custom_id.in_(ids)
+                )
+                session.execute(stmt)
             session.commit()
 
     def get_collection(self, session: Session) -> Optional["CollectionStore"]:

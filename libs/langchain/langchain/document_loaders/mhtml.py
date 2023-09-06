@@ -52,7 +52,7 @@ class MHTMLLoader(BaseLoader):
             message = email.message_from_string(f.read())
             parts = message.get_payload()
 
-            if type(parts) is not list:
+            if not isinstance(parts, list):
                 parts = [message]
 
             for part in parts:

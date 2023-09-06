@@ -53,9 +53,9 @@ def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> 
 
 @deprecated("0.0.265", alternative="ElasticsearchStore class.", pending=True)
 class ElasticVectorSearch(VectorStore):
-    """Wrapper around Elasticsearch as a vector database.
+    """[DEPRECATED] `Elasticsearch` vector store.
 
-    To connect to an Elasticsearch instance that does not require
+    To connect to an `Elasticsearch` instance that does not require
     login credentials, pass the Elasticsearch URL and index name along with the
     embedding object to the constructor.
 
@@ -340,11 +340,10 @@ class ElasticVectorSearch(VectorStore):
 
 
 class ElasticKnnSearch(VectorStore):
-    """
-    ElasticKnnSearch is a class for performing k-nearest neighbor
-    (k-NN) searches on text data using Elasticsearch.
+    """[DEPRECATED] `Elasticsearch` with k-nearest neighbor search
+    (`k-NN`) vector store.
 
-    This class is used to create an Elasticsearch index of text data that
+    It creates an Elasticsearch index of text data that
     can be searched using k-NN search. The text data is transformed into
     vector embeddings using a provided embedding model, and these embeddings
     are stored in the Elasticsearch index.

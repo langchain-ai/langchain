@@ -1,5 +1,3 @@
-"""Wrapper around Elasticsearch vector database."""
-
 import logging
 import uuid
 from abc import ABC, abstractmethod
@@ -28,6 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class BaseRetrievalStrategy(ABC):
+    """Base class for `Elasticsearch` retrieval strategies."""
+
     @abstractmethod
     def query(
         self,
@@ -109,6 +109,8 @@ class BaseRetrievalStrategy(ABC):
 
 
 class ApproxRetrievalStrategy(BaseRetrievalStrategy):
+    """Approximate retrieval strategy using the `HNSW` algorithm."""
+
     def __init__(
         self,
         query_model_id: Optional[str] = None,
@@ -211,6 +213,8 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
 
 
 class ExactRetrievalStrategy(BaseRetrievalStrategy):
+    """Exact retrieval strategy using the `script_score` query."""
+
     def query(
         self,
         query_vector: Union[List[float], None],
@@ -276,6 +280,8 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
 
 
 class SparseRetrievalStrategy(BaseRetrievalStrategy):
+    """Sparse retrieval strategy using the `text_expansion` processor."""
+
     def __init__(self, model_id: Optional[str] = None):
         self.model_id = model_id or ".elser_model_1"
 
@@ -355,8 +361,7 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
 
 
 class ElasticsearchStore(VectorStore):
-
-    """Wrapper around Elasticsearch search database.
+    """`Elasticsearch` vector store.
 
     Example:
         .. code-block:: python
@@ -710,7 +715,7 @@ class ElasticsearchStore(VectorStore):
                             after deleting documents. Defaults to True.
         """
         try:
-            from elasticsearch.helpers import bulk
+            from elasticsearch.helpers import BulkIndexError, bulk
         except ImportError:
             raise ImportError(
                 "Could not import elasticsearch python package. "
@@ -731,8 +736,10 @@ class ElasticsearchStore(VectorStore):
                 logger.debug(f"Deleted {len(body)} texts from index")
 
                 return True
-            except Exception as e:
+            except BulkIndexError as e:
                 logger.error(f"Error deleting texts: {e}")
+                firstError = e.errors[0].get("index", {}).get("error", {})
+                logger.error(f"First error reason: {firstError.get('reason')}")
                 raise e
 
         else:
@@ -801,7 +808,7 @@ class ElasticsearchStore(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         try:
-            from elasticsearch.helpers import bulk
+            from elasticsearch.helpers import BulkIndexError, bulk
         except ImportError:
             raise ImportError(
                 "Could not import elasticsearch python package. "
@@ -867,8 +874,10 @@ class ElasticsearchStore(VectorStore):
 
                 logger.debug(f"added texts {ids} to index")
                 return ids
-            except Exception as e:
+            except BulkIndexError as e:
                 logger.error(f"Error adding texts: {e}")
+                firstError = e.errors[0].get("index", {}).get("error", {})
+                logger.error(f"First error reason: {firstError.get('reason')}")
                 raise e
 
         else:

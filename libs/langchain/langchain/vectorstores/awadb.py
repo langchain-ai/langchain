@@ -1,4 +1,3 @@
-"""Wrapper around AwaDB for embedding vectors"""
 from __future__ import annotations
 
 import logging
@@ -20,7 +19,7 @@ DEFAULT_TOPN = 4
 
 
 class AwaDB(VectorStore):
-    """Interface implemented by AwaDB vector stores."""
+    """`AwaDB` vector store."""
 
     _DEFAULT_TABLE_NAME = "langchain_awadb"
 
@@ -50,7 +49,7 @@ class AwaDB(VectorStore):
         try:
             import awadb
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import awadb python package. "
                 "Please install it with `pip install awadb`."
             )

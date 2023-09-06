@@ -69,6 +69,13 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     when making API calls. If not provided, credentials will be ascertained from
     the environment."""
 
+    # TODO: Add extra data type handling for type website
+    engine_data_type: int = Field(default=0, ge=0, le=1)
+    """ Defines the enterprise search data type
+    0 - Unstructured data 
+    1 - Structured data
+    """
+
     _client: SearchServiceClient
     _serving_config: str
 
@@ -86,8 +93,16 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             from google.cloud import discoveryengine_v1beta  # noqa: F401
         except ImportError as exc:
             raise ImportError(
-                "google.cloud.discoveryengine is not installed. "
+                "google.cloud.discoveryengine is not installed."
                 "Please install it with pip install google-cloud-discoveryengine"
+            ) from exc
+
+        try:
+            from google.api_core.exceptions import InvalidArgument  # noqa: F401
+        except ImportError as exc:
+            raise ImportError(
+                "google.api_core.exceptions is not installed. "
+                "Please install it with pip install google-api-core"
             ) from exc
 
         values["project_id"] = get_from_dict_or_env(values, "project_id", "PROJECT_ID")
@@ -99,7 +114,13 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
     def __init__(self, **data: Any) -> None:
         """Initializes private fields."""
-        from google.cloud.discoveryengine_v1beta import SearchServiceClient
+        try:
+            from google.cloud.discoveryengine_v1beta import SearchServiceClient
+        except ImportError:
+            raise ImportError(
+                "google.cloud.discoveryengine is not installed."
+                "Please install it with pip install google-cloud-discoveryengine"
+            )
 
         super().__init__(**data)
         self._client = SearchServiceClient(credentials=self.credentials)
@@ -110,7 +131,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             serving_config=self.serving_config_id,
         )
 
-    def _convert_search_response(
+    def _convert_unstructured_search_response(
         self, results: Sequence[SearchResult]
     ) -> List[Document]:
         """Converts a sequence of search results to a list of LangChain documents."""
@@ -122,7 +143,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             document_dict = MessageToDict(
                 result.document._pb, preserving_proto_field_name=True
             )
-            derived_struct_data = document_dict.get("derived_struct_data", None)
+            derived_struct_data = document_dict.get("derived_struct_data")
             if not derived_struct_data:
                 continue
 
@@ -135,7 +156,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
                 else "extractive_segments"
             )
 
-            for chunk in getattr(derived_struct_data, chunk_type, []):
+            for chunk in derived_struct_data.get(chunk_type, []):
                 doc_metadata["source"] = derived_struct_data.get("link", "")
 
                 if chunk_type == "extractive_answers":
@@ -146,6 +167,30 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
                         page_content=chunk.get("content", ""), metadata=doc_metadata
                     )
                 )
+
+        return documents
+
+    def _convert_structured_search_response(
+        self, results: Sequence[SearchResult]
+    ) -> List[Document]:
+        """Converts a sequence of search results to a list of LangChain documents."""
+        import json
+
+        from google.protobuf.json_format import MessageToDict
+
+        documents: List[Document] = []
+
+        for result in results:
+            document_dict = MessageToDict(
+                result.document._pb, preserving_proto_field_name=True
+            )
+
+            documents.append(
+                Document(
+                    page_content=json.dumps(document_dict.get("struct_data", {})),
+                    metadata={"id": document_dict["id"], "name": document_dict["name"]},
+                )
+            )
 
         return documents
 
@@ -161,22 +206,31 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             mode=self.spell_correction_mode
         )
 
-        if self.get_extractive_answers:
-            extractive_content_spec = (
-                SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
-                    max_extractive_answer_count=self.max_extractive_answer_count,
+        if self.engine_data_type == 0:
+            if self.get_extractive_answers:
+                extractive_content_spec = (
+                    SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
+                        max_extractive_answer_count=self.max_extractive_answer_count,
+                    )
                 )
+            else:
+                extractive_content_spec = (
+                    SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
+                        max_extractive_segment_count=self.max_extractive_segment_count,
+                    )
+                )
+            content_search_spec = SearchRequest.ContentSearchSpec(
+                extractive_content_spec=extractive_content_spec
             )
+        elif self.engine_data_type == 1:
+            content_search_spec = None
         else:
-            extractive_content_spec = (
-                SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
-                    max_extractive_segment_count=self.max_extractive_segment_count,
-                )
+            # TODO: Add extra data type handling for type website
+            raise NotImplementedError(
+                "Only engine data type 0 (Unstructured) or 1 (Structured)"
+                + " are supported currently."
+                + f" Got {self.engine_data_type}"
             )
-
-        content_search_spec = SearchRequest.ContentSearchSpec(
-            extractive_content_spec=extractive_content_spec,
-        )
 
         return SearchRequest(
             query=query,
@@ -192,8 +246,27 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant for a query."""
+        from google.api_core.exceptions import InvalidArgument
+
         search_request = self._create_search_request(query)
-        response = self._client.search(search_request)
-        documents = self._convert_search_response(response.results)
+
+        try:
+            response = self._client.search(search_request)
+        except InvalidArgument as e:
+            raise type(e)(
+                e.message + " This might be due to engine_data_type not set correctly."
+            )
+
+        if self.engine_data_type == 0:
+            documents = self._convert_unstructured_search_response(response.results)
+        elif self.engine_data_type == 1:
+            documents = self._convert_structured_search_response(response.results)
+        else:
+            # TODO: Add extra data type handling for type website
+            raise NotImplementedError(
+                "Only engine data type 0 (Unstructured) or 1 (Structured)"
+                + " are supported currently."
+                + f" Got {self.engine_data_type}"
+            )
 
         return documents
