@@ -39,6 +39,8 @@ from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
 from langchain.schema.runnable.config import (
     RunnableConfig,
+    acall_func_with_variable_args,
+    call_func_with_variable_args,
     ensure_config,
     get_async_callback_manager_for_config,
     get_callback_manager_for_config,
@@ -47,6 +49,8 @@ from langchain.schema.runnable.config import (
     patch_config,
 )
 from langchain.schema.runnable.utils import (
+    Input,
+    Output,
     accepts_run_manager,
     accepts_run_manager_and_config,
     gather_with_concurrency,
@@ -54,9 +58,6 @@ from langchain.schema.runnable.utils import (
 from langchain.utils.aiter import atee, py_anext
 from langchain.utils.iter import safetee
 
-Input = TypeVar("Input")
-# Output type should implement __concat__, as eg str, list, dict do
-Output = TypeVar("Output")
 Other = TypeVar("Other")
 
 
@@ -289,59 +290,6 @@ class Runnable(Generic[Input, Output], ABC):
 
     """ --- Helper methods for Subclasses --- """
 
-    def _call_func_with_variable_args(
-        self,
-        func: Union[
-            Callable[[Input], Output],
-            Callable[[Input, CallbackManagerForChainRun], Output],
-            Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
-        ],
-        input: Input,
-        run_manager: CallbackManagerForChainRun,
-        config: RunnableConfig,
-    ) -> Output:
-        """Call function that may optionally accept a run_manager and/or config."""
-        if accepts_run_manager_and_config(func):
-            output = func(
-                input,
-                run_manager=run_manager,
-                config=config,
-            )  # type: ignore[call-arg]
-        elif accepts_run_manager(func):
-            output = func(input, run_manager=run_manager)  # type: ignore[call-arg]
-        else:
-            output = func(input)  # type: ignore[call-arg]
-        return output
-
-    async def _acall_func_with_variable_args(
-        self,
-        func: Union[
-            Callable[[Input], Awaitable[Output]],
-            Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
-            Callable[
-                [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
-                Awaitable[Output],
-            ],
-        ],
-        input: Input,
-        run_manager: AsyncCallbackManagerForChainRun,
-        config: RunnableConfig,
-    ) -> Output:
-        """Call function that may optionally accept a run_manager and/or config."""
-        if accepts_run_manager_and_config(func):
-            output = await func(
-                input,
-                run_manager=run_manager,
-                config=config,
-            )  # type: ignore[call-arg]
-        elif accepts_run_manager(func):
-            output = await func(
-                input, run_manager=run_manager  # type: ignore[call-arg]
-            )
-        else:
-            output = await func(input)  # type: ignore[call-arg]
-        return output
-
     def _call_with_config(
         self,
         func: Union[
@@ -364,9 +312,7 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name"),
         )
         try:
-            output = self._call_func_with_variable_args(
-                func, input, run_manager, config
-            )
+            output = call_func_with_variable_args(func, input, run_manager, config)
         except Exception as e:
             run_manager.on_chain_error(e)
             raise
@@ -399,7 +345,7 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name"),
         )
         try:
-            output = await self._acall_func_with_variable_args(
+            output = await acall_func_with_variable_args(
                 func, input, run_manager, config
             )
         except Exception as e:
@@ -1792,9 +1738,7 @@ class RunnableLambda(Runnable[Input, Output]):
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> Output:
-        output = self._call_func_with_variable_args(
-            self.func, input, run_manager, config
-        )
+        output = call_func_with_variable_args(self.func, input, run_manager, config)
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
@@ -1818,7 +1762,7 @@ class RunnableLambda(Runnable[Input, Output]):
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> Output:
-        output = await self._acall_func_with_variable_args(
+        output = await acall_func_with_variable_args(
             self.afunc, input, run_manager, config
         )
         # If the output is a runnable, invoke it
@@ -1838,6 +1782,21 @@ class RunnableLambda(Runnable[Input, Output]):
             )
         return output
 
+    def _config(
+        self, config: Optional[RunnableConfig], callable: Callable[..., Any]
+    ) -> RunnableConfig:
+        config = config or {}
+
+        if config.get("run_name") is None:
+            try:
+                run_name = callable.__name__
+            except AttributeError:
+                run_name = None
+            if run_name is not None:
+                return patch_config(config, run_name=run_name)
+
+        return config
+
     def invoke(
         self,
         input: Input,
@@ -1845,7 +1804,11 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         if hasattr(self, "func"):
-            return self._call_with_config(self._invoke, input, config)
+            return self._call_with_config(
+                self._invoke,
+                input,
+                self._config(config, self.func),
+            )
         else:
             raise TypeError(
                 "Cannot invoke a coroutine function synchronously."
@@ -1859,7 +1822,11 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         if hasattr(self, "afunc"):
-            return await self._acall_with_config(self._ainvoke, input, config)
+            return await self._acall_with_config(
+                self._ainvoke,
+                input,
+                self._config(config, self.afunc),
+            )
         else:
             # Delegating to super implementation of ainvoke.
             # Uses asyncio executor to run the sync version (invoke)
