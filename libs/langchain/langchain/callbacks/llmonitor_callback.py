@@ -14,7 +14,7 @@ from langchain.schema.output import LLMResult
 DEFAULT_API_URL = "https://app.llmonitor.com"
 
 
-def serialize(obj):
+def _serialize(obj):
     if hasattr(obj, "to_json"):
         return obj.to_json()
 
