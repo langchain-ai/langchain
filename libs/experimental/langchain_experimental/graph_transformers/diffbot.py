@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import requests
-from langchain.schema import Document
 from langchain.graphs.graph_document import GraphDocument, Node, Relationship
+from langchain.schema import Document
 from langchain.utils import get_from_env
 
 
@@ -296,7 +296,9 @@ class DiffbotGraphTransformer:
             source=document,
         )
 
-    def convert_to_graph_documents(self, documents: Sequence[Document]) -> List[GraphDocument]:
+    def convert_to_graph_documents(
+        self, documents: Sequence[Document]
+    ) -> List[GraphDocument]:
         """Convert a sequence of documents into graph documents.
 
         Args:
