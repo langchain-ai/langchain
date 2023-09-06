@@ -3,12 +3,6 @@ from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.chat_history import BaseChatMessageHistory
 from langchain.schema.document import BaseDocumentTransformer, Document
 from langchain.schema.exceptions import LangChainException
-from langchain.schema.graph_document import (
-    BaseGraphDocumentTransformer,
-    GraphDocument,
-    Node,
-    Relationship,
-)
 from langchain.schema.memory import BaseMemory
 from langchain.schema.messages import (
     AIMessage,
@@ -79,8 +73,4 @@ __all__ = [
     "BaseLLMOutputParser",
     "BasePromptTemplate",
     "format_document",
-    "Node",
-    "Relationship",
-    "GraphDocument",
-    "BaseGraphDocumentTransformer",
 ]

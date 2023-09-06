@@ -2,12 +2,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import requests
 from langchain.schema import Document
-from langchain.schema.graph_document import (
-    BaseGraphDocumentTransformer,
-    GraphDocument,
-    Node,
-    Relationship,
-)
+from langchain.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain.utils import get_from_env
 
 
@@ -120,9 +115,32 @@ class SimplifiedSchema:
             return type
 
 
-class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
-    """
-    Transforms documents into graph documents using Diffbot's NLP API.
+class DiffbotGraphTransformer:
+    """Transforms documents into graph documents using Diffbot's NLP API.
+
+    A graph document transformation system takes a sequence of Documents and returns a
+    sequence of Graph Documents.
+
+    Example:
+        .. code-block:: python
+
+            class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
+
+                def transform_documents(
+                    self, documents: Sequence[Document], **kwargs: Any
+                ) -> Sequence[GraphDocument]:
+                    results = []
+
+                    for document in documents:
+                        raw_results = self.nlp_request(document.page_content)
+                        graph_document = self.process_response(raw_results, document)
+                        results.append(graph_document)
+                    return results
+
+                async def atransform_documents(
+                    self, documents: Sequence[Document], **kwargs: Any
+                ) -> Sequence[Document]:
+                    raise NotImplementedError
     """
 
     def __init__(
@@ -278,11 +296,8 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
             source=document,
         )
 
-    def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[GraphDocument]:
-        """
-        Transform a sequence of documents into graph documents.
+    def convert_to_graph_documents(self, documents: Sequence[Document]) -> List[GraphDocument]:
+        """Convert a sequence of documents into graph documents.
 
         Args:
             documents (Sequence[Document]): The original documents.
@@ -292,14 +307,8 @@ class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
             Sequence[GraphDocument]: The transformed documents as graphs.
         """
         results = []
-
         for document in documents:
             raw_results = self.nlp_request(document.page_content)
             graph_document = self.process_response(raw_results, document)
             results.append(graph_document)
         return results
-
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[GraphDocument]:
-        raise NotImplementedError()
