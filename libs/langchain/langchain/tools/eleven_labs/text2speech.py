@@ -1,5 +1,6 @@
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
 from langchain.tools.audio_utils import load_audio, save_audio
 from langchain.tools.base import BaseTool
@@ -43,7 +44,11 @@ class ElevenLabsText2SpeechTool(BaseTool):
         speech = elevenlabs.generate(text=text, model=self.model)
         return speech
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         try:
             speech = self._text2speech(query)
