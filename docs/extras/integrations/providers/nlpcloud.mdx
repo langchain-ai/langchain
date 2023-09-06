@@ -1,17 +1,31 @@
 # NLPCloud
 
-This page covers how to use the NLPCloud ecosystem within LangChain.
-It is broken into two parts: installation and setup, and then references to specific NLPCloud wrappers.
+>[NLP Cloud](https://docs.nlpcloud.com/#introduction) is an artificial intelligence platform that allows you to use the most advanced AI engines, and even train your own engines with your own data. 
+
 
 ## Installation and Setup
-- Install the Python SDK with `pip install nlpcloud`
+
+- Install the `nlpcloud` package.
+
+```bash
+pip install nlpcloud
+```
+
 - Get an NLPCloud api key and set it as an environment variable (`NLPCLOUD_API_KEY`)
 
-## Wrappers
 
-### LLM
+## LLM
 
-There exists an NLPCloud LLM wrapper, which you can access with 
+See a [usage example](/docs/integrations/llms/nlpcloud).
+
 ```python
 from langchain.llms import NLPCloud
+```
+
+## Text Embedding Models
+
+See a [usage example](/docs/integrations/text_embedding/nlp_cloud)
+
+```python
+from langchain.embeddings import NLPCloudEmbeddings
 ```
