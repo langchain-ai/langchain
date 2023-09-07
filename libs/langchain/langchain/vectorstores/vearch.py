@@ -3,15 +3,15 @@ from __future__ import annotations
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type
 
 import numpy as np
-import vearch
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-from vearch import GammaFieldInfo, GammaVectorInfo
 
+if TYPE_CHECKING:
+    import vearch
 DEFAULT_TOPN = 4
 
 
@@ -121,9 +121,9 @@ class Vearch(VectorStore):
             "retrieval_param": {"ncentroids": 2048, "nsubvector": 32},
         }
         fields = [
-            GammaFieldInfo(fi["filed"], type_dict[fi["type"]]) for fi in filed_list
+            vearch.GammaFieldInfo(fi["filed"], type_dict[fi["type"]]) for fi in filed_list
         ]
-        vector_field = GammaVectorInfo(
+        vector_field = vearch.GammaVectorInfo(
             name="text_embedding",
             type=vearch.dataType.VECTOR,
             is_index=True,
