@@ -17,6 +17,7 @@ from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.supabase import SupabaseVectorTranslator
+from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
@@ -29,7 +30,6 @@ from langchain.vectorstores import (
     MyScale,
     Pinecone,
     Qdrant,
-    SupabaseVectorStore,
     VectorStore,
     Weaviate,
 )
@@ -43,6 +43,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Chroma: ChromaTranslator,
         DashVector: DashvectorTranslator,
         Weaviate: WeaviateTranslator,
+        Vectara: VectaraTranslator,
         Qdrant: QdrantTranslator,
         MyScale: MyScaleTranslator,
         DeepLake: DeepLakeTranslator,
