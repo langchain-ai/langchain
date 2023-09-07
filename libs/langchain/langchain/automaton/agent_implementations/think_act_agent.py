@@ -143,7 +143,8 @@ class ThinkActPromptGenerator(PromptValue):
                 if message.type == "error":
                     finalized.extend(
                         [
-                            f"Error: Malformed <action> blob with error: {message.data}. Please re-write the action correctly."
+                            f"Error: Malformed <action> blob with error: {message.data}. "
+                            f"Please re-write the action correctly."
                             "\n",
                         ]
                     )
@@ -212,6 +213,7 @@ class ThinkActAgent(Agent):
         messages: Sequence[MessageLike],
         *,
         max_iterations: int = 100,
+        config,
     ) -> Iterator[MessageLike]:
         """Run the agent."""
         all_messages = list(messages)
@@ -224,6 +226,6 @@ class ThinkActAgent(Agent):
             ):
                 all_messages.append(AdHocMessage(type="prime", data="Thought:"))
 
-            new_messages = self.think_act.invoke(all_messages)
+            new_messages = self.think_act.invoke(all_messages, config=config)
             yield from new_messages
             all_messages.extend(new_messages)
