@@ -1,5 +1,5 @@
 import tempfile
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, TYPE_CHECKING
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
@@ -7,13 +7,14 @@ from langchain.tools.base import BaseTool
 from langchain.tools.eleven_labs.models import ElevenLabsModel
 from langchain.utils import get_from_dict_or_env
 
-try:
-    import elevenlabs
+if TYPE_CHECKING:
+    try:
+        import elevenlabs
 
-except ImportError:
-    raise ImportError(
-        "elevenlabs is not installed. " "Run `pip install elevenlabs` to install."
-    )
+    except ImportError:
+        raise ImportError(
+            "elevenlabs is not installed. " "Run `pip install elevenlabs` to install."
+        )
 
 
 class ElevenLabsText2SpeechTool(BaseTool):
