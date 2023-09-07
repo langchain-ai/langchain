@@ -35,7 +35,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             isolating records based off of application details such as a user id.
             This may also contain global and local secondary index keys.
     """
-    
+
     def __init__(
         self,
         table_name: str,
