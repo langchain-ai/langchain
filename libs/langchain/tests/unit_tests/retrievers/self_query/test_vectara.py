@@ -38,19 +38,18 @@ def test_visit_structured_query() -> None:
     structured_query = StructuredQuery(
         query=query,
         filter=None,
+        limit=None,
     )
     expected: Tuple[str, Dict] = (query, {})
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
     comp = Comparison(comparator=Comparator.LT, attribute="foo", value=1)
-    expected = (
-        query,
-        {'filter': '( doc.foo < 1 )'}
-    )
+    expected = (query, {"filter": "( doc.foo < 1 )"})
     structured_query = StructuredQuery(
         query=query,
         filter=comp,
+        limit=None,
     )
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
@@ -63,13 +62,10 @@ def test_visit_structured_query() -> None:
             Comparison(comparator=Comparator.LT, attribute="abc", value=1),
         ],
     )
-    structured_query = StructuredQuery(
-        query=query,
-        filter=op,
-    )
+    structured_query = StructuredQuery(query=query, filter=op, limit=None)
     expected = (
         query,
-        {'filter': "( ( doc.foo < 2 ) and ( doc.bar = 'baz' ) and ( doc.abc < 1 ) )"}
+        {"filter": "( ( doc.foo < 2 ) and ( doc.bar = 'baz' ) and ( doc.abc < 1 ) )"},
     )
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual

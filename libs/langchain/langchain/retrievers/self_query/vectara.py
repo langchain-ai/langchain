@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Union
+from typing import Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -9,12 +9,14 @@ from langchain.chains.query_constructor.ir import (
     Visitor,
 )
 
+
 def process_value(value: Union[int, float, str]) -> str:
     if isinstance(value, str):
         return f"'{value}'"
     else:
         return str(value)
-    
+
+
 class VectaraTranslator(Visitor):
     """Translate `Vectara` internal query language elements to valid filters."""
 
@@ -32,15 +34,19 @@ class VectaraTranslator(Visitor):
 
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
         map_dict = {
-            Operator.AND: " and ", Operator.OR: " or ", 
-            Comparator.EQ: "=", Comparator.NE: "!=",
-            Comparator.GT: ">", Comparator.GTE: ">=",
-            Comparator.LT: "<", Comparator.LTE: "<="
+            Operator.AND: " and ",
+            Operator.OR: " or ",
+            Comparator.EQ: "=",
+            Comparator.NE: "!=",
+            Comparator.GT: ">",
+            Comparator.GTE: ">=",
+            Comparator.LT: "<",
+            Comparator.LTE: "<=",
         }
         self._validate_func(func)
         return map_dict[func]
 
-    def visit_operation(self, operation: Operation) -> Dict:
+    def visit_operation(self, operation: Operation) -> str:
         args = [arg.accept(self) for arg in operation.arguments]
         operator = self._format_func(operation.operator)
         return "( " + operator.join(args) + " )"
@@ -49,7 +55,9 @@ class VectaraTranslator(Visitor):
         comparator = self._format_func(comparison.comparator)
         processed_value = process_value(comparison.value)
         attribute = comparison.attribute
-        return "( " + 'doc.' + attribute + " " + comparator + " " + processed_value + " )"
+        return (
+            "( " + "doc." + attribute + " " + comparator + " " + processed_value + " )"
+        )
 
     def visit_structured_query(
         self, structured_query: StructuredQuery
