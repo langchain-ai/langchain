@@ -17,23 +17,24 @@ from langchain.utils import get_from_dict_or_env
 
 class LlamaContentFormatter(ContentFormatterBase):
     """Content formatter for `LLaMA`."""
+    
 
     SUPPORTED_ROLES: List[str] = ["user", "assistant", "system"]
 
     @staticmethod
     def _convert_message_to_dict(message: BaseMessage) -> Dict:
         """Converts message to a dict according to role"""
-        if isinstance(message, HumanMessage):
-            return {"role": "user", "content": message.content}
+        if isinstance(message, HumanMessage): 
+            return {"role": "user", "content": ContentFormatterBase.escape_special_characters(message.content)}
         elif isinstance(message, AIMessage):
-            return {"role": "assistant", "content": message.content}
+            return {"role": "assistant", "content": ContentFormatterBase.escape_special_characters(message.content)}
         elif isinstance(message, SystemMessage):
-            return {"role": "system", "content": message.content}
+            return {"role": "system", "content": ContentFormatterBase.escape_special_characters(message.content)}
         elif (
             isinstance(message, ChatMessage)
             and message.role in LlamaContentFormatter.SUPPORTED_ROLES
         ):
-            return {"role": message.role, "content": message.content}
+            return {"role": message.role, "content": ContentFormatterBase.escape_special_characters(message.content)}
         else:
             supported = ",".join(
                 [role for role in LlamaContentFormatter.SUPPORTED_ROLES]
@@ -46,7 +47,7 @@ class LlamaContentFormatter(ContentFormatterBase):
     def _format_request_payload(
         self, messages: List[BaseMessage], model_kwargs: Dict
     ) -> bytes:
-        chat_messages = [
+        chat_messages = [ 
             LlamaContentFormatter._convert_message_to_dict(message)
             for message in messages
         ]
