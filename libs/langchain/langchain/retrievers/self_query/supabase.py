@@ -54,8 +54,11 @@ class SupabaseVectorTranslator(Visitor):
         }.get(comparator)
 
         if postgrest_comparator is None:
-            raise Exception(f"Comparator '{comparator}' is not currently supported in Supabase Vector")
-        
+            raise Exception(
+                f"Comparator '{comparator}' is not currently "
+                "supported in Supabase Vector"
+            )
+
         return postgrest_comparator
 
     def _get_json_operator(self, value: Any) -> str:
