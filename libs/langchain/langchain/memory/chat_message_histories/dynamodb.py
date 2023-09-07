@@ -10,6 +10,7 @@ from langchain.schema.messages import (
     messages_from_dict,
     messages_to_dict,
 )
+from boto3.session import Session
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             isolating records based off of application details such as a user id.
             This may also contain global and local secondary index keys.
     """
-
+    
     def __init__(
         self,
         table_name: str,
@@ -42,10 +43,12 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         endpoint_url: Optional[str] = None,
         primary_key_name: str = "SessionId",
         key: Optional[Dict[str, str]] = None,
+        boto3_session: Optional[Session] = None,
     ):
         import boto3
-
-        if endpoint_url:
+        if boto3_session:
+            client = boto3_session.resource("dynamodb")
+        elif endpoint_url:
             client = boto3.resource("dynamodb", endpoint_url=endpoint_url)
         else:
             client = boto3.resource("dynamodb")
