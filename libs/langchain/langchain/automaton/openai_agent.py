@@ -10,6 +10,7 @@ from langchain.automaton.typedefs import (
     AgentFinish,
     FunctionCall,
     FunctionResult,
+    MessageLike,
 )
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.schema import Generation
@@ -38,14 +39,14 @@ class OpenAIFunctionsParser(BaseGenerationOutputParser):
 
         return FunctionCall(
             name=function_request["name"],
-            arguments=function_request["arguments"],
+            named_arguments=function_request["arguments"],
         )
 
 
-def prompt_generator(log: MessageLog) -> List[BaseMessage]:
+def prompt_generator(input_messages: Sequence[MessageLike]) -> List[BaseMessage]:
     """Generate a prompt from a log of message like objects."""
     messages = []
-    for message in log.messages:
+    for message in input_messages:
         if isinstance(message, BaseMessage):
             messages.append(message)
         elif isinstance(message, FunctionResult):
@@ -62,8 +63,6 @@ class OpenAIAgent:
         self,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        *,
-        max_iterations: int = 10,
     ) -> None:
         """Initialize the chat automaton."""
         self.llm_program = create_llm_program(
@@ -72,18 +71,13 @@ class OpenAIAgent:
             tools=tools,
             parser=OpenAIFunctionsParser(),
         )
-        self.max_iterations = max_iterations
 
-    def run(self, message_log: MessageLog) -> None:
+    def run(self, messages: Sequence[MessageLike], max_iterations: int) -> None:
         """Run the agent."""
-        if not message_log:
-            raise AssertionError(f"Expected at least one message in message_log")
-
-        for _ in range(self.max_iterations):
-            last_message = message_log[-1]
-
-            if isinstance(last_message, AgentFinish):
+        all_messages = list(messages)
+        for _ in range(max_iterations):
+            if all_messages and isinstance(all_messages[-1], AgentFinish):
                 break
+            all_messages.extend(self.llm_program.invoke(all_messages))
 
-            messages = self.llm_program.invoke(message_log)
-            message_log.add_messages(messages)
+        return all_messages

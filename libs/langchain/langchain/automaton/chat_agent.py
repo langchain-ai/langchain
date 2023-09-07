@@ -70,7 +70,7 @@ def decode(text: Union[BaseMessage, str]) -> MessageLike:
         name = data["action"]
         if name == "Final Answer":  # Special cased "tool" for final answer
             return AgentFinish(result=data["action_input"])
-        return FunctionCall(name=data["action"], arguments=data["action_input"] or {})
+        return FunctionCall(name=data["action"], named_arguments=data["action_input"] or {})
     else:
         return AgentFinish(result=text)
 

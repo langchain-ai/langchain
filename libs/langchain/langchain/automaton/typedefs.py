@@ -27,6 +27,9 @@ class FunctionCall(InternalMessage):
     named_arguments: Optional[Mapping[str, Any]] = None
     """The named arguments to pass to the function."""
 
+    class Config:
+        extra = "forbid"
+
 
 class FunctionResult(InternalMessage):
     name: str
