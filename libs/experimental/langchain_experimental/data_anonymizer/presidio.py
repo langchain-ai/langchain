@@ -46,13 +46,19 @@ if TYPE_CHECKING:
     from presidio_analyzer import EntityRecognizer, RecognizerResult
     from presidio_anonymizer.entities import EngineResult
 
+# Configuring Anonymizer for multiple languages
+# Detailed description and examples can be found here:
+# langchain/docs/extras/guides/privacy/multi_language_anonymization.ipynb
 DEFAULT_LANGUAGES_CONFIG = {
+    # You can also use Stanza or transformers library.
+    # See https://microsoft.github.io/presidio/analyzer/customizing_nlp_models/
     "nlp_engine_name": "spacy",
     "models": [
         {"lang_code": "en", "model_name": "en_core_web_lg"},
         # {"lang_code": "de", "model_name": "de_core_news_md"},
         # {"lang_code": "es", "model_name": "es_core_news_md"},
         # ...
+        # List of available models: https://spacy.io/usage/models
     ],
 }
 
@@ -73,6 +79,11 @@ class PresidioAnonymizerBase(AnonymizerBase):
                 Operators allow for custom anonymization of detected PII.
                 Learn more:
                 https://microsoft.github.io/presidio/tutorial/10_simple_anonymization/
+            languages_config: Configuration for the NLP engine.
+                First language in the list will be used as the main language
+                in self.anonymize(...) when no language is specified.
+                Learn more:
+                https://microsoft.github.io/presidio/analyzer/customizing_nlp_models/
             faker_seed: Seed used to initialize faker.
                 Defaults to None, in which case faker will be seeded randomly
                 and provide random values.
@@ -124,13 +135,16 @@ class PresidioAnonymizerBase(AnonymizerBase):
 
 
 class PresidioAnonymizer(PresidioAnonymizerBase):
-    def _anonymize(self, text: str, language: Optional[str]) -> str:
+    def _anonymize(self, text: str, language: Optional[str] = None) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
         Each time fake values will be different, as they are generated randomly.
 
         Args:
             text: text to anonymize
+            language: language to use for analysis of PII
+                If None, the first (main) language in the list
+                of languages specified in the configuration will be used.
         """
         if language is None:
             language = self.supported_languages[0]
@@ -223,7 +237,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
 
         self._deanonymizer_mapping.update(new_deanonymizer_mapping)
 
-    def _anonymize(self, text: str, language: Optional[str]) -> str:
+    def _anonymize(self, text: str, language: Optional[str] = None) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
         Each time fake values will be different, as they are generated randomly.
@@ -232,6 +246,9 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
 
         Args:
             text: text to anonymize
+            language: language to use for analysis of PII
+                If None, the first (main) language in the list
+                of languages specified in the configuration will be used.
         """
         if language is None:
             language = self.supported_languages[0]
