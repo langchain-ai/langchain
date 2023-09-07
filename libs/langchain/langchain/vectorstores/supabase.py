@@ -168,10 +168,8 @@ class SupabaseVectorStore(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        vectors = self._embedding.embed_documents([query])
-        return self.similarity_search_by_vector(
-            vectors[0], k=k, filter=filter, **kwargs
-        )
+        vector = self._embedding.embed_query(query)
+        return self.similarity_search_by_vector(vector, k=k, filter=filter, **kwargs)
 
     def similarity_search_by_vector(
         self,
@@ -195,9 +193,9 @@ class SupabaseVectorStore(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        vectors = self._embedding.embed_documents([query])
+        vector = self._embedding.embed_query(query)
         return self.similarity_search_by_vector_with_relevance_scores(
-            vectors[0], k=k, filter=filter
+            vector, k=k, filter=filter
         )
 
     def match_args(
@@ -407,9 +405,9 @@ class SupabaseVectorStore(VectorStore):
         $$;
         ```
         """
-        embedding = self._embedding.embed_documents([query])
+        embedding = self._embedding.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding[0], k, fetch_k, lambda_mult=lambda_mult
+            embedding, k, fetch_k, lambda_mult=lambda_mult
         )
         return docs
 
