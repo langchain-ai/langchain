@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import Sequence, Union, List
+from typing import Sequence, Union, List, Iterator
 from langchain.automaton.tool_utils import generate_tool_info
 
 from langchain.automaton.runnables import create_llm_program
@@ -70,7 +70,9 @@ def decode(text: Union[BaseMessage, str]) -> MessageLike:
         name = data["action"]
         if name == "Final Answer":  # Special cased "tool" for final answer
             return AgentFinish(result=data["action_input"])
-        return FunctionCall(name=data["action"], named_arguments=data["action_input"] or {})
+        return FunctionCall(
+            name=data["action"], named_arguments=data["action_input"] or {}
+        )
     else:
         return AgentFinish(result=text)
 
@@ -111,16 +113,18 @@ class ChatAgent:
         )
         self.max_iterations = max_iterations
 
-    def run(self, message_log: MessageLog) -> None:
+    def invoke(
+        self,
+        messages: Sequence[MessageLike],
+        *,
+        max_iterations: int = 100,
+    ) -> Iterator[MessageLike]:
         """Run the agent."""
-        if not message_log:
-            raise AssertionError(f"Expected at least one message in message_log")
-
-        for _ in range(self.max_iterations):
-            last_message = message_log[-1]
-
-            if isinstance(last_message, AgentFinish):
+        all_messages = list(messages)
+        for _ in range(max_iterations):
+            if all_messages and isinstance(all_messages[-1], AgentFinish):
                 break
 
-            messages = self.llm_program.invoke(message_log)
-            message_log.add_messages(messages)
+            new_messages = self.llm_program.invoke(all_messages)
+            yield from new_messages
+            all_messages.extend(new_messages)

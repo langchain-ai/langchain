@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import json
-from typing import Sequence, List
+from typing import Sequence, List, Iterator
 
 from langchain.automaton.runnables import create_llm_program
 from langchain.automaton.typedefs import (
-    MessageLog,
     AgentFinish,
     FunctionCall,
     FunctionResult,
@@ -72,12 +71,19 @@ class OpenAIAgent:
             parser=OpenAIFunctionsParser(),
         )
 
-    def run(self, messages: Sequence[MessageLike], max_iterations: int) -> None:
+    def invoke(
+        self,
+        messages: Sequence[MessageLike],
+        *,
+        max_iterations: int = 100,
+    ) -> Iterator[MessageLike]:
         """Run the agent."""
         all_messages = list(messages)
         for _ in range(max_iterations):
             if all_messages and isinstance(all_messages[-1], AgentFinish):
                 break
-            all_messages.extend(self.llm_program.invoke(all_messages))
 
-        return all_messages
+            new_messages = self.llm_program.invoke(all_messages)
+            yield from new_messages
+            all_messages.extend(new_messages)
+

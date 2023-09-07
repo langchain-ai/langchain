@@ -30,11 +30,19 @@ class FunctionCall(InternalMessage):
     class Config:
         extra = "forbid"
 
+    def __str__(self):
+        return f"FunctionCall(name={self.name}, named_arguments={self.named_arguments})"
+
 
 class FunctionResult(InternalMessage):
+    """A result of a function invocation."""
+
     name: str
     result: Any
     error: Optional[str] = None
+
+    def __str__(self):
+        return f"FunctionResult(name={self.name}, result={self.result}, error={self.error})"
 
 
 class PrimingMessage(InternalMessage):
@@ -45,6 +53,9 @@ class PrimingMessage(InternalMessage):
 
 class AgentFinish(InternalMessage):
     result: Any
+
+    def __str__(self):
+        return f"AgentFinish(result={self.result})"
 
 
 MessageLike = Union[BaseMessage, InternalMessage]
