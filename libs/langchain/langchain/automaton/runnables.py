@@ -97,8 +97,14 @@ def _apply_and_concat(
 
 def create_tool_invoker(
     tools: Sequence[BaseTool],
-) -> Runnable[FunctionCall, FunctionResult]:
-    """Re-write with router."""
+) -> Runnable[MessageLike, Optional[FunctionResult]]:
+    """See if possible to re-write with router
+
+    TODO:
+    * re-write with router
+    * potentially remove hack replace MessageLike with FunctionCall, requires
+      a branching runnable
+    """
     tools_by_name = {tool.name: tool for tool in tools}
 
     def func(
