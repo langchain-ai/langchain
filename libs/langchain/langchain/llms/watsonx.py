@@ -33,7 +33,7 @@ class Watsonx(LLM):
     def _llm_type(self) -> str:
         return "watsonx"
 
-    def __call__(
+    def _call(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
@@ -73,7 +73,6 @@ class Watsonx(LLM):
             "top_k": self.top_k,
             "min_new_tokens": self.min_new_tokens,
             "max_new_tokens": self.max_new_tokens,
-            "api_key": self.api_key,
             "repetition_penalty": self.repetition_penalty,
             "random_seed": self.random_seed,
             "stop_sequences": self.stop_sequences,
