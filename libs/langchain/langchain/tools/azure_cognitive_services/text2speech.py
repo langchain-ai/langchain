@@ -56,9 +56,7 @@ class AzureCogsText2SpeechTool(BaseTool):
         )
         return values
 
-    def _text2speech(
-        self, text: str, speech_language: str
-    ) -> speechsdk.AudioDataStream:
+    def _text2speech(self, text: str, speech_language: str) -> bytes:
         self.speech_config.speech_synthesis_language = speech_language
         speech_synthesizer = speechsdk.SpeechSynthesizer(
             speech_config=self.speech_config, audio_config=None
@@ -66,8 +64,7 @@ class AzureCogsText2SpeechTool(BaseTool):
         result = speech_synthesizer.speak_text(text)
 
         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-            stream = speechsdk.AudioDataStream(result)
-            return stream
+            return result.audio_data
 
         elif result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = result.cancellation_details
@@ -95,7 +92,7 @@ class AzureCogsText2SpeechTool(BaseTool):
         except Exception as e:
             raise RuntimeError(f"Error while running AzureCogsText2SpeechTool: {e}")
 
-    def play(self, speech: speechsdk.AudioDataStream) -> None:
+    def play(self, speech: bytes) -> None:
         """Play the speech."""
         audio = display.Audio(speech)
         display.display(audio)

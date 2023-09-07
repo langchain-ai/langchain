@@ -9,7 +9,6 @@ from langchain.utils import get_from_dict_or_env
 
 try:
     import elevenlabs
-
 except ImportError:
     raise ImportError(
         "elevenlabs is not installed. " "Run `pip install elevenlabs` to install."
@@ -74,6 +73,6 @@ class ElevenLabsText2SpeechTool(BaseTool):
         return path
 
     def load_and_play(self, path: str) -> None:
-        """Load the text as speech from a temporary file."""
+        """Load the text as speech from a temporary file and play it."""
         speech = load_audio(path)
         self.play(speech)
