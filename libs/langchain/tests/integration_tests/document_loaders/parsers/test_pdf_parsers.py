@@ -19,6 +19,10 @@ LAYOUT_PARSER_PAPER_PDF = (
     Path(__file__).parent.parent.parent / "examples" / "layout-parser-paper.pdf"
 )
 
+DUPLICATE_CHARS = (
+    Path(__file__).parent.parent.parent / "examples" / "duplicate-chars.pdf"
+)
+
 
 def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> None:
     """Standard tests to verify that the given parser works.
@@ -59,6 +63,26 @@ def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> 
         assert metadata["page"] == 0
 
 
+def _assert_with_duplicate_parser(parser: BaseBlobParser, dedupe: bool = False) -> None:
+    """PDFPlumber tests to verify that duplicate characters appear or not
+    Args:
+        parser (BaseBlobParser): The parser to test.
+        splits_by_page (bool): Whether the parser splits by page or not by default.
+        dedupe: Avoiding the error of duplicate characters if `dedupe=True`.
+    """
+    blob = Blob.from_path(DUPLICATE_CHARS)
+    doc_generator = parser.lazy_parse(blob)
+    assert isinstance(doc_generator, Iterator)
+    docs = list(doc_generator)
+
+    if dedupe:
+        # use dedupe avoid duplicate characters.
+        assert "1000 Series" == docs[0].page_content.split("\n")[0]
+    else:
+        # duplicate characters will appear in doc if not dedupe
+        assert "11000000 SSeerriieess" == docs[0].page_content.split("\n")[0]
+
+
 def test_pymupdf_loader() -> None:
     """Test PyMuPDF loader."""
     _assert_with_parser(PyMuPDFParser())
@@ -84,3 +108,5 @@ def test_pypdfium2_parser() -> None:
 def test_pdfplumber_parser() -> None:
     """Test PDFPlumber parser."""
     _assert_with_parser(PDFPlumberParser())
+    _assert_with_duplicate_parser(PDFPlumberParser())
+    _assert_with_duplicate_parser(PDFPlumberParser(dedupe=True), dedupe=True)

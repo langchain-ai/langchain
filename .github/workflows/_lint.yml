@@ -87,7 +87,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
-          cache-key: lint
+          cache-key: lint-with-extras
 
       - name: Check Poetry File
         shell: bash
@@ -102,9 +102,17 @@ jobs:
           poetry lock --check
 
       - name: Install dependencies
+        # Also installs dev/lint/test/typing dependencies, to ensure we have
+        # type hints for as many of our libraries as possible.
+        # This helps catch errors that require dependencies to be spotted, for example:
+        # https://github.com/langchain-ai/langchain/pull/10249/files#diff-935185cd488d015f026dcd9e19616ff62863e8cde8c0bee70318d3ccbca98341
+        #
+        # If you change this configuration, make sure to change the `cache-key`
+        # in the `poetry_setup` action above to stop using the old cache.
+        # It doesn't matter how you change it, any change will cause a cache-bust.
         working-directory: ${{ inputs.working-directory }}
         run: |
-          poetry install
+          poetry install --with dev,lint,test,typing
 
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
