@@ -23,18 +23,11 @@ class SupabaseVectorTranslator(Visitor):
         Comparator.GTE,
         Comparator.LT,
         Comparator.LTE,
-        Comparator.CONTAIN,
         Comparator.LIKE,
     ]
     """Subset of allowed logical comparators."""
 
     metadata_column = "metadata"
-
-    def _format_value(self, value: Any, comparator: Comparator) -> str:
-        if comparator == Comparator.CONTAIN:
-            return f"%{value}%"
-
-        return value
 
     def _map_comparator(self, comparator: Comparator) -> str:
         """
@@ -49,7 +42,6 @@ class SupabaseVectorTranslator(Visitor):
             Comparator.GTE: "gte",
             Comparator.LT: "lt",
             Comparator.LTE: "lte",
-            Comparator.CONTAIN: "like",
             Comparator.LIKE: "like",
         }.get(comparator)
 
@@ -91,7 +83,7 @@ class SupabaseVectorTranslator(Visitor):
             [
                 f"{self.metadata_column}{self._get_json_operator(comparison.value)}{comparison.attribute}",
                 f"{self._map_comparator(comparison.comparator)}",
-                f"{self._format_value(comparison.value, comparison.comparator)}",
+                f"{comparison.value}",
             ]
         )
 

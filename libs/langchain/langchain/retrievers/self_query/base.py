@@ -30,6 +30,8 @@ from langchain.vectorstores import (
     MyScale,
     Pinecone,
     Qdrant,
+    SupabaseVectorStore,
+    Vectara,
     VectorStore,
     Weaviate,
 )
