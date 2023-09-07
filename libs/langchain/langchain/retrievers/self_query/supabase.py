@@ -41,7 +41,7 @@ class SupabaseVectorTranslator(Visitor):
 
         https://postgrest.org/en/stable/references/api/tables_views.html#operators
         """
-        return {
+        postgrest_comparator = {
             Comparator.EQ: "eq",
             Comparator.NE: "neq",
             Comparator.GT: "gt",
@@ -50,7 +50,12 @@ class SupabaseVectorTranslator(Visitor):
             Comparator.LTE: "lte",
             Comparator.CONTAIN: "like",
             Comparator.LIKE: "like",
-        }.get(comparator, comparator)
+        }.get(comparator)
+
+        if postgrest_comparator is None:
+            raise Exception(f"Comparator '{comparator}' is not currently supported in Supabase Vector")
+        
+        return postgrest_comparator
 
     def _get_json_operator(self, value: Any) -> str:
         if isinstance(value, str):
