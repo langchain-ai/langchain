@@ -14,7 +14,7 @@ from langchain.schema.output import LLMResult
 DEFAULT_API_URL = "https://app.llmonitor.com"
 
 
-def _serialize(obj):
+def _serialize(obj: Any) -> Union[Dict[str, Any], List[Any], Any]:
     if hasattr(obj, "to_json"):
         return obj.to_json()
 
@@ -27,7 +27,7 @@ def _serialize(obj):
     return obj
 
 
-def _parse_input(raw_input) -> str:
+def _parse_input(raw_input: Any) -> Any:
     if not raw_input:
         return None
 
@@ -51,7 +51,7 @@ def _parse_input(raw_input) -> str:
     return _serialize(raw_input)
 
 
-def _parse_output(raw_output: dict) -> str:
+def _parse_output(raw_output: dict) -> Any:
     if not raw_output:
         return None
 
@@ -93,7 +93,8 @@ def _parse_lc_role(
         return None
 
 
-def _get_user_id(metadata: Union[Dict[str, Any], None]) -> str:
+def _get_user_id(metadata: Any) -> Any:
+    metadata = metadata or {}
     user_id = metadata.get("user_id")
     if user_id is None:
         user_id = metadata.get("userId")
@@ -105,7 +106,7 @@ def _parse_lc_message(message: BaseMessage) -> Dict[str, Any]:
 
 
 def _parse_lc_messages(messages: List[BaseMessage]) -> List[Dict[str, Any]]:
-    return [_parse_lc_message(message) for message in messages[0]]
+    return [_parse_lc_message(message) for message in messages]
 
 
 class LLMonitorCallbackHandler(BaseCallbackHandler):
@@ -204,13 +205,14 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> Any:
         user_id = _get_user_id(metadata)
+
         event = {
             "event": "start",
             "type": "llm",
             "userId": user_id,
             "runId": str(run_id),
             "parentRunId": str(parent_run_id) if parent_run_id else None,
-            "input": _parse_lc_messages(messages),
+            "input": _parse_lc_messages(messages[0]),
             "name": kwargs.get("invocation_params", {}).get("model_name"),
             "tags": tags,
             "metadata": metadata,
@@ -279,7 +281,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             "type": "tool",
             "runId": str(run_id),
             "parent_run_id": str(parent_run_id) if parent_run_id else None,
-            "output": _parse_output(output),
+            "output": output,
         }
         self.__send_event(event)
 
