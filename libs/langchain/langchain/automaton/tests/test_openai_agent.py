@@ -6,7 +6,7 @@ import pytest
 
 from langchain.automaton.openai_agent import OpenAIAgent
 from langchain.automaton.tests.utils import (
-    FakeChatOpenAI,
+    FakeChatModel,
     construct_func_invocation_message,
 )
 from langchain.automaton.typedefs import (
@@ -40,7 +40,7 @@ def tools() -> List[BaseTool]:
 
 def test_openai_agent(tools: List[Tool]) -> None:
     get_time, get_location = tools
-    llm = FakeChatOpenAI(
+    llm = FakeChatModel(
         message_iter=iter(
             [
                 construct_func_invocation_message(get_time, {}),

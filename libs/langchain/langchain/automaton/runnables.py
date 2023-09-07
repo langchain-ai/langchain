@@ -1,18 +1,95 @@
 """Module contains useful runnables for agents."""
 from __future__ import annotations
 
-from typing import Sequence, Callable, List, Optional, Union
+from typing import Callable, TypeVar, Dict, Union, Sequence, List, Optional, Any
 
 from langchain.automaton.typedefs import (
     MessageLike,
-    MessageLog,
     FunctionResult,
     FunctionCall,
 )
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.schema import BaseMessage, AIMessage, PromptValue
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.runnable.base import RunnableLambda, Runnable
+from langchain.schema.output_parser import BaseOutputParser
+from langchain.schema.runnable import (
+    RunnableLambda,
+    Runnable,
+    RunnablePassthrough,
+    RunnableMap,
+    RunnableConfig,
+    patch_config,
+)
 from langchain.tools import BaseTool
+
+T = TypeVar("T")
+
+
+def _to_message(result: Union[BaseMessage, str]) -> BaseMessage:
+    """Convert to a list of messages."""
+    if isinstance(result, BaseMessage):
+        return result
+    elif isinstance(result, str):
+        return AIMessage(content=result)
+    else:
+        raise NotImplementedError(f"Unsupported type {type(result)}")
+
+
+def _to_list(element: Union[None, T, List[T]]) -> List[T]:
+    """Convert to a sequence."""
+    if element is None:
+        return []
+    elif isinstance(element, list):
+        return element
+    else:
+        return [element]
+
+
+def _to_runnable_parser(parser: Optional[BaseOutputParser]) -> Runnable:
+    """Adapt a parser to a runnable."""
+    if parser is None:
+        # Then create a runnable that returns no messages
+        return RunnableLambda(lambda *args, **kwargs: None)
+
+    if isinstance(parser, Runnable):
+        return parser
+
+    raise ValueError(f"Expected BaseOutputParser, got {parser}")
+
+
+def _concatenate_head_and_tail(intermediate_input: Dict[str, Any]) -> List[BaseMessage]:
+    """Concatenate head and tail into a single list."""
+    head = _to_list(intermediate_input["head"])
+    tail = _to_list(intermediate_input["tail"])
+    return head + tail
+
+
+def _apply_and_concat(
+    head: Union[Runnable, Callable], tail: Union[Runnable, Callable]
+) -> Runnable:
+    """Apply head and tail and concatenate the results.
+
+    Note: Probably generalize to _apply(funcs) and _concatenate runnables
+
+    Args:
+        head: A runnable or callable
+        tail: A runnable or callable
+
+    Returns:
+        A runnable that applies head and tail and concatenates the results in order.
+    """
+    head_ = head if isinstance(head, Runnable) else RunnableLambda(head)
+    tail_ = tail if isinstance(tail, Runnable) else RunnableLambda(tail)
+
+    return (
+        RunnableMap(
+            steps={
+                "head": head_,
+                "tail": tail_,
+            }
+        )
+        | _concatenate_head_and_tail
+    )
 
 
 # PUBLIC API
@@ -24,85 +101,105 @@ def create_tool_invoker(
     """Re-write with router."""
     tools_by_name = {tool.name: tool for tool in tools}
 
-    def func(function_call: FunctionCall) -> FunctionResult:
+    def func(
+        function_call: FunctionCall,
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> FunctionResult:
         """A function that can invoke a tool using .run"""
         try:
             tool = tools_by_name[function_call.name]
         except KeyError:
             raise AssertionError(f"No such tool: {function_call.name}")
         try:
-            result = tool.run(function_call.arguments or {})
+            result = tool.invoke(
+                function_call.arguments or {},
+                patch_config(config, callbacks=run_manager.get_child()),
+            )
             error = None
         except Exception as e:
             result = None
             error = repr(e) + repr(function_call.arguments)
+
         return FunctionResult(name=function_call.name, result=result, error=error)
 
-    return RunnableLambda(func=func)
+    async def afunc(
+        function_call: FunctionCall,
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> FunctionResult:
+        """A function that can invoke a tool using .run"""
+        try:
+            tool = tools_by_name[function_call.name]
+        except KeyError:
+            raise AssertionError(f"No such tool: {function_call.name}")
+        try:
+            result = await tool.ainvoke(
+                function_call.arguments or {},
+                patch_config(config, callbacks=run_manager.get_child()),
+            )
+            error = None
+        except Exception as e:
+            result = None
+            error = repr(e) + repr(function_call.arguments)
 
+        return FunctionResult(name=function_call.name, result=result, error=error)
 
-LogOrMessages = Union[MessageLog, Sequence[MessageLike]]
+    return RunnableLambda(func=func, afunc=afunc)
 
 
 def create_llm_program(
     llm: BaseLanguageModel,
-    prompt_generator: Callable[
-        [LogOrMessages], Union[str, PromptValue, Sequence[BaseMessage]]
-    ],
+    prompt_generator: Callable[[T], Union[str, PromptValue, Sequence[BaseMessage]]],
     *,
     tools: Optional[Sequence[BaseTool]] = None,
     stop: Optional[Sequence[str]] = None,
     parser: Union[
         Runnable[Union[BaseMessage, str], MessageLike],
         Callable[[Union[BaseMessage, str]], MessageLike],
+        BaseOutputParser,
         None,
     ] = None,
-    invoke_tools: bool = True,
-) -> Runnable[MessageLog, List[MessageLike]]:
-    """Create a runnable that can update memory."""
+    invoke_tools: bool = True, # TODO(Eugene): Perhaps remove.
+) -> Runnable[T, List[MessageLike]]:
+    """Create a runnable that provides a generalized interface to an LLM with actions.
 
-    tool_invoker = create_tool_invoker(tools) if invoke_tools else None
+    Args:
+        llm: A language model
+        prompt_generator: A function that takes a list of messages and returns a prompt
+        tools: A list of tools to invoke
+        stop: optional list of stop tokens
+        parser: optional parser to apply to the output of the LLM
+        invoke_tools: Whether to invoke tools on the output of the LLM
 
-    def _bound(message_log: MessageLog) -> List[MessageLike]:
-        """A function that can be invoked with a message log."""
-        messages = []
-        prompt = prompt_generator(message_log)
-        llm_chain = llm
-        if stop:
-            llm_chain = llm_chain.bind(stop=stop)
+    Returns:
+        A runnable that returns a list of messages
+    """
 
-        result = llm_chain.invoke(prompt)
+    if not isinstance(prompt_generator, RunnableLambda):
+        _prompt_generator = RunnableLambda(prompt_generator)
+    else:
+        _prompt_generator = Runnable
 
-        if isinstance(result, BaseMessage):
-            messages.append(result)
-        elif isinstance(result, str):
-            messages.append(AIMessage(content=result))
-        else:
-            raise NotImplementedError(f"Unsupported type {type(result)}")
+    if stop:
+        llm = llm.bind(stop=stop)
 
-        if parser:
-            if not isinstance(parser, Runnable):
-                _parser = RunnableLambda(parser)
-            else:
-                _parser = parser
-            parsed_result = _parser.invoke(result)
-            if parsed_result:
-                if not isinstance(parsed_result, MessageLike):
-                    raise TypeError(
-                        f"Expected a MessageLike type got: {type(parsed_result)}"
-                    )
-                messages.append(parsed_result)
+    # Add parser to the end of the chain and concatenate original llm output
+    # with the parser output.
+    # The parser is always created even if it is None, to make sure that
+    # the _to_message adapter is always applied (regardless of the parser).
+    _parser = _to_runnable_parser(parser)
 
-        if not messages:
-            raise AssertionError(f"Expected at least one message")
-        last_message = messages[-1]
+    chain = _prompt_generator | llm | _apply_and_concat(_to_message, _parser)
 
-        if tool_invoker and isinstance(last_message, FunctionCall):
-            function_result = tool_invoker.invoke(last_message)
-            messages.append(function_result)
+    # Add tool invoker to the end of the chain.
+    if invoke_tools and tools:
+        tool_invoker = create_tool_invoker(tools)
+        invoke_on_last = RunnableLambda(lambda msgs: msgs[-1]) | tool_invoker
+        complete_chain = chain | _apply_and_concat(
+            RunnablePassthrough(), invoke_on_last
+        )
+    else:
+        complete_chain = chain
 
-        return messages
-
-    return RunnableLambda(
-        func=_bound,
-    )
+    return complete_chain

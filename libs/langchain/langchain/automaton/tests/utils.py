@@ -9,7 +9,7 @@ from langchain.schema import BaseMessage, ChatResult, ChatGeneration, AIMessage
 from langchain.tools import BaseTool
 
 
-class FakeChatOpenAI(BaseChatModel):
+class FakeChatModel(BaseChatModel):
     """A fake chat model that returns a pre-defined response."""
 
     message_iter: Iterator[BaseMessage]
