@@ -176,7 +176,11 @@ class PubMedAPIWrapper(BaseModel):
             else (
                 abstract_text
                 if isinstance(abstract_text, str)
-                else ("\n".join(str(value) for value in abstract_text.values()))
+                else (
+                    "\n".join(str(value) for value in abstract_text.values())
+                    if isinstance(abstract_text, dict)
+                    else "No abstract available"
+                )
             )
         )
         a_d = ar.get("ArticleDate", {})
