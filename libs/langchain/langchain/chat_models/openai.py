@@ -156,7 +156,7 @@ class ChatOpenAI(BaseChatModel):
     openai_proxy: Optional[str] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
-    max_retries: int = 6
+    max_retries: int = 4 
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""

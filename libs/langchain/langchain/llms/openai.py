@@ -174,7 +174,7 @@ class BaseOpenAI(BaseLLM):
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
     """Adjust the probability of specific tokens being generated."""
-    max_retries: int = 6
+    max_retries: int = 4
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
@@ -715,7 +715,7 @@ class OpenAIChat(BaseLLM):
     openai_api_base: Optional[str] = None
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
-    max_retries: int = 6
+    max_retries: int = 4
     """Maximum number of retries to make when generating."""
     prefix_messages: List = Field(default_factory=list)
     """Series of messages for Chat input."""

@@ -177,7 +177,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
     chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
-    max_retries: int = 6
+    max_retries: int = 4
     """Maximum number of retries to make when generating."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout in seconds for the OpenAPI request."""

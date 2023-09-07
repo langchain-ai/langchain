@@ -218,7 +218,7 @@ class ChatLiteLLM(BaseChatModel):
        not return the full n completions if duplicates are generated."""
     max_tokens: int = 256
 
-    max_retries: int = 6
+    max_retries: int = 4 
 
     @property
     def _default_params(self) -> Dict[str, Any]:
