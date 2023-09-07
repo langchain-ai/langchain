@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from langchain.schema import (
     BaseChatMessageHistory,
@@ -10,7 +12,9 @@ from langchain.schema.messages import (
     messages_from_dict,
     messages_to_dict,
 )
-from boto3.session import Session
+
+if TYPE_CHECKING:
+    from boto3.session import Session
 
 logger = logging.getLogger(__name__)
 
@@ -45,13 +49,19 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         key: Optional[Dict[str, str]] = None,
         boto3_session: Optional[Session] = None,
     ):
-        import boto3
         if boto3_session:
             client = boto3_session.resource("dynamodb")
-        elif endpoint_url:
-            client = boto3.resource("dynamodb", endpoint_url=endpoint_url)
         else:
-            client = boto3.resource("dynamodb")
+            try:
+                import boto3
+            except ImportError as e:
+                raise ImportError(
+                    "Unable to import boto3, please install with `pip install boto3`."
+                ) from e
+            if endpoint_url:
+                client = boto3.resource("dynamodb", endpoint_url=endpoint_url)
+            else:
+                client = boto3.resource("dynamodb")
         self.table = client.Table(table_name)
         self.session_id = session_id
         self.key: Dict = key or {primary_key_name: session_id}
@@ -59,7 +69,12 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the messages from DynamoDB"""
-        from botocore.exceptions import ClientError
+        try:
+            from botocore.exceptions import ClientError
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import botocore, please install with `pip install botocore`."
+            ) from e
 
         response = None
         try:
@@ -80,7 +95,12 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in DynamoDB"""
-        from botocore.exceptions import ClientError
+        try:
+            from botocore.exceptions import ClientError
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import botocore, please install with `pip install botocore`."
+            ) from e
 
         messages = messages_to_dict(self.messages)
         _message = _message_to_dict(message)
@@ -93,7 +113,12 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
     def clear(self) -> None:
         """Clear session memory from DynamoDB"""
-        from botocore.exceptions import ClientError
+        try:
+            from botocore.exceptions import ClientError
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import botocore, please install with `pip install botocore`."
+            ) from e
 
         try:
             self.table.delete_item(self.key)
