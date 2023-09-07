@@ -3,18 +3,18 @@ from __future__ import annotations
 import json
 from typing import List, Sequence
 
+from langchain.automaton.chat_agent import ChatAgent
 from langchain.automaton.typedefs import (
     AgentFinish,
     FunctionCall,
-    MessageLike,
     FunctionResult,
+    MessageLike,
 )
-from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.schema import Generation, AIMessage, BaseMessage, FunctionMessage
-from langchain.schema.output_parser import BaseGenerationOutputParser
-from langchain.automaton.chat_agent import ChatAgent
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.tools import format_tool_to_openai_function, BaseTool
+from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
+from langchain.schema import AIMessage, BaseMessage, FunctionMessage, Generation
+from langchain.schema.output_parser import BaseGenerationOutputParser
+from langchain.tools import BaseTool, format_tool_to_openai_function
 
 
 class OpenAIFunctionsParser(BaseGenerationOutputParser):

@@ -4,8 +4,8 @@ from typing import Any, List, Optional, cast
 import pytest
 
 from langchain.automaton.runnables import (
-    _apply_and_concat,
     RunnablePassthrough,
+    _apply_and_concat,
     _to_list,
     _to_runnable_parser,
     create_llm_program,
@@ -14,9 +14,9 @@ from langchain.automaton.tests.utils import (
     FakeChatModel,
 )
 from langchain.automaton.typedefs import FunctionCall, FunctionResult, MessageLike
-from langchain.schema.messages import HumanMessage, AIMessage, BaseMessage
-from langchain.schema.runnable import RunnableLambda
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain.schema.runnable import RunnableLambda
 from langchain.tools import BaseTool, tool
 
 

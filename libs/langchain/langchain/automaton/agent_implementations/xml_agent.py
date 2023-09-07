@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import Sequence, List, Union
+from typing import List, Sequence, Union
 
 from langchain.automaton.chat_agent import ChatAgent
 from langchain.automaton.tool_utils import generate_tool_info
 from langchain.automaton.typedefs import (
-    MessageLike,
     AgentFinish,
     FunctionCall,
     FunctionResult,
+    MessageLike,
 )
 from langchain.prompts import SystemMessagePromptTemplate
 from langchain.schema import BaseMessage, HumanMessage

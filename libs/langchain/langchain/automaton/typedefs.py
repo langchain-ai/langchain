@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Mapping, overload, Union, Iterator
+from typing import Any, Iterator, Mapping, Optional, Sequence, Union, overload
 
 from langchain.load.serializable import Serializable
 from langchain.schema import (

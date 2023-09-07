@@ -1,23 +1,23 @@
 """Module contains useful runnables for agents."""
 from __future__ import annotations
 
-from typing import Callable, TypeVar, Dict, Union, Sequence, List, Optional, Any
+from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar, Union
 
 from langchain.automaton.typedefs import (
-    MessageLike,
-    FunctionResult,
     FunctionCall,
+    FunctionResult,
+    MessageLike,
 )
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.schema import BaseMessage, AIMessage, PromptValue
+from langchain.schema import AIMessage, BaseMessage, PromptValue
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.runnable import (
-    RunnableLambda,
     Runnable,
-    RunnablePassthrough,
-    RunnableMap,
     RunnableConfig,
+    RunnableLambda,
+    RunnableMap,
+    RunnablePassthrough,
     patch_config,
 )
 from langchain.tools import BaseTool

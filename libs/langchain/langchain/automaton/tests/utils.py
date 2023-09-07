@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-from typing import Iterator, List, Any, Mapping
+from typing import Any, Iterator, List, Mapping
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
-from langchain.schema import BaseMessage, ChatResult, ChatGeneration, AIMessage
+from langchain.schema import AIMessage, BaseMessage, ChatGeneration, ChatResult
 from langchain.tools import BaseTool
 
 

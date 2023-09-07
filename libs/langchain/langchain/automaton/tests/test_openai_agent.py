@@ -10,16 +10,16 @@ from langchain.automaton.tests.utils import (
     construct_func_invocation_message,
 )
 from langchain.automaton.typedefs import (
+    AgentFinish,
     FunctionCall,
     FunctionResult,
     MessageLog,
-    AgentFinish,
 )
 from langchain.schema.messages import (
     AIMessage,
     SystemMessage,
 )
-from langchain.tools import tool, Tool
+from langchain.tools import Tool, tool
 from langchain.tools.base import BaseTool
 
 

@@ -1,19 +1,19 @@
 """Generalized chat agent, works with any chat model."""
 from __future__ import annotations
 
-from typing import TypeVar, Callable, Optional, Sequence, Union, Iterator
+from typing import Callable, Iterator, Optional, Sequence, TypeVar, Union
 
 from langchain.automaton.runnables import create_llm_program
 from langchain.automaton.typedefs import (
+    Agent,
     AgentFinish,
     MessageLike,
-    Agent,
 )
 from langchain.schema import PromptValue
 from langchain.schema.language_model import (
     BaseLanguageModel,
-    LanguageModelOutput,
     LanguageModelInput,
+    LanguageModelOutput,
 )
 from langchain.schema.messages import BaseMessage
 from langchain.schema.output_parser import BaseOutputParser
@@ -23,7 +23,6 @@ from langchain.schema.runnable import (
 from langchain.tools import BaseTool
 
 T = TypeVar("T")
-
 
 
 class ChatAgent(Agent):

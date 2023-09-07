@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import Sequence, Optional, Union, List
+from typing import List, Optional, Sequence, Union
 
 from langchain.automaton.runnables import (
     create_llm_program,
@@ -14,19 +14,19 @@ from langchain.automaton.runnables import (
 from langchain.automaton.tool_utils import generate_tool_info
 from langchain.automaton.typedefs import (
     Agent,
-    MessageLog,
-    MessageLike,
+    AgentFinish,
     FunctionCall,
     FunctionResult,
-    AgentFinish,
+    MessageLike,
+    MessageLog,
     PrimingMessage,
 )
 from langchain.prompts import SystemMessagePromptTemplate
 from langchain.schema import (
-    PromptValue,
+    AIMessage,
     BaseMessage,
     HumanMessage,
-    AIMessage,
+    PromptValue,
     SystemMessage,
 )
 from langchain.schema.language_model import BaseLanguageModel
