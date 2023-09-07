@@ -16,8 +16,16 @@ class InternalMessage(Serializable):
 
 
 class FunctionCall(InternalMessage):
+    """A request for a function invocation.
+
+    This message can be used to request a function invocation
+    using the function name and the arguments to pass to the function.
+    """
+
     name: str
-    arguments: Optional[Mapping[str, Any]]
+    """The name of the function to invoke."""
+    named_arguments: Optional[Mapping[str, Any]] = None
+    """The named arguments to pass to the function."""
 
 
 class FunctionResult(InternalMessage):

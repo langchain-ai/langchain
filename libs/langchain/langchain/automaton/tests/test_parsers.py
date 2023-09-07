@@ -13,8 +13,10 @@ from langchain.automaton.runnables import (
 from langchain.automaton.tests.utils import (
     FakeChatModel,
 )
+from langchain.automaton.typedefs import FunctionCall, FunctionResult, MessageLike
 from langchain.schema.messages import HumanMessage, AIMessage, BaseMessage
 from langchain.schema.runnable import RunnableLambda
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool, tool
 
 
@@ -78,9 +80,9 @@ def tools() -> List[BaseTool]:
     return cast(List[BaseTool], [get_time, get_location])
 
 
-def test_simple_llm_program() -> None:
-    """Test simple llm program with no parser or tools."""
-    get_time, _ = tools
+@pytest.fixture()
+def fake_llm() -> BaseLanguageModel:
+    """Make a fake chat model."""
     llm = FakeChatModel(
         message_iter=iter(
             [
@@ -90,29 +92,24 @@ def test_simple_llm_program() -> None:
             ]
         )
     )
+    return llm
 
+
+def test_simple_llm_program(fake_llm: BaseLanguageModel) -> None:
+    """Test simple llm program with no parser or tools."""
+    get_time, _ = tools
     program = create_llm_program(
-        llm,
+        fake_llm,
         prompt_generator=lambda x: x,
     )
     assert program.invoke("What time is it?") == [AIMessage(content="Hello")]
 
 
-def test_llm_program_with_parser() -> None:
+def test_llm_program_with_parser(fake_llm: BaseLanguageModel) -> None:
     """Test simple llm program with no parser or tools."""
     parser = RunnableLambda(lambda msg: AIMessage(content=msg.content + " parsed"))
-    llm = FakeChatModel(
-        message_iter=iter(
-            [
-                AIMessage(
-                    content="Hello",
-                ),
-            ]
-        )
-    )
-
     program = create_llm_program(
-        llm,
+        fake_llm,
         prompt_generator=lambda x: x,
         parser=parser,
     )
@@ -122,26 +119,35 @@ def test_llm_program_with_parser() -> None:
     ]
 
 
-def test_llm_program_with_parser_and_tools(tools: List[BaseTool]) -> None:
-    """Test simple llm program with no parser or tools."""
-    parser = RunnableLambda(lambda msg: AIMessage(content=msg.content + " parsed"))
-    llm = FakeChatModel(
-        message_iter=iter(
+@pytest.mark.parametrize(
+    "parser, output",
+    [
+        (
+            RunnableLambda(lambda msg: AIMessage(content="Goodbye")),
+            [AIMessage(content="Hello"), AIMessage(content="Goodbye")],
+        ),
+        (
+            RunnableLambda(lambda msg: FunctionCall(name="get_time")),
             [
-                AIMessage(
-                    content="Hello",
-                ),
-            ]
-        )
-    )
-
+                AIMessage(content="Hello"),
+                FunctionCall(name="get_time"),
+                FunctionResult(result="9 PM", name="get_time"),
+            ],
+        ),
+    ],
+)
+def test_llm_program_with_parser_and_tools(
+    tools: List[BaseTool],
+    fake_llm: BaseLanguageModel,
+    parser: Any,
+    output: List[MessageLike],
+) -> None:
+    """Test simple llm program with no parser or tools."""
     program = create_llm_program(
-        llm,
+        fake_llm,
         prompt_generator=lambda x: x,
         parser=parser,
         tools=tools,
+        invoke_tools=True,
     )
-    assert program.invoke("What time is it?") == [
-        AIMessage(content="Hello"),
-        AIMessage(content="Hello parsed"),
-    ]
+    assert program.invoke("What time is it?") == output

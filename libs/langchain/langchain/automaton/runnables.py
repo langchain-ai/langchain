@@ -102,46 +102,54 @@ def create_tool_invoker(
     tools_by_name = {tool.name: tool for tool in tools}
 
     def func(
-        function_call: FunctionCall,
+        function_call: MessageLike,
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
-    ) -> FunctionResult:
+    ) -> Optional[FunctionResult]:
         """A function that can invoke a tool using .run"""
+        if not isinstance(
+            function_call, FunctionCall
+        ):  # TODO(Hack): Workaround lack of conditional apply
+            return None
         try:
             tool = tools_by_name[function_call.name]
         except KeyError:
             raise AssertionError(f"No such tool: {function_call.name}")
         try:
             result = tool.invoke(
-                function_call.arguments or {},
+                function_call.named_arguments or {},
                 patch_config(config, callbacks=run_manager.get_child()),
             )
             error = None
         except Exception as e:
             result = None
-            error = repr(e) + repr(function_call.arguments)
+            error = repr(e) + repr(function_call.named_arguments)
 
         return FunctionResult(name=function_call.name, result=result, error=error)
 
     async def afunc(
-        function_call: FunctionCall,
+        function_call: MessageLike,
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
-    ) -> FunctionResult:
+    ) -> Optional[FunctionResult]:
         """A function that can invoke a tool using .run"""
+        if not isinstance(
+            function_call, FunctionCall
+        ):  # TODO(Hack): Workaround lack of conditional apply
+            return None
         try:
             tool = tools_by_name[function_call.name]
         except KeyError:
             raise AssertionError(f"No such tool: {function_call.name}")
         try:
             result = await tool.ainvoke(
-                function_call.arguments or {},
+                function_call.named_arguments or {},
                 patch_config(config, callbacks=run_manager.get_child()),
             )
             error = None
         except Exception as e:
             result = None
-            error = repr(e) + repr(function_call.arguments)
+            error = repr(e) + repr(function_call.named_arguments)
 
         return FunctionResult(name=function_call.name, result=result, error=error)
 
@@ -150,7 +158,9 @@ def create_tool_invoker(
 
 def create_llm_program(
     llm: BaseLanguageModel,
-    prompt_generator: Callable[[T], Union[str, PromptValue, Sequence[BaseMessage]]],
+    prompt_generator: Union[
+        Callable[[T], Union[str, PromptValue, Sequence[BaseMessage]]], Runnable
+    ],
     *,
     tools: Optional[Sequence[BaseTool]] = None,
     stop: Optional[Sequence[str]] = None,
@@ -160,7 +170,7 @@ def create_llm_program(
         BaseOutputParser,
         None,
     ] = None,
-    invoke_tools: bool = True, # TODO(Eugene): Perhaps remove.
+    invoke_tools: bool = True,  # TODO(Eugene): Perhaps remove.
 ) -> Runnable[T, List[MessageLike]]:
     """Create a runnable that provides a generalized interface to an LLM with actions.
 
@@ -176,7 +186,7 @@ def create_llm_program(
         A runnable that returns a list of messages
     """
 
-    if not isinstance(prompt_generator, RunnableLambda):
+    if not isinstance(prompt_generator, Runnable):
         _prompt_generator = RunnableLambda(prompt_generator)
     else:
         _prompt_generator = Runnable
