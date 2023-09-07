@@ -45,10 +45,11 @@ class FunctionResult(InternalMessage):
         return f"FunctionResult(name={self.name}, result={self.result}, error={self.error})"
 
 
-class PrimingMessage(InternalMessage):
+class AdHocMessage(InternalMessage):
     """A message that is used to prime the language model."""
 
-    content: str
+    type: str
+    data: Any  # Make sure this is serializable
 
 
 class AgentFinish(InternalMessage):
