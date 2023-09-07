@@ -85,7 +85,7 @@ def test_character_text_splitter_longer_words() -> None:
     "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex(
-    separator: str, is_separator_regex: bool
+        separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character.
@@ -107,7 +107,7 @@ def test_character_text_splitter_keep_separator_regex(
     "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_discard_separator_regex(
-    separator: str, is_separator_regex: bool
+        separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters discarding the separator
     that is a regex special character."""
@@ -484,6 +484,78 @@ public class HelloWorld {
 }
     """
     chunks = splitter.split_text(code)
+    assert chunks == [
+        "public class",
+        "HelloWorld {",
+        "public",
+        "static void",
+        "main(String[]",
+        "args) {",
+        "System.out.prin",
+        'tln("Hello,',
+        'World!");',
+        "}\n}",
+    ]
+
+
+def test_csharp_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.CSHARP, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+using System;
+
+class Program
+{
+    public static void Main(string[] args)
+    {
+        RunProgram();
+    }
+
+    public static void RunProgram()
+    {
+        // Get user input
+        string input = GetUserInput();
+
+        if (int.TryParse(input, out int number))
+        {
+            CheckEvenOrOdd(number);
+        }
+        else
+        {
+            DisplayInvalidInputMessage();
+        }
+    }
+
+    static string GetUserInput()
+    {
+        Console.Write("Enter a number: ");
+        return Console.ReadLine();
+    }
+
+    static void CheckEvenOrOdd(int number)
+    {
+        if (number % 2 == 0)
+        {
+            // The number is even
+            Console.WriteLine($"The number {number} is even.");
+        }
+        else
+        {
+            // The number is odd
+            Console.WriteLine($"The number {number} is odd.");
+        }
+    }
+
+    static void DisplayInvalidInputMessage()
+    {
+        // Invalid input. Please enter a valid number.
+        Console.WriteLine("Invalid input. Please enter a valid number.");
+    }
+}
+    """
+    chunks = splitter.split_text(code)
+    print(chunks)
     assert chunks == [
         "public class",
         "HelloWorld {",
