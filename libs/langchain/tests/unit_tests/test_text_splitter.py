@@ -507,66 +507,61 @@ using System;
 
 class Program
 {
-    public static void Main(string[] args)
+    static void Main()
     {
-        RunProgram();
-    }
+        int age = 30; // Change the age value as needed
 
-    public static void RunProgram()
-    {
-        // Get user input
-        string input = GetUserInput();
-
-        if (int.TryParse(input, out int number))
+        // Categorize the age without any console output
+        if (age < 18)
         {
-            CheckEvenOrOdd(number);
+            // Age is under 18
+        }
+        else if (age >= 18 && age < 65)
+        {
+            // Age is an adult
         }
         else
         {
-            DisplayInvalidInputMessage();
+            // Age is a senior citizen
         }
-    }
-
-    static string GetUserInput()
-    {
-        Console.Write("Enter a number: ");
-        return Console.ReadLine();
-    }
-
-    static void CheckEvenOrOdd(int number)
-    {
-        if (number % 2 == 0)
-        {
-            // The number is even
-            Console.WriteLine($"The number {number} is even.");
-        }
-        else
-        {
-            // The number is odd
-            Console.WriteLine($"The number {number} is odd.");
-        }
-    }
-
-    static void DisplayInvalidInputMessage()
-    {
-        // Invalid input. Please enter a valid number.
-        Console.WriteLine("Invalid input. Please enter a valid number.");
     }
 }
     """
+   
+
     chunks = splitter.split_text(code)
-    print(chunks)
     assert chunks == [
-        "public class",
-        "HelloWorld {",
-        "public",
+        "using System;",
+        "class Program\n{",
         "static void",
-        "main(String[]",
-        "args) {",
-        "System.out.prin",
-        'tln("Hello,',
-        'World!");',
-        "}\n}",
+        "Main()",
+        "{",
+        "int age",
+        "= 30; // Change",
+        "the age value",
+        "as needed",
+        "//",
+        "Categorize the",
+        "age without any",
+        "console output",
+        "if (age", "< 18)",
+        "{",
+        "//",
+        "Age is under 18",
+        "}",
+        "else if",
+        "(age >= 18 &&",
+        "age < 65)",
+        "{",
+        "//",
+        "Age is an adult",
+        "}", "else",
+        "{",
+        "//",
+        "Age is a senior",
+        "citizen",
+        "}\n    }",
+        "}"
     ]
 
 
