@@ -1,8 +1,8 @@
 import string
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 
 
-def get_pseudoanonymizer_mapping() -> Dict[str, Callable]:
+def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callable]:
     try:
         from faker import Faker
     except ImportError as e:
@@ -11,6 +11,7 @@ def get_pseudoanonymizer_mapping() -> Dict[str, Callable]:
         ) from e
 
     fake = Faker()
+    fake.seed_instance(seed)
 
     # Listed  entities supported by Microsoft Presidio (for now, global and US only)
     # Source: https://microsoft.github.io/presidio/supported_entities/
