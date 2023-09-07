@@ -104,6 +104,6 @@ class AzureCogsText2SpeechTool(BaseTool):
         return path
 
     def load_and_play(self, path: str) -> None:
-        """Load the text as speech from a temporary file."""
+        """Load the text as speech from a temporary file and play it."""
         speech = load_audio(path)
         self.play(speech)
