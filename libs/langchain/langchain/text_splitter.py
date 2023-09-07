@@ -173,27 +173,34 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         current_doc: List[SplittedText] = []
         current_doc_total = 0
 
-        def _append_doc(current_doc: List[SplittedText]):
+        def _append_doc(doc: List[SplittedText], doc_total: int):
             nonlocal docs
 
-            doc_end = len(current_doc)
+            doc_start = 0
+            doc_end = len(doc)
             if not self._keep_separator:
+                # remove separators from the beginning
+                while doc_start < doc_end and doc[doc_start].is_separator:
+                    doc_total -= len(doc[doc_start])
+                    doc_start += 1
+
                 # remove separators from the end
-                while doc_end > 0 and current_doc[doc_end - 1].is_separator:
+                while doc_end > 0 and doc[doc_end - 1].is_separator:
+                    doc_total -= len(doc[doc_end - 1])
                     doc_end -= 1
 
-            if doc_end:
-                docs.append("".join([s.text for s in current_doc[:doc_end]]))
-
-        while splits:
-            if current_doc and current_doc_total + len(splits[0]) > self._chunk_size:
-                if current_doc_total > self._chunk_size:
+            if doc_end - doc_start > 0:
+                if doc_total > self._chunk_size:
                     logger.warning(
-                        f"Created a chunk of size {current_doc_total}, "
+                        f"Created a chunk of size {doc_total}, "
                         f"which is longer than the specified {self._chunk_size}"
                     )
 
-                _append_doc(current_doc)
+                docs.append("".join([s.text for s in doc[doc_start:doc_end]]))
+
+        while splits:
+            if current_doc and current_doc_total + len(splits[0]) > self._chunk_size:
+                _append_doc(current_doc, current_doc_total)
 
                 while current_doc_total > self._chunk_overlap:
                     current_doc_total -= len(current_doc[0])
@@ -207,7 +214,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     current_doc.pop(0)
 
         if current_doc:
-            _append_doc(current_doc)
+            _append_doc(current_doc, current_doc_total)
 
         return docs
 
