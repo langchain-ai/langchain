@@ -9,6 +9,7 @@ from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
+from sqlalchemy.types import NullType
 
 from langchain.utils import get_from_env
 
@@ -314,6 +315,11 @@ class SQLDatabase:
                 tables.append(self._custom_table_info[table.name])
                 continue
 
+            # Ignore JSON datatyped columns
+            for k, v in table.columns.items():
+                if type(v.type) is NullType:
+                    table._columns.remove(v)
+
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
             table_info = f"{create_table.rstrip()}"
@@ -384,6 +390,8 @@ class SQLDatabase:
                     connection.exec_driver_sql(f"SET @@dataset_id='{self._schema}'")
                 elif self.dialect == "mssql":
                     pass
+                elif self.dialect == "trino":
+                    connection.exec_driver_sql(f"USE {self._schema}")
                 else:  # postgresql and compatible dialects
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.execute(text(command))
