@@ -1,13 +1,13 @@
 # LLMonitor
 
-[LLMonitor](https://llmonitor.com) is an open-source observability platform that provides cost tracking, user tracking and powerful agent tracing.
+[LLMonitor](https://llmonitor.com?utm_source=langchain&utm_medium=py&utm_campaign=docs) is an open-source observability platform that provides cost tracking, user tracking and powerful agent tracing.
 
 <video controls width='100%' >
   <source src='https://llmonitor.com/videos/demo-annotated.mp4'/>
 </video>
 
 ## Setup
-Create an account on [llmonitor.com](https://llmonitor.com), create an `App`, and then copy the associated `tracking id`.
+Create an account on [llmonitor.com](https://llmonitor.com?utm_source=langchain&utm_medium=py&utm_campaign=docs), create an `App`, and then copy the associated `tracking id`.
 Once you have it, set it as an environment variable by running:
 ```bash
 export LLMONITOR_APP_ID="..."
