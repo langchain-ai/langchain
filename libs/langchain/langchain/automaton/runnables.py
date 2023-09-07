@@ -50,11 +50,12 @@ def _to_runnable_parser(parser: Optional[BaseOutputParser]) -> Runnable:
     if parser is None:
         # Then create a runnable that returns no messages
         return RunnableLambda(lambda *args, **kwargs: None)
-
-    if isinstance(parser, Runnable):
+    elif isinstance(parser, Runnable):
         return parser
-
-    raise ValueError(f"Expected BaseOutputParser, got {parser}")
+    elif isinstance(parser, Callable):
+        return RunnableLambda(parser)
+    else:
+        raise ValueError(f"Expected BaseOutputParser, got {parser}")
 
 
 def _concatenate_head_and_tail(intermediate_input: Dict[str, Any]) -> List[BaseMessage]:

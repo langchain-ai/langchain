@@ -59,7 +59,7 @@ def create_openai_agent(llm: ChatOpenAI, tools: Sequence[BaseTool]) -> ChatAgent
     """Create an agent that uses OpenAI's API."""
     openai_funcs = [format_tool_to_openai_function(tool_) for tool_ in tools]
     return ChatAgent(
-        llm.bind(funcions=openai_funcs),
+        llm.bind(functions=openai_funcs),
         prompt_generator=prompt_generator,
         tools=tools,
         parser=OpenAIFunctionsParser(),

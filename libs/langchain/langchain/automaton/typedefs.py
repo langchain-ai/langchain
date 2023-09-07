@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Iterator, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 
 from langchain.load.serializable import Serializable
 from langchain.schema import (
@@ -51,6 +51,9 @@ class AdHocMessage(InternalMessage):
     type: str
     data: Any  # Make sure this is serializable
 
+    def __str__(self):
+        return f"AdHocMessage(type={self.type}, data={self.data})"
+
 
 class AgentFinish(InternalMessage):
     result: Any
@@ -60,42 +63,6 @@ class AgentFinish(InternalMessage):
 
 
 MessageLike = Union[BaseMessage, InternalMessage]
-
-
-class MessageLog:
-    """A generalized message log for message like items."""
-
-    def __init__(self, messages: Sequence[MessageLike] = ()) -> None:
-        """Initialize the message log."""
-        self.messages = list(messages)
-
-    def add_messages(self, messages: Sequence[MessageLike]) -> None:
-        """Add messages to the message log."""
-        self.messages.extend(messages)
-
-    @overload
-    def __getitem__(self, index: int) -> MessageLike:
-        ...
-
-    @overload
-    def __getitem__(self, index: slice) -> MessageLog:
-        ...
-
-    def __getitem__(self, index: Union[int, slice]) -> Union[MessageLike, MessageLog]:
-        """Use to index into the chat template."""
-        if isinstance(index, slice):
-            start, stop, step = index.indices(len(self.messages))
-            messages = self.messages[start:stop:step]
-            return MessageLog(messages=messages)
-        else:
-            return self.messages[index]
-
-    def __bool__(self):
-        return bool(self.messages)
-
-    def __len__(self) -> int:
-        """Get the length of the chat template."""
-        return len(self.messages)
 
 
 class Agent:  # This is just approximate still, may end up being a runnable

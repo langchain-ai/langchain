@@ -19,7 +19,6 @@ from langchain.automaton.typedefs import (
     FunctionCall,
     FunctionResult,
     MessageLike,
-    MessageLog,
 )
 from langchain.prompts import SystemMessagePromptTemplate
 from langchain.schema import (
@@ -76,15 +75,10 @@ Format is <action>$BLOB</action> then Observation. \
 """
 
 
-def generate_memory(tools: Sequence[Tool]) -> MessageLog:
+def generate_memory(tools: Sequence[Tool]) -> List[MessageLike]:
     """Set up basic memory for agent."""
     tools_info = generate_tool_info(tools)
-
-    return MessageLog(
-        messages=[
-            SystemMessagePromptTemplate.from_template(TEMPLATE_).format(**tools_info)
-        ]
-    )
+    return [SystemMessagePromptTemplate.from_template(TEMPLATE_).format(**tools_info)]
 
 
 class ActionParser:
@@ -101,12 +95,29 @@ class ActionParser:
         match = self.pattern.search(text)
         if match:
             action_blob = match.group("action_blob")
-            data = ast.literal_eval(action_blob)
+            try:
+                data = ast.literal_eval(action_blob)
+            except SyntaxError:
+                return AdHocMessage(
+                    type="error", data=f"Invalid action blob {action_blob}"
+                )
             name = data["action"]
+
             if name == "Final Answer":  # Special cased "tool" for final answer
                 return AgentFinish(result=data["action_input"])
+            action_input = data["action_input"]
+            if isinstance(action_input, str) and not action_input:
+                named_arguments = {}
+            elif isinstance(action_input, dict):
+                named_arguments = action_input
+            else:
+                return AdHocMessage(
+                    type="error",
+                    data=f"Invalid action blob {action_blob}, action_input must be a dict",
+                )
+
             return FunctionCall(
-                name=data["action"], arguments=data["action_input"] or {}
+                name=data["action"], named_arguments=named_arguments or {}
             )
         else:
             return None
@@ -129,6 +140,14 @@ class ThinkActPromptGenerator(PromptValue):
         messages = self.messages
         for idx, message in enumerate(messages):
             if isinstance(message, AdHocMessage):
+                if message.type == "error":
+                    finalized.extend(
+                        [
+                            f"Error: Malformed <action> blob with error: {message.data}. Please re-write the action correctly."
+                            "\n",
+                        ]
+                    )
+                    continue
                 if message.type != "prime":
                     raise AssertionError()
                 component = message.data
