@@ -1,5 +1,5 @@
 """Test LLM utility functions."""
-from langchain.llms.utils import enforce_stop_tokens
+from langchain.llms.utils import enforce_stop_tokens, remove_stop_words
 
 
 def test_enforce_stop_tokens() -> None:
@@ -20,3 +20,10 @@ def test_enforce_stop_tokens_none() -> None:
     text = "foo bar baz"
     output = enforce_stop_tokens(text, ["moo"])
     assert output == "foo bar baz"
+
+
+def test_remove_stop_words() -> None:
+    """Test removing stop tokens from the text"""
+    text = "foo bar baz"
+    output = remove_stop_words(text=text, stop=["baz"])
+    assert "baz" not in output

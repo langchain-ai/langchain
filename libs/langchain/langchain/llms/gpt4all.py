@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.llms.utils import enforce_stop_tokens
+from langchain.llms.utils import enforce_stop_tokens, remove_stop_words
 from langchain.pydantic_v1 import Extra, Field, root_validator
 
 
@@ -201,6 +201,11 @@ class GPT4All(LLM):
             if text_callback:
                 text_callback(token)
             text += token
+            if self.stop is not None:
+                stop_generate = any([sw in text for sw in self.stop])
+                if stop_generate:
+                    text = remove_stop_words(text=text, stop=self.stop)
+                    break
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         return text
