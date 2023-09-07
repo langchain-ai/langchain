@@ -1,22 +1,20 @@
-"""Specialized open ai functions based agent."""
 from __future__ import annotations
 
 import json
-from typing import Sequence, List, Iterator
+from typing import List, Sequence
 
-from langchain.automaton.runnables import create_llm_program
 from langchain.automaton.typedefs import (
     AgentFinish,
     FunctionCall,
-    FunctionResult,
     MessageLike,
+    FunctionResult,
 )
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.schema import Generation
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage, FunctionMessage, AIMessage
+from langchain.schema import Generation, AIMessage, BaseMessage, FunctionMessage
 from langchain.schema.output_parser import BaseGenerationOutputParser
-from langchain.tools import BaseTool
+from langchain.automaton.chat_agent import ChatAgent
+from langchain.chat_models.openai import ChatOpenAI
+from langchain.tools import format_tool_to_openai_function, BaseTool
 
 
 class OpenAIFunctionsParser(BaseGenerationOutputParser):
@@ -57,33 +55,12 @@ def prompt_generator(input_messages: Sequence[MessageLike]) -> List[BaseMessage]
     return messages
 
 
-class OpenAIAgent:
-    def __init__(
-        self,
-        llm: BaseLanguageModel,
-        tools: Sequence[BaseTool],
-    ) -> None:
-        """Initialize the chat automaton."""
-        self.llm_program = create_llm_program(
-            llm,
-            prompt_generator=prompt_generator,
-            tools=tools,
-            parser=OpenAIFunctionsParser(),
-        )
-
-    def invoke(
-        self,
-        messages: Sequence[MessageLike],
-        *,
-        max_iterations: int = 100,
-    ) -> Iterator[MessageLike]:
-        """Run the agent."""
-        all_messages = list(messages)
-        for _ in range(max_iterations):
-            if all_messages and isinstance(all_messages[-1], AgentFinish):
-                break
-
-            new_messages = self.llm_program.invoke(all_messages)
-            yield from new_messages
-            all_messages.extend(new_messages)
-
+def create_openai_agent(llm: ChatOpenAI, tools: Sequence[BaseTool]) -> ChatAgent:
+    """Create an agent that uses OpenAI's API."""
+    openai_funcs = [format_tool_to_openai_function(tool_) for tool_ in tools]
+    return ChatAgent(
+        llm.bind(funcions=openai_funcs),
+        prompt_generator=prompt_generator,
+        tools=tools,
+        parser=OpenAIFunctionsParser(),
+    )

@@ -165,7 +165,10 @@ def create_tool_invoker(
 def create_llm_program(
     llm: BaseLanguageModel,
     prompt_generator: Union[
-        Callable[[T], Union[str, PromptValue, Sequence[BaseMessage]]], Runnable
+        Callable[
+            [Sequence[MessageLike]], Union[str, PromptValue, Sequence[BaseMessage]]
+        ],
+        Runnable,
     ],
     *,
     tools: Optional[Sequence[BaseTool]] = None,
@@ -177,7 +180,7 @@ def create_llm_program(
         None,
     ] = None,
     invoke_tools: bool = True,  # TODO(Eugene): Perhaps remove.
-) -> Runnable[T, List[MessageLike]]:
+) -> Runnable[Sequence[MessageLike], List[MessageLike]]:
     """Create a runnable that provides a generalized interface to an LLM with actions.
 
     Args:

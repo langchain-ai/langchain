@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Mapping, overload, Union
+from typing import Any, Optional, Sequence, Mapping, overload, Union, Iterator
 
 from langchain.load.serializable import Serializable
 from langchain.schema import (
@@ -97,7 +97,7 @@ class MessageLog:
         return len(self.messages)
 
 
-class Agent:  # This is just approximate still
-    def run(self, message_log: MessageLog) -> None:
+class Agent:  # This is just approximate still, may end up being a runnable
+    def run(self, messages: Sequence[MessageLike]) -> Iterator[MessageLike]:
         """Run the agent on a message."""
         raise NotImplementedError
