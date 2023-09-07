@@ -133,7 +133,6 @@ class CTranslate2(BaseLLM):
         """Run the LLM on the given prompt and input."""
 
         # build sampling parameters
-        # params = {**self._default_params, **kwargs, "stop": stop}
         params = {**self._default_params, **kwargs}
 
         # call the model
@@ -145,9 +144,11 @@ class CTranslate2(BaseLLM):
 
         results = self.client.generate_batch(tokenized_prompts, **params)
 
+        sequences = [result.sequences_ids[0] for result in results]
+        decoded_sequences = [self.tokenizer.decode(seq) for seq in sequences]
+
         generations = []
-        for sequence in results[0].sequences_ids:
-            text = self.tokenizer.decode(sequence)
+        for text in decoded_sequences:
             generations.append([Generation(text=text)])
 
         return LLMResult(generations=generations)
@@ -156,12 +157,3 @@ class CTranslate2(BaseLLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "ctranslate2"
-
-
-# TODO:
-# how to implement batch generation properly
-# test single and batch generation
-# is there a speed up
-# stop words
-# streaming
-# change these terrible defaults
