@@ -392,7 +392,7 @@ class MarkdownHeaderTextSplitter:
                     in_code_block = True
                 elif in_code_block:  # code block ends
                     in_code_block = False
-                
+
                 # code block in one row
                 if stripped_line.count("```") >= 2:
                     in_code_block = False
