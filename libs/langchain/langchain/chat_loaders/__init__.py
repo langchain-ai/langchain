@@ -8,7 +8,7 @@ WhatsApp. The loaded chat messages can be used for fine-tuning models.
 
 .. code-block::
 
-    BaseChatLoader --> <name>ChatLoader  # Examples: FolderFacebookMessengerChatLoader, IMessageChatLoader
+    BaseChatLoader --> <name>ChatLoader  # Examples: WhatsAppChatLoader, IMessageChatLoader
 
 **Main helpers:**
 
@@ -16,4 +16,4 @@ WhatsApp. The loaded chat messages can be used for fine-tuning models.
 
     ChatSession
 
-"""
+"""  # noqa: E501

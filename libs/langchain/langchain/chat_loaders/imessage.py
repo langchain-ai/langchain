@@ -21,6 +21,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
     grant full disk access for your terminal emulator in System Settings > Security
     and Privacy > Full Disk Access.
     """
+
     def __init__(self, path: Optional[Union[str, Path]] = None):
         """
         Initialize the IMessageChatLoader.
