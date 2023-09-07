@@ -8,7 +8,9 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 if TYPE_CHECKING:
-    from playwright.async_api import AsyncBrowser, AsyncPage, AsyncResponse
+    from playwright.async_api import Browser as AsyncBrowser
+    from playwright.async_api import Page as AsyncPage
+    from playwright.async_api import Response as AsyncResponse
     from playwright.sync_api import Browser, Page, Response
 
 
@@ -155,6 +157,9 @@ class PlaywrightURLLoader(BaseLoader):
                 try:
                     page = browser.new_page()
                     response = page.goto(url)
+                    if response is None:
+                        raise ValueError(f"page.goto() returned None for url {url}")
+
                     text = self.evaluator.evaluate(page, browser, response)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
@@ -185,6 +190,9 @@ class PlaywrightURLLoader(BaseLoader):
                 try:
                     page = await browser.new_page()
                     response = await page.goto(url)
+                    if response is None:
+                        raise ValueError(f"page.goto() returned None for url {url}")
+
                     text = await self.evaluator.evaluate_async(page, browser, response)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))

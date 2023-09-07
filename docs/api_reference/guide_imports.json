@@ -317,7 +317,7 @@
         "Chatbots": "https://python.langchain.com/docs/use_cases/chatbots",
         "Summarization": "https://python.langchain.com/docs/use_cases/summarization",
         "Extraction": "https://python.langchain.com/docs/use_cases/extraction",
-        "SQL": "https://python.langchain.com/docs/use_cases/sql",
+        "SQL": "https://python.langchain.com/docs/use_cases/qa_structured/sql",
         "Tagging": "https://python.langchain.com/docs/use_cases/tagging",
         "Code Understanding": "https://python.langchain.com/docs/use_cases/code_understanding",
         "AutoGPT": "https://python.langchain.com/docs/use_cases/autonomous_agents/autogpt",
@@ -400,7 +400,7 @@
         "Summarization": "https://python.langchain.com/docs/use_cases/summarization",
         "Extraction": "https://python.langchain.com/docs/use_cases/extraction",
         "Interacting with APIs": "https://python.langchain.com/docs/use_cases/apis",
-        "SQL": "https://python.langchain.com/docs/use_cases/sql",
+        "SQL": "https://python.langchain.com/docs/use_cases/qa_structured/sql",
         "QA over Documents": "https://python.langchain.com/docs/use_cases/question_answering/index",
         "Retrieve from vector stores directly": "https://python.langchain.com/docs/use_cases/question_answering/how_to/vector_db_text_generation",
         "Improve document indexing with HyDE": "https://python.langchain.com/docs/use_cases/question_answering/how_to/hyde",
@@ -641,7 +641,7 @@
         "Chatbots": "https://python.langchain.com/docs/use_cases/chatbots",
         "Extraction": "https://python.langchain.com/docs/use_cases/extraction",
         "Interacting with APIs": "https://python.langchain.com/docs/use_cases/apis",
-        "SQL": "https://python.langchain.com/docs/use_cases/sql",
+        "SQL": "https://python.langchain.com/docs/use_cases/qa_structured/sql",
         "HuggingGPT": "https://python.langchain.com/docs/use_cases/autonomous_agents/hugginggpt",
         "Perform context-aware text splitting": "https://python.langchain.com/docs/use_cases/question_answering/how_to/document-context-aware-QA",
         "Retrieve from vector stores directly": "https://python.langchain.com/docs/use_cases/question_answering/how_to/vector_db_text_generation",
@@ -1009,7 +1009,7 @@
         "LangSmith Walkthrough": "https://python.langchain.com/docs/guides/langsmith/walkthrough",
         "Comparing Chain Outputs": "https://python.langchain.com/docs/guides/evaluation/examples/comparisons",
         "Agent Trajectory": "https://python.langchain.com/docs/guides/evaluation/trajectory/trajectory_eval",
-        "SQL": "https://python.langchain.com/docs/use_cases/sql",
+        "SQL": "https://python.langchain.com/docs/use_cases/qa_structured/sql",
         "Multi-modal outputs: Image & Text": "https://python.langchain.com/docs/use_cases/multi_modal/image_agent",
         "Agent Debates with Tools": "https://python.langchain.com/docs/use_cases/agent_simulations/two_agent_debate_tools",
         "Multiple callback handlers": "https://python.langchain.com/docs/modules/callbacks/multiple_callbacks",
@@ -1268,7 +1268,7 @@
         "SQL Database Agent": "https://python.langchain.com/docs/integrations/toolkits/sql_database",
         "JSON Agent": "https://python.langchain.com/docs/integrations/toolkits/json",
         "NIBittensorLLM": "https://python.langchain.com/docs/integrations/llms/bittensor",
-        "SQL": "https://python.langchain.com/docs/use_cases/sql",
+        "SQL": "https://python.langchain.com/docs/use_cases/qa_structured/sql",
         "BabyAGI with Tools": "https://python.langchain.com/docs/use_cases/agents/baby_agi_with_agent",
         "Conversational Retrieval Agent": "https://python.langchain.com/docs/use_cases/question_answering/how_to/conversational_retrieval_agents",
         "Plug-and-Plai": "https://python.langchain.com/docs/use_cases/agents/custom_agent_with_plugin_retrieval_using_plugnplai",
@@ -1832,12 +1832,12 @@
     "create_sql_agent": {
         "CnosDB": "https://python.langchain.com/docs/integrations/providers/cnosdb",
         "SQL Database Agent": "https://python.langchain.com/docs/integrations/toolkits/sql_database",
-        "SQL": "https://python.langchain.com/docs/use_cases/sql"
+        "SQL": "https://python.langchain.com/docs/use_cases/qa_structured/sql"
     },
     "SQLDatabaseToolkit": {
         "CnosDB": "https://python.langchain.com/docs/integrations/providers/cnosdb",
         "SQL Database Agent": "https://python.langchain.com/docs/integrations/toolkits/sql_database",
-        "SQL": "https://python.langchain.com/docs/use_cases/sql",
+        "SQL": "https://python.langchain.com/docs/use_cases/qa_structured/sql",
         "Use ToolKits with OpenAI Functions": "https://python.langchain.com/docs/modules/agents/how_to/use_toolkits_with_openai_functions"
     },
     "SageMakerCallbackHandler": {
@@ -1899,7 +1899,7 @@
         "Rebuff": "https://python.langchain.com/docs/integrations/providers/rebuff",
         "SQL Database Agent": "https://python.langchain.com/docs/integrations/toolkits/sql_database",
         "Cookbook": "https://python.langchain.com/docs/guides/expression_language/cookbook",
-        "SQL": "https://python.langchain.com/docs/use_cases/sql",
+        "SQL": "https://python.langchain.com/docs/use_cases/qa_structured/sql",
         "Multiple Retrieval Sources": "https://python.langchain.com/docs/use_cases/question_answering/how_to/multiple_retrieval"
     },
     "Weaviate": {
@@ -3035,11 +3035,11 @@
         "Interacting with APIs": "https://python.langchain.com/docs/use_cases/apis"
     },
     "create_sql_query_chain": {
-        "SQL": "https://python.langchain.com/docs/use_cases/sql",
+        "SQL": "https://python.langchain.com/docs/use_cases/qa_structured/sql",
         "Multiple Retrieval Sources": "https://python.langchain.com/docs/use_cases/question_answering/how_to/multiple_retrieval"
     },
     "ElasticsearchDatabaseChain": {
-        "SQL": "https://python.langchain.com/docs/use_cases/sql"
+        "SQL": "https://python.langchain.com/docs/use_cases/qa_structured/sql"
     },
     "FileChatMessageHistory": {
         "AutoGPT": "https://python.langchain.com/docs/use_cases/autonomous_agents/autogpt"
