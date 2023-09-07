@@ -102,7 +102,14 @@ def _get_user_id(metadata: Any) -> Any:
 
 
 def _parse_lc_message(message: BaseMessage) -> Dict[str, Any]:
-    return {"text": message.content, "role": _parse_lc_role(message.type)}
+    parsed = {"text": message.content, "role": _parse_lc_role(message.type)}
+
+    function_call = (message.additional_kwargs or {}).get("function_call")
+
+    if function_call is not None:
+        parsed["functionCall"] = function_call
+
+    return parsed
 
 
 def _parse_lc_messages(messages: List[BaseMessage]) -> List[Dict[str, Any]]:
@@ -138,13 +145,16 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
     __api_url: str
     __app_id: str
+    __verbose: bool
 
     def __init__(
-        self, app_id: Union[str, None] = None, api_url: Union[str, None] = None
+        self, app_id: Union[str, None] = None, api_url: Union[str, None] = None, verbose: bool = False
     ) -> None:
         super().__init__()
 
         self.__api_url = api_url or os.getenv("LLMONITOR_API_URL") or DEFAULT_API_URL
+
+        self.__verbose = verbose or os.getenv("LLMONITOR_VERBOSE")
 
         _app_id = app_id or os.getenv("LLMONITOR_APP_ID")
         if _app_id is None:
@@ -165,7 +175,12 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
     def __send_event(self, event: Dict[str, Any]) -> None:
         headers = {"Content-Type": "application/json"}
+
         event = {**event, "app": self.__app_id, "timestamp": str(datetime.utcnow())}
+
+        if self.__verbose:
+            print('llmonitor_callback', event)
+
         data = {"events": event}
         requests.post(headers=headers, url=f"{self.__api_url}/api/report", json=data)
 
@@ -229,15 +244,17 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     ) -> None:
         token_usage = (response.llm_output or {}).get("token_usage", {})
 
+        parsed_output = _parse_lc_messages(map(lambda o: o.message, response.generations[0]))
+
         event = {
             "event": "end",
             "type": "llm",
             "runId": str(run_id),
             "parent_run_id": str(parent_run_id) if parent_run_id else None,
-            "output": {"text": response.generations[0][0].text, "role": "ai"},
+            "output": parsed_output,
             "tokensUsage": {
-                "prompt": token_usage.get("prompt_tokens", 0),
-                "completion": token_usage.get("completion_tokens", 0),
+                "prompt": token_usage.get("prompt_tokens"),
+                "completion": token_usage.get("completion_tokens"),
             },
         }
         self.__send_event(event)
