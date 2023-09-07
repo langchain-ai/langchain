@@ -39,7 +39,6 @@ from langchain.vectorstores import (
 
 def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
-    vectorstore_cls = vectorstore.__class__
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         Pinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
@@ -58,11 +57,11 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         return MyScaleTranslator(metadata_key=vectorstore.metadata_column)
     elif isinstance(vectorstore, Redis):
         return RedisTranslator.from_vectorstore(vectorstore)
-    elif vectorstore_cls in BUILTIN_TRANSLATORS:
-        return BUILTIN_TRANSLATORS[vectorstore_cls]()
+    elif vectorstore.__class__ in BUILTIN_TRANSLATORS:
+        return BUILTIN_TRANSLATORS[vectorstore.__class__]()
     else:
         raise ValueError(
-            f"Self query retriever with Vector Store type {vectorstore_cls}"
+            f"Self query retriever with Vector Store type {vectorstore.__class__}"
             f" not supported."
         )
 
