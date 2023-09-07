@@ -15,6 +15,7 @@ class SupabaseVectorTranslator(Visitor):
 
     allowed_operators = [Operator.AND, Operator.OR]
     """Subset of allowed logical operators."""
+
     allowed_comparators = [
         Comparator.EQ,
         Comparator.NE,
@@ -65,7 +66,7 @@ class SupabaseVectorTranslator(Visitor):
 
     def visit_operation(self, operation: Operation) -> str:
         args = [arg.accept(self) for arg in operation.arguments]
-        return f"{operation.operator}({','.join(args)})"
+        return f"{operation.operator.value}({','.join(args)})"
 
     def visit_comparison(self, comparison: Comparison) -> str:
         if isinstance(comparison.value, list):
