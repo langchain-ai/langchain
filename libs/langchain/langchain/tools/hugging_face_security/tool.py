@@ -14,11 +14,11 @@ class PromptInjectionModelOutput(str, Enum):
     INJECTION = "INJECTION"
 
 
-class HuggingFaceInjectionSecurer(BaseTool):
+class HuggingFaceInjectionIdentifier(BaseTool):
     """Tool that uses deberta-v3-base-injection model
     to identify prompt injection attacks."""
 
-    name: str = "hugging_face_injection_securer"
+    name: str = "hugging_face_injection_identifier"
     description: str = (
         "A wrapper around HuggingFace Prompt Injection security model. "
         "Useful for when you need to ensure that prompt is free of injection attacks. "

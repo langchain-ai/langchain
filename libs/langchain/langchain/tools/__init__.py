@@ -64,7 +64,7 @@ from langchain.tools.google_places.tool import GooglePlacesTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
 from langchain.tools.graphql.tool import BaseGraphQLTool
-from langchain.tools.hugging_face_security.tool import HuggingFaceInjectionSecurer
+from langchain.tools.hugging_face_security.tool import HuggingFaceInjectionIdentifier
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.ifttt import IFTTTWebhook
 from langchain.tools.interaction.tool import StdInInquireTool
@@ -182,7 +182,7 @@ __all__ = [
     "GoogleSearchRun",
     "GoogleSerperResults",
     "GoogleSerperRun",
-    "HuggingFaceInjectionSecurer",
+    "HuggingFaceInjectionIdentifier",
     "HumanInputRun",
     "IFTTTWebhook",
     "InfoPowerBITool",

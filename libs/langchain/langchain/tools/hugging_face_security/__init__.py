@@ -1,5 +1,5 @@
 """HuggingFace Security toolkit."""
 
-from langchain.tools.hugging_face_security.tool import HuggingFaceInjectionSecurer
+from langchain.tools.hugging_face_security.tool import HuggingFaceInjectionIdentifier
 
-__all__ = ["HuggingFaceInjectionSecurer"]
+__all__ = ["HuggingFaceInjectionIdentifier"]
