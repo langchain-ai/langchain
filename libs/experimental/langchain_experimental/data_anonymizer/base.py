@@ -15,3 +15,17 @@ class AnonymizerBase(ABC):
     @abstractmethod
     def _anonymize(self, text: str) -> str:
         """Abstract method to anonymize text"""
+
+
+class ReversibleAnonymizerBase(AnonymizerBase):
+    """
+    Base abstract class for reversible anonymizers.
+    """
+
+    def deanonymize(self, text: str) -> str:
+        """Deanonymize text"""
+        return self._deanonymize(text)
+
+    @abstractmethod
+    def _deanonymize(self, text: str) -> str:
+        """Abstract method to deanonymize text"""
