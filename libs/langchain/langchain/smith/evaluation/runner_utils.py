@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import inspect
 import logging
 import warnings
@@ -40,7 +41,6 @@ from langchain.smith.evaluation import name_generation, progress
 
 if TYPE_CHECKING:
     import pandas as pd
-
 
 logger = logging.getLogger(__name__)
 
@@ -273,14 +273,6 @@ def _get_messages(inputs: Dict[str, Any]) -> List[BaseMessage]:
             f"Chat Run expects single List[dict] or List[List[dict]] 'messages'"
             f" input. Got {len(raw_messages)} messages from inputs {inputs}"
         )
-
-
-def _get_project_name(
-    project_name: Optional[str],
-) -> str:
-    if project_name is not None:
-        return project_name
-    return name_generation.random_name("test")
 
 
 ## Shared data validation utilities
@@ -673,10 +665,9 @@ async def _arun_chain(
 
 async def _arun_llm_or_chain(
     example: Example,
-    llm_or_chain_factory: MCF,
+    config: RunnableConfig,
     *,
-    tags: Optional[List[str]] = None,
-    callbacks: Callbacks = None,
+    llm_or_chain_factory: MCF,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[dict, str, LLMResult, ChatResult]:
     """Asynchronously run the Chain or language model.
@@ -700,8 +691,8 @@ async def _arun_llm_or_chain(
             output: Any = await _arun_llm(
                 llm_or_chain_factory,
                 example.inputs,
-                tags=tags,
-                callbacks=callbacks,
+                tags=config["tags"],
+                callbacks=config["callbacks"],
                 input_mapper=input_mapper,
             )
         else:
@@ -709,19 +700,18 @@ async def _arun_llm_or_chain(
             output = await _arun_chain(
                 chain,
                 example.inputs,
-                tags=tags,
-                callbacks=callbacks,
+                tags=config["tags"],
+                callbacks=config["callbacks"],
                 input_mapper=input_mapper,
             )
         result = output
     except Exception as e:
-        error_type = type(e).__name__
         logger.warning(
             f"{chain_or_llm} failed for example {example.id} "
             f"with inputs {example.inputs}"
-            f"\nError Type: {error_type}, Message: {e}"
+            f"\n{repr(e)}"
         )
-        result = {"Error": str(e)}
+        result = {"Error": repr(e)}
     return result
 
 
@@ -803,10 +793,9 @@ def _run_chain(
 
 def _run_llm_or_chain(
     example: Example,
-    llm_or_chain_factory: MCF,
+    config: RunnableConfig,
     *,
-    tags: Optional[List[str]] = None,
-    callbacks: Callbacks = None,
+    llm_or_chain_factory: MCF,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[dict, str, LLMResult, ChatResult]:
     """
@@ -831,8 +820,8 @@ def _run_llm_or_chain(
             output: Any = _run_llm(
                 llm_or_chain_factory,
                 example.inputs,
-                callbacks,
-                tags=tags,
+                config["callbacks"],
+                tags=config["tags"],
                 input_mapper=input_mapper,
             )
         else:
@@ -840,8 +829,8 @@ def _run_llm_or_chain(
             output = _run_chain(
                 chain,
                 example.inputs,
-                callbacks,
-                tags=tags,
+                config["callbacks"],
+                tags=config["tags"],
                 input_mapper=input_mapper,
             )
         result = output
@@ -852,7 +841,7 @@ def _run_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\nError Type: {error_type}, Message: {e}"
         )
-        result = {"Error": str(e)}
+        result = {"Error": repr(e)}
     return result
 
 
@@ -863,10 +852,9 @@ def _prepare_eval_run(
     client: Client,
     dataset_name: str,
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
-    project_name: Optional[str],
+    project_name: str,
 ) -> Tuple[MCF, str, Dataset, List[Example]]:
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
-    project_name = _get_project_name(project_name)
     try:
         project = client.create_project(project_name)
     except ValueError as e:
@@ -895,15 +883,16 @@ def _prepare_run_on_dataset(
     input_mapper: Optional[Callable[[Dict], Any]] = None,
     concurrency_level: int = 5,
 ) -> Tuple[MCF, str, List[Example], List[RunnableConfig]]:
+    project_name = project_name or name_generation.random_name()
     wrapped_model, project_name, dataset, examples = _prepare_eval_run(
         client, dataset_name, llm_or_chain_factory, project_name
     )
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
-    project_name = _get_project_name(project_name)
     run_evaluators = _setup_evaluation(
         wrapped_model, examples, evaluation, dataset.data_type
     )
     _validate_example_inputs(examples[0], wrapped_model, input_mapper)
+    progress_bar = progress.ProgressBarCallback(len(examples))
     configs = [
         RunnableConfig(
             callbacks=[
@@ -919,6 +908,7 @@ def _prepare_run_on_dataset(
                     max_workers=0,
                     example_id=example.id,
                 ),
+                progress_bar,
             ],
             tags=tags or [],
             max_concurrency=concurrency_level,
@@ -939,7 +929,6 @@ def _collect_test_results(
     for c in configs:
         for callback in cast(list, c["callbacks"]):
             if isinstance(callback, EvaluatorCallbackHandler):
-                callback.close()
                 all_feedback.update(callback.logged_feedback)
     results = {}
     for example, output in zip(examples, batch_results):
@@ -1094,24 +1083,18 @@ async def arun_on_dataset(
         input_mapper,
         concurrency_level,
     )
-    progress_bar = progress.ProgressBar(len(examples))
-
-    async def _async_executor(
-        example: Example, config: RunnableConfig
-    ) -> Union[dict, str, LLMResult, ChatResult]:
-        res = await _arun_llm_or_chain(
-            example,
-            wrapped_model,
-            tags=tags,
-            callbacks=config["callbacks"],
-            input_mapper=input_mapper,
-        )
-        if verbose:
-            progress_bar.increment()
-        return res
 
     batch_results = await runnable_utils.gather_with_concurrency(
-        configs[0].get("max_concurrency"), *map(_async_executor, examples, configs)
+        configs[0].get("max_concurrency"),
+        *map(
+            functools.partial(
+                _arun_llm_or_chain,
+                llm_or_chain_factory=wrapped_model,
+                input_mapper=input_mapper,
+            ),
+            examples,
+            configs,
+        ),
     )
     results = _collect_test_results(examples, batch_results, configs, project_name)
     if verbose:
@@ -1120,7 +1103,7 @@ async def arun_on_dataset(
             print("\n Eval quantiles:")
             print(agg_feedback)
         except Exception as e:
-            logger.debug(f"Failed to print aggregate feedback: {e}")
+            logger.debug(f"Failed to print aggregate feedback: {repr(e)}")
     return results
 
 
@@ -1262,24 +1245,18 @@ def run_on_dataset(
         input_mapper,
         concurrency_level,
     )
-    progress_bar = progress.ProgressBar(len(examples))
-
-    def _executor(
-        example: Example, config: RunnableConfig
-    ) -> Union[dict, str, LLMResult, ChatResult]:
-        res = _run_llm_or_chain(
-            example,
-            wrapped_model,
-            tags=tags,
-            callbacks=config["callbacks"],
-            input_mapper=input_mapper,
-        )
-        if verbose:
-            progress_bar.increment()
-        return res
-
     with runnable_config.get_executor_for_config(configs[0]) as executor:
-        batch_results = list(executor.map(_executor, examples, configs))
+        batch_results = list(
+            executor.map(
+                functools.partial(
+                    _run_llm_or_chain,
+                    llm_or_chain_factory=wrapped_model,
+                    input_mapper=input_mapper,
+                ),
+                examples,
+                configs,
+            )
+        )
 
     results = _collect_test_results(examples, batch_results, configs, project_name)
     if verbose:
@@ -1288,5 +1265,5 @@ def run_on_dataset(
             print("\n Eval quantiles:")
             print(agg_feedback)
         except Exception as e:
-            logger.debug(f"Failed to print aggregate feedback: {e}")
+            logger.debug(f"Failed to print aggregate feedback: {repr(e)}")
     return results

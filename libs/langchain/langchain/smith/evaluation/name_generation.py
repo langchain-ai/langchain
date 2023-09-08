@@ -720,7 +720,7 @@ nouns = [
 ]
 
 
-def random_name(prefix: str = "pt") -> str:
+def random_name(prefix: str = "test") -> str:
     """Generate a random name."""
     adjective = random.choice(adjectives)
     noun = random.choice(nouns)
