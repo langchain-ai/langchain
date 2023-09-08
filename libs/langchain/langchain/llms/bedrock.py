@@ -1,11 +1,15 @@
 import json
 from abc import ABC
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Iterator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.schema.output import GenerationChunk
+
+
+BEDROCK_PROVIDERS_WITH_STREAMING = ["anthropic"]
 
 
 class LLMInputOutputAdapter:
@@ -14,6 +18,11 @@ class LLMInputOutputAdapter:
 
     It also provides helper function to extract
     the generated text from the model response."""
+
+    provder_to_output_key_map = {
+        "anthropic": "completion",
+        "amazon": "outputText",
+    }
 
     @classmethod
     def prepare_input(
@@ -30,7 +39,7 @@ class LLMInputOutputAdapter:
             input_body["inputText"] = prompt
 
         if provider == "anthropic" and "max_tokens_to_sample" not in input_body:
-            input_body["max_tokens_to_sample"] = 50
+            input_body["max_tokens_to_sample"] = 256
 
         return input_body
 
@@ -46,6 +55,30 @@ class LLMInputOutputAdapter:
             return response_body.get("completions")[0].get("data").get("text")
         else:
             return response_body.get("results")[0].get("outputText")
+
+    @classmethod
+    def prepare_output_stream(
+        cls, provider: str, response: Any, stop: Optional[List[str]] = None
+    ) -> Iterator[GenerationChunk]:
+        stream = response.get("body")
+
+        if not stream:
+            return
+
+        if provider not in cls.provder_to_output_key_map:
+            raise ValueError(
+                f"Unknown streaming response output key for provider: {provider}"
+            )
+
+        for event in stream:
+            chunk = event.get("chunk")
+            if chunk:
+                chunk_obj = json.loads(chunk.get("bytes").decode())
+
+                # chunk obj format varies with provider
+                yield GenerationChunk(
+                    text=chunk_obj[cls.provder_to_output_key_map[provider]]
+                )
 
 
 class BedrockBase(BaseModel, ABC):
@@ -73,6 +106,9 @@ class BedrockBase(BaseModel, ABC):
 
     endpoint_url: Optional[str] = None
     """Needed if you don't want to default to us-east-1 endpoint"""
+
+    streaming: bool = False
+    """Whether to stream the results."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -154,6 +190,33 @@ class BedrockBase(BaseModel, ABC):
 
         return text
 
+    def _prepare_input_and_invoke_stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        _model_kwargs = self.model_kwargs or {}
+        provider = self.model_id.split(".")[0]
+        params = {**_model_kwargs, **kwargs}
+        input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
+        body = json.dumps(input_body)
+
+        response = self.client.invoke_model_with_response_stream(
+            body=body,
+            modelId=self.model_id,
+            accept="application/json",
+            contentType="application/json",
+        )
+
+        for chunk in LLMInputOutputAdapter.prepare_output_stream(
+            provider, response, stop
+        ):
+            yield chunk
+            if run_manager is not None:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+
 
 class Bedrock(LLM, BedrockBase):
     """Bedrock models.
@@ -192,6 +255,17 @@ class Bedrock(LLM, BedrockBase):
 
         extra = Extra.forbid
 
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        return self._prepare_input_and_invoke_stream(
+            prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+        )
+
     def _call(
         self,
         prompt: str,
@@ -211,9 +285,15 @@ class Bedrock(LLM, BedrockBase):
         Example:
             .. code-block:: python
 
-                response = se("Tell me a joke.")
+                response = llm("Tell me a joke.")
         """
 
-        text = self._prepare_input_and_invoke(prompt=prompt, stop=stop, **kwargs)
+        if self.streaming:
+            completion = ""
+            for chunk in self._stream(
+                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                completion += chunk.text
+            return completion
 
-        return text
+        return self._prepare_input_and_invoke(prompt=prompt, stop=stop, **kwargs)
