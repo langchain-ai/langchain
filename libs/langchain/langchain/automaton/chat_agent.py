@@ -1,7 +1,7 @@
 """Generalized chat agent, works with any chat model."""
 from __future__ import annotations
 
-from typing import Callable, Iterator, Optional, Sequence, TypeVar, Union
+from typing import Callable, Iterator, Optional, Sequence, TypeVar, Union, List
 
 from langchain.automaton.runnables import create_llm_program
 from langchain.automaton.typedefs import (
@@ -32,7 +32,10 @@ class ChatAgent(Agent):
         self,
         llm: BaseLanguageModel[LanguageModelInput, LanguageModelOutput],
         prompt_generator: Union[
-            Callable[[T], Union[str, PromptValue, Sequence[BaseMessage]]], Runnable
+            Callable[
+                [Sequence[MessageLike]], Union[str, PromptValue, List[BaseMessage]]
+            ],
+            Runnable,
         ],
         *,
         tools: Optional[Sequence[BaseTool]] = None,
@@ -46,7 +49,9 @@ class ChatAgent(Agent):
     ) -> None:
         """Initialize the chat agent."""
         invoke_tools = bool(tools)
-        self.llm_program = create_llm_program(
+        self.llm_program: Runnable[
+            Sequence[MessageLike], List[MessageLike]
+        ] = create_llm_program(
             llm,
             prompt_generator=prompt_generator,
             tools=tools,
@@ -72,4 +77,3 @@ class ChatAgent(Agent):
 
             yield from new_messages
             all_messages.extend(new_messages)
-

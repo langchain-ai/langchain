@@ -1,7 +1,15 @@
 """Generalized chat agent, works with any chat model."""
 from __future__ import annotations
 
-from typing import Callable, Iterator, Optional, Sequence, TypeVar, Union, List
+from typing import (
+    Callable,
+    Iterator,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    List,
+)
 
 from langchain.automaton.runnables import create_llm_program, create_retriever
 from langchain.automaton.typedefs import (
@@ -65,7 +73,10 @@ class RagAgent(Agent):
         self,
         llm: BaseLanguageModel[LanguageModelInput, LanguageModelOutput],
         prompt_generator: Union[
-            Callable[[T], Union[str, PromptValue, Sequence[BaseMessage]]], Runnable
+            Callable[
+                [Sequence[MessageLike]], Union[str, PromptValue, List[BaseMessage]]
+            ],
+            Runnable,
         ],
         *,
         tools: Optional[Sequence[BaseTool]] = None,
@@ -116,3 +127,11 @@ class RagAgent(Agent):
 
             yield from new_messages
             all_messages.extend(new_messages)
+
+
+class Automaton:
+    def __init__(self):
+        pass
+
+    def get_next_state(self):
+        pass
