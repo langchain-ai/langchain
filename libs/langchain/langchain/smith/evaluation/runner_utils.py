@@ -865,6 +865,7 @@ def _prepare_run_on_dataset(
     evaluation: Optional[smith_eval.RunEvalConfig] = None,
     tags: Optional[List[str]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
+    concurrency_level: int = 5,
 ) -> Tuple[MCF, str, List[Example], List[RunnableConfig]]:
     wrapped_model, project_name, dataset, examples = _prepare_eval_run(
         client, dataset_name, llm_or_chain_factory, project_name
@@ -892,6 +893,7 @@ def _prepare_run_on_dataset(
                 ),
             ],
             tags=tags or [],
+            concurrency_level=concurrency_level,
         )
         for example in examples
     ]
@@ -1058,6 +1060,7 @@ async def arun_on_dataset(
         evaluation,
         tags,
         input_mapper,
+        concurrency_level,
     )
     progress_bar = progress.ProgressBar(len(examples))
 
@@ -1221,6 +1224,7 @@ def run_on_dataset(
         evaluation,
         tags,
         input_mapper,
+        concurrency_level,
     )
     progress_bar = progress.ProgressBar(len(examples))
 
