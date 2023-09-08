@@ -66,7 +66,7 @@ class BasePDFLoader(BaseLoader, ABC):
     to a temporary file, use it, then clean up the temporary file after completion
     """
 
-    def __init__(self, file_path: str, file_headers: Optional[Dict] = None):
+    def __init__(self, file_path: str, *, headers: Optional[Dict] = None):
         """Initialize with a file path."""
         self.file_path = file_path
         self.web_path = None
