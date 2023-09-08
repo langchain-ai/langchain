@@ -100,6 +100,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         length_function: Callable[[str], int] = len,
         keep_separator: bool = False,
         add_start_index: bool = False,
+        strip_whitespace: bool = True,
     ) -> None:
         """Create a new TextSplitter.
 
@@ -109,6 +110,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             length_function: Function that measures the length of given chunks
             keep_separator: Whether to keep the separator in the chunks
             add_start_index: If `True`, includes chunk's start index in metadata
+            strip_whitespace: If `True`, strips whitespace from the start and end of
+                              every document
         """
         if chunk_overlap > chunk_size:
             raise ValueError(
@@ -120,6 +123,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._length_function = length_function
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
+        self._strip_whitespace = strip_whitespace
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
@@ -152,7 +156,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
     def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
         text = separator.join(docs)
-        text = text.strip()
+        if self._strip_whitespace:
+            text = text.strip()
         if text == "":
             return None
         else:

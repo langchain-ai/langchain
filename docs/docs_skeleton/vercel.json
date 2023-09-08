@@ -1077,6 +1077,10 @@
       "destination": "/docs/integrations/tools/zapier"
     },
     {
+      "source": "/docs/integrations/tools/sqlite",
+      "destination": "/docs/use_cases/sql/sqlite"
+    },
+    {
       "source": "/en/latest/modules/callbacks/filecallbackhandler.html",
       "destination": "/docs/modules/callbacks/how_to/filecallbackhandler"
     },
@@ -2217,6 +2221,10 @@
       "destination": "/docs/integrations/text_embedding/tensorflowhub"
     },
     {
+      "source": "/docs/integrations/text_embedding/Awa",
+      "destination": "/docs/integrations/text_embedding/awadb"
+    },
+    {
       "source": "/en/latest/modules/indexes/vectorstores/examples/analyticdb.html",
       "destination": "/docs/integrations/vectorstores/analyticdb"
     },
@@ -3178,7 +3186,11 @@
     },
     {
       "source": "/en/latest/use_cases/tabular.html",
-      "destination": "/docs/use_cases/tabular"
+      "destination": "/docs/use_cases/qa_structured"
+    },
+    {
+      "source": "/docs/use_cases/sql(/?)",
+      "destination": "/docs/use_cases/qa_structured/sql"
     },
     {
       "source": "/en/latest/youtube.html",
@@ -3370,7 +3382,7 @@
     },
     {
       "source": "/docs/modules/chains/popular/sqlite",
-      "destination": "/docs/use_cases/tabular/sqlite"
+      "destination": "/docs/use_cases/qa_structured/sql"
     },
     {
       "source": "/docs/modules/chains/popular/openai_functions",
@@ -3582,7 +3594,7 @@
     },
     {
       "source": "/docs/modules/chains/additional/elasticsearch_database",
-      "destination": "/docs/use_cases/tabular/elasticsearch_database"
+      "destination": "/docs/use_cases/qa_structured/integrations/elasticsearch"
     },
     {
       "source": "/docs/modules/chains/additional/tagging",
