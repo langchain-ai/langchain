@@ -199,18 +199,31 @@ class SupabaseVectorStore(VectorStore):
         )
 
     def match_args(
-        self, query: List[float], k: int, filter: Optional[Dict[str, Any]]
+        self, query: List[float], filter: Optional[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        ret = dict(query_embedding=query, match_count=k)
+        ret: Dict[str, Any] = dict(query_embedding=query)
         if filter:
             ret["filter"] = filter
         return ret
 
     def similarity_search_by_vector_with_relevance_scores(
-        self, query: List[float], k: int, filter: Optional[Dict[str, Any]] = None
+        self,
+        query: List[float],
+        k: int,
+        filter: Optional[Dict[str, Any]] = None,
+        postgrest_filter: Optional[str] = None,
     ) -> List[Tuple[Document, float]]:
-        match_documents_params = self.match_args(query, k, filter)
-        res = self._client.rpc(self.query_name, match_documents_params).execute()
+        match_documents_params = self.match_args(query, filter)
+        query_builder = self._client.rpc(self.query_name, match_documents_params)
+
+        if postgrest_filter:
+            query_builder.params = query_builder.params.set(
+                "and", f"({postgrest_filter})"
+            )
+
+        query_builder.params = query_builder.params.set("limit", k)
+
+        res = query_builder.execute()
 
         match_result = [
             (
@@ -227,10 +240,23 @@ class SupabaseVectorStore(VectorStore):
         return match_result
 
     def similarity_search_by_vector_returning_embeddings(
-        self, query: List[float], k: int, filter: Optional[Dict[str, Any]] = None
+        self,
+        query: List[float],
+        k: int,
+        filter: Optional[Dict[str, Any]] = None,
+        postgrest_filter: Optional[str] = None,
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
-        match_documents_params = self.match_args(query, k, filter)
-        res = self._client.rpc(self.query_name, match_documents_params).execute()
+        match_documents_params = self.match_args(query, filter)
+        query_builder = self._client.rpc(self.query_name, match_documents_params)
+
+        if postgrest_filter:
+            query_builder.params = query_builder.params.set(
+                "and", f"({postgrest_filter})"
+            )
+
+        query_builder.params = query_builder.params.set("limit", k)
+
+        res = query_builder.execute()
 
         match_result = [
             (
