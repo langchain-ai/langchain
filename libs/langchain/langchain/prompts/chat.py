@@ -229,7 +229,7 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 
 class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
-    """Human message prompt template. This is a message that is sent to the user."""
+    """Human message prompt template. This is a message that is sent from the user to the AI."""
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -245,7 +245,7 @@ class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 
 class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
-    """AI message prompt template. This is a message that is not sent to the user."""
+    """AI message prompt template. This is a message that is sent to the user from the AI."""
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
