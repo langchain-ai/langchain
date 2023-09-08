@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class TelegramChatLoader(chat_loaders.BaseChatLoader):
-    """A loading utility for converting telegram conversations
-    to LangChain chat messages.
+    """Load `telegram` conversations to LangChain chat messages.
 
     To export, use the Telegram Desktop app from
     https://desktop.telegram.org/, select a conversation, click the three dots
