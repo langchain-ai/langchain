@@ -112,7 +112,7 @@ def _parse_lc_message(message: BaseMessage) -> Dict[str, Any]:
     return parsed
 
 
-def _parse_lc_messages(messages: List[BaseMessage]) -> List[Dict[str, Any]]:
+def _parse_lc_messages(messages: Union[List[BaseMessage], Any]) -> List[Dict[str, Any]]:
     return [_parse_lc_message(message) for message in messages]
 
 
@@ -148,13 +148,16 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     __verbose: bool
 
     def __init__(
-        self, app_id: Union[str, None] = None, api_url: Union[str, None] = None, verbose: bool = False
+        self,
+        app_id: Union[str, None] = None,
+        api_url: Union[str, None] = None,
+        verbose: bool = False,
     ) -> None:
         super().__init__()
 
         self.__api_url = api_url or os.getenv("LLMONITOR_API_URL") or DEFAULT_API_URL
 
-        self.__verbose = verbose or os.getenv("LLMONITOR_VERBOSE")
+        self.__verbose = verbose or bool(os.getenv("LLMONITOR_VERBOSE"))
 
         _app_id = app_id or os.getenv("LLMONITOR_APP_ID")
         if _app_id is None:
@@ -179,7 +182,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         event = {**event, "app": self.__app_id, "timestamp": str(datetime.utcnow())}
 
         if self.__verbose:
-            print('llmonitor_callback', event)
+            print("llmonitor_callback", event)
 
         data = {"events": event}
         requests.post(headers=headers, url=f"{self.__api_url}/api/report", json=data)
@@ -244,7 +247,12 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     ) -> None:
         token_usage = (response.llm_output or {}).get("token_usage", {})
 
-        parsed_output = _parse_lc_messages(map(lambda o: o.message, response.generations[0]))
+        parsed_output = _parse_lc_messages(
+            map(
+                lambda o: o.message if hasattr(o, "message") else None,
+                response.generations[0],
+            )
+        )
 
         event = {
             "event": "end",
