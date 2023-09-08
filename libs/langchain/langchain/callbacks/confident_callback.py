@@ -8,7 +8,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-class DeepevalCallbackHandler(BaseCallbackHandler):
+class DeepEvalCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs into deepeval.
 
     Args:
@@ -16,9 +16,6 @@ class DeepevalCallbackHandler(BaseCallbackHandler):
             exist in advance. If you need help on how to create a `FeedbackDataset` in
             deepeval, please visit
             https://docs.deepeval.io/en/latest/guides/llms/practical_guides/use_deepeval_callback_in_langchain.html.
-        api_key: API Key to connect to the deepeval server. Defaults to `None`, which
-            means that either `deepeval_API_KEY` environment variable or the default
-            will be used.
         metrics: A list of metrics
 
     Raises:
@@ -28,10 +25,12 @@ class DeepevalCallbackHandler(BaseCallbackHandler):
 
     Examples:
         >>> from langchain.llms import OpenAI
-        >>> from langchain.callbacks import deepevalCallbackHandler
-        >>> deepeval_callback = deepevalCallbackHandler(
+        >>> from langchain.callbacks import DeepEvalCallbackHandler
+        >>> from deepeval.metrics import AnswerRelevancy
+        >>> metric = AnswerRelevancy(minimum_score=0.3)
+        >>> deepeval_callback = DeepEvalCallbackHandler(
         ...     implementation_name="exampleImplementation",
-        ...     api_key="<apikey>",
+        ...     metrics=[metric],
         ... )
         >>> llm = OpenAI(
         ...     temperature=0,
@@ -51,7 +50,6 @@ class DeepevalCallbackHandler(BaseCallbackHandler):
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
         implementation_name: Optional[str] = None,
         metrics: List[Any] = None,
     ) -> None:
@@ -97,7 +95,6 @@ class DeepevalCallbackHandler(BaseCallbackHandler):
         # Set the deepeval variables
         self.implementation_name = implementation_name
         self.metrics = metrics
-        self.api_key = api_key
 
         warnings.warn(
             (
@@ -137,11 +134,9 @@ class DeepevalCallbackHandler(BaseCallbackHandler):
                     )
                     print(f"Answer Relevancy: {result}")
                 elif isinstance(metric, UnBiasedMetric):
-                    metric = UnBiasedMetric(model_name="original", minimum_score=0.5)
                     score = metric.measure(output)
                     print(f"Bias Score: {score}")
                 elif isinstance(metric, NonToxicMetric):
-                    metric = NonToxicMetric(minimum_score=0.5)
                     score = metric.measure(output)
                     print(f"Toxic Score: {score}")
                 else:
