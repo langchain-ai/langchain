@@ -18,6 +18,7 @@ from typing import (
     Tuple,
     Union,
     cast,
+    overload,
 )
 
 from langsmith import Client, RunEvaluator
@@ -946,11 +947,12 @@ def _collect_test_results(
     )
 
 
+@overload
 async def arun_on_dataset(
-    client: Client,
     dataset_name: str,
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
+    client: Optional[Client] = None,
     evaluation: Optional[smith_eval.RunEvalConfig] = None,
     concurrency_level: int = 5,
     project_name: Optional[str] = None,
@@ -964,16 +966,16 @@ async def arun_on_dataset(
     and store traces to the specified project name.
 
     Args:
-        client: LangSmith client to use to read the dataset, and to
-            log feedback and run traces.
         dataset_name: Name of the dataset to run the chain on.
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
+        client: LangSmith client to use to read the dataset, and to
+            log feedback and run traces.
         evaluation: Optional evaluation configuration to use when evaluating
         concurrency_level: The number of async tasks to run concurrently.
         project_name: Name of the project to store the traces in.
-            Defaults to {dataset_name}-{chain class name}-{datetime}.
+            Defaults to a friendly name.
         verbose: Whether to print progress.
         tags: Tags to add to each run in the project.
         input_mapper: A function to map to the inputs dictionary from an Example
@@ -993,7 +995,6 @@ async def arun_on_dataset(
 
     .. code-block:: python
 
-        from langsmith import Client
         from langchain.chat_models import ChatOpenAI
         from langchain.chains import LLMChain
         from langchain.smith import smith_eval.RunEvalConfig, arun_on_dataset
@@ -1020,11 +1021,9 @@ async def arun_on_dataset(
             ]
         )
 
-        client = Client()
         await arun_on_dataset(
-            client,
-            "<my_dataset_name>",
-            construct_chain,
+            dataset_name="<my_dataset_name>",
+            llm_or_chain_config=construct_chain,
             evaluation=evaluation_config,
         )
 
@@ -1073,6 +1072,7 @@ async def arun_on_dataset(
             f"{kwargs.keys()}.",
             DeprecationWarning,
         )
+    client = client or Client()
     wrapped_model, project_name, examples, configs = _prepare_run_on_dataset(
         client,
         dataset_name,
@@ -1108,10 +1108,10 @@ async def arun_on_dataset(
 
 
 def run_on_dataset(
-    client: Client,
     dataset_name: str,
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
+    client: Optional[Client] = None,
     evaluation: Optional[smith_eval.RunEvalConfig] = None,
     concurrency_level: int = 5,
     project_name: Optional[str] = None,
@@ -1135,7 +1135,7 @@ def run_on_dataset(
             results of the chain
         concurrency_level: The number of async tasks to run concurrently.
         project_name: Name of the project to store the traces in.
-            Defaults to {dataset_name}-{chain class name}-{datetime}.
+            Defaults to a friendly name
         verbose: Whether to print progress.
         tags: Tags to add to each run in the project.
         input_mapper: A function to map to the inputs dictionary from an Example
@@ -1155,7 +1155,6 @@ def run_on_dataset(
 
     .. code-block:: python
 
-        from langsmith import Client
         from langchain.chat_models import ChatOpenAI
         from langchain.chains import LLMChain
         from langchain.smith import smith_eval.RunEvalConfig, run_on_dataset
@@ -1182,12 +1181,11 @@ def run_on_dataset(
             ]
         )
 
-        client = Client()
         run_on_dataset(
-            client,
-            "<my_dataset_name>",
-            construct_chain,
+            dataset_name="<my_dataset_name>",
+            llm_or_chain_factory=construct_chain,
             evaluation=evaluation_config,
+            verbose=True,
         )
 
     You can also create custom evaluators by subclassing the
@@ -1235,6 +1233,7 @@ def run_on_dataset(
             f"{kwargs.keys()}.",
             DeprecationWarning,
         )
+    client = client or Client()
     wrapped_model, project_name, examples, configs = _prepare_run_on_dataset(
         client,
         dataset_name,
