@@ -24,7 +24,7 @@ U = TypeVar("U")
 class RunnableRetry(RunnableBinding[Input, Output]):
     """Retry a Runnable if it fails."""
 
-    retry_exception_types: Tuple[Type[BaseException]] = (Exception,)
+    retry_exception_types: Tuple[Type[BaseException], ...] = (Exception,)
 
     wait_exponential_jitter: bool = True
 
