@@ -11,8 +11,8 @@ from langchain.automaton.tests.utils import (
 )
 from langchain.automaton.typedefs import (
     AgentFinish,
-    FunctionCall,
-    FunctionResult,
+    FunctionCallRequest,
+    FunctionCallResponse,
     MessageLog,
 )
 from langchain.schema.messages import (
@@ -74,11 +74,11 @@ def test_openai_agent(tools: List[Tool]) -> None:
                 }
             },
         ),
-        FunctionCall(
+        FunctionCallRequest(
             name="get_time",
             arguments={},
         ),
-        FunctionResult(
+        FunctionCallResponse(
             name="get_time",
             result="9 PM",
             error=None,

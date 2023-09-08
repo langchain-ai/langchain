@@ -13,7 +13,7 @@ from langchain.automaton.runnables import (
 from langchain.automaton.tests.utils import (
     FakeChatModel,
 )
-from langchain.automaton.typedefs import FunctionCall, FunctionResult, MessageLike
+from langchain.automaton.typedefs import FunctionCallRequest, FunctionCallResponse, MessageLike
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 from langchain.schema.runnable import RunnableLambda
@@ -127,11 +127,11 @@ def test_llm_program_with_parser(fake_llm: BaseLanguageModel) -> None:
             [AIMessage(content="Hello"), AIMessage(content="Goodbye")],
         ),
         (
-            RunnableLambda(lambda msg: FunctionCall(name="get_time")),
+            RunnableLambda(lambda msg: FunctionCallRequest(name="get_time")),
             [
                 AIMessage(content="Hello"),
-                FunctionCall(name="get_time"),
-                FunctionResult(result="9 PM", name="get_time"),
+                FunctionCallRequest(name="get_time"),
+                FunctionCallResponse(result="9 PM", name="get_time"),
             ],
         ),
     ],

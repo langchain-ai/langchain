@@ -17,7 +17,7 @@ from langchain.automaton.typedefs import (
     AgentFinish,
     MessageLike,
     RetrievalRequest,
-    RetrievalResult,
+    RetrievalResponse,
 )
 from langchain.schema import PromptValue, BaseRetriever
 from langchain.schema.language_model import (
@@ -41,7 +41,7 @@ def prompt_generator(input_messages: Sequence[MessageLike]) -> List[BaseMessage]
     for message in input_messages:
         if isinstance(message, BaseMessage):
             messages.append(message)
-        elif isinstance(message, RetrievalResult):
+        elif isinstance(message, RetrievalResponse):
             prompt = ""
 
             if message.results:

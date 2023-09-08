@@ -5,10 +5,10 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar, Union
 
 from langchain.schema.retriever import BaseRetriever
 from langchain.automaton.typedefs import (
-    FunctionCall,
-    FunctionResult,
+    FunctionCallRequest,
+    FunctionCallResponse,
     MessageLike,
-    RetrievalResult,
+    RetrievalResponse,
     RetrievalRequest,
 )
 from langchain.callbacks.manager import CallbackManagerForChainRun
@@ -111,7 +111,7 @@ def _to_retriever_input(message: MessageLike) -> str:
 
 def create_tool_invoker(
     tools: Sequence[BaseTool],
-) -> Runnable[MessageLike, Optional[FunctionResult]]:
+) -> Runnable[MessageLike, Optional[FunctionCallResponse]]:
     """See if possible to re-write with router
 
     TODO:
@@ -125,10 +125,10 @@ def create_tool_invoker(
         function_call: MessageLike,
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
-    ) -> Optional[FunctionResult]:
+    ) -> Optional[FunctionCallResponse]:
         """A function that can invoke a tool using .run"""
         if not isinstance(
-            function_call, FunctionCall
+            function_call, FunctionCallRequest
         ):  # TODO(Hack): Workaround lack of conditional apply
             return None
         try:
@@ -145,16 +145,16 @@ def create_tool_invoker(
             result = None
             error = repr(e) + repr(function_call.named_arguments)
 
-        return FunctionResult(name=function_call.name, result=result, error=error)
+        return FunctionCallResponse(name=function_call.name, result=result, error=error)
 
     async def afunc(
         function_call: MessageLike,
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
-    ) -> Optional[FunctionResult]:
+    ) -> Optional[FunctionCallResponse]:
         """A function that can invoke a tool using .run"""
         if not isinstance(
-            function_call, FunctionCall
+            function_call, FunctionCallRequest
         ):  # TODO(Hack): Workaround lack of conditional apply
             return None
         try:
@@ -171,7 +171,7 @@ def create_tool_invoker(
             result = None
             error = repr(e) + repr(function_call.named_arguments)
 
-        return FunctionResult(name=function_call.name, result=result, error=error)
+        return FunctionCallResponse(name=function_call.name, result=result, error=error)
 
     return RunnableLambda(func=func, afunc=afunc)
 
@@ -240,16 +240,16 @@ def create_llm_program(
 
 def create_retriever(
     base_retriever: BaseRetriever,
-) -> Runnable[RetrievalRequest, RetrievalResult]:
+) -> Runnable[RetrievalRequest, RetrievalResponse]:
     """Create a runnable retriever that uses messages."""
 
     def _from_retrieval_request(request: RetrievalRequest) -> str:
         """Convert a message to a list of documents."""
         return request.query
 
-    def _to_retrieval_result(docs: List[Document]) -> RetrievalResult:
+    def _to_retrieval_result(docs: List[Document]) -> RetrievalResponse:
         """Convert a list of documents to a message."""
-        return RetrievalResult(results=docs)
+        return RetrievalResponse(results=docs)
 
     return (
         RunnableLambda(_from_retrieval_request)

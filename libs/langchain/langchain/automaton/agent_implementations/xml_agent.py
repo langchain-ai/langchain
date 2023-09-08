@@ -8,8 +8,8 @@ from langchain.automaton.chat_agent import ChatAgent
 from langchain.automaton.tool_utils import generate_tool_info
 from langchain.automaton.typedefs import (
     AgentFinish,
-    FunctionCall,
-    FunctionResult,
+    FunctionCallRequest,
+    FunctionCallResponse,
     MessageLike,
 )
 from langchain.prompts import SystemMessagePromptTemplate
@@ -66,7 +66,7 @@ def _decode(text: Union[BaseMessage, str]) -> MessageLike:
         name = data["action"]
         if name == "Final Answer":  # Special cased "tool" for final answer
             return AgentFinish(result=data["action_input"])
-        return FunctionCall(
+        return FunctionCallRequest(
             name=data["action"], named_arguments=data["action_input"] or {}
         )
     else:
@@ -79,7 +79,7 @@ def generate_prompt(current_messages: Sequence[MessageLike]) -> List[BaseMessage
     for message in current_messages:
         if isinstance(message, BaseMessage):
             messages.append(message)
-        elif isinstance(message, FunctionResult):
+        elif isinstance(message, FunctionCallResponse):
             messages.append(
                 HumanMessage(
                     content=f"Observation: {message.result}",

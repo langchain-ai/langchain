@@ -16,8 +16,8 @@ from langchain.automaton.typedefs import (
     AdHocMessage,
     Agent,
     AgentFinish,
-    FunctionCall,
-    FunctionResult,
+    FunctionCallRequest,
+    FunctionCallResponse,
     MessageLike,
 )
 from langchain.prompts import SystemMessagePromptTemplate
@@ -116,7 +116,7 @@ class ActionParser:
                     data=f"Invalid action blob {action_blob}, action_input must be a dict",
                 )
 
-            return FunctionCall(
+            return FunctionCallRequest(
                 name=data["action"], named_arguments=named_arguments or {}
             )
         else:
@@ -155,13 +155,13 @@ class ThinkActPromptGenerator(PromptValue):
                 finalized.append(component)
                 continue
 
-            if isinstance(message, FunctionResult):
+            if isinstance(message, FunctionCallResponse):
                 component = f"Observation: {message.result}"
             elif isinstance(message, HumanMessage):
                 component = f"Question: {message.content.strip()}"
             elif isinstance(message, (AIMessage, SystemMessage)):
                 component = message.content.strip()
-            elif isinstance(message, FunctionCall):
+            elif isinstance(message, FunctionCallRequest):
                 # This is an internal message, and should not be returned to the user.
                 continue
             elif isinstance(message, AgentFinish):
@@ -177,7 +177,7 @@ class ThinkActPromptGenerator(PromptValue):
         for message in self.messages:
             if isinstance(message, BaseMessage):
                 messages.append(message)
-            elif isinstance(message, FunctionResult):
+            elif isinstance(message, FunctionCallResponse):
                 messages.append(
                     SystemMessage(content=f"Observation: `{message.result}`")
                 )
@@ -222,7 +222,7 @@ class ThinkActAgent(Agent):
                 break
 
             if all_messages and isinstance(
-                all_messages[-1], (FunctionResult, HumanMessage)
+                all_messages[-1], (FunctionCallResponse, HumanMessage)
             ):
                 all_messages.append(AdHocMessage(type="prime", data="Thought:"))
 

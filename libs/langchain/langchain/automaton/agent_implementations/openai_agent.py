@@ -6,8 +6,8 @@ from typing import List, Sequence
 from langchain.automaton.chat_agent import ChatAgent
 from langchain.automaton.typedefs import (
     AgentFinish,
-    FunctionCall,
-    FunctionResult,
+    FunctionCallRequest,
+    FunctionCallResponse,
     MessageLike,
 )
 from langchain.chat_models.openai import ChatOpenAI
@@ -34,7 +34,7 @@ class OpenAIFunctionsParser(BaseGenerationOutputParser):
         except Exception as e:
             raise RuntimeError(f"Error parsing result: {result} {repr(e)}") from e
 
-        return FunctionCall(
+        return FunctionCallRequest(
             name=function_request["name"],
             named_arguments=function_request["arguments"],
         )
@@ -46,7 +46,7 @@ def prompt_generator(input_messages: Sequence[MessageLike]) -> List[BaseMessage]
     for message in input_messages:
         if isinstance(message, BaseMessage):
             messages.append(message)
-        elif isinstance(message, FunctionResult):
+        elif isinstance(message, FunctionCallResponse):
             messages.append(
                 FunctionMessage(name=message.name, content=json.dumps(message.result))
             )
