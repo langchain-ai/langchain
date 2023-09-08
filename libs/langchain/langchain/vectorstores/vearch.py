@@ -1,13 +1,12 @@
-
 from __future__ import annotations
 
 import os
 import time
 import uuid
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple,
-                    Type)
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
@@ -85,7 +84,7 @@ class VearchDb(VectorStore):
         cls: Type[VearchDb],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]]=None,
+        metadatas: Optional[List[dict]] = None,
         table_name: str = _DEFAULT_TABLE_NAME,
         metadata_path: Optional[str] = None,
         **kwargs: Any,
@@ -102,8 +101,8 @@ class VearchDb(VectorStore):
 
     def _create_table(
         self,
-        dim:int=1024,
-        filed_list:List[dict]=[
+        dim: int = 1024,
+        filed_list: List[dict] = [
             {"filed": "text", "type": "str"},
             {"filed": "metadata", "type": "str"},
         ],
@@ -123,8 +122,9 @@ class VearchDb(VectorStore):
             "retrieval_param": {"ncentroids": 2048, "nsubvector": 32},
         }
         fields = [
-            vearch.GammaFieldInfo(fi["filed"], type_dict[fi["type"]]) 
-                for fi in filed_list]
+            vearch.GammaFieldInfo(fi["filed"], type_dict[fi["type"]])
+            for fi in filed_list
+        ]
         vector_field = vearch.GammaVectorInfo(
             name="text_embedding",
             type=vearch.dataType.VECTOR,
@@ -145,8 +145,8 @@ class VearchDb(VectorStore):
 
     def add_texts(
         self,
-        texts:Iterable[str],
-        metadatas: Optional[List[dict]]=None,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -167,9 +167,9 @@ class VearchDb(VectorStore):
             if response_code:
                 raise ValueError("create table failed!!!")
         if embeddings is not None and metadatas is not None:
-            doc_items = [] 
-            for text,metadata,embed in zip(texts,metadatas,embeddings):
-                profiles:dict[str,Any] = {}
+            doc_items = []
+            for text, metadata, embed in zip(texts, metadatas, embeddings):
+                profiles: dict[str, Any] = {}
                 profiles["text"] = text
                 profiles["metadata"] = metadata["source"]
                 profiles["text_embedding"] = embed
@@ -185,7 +185,7 @@ class VearchDb(VectorStore):
             self.vearch_engine.dump()
         return docid
 
-    def _load(self)->None:
+    def _load(self) -> None:
         """
         load vearch engine
         """
@@ -256,7 +256,7 @@ class VearchDb(VectorStore):
             "vector": [
                 {
                     "field": "text_embedding",
-                    "feature":np.array(embedding),
+                    "feature": np.array(embedding),
                 }
             ],
             "fields": [],
@@ -302,7 +302,7 @@ class VearchDb(VectorStore):
             "vector": [
                 {
                     "field": "text_embedding",
-                    "feature":np.array(embeddings),
+                    "feature": np.array(embeddings),
                 }
             ],
             "fields": [],
@@ -322,10 +322,10 @@ class VearchDb(VectorStore):
                 if item_key == "metadata":
                     meta_data["source"] = item[item_key]
                     continue
-                if item_key=="score":
-                    score=item[item_key]
+                if item_key == "score":
+                    score = item[item_key]
                     continue
-            tmp_res=(Document(page_content=content, metadata=meta_data),score)
+            tmp_res = (Document(page_content=content, metadata=meta_data), score)
             results.append(tmp_res)
         return results
 
@@ -355,7 +355,7 @@ class VearchDb(VectorStore):
             raise ValueError("Verach Engine is None!!!")
         ret: Optional[bool] = None
         tmp_res = []
-        if ids is None or ids.__len__()==0:
+        if ids is None or ids.__len__() == 0:
             return ret
         for _id in ids:
             ret = self.vearch_engine.del_doc(_id)
@@ -379,7 +379,7 @@ class VearchDb(VectorStore):
         if self.vearch_engine is None:
             raise ValueError("vearch engine is None!!!")
         results: Dict[str, Document] = {}
-        if ids is None or ids.__len__()==0:
+        if ids is None or ids.__len__() == 0:
             return results
         for id in ids:
             docs_detail = self.vearch_engine.get_doc_by_id(id)
@@ -399,4 +399,3 @@ class VearchDb(VectorStore):
                 page_content=content, metadata=meta_info
             )
         return results
-
