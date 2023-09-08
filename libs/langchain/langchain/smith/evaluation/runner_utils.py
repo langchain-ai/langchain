@@ -63,6 +63,22 @@ class InputFormatError(Exception):
 class TestResult(dict):
     """A dictionary of the results of a single test run."""
 
+    def get_aggregate_feedback(self) -> pd.DataFrame:
+        """Return quantiles for the feedback scores.
+
+        This method calculates and prints the quantiles for the feedback scores
+        across all feedback keys.
+
+        Returns:
+            A DataFrame containing the quantiles for each feedback key.
+        """
+        df = self.to_dataframe()
+        feedback_cols = [
+            col for col in df.columns if col not in ["input", "output", "reference"]
+        ]
+        quantiles = df[feedback_cols].quantile([0.25, 0.5, 0.75])
+        return quantiles
+
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the results to a dataframe."""
         try:
