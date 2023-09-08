@@ -179,7 +179,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         return embeddings_list
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed documents using a Deep Infra deployed embedding model.
+        """Embed documents using a Ollama deployed embedding model.
 
         Args:
             texts: The list of texts to embed.
@@ -192,7 +192,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
-        """Embed a query using a Deep Infra deployed embedding model.
+        """Embed a query using a Ollama deployed embedding model.
 
         Args:
             text: The text to embed.
