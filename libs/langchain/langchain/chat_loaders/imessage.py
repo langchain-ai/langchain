@@ -18,8 +18,8 @@ class IMessageChatLoader(BaseChatLoader):
     The chat.db file is likely located at ~/Library/Messages/chat.db. However, your
     terminal may not have permission to access this file. To resolve this, you can
     copy the file to a different location, change the permissions of the file, or
-    grant full disk access for your terminal emulator in System Settings > Security
-    and Privacy > Full Disk Access.
+    grant full disk access for your terminal emulator
+    in System Settings > Security and Privacy > Full Disk Access.
     """
 
     def __init__(self, path: Optional[Union[str, Path]] = None):
