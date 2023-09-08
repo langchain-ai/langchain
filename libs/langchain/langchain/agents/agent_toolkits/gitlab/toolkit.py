@@ -16,6 +16,7 @@ from langchain.tools.gitlab.prompt import (
 from langchain.tools.gitlab.tool import GitLabAction
 from langchain.utilities.gitlab import GitLabAPIWrapper
 
+
 class GitLabToolkit(BaseToolkit):
     """GitLab Toolkit."""
 

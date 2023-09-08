@@ -117,7 +117,9 @@ class GitLabAPIWrapper(BaseModel):
                 break
             for comment in comments_page:
                 comment = issue.notes.get(comment.id)
-                comments.append({"body": comment.body, "user": comment.author["username"]})
+                comments.append(
+                    {"body": comment.body, "user": comment.author["username"]}
+                )
             page += 1
 
         return {
@@ -144,13 +146,15 @@ class GitLabAPIWrapper(BaseModel):
             try:
                 title = pr_query.split("\n")[0]
                 body = pr_query[len(title) + 2 :]
-                pr = self.gitlab_repo_instance.mergerequests.create({
-                    'source_branch': self.gitlab_branch,
-                    'target_branch': self.gitlab_base_branch,
-                    'title': title,
-                    'description': body,
-                    'labels': ['created-by-agent']
-                })
+                pr = self.gitlab_repo_instance.mergerequests.create(
+                    {
+                        "source_branch": self.gitlab_branch,
+                        "target_branch": self.gitlab_base_branch,
+                        "title": title,
+                        "description": body,
+                        "labels": ["created-by-agent"],
+                    }
+                )
                 return f"Successfully created PR number {pr.iid}"
             except Exception as e:
                 return "Unable to make pull request due to error:\n" + str(e)
@@ -170,7 +174,7 @@ class GitLabAPIWrapper(BaseModel):
         comment = comment_query[len(str(issue_number)) + 2 :]
         try:
             issue = self.gitlab_repo_instance.issues.get(issue_number)
-            issue.notes.create({'body': comment})
+            issue.notes.create({"body": comment})
             return "Commented on issue " + str(issue_number)
         except Exception as e:
             return "Unable to make comment due to error:\n" + str(e)
@@ -193,10 +197,10 @@ class GitLabAPIWrapper(BaseModel):
             return f"File already exists at {file_path}. Use update_file instead"
         except Exception as e:
             data = {
-                'branch': self.gitlab_branch,
-                'commit_message': 'Create ' + file_path,
-                'file_path': file_path,
-                'content': file_contents
+                "branch": self.gitlab_branch,
+                "commit_message": "Create " + file_path,
+                "file_path": file_path,
+                "content": file_contents,
             }
 
             self.gitlab_repo_instance.files.create(data)
@@ -254,15 +258,15 @@ class GitLabAPIWrapper(BaseModel):
                 )
 
             commit = {
-                'branch': self.gitlab_branch,
-                'commit_message': 'Create ' + file_path,
-                'actions': [
+                "branch": self.gitlab_branch,
+                "commit_message": "Create " + file_path,
+                "actions": [
                     {
-                        'action': 'update',
-                        'file_path': file_path,
-                        'content': updated_file_content
+                        "action": "update",
+                        "file_path": file_path,
+                        "content": updated_file_content,
                     }
-                ]
+                ],
             }
 
             self.gitlab_repo_instance.commits.create(commit)
@@ -279,7 +283,9 @@ class GitLabAPIWrapper(BaseModel):
             str: Success or failure message
         """
         try:
-            self.gitlab_repo_instance.files.delete(file_path, self.gitlab_branch, "Delete " + file_path)
+            self.gitlab_repo_instance.files.delete(
+                file_path, self.gitlab_branch, "Delete " + file_path
+            )
             return "Deleted file " + file_path
         except Exception as e:
             return "Unable to delete file due to error:\n" + str(e)
