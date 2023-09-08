@@ -50,25 +50,14 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
 
     def __init__(
         self,
+        metrics: List[Any],
         implementation_name: Optional[str] = None,
-        metrics: List[Any] = None,
     ) -> None:
         """Initializes the `deepevalCallbackHandler`.
 
         Args:
-            dataset_name: name of the `FeedbackDataset` in deepeval. Note that it must
-                exist in advance. If you need help on how to create a `FeedbackDataset`
-                in deepeval, please visit
-                https://docs.deepeval.io/en/latest/guides/llms/practical_guides/use_deepeval_callback_in_langchain.html.
-            workspace_name: name of the workspace in deepeval where the specified
-                `FeedbackDataset` lives in. Defaults to `None`, which means that the
-                default workspace will be used.
-            api_url: URL of the deepeval Server that we want to use, and where the
-                `FeedbackDataset` lives in. Defaults to `None`, which means that either
-                `deepeval_API_URL` environment variable or the default will be used.
-            api_key: API Key to connect to the deepeval Server. Defaults to `None`, which
-                means that either `deepeval_API_KEY` environment variable or the default
-                will be used.
+            implementation_name: Name of the implementation you want.
+            metrics: What metrics do you want to track?
 
         Raises:
             ImportError: if the `deepeval` package is not installed.
