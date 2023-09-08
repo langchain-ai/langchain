@@ -527,7 +527,6 @@ class Program
 }
     """
    
-
     chunks = splitter.split_text(code)
     assert chunks == [
         "using System;",
