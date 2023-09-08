@@ -44,7 +44,7 @@ class ConstitutionalChain(Chain):
             constitutional_chain.run(question="What is the meaning of life?")
     """
 
-    chain: LLMChain
+    chain: Chain
     constitutional_principles: List[ConstitutionalPrinciple]
     critique_chain: LLMChain
     revision_chain: LLMChain
@@ -63,7 +63,7 @@ class ConstitutionalChain(Chain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        chain: LLMChain,
+        chain: Chain,
         critique_prompt: BasePromptTemplate = CRITIQUE_PROMPT,
         revision_prompt: BasePromptTemplate = REVISION_PROMPT,
         **kwargs: Any,
