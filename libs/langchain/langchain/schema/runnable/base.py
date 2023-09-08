@@ -1692,8 +1692,18 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __init__(
         self,
-        func: Union[Callable[[Input], Output], Callable[[Input], Awaitable[Output]]],
-        afunc: Optional[Callable[[Input], Awaitable[Output]]] = None,
+        func: Union[
+            Callable[[Input], Output],
+            Callable[[Input, RunnableConfig], Output],
+            Callable[[Input], Awaitable[Output]],
+            Callable[[Input, RunnableConfig], Awaitable[Output]],
+        ],
+        afunc: Optional[
+            Union[
+                Callable[[Input], Awaitable[Output]],
+                Callable[[Input, RunnableConfig], Awaitable[Output]],
+            ]
+        ] = None,
     ) -> None:
         if afunc is not None:
             self.afunc = afunc

@@ -143,6 +143,7 @@ def call_func_with_variable_args(
     func: Union[
         Callable[[Input], Output],
         Callable[[Input, CallbackManagerForChainRun], Output],
+        Callable[[Input, RunnableConfig], Output],
         Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
     ],
     input: Input,
@@ -164,6 +165,10 @@ async def acall_func_with_variable_args(
         Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
         Callable[
             [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+            Awaitable[Output],
+        ],
+        Callable[
+            [Input, RunnableConfig],
             Awaitable[Output],
         ],
     ],

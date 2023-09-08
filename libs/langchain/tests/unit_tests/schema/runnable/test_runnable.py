@@ -1,3 +1,4 @@
+import asyncio
 from operator import itemgetter
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
@@ -1785,3 +1786,18 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
+
+
+@pytest.mark.asyncio
+async def test_lambda_accept_config() -> None:
+    def sync_with_config(x: str, config: RunnableConfig) -> str:
+        return x
+
+    RunnableLambda(sync_with_config).invoke("foo")
+
+    async def async_with_config(x: str, config: RunnableConfig) -> str:
+        asyncio.sleep(0.001)
+        return x
+
+    await RunnableLambda(async_with_config).ainvoke("foo")
+    await RunnableLambda(sync_with_config, async_with_config).abatch(["foo"])
