@@ -4,13 +4,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
 from langchain import schema
-from langchain.chat_loaders import base as chat_loaders
+from langchain.chat_loaders.base import BaseChatLoader, ChatSession
 
 if TYPE_CHECKING:
     import sqlite3
 
 
-class IMessageChatLoader(chat_loaders.BaseChatLoader):
+class IMessageChatLoader(BaseChatLoader):
     """Load chat sessions from the `iMessage` chat.db SQLite file.
 
     It only works on macOS when you have iMessage enabled and have the chat.db file.
@@ -46,7 +46,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
 
     def _load_single_chat_session(
         self, cursor: "sqlite3.Cursor", chat_id: int
-    ) -> chat_loaders.ChatSession:
+    ) -> ChatSession:
         """
         Load a single chat session from the iMessage chat.db.
 
@@ -83,9 +83,9 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
                     )
                 )
 
-        return chat_loaders.ChatSession(messages=results)
+        return ChatSession(messages=results)
 
-    def lazy_load(self) -> Iterator[chat_loaders.ChatSession]:
+    def lazy_load(self) -> Iterator[ChatSession]:
         """
         Lazy load the chat sessions from the iMessage chat.db
         and yield them in the required format.
