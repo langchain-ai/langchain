@@ -254,7 +254,7 @@ class Runnable(Generic[Input, Output], ABC):
     def with_retry(
         self,
         *,
-        retry_if_exception_type: Tuple[Type[BaseException]] = (Exception,),
+        retry_if_exception_type: Tuple[Type[BaseException], ...] = (Exception,),
         wait_exponential_jitter: bool = True,
         stop_after_attempt: int = 3,
     ) -> Runnable[Input, Output]:
@@ -280,7 +280,7 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         fallbacks: Sequence[Runnable[Input, Output]],
         *,
-        exceptions_to_handle: Tuple[Type[BaseException]] = (Exception,),
+        exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,),
     ) -> RunnableWithFallbacks[Input, Output]:
         return RunnableWithFallbacks(
             runnable=self,
@@ -653,7 +653,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
 
     runnable: Runnable[Input, Output]
     fallbacks: Sequence[Runnable[Input, Output]]
-    exceptions_to_handle: Tuple[Type[BaseException]] = (Exception,)
+    exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,)
 
     class Config:
         arbitrary_types_allowed = True
