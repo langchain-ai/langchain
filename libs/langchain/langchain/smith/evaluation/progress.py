@@ -1,6 +1,6 @@
 """A simple progress bar for the console."""
 import threading
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Optional, Sequence
 from uuid import UUID
 
 from langchain.callbacks import base as base_callbacks
@@ -42,7 +42,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         outputs: Dict[str, Any],
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:
@@ -53,7 +53,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         documents: Sequence[Document],
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:
@@ -64,7 +64,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         response: LLMResult,
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:
@@ -75,7 +75,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         output: str,
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:

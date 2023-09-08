@@ -182,10 +182,15 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         return {"the right input": inputs["the wrong input"]}
 
     result = _run_llm_or_chain(
-        example, {}, llm_or_chain_factory=lambda: mock_chain, input_mapper=input_mapper
+        example,
+        {"callbacks": [], "tags": []},
+        llm_or_chain_factory=lambda: mock_chain,
+        input_mapper=input_mapper,
     )
     assert result == {"output": "2", "the right input": "1"}
-    bad_result = _run_llm_or_chain(example, {}, llm_or_chain_factory=lambda: mock_chain)
+    bad_result = _run_llm_or_chain(
+        example, {"callbacks": [], "tags": []}, llm_or_chain_factory=lambda: mock_chain
+    )
     assert "Error" in bad_result
 
     # Try with LLM
@@ -193,11 +198,11 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         assert "the wrong input" in inputs
         return "the right input"
 
-    FakeLLM(queries={"the right input": "somenumber"})
+    mock_llm = FakeLLM(queries={"the right input": "somenumber"})
     llm_result = _run_llm_or_chain(
         example,
-        {},
-        llm_or_chain_factory=lambda: mock_chain,
+        {"callbacks": [], "tags": []},
+        llm_or_chain_factory=mock_llm,
         input_mapper=llm_input_mapper,
     )
     assert isinstance(llm_result, str)
