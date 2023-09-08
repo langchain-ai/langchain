@@ -63,9 +63,13 @@ class ChatAgent(Agent):
     ) -> Iterator[MessageLike]:
         """Run the agent."""
         all_messages = list(messages)
+
         for _ in range(max_iterations):
             if all_messages and isinstance(all_messages[-1], AgentFinish):
                 break
+
             new_messages = self.llm_program.invoke(all_messages)
+
             yield from new_messages
             all_messages.extend(new_messages)
+

@@ -3,9 +3,7 @@ from __future__ import annotations
 from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 
 from langchain.load.serializable import Serializable
-from langchain.schema import (
-    BaseMessage,
-)
+from langchain.schema import BaseMessage, Document
 
 
 class InternalMessage(Serializable):
@@ -15,7 +13,7 @@ class InternalMessage(Serializable):
         return True
 
 
-class FunctionCall(InternalMessage):
+class FunctionCall(InternalMessage):  # TODO(Eugene): Rename as FunctionCallRequest
     """A request for a function invocation.
 
     This message can be used to request a function invocation
@@ -34,7 +32,7 @@ class FunctionCall(InternalMessage):
         return f"FunctionCall(name={self.name}, named_arguments={self.named_arguments})"
 
 
-class FunctionResult(InternalMessage):
+class FunctionResult(InternalMessage):  # Rename as FunctionCallResult
     """A result of a function invocation."""
 
     name: str
@@ -43,6 +41,25 @@ class FunctionResult(InternalMessage):
 
     def __str__(self):
         return f"FunctionResult(name={self.name}, result={self.result}, error={self.error})"
+
+
+class RetrievalRequest(InternalMessage):
+    """A request for a retrieval."""
+
+    query: str
+    """The query to use for the retrieval."""
+
+    def __str__(self):
+        return f"RetrievalRequest(query={self.query})"
+
+
+class RetrievalResult(InternalMessage):
+    """A result of a retrieval."""
+
+    results: Sequence[Document]
+
+    def __str__(self):
+        return f"RetrievalResults(results={self.results})"
 
 
 class AdHocMessage(InternalMessage):
@@ -56,6 +73,8 @@ class AdHocMessage(InternalMessage):
 
 
 class AgentFinish(InternalMessage):
+    """A message that indicates that the agent is finished."""
+
     result: Any
 
     def __str__(self):

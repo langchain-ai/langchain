@@ -3,13 +3,16 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar, Union
 
+from langchain.schema.retriever import BaseRetriever
 from langchain.automaton.typedefs import (
     FunctionCall,
     FunctionResult,
     MessageLike,
+    RetrievalResult,
+    RetrievalRequest,
 )
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.schema import AIMessage, BaseMessage, PromptValue
+from langchain.schema import AIMessage, BaseMessage, PromptValue, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.runnable import (
@@ -91,6 +94,16 @@ def _apply_and_concat(
         )
         | _concatenate_head_and_tail
     )
+
+
+def _to_retriever_input(message: MessageLike) -> str:
+    """Convert a message to a retriever input."""
+    if isinstance(message, str):
+        return message
+    elif isinstance(message, BaseMessage):
+        return message.content
+    else:
+        raise NotImplementedError(f"Unsupported type {type(message)}")
 
 
 # PUBLIC API
@@ -223,3 +236,23 @@ def create_llm_program(
         complete_chain = chain
 
     return complete_chain
+
+
+def create_retriever(
+    base_retriever: BaseRetriever,
+) -> Runnable[RetrievalRequest, RetrievalResult]:
+    """Create a runnable retriever that uses messages."""
+
+    def _from_retrieval_request(request: RetrievalRequest) -> str:
+        """Convert a message to a list of documents."""
+        return request.query
+
+    def _to_retrieval_result(docs: List[Document]) -> RetrievalResult:
+        """Convert a list of documents to a message."""
+        return RetrievalResult(results=docs)
+
+    return (
+        RunnableLambda(_from_retrieval_request)
+        | base_retriever
+        | RunnableLambda(_to_retrieval_result)
+    )
