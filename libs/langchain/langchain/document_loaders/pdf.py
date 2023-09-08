@@ -6,7 +6,7 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import Any, Iterator, List, Mapping, Optional, Sequence, Union, Dict
 from urllib.parse import urlparse
 
 import requests
@@ -66,10 +66,11 @@ class BasePDFLoader(BaseLoader, ABC):
     to a temporary file, use it, then clean up the temporary file after completion
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, file_headers: Optional[Dict] = None):
         """Initialize with a file path."""
         self.file_path = file_path
         self.web_path = None
+        self.file_headers = file_headers
         if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
@@ -81,7 +82,7 @@ class BasePDFLoader(BaseLoader, ABC):
             if self._is_s3_url(self.file_path):
                 self.web_path = self.file_path
             else:
-                r = requests.get(self.file_path)
+                r = requests.get(self.file_path, headers=self.file_headers)
 
                 if r.status_code != 200:
                     raise ValueError(
@@ -138,7 +139,7 @@ class PyPDFLoader(BasePDFLoader):
     """
 
     def __init__(
-        self, file_path: str, password: Optional[Union[str, bytes]] = None
+        self, file_path: str, password: Optional[Union[str, bytes]] = None, file_headers: Optional[Dict] = None
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -148,7 +149,7 @@ class PyPDFLoader(BasePDFLoader):
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
         self.parser = PyPDFParser(password=password)
-        super().__init__(file_path)
+        super().__init__(file_path, file_headers)
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
@@ -165,9 +166,9 @@ class PyPDFLoader(BasePDFLoader):
 class PyPDFium2Loader(BasePDFLoader):
     """Load `PDF` using `pypdfium2` and chunks at character level."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, file_headers: Optional[Dict] = None):
         """Initialize with a file path."""
-        super().__init__(file_path)
+        super().__init__(file_path, file_headers)
         self.parser = PyPDFium2Parser()
 
     def load(self) -> List[Document]:
@@ -230,7 +231,7 @@ class PyPDFDirectoryLoader(BaseLoader):
 class PDFMinerLoader(BasePDFLoader):
     """Load `PDF` files using `PDFMiner`."""
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, file_headers: Optional[Dict] = None) -> None:
         """Initialize with file path."""
         try:
             from pdfminer.high_level import extract_text  # noqa:F401
@@ -240,7 +241,7 @@ class PDFMinerLoader(BasePDFLoader):
                 "`pip install pdfminer.six`"
             )
 
-        super().__init__(file_path)
+        super().__init__(file_path, file_headers)
         self.parser = PDFMinerParser()
 
     def load(self) -> List[Document]:
@@ -258,7 +259,7 @@ class PDFMinerLoader(BasePDFLoader):
 class PDFMinerPDFasHTMLLoader(BasePDFLoader):
     """Load `PDF` files as HTML content using `PDFMiner`."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, file_headers: Optional[Dict] = None):
         """Initialize with a file path."""
         try:
             from pdfminer.high_level import extract_text_to_fp  # noqa:F401
@@ -268,7 +269,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
                 "`pip install pdfminer.six`"
             )
 
-        super().__init__(file_path)
+        super().__init__(file_path, file_headers)
 
     def load(self) -> List[Document]:
         """Load file."""
@@ -292,7 +293,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 class PyMuPDFLoader(BasePDFLoader):
     """Load `PDF` files using `PyMuPDF`."""
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, file_headers: Optional[Dict]) -> None:
         """Initialize with a file path."""
         try:
             import fitz  # noqa:F401
@@ -302,7 +303,7 @@ class PyMuPDFLoader(BasePDFLoader):
                 "`pip install pymupdf`"
             )
 
-        super().__init__(file_path)
+        super().__init__(file_path, file_headers)
 
     def load(self, **kwargs: Optional[Any]) -> List[Document]:
         """Load file."""
@@ -323,6 +324,7 @@ class MathpixPDFLoader(BasePDFLoader):
         processed_file_format: str = "mmd",
         max_wait_time_seconds: int = 500,
         should_clean_pdf: bool = False,
+        file_headers: Optional[Dict] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with a file path.
@@ -335,7 +337,7 @@ class MathpixPDFLoader(BasePDFLoader):
             should_clean_pdf: a flag to clean the PDF file. Default is False.
             **kwargs: additional keyword arguments.
         """
-        super().__init__(file_path)
+        super().__init__(file_path, file_headers)
         self.mathpix_api_key = get_from_dict_or_env(
             kwargs, "mathpix_api_key", "MATHPIX_API_KEY"
         )
@@ -441,6 +443,7 @@ class PDFPlumberLoader(BasePDFLoader):
         file_path: str,
         text_kwargs: Optional[Mapping[str, Any]] = None,
         dedupe: bool = False,
+        file_headers: Optional[Dict] = None,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -451,7 +454,7 @@ class PDFPlumberLoader(BasePDFLoader):
                 "`pip install pdfplumber`"
             )
 
-        super().__init__(file_path)
+        super().__init__(file_path, file_headers)
         self.text_kwargs = text_kwargs or {}
         self.dedupe = dedupe
 
@@ -493,6 +496,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
         endpoint_url: Optional[str] = None,
+        file_headers: Optional[Dict] = None,
     ) -> None:
         """Initialize the loader.
 
@@ -507,7 +511,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             endpoint_url: endpoint url for the textract service (Optional)
 
         """
-        super().__init__(file_path)
+        super().__init__(file_path, file_headers)
 
         try:
             import textractcaller as tc  # noqa: F401
@@ -608,7 +612,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
     """Loads a PDF with Azure Document Intelligence"""
 
     def __init__(
-        self, file_path: str, client: Any, model: str = "prebuilt-document"
+        self, file_path: str, client: Any, model: str = "prebuilt-document", file_headers: Optional[Dict] = None
     ) -> None:
         """
         Initialize the object for file processing with Azure Document Intelligence
@@ -638,7 +642,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         """
 
         self.parser = DocumentIntelligenceParser(client=client, model=model)
-        super().__init__(file_path)
+        super().__init__(file_path, file_headers)
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
