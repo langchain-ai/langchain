@@ -2217,6 +2217,10 @@
       "destination": "/docs/integrations/text_embedding/tensorflowhub"
     },
     {
+      "source": "/docs/integrations/text_embedding/Awa",
+      "destination": "/docs/integrations/text_embedding/awadb"
+    },
+    {
       "source": "/en/latest/modules/indexes/vectorstores/examples/analyticdb.html",
       "destination": "/docs/integrations/vectorstores/analyticdb"
     },
