@@ -627,6 +627,7 @@ class Language(str, Enum):
     LATEX = "latex"
     HTML = "html"
     SOL = "sol"
+    CSHARP = "csharp"
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
@@ -1002,6 +1003,43 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "<title",
                 "",
             ]
+        elif language == Language.CSHARP:
+            return [
+                "\ninterface ",
+                "\nenum ",
+                "\nimplements ",
+                "\ndelegate ",
+                "\nevent ",
+                # Split along class definitions
+                "\nclass ",
+                "\nabstract ",
+                # Split along method definitions
+                "\npublic ",
+                "\nprotected ",
+                "\nprivate ",
+                "\nstatic ",
+                "\nreturn ",
+                # Split along control flow statements
+                "\nif ",
+                "\ncontinue ",
+                "\nfor ",
+                "\nforeach ",
+                "\nwhile ",
+                "\nswitch ",
+                "\nbreak ",
+                "\ncase ",
+                "\nelse ",
+                # Split by exceptions
+                "\ntry ",
+                "\nthrow ",
+                "\nfinally ",
+                "\ncatch ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         elif language == Language.SOL:
             return [
                 # Split along compiler information definitions
@@ -1032,6 +1070,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+
         else:
             raise ValueError(
                 f"Language {language} is not supported! "
