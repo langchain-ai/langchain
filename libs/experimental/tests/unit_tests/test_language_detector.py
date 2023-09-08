@@ -11,7 +11,7 @@ import pytest
         ("Hallo, mein Name ist John Doe.", "de"),
     ],
 )
-def test_detect_single_language(text: str, language: str) -> str:
+def test_detect_single_language(text: str, language: str) -> None:
     """Test detecting most probable language of a text"""
     from langchain_experimental.language_detector import LangDetector
 
@@ -25,10 +25,13 @@ def test_detect_single_language(text: str, language: str) -> str:
     "text,languages",
     [
         ("Hello, my name is John Doe.", ["en"]),
-        ("Hello, my name is John Doe. I live in London. Auf Wiedersehen.", ["de", "en"]),
+        (
+            "Hello, my name is John Doe. I live in London. Auf Wiedersehen.",
+            ["de", "en"],
+        ),
     ],
 )
-def test_detect_many_languages(text: str, languages: List[str]) -> str:
+def test_detect_many_languages(text: str, languages: List[str]) -> None:
     """Test detecting most probable languages of a text"""
     from langchain_experimental.language_detector import LangDetector
 

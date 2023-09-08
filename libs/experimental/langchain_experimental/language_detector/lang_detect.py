@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Tuple
+from typing import List, Tuple
 
 from langchain_experimental.language_detector.base import LanguageDetectorBase
 
@@ -8,10 +8,6 @@ except ImportError:
     raise ImportError(
         "Could not import langdetect, please install with " "`pip install langdetect`."
     )
-
-
-if TYPE_CHECKING:
-    import langdetect
 
 
 class LangDetector(LanguageDetectorBase):
