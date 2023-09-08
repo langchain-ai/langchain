@@ -715,7 +715,12 @@ async def _arun_llm_or_chain(
             )
         result = output
     except Exception as e:
-        logger.warning(f"{chain_or_llm} failed for example {example.id}. Error: {e}")
+        error_type = type(e).__name__
+        logger.warning(
+            f"{chain_or_llm} failed for example {example.id} "
+            f"with inputs {example.inputs}"
+            f"\nError Type: {error_type}, Message: {e}"
+        )
         result = {"Error": str(e)}
     return result
 
@@ -841,9 +846,11 @@ def _run_llm_or_chain(
             )
         result = output
     except Exception as e:
+        error_type = type(e).__name__
         logger.warning(
-            f"{chain_or_llm} failed for example {example.id} with inputs:"
-            f" {example.inputs}.\nError: {e}",
+            f"{chain_or_llm} failed for example {example.id} "
+            f"with inputs {example.inputs}"
+            f"\nError Type: {error_type}, Message: {e}"
         )
         result = {"Error": str(e)}
     return result
