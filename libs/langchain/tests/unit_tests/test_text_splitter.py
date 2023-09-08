@@ -504,7 +504,6 @@ def test_csharp_code_splitter() -> None:
     )
     code = """
 using System;
-
 class Program
 {
     static void Main()
