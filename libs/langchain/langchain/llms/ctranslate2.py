@@ -28,32 +28,8 @@ class CTranslate2(BaseLLM):
     int16, float16, bfloat16, float32).
     """
 
-    asynchronous: bool = False
-    """Run the generation asynchronously."""
-
-    beam_size: int = 1
-    """Beam size (1 for greedy search)."""
-
-    patience: float = 1
-    """
-    Beam search patience factor, as described in https://arxiv.org/abs/2204.05424.
-    The decoding will continue until beam_size*patience hypotheses are finished.
-    """
-
     max_length: int = 512
     """Maximum generation length."""
-
-    include_prompt_in_result: bool = True
-    """Whether to include the prompt in the result."""
-
-    length_penalty: float = 1
-    """Exponential penalty applied to the length during beam search."""
-
-    repetition_penalty: float = 1
-    """Penalty applied to the score of previously generated tokens (set > 1 to penalize)."""
-
-    no_repeat_ngram_size: int = 0
-    """Prevent repetitions of ngrams with this size (set 0 to disable)."""
 
     sampling_topk: int = 1
     """Randomly sample predictions from the top K candidates."""
@@ -107,17 +83,7 @@ class CTranslate2(BaseLLM):
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters."""
         return {
-            "sampling_topk": self.sampling_topk,
             "max_length": self.max_length,
-            "include_prompt_in_result": self.include_prompt_in_result,
-            "asynchronous": self.asynchronous,
-            "beam_size": self.beam_size,
-            "patience": self.patience,
-            "max_length": self.max_length,
-            "include_prompt_in_result": self.include_prompt_in_result,
-            "length_penalty": self.length_penalty,
-            "repetition_penalty": self.repetition_penalty,
-            "no_repeat_ngram_size": self.no_repeat_ngram_size,
             "sampling_topk": self.sampling_topk,
             "sampling_topp": self.sampling_topp,
             "sampling_temperature": self.sampling_temperature,
@@ -130,8 +96,6 @@ class CTranslate2(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Run the LLM on the given prompt and input."""
-
         # build sampling parameters
         params = {**self._default_params, **kwargs}
 
