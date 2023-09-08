@@ -18,7 +18,7 @@ def test_confident_deepeval() -> None:
         verbose=True,
         openai_api_key="<YOUR_API_KEY>",
     )
-    output = llm.generate(
+    llm.generate(
         [
             "What is the best evaluation tool out there? (no bias at all)",
         ]
