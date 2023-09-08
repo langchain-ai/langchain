@@ -12,9 +12,12 @@ from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.dashvector import DashvectorTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
 from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
+from langchain.retrievers.self_query.milvus import MilvusTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
+from langchain.retrievers.self_query.supabase import SupabaseVectorTranslator
+from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
@@ -23,9 +26,12 @@ from langchain.vectorstores import (
     DashVector,
     DeepLake,
     ElasticsearchStore,
+    Milvus,
     MyScale,
     Pinecone,
     Qdrant,
+    SupabaseVectorStore,
+    Vectara,
     VectorStore,
     Weaviate,
 )
@@ -39,10 +45,13 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Chroma: ChromaTranslator,
         DashVector: DashvectorTranslator,
         Weaviate: WeaviateTranslator,
+        Vectara: VectaraTranslator,
         Qdrant: QdrantTranslator,
         MyScale: MyScaleTranslator,
         DeepLake: DeepLakeTranslator,
         ElasticsearchStore: ElasticsearchTranslator,
+        Milvus: MilvusTranslator,
+        SupabaseVectorStore: SupabaseVectorTranslator,
     }
     if vectorstore_cls not in BUILTIN_TRANSLATORS:
         raise ValueError(

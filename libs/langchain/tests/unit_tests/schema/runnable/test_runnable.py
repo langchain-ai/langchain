@@ -948,7 +948,7 @@ async def test_higher_order_lambda_runnable(
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 2
     router_run = parent_run.child_runs[1]
-    assert router_run.name == "RunnableLambda"
+    assert router_run.name == "router"
     assert len(router_run.child_runs) == 1
     math_run = router_run.child_runs[0]
     assert math_run.name == "RunnableSequence"
@@ -980,7 +980,7 @@ async def test_higher_order_lambda_runnable(
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 2
     router_run = parent_run.child_runs[1]
-    assert router_run.name == "RunnableLambda"
+    assert router_run.name == "arouter"
     assert len(router_run.child_runs) == 1
     math_run = router_run.child_runs[0]
     assert math_run.name == "RunnableSequence"
