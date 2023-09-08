@@ -20,8 +20,8 @@ from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
-from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
+from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.loading import (
@@ -424,7 +424,10 @@ def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
         **config,
     )
 
-def _load_retrieval_qa_with_sources_chain(config: dict, **kwargs: Any) -> RetrievalQAWithSourcesChain:
+
+def _load_retrieval_qa_with_sources_chain(
+    config: dict, **kwargs: Any
+) -> RetrievalQAWithSourcesChain:
     if "retriever" in kwargs:
         retriever = kwargs.pop("retriever")
     else:

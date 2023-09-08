@@ -3,7 +3,7 @@ from pathlib import Path
 
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.chains.loading import load_chain
-from langchain.document_loaders import TextLoader, DirectoryLoader
+from langchain.document_loaders import DirectoryLoader, TextLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms import OpenAI
 from langchain.text_splitter import CharacterTextSplitter
@@ -18,7 +18,9 @@ def test_retrieval_qa_with_sources_chain_saving_loading(tmp_path: str) -> None:
     texts = text_splitter.split_documents(documents)
     embeddings = OpenAIEmbeddings()
     docsearch = FAISS.from_documents(texts, embeddings)
-    qa = RetrievalQAWithSourcesChain.from_llm(llm=OpenAI(), retriever=docsearch.as_retriever())
+    qa = RetrievalQAWithSourcesChain.from_llm(
+        llm=OpenAI(), retriever=docsearch.as_retriever()
+    )
     qa("What did the president say about Ketanji Brown Jackson?")
 
     file_path = tmp_path + "/RetrievalQAWithSourcesChain.yaml"
