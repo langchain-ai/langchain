@@ -42,7 +42,7 @@ def wait_for_all_tracers() -> None:
             tracer.wait_for_futures()
 
 
-def _get_client() -> Client:
+def get_client() -> Client:
     """Get the client."""
     global _CLIENT
     if _CLIENT is None:
@@ -83,7 +83,7 @@ class LangChainTracer(BaseTracer):
                 _EXECUTORS.append(self.executor)
         else:
             self.executor = None
-        self.client = client or _get_client()
+        self.client = client or get_client()
         self._futures: Set[Future] = set()
         self.tags = tags or []
         global _TRACERS
