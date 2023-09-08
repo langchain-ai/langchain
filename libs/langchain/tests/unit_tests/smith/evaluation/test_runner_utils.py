@@ -324,10 +324,14 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
         expected = {
-            uuid_: {
-                "output": {"result": f"Result for example {uuid.UUID(uuid_)}"},
+            str(example.id): {
+                "output": {
+                    "result": f"Result for example {uuid.UUID(str(example.id))}"
+                },
+                "input": {"input": example.inputs["input"]},
+                "reference": {"output": example.outputs["output"]},
                 "feedback": [],
             }
-            for uuid_ in uuids
+            for example in examples
         }
         assert results["results"] == expected

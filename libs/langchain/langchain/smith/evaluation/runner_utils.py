@@ -1104,7 +1104,9 @@ async def arun_on_dataset(
     results = _collect_test_results(examples, batch_results, configs, project_name)
     if verbose:
         try:
-            print(results.get_aggregate_feedback())
+            agg_feedback = results.get_aggregate_feedback()
+            print("\n Eval quantiles:")
+            print(agg_feedback)
         except Exception as e:
             logger.debug(f"Failed to print aggregate feedback: {e}")
     return results
@@ -1270,7 +1272,9 @@ def run_on_dataset(
     results = _collect_test_results(examples, batch_results, configs, project_name)
     if verbose:
         try:
-            print(results.get_aggregate_feedback())
+            agg_feedback = results.get_aggregate_feedback()
+            print("\n Eval quantiles:")
+            print(agg_feedback)
         except Exception as e:
             logger.debug(f"Failed to print aggregate feedback: {e}")
     return results
