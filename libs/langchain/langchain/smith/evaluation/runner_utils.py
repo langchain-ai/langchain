@@ -65,7 +65,7 @@ class TestResult(dict):
     """A dictionary of the results of a single test run."""
 
     def get_aggregate_feedback(
-        self, quantiles: Optional[Sequence[int]] = None
+        self, quantiles: Optional[Sequence[float]] = None
     ) -> pd.DataFrame:
         """Return quantiles for the feedback scores.
 
@@ -79,7 +79,9 @@ class TestResult(dict):
         feedback_cols = [
             col for col in df.columns if col not in ["input", "output", "reference"]
         ]
-        _quantiles = df[feedback_cols].quantile(quantiles or [0.25, 0.5, 0.75], numeric_only=True)
+        _quantiles = df[feedback_cols].quantile(
+            quantiles or [0.25, 0.5, 0.75], numeric_only=True
+        )
         return _quantiles.transpose()
 
     def to_dataframe(self) -> pd.DataFrame:
