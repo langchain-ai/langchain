@@ -1,4 +1,5 @@
 from __future__ import annotations
+import math
 
 from typing import Any, AsyncIterator, Callable, Optional, TypedDict, Union
 
@@ -56,7 +57,7 @@ class MessageLogCallbackHandler(BaseTracer):
     def __init__(self, run_filter: Callable[[Run], bool]) -> None:
         super().__init__()
 
-        send_stream, receive_stream = create_memory_object_stream[MessageLog]()
+        send_stream, receive_stream = create_memory_object_stream[MessageLog](math.inf)
         self.send_stream = send_stream
         self.receive_stream = receive_stream
         self.run_filter = run_filter
