@@ -9,7 +9,7 @@ from uuid import UUID
 import langsmith
 from langsmith import schemas as langsmith_schemas
 
-from langchain.callbacks.manager import tracing_v2_enabled
+from langchain import callbacks
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.langchain import _get_client
 from langchain.callbacks.tracers.schemas import Run
@@ -81,9 +81,12 @@ class EvaluatorCallbackHandler(BaseTracer):
         )
         self.client = client or _get_client()
         self.evaluators = evaluators
-        self.executor = ThreadPoolExecutor(
-            max_workers=max(max_workers or len(evaluators), 1)
-        )
+        max_workers = max_workers if max_workers is not None else len(evaluators)
+        if not max_workers:
+            self.executor = None
+
+        else:
+            self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.futures: Set[Future] = set()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
@@ -105,7 +108,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         try:
             if self.project_name is None:
                 feedback = self.client.evaluate_run(run, evaluator)
-            with tracing_v2_enabled(
+            with callbacks.tracing_v2_enabled(
                 project_name=self.project_name, tags=["eval"], client=self.client
             ):
                 feedback = self.client.evaluate_run(run, evaluator)
@@ -134,9 +137,18 @@ class EvaluatorCallbackHandler(BaseTracer):
         run_ = run.copy()
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
-            self.futures.add(
-                self.executor.submit(self._evaluate_in_project, run_, evaluator)
-            )
+            if self.executor:
+                self.futures.add(
+                    self.executor.submit(self._evaluate_in_project, run_, evaluator)
+                )
+            else:
+                self._evaluate_in_project(run_, evaluator)
+
+    def close(self) -> None:
+        """Wait for all futures to complete."""
+        self.wait_for_futures()
+        if self.executor:
+            self.executor.shutdown()
 
     def wait_for_futures(self) -> None:
         """Wait for all futures to complete."""
