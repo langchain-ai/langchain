@@ -5,7 +5,6 @@ import pytest
 from langsmith import Client as Client
 from langsmith.schemas import DataType
 
-from langchain.callbacks.tracers.evaluation import wait_for_all_evaluators
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.evaluation import EvaluatorType
@@ -22,7 +21,6 @@ def _check_all_feedback_passed(_project_name: str, client: Client) -> None:
     # chain or llm passes for the feedback provided.
     runs = list(client.list_runs(project_name=_project_name, execution_order=1))
     assert len(runs) == 4
-    wait_for_all_evaluators()
     feedback = list(client.list_feedback(run_ids=[run.id for run in runs]))
     assert len(feedback) == 8
     assert all([f.score == 1 for f in feedback])
