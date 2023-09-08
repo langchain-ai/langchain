@@ -4,7 +4,7 @@ from typing import List, cast
 
 import pytest
 
-from langchain.automaton.openai_agent import OpenAIAgent
+from langchain.automaton.agent_implementations.openai_agent import OpenAIAgent
 from langchain.automaton.tests.utils import (
     FakeChatModel,
     construct_func_invocation_message,
@@ -13,7 +13,6 @@ from langchain.automaton.typedefs import (
     AgentFinish,
     FunctionCallRequest,
     FunctionCallResponse,
-    MessageLog,
 )
 from langchain.schema.messages import (
     AIMessage,

@@ -19,6 +19,7 @@ from langchain.schema.messages import BaseMessage
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.runnable import (
     Runnable,
+    RunnableConfig,
 )
 from langchain.tools import BaseTool
 
@@ -49,6 +50,7 @@ class ChatAgent(Agent):
     ) -> None:
         """Initialize the chat agent."""
         invoke_tools = bool(tools)
+        self.prompt_generator = prompt_generator
         self.llm_program: Runnable[
             Sequence[MessageLike], List[MessageLike]
         ] = create_llm_program(
@@ -59,6 +61,14 @@ class ChatAgent(Agent):
             stop=stop,
             invoke_tools=invoke_tools,
         )
+
+    def step(
+        self,
+        messages: Sequence[MessageLike],
+        *,
+        config: Optional[RunnableConfig] = None,
+    ) -> List[MessageLike]:
+        """"""
 
     def run(
         self,

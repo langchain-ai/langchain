@@ -4,8 +4,8 @@ from __future__ import annotations
 import abc
 from typing import Mapping, Any, Callable, List, Sequence, Optional
 
-from langchain.automaton.typedefs import MessageLike, FunctionCallResponse
-from langchain.schema import BaseMessage, PromptValue, HumanMessage
+from langchain.automaton.typedefs import MessageLike
+from langchain.schema import BaseMessage, PromptValue
 
 
 class BoundPromptValue(PromptValue):

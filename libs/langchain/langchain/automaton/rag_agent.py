@@ -29,6 +29,7 @@ from langchain.schema.messages import BaseMessage, HumanMessage, AIMessage
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.runnable import (
     Runnable,
+    RunnableConfig,
 )
 from langchain.tools import BaseTool
 
@@ -101,37 +102,24 @@ class RagAgent(Agent):
         )
         self.retriever = create_retriever(retriever)
 
-    def run(
+    def step(
         self,
         messages: Sequence[MessageLike],
         *,
-        config: Optional[dict] = None,
-        max_iterations: int = 100,
-    ) -> Iterator[MessageLike]:
-        """Run the agent."""
-        all_messages = list(messages)
-
-        for _ in range(max_iterations):
-            last_message = all_messages[-1] if all_messages else None
-            match last_message:
-                case AIMessage():
-                    break
-                case AgentFinish():
-                    break
-                case HumanMessage():
-                    new_messages = [RetrievalRequest(query=last_message.content)]
-                case RetrievalRequest():
-                    new_messages = [self.retriever.invoke(last_message, config=config)]
-                case _:
-                    new_messages = self.llm_program.invoke(all_messages, config=config)
-
-            yield from new_messages
-            all_messages.extend(new_messages)
-
-
-class Automaton:
-    def __init__(self):
-        pass
-
-    def get_next_state(self):
-        pass
+        config: Optional[RunnableConfig] = None,
+    ) -> List[MessageLike]:
+        """Take a single step with the agent."""
+        last_message = messages[-1] if messages else None
+        if not last_message:
+            return []
+        match last_message:
+            case AIMessage():
+                return []
+            case AgentFinish():
+                return []
+            case HumanMessage():
+                return [RetrievalRequest(query=last_message.content)]
+            case RetrievalRequest():
+                return [self.retriever.invoke(last_message, config=config)]
+            case _:
+                return self.llm_program.invoke(messages, config=config)
