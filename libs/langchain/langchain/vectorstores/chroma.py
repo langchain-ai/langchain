@@ -278,7 +278,10 @@ class Chroma(VectorStore):
             List of Documents most similar to the query vector.
         """
         results = self.__query_collection(
-            query_embeddings=embedding, n_results=k, where=filter, where_document=where_document
+            query_embeddings=embedding,
+            n_results=k,
+            where=filter,
+            where_document=where_document,
         )
         return _results_to_docs(results)
 
@@ -304,7 +307,10 @@ class Chroma(VectorStore):
             Lower score represents more similarity.
         """
         results = self.__query_collection(
-            query_embeddings=embedding, n_results=k, where=filter, where_document=where_document
+            query_embeddings=embedding,
+            n_results=k,
+            where=filter,
+            where_document=where_document,
         )
         return _results_to_docs_and_scores(results)
 
@@ -330,12 +336,18 @@ class Chroma(VectorStore):
         """
         if self._embedding_function is None:
             results = self.__query_collection(
-                query_texts=[query], n_results=k, where=filter, where_document=where_document
+                query_texts=[query],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
             )
         else:
             query_embedding = self._embedding_function.embed_query(query)
             results = self.__query_collection(
-                query_embeddings=[query_embedding], n_results=k, where=filter, where_document=where_document
+                query_embeddings=[query_embedding],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
             )
 
         return _results_to_docs_and_scores(results)
@@ -453,7 +465,12 @@ class Chroma(VectorStore):
 
         embedding = self._embedding_function.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mult=lambda_mult, filter=filter, where_document=where_document
+            embedding,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            where_document=where_document,
         )
         return docs
 
