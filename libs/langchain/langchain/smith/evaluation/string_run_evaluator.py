@@ -148,13 +148,27 @@ class ChainStringRunMapper(StringRunMapper):
     def map(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
         if not run.outputs:
-            raise ValueError(f"Run {run.id} has no outputs to evaluate.")
-        if self.input_key is not None and self.input_key not in run.inputs:
-            raise ValueError(f"Run {run.id} does not have input key {self.input_key}.")
-        elif self.prediction_key is not None and self.prediction_key not in run.outputs:
             raise ValueError(
-                f"Run {run.id} does not have prediction key {self.prediction_key}."
+                f"Run with ID {run.id} lacks outputs required for evaluation."
+                " Ensure the Run has valid outputs."
             )
+        if self.input_key is not None and self.input_key not in run.inputs:
+            raise ValueError(
+                f"Run with ID {run.id} is missing the expected input key"
+                f" '{self.input_key}'.\nAvailable input keys in this Run"
+                f"  are: {run.inputs.keys()}.\nAdjust the evaluator's"
+                f" input_key or ensure your input data includes key"
+                f" '{self.input_key}'."
+            )
+        elif self.prediction_key is not None and self.prediction_key not in run.outputs:
+            available_keys = ", ".join(run.outputs.keys())
+            raise ValueError(
+                f"Run with ID {run.id} doesn't have the expected prediction key"
+                f" '{self.prediction_key}'. Available prediction keys in this Run are:"
+                f" {available_keys}. Adjust the evaluator's prediction_key or"
+                " ensure the Run object's outputs the expected key."
+            )
+
         else:
             input_ = self._get_key(run.inputs, self.input_key, "input")
             prediction = self._get_key(run.outputs, self.prediction_key, "prediction")

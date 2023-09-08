@@ -592,7 +592,7 @@ class StructuredTool(BaseTool):
                 None, partial(self.invoke, input, config, **kwargs)
             )
 
-        return super().ainvoke(input, config, **kwargs)
+        return await super().ainvoke(input, config, **kwargs)
 
     # --- Tool ---
 

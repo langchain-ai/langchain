@@ -3,13 +3,35 @@ from __future__ import annotations
 from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Union,
+)
 
 from typing_extensions import TypedDict
 
+from langchain.schema.runnable.utils import (
+    Input,
+    Output,
+    accepts_config,
+    accepts_run_manager,
+)
+
 if TYPE_CHECKING:
     from langchain.callbacks.base import BaseCallbackManager, Callbacks
-    from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
+    from langchain.callbacks.manager import (
+        AsyncCallbackManager,
+        AsyncCallbackManagerForChainRun,
+        CallbackManager,
+        CallbackManagerForChainRun,
+    )
 
 
 class RunnableConfig(TypedDict, total=False):
@@ -115,6 +137,47 @@ def patch_config(
     if run_name is not None:
         config["run_name"] = run_name
     return config
+
+
+def call_func_with_variable_args(
+    func: Union[
+        Callable[[Input], Output],
+        Callable[[Input, CallbackManagerForChainRun], Output],
+        Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
+    ],
+    input: Input,
+    run_manager: CallbackManagerForChainRun,
+    config: RunnableConfig,
+) -> Output:
+    """Call function that may optionally accept a run_manager and/or config."""
+    kwargs: Dict[str, Any] = {}
+    if accepts_config(func):
+        kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
+    if accepts_run_manager(func):
+        kwargs["run_manager"] = run_manager
+    return func(input, **kwargs)  # type: ignore[call-arg]
+
+
+async def acall_func_with_variable_args(
+    func: Union[
+        Callable[[Input], Awaitable[Output]],
+        Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
+        Callable[
+            [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+            Awaitable[Output],
+        ],
+    ],
+    input: Input,
+    run_manager: AsyncCallbackManagerForChainRun,
+    config: RunnableConfig,
+) -> Output:
+    """Call function that may optionally accept a run_manager and/or config."""
+    kwargs: Dict[str, Any] = {}
+    if accepts_config(func):
+        kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
+    if accepts_run_manager(func):
+        kwargs["run_manager"] = run_manager
+    return await func(input, **kwargs)  # type: ignore[call-arg]
 
 
 def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
