@@ -151,6 +151,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 "kwargs": event_kwargs,
             },
         )
+        self._on_llm_new_token(llm_run, token)
 
     def on_retry(
         self,
@@ -463,6 +464,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def _on_llm_start(self, run: Run) -> None:
         """Process the LLM Run upon start."""
+
+    def _on_llm_new_token(self, run: Run, token: str) -> None:
+        """Process new LLM token."""
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""

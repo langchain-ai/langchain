@@ -9,6 +9,7 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Dict,
     List,
@@ -31,6 +32,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.callbacks.message_log import MessageLog, MessageLogCallbackHandler
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts.few_shot import FewShotPromptTemplate
@@ -45,7 +47,7 @@ from langchain.schema import (
 )
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
-from langchain.schema.runnable import Runnable
+from langchain.schema.runnable import Runnable, RunnableConfig
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 from langchain.utils.input import get_color_mapping
@@ -819,6 +821,32 @@ s
     def save_agent(self, file_path: Union[Path, str]) -> None:
         """Save the underlying agent."""
         return self.agent.save(file_path)
+
+    async def astream(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[MessageLog]:
+        """
+        Default implementation of astream, which calls ainvoke.
+        Subclasses should override this method if they support streaming output.
+        """
+        stream = MessageLogCallbackHandler(lambda run: False)
+
+        config = config or {}
+        callbacks = config.get("callbacks", [])
+        if isinstance(callbacks, list):
+            callbacks.append(stream)
+        if isinstance(callbacks, BaseCallbackManager):
+            callbacks.inheritable_handlers.append(stream)
+
+        task = asyncio.create_task(self.ainvoke(input, config, **kwargs))
+
+        async for message in stream:
+            yield message
+
+        await task
 
     def iter(
         self,
