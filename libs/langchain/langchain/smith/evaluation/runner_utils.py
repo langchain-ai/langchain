@@ -77,7 +77,7 @@ class TestResult(dict):
             col for col in df.columns if col not in ["input", "output", "reference"]
         ]
         quantiles = df[feedback_cols].quantile([0.25, 0.5, 0.75])
-        return quantiles
+        return quantiles.transpose()
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the results to a dataframe."""
@@ -909,7 +909,7 @@ def _prepare_run_on_dataset(
                 ),
             ],
             tags=tags or [],
-            concurrency_level=concurrency_level,
+            max_concurrency=concurrency_level,
         )
         for example in examples
     ]
@@ -920,7 +920,8 @@ def _collect_test_results(
     examples: List[Example],
     batch_results: List[Union[dict, str, LLMResult, ChatResult]],
     configs: List[RunnableConfig],
-) -> Dict[str, Any]:
+    project_name: str,
+) -> TestResult:
     wait_for_all_tracers()
     all_feedback = {}
     for c in configs:
@@ -938,7 +939,10 @@ def _collect_test_results(
         }
         if example.outputs:
             results[str(example.id)]["reference"] = example.outputs
-    return results
+    return TestResult(
+        project_name=project_name,
+        results=results,
+    )
 
 
 async def arun_on_dataset(
@@ -1097,11 +1101,13 @@ async def arun_on_dataset(
     batch_results = await runnable_utils.gather_with_concurrency(
         configs[0].get("max_concurrency"), *map(_async_executor, examples, configs)
     )
-    results = _collect_test_results(examples, batch_results, configs)
-    return TestResult(
-        project_name=project_name,
-        results=results,
-    )
+    results = _collect_test_results(examples, batch_results, configs, project_name)
+    if verbose:
+        try:
+            print(results.get_aggregate_feedback())
+        except Exception as e:
+            logger.debug(f"Failed to print aggregate feedback: {e}")
+    return results
 
 
 def run_on_dataset(
@@ -1261,8 +1267,10 @@ def run_on_dataset(
     with runnable_config.get_executor_for_config(configs[0]) as executor:
         batch_results = list(executor.map(_executor, examples, configs))
 
-    results = _collect_test_results(examples, batch_results, configs)
-    return TestResult(
-        project_name=project_name,
-        results=results,
-    )
+    results = _collect_test_results(examples, batch_results, configs, project_name)
+    if verbose:
+        try:
+            print(results.get_aggregate_feedback())
+        except Exception as e:
+            logger.debug(f"Failed to print aggregate feedback: {e}")
+    return results
