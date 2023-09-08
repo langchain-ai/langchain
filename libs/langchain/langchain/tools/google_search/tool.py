@@ -10,8 +10,8 @@ from langchain.utilities.google_search import GoogleSearchAPIWrapper
 class GoogleSearchRun(BaseTool):
     """Tool that queries the Google search API."""
 
-    name = "google_search"
-    description = (
+    name: str = "google_search"
+    description: str = (
         "A wrapper around Google Search. "
         "Useful for when you need to answer questions about current events. "
         "Input should be a search query."
@@ -30,8 +30,8 @@ class GoogleSearchRun(BaseTool):
 class GoogleSearchResults(BaseTool):
     """Tool that queries the Google Search API and gets back json."""
 
-    name = "Google Search Results JSON"
-    description = (
+    name: str = "Google Search Results JSON"
+    description: str = (
         "A wrapper around Google Search. "
         "Useful for when you need to answer questions about current events. "
         "Input should be a search query. Output is a JSON array of the query results"

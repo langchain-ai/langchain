@@ -33,30 +33,30 @@ class BaseRetriever(ABC):
         ...
 ```
 
-It's that simple! You can call `get_relevant_documents` or the async `get_relevant_documents` methods to retrieve documents relevant to a query, where "relevance" is defined by
+It's that simple! You can call `get_relevant_documents` or the async `aget_relevant_documents` methods to retrieve documents relevant to a query, where "relevance" is defined by
 the specific retriever object you are calling.
 
-Of course, we also help construct what we think useful Retrievers are. The main type of Retriever that we focus on is a Vectorstore retriever. We will focus on that for the rest of this guide.
+Of course, we also help construct what we think useful retrievers are. The main type of retriever that we focus on is a vector store retriever. We will focus on that for the rest of this guide.
 
-In order to understand what a vectorstore retriever is, it's important to understand what a Vectorstore is. So let's look at that.
+In order to understand what a vector store retriever is, it's important to understand what a vector store is. So let's look at that.
 
-By default, LangChain uses [Chroma](/docs/ecosystem/integrations/chroma.html) as the vectorstore to index and search embeddings. To walk through this tutorial, we'll first need to install `chromadb`.
+By default, LangChain uses [Chroma](/docs/ecosystem/integrations/chroma.html) as the vector store to index and search embeddings. To walk through this tutorial, we'll first need to install `chromadb`.
 
 ```
 pip install chromadb
 ```
 
 This example showcases question answering over documents.
-We have chosen this as the example for getting started because it nicely combines a lot of different elements (Text splitters, embeddings, vectorstores) and then also shows how to use them in a chain.
+We have chosen this as the example for getting started because it nicely combines a lot of different elements (Text splitters, embeddings, vector stores) and then also shows how to use them in a chain.
 
 Question answering over documents consists of four steps:
 
 1. Create an index
-2. Create a Retriever from that index
+2. Create a retriever from that index
 3. Create a question answering chain
 4. Ask questions!
 
-Each of the steps has multiple sub steps and potential configurations. In this notebook we will primarily focus on (1). We will start by showing the one-liner for doing so, but then break down what is actually going on.
+Each of the steps has multiple substeps and potential configurations. In this notebook we will primarily focus on (1). We will start by showing the one-liner for doing so, but then break down what is actually going on.
 
 First, let's import some common classes we'll use no matter what.
 
@@ -66,7 +66,7 @@ from langchain.chains import RetrievalQA
 from langchain.llms import OpenAI
 ```
 
-Next in the generic setup, let's specify the document loader we want to use. You can download the `state_of_the_union.txt` file [here](https://github.com/hwchase17/langchain/blob/master/docs/extras/modules/state_of_the_union.txt)
+Next in the generic setup, let's specify the document loader we want to use. You can download the `state_of_the_union.txt` file [here](https://github.com/hwchase17/langchain/blob/master/docs/extras/modules/state_of_the_union.txt).
 
 
 ```python
@@ -129,7 +129,7 @@ index.query_with_sources(query)
 
 </CodeOutputBlock>
 
-What is returned from the `VectorstoreIndexCreator` is `VectorStoreIndexWrapper`, which provides these nice `query` and `query_with_sources` functionality. If we just wanted to access the vectorstore directly, we can also do that.
+What is returned from the `VectorstoreIndexCreator` is a `VectorStoreIndexWrapper`, which provides these nice `query` and `query_with_sources` functionalities. If we just want to access the vector store directly, we can also do that.
 
 
 ```python
@@ -144,7 +144,7 @@ index.vectorstore
 
 </CodeOutputBlock>
 
-If we then want to access the VectorstoreRetriever, we can do that with:
+If we then want to access the `VectorStoreRetriever`, we can do that with:
 
 
 ```python
@@ -159,7 +159,7 @@ index.vectorstore.as_retriever()
 
 </CodeOutputBlock>
 
-It can also be convenient to filter the vectorstore by the metadata associated with documents, particularly when your vectorstore has multiple sources.  This can be done using the `query` method like so:
+It can also be convenient to filter the vector store by the metadata associated with documents, particularly when your vector store has multiple sources.  This can be done using the `query` method like so:
 
 
 ```python
@@ -185,7 +185,7 @@ There are three main steps going on after the documents are loaded:
 
 1. Splitting documents into chunks
 2. Creating embeddings for each document
-3. Storing documents and embeddings in a vectorstore
+3. Storing documents and embeddings in a vector store
 
 Let's walk through this in code
 
@@ -211,7 +211,7 @@ from langchain.embeddings import OpenAIEmbeddings
 embeddings = OpenAIEmbeddings()
 ```
 
-We now create the vectorstore to use as the index.
+We now create the vector store to use as the index.
 
 
 ```python

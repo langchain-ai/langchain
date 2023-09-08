@@ -18,8 +18,8 @@ from langchain.tools import BaseTool
 class YouTubeSearchTool(BaseTool):
     """Tool that queries YouTube."""
 
-    name = "youtube_search"
-    description = (
+    name: str = "youtube_search"
+    description: str = (
         "search for youtube videos associated with a person. "
         "the input to this tool should be a comma separated list, "
         "the first part contains a person name and the second a "

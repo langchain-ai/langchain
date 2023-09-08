@@ -2,11 +2,10 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.vertexai import _VertexAICommon, is_codey_model
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -93,7 +92,7 @@ def _parse_examples(examples: List[BaseMessage]) -> List["InputOutputTextPair"]:
 
 
 class ChatVertexAI(_VertexAICommon, BaseChatModel):
-    """Wrapper around Vertex AI large language models."""
+    """`Vertex AI` Chat large language models API."""
 
     model_name: str = "chat-bison"
 

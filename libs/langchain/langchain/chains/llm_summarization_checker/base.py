@@ -6,13 +6,12 @@ import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema.language_model import BaseLanguageModel
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"

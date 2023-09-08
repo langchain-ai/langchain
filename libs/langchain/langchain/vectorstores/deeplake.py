@@ -1,4 +1,3 @@
-"""Wrapper around Activeloop Deep Lake."""
 from __future__ import annotations
 
 import logging
@@ -24,9 +23,9 @@ logger = logging.getLogger(__name__)
 
 
 class DeepLake(VectorStore):
-    """Wrapper around Deep Lake, a data lake for deep learning applications.
+    """`Activeloop Deep Lake` vector store.
 
-    We integrated deeplake's similarity search and filtering for fast prototyping,
+    We integrated deeplake's similarity search and filtering for fast prototyping.
     Now, it supports Tensor Query Language (TQL) for production use cases
     over billion rows.
 
@@ -63,6 +62,7 @@ class DeepLake(VectorStore):
         num_workers: int = 0,
         verbose: bool = True,
         exec_option: Optional[str] = None,
+        runtime: Optional[Dict] = None,
         **kwargs: Any,
     ) -> None:
         """Creates an empty DeepLakeVectorStore or loads an existing one.
@@ -78,7 +78,7 @@ class DeepLake(VectorStore):
             >>> # Create a vector store in the Deep Lake Managed Tensor Database
             >>> data = DeepLake(
             ...        path = "hub://org_id/dataset_name",
-            ...        exec_option = "tensor_db",
+            ...        runtime = {"tensor_db": True},
             ... )
 
         Args:
@@ -115,6 +115,10 @@ class DeepLake(VectorStore):
                     responsible for storage and query execution. Only for data stored in
                     the Deep Lake Managed Database. Use runtime = {"db_engine": True}
                     during dataset creation.
+            runtime (Dict, optional): Parameters for creating the Vector Store in
+                Deep Lake's Managed Tensor Database. Not applicable when loading an
+                existing Vector Store. To create a Vector Store in the Managed Tensor
+                Database, set `runtime = {"tensor_db": True}`.
             **kwargs: Other optional keyword arguments.
 
         Raises:
@@ -126,26 +130,28 @@ class DeepLake(VectorStore):
         self.verbose = verbose
 
         if _DEEPLAKE_INSTALLED is False:
-            raise ValueError(
+            raise ImportError(
                 "Could not import deeplake python package. "
                 "Please install it with `pip install deeplake[enterprise]`."
             )
 
         if (
-            kwargs.get("runtime") == {"tensor_db": True}
+            runtime == {"tensor_db": True}
             and version_compare(deeplake.__version__, "3.6.7") == -1
         ):
-            raise ValueError(
-                "To use tensor_db option you need to update deeplake to `3.6.7`. "
+            raise ImportError(
+                "To use tensor_db option you need to update deeplake to `3.6.7` or "
+                "higher. "
                 f"Currently installed deeplake version is {deeplake.__version__}. "
             )
 
         self.dataset_path = dataset_path
 
-        logger.warning(
-            "Using embedding function is deprecated and will be removed "
-            "in the future. Please use embedding instead."
-        )
+        if embedding_function:
+            logger.warning(
+                "Using embedding function is deprecated and will be removed "
+                "in the future. Please use embedding instead."
+            )
 
         self.vectorstore = DeepLakeVectorStore(
             path=self.dataset_path,
@@ -154,6 +160,7 @@ class DeepLake(VectorStore):
             token=token,
             exec_option=exec_option,
             verbose=verbose,
+            runtime=runtime,
             **kwargs,
         )
 

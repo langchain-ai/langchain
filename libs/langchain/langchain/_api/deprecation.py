@@ -293,6 +293,21 @@ def deprecated(
         else:
             new_doc = f"[*Deprecated*]  {old_doc}"
 
+        # Modify the docstring to include a deprecation notice.
+        notes_header = "\nNotes\n-----"
+        components = [
+            message,
+            f"Use {alternative} instead." if alternative else "",
+            addendum,
+        ]
+        details = " ".join([component.strip() for component in components if component])
+        new_doc += (
+            f"[*Deprecated*] {old_doc}\n"
+            f"{notes_header if notes_header not in old_doc else ''}\n"
+            f".. deprecated:: {since}\n"
+            f"   {details}"
+        )
+
         return finalize(warning_emitting_wrapper, new_doc)
 
     return deprecate

@@ -15,6 +15,9 @@
     Document
 """  # noqa: E501
 
+from langchain.document_transformers.beautiful_soup_transformer import (
+    BeautifulSoupTransformer,
+)
 from langchain.document_transformers.doctran_text_extract import (
     DoctranPropertyExtractor,
 )
@@ -31,6 +34,7 @@ from langchain.document_transformers.nuclia_text_transform import NucliaTextTran
 from langchain.document_transformers.openai_functions import OpenAIMetadataTagger
 
 __all__ = [
+    "BeautifulSoupTransformer",
     "DoctranQATransformer",
     "DoctranTextTranslator",
     "DoctranPropertyExtractor",

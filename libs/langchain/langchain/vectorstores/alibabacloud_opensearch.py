@@ -12,7 +12,7 @@ logger = logging.getLogger()
 
 
 class AlibabaCloudOpenSearchSettings:
-    """Alibaba Cloud Opensearch Client Configuration.
+    """`Alibaba Cloud Opensearch` client configuration.
 
     Attribute:
         endpoint (str) : The endpoint of opensearch instance, You can find it
@@ -90,7 +90,7 @@ def create_metadata(fields: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class AlibabaCloudOpenSearch(VectorStore):
-    """Alibaba Cloud OpenSearch Vector Store"""
+    """`Alibaba Cloud OpenSearch` vector store."""
 
     def __init__(
         self,
@@ -102,7 +102,7 @@ class AlibabaCloudOpenSearch(VectorStore):
             from alibabacloud_ha3engine import client, models
             from alibabacloud_tea_util import models as util_models
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import alibaba cloud opensearch python package. "
                 "Please install it with `pip install alibabacloud-ha3engine`."
             )

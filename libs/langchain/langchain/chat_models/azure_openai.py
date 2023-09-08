@@ -4,9 +4,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Mapping
 
-from pydantic import root_validator
-
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import ChatResult
 from langchain.utils import get_from_dict_or_env
 
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class AzureChatOpenAI(ChatOpenAI):
-    """Wrapper around Azure OpenAI Chat Completion API.
+    """`Azure OpenAI` Chat Completion API.
 
     To use this class you
     must have a deployed model on Azure OpenAI. Use `deployment_name` in the

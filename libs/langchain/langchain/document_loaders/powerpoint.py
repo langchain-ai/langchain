@@ -1,4 +1,3 @@
-"""Loads PowerPoint files."""
 import os
 from typing import List
 
@@ -6,7 +5,8 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class UnstructuredPowerPointLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load PowerPoint files.
+    """Load `Microsoft PowerPoint` files using `Unstructured`.
+
     Works with both .ppt and .pptx files.
     You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single

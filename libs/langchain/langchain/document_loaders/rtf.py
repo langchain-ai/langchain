@@ -8,7 +8,8 @@ from langchain.document_loaders.unstructured import (
 
 
 class UnstructuredRTFLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load RTF files.
+    """Load `RTF` files using `Unstructured`.
+
     You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single
     langchain Document object. If you use "elements" mode, the unstructured

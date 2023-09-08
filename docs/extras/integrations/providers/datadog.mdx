@@ -4,12 +4,12 @@
 
 Key features of the ddtrace integration for LangChain:
 - Traces: Capture LangChain requests, parameters, prompt-completions, and help visualize LangChain operations.
-- Metrics: Capture LangChain request latency, errors, and token/cost usage (for OpenAI LLMs and Chat Models).
+- Metrics: Capture LangChain request latency, errors, and token/cost usage (for OpenAI LLMs and chat models).
 - Logs: Store prompt completion data for each LangChain operation.
 - Dashboard: Combine metrics, logs, and trace data into a single plane to monitor LangChain requests.
 - Monitors: Provide alerts in response to spikes in LangChain request latency or error rate.
 
-Note: The ddtrace LangChain integration currently provides tracing for LLMs, Chat Models, Text Embedding Models, Chains, and Vectorstores.
+Note: The ddtrace LangChain integration currently provides tracing for LLMs, chat models, Text Embedding Models, Chains, and Vectorstores.
 
 ## Installation and Setup
 
@@ -52,7 +52,7 @@ Note that using `ddtrace-run` or `patch_all()` will also enable the `requests` a
 from ddtrace import config, patch
 
 # Note: be sure to configure the integration before calling ``patch()``!
-# eg. config.langchain["logs_enabled"] = True
+# e.g. config.langchain["logs_enabled"] = True
 
 patch(langchain=True)
 

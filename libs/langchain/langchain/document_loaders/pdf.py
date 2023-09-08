@@ -1,4 +1,3 @@
-"""Loads PDF files."""
 import json
 import logging
 import os
@@ -17,6 +16,7 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     AmazonTextractPDFParser,
+    DocumentIntelligenceParser,
     PDFMinerParser,
     PDFPlumberParser,
     PyMuPDFParser,
@@ -30,7 +30,8 @@ logger = logging.getLogger(__file__)
 
 
 class UnstructuredPDFLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load PDF files.
+    """Load `PDF` files using `Unstructured`.
+
     You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single
     langchain Document object. If you use "elements" mode, the unstructured
@@ -59,7 +60,7 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
 
 
 class BasePDFLoader(BaseLoader, ABC):
-    """Base loader class for PDF files.
+    """Base Loader class for `PDF` files.
 
     Defaults to check for local file, but if the file is a web path, it will download it
     to a temporary file, use it, then clean up the temporary file after completion
@@ -122,7 +123,7 @@ class BasePDFLoader(BaseLoader, ABC):
 
 
 class OnlinePDFLoader(BasePDFLoader):
-    """Loads online PDFs."""
+    """Load online `PDF`."""
 
     def load(self) -> List[Document]:
         """Load documents."""
@@ -131,7 +132,7 @@ class OnlinePDFLoader(BasePDFLoader):
 
 
 class PyPDFLoader(BasePDFLoader):
-    """Loads a PDF with pypdf and chunks at character level.
+    """Load `PDF using `pypdf` and chunks at character level.
 
     Loader also stores page numbers in metadata.
     """
@@ -162,7 +163,7 @@ class PyPDFLoader(BasePDFLoader):
 
 
 class PyPDFium2Loader(BasePDFLoader):
-    """Loads a PDF with pypdfium2 and chunks at character level."""
+    """Load `PDF` using `pypdfium2` and chunks at character level."""
 
     def __init__(self, file_path: str):
         """Initialize with a file path."""
@@ -182,7 +183,7 @@ class PyPDFium2Loader(BasePDFLoader):
 
 
 class PyPDFDirectoryLoader(BaseLoader):
-    """Loads a directory with PDF files with pypdf and chunks at character level.
+    """Load a directory with `PDF` files using `pypdf` and chunks at character level.
 
     Loader also stores page numbers in metadata.
     """
@@ -227,7 +228,7 @@ class PyPDFDirectoryLoader(BaseLoader):
 
 
 class PDFMinerLoader(BasePDFLoader):
-    """Loader that uses PDFMiner to load PDF files."""
+    """Load `PDF` files using `PDFMiner`."""
 
     def __init__(self, file_path: str) -> None:
         """Initialize with file path."""
@@ -255,7 +256,7 @@ class PDFMinerLoader(BasePDFLoader):
 
 
 class PDFMinerPDFasHTMLLoader(BasePDFLoader):
-    """Loader that uses PDFMiner to load PDF files as HTML content."""
+    """Load `PDF` files as HTML content using `PDFMiner`."""
 
     def __init__(self, file_path: str):
         """Initialize with a file path."""
@@ -289,7 +290,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 
 
 class PyMuPDFLoader(BasePDFLoader):
-    """Loader that uses PyMuPDF to load PDF files."""
+    """Load `PDF` files using `PyMuPDF`."""
 
     def __init__(self, file_path: str) -> None:
         """Initialize with a file path."""
@@ -314,7 +315,7 @@ class PyMuPDFLoader(BasePDFLoader):
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:
 # https://gist.github.com/danielgross/3ab4104e14faccc12b49200843adab21
 class MathpixPDFLoader(BasePDFLoader):
-    """This class uses Mathpix service to load PDF files."""
+    """Load `PDF` files using `Mathpix` service."""
 
     def __init__(
         self,
@@ -433,10 +434,13 @@ class MathpixPDFLoader(BasePDFLoader):
 
 
 class PDFPlumberLoader(BasePDFLoader):
-    """Loader that uses pdfplumber to load PDF files."""
+    """Load `PDF` files using `pdfplumber`."""
 
     def __init__(
-        self, file_path: str, text_kwargs: Optional[Mapping[str, Any]] = None
+        self,
+        file_path: str,
+        text_kwargs: Optional[Mapping[str, Any]] = None,
+        dedupe: bool = False,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -449,17 +453,18 @@ class PDFPlumberLoader(BasePDFLoader):
 
         super().__init__(file_path)
         self.text_kwargs = text_kwargs or {}
+        self.dedupe = dedupe
 
     def load(self) -> List[Document]:
         """Load file."""
 
-        parser = PDFPlumberParser(text_kwargs=self.text_kwargs)
+        parser = PDFPlumberParser(text_kwargs=self.text_kwargs, dedupe=self.dedupe)
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
 
 class AmazonTextractPDFLoader(BasePDFLoader):
-    """Loads a PDF document from local file system, HTTP or S3.
+    """Load `PDF` files from a local file system, HTTP or S3.
 
     To authenticate, the AWS client uses the following methods to
     automatically load credentials:
@@ -597,3 +602,51 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             return 1
         else:
             raise ValueError(f"unsupported mime type: {blob.mimetype}")
+
+
+class DocumentIntelligenceLoader(BasePDFLoader):
+    """Loads a PDF with Azure Document Intelligence"""
+
+    def __init__(
+        self, file_path: str, client: Any, model: str = "prebuilt-document"
+    ) -> None:
+        """
+        Initialize the object for file processing with Azure Document Intelligence
+        (formerly Form Recognizer).
+
+        This constructor initializes a DocumentIntelligenceParser object to be used
+        for parsing files using the Azure Document Intelligence API. The load method
+        generates a Document node including metadata (source blob and page number)
+        for each page.
+
+        Parameters:
+        -----------
+        file_path : str
+            The path to the file that needs to be parsed.
+        client: Any
+            A DocumentAnalysisClient to perform the analysis of the blob
+        model : str
+            The model name or ID to be used for form recognition in Azure.
+
+        Examples:
+        ---------
+        >>> obj = DocumentIntelligenceLoader(
+        ...     file_path="path/to/file",
+        ...     client=client,
+        ...     model="prebuilt-document"
+        ... )
+        """
+
+        self.parser = DocumentIntelligenceParser(client=client, model=model)
+        super().__init__(file_path)
+
+    def load(self) -> List[Document]:
+        """Load given path as pages."""
+        return list(self.lazy_load())
+
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        """Lazy load given path as pages."""
+        blob = Blob.from_path(self.file_path)
+        yield from self.parser.parse(blob)

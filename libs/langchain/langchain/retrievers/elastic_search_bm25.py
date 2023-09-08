@@ -11,7 +11,7 @@ from langchain.schema import BaseRetriever
 
 
 class ElasticSearchBM25Retriever(BaseRetriever):
-    """Retriever for the Elasticsearch using BM25 as a retrieval method.
+    """`Elasticsearch` retriever that uses `BM25`.
 
     To connect to an Elasticsearch instance that requires login credentials,
     including Elastic Cloud, use the Elasticsearch URL format

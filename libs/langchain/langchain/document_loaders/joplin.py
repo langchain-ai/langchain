@@ -11,8 +11,7 @@ LINK_NOTE_TEMPLATE = "joplin://x-callback-url/openNote?id={id}"
 
 
 class JoplinLoader(BaseLoader):
-    """
-    Loader that fetches notes from Joplin.
+    """Load notes from `Joplin`.
 
     In order to use this loader, you need to have Joplin running with the
     Web Clipper enabled (look for "Web Clipper" in the app settings).
