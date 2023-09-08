@@ -3,19 +3,18 @@ from __future__ import annotations
 import os
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
+import vearch
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
-if TYPE_CHECKING:
-    import vearch
 DEFAULT_TOPN = 4
 
 
-class Vearch(VectorStore):
+class VearchDb(VectorStore):
     _DEFAULT_TABLE_NAME = "langchain_vearch"
 
     def __init__(
@@ -26,13 +25,6 @@ class Vearch(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize vearch vector store"""
-        try:
-            import vearch
-        except ImportError:
-            raise ValueError(
-                "Could not import vearch python package. "
-                "Please install it with `pip install vearch`."
-            )
 
         if metadata_path is None:
             metadata_path = os.getcwd().replace("\\", "/")
@@ -57,13 +49,13 @@ class Vearch(VectorStore):
 
     @classmethod
     def from_documents(
-        cls: Type[Vearch],
+        cls: Type[VearchDb],
         documents: List[Document],
         embedding: Embeddings,
         table_name: str = "langchain_vearch",
         metadata_path: Optional[str] = None,
         **kwargs: Any,
-    ) -> Vearch:
+    ) -> VearchDb:
         """Return Vearch VectorStore"""
 
         texts = [d.page_content for d in documents]
@@ -80,14 +72,14 @@ class Vearch(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[Vearch],
+        cls: Type[VearchDb],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]]=None,
         table_name: str = _DEFAULT_TABLE_NAME,
         metadata_path: Optional[str] = None,
         **kwargs: Any,
-    ) -> Vearch:
+    ) -> VearchDb:
         """Return Vearch VectorStore"""
 
         vearch_db = cls(
@@ -196,7 +188,7 @@ class Vearch(VectorStore):
         table_name: str = _DEFAULT_TABLE_NAME,
         metadata_path: Optional[str] = None,
         **kwargs: Any,
-    ) -> Vearch:
+    ) -> VearchDb:
         """Load the local specified table.
         Returns:
             Success or failure of loading the local specified table
@@ -231,14 +223,13 @@ class Vearch(VectorStore):
         if self.embedding_func is None:
             raise ValueError("embedding_func is None!!!")
         embeddings = self.embedding_func.embed_query(query)
-        docs = self.similarity_search_with_score_by_vector(embeddings, k)
+        docs = self.similarity_search_by_vector(embeddings, k)
         return docs
 
-    def similarity_search_with_score_by_vector(
+    def similarity_search_by_vector(
         self,
-        embeddings: List[float],
+        embedding: List[float],
         k: int = DEFAULT_TOPN,
-        min_score: float = 0.0,
         **kwargs: Any,
     ) -> List[Document]:
         """The most k similar documents and scores of the specified query.
@@ -255,8 +246,7 @@ class Vearch(VectorStore):
             "vector": [
                 {
                     "field": "text_embedding",
-                    "feature":np.array(embeddings),
-                    "min_score": min_score,
+                    "feature":np.array(embedding),
                 }
             ],
             "fields": [],
@@ -278,6 +268,64 @@ class Vearch(VectorStore):
                     continue
             docs.append(Document(page_content=content, metadata=meta_data))
         return docs
+
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = DEFAULT_TOPN,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """The most k similar documents and scores of the specified query.
+
+        Args:
+            embeddings: embedding vector of the query.
+            k: The k most similar documents to the text query.
+            min_score: the score of similar documents to the text query
+        Returns:
+            The k most similar documents to the specified text query.
+            0 is dissimilar, 1 is the most similar.
+        """
+        if self.embedding_func is None:
+            raise ValueError("embedding_func is None!!!")
+        embeddings = self.embedding_func.embed_query(query)
+        query_data = {
+            "vector": [
+                {
+                    "field": "text_embedding",
+                    "feature":np.array(embeddings),
+                }
+            ],
+            "fields": [],
+            "is_brute_search": 1,
+            "retrieval_param": {"metric_type": "InnerProduct", "nprobe": 20},
+            "topn": k,
+        }
+        query_result = self.vearch_engine.search(query_data)
+        results: List[Tuple[Document, float]] = []
+        for item in query_result[0]["result_items"]:
+            content = ""
+            meta_data = {}
+            for item_key in item:
+                if item_key == "text":
+                    content = item[item_key]
+                    continue
+                if item_key == "metadata":
+                    meta_data["source"] = item[item_key]
+                    continue
+                if item_key=="score":
+                    score=item[item_key]
+                    continue
+            tmp_res=(Document(page_content=content, metadata=meta_data),score)
+            results.append(tmp_res)
+        return results
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        return self.similarity_search_with_score(query, k, **kwargs)
 
     def delete(
         self,
