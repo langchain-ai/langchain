@@ -105,9 +105,9 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Log records to deepeval when an LLM ends."""
-        from deepeval.metrics.metric import Metric
         from deepeval.metrics.answer_relevancy import AnswerRelevancy
         from deepeval.metrics.bias_classifier import UnBiasedMetric
+        from deepeval.metrics.metric import Metric
         from deepeval.metrics.toxic_classifier import NonToxicMetric
 
         for metric in self.metrics:

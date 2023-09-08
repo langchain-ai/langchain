@@ -3,9 +3,10 @@
 
 def test_confident_deepeval() -> None:
     """Test valid call to Beam."""
-    from langchain.llms import OpenAI
-    from langchain.callbacks.confident_callback import DeepEvalCallbackHandler
     from deepeval.metrics.answer_relevancy import AnswerRelevancy
+
+    from langchain.callbacks.confident_callback import DeepEvalCallbackHandler
+    from langchain.llms import OpenAI
 
     answer_relevancy = AnswerRelevancy(minimum_score=0.3)
     deepeval_callback = DeepEvalCallbackHandler(
