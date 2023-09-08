@@ -221,7 +221,21 @@ class ChatMessage(BaseMessage):
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     """A Chat Message chunk."""
 
-    pass
+    def __add__(self, other: Any) -> BaseMessageChunk:
+        if isinstance(other, BaseMessageChunk):
+            return self.__class__(
+                content=self.content + other.content,
+                role=self.role,
+                additional_kwargs=self._merge_kwargs_dict(
+                    self.additional_kwargs, other.additional_kwargs
+                ),
+            )
+        else:
+            raise TypeError(
+                'unsupported operand type(s) for +: "'
+                f"{self.__class__.__name__}"
+                f'" and "{other.__class__.__name__}"'
+            )
 
 
 def _message_to_dict(message: BaseMessage) -> dict:
