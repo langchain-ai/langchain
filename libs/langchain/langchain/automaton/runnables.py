@@ -199,7 +199,7 @@ def create_llm_program(
     if not isinstance(prompt_generator, Runnable):
         _prompt_generator = RunnableLambda(prompt_generator)
     else:
-        _prompt_generator = Runnable
+        _prompt_generator = prompt_generator
 
     if stop:
         llm = llm.bind(stop=stop)
