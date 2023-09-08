@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import tempfile
 import zipfile
 from pathlib import Path
 from typing import Iterator, List, Union
@@ -12,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class TelegramChatLoader(chat_loaders.BaseChatLoader):
-    """A loading utility for converting telegram conversations
-    to LangChain chat messages.
+    """Load `telegram` conversations to LangChain chat messages.
 
     To export, use the Telegram Desktop app from
     https://desktop.telegram.org/, select a conversation, click the three dots
@@ -136,7 +136,8 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
             with zipfile.ZipFile(path) as zip_file:
                 for file in zip_file.namelist():
                     if file.endswith((".html", ".json")):
-                        yield zip_file.extract(file)
+                        with tempfile.TemporaryDirectory() as temp_dir:
+                            yield zip_file.extract(file, path=temp_dir)
 
     def lazy_load(self) -> Iterator[chat_loaders.ChatSession]:
         """Lazy load the messages from the chat file and yield them
