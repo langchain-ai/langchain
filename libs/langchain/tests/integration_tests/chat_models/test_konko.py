@@ -14,7 +14,6 @@ from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-@pytest.mark.scheduled
 def test_konko_chat_test() -> None:
     """Evaluate basic ChatKonko functionality."""
     chat_instance = ChatKonko(max_tokens=10)
@@ -58,7 +57,6 @@ def test_konko_system_msg_test() -> None:
     assert isinstance(chat_response.content, str)
 
 
-@pytest.mark.scheduled
 def test_konko_generation_test() -> None:
     """Check ChatKonko's generation ability."""
     chat_instance = ChatKonko(max_tokens=10, n=2)
@@ -74,7 +72,6 @@ def test_konko_generation_test() -> None:
             assert gen.text == gen.message.content
 
 
-@pytest.mark.scheduled
 def test_konko_multiple_outputs_test() -> None:
     """Test multiple completions with ChatKonko."""
     chat_instance = ChatKonko(max_tokens=10, n=5)
@@ -87,7 +84,6 @@ def test_konko_multiple_outputs_test() -> None:
         assert isinstance(gen.message.content, str)
 
 
-@pytest.mark.scheduled
 def test_konko_streaming_callback_test() -> None:
     """Evaluate streaming's token callback functionality."""
     callback_instance = FakeCallbackHandler()
@@ -105,7 +101,6 @@ def test_konko_streaming_callback_test() -> None:
     assert isinstance(chat_response, BaseMessage)
 
 
-@pytest.mark.scheduled
 def test_konko_streaming_info_test() -> None:
     """Ensure generation details are retained during streaming."""
 
@@ -175,7 +170,6 @@ def test_konko_additional_args_test() -> None:
         ChatKonko(model_kwargs={"model": "text-davinci-003"})
 
 
-@pytest.mark.scheduled
 def test_konko_token_streaming_test() -> None:
     """Check token streaming for ChatKonko."""
     chat_instance = ChatKonko(max_tokens=10)
