@@ -195,7 +195,7 @@ class GitLabAPIWrapper(BaseModel):
         try:
             self.gitlab_repo_instance.files.get(file_path, self.gitlab_branch)
             return f"File already exists at {file_path}. Use update_file instead"
-        except Exception as e:
+        except Exception:
             data = {
                 "branch": self.gitlab_branch,
                 "commit_message": "Create " + file_path,
