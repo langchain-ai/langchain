@@ -17,6 +17,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -1011,7 +1012,10 @@ class Redis(VectorStore):
         # Get the embeddings for the fetched documents
         prefetch_embeddings = [
             _buffer_to_array(
-                self.client.hget(prefetch_id, self._schema.content_vector_key),
+                cast(
+                    bytes,
+                    self.client.hget(prefetch_id, self._schema.content_vector_key),
+                ),
                 dtype=self._schema.vector_dtype,
             )
             for prefetch_id in prefetch_ids
