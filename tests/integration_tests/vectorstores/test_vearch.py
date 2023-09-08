@@ -1,5 +1,5 @@
 from langchain.docstore.document import Document
-from langchain.vectorstores import Vearch
+from langchain.vectorstores.vearch import VearchDb
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
@@ -23,7 +23,7 @@ def test_vearch() -> None:
             "source": "/data/zhx/zhx/langchain-ChatGLM_new/knowledge_base/santi/three_body.txt"
         },
     ]
-    vearch_db = Vearch.from_texts(
+    vearch_db = VearchDb.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
@@ -62,7 +62,7 @@ def test_vearch_add_texts() -> None:
             "source": "/data/zhx/zhx/langchain-ChatGLM_new/knowledge_base/santi/three_body.txt"
         },
     ]
-    vearch_db = Vearch.from_texts(
+    vearch_db = VearchDb.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,

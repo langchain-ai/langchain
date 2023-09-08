@@ -1,16 +1,19 @@
+
 from __future__ import annotations
 
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple,
+                    Type)
 
 import numpy as np
-import vearch
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
+if TYPE_CHECKING:
+    import vearch
 DEFAULT_TOPN = 4
 
 
@@ -25,6 +28,13 @@ class VearchDb(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize vearch vector store"""
+        try:
+            import vearch
+        except ImportError:
+            raise ValueError(
+                "Could not import vearch python package. "
+                "Please install it with `pip install vearch`."
+            )
 
         if metadata_path is None:
             metadata_path = os.getcwd().replace("\\", "/")
@@ -113,8 +123,8 @@ class VearchDb(VectorStore):
             "retrieval_param": {"ncentroids": 2048, "nsubvector": 32},
         }
         fields = [
-            vearch.GammaFieldInfo(fi["filed"], type_dict[fi["type"]]) for fi in filed_list
-        ]
+            vearch.GammaFieldInfo(fi["filed"], type_dict[fi["type"]]) 
+                for fi in filed_list]
         vector_field = vearch.GammaVectorInfo(
             name="text_embedding",
             type=vearch.dataType.VECTOR,
