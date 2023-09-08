@@ -1038,7 +1038,7 @@ class NLTKTextSplitter(TextSplitter):
     """Splitting text using NLTK package."""
 
     def __init__(
-        self, separator: str = "\n\n", language="english", **kwargs: Any
+        self, separator: str = "\n\n", language: str = "english", **kwargs: Any
     ) -> None:
         """Initialize the NLTK splitter."""
         super().__init__(**kwargs)
