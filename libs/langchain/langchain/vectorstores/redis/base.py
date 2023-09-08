@@ -879,7 +879,7 @@ class Redis(VectorStore):
             distance_threshold=distance_threshold,
             **kwargs,
         )
-            
+
     def similarity_search_by_vector(
         self,
         embedding: List[float],
