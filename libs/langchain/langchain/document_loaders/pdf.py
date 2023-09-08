@@ -6,7 +6,7 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterator, List, Mapping, Optional, Sequence, Union, Dict
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 from urllib.parse import urlparse
 
 import requests
@@ -139,7 +139,10 @@ class PyPDFLoader(BasePDFLoader):
     """
 
     def __init__(
-        self, file_path: str, password: Optional[Union[str, bytes]] = None, file_headers: Optional[Dict] = None
+        self,
+        file_path: str,
+        password: Optional[Union[str, bytes]] = None,
+        file_headers: Optional[Dict] = None,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -612,7 +615,11 @@ class DocumentIntelligenceLoader(BasePDFLoader):
     """Loads a PDF with Azure Document Intelligence"""
 
     def __init__(
-        self, file_path: str, client: Any, model: str = "prebuilt-document", file_headers: Optional[Dict] = None
+        self,
+        file_path: str,
+        client: Any,
+        model: str = "prebuilt-document",
+        file_headers: Optional[Dict] = None,
     ) -> None:
         """
         Initialize the object for file processing with Azure Document Intelligence
