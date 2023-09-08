@@ -603,15 +603,15 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
         query: str,
-        *,
         run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         if self.search_type == "similarity":
-            docs = self.vectorstore.vector_search(query, k=self.k)
+            docs = self.vectorstore.vector_search(query, k=self.k, **kwargs)
         elif self.search_type == "hybrid":
-            docs = self.vectorstore.hybrid_search(query, k=self.k)
+            docs = self.vectorstore.hybrid_search(query, k=self.k, **kwargs)
         elif self.search_type == "semantic_hybrid":
-            docs = self.vectorstore.semantic_hybrid_search(query, k=self.k)
+            docs = self.vectorstore.semantic_hybrid_search(query, k=self.k, **kwargs)
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
