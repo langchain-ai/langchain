@@ -17,6 +17,7 @@ from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.redis import RedisTranslator
+from langchain.retrievers.self_query.supabase import SupabaseVectorTranslator
 from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 from langchain.schema import BaseRetriever, Document
@@ -31,6 +32,7 @@ from langchain.vectorstores import (
     Pinecone,
     Qdrant,
     Redis,
+    SupabaseVectorStore,
     Vectara,
     VectorStore,
     Weaviate,
@@ -50,6 +52,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         DeepLake: DeepLakeTranslator,
         ElasticsearchStore: ElasticsearchTranslator,
         Milvus: MilvusTranslator,
+        SupabaseVectorStore: SupabaseVectorTranslator,
     }
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
