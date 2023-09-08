@@ -85,7 +85,7 @@ def test_character_text_splitter_longer_words() -> None:
     "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex(
-        separator: str, is_separator_regex: bool
+    separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character.
@@ -107,7 +107,7 @@ def test_character_text_splitter_keep_separator_regex(
     "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_discard_separator_regex(
-        separator: str, is_separator_regex: bool
+    separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters discarding the separator
     that is a regex special character."""
@@ -526,7 +526,7 @@ class Program
     }
 }
     """
-   
+
     chunks = splitter.split_text(code)
     assert chunks == [
         "using System;",
@@ -542,7 +542,8 @@ class Program
         "Categorize the",
         "age without any",
         "console output",
-        "if (age", "< 18)",
+        "if (age",
+        "< 18)",
         "{",
         "//",
         "Age is under 18",
@@ -553,13 +554,14 @@ class Program
         "{",
         "//",
         "Age is an adult",
-        "}", "else",
+        "}",
+        "else",
         "{",
         "//",
         "Age is a senior",
         "citizen",
         "}\n    }",
-        "}"
+        "}",
     ]
 
 
