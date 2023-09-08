@@ -863,8 +863,8 @@ class Redis(VectorStore):
                 Defaults to None.
             return_metadata (bool, optional): Whether to return metadata.
                 Defaults to True.
-            distance_threshold (Optional[float], optional): Distance threshold
-                for vector distance from query vector. Defaults to None.
+            distance_threshold (Optional[float], optional): Maximum vector distance
+                between selected documents and the query vector. Defaults to None.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query
@@ -899,8 +899,8 @@ class Redis(VectorStore):
                 Defaults to None.
             return_metadata (bool, optional): Whether to return metadata.
                 Defaults to True.
-            distance_threshold (Optional[float], optional): Distance threshold
-                for vector distance from query vector. Defaults to None.
+            distance_threshold (Optional[float], optional): Maximum vector distance
+                between selected documents and the query vector. Defaults to None.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query
@@ -988,8 +988,8 @@ class Redis(VectorStore):
                 Defaults to None.
             return_metadata (bool, optional): Whether to return metadata.
                 Defaults to True.
-            distance_threshold (Optional[float], optional): Distance threshold
-                for vector distance from query vector. Defaults to None.
+            distance_threshold (Optional[float], optional): Maximum vector distance
+                between selected documents and the query vector. Defaults to None.
 
         Returns:
             List[Document]: A list of Documents selected by maximal marginal relevance.
