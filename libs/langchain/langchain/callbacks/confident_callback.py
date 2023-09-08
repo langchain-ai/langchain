@@ -1,8 +1,7 @@
+# flake8: noqa
 import os
 import warnings
 from typing import Any, Dict, List, Optional, Union
-
-from packaging.version import parse
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -12,16 +11,11 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs into deepeval.
 
     Args:
-        implementation_name: name of the `FeedbackDataset` in deepeval. Note that it must
-            exist in advance. If you need help on how to create a `FeedbackDataset` in
-            deepeval, please visit
-            https://docs.deepeval.io/en/latest/guides/llms/practical_guides/use_deepeval_callback_in_langchain.html.
+        implementation_name: name of the `implementation` in deepeval
         metrics: A list of metrics
 
     Raises:
         ImportError: if the `deepeval` package is not installed.
-        ConnectionError: if the connection to deepeval fails.
-        FileNotFoundError: if the `FeedbackDataset` retrieval from deepeval fails.
 
     Examples:
         >>> from langchain.llms import OpenAI
@@ -62,23 +56,24 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
         Raises:
             ImportError: if the `deepeval` package is not installed.
             ConnectionError: if the connection to deepeval fails.
-            FileNotFoundError: if the `FeedbackDataset` retrieval from deepeval fails.
         """
 
         super().__init__()
 
         # Import deepeval (not via `import_deepeval` to keep hints in IDEs)
         try:
-            import deepeval
+            import deepeval  # ignore: F401,I001
         except ImportError:
             raise ImportError(
-                "To use the deepeval callback manager you need to have the `deepeval` "
-                "Python package installed. Please install it with `pip install deepeval`"
+                """To use the deepeval callback manager you need to have the 
+                `deepeval` Python package installed. Please install it with 
+                `pip install deepeval`"""
             )
 
         if os.path.exists(".deepeval"):
             warnings.warn(
-                """You are currently not logging anything to the dashboard, we recommend using `deepeval login`."""
+                """You are currently not logging anything to the dashboard, we 
+                recommend using `deepeval login`."""
             )
 
         # Set the deepeval variables
@@ -130,7 +125,8 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
                     print(f"Toxic Score: {score}")
                 else:
                     raise ValueError(
-                        f"Metric {metric.__name__} is not supported by deepeval callbacks."
+                        f"""Metric {metric.__name__} is not supported by deepeval 
+                        callbacks."""
                     )
 
     def on_llm_error(
