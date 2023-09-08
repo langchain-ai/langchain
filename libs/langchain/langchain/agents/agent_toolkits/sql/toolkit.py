@@ -4,7 +4,6 @@ from typing import List
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.tools import BaseTool
 from langchain.tools.sql_database.tool import (
     InfoSQLDatabaseTool,
     ListSQLDatabaseTool,
@@ -12,6 +11,9 @@ from langchain.tools.sql_database.tool import (
     QuerySQLDataBaseTool,
 )
 from langchain.utilities.sql_database import SQLDatabase
+from pydantic import Field
+
+from langchain.tools import BaseTool
 
 
 class SQLDatabaseToolkit(BaseToolkit):
@@ -34,10 +36,8 @@ class SQLDatabaseToolkit(BaseToolkit):
         """Get the tools in the toolkit."""
         list_sql_database_tool = ListSQLDatabaseTool(db=self.db)
         info_sql_database_tool_description = (
-            "Input to this tool is a comma-separated list of tables, output is the "
+            "Input to this tool is a comma-separated list of tables (with spaces), output is the "
             "schema and sample rows for those tables. "
-            "Be sure that the tables actually exist by calling "
-            f"{list_sql_database_tool.name} first! "
             "Example Input: 'table1, table2, table3'"
         )
         info_sql_database_tool = InfoSQLDatabaseTool(
@@ -55,9 +55,8 @@ class SQLDatabaseToolkit(BaseToolkit):
             db=self.db, description=query_sql_database_tool_description
         )
         query_sql_checker_tool_description = (
-            "Use this tool to double check if your query is correct before executing "
-            "it. Always use this tool before executing a query with "
-            f"{query_sql_database_tool.name}!"
+            "Use this tool to double check if your query is correct if"
+            "recovering from an error"
         )
         query_sql_checker_tool = QuerySQLCheckerTool(
             db=self.db, llm=self.llm, description=query_sql_checker_tool_description
@@ -65,6 +64,6 @@ class SQLDatabaseToolkit(BaseToolkit):
         return [
             query_sql_database_tool,
             info_sql_database_tool,
-            list_sql_database_tool,
+            # list_sql_database_tool,
             query_sql_checker_tool,
         ]
