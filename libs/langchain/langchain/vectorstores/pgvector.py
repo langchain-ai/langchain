@@ -343,7 +343,7 @@ class PGVector(VectorStore):
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List of Documents most similar to the query and score for each
+            List of Documents most similar to the query and score for each.
         """
         embedding = self.embedding_function.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
@@ -664,6 +664,24 @@ class PGVector(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance with score to embedding vector.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of Documents selected by maximal marginal relevance to the query and score for each.
+        """
         results = self.__query_collection(embedding, filter, k=fetch_k)
 
         embedding_list = [result.EmbeddingStore.embedding for result in results]
@@ -688,6 +706,24 @@ class PGVector(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            query (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Document]: List of Documents selected by maximal marginal relevance.
+        """
         embedding = self.embedding_function.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding,
@@ -704,7 +740,26 @@ class PGVector(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[dict] = None,
+        **kwargs,
     ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance with score.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            query (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of Documents selected by maximal marginal relevance to the query and score for each.
+        """
         embedding = self.embedding_function.embed_query(query)
         docs = self.max_marginal_relevance_search_with_score_by_vector(
             embedding=embedding,
@@ -712,6 +767,7 @@ class PGVector(VectorStore):
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
             filter=filter,
+            **kwargs,
         )
         return docs
 
@@ -724,6 +780,24 @@ class PGVector(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance to embedding vector.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            embedding (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Document]: List of Documents selected by maximal marginal relevance.
+        """
         docs_and_scores = self.max_marginal_relevance_search_with_score_by_vector(
             embedding,
             k=k,
@@ -741,6 +815,7 @@ class PGVector(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
