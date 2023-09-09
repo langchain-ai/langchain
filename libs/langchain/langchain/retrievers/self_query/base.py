@@ -2,27 +2,36 @@
 
 from typing import Any, Dict, List, Optional, Type, cast
 
-from pydantic import BaseModel, Field, root_validator
-
 from langchain import LLMChain
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.chains.query_constructor.base import load_query_constructor_chain
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
+from langchain.retrievers.self_query.dashvector import DashvectorTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
+from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
+from langchain.retrievers.self_query.milvus import MilvusTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
+from langchain.retrievers.self_query.supabase import SupabaseVectorTranslator
+from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores import (
     Chroma,
+    DashVector,
     DeepLake,
+    ElasticsearchStore,
+    Milvus,
     MyScale,
     Pinecone,
     Qdrant,
+    SupabaseVectorStore,
+    Vectara,
     VectorStore,
     Weaviate,
 )
@@ -34,10 +43,15 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         Pinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
+        DashVector: DashvectorTranslator,
         Weaviate: WeaviateTranslator,
+        Vectara: VectaraTranslator,
         Qdrant: QdrantTranslator,
         MyScale: MyScaleTranslator,
         DeepLake: DeepLakeTranslator,
+        ElasticsearchStore: ElasticsearchTranslator,
+        Milvus: MilvusTranslator,
+        SupabaseVectorStore: SupabaseVectorTranslator,
     }
     if vectorstore_cls not in BUILTIN_TRANSLATORS:
         raise ValueError(

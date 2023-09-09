@@ -231,3 +231,57 @@ class TestPinecone:
         assert all(
             (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
         )
+
+    @pytest.mark.skipif(reason="slow to run for benchmark")
+    @pytest.mark.parametrize(
+        "pool_threads,batch_size,embeddings_chunk_size,data_multiplier",
+        [
+            (
+                1,
+                32,
+                32,
+                1000,
+            ),  # simulate single threaded with embeddings_chunk_size = batch_size = 32
+            (
+                1,
+                32,
+                1000,
+                1000,
+            ),  # simulate single threaded with embeddings_chunk_size = 1000
+            (
+                4,
+                32,
+                1000,
+                1000,
+            ),  # simulate 4 threaded with embeddings_chunk_size = 1000
+            (20, 64, 5000, 1000),
+        ],  # simulate 20 threaded with embeddings_chunk_size = 5000
+    )
+    def test_from_texts_with_metadatas_benchmark(
+        self,
+        pool_threads: int,
+        batch_size: int,
+        embeddings_chunk_size: int,
+        data_multiplier: int,
+        documents: List[Document],
+        embedding_openai: OpenAIEmbeddings,
+    ) -> None:
+        """Test end to end construction and search."""
+
+        texts = [document.page_content for document in documents] * data_multiplier
+        uuids = [uuid.uuid4().hex for _ in range(len(texts))]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = Pinecone.from_texts(
+            texts,
+            embedding_openai,
+            ids=uuids,
+            metadatas=metadatas,
+            index_name=index_name,
+            namespace=namespace_name,
+            pool_threads=pool_threads,
+            batch_size=batch_size,
+            embeddings_chunk_size=embeddings_chunk_size,
+        )
+
+        query = "What did the president say about Ketanji Brown Jackson"
+        _ = docsearch.similarity_search(query, k=1, namespace=namespace_name)

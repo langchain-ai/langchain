@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
-from pydantic import BaseModel, root_validator
 
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
@@ -27,6 +26,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import (
     AgentAction,
     AgentFinish,
@@ -615,9 +615,9 @@ class Agent(BaseSingleActionAgent):
 class ExceptionTool(BaseTool):
     """Tool that just returns the query."""
 
-    name = "_Exception"
+    name: str = "_Exception"
     """Name of the tool."""
-    description = "Exception tool"
+    description: str = "Exception tool"
     """Description of the tool."""
 
     def _run(
@@ -686,12 +686,15 @@ s
         cls,
         agent: Union[BaseSingleActionAgent, BaseMultiActionAgent],
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> AgentExecutor:
         """Create from agent and tools."""
         return cls(
-            agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
+            agent=agent,
+            tools=tools,
+            callbacks=callbacks,
+            **kwargs,
         )
 
     @root_validator()

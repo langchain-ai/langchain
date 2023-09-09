@@ -55,6 +55,21 @@ def test_connect_arangodb() -> None:
     assert ["hello_world"] == sample_aql_result
 
 
+def test_empty_schema_on_no_data() -> None:
+    """Test that the schema is empty for an empty ArangoDB Database"""
+    db = get_arangodb_client()
+    db.delete_graph("GameOfThrones", drop_collections=True, ignore_missing=True)
+    db.delete_collection("empty_collection", ignore_missing=True)
+    db.create_collection("empty_collection")
+
+    graph = ArangoGraph(db)
+
+    assert graph.schema == {
+        "Graph Schema": [],
+        "Collection Schema": [],
+    }
+
+
 def test_aql_generation() -> None:
     """Test that AQL statement is correctly generated and executed."""
     db = get_arangodb_client()

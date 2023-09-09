@@ -11,9 +11,10 @@ What is Vectara?
 - You can use Vectara's integration with LangChain as a Vector store or using the Retriever abstraction.
 
 ## Installation and Setup
-To use Vectara with LangChain no special installation steps are required. You just have to provide your customer_id, corpus ID, and an API key created within the Vectara console to enable indexing and searching.
+To use Vectara with LangChain no special installation steps are required. 
+To get started, follow our [quickstart](https://docs.vectara.com/docs/quickstart) guide to create an account, a corpus and an API key. 
+Once you have these, you can provide them as arguments to the Vectara vectorstore, or you can set them as environment variables.
 
-Alternatively these can be provided as environment variables
 - export `VECTARA_CUSTOMER_ID`="your_customer_id"
 - export `VECTARA_CORPUS_ID`="your_corpus_id"
 - export `VECTARA_API_KEY`="your-vectara-api-key"
@@ -63,7 +64,7 @@ results = vectara.similarity_score("what is LangChain?")
 - `k`: number of results to return (defaults to 5)
 - `lambda_val`: the [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching) factor for hybrid search (defaults to 0.025)
 - `filter`: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview) to apply to the results (default None)
-- `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results. This defaults to 0 so as to return the exact text segment that matches, but can be used with other values e.g. 2 or 3 to return adjacent text segments.
+- `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results. This defaults to 2.
 
 The results are returned as a list of relevant documents, and a relevance score of each document.
 

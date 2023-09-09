@@ -1,9 +1,3 @@
-"""Loads image captions.
-
-By default, the loader utilizes the pre-trained BLIP image captioning model.
-https://huggingface.co/Salesforce/blip-image-captioning-base
-
-"""
 from typing import Any, List, Tuple, Union
 
 import requests
@@ -13,7 +7,12 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class ImageCaptionLoader(BaseLoader):
-    """Loads the captions of an image"""
+    """Load image captions.
+
+    By default, the loader utilizes the pre-trained
+    Salesforce BLIP image captioning model.
+    https://huggingface.co/Salesforce/blip-image-captioning-base
+    """
 
     def __init__(
         self,

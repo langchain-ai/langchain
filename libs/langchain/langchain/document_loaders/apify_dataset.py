@@ -1,13 +1,13 @@
 from typing import Any, Callable, Dict, List
 
-from pydantic import BaseModel, root_validator
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.pydantic_v1 import BaseModel, root_validator
 
 
 class ApifyDatasetLoader(BaseLoader, BaseModel):
-    """Loads datasets from Apify-a web scraping, crawling, and data extraction platform.
+    """Load datasets from `Apify` web scraping, crawling, and data extraction platform.
+
     For details, see https://docs.apify.com/platform/integrations/langchain
 
     Example:

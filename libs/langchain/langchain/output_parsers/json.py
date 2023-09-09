@@ -13,7 +13,7 @@ def _replace_new_line(match: re.Match[str]) -> str:
     value = re.sub(r"\n", r"\\n", value)
     value = re.sub(r"\r", r"\\r", value)
     value = re.sub(r"\t", r"\\t", value)
-    value = re.sub('"', r"\"", value)
+    value = re.sub(r'(?<!\\)"', r"\"", value)
 
     return match.group(1) + value + match.group(3)
 

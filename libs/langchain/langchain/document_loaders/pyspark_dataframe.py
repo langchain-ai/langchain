@@ -1,4 +1,3 @@
-"""Load from a Spark Dataframe object"""
 import itertools
 import logging
 import sys
@@ -14,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class PySparkDataFrameLoader(BaseLoader):
-    """Load PySpark DataFrames"""
+    """Load `PySpark` DataFrames."""
 
     def __init__(
         self,

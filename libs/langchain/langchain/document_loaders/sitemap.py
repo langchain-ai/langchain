@@ -1,4 +1,3 @@
-"""Loader that fetches a sitemap and loads those URLs."""
 import itertools
 import re
 from typing import Any, Callable, Generator, Iterable, List, Optional
@@ -22,7 +21,7 @@ def _batch_block(iterable: Iterable, size: int) -> Generator[List[dict], None, N
 
 
 class SitemapLoader(WebBaseLoader):
-    """Loader that fetches a sitemap and loads those URLs."""
+    """Load a sitemap and its URLs."""
 
     def __init__(
         self,

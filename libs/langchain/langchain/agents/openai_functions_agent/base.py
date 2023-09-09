@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
-from pydantic import root_validator
-
 from langchain.agents import BaseSingleActionAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
@@ -16,6 +14,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import (
     AgentAction,
     AgentFinish,

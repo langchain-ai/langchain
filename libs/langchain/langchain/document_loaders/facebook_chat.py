@@ -1,4 +1,3 @@
-"""Loads Facebook chat json dump."""
 import datetime
 import json
 from pathlib import Path
@@ -23,7 +22,7 @@ def concatenate_rows(row: dict) -> str:
 
 
 class FacebookChatLoader(BaseLoader):
-    """Loads Facebook messages json directory dump."""
+    """Load `Facebook Chat` messages directory dump."""
 
     def __init__(self, path: str):
         """Initialize with a path."""

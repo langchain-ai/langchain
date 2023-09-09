@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import AsyncIterator, Iterator, List, Optional
+from typing import Any, AsyncIterator, Iterator, List, Optional
 
 from langchain.load.serializable import Serializable
 from langchain.schema.runnable.base import Input, Runnable
@@ -32,16 +32,26 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
         return self._call_with_config(identity, input, config)
 
     async def ainvoke(
-        self, input: Input, config: RunnableConfig | None = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Input:
         return await self._acall_with_config(aidentity, input, config)
 
     def transform(
-        self, input: Iterator[Input], config: RunnableConfig | None = None
+        self,
+        input: Iterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Iterator[Input]:
         return self._transform_stream_with_config(input, identity, config)
 
-    def atransform(
-        self, input: AsyncIterator[Input], config: RunnableConfig | None = None
+    async def atransform(
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[Input]:
-        return self._atransform_stream_with_config(input, identity, config)
+        async for chunk in self._atransform_stream_with_config(input, identity, config):
+            yield chunk

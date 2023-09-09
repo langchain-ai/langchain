@@ -79,7 +79,10 @@ class BaseGenerationOutputParser(
             )
 
     async def ainvoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(
@@ -147,7 +150,10 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
             )
 
     async def ainvoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(
@@ -277,6 +283,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         self,
         input: Iterator[Union[str, BaseMessage]],
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Iterator[T]:
         yield from self._transform_stream_with_config(
             input, self._transform, config, run_type="parser"
@@ -286,6 +293,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         self,
         input: AsyncIterator[Union[str, BaseMessage]],
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[T]:
         async for chunk in self._atransform_stream_with_config(
             input, self._atransform, config, run_type="parser"

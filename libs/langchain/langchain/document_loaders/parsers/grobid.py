@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 
 
 class ServerUnavailableException(Exception):
-    """Exception raised when the GROBID server is unavailable."""
+    """Exception raised when the Grobid server is unavailable."""
 
     pass
 
 
 class GrobidParser(BaseBlobParser):
-    """Loader that uses Grobid to load article PDF files."""
+    """Load  article `PDF` files using `Grobid`."""
 
     def __init__(
         self,

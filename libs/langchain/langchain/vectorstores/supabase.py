@@ -26,7 +26,9 @@ if TYPE_CHECKING:
 
 
 class SupabaseVectorStore(VectorStore):
-    """VectorStore for a Supabase postgres database. Assumes you have the `pgvector`
+    """`Supabase Postgres` vector store.
+
+    It assumes you have the `pgvector`
     extension installed and a `match_documents` (or similar) function. For more details:
     https://integrations.langchain.com/vectorstores?integration_name=SupabaseVectorStore
 
@@ -92,7 +94,7 @@ class SupabaseVectorStore(VectorStore):
         try:
             import supabase  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import supabase python package. "
                 "Please install it with `pip install supabase`."
             )
@@ -166,10 +168,8 @@ class SupabaseVectorStore(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        vectors = self._embedding.embed_documents([query])
-        return self.similarity_search_by_vector(
-            vectors[0], k=k, filter=filter, **kwargs
-        )
+        vector = self._embedding.embed_query(query)
+        return self.similarity_search_by_vector(vector, k=k, filter=filter, **kwargs)
 
     def similarity_search_by_vector(
         self,
@@ -193,24 +193,37 @@ class SupabaseVectorStore(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        vectors = self._embedding.embed_documents([query])
+        vector = self._embedding.embed_query(query)
         return self.similarity_search_by_vector_with_relevance_scores(
-            vectors[0], k=k, filter=filter
+            vector, k=k, filter=filter
         )
 
     def match_args(
-        self, query: List[float], k: int, filter: Optional[Dict[str, Any]]
+        self, query: List[float], filter: Optional[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        ret = dict(query_embedding=query, match_count=k)
+        ret: Dict[str, Any] = dict(query_embedding=query)
         if filter:
             ret["filter"] = filter
         return ret
 
     def similarity_search_by_vector_with_relevance_scores(
-        self, query: List[float], k: int, filter: Optional[Dict[str, Any]] = None
+        self,
+        query: List[float],
+        k: int,
+        filter: Optional[Dict[str, Any]] = None,
+        postgrest_filter: Optional[str] = None,
     ) -> List[Tuple[Document, float]]:
-        match_documents_params = self.match_args(query, k, filter)
-        res = self._client.rpc(self.query_name, match_documents_params).execute()
+        match_documents_params = self.match_args(query, filter)
+        query_builder = self._client.rpc(self.query_name, match_documents_params)
+
+        if postgrest_filter:
+            query_builder.params = query_builder.params.set(
+                "and", f"({postgrest_filter})"
+            )
+
+        query_builder.params = query_builder.params.set("limit", k)
+
+        res = query_builder.execute()
 
         match_result = [
             (
@@ -227,10 +240,23 @@ class SupabaseVectorStore(VectorStore):
         return match_result
 
     def similarity_search_by_vector_returning_embeddings(
-        self, query: List[float], k: int, filter: Optional[Dict[str, Any]] = None
+        self,
+        query: List[float],
+        k: int,
+        filter: Optional[Dict[str, Any]] = None,
+        postgrest_filter: Optional[str] = None,
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
-        match_documents_params = self.match_args(query, k, filter)
-        res = self._client.rpc(self.query_name, match_documents_params).execute()
+        match_documents_params = self.match_args(query, filter)
+        query_builder = self._client.rpc(self.query_name, match_documents_params)
+
+        if postgrest_filter:
+            query_builder.params = query_builder.params.set(
+                "and", f"({postgrest_filter})"
+            )
+
+        query_builder.params = query_builder.params.set("limit", k)
+
+        res = query_builder.execute()
 
         match_result = [
             (
@@ -405,9 +431,9 @@ class SupabaseVectorStore(VectorStore):
         $$;
         ```
         """
-        embedding = self._embedding.embed_documents([query])
+        embedding = self._embedding.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding[0], k, fetch_k, lambda_mult=lambda_mult
+            embedding, k, fetch_k, lambda_mult=lambda_mult
         )
         return docs
 

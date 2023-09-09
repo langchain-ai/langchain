@@ -18,8 +18,8 @@ class AgentTokenBufferMemory(BaseChatMemory):
     """The max number of tokens to keep in the buffer. 
     Once the buffer exceeds this many tokens, the oldest messages will be pruned."""
     return_messages: bool = True
-    output_key = "output"
-    intermediate_steps_key = "intermediate_steps"
+    output_key: str = "output"
+    intermediate_steps_key: str = "intermediate_steps"
 
     @property
     def buffer(self) -> List[BaseMessage]:

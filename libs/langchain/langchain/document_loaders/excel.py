@@ -8,7 +8,9 @@ from langchain.document_loaders.unstructured import (
 
 
 class UnstructuredExcelLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load Excel files. Like other
+    """Load Microsoft Excel files using `Unstructured`.
+
+    Like other
     Unstructured loaders, UnstructuredExcelLoader can be used in both
     "single" and "elements" mode. If you use the loader in "elements"
     mode, each sheet in the Excel file will be a an Unstructured Table
