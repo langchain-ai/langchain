@@ -297,6 +297,7 @@ class RedisCache(BaseCache):
 
     def _key(self, prompt: str, llm_string: str) -> str:
         """Compute key from prompt and llm_string"""
+        print(prompt + llm_string)
         return _hash(prompt + llm_string)
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
@@ -306,7 +307,7 @@ class RedisCache(BaseCache):
         results = self.redis.hgetall(self._key(prompt, llm_string))
         if results:
             for _, text in results.items():
-                generations.append(Generation(text=text))
+                generations.append(loads(text))
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -317,12 +318,6 @@ class RedisCache(BaseCache):
                     "RedisCache only supports caching of normal LLM generations, "
                     f"got {type(gen)}"
                 )
-            if isinstance(gen, ChatGeneration):
-                warnings.warn(
-                    "NOTE: Generation has not been cached. RedisCache does not"
-                    " support caching ChatModel outputs."
-                )
-                return
         # Write to a Redis HASH
         key = self._key(prompt, llm_string)
 
@@ -330,7 +325,7 @@ class RedisCache(BaseCache):
             pipe.hset(
                 key,
                 mapping={
-                    str(idx): generation.text
+                    str(idx): dumps(generation)
                     for idx, generation in enumerate(return_val)
                 },
             )
@@ -442,7 +437,7 @@ class RedisSemanticCache(BaseCache):
         if results:
             for document in results:
                 generations.extend(
-                    _load_generations_from_json(document.metadata["return_val"])
+                    loads(document.metadata["return_val"])
                 )
         return generations if generations else None
 
@@ -454,18 +449,12 @@ class RedisSemanticCache(BaseCache):
                     "RedisSemanticCache only supports caching of "
                     f"normal LLM generations, got {type(gen)}"
                 )
-            if isinstance(gen, ChatGeneration):
-                warnings.warn(
-                    "NOTE: Generation has not been cached. RedisSentimentCache does not"
-                    " support caching ChatModel outputs."
-                )
-                return
         llm_cache = self._get_llm_cache(llm_string)
-        _dump_generations_to_json([g for g in return_val])
+
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
-            "return_val": _dump_generations_to_json([g for g in return_val]),
+            "return_val": dumps([g for g in return_val]),
         }
         llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
 
