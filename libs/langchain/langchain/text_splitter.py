@@ -388,14 +388,11 @@ class MarkdownHeaderTextSplitter:
             stripped_line = line.strip()
 
             if stripped_line.startswith("```"):
-                if not in_code_block:  # code block starts
-                    in_code_block = True
-                elif in_code_block:  # code block ends
-                    in_code_block = False
-
                 # code block in one row
                 if stripped_line.count("```") >= 2:
                     in_code_block = False
+                else:
+                    in_code_block = not in_code_block
 
             if in_code_block:
                 current_content.append(stripped_line)

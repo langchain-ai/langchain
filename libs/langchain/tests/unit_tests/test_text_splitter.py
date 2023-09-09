@@ -686,6 +686,8 @@ b = 2
         "```",
         "This is a code",
         "block",
+        "# sample code",
+        "a = 1\nb = 2",
         "```",
     ]
     # Special test for special characters
