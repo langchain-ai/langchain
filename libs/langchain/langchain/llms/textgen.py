@@ -191,7 +191,8 @@ class TextGen(LLM):
         Args:
             prompt: The prompt to use for generation.
             stop: A list of strings to stop generation when encountered.
-            print_output (bool, optional): Whether to print the output to the terminal (default is True).
+            print_output (bool, optional): Whether to print the output to the terminal.
+                Default is True.
 
         Returns:
             The generated text.
