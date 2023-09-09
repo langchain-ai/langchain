@@ -9,9 +9,6 @@ from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.output import GenerationChunk
 
 
-BEDROCK_PROVIDERS_WITH_STREAMING = ["anthropic"]
-
-
 class LLMInputOutputAdapter:
     """Adapter class to prepare the inputs from Langchain to a format
     that LLM model expects.
@@ -110,6 +107,12 @@ class BedrockBase(BaseModel, ABC):
     streaming: bool = False
     """Whether to stream the results."""
 
+    provider_stop_sequence_key_name_map: Mapping[str, str] = {
+        "anthropic": "stop_sequences",
+        "amazon": "stopSequences",
+        "ai21": "stop_sequences",
+    }
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
@@ -198,7 +201,18 @@ class BedrockBase(BaseModel, ABC):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         _model_kwargs = self.model_kwargs or {}
-        provider = self.model_id.split(".")[0]
+        provider = self._get_provider()
+
+        stop_sequence_key_name = self.provider_stop_sequence_key_name_map.get(provider)
+        if stop:
+            if stop_sequence_key_name is None:
+                raise ValueError(
+                    f"Stop sequence key name for {provider} is not supported."
+                )
+
+            # stop sequence from _generate() overrides stop sequences in the class attribute
+            _model_kwargs[stop_sequence_key_name] = stop
+
         params = {**_model_kwargs, **kwargs}
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
@@ -240,7 +254,8 @@ class Bedrock(LLM, BedrockBase):
 
             llm = BedrockLLM(
                 credentials_profile_name="default", 
-                model_id="amazon.titan-tg1-large"
+                model_id="amazon.titan-tg1-large",
+                streaming=True
             )
 
     """
@@ -262,6 +277,20 @@ class Bedrock(LLM, BedrockBase):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
+        """Call out to Bedrock service with streaming.
+
+        Args:
+            prompt (str): The prompt to pass into the model
+            stop (Optional[List[str]], optional): Stop sequences. These will override any stop sequences
+                in the `model_kwargs` attribute. Defaults to None.
+            run_manager (Optional[CallbackManagerForLLMRun], optional): Callback run managers used to process the output. Defaults to None.
+
+        Returns:
+            Iterator[GenerationChunk]: Generator that yields the streamed responses.
+
+        Yields:
+            Iterator[GenerationChunk]: Responses from the model.
+        """
         return self._prepare_input_and_invoke_stream(
             prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
         )
