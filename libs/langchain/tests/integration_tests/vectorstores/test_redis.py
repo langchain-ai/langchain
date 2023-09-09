@@ -139,10 +139,7 @@ def test_redis_from_documents(texts: List[str]) -> None:
 def test_custom_keys(texts: List[str]) -> None:
     keys_in = ["test_key_1", "test_key_2", "test_key_3"]
     docsearch, keys_out = Redis.from_texts_return_keys(
-        texts,
-        FakeEmbeddings(),
-        redis_url=TEST_REDIS_URL,
-        keys=keys_in
+        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, keys=keys_in
     )
     assert keys_in == keys_out
     assert drop(docsearch.index_name)
@@ -153,10 +150,7 @@ def test_custom_keys_from_docs(texts: List[str]) -> None:
     docs = [Document(page_content=t, metadata={"a": "b"}) for t in texts]
 
     docsearch = Redis.from_documents(
-        docs,
-        FakeEmbeddings(),
-        redis_url=TEST_REDIS_URL,
-        keys=keys_in
+        docs, FakeEmbeddings(), redis_url=TEST_REDIS_URL, keys=keys_in
     )
     client = docsearch.client
     # test keys are correct
