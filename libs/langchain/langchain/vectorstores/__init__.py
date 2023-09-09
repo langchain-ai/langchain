@@ -52,6 +52,7 @@ from langchain.vectorstores.meilisearch import Meilisearch
 from langchain.vectorstores.milvus import Milvus
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 from langchain.vectorstores.myscale import MyScale, MyScaleSettings
+from langchain.vectorstores.neo4j_vector import Neo4jVector
 from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
 from langchain.vectorstores.pgembedding import PGEmbedding
 from langchain.vectorstores.pgvector import PGVector
@@ -62,9 +63,11 @@ from langchain.vectorstores.rocksetdb import Rockset
 from langchain.vectorstores.scann import ScaNN
 from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.sklearn import SKLearnVectorStore
+from langchain.vectorstores.sqlitevss import SQLiteVSS
 from langchain.vectorstores.starrocks import StarRocks
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
+from langchain.vectorstores.tencentvectordb import TencentVectorDB
 from langchain.vectorstores.tigris import Tigris
 from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.usearch import USearch
@@ -110,6 +113,7 @@ __all__ = [
     "MongoDBAtlasVectorSearch",
     "MyScale",
     "MyScaleSettings",
+    "Neo4jVector",
     "OpenSearchVectorSearch",
     "OpenSearchVectorSearch",
     "PGEmbedding",
@@ -122,6 +126,7 @@ __all__ = [
     "ScaNN",
     "SingleStoreDB",
     "SingleStoreDB",
+    "SQLiteVSS",
     "StarRocks",
     "SupabaseVectorStore",
     "Tair",
@@ -134,4 +139,5 @@ __all__ = [
     "ZepVectorStore",
     "Zilliz",
     "Zilliz",
+    "TencentVectorDB",
 ]

@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
+    """Load `WhatsApp` conversations from a dump zip file or directory."""
+
     def __init__(self, path: str):
         """Initialize the WhatsAppChatLoader.
 

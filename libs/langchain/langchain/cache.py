@@ -26,15 +26,15 @@ import inspect
 import json
 import logging
 import warnings
-from abc import ABC, abstractmethod
 from datetime import timedelta
+from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,
@@ -45,25 +45,26 @@ from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
-from langchain.utils import get_from_env
-
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+
 from langchain.embeddings.base import Embeddings
+from langchain.llms.base import LLM, get_prompts
 from langchain.load.dump import dumps
 from langchain.load.load import loads
 from langchain.schema import ChatGeneration, Generation
+from langchain.schema.cache import RETURN_VAL_TYPE, BaseCache
+from langchain.utils import get_from_env
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
 
 if TYPE_CHECKING:
     import momento
-
-RETURN_VAL_TYPE = Sequence[Generation]
+    from cassandra.cluster import Session as CassandraSession
 
 
 def _hash(_input: str) -> str:
@@ -102,22 +103,6 @@ def _load_generations_from_json(generations_json: str) -> RETURN_VAL_TYPE:
         raise ValueError(
             f"Could not decode json to list of generations: {generations_json}"
         )
-
-
-class BaseCache(ABC):
-    """Base interface for cache."""
-
-    @abstractmethod
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
-
-    @abstractmethod
-    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
-
-    @abstractmethod
-    def clear(self, **kwargs: Any) -> None:
-        """Clear cache that can take additional keyword arguments."""
 
 
 class InMemoryCache(BaseCache):
@@ -302,6 +287,14 @@ class RedisSemanticCache(BaseCache):
 
     # TODO - implement a TTL policy in Redis
 
+    DEFAULT_SCHEMA = {
+        "content_key": "prompt",
+        "text": [
+            {"name": "prompt"},
+        ],
+        "extra": [{"name": "return_val"}, {"name": "llm_string"}],
+    }
+
     def __init__(
         self, redis_url: str, embedding: Embeddings, score_threshold: float = 0.2
     ):
@@ -349,12 +342,14 @@ class RedisSemanticCache(BaseCache):
                 embedding=self.embedding,
                 index_name=index_name,
                 redis_url=self.redis_url,
+                schema=cast(Dict, self.DEFAULT_SCHEMA),
             )
         except ValueError:
             redis = RedisVectorstore(
-                embedding_function=self.embedding.embed_query,
+                embedding=self.embedding,
                 index_name=index_name,
                 redis_url=self.redis_url,
+                index_schema=cast(Dict, self.DEFAULT_SCHEMA),
             )
             _embedding = self.embedding.embed_query(text="test")
             redis._create_index(dim=len(_embedding))
@@ -374,17 +369,18 @@ class RedisSemanticCache(BaseCache):
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
         llm_cache = self._get_llm_cache(llm_string)
-        generations = []
+        generations: List = []
         # Read from a Hash
-        results = llm_cache.similarity_search_limit_score(
+        results = llm_cache.similarity_search(
             query=prompt,
             k=1,
-            score_threshold=self.score_threshold,
+            distance_threshold=self.score_threshold,
         )
         if results:
             for document in results:
-                for text in document.metadata["return_val"]:
-                    generations.append(Generation(text=text))
+                generations.extend(
+                    _load_generations_from_json(document.metadata["return_val"])
+                )
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -402,11 +398,11 @@ class RedisSemanticCache(BaseCache):
                 )
                 return
         llm_cache = self._get_llm_cache(llm_string)
-        # Write to vectorstore
+        _dump_generations_to_json([g for g in return_val])
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
-            "return_val": [generation.text for generation in return_val],
+            "return_val": _dump_generations_to_json([g for g in return_val]),
         }
         llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
 
@@ -718,3 +714,264 @@ class MomentoCache(BaseCache):
             pass
         elif isinstance(flush_response, CacheFlush.Error):
             raise flush_response.inner_exception
+
+
+CASSANDRA_CACHE_DEFAULT_TABLE_NAME = "langchain_llm_cache"
+CASSANDRA_CACHE_DEFAULT_TTL_SECONDS = None
+
+
+class CassandraCache(BaseCache):
+    """
+    Cache that uses Cassandra / Astra DB as a backend.
+
+    It uses a single Cassandra table.
+    The lookup keys (which get to form the primary key) are:
+        - prompt, a string
+        - llm_string, a deterministic str representation of the model parameters.
+          (needed to prevent collisions same-prompt-different-model collisions)
+    """
+
+    def __init__(
+        self,
+        session: CassandraSession,
+        keyspace: str,
+        table_name: str = CASSANDRA_CACHE_DEFAULT_TABLE_NAME,
+        ttl_seconds: Optional[int] = CASSANDRA_CACHE_DEFAULT_TTL_SECONDS,
+    ):
+        """
+        Initialize with a ready session and a keyspace name.
+        Args:
+            session (cassandra.cluster.Session): an open Cassandra session
+            keyspace (str): the keyspace to use for storing the cache
+            table_name (str): name of the Cassandra table to use as cache
+            ttl_seconds (optional int): time-to-live for cache entries
+                (default: None, i.e. forever)
+        """
+        try:
+            from cassio.table import ElasticCassandraTable
+        except (ImportError, ModuleNotFoundError):
+            raise ValueError(
+                "Could not import cassio python package. "
+                "Please install it with `pip install cassio`."
+            )
+
+        self.session = session
+        self.keyspace = keyspace
+        self.table_name = table_name
+        self.ttl_seconds = ttl_seconds
+
+        self.kv_cache = ElasticCassandraTable(
+            session=self.session,
+            keyspace=self.keyspace,
+            table=self.table_name,
+            keys=["llm_string", "prompt"],
+            primary_key_type=["TEXT", "TEXT"],
+            ttl_seconds=self.ttl_seconds,
+        )
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        item = self.kv_cache.get(
+            llm_string=_hash(llm_string),
+            prompt=_hash(prompt),
+        )
+        if item:
+            return _load_generations_from_json(item["body_blob"])
+        else:
+            return None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        blob = _dump_generations_to_json(return_val)
+        self.kv_cache.put(
+            llm_string=_hash(llm_string),
+            prompt=_hash(prompt),
+            body_blob=blob,
+        )
+
+    def delete_through_llm(
+        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+    ) -> None:
+        """
+        A wrapper around `delete` with the LLM being passed.
+        In case the llm(prompt) calls have a `stop` param, you should pass it here
+        """
+        llm_string = get_prompts(
+            {**llm.dict(), **{"stop": stop}},
+            [],
+        )[1]
+        return self.delete(prompt, llm_string=llm_string)
+
+    def delete(self, prompt: str, llm_string: str) -> None:
+        """Evict from cache if there's an entry."""
+        return self.kv_cache.delete(
+            llm_string=_hash(llm_string),
+            prompt=_hash(prompt),
+        )
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache. This is for all LLMs at once."""
+        self.kv_cache.clear()
+
+
+CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC = "dot"
+CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD = 0.85
+CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME = "langchain_llm_semantic_cache"
+CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS = None
+CASSANDRA_SEMANTIC_CACHE_EMBEDDING_CACHE_SIZE = 16
+
+
+class CassandraSemanticCache(BaseCache):
+    """
+    Cache that uses Cassandra as a vector-store backend for semantic
+    (i.e. similarity-based) lookup.
+
+    It uses a single (vector) Cassandra table and stores, in principle,
+    cached values from several LLMs, so the LLM's llm_string is part
+    of the rows' primary keys.
+
+    The similarity is based on one of several distance metrics (default: "dot").
+    If choosing another metric, the default threshold is to be re-tuned accordingly.
+    """
+
+    def __init__(
+        self,
+        session: CassandraSession,
+        keyspace: str,
+        embedding: Embeddings,
+        table_name: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME,
+        distance_metric: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC,
+        score_threshold: float = CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD,
+        ttl_seconds: Optional[int] = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS,
+    ):
+        """
+        Initialize the cache with all relevant parameters.
+        Args:
+            session (cassandra.cluster.Session): an open Cassandra session
+            keyspace (str): the keyspace to use for storing the cache
+            embedding (Embedding): Embedding provider for semantic
+                encoding and search.
+            table_name (str): name of the Cassandra (vector) table
+                to use as cache
+            distance_metric (str, 'dot'): which measure to adopt for
+                similarity searches
+            score_threshold (optional float): numeric value to use as
+                cutoff for the similarity searches
+            ttl_seconds (optional int): time-to-live for cache entries
+                (default: None, i.e. forever)
+        The default score threshold is tuned to the default metric.
+        Tune it carefully yourself if switching to another distance metric.
+        """
+        try:
+            from cassio.table import MetadataVectorCassandraTable
+        except (ImportError, ModuleNotFoundError):
+            raise ValueError(
+                "Could not import cassio python package. "
+                "Please install it with `pip install cassio`."
+            )
+        self.session = session
+        self.keyspace = keyspace
+        self.embedding = embedding
+        self.table_name = table_name
+        self.distance_metric = distance_metric
+        self.score_threshold = score_threshold
+        self.ttl_seconds = ttl_seconds
+
+        # The contract for this class has separate lookup and update:
+        # in order to spare some embedding calculations we cache them between
+        # the two calls.
+        # Note: each instance of this class has its own `_get_embedding` with
+        # its own lru.
+        @lru_cache(maxsize=CASSANDRA_SEMANTIC_CACHE_EMBEDDING_CACHE_SIZE)
+        def _cache_embedding(text: str) -> List[float]:
+            return self.embedding.embed_query(text=text)
+
+        self._get_embedding = _cache_embedding
+        self.embedding_dimension = self._get_embedding_dimension()
+
+        self.table = MetadataVectorCassandraTable(
+            session=self.session,
+            keyspace=self.keyspace,
+            table=self.table_name,
+            primary_key_type=["TEXT"],
+            vector_dimension=self.embedding_dimension,
+            ttl_seconds=self.ttl_seconds,
+            metadata_indexing=("allow", {"_llm_string_hash"}),
+        )
+
+    def _get_embedding_dimension(self) -> int:
+        return len(self._get_embedding(text="This is a sample sentence."))
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        embedding_vector = self._get_embedding(text=prompt)
+        llm_string_hash = _hash(llm_string)
+        body = _dump_generations_to_json(return_val)
+        metadata = {
+            "_prompt": prompt,
+            "_llm_string_hash": llm_string_hash,
+        }
+        row_id = f"{_hash(prompt)}-{llm_string_hash}"
+        #
+        self.table.put(
+            body_blob=body,
+            vector=embedding_vector,
+            row_id=row_id,
+            metadata=metadata,
+        )
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        hit_with_id = self.lookup_with_id(prompt, llm_string)
+        if hit_with_id is not None:
+            return hit_with_id[1]
+        else:
+            return None
+
+    def lookup_with_id(
+        self, prompt: str, llm_string: str
+    ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
+        """
+        Look up based on prompt and llm_string.
+        If there are hits, return (document_id, cached_entry)
+        """
+        prompt_embedding: List[float] = self._get_embedding(text=prompt)
+        hits = list(
+            self.table.metric_ann_search(
+                vector=prompt_embedding,
+                metadata={"_llm_string_hash": _hash(llm_string)},
+                n=1,
+                metric=self.distance_metric,
+                metric_threshold=self.score_threshold,
+            )
+        )
+        if hits:
+            hit = hits[0]
+            generations_str = hit["body_blob"]
+            return (
+                hit["row_id"],
+                _load_generations_from_json(generations_str),
+            )
+        else:
+            return None
+
+    def lookup_with_id_through_llm(
+        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+    ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
+        llm_string = get_prompts(
+            {**llm.dict(), **{"stop": stop}},
+            [],
+        )[1]
+        return self.lookup_with_id(prompt, llm_string=llm_string)
+
+    def delete_by_document_id(self, document_id: str) -> None:
+        """
+        Given this is a "similarity search" cache, an invalidation pattern
+        that makes sense is first a lookup to get an ID, and then deleting
+        with that ID. This is for the second step.
+        """
+        self.table.delete(row_id=document_id)
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear the *whole* semantic cache."""
+        self.table.clear()

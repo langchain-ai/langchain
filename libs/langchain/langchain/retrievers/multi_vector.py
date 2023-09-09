@@ -1,8 +1,7 @@
 from typing import List
 
-from pydantic import Field
-
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.pydantic_v1 import Field
 from langchain.schema import BaseRetriever, BaseStore, Document
 from langchain.vectorstores import VectorStore
 

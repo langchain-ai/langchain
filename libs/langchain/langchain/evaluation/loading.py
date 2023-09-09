@@ -108,7 +108,6 @@ def load_evaluator(
     >>> from langchain.evaluation import load_evaluator, EvaluatorType
     >>> evaluator = load_evaluator(EvaluatorType.QA)
     """
-    llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
     if evaluator not in _EVALUATOR_MAP:
         raise ValueError(
             f"Unknown evaluator type: {evaluator}"
@@ -116,6 +115,16 @@ def load_evaluator(
         )
     evaluator_cls = _EVALUATOR_MAP[evaluator]
     if issubclass(evaluator_cls, LLMEvalChain):
+        try:
+            llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
+        except Exception as e:
+            raise ValueError(
+                f"Evaluation with the {evaluator_cls} requires a "
+                "language model to function."
+                " Failed to create the default 'gpt-4' model."
+                " Please manually provide an evaluation LLM"
+                " or check your openai credentials."
+            ) from e
         return evaluator_cls.from_llm(llm=llm, **kwargs)
     else:
         return evaluator_cls(**kwargs)
@@ -154,7 +163,6 @@ def load_evaluators(
     >>> evaluators = [EvaluatorType.QA, EvaluatorType.CRITERIA]
     >>> loaded_evaluators = load_evaluators(evaluators, criteria="helpfulness")
     """
-    llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
     loaded = []
     for evaluator in evaluators:
         _kwargs = config.get(evaluator, {}) if config else {}
