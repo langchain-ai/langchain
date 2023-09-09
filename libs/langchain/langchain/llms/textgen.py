@@ -209,8 +209,6 @@ class TextGen(LLM):
                 prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
             ):
                 combined_text_output += chunk.text
-            if print_output:  # Conditionally print the output
-                print(prompt + combined_text_output)
             result = combined_text_output
 
         else:
