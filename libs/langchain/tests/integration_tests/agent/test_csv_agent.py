@@ -18,7 +18,6 @@ def csv(tmp_path_factory: TempPathFactory) -> DataFrame:
     df.to_csv(filename)
     return filename
 
-
 @pytest.fixture(scope="module")
 def csv_list(tmp_path_factory: TempPathFactory) -> DataFrame:
     random_data = np.random.rand(4, 4)
@@ -32,6 +31,14 @@ def csv_list(tmp_path_factory: TempPathFactory) -> DataFrame:
     df2.to_csv(filename2)
 
     return [filename1, filename2]
+
+@pytest.fixture(scope="module")
+def csv_file_like(tmp_path_factory: TempPathFactory) -> DataFrame:
+    random_data = np.random.rand(4, 4)
+    df = DataFrame(random_data, columns=["name", "age", "food", "sport"])
+    buffer = io.BytesIO()
+    df.to_pickle(buffer)
+    return buffer
 
 
 def test_csv_agent_creation(csv: str) -> None:
@@ -53,5 +60,13 @@ def test_multi_csv(csv_list: list) -> None:
     assert isinstance(agent, AgentExecutor)
     response = agent.run("How many combined rows in the two csvs? Give me a number.")
     result = re.search(r".*(6).*", response)
+    assert result is not None
+    assert result.group(1) is not None
+
+def test_file_like(file_like: bytes) -> None:
+    agent = create_csv_agent(OpenAI(temperature=0), file_like, verbose=True)
+    assert isinstance(agent, AgentExecutor)
+    response = agent.run("How many rows in the csv? Give me a number.")
+    result = re.search(r".*(4).*", response)
     assert result is not None
     assert result.group(1) is not None
