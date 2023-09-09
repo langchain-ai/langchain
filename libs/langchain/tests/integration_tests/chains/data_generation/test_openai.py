@@ -1,11 +1,17 @@
 import pytest
+from pydantic import BaseModel
 
 from langchain import FewShotPromptTemplate
-from langchain.chat_models import ChatOpenAI
 from langchain.chains.data_generation.base import SyntheticDataGenerator
-from langchain.chains.data_generation.openai import create_openai_data_generator, OPENAI_TEMPLATE
-from langchain.chains.data_generation.prompts import SYNTHETIC_FEW_SHOT_PREFIX, SYNTHETIC_FEW_SHOT_SUFFIX
-from pydantic import BaseModel
+from langchain.chains.data_generation.openai import (
+    OPENAI_TEMPLATE,
+    create_openai_data_generator,
+)
+from langchain.chains.data_generation.prompts import (
+    SYNTHETIC_FEW_SHOT_PREFIX,
+    SYNTHETIC_FEW_SHOT_SUFFIX,
+)
+from langchain.chat_models import ChatOpenAI
 
 
 # Define the desired output schema for individual medical billing record
@@ -20,29 +26,35 @@ class MedicalBilling(BaseModel):
 
 examples = [
     {
-        "example": """Patient ID: 123456, Patient Name: John Doe, Diagnosis Code: J20.9, Procedure Code: 99203, 
-        Total Charge: $500, Insurance Claim Amount: $350"""
+        "example": """Patient ID: 123456, Patient Name: John Doe, Diagnosis Code: 
+        J20.9, Procedure Code: 99203, Total Charge: $500, Insurance Claim Amount: 
+        $350"""
     },
     {
-        "example": """Patient ID: 789012, Patient Name: Johnson Smith, Diagnosis Code: M54.5, Procedure Code: 99213, 
-        Total Charge: $150, Insurance Claim Amount: $120"""
+        "example": """Patient ID: 789012, Patient Name: Johnson Smith, Diagnosis 
+        Code: M54.5, Procedure Code: 99213, Total Charge: $150, Insurance Claim 
+        Amount: $120"""
     },
     {
-        "example": """Patient ID: 345678, Patient Name: Emily Stone, Diagnosis Code: E11.9, Procedure Code: 99214, 
-        Total Charge: $300, Insurance Claim Amount: $250"""
+        "example": """Patient ID: 345678, Patient Name: Emily Stone, Diagnosis Code: 
+        E11.9, Procedure Code: 99214, Total Charge: $300, Insurance Claim Amount: 
+        $250"""
     },
     {
-        "example": """Patient ID: 901234, Patient Name: Robert Miles, Diagnosis Code: B07.9, Procedure Code: 99204, 
-        Total Charge: $200, Insurance Claim Amount: $160"""
+        "example": """Patient ID: 901234, Patient Name: Robert Miles, Diagnosis Code: 
+        B07.9, Procedure Code: 99204, Total Charge: $200, Insurance Claim Amount: 
+        $160"""
     },
     {
-        "example": """Patient ID: 567890, Patient Name: Clara Jensen, Diagnosis Code: F41.9, Procedure Code: 99205, 
-        Total Charge: $450, Insurance Claim Amount: $310"""
+        "example": """Patient ID: 567890, Patient Name: Clara Jensen, Diagnosis Code: 
+        F41.9, Procedure Code: 99205, Total Charge: $450, Insurance Claim Amount: 
+        $310"""
     },
     {
-        "example": """Patient ID: 234567, Patient Name: Alan Turing, Diagnosis Code: G40.909, Procedure Code: 99215, 
-        Total Charge: $220, Insurance Claim Amount: $180"""
-    }
+        "example": """Patient ID: 234567, Patient Name: Alan Turing, Diagnosis Code: 
+        G40.909, Procedure Code: 99215, Total Charge: $220, Insurance Claim Amount: 
+        $180"""
+    },
 ]
 
 prompt_template = FewShotPromptTemplate(
@@ -55,21 +67,22 @@ prompt_template = FewShotPromptTemplate(
 
 
 @pytest.fixture(scope="function")
-def synthetic_data_generator():
+def synthetic_data_generator() -> SyntheticDataGenerator:
     return create_openai_data_generator(
         output_schema=MedicalBilling,
         llm=ChatOpenAI(temperature=1),  # replace with your LLM instance
-        prompt=prompt_template
+        prompt=prompt_template,
     )
 
 
 @pytest.mark.requires("openai")
-def test_generate_synthetic(synthetic_data_generator: SyntheticDataGenerator):
-    synthetic_results = synthetic_data_generator.generate(subject="medical_billing",
-                                                          extra="""the name must be chosen at random. Make it 
-                                                                 something you wouldn't normally choose. The CPT 
-                                                                 codes must make sense with the ICD-10 code""",
-                                                          runs=10)
+def test_generate_synthetic(synthetic_data_generator: SyntheticDataGenerator) -> None:
+    synthetic_results = synthetic_data_generator.generate(
+        subject="medical_billing",
+        extra="""the name must be chosen at random. Make it something you wouldn't 
+        normally choose.""",
+        runs=10,
+    )
     assert len(synthetic_results) == 10
     for row in synthetic_results:
         assert isinstance(row, MedicalBilling)
@@ -78,11 +91,15 @@ def test_generate_synthetic(synthetic_data_generator: SyntheticDataGenerator):
 
 @pytest.mark.requires("openai")
 @pytest.mark.asyncio
-async def test_agenerate_synthetic(synthetic_data_generator: SyntheticDataGenerator):
-    synthetic_results = await synthetic_data_generator.agenerate(subject="medical_billing",
-                                                                 extra="""the name must be chosen at random. Make it 
-                                                                 something you wouldn't normally choose.""",
-                                                                 runs=10)
+async def test_agenerate_synthetic(
+    synthetic_data_generator: SyntheticDataGenerator,
+) -> None:
+    synthetic_results = await synthetic_data_generator.agenerate(
+        subject="medical_billing",
+        extra="""the name must be chosen at random. Make it something you wouldn't 
+        normally choose.""",
+        runs=10,
+    )
     assert len(synthetic_results) == 10
     for row in synthetic_results:
         assert isinstance(row, MedicalBilling)
