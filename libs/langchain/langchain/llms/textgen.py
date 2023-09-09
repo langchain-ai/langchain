@@ -419,8 +419,6 @@ class TextGen(LLM):
                     text=result["text"],
                     generation_info=None,
                 )
-                if print_output:  # Conditionally print the output
-                    print(prompt + chunk.text)
                 yield chunk
             elif result["event"] == "stream_end":
                 websocket_client.close()
