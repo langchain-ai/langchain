@@ -1,4 +1,4 @@
-from typing import Dict, List, Union, Any, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
@@ -24,8 +24,8 @@ class CTranslate2(BaseLLM):
     compute_type: Union[str, Dict[str, str]] = "default"
     """
     Model computation type or a dictionary mapping a device name to the computation type
-    (possible values are: default, auto, int8, int8_float32, int8_float16, int8_bfloat16, 
-    int16, float16, bfloat16, float32).
+    (possible values are: default, auto, int8, int8_float32, int8_float16,
+    int8_bfloat16, int16, float16, bfloat16, float32).
     """
 
     max_length: int = 512
@@ -40,10 +40,15 @@ class CTranslate2(BaseLLM):
     sampling_temperature: float = 1
     """Sampling temperature to generate more random samples."""
 
-    client: Any
+    client: Any  #: :meta private:
+
+    tokenizer: Any  #: :meta private:
 
     ctranslate2_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Holds any model parameters valid for `ctranslate2.Generator` call not explicitly specified."""
+    """
+    Holds any model parameters valid for `ctranslate2.Generator` call not 
+    explicitly specified.
+    """
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
