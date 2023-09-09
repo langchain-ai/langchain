@@ -107,7 +107,6 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
 
         for metric in self.metrics:
             for i, generation in enumerate(response.generations):
-                metric: Metric
                 # Here, we only measure the first generation's output
                 output = generation[0].text
                 query = self.prompts[i]
