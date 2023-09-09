@@ -58,6 +58,11 @@ class BaseModel(Base):
     uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 
+def _results_to_docs(docs_and_scores: Any) -> List[Document]:
+    """Return docs from docs and scores."""
+    return [doc for doc, _ in docs_and_scores]
+
+
 class PGVector(VectorStore):
     """`Postgres`/`PGVector` vector store.
 
@@ -375,10 +380,8 @@ class PGVector(VectorStore):
 
         return self._results_to_docs_and_scores(results)
 
-    def _results_to_docs(self, docs_and_scores) -> List[Document]:
-        return [doc for doc, _ in docs_and_scores]
-
-    def _results_to_docs_and_scores(self, results):
+    def _results_to_docs_and_scores(self, results: Any):
+        """Return docs and scores from results."""
         docs = [
             (
                 Document(
@@ -391,7 +394,13 @@ class PGVector(VectorStore):
         ]
         return docs
 
-    def __query_collection(self, embedding, filter, k):
+    def __query_collection(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+    ):
+        """Query the collection."""
         with Session(self._conn) as session:
             collection = self.get_collection(session)
             if not collection:
@@ -457,7 +466,7 @@ class PGVector(VectorStore):
         docs_and_scores = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, filter=filter
         )
-        return self._results_to_docs(docs_and_scores)
+        return _results_to_docs(docs_and_scores)
 
     @classmethod
     def from_texts(
@@ -807,7 +816,7 @@ class PGVector(VectorStore):
             **kwargs,
         )
 
-        return self._results_to_docs(docs_and_scores)
+        return _results_to_docs(docs_and_scores)
 
     async def amax_marginal_relevance_search_by_vector(
         self,
