@@ -220,8 +220,6 @@ class TextGen(LLM):
 
             if response.status_code == 200:
                 result = response.json()["results"][0]["text"]
-                if print_output:  # Conditionally print the output
-                    print(prompt + result)
             else:
                 print(f"ERROR: response: {response}")
                 result = ""
