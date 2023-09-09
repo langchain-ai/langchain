@@ -362,7 +362,6 @@ class TextGen(LLM):
         Args:
             prompt: The prompts to pass into the model.
             stop: Optional list of stop words to use when generating.
-            print_output (bool, optional): Whether to print the output to the terminal (default is True).
 
         Returns:
             A generator representing the stream of tokens being generated.
