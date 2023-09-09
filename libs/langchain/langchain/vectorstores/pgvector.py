@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import enum
 import logging
 import uuid
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,6 +19,7 @@ from typing import (
     Type,
 )
 
+import numpy as np
 import sqlalchemy
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import UUID
@@ -26,6 +29,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from langchain.vectorstores._pgvector_data_models import CollectionStore
@@ -367,6 +371,27 @@ class PGVector(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
+        results = self.__query_collection(embedding=embedding, filter=filter, k=k)
+
+        return self._results_to_docs_and_scores(results)
+
+    def _results_to_docs(self, docs_and_scores) -> List[Document]:
+        return [doc for doc, _ in docs_and_scores]
+
+    def _results_to_docs_and_scores(self, results):
+        docs = [
+            (
+                Document(
+                    page_content=result.EmbeddingStore.document,
+                    metadata=result.EmbeddingStore.cmetadata,
+                ),
+                result.distance if self.embedding_function is not None else None,
+            )
+            for result in results
+        ]
+        return docs
+
+    def __query_collection(self, embedding, filter, k):
         with Session(self._conn) as session:
             collection = self.get_collection(session)
             if not collection:
@@ -410,18 +435,7 @@ class PGVector(VectorStore):
                 .limit(k)
                 .all()
             )
-
-        docs = [
-            (
-                Document(
-                    page_content=result.EmbeddingStore.document,
-                    metadata=result.EmbeddingStore.cmetadata,
-                ),
-                result.distance if self.embedding_function is not None else None,
-            )
-            for result in results
-        ]
-        return docs
+        return results
 
     def similarity_search_by_vector(
         self,
@@ -443,7 +457,7 @@ class PGVector(VectorStore):
         docs_and_scores = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, filter=filter
         )
-        return [doc for doc, _ in docs_and_scores]
+        return self._results_to_docs(docs_and_scores)
 
     @classmethod
     def from_texts(
@@ -640,3 +654,107 @@ class PGVector(VectorStore):
                 f" for distance_strategy of {self._distance_strategy}."
                 "Consider providing relevance_score_fn to PGVector constructor."
             )
+
+    def max_marginal_relevance_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        results = self.__query_collection(embedding, filter, k=fetch_k)
+
+        embedding_list = [result.EmbeddingStore.embedding for result in results]
+
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding, dtype=np.float32),
+            embedding_list,
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+
+        candidates = self._results_to_docs_and_scores(results)
+
+        return [r for i, r in enumerate(candidates) if i in mmr_selected]
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        embedding = self.embedding_function.embed_query(query)
+        return self.max_marginal_relevance_search_by_vector(
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            **kwargs,
+        )
+
+    def max_marginal_relevance_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict] = None,
+    ) -> List[Tuple[Document, float]]:
+        embedding = self.embedding_function.embed_query(query)
+        docs = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding=embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+        )
+        return docs
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        docs_and_scores = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )
+
+        return self._results_to_docs(docs_and_scores)
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance."""
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(
+            self.max_marginal_relevance_search_by_vector,
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )
+        return await asyncio.get_event_loop().run_in_executor(None, func)
