@@ -352,7 +352,6 @@ class TextGen(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        print_output: bool = True,  # New parameter for printing control
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         """Yields results objects as they are generated in real time.
