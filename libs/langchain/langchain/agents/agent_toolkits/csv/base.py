@@ -1,4 +1,5 @@
 from typing import Any, List, Optional, Union
+from io import IOBase
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
@@ -28,6 +29,8 @@ def create_csv_agent(
             if not isinstance(item, str):
                 raise ValueError(f"Expected str, got {type(path)}")
             df.append(pd.read_csv(item, **_kwargs))
+    elif isinstance(path, IOBase):
+        df = pd.read_csv(path, **_kwargs)
     else:
-        raise ValueError(f"Expected str or list, got {type(path)}")
+        raise ValueError(f"Expected str, list, or file-like object, got {type(path)}")
     return create_pandas_dataframe_agent(llm, df, **kwargs)
