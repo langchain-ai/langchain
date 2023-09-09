@@ -17,9 +17,13 @@ class GitLabAPIWrapper(BaseModel):
     gitlab: Any  #: :meta private:
     gitlab_repo_instance: Any  #: :meta private:
     gitlab_repository: Optional[str] = None
-    gitlab_app_private_key: Optional[str] = None
+    """The name of the GitLab repository, in the form {username}/{repo-name}."""
+    gitlab_personal_access_token: Optional[str] = None
+    """Personal access token for the GitLab service, used for authentication."""
     gitlab_branch: Optional[str] = None
+    """The specific branch in the GitLab repository where the bot will make its commits. Defaults to 'main'."""
     gitlab_base_branch: Optional[str] = None
+    """The base branch in the GitLab repository, used for comparisons. Usually 'main' or 'master'. Defaults to 'main'."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -33,15 +37,15 @@ class GitLabAPIWrapper(BaseModel):
             values, "gitlab_repository", "GITLAB_REPOSITORY"
         )
 
-        gitlab_pat = get_from_dict_or_env(
+        gitlab_personal_access_token = get_from_dict_or_env(
             values, "gitlab_personal_access_token", "GITLAB_PERSONAL_ACCESS_TOKEN"
         )
 
         gitlab_branch = get_from_dict_or_env(
-            values, "gitlab_branch", "GITLAB_BRANCH", default="master"
+            values, "gitlab_branch", "GITLAB_BRANCH", default="main"
         )
         gitlab_base_branch = get_from_dict_or_env(
-            values, "gitlab_base_branch", "GITLAB_BASE_BRANCH", default="master"
+            values, "gitlab_base_branch", "GITLAB_BASE_BRANCH", default="main"
         )
 
         try:
@@ -53,14 +57,14 @@ class GitLabAPIWrapper(BaseModel):
                 "Please install it with `pip install python-gitlab`"
             )
 
-        g = gitlab.Gitlab(private_token=gitlab_pat)
+        g = gitlab.Gitlab(private_token=gitlab_personal_access_token)
 
         g.auth()
 
         values["gitlab"] = g
         values["gitlab_repo_instance"] = g.projects.get(gitlab_repository)
         values["gitlab_repository"] = gitlab_repository
-        values["gitlab_app_private_access_token"] = gitlab_pat
+        values["gitlab_personal_access_token"] = gitlab_personal_access_token
         values["gitlab_branch"] = gitlab_branch
         values["gitlab_base_branch"] = gitlab_base_branch
 
@@ -105,7 +109,7 @@ class GitLabAPIWrapper(BaseModel):
         Parameters:
             issue_number(int): The number for the gitlab issue
         Returns:
-            dict: A doctionary containing the issue's title,
+            dict: A dictionary containing the issue's title,
             body, and comments as a string
         """
         issue = self.gitlab_repo_instance.issues.get(issue_number)
