@@ -36,7 +36,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field, root_validator, validator
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import (
     AgentAction,
     AgentFinish,
