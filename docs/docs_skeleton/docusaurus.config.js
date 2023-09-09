@@ -239,6 +239,14 @@ const config = {
         copyright: `Copyright © ${new Date().getFullYear()} LangChain, Inc.`,
       },
     }),
+
+  scripts: [
+    "/js/vercel_analytics.js",
+    {
+      src: "/_vercel/insights/script.js",
+      defer: true,
+    }
+  ]
 };
 
 module.exports = config;
