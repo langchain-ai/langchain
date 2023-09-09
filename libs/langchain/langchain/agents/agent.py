@@ -363,7 +363,7 @@ class RunnableAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        inputs = AgentInput(**kwargs, **{"intermediate_steps": intermediate_steps})
         output = self.runnable.invoke(inputs, config={"callbacks": callbacks})
         return output
 
@@ -384,7 +384,7 @@ class RunnableAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        inputs = AgentInput(**kwargs, **{"intermediate_steps": intermediate_steps})
         output = await self.runnable.ainvoke(inputs, config={"callbacks": callbacks})
         return output
 
