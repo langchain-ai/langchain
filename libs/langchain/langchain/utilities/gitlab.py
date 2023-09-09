@@ -21,9 +21,13 @@ class GitLabAPIWrapper(BaseModel):
     gitlab_personal_access_token: Optional[str] = None
     """Personal access token for the GitLab service, used for authentication."""
     gitlab_branch: Optional[str] = None
-    """The specific branch in the GitLab repository where the bot will make its commits. Defaults to 'main'."""
+    """The specific branch in the GitLab repository where the bot will make 
+        its commits. Defaults to 'main'.
+    """
     gitlab_base_branch: Optional[str] = None
-    """The base branch in the GitLab repository, used for comparisons. Usually 'main' or 'master'. Defaults to 'main'."""
+    """The base branch in the GitLab repository, used for comparisons. 
+        Usually 'main' or 'master'. Defaults to 'main'.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
