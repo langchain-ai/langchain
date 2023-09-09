@@ -1,6 +1,6 @@
 import json
 from abc import ABC
-from typing import Any, Dict, List, Mapping, Optional, Iterator
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -210,7 +210,8 @@ class BedrockBase(BaseModel, ABC):
                     f"Stop sequence key name for {provider} is not supported."
                 )
 
-            # stop sequence from _generate() overrides stop sequences in the class attribute
+            # stop sequence from _generate() overrides
+            # stop sequences in the class attribute
             _model_kwargs[stop_sequence_key_name] = stop
 
         params = {**_model_kwargs, **kwargs}
@@ -284,9 +285,11 @@ class Bedrock(LLM, BedrockBase):
 
         Args:
             prompt (str): The prompt to pass into the model
-            stop (Optional[List[str]], optional): Stop sequences. These will override any stop sequences
-                in the `model_kwargs` attribute. Defaults to None.
-            run_manager (Optional[CallbackManagerForLLMRun], optional): Callback run managers used to process the output. Defaults to None.
+            stop (Optional[List[str]], optional): Stop sequences. These will
+                override any stop sequences in the `model_kwargs` attribute.
+                Defaults to None.
+            run_manager (Optional[CallbackManagerForLLMRun], optional): Callback
+                run managers used to process the output. Defaults to None.
 
         Returns:
             Iterator[GenerationChunk]: Generator that yields the streamed responses.
