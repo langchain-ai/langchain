@@ -2,11 +2,13 @@ import re
 
 import numpy as np
 import pytest
-from pandas import DataFrame
-
 from langchain.agents.agent import AgentExecutor
 from langchain.llms import OpenAI
-from langchain_experimental.dataframe_agents.pandas.base import create_pandas_dataframe_agent
+from pandas import DataFrame
+
+from langchain_experimental.dataframe_agents.pandas.base import (
+    create_pandas_dataframe_agent,
+)
 
 
 @pytest.fixture(scope="module")

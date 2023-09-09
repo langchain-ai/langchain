@@ -2,11 +2,13 @@ import re
 
 import numpy as np
 import pytest
-from polars import DataFrame
-
 from langchain.agents.agent import AgentExecutor
 from langchain.llms import OpenAI
-from langchain_experimental.dataframe_agents.polars.base import create_polars_dataframe_agent
+from polars import DataFrame
+
+from langchain_experimental.dataframe_agents.polars.base import (
+    create_polars_dataframe_agent,
+)
 
 
 @pytest.fixture(scope="module")

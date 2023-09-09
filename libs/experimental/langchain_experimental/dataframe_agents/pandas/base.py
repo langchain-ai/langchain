@@ -11,6 +11,7 @@ from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import SystemMessage
 from langchain.tools.python.tool import PythonAstREPLTool
+
 from langchain_experimental.dataframe_agents.pandas.prompt import (
     FUNCTIONS_WITH_DF,
     FUNCTIONS_WITH_MULTI_DF,
@@ -22,7 +23,6 @@ from langchain_experimental.dataframe_agents.pandas.prompt import (
     SUFFIX_WITH_DF,
     SUFFIX_WITH_MULTI_DF,
 )
-
 
 PREFIX = PREFIX.format(lib="pandas")
 MULTI_DF_PREFIX = MULTI_DF_PREFIX.format(lib="pandas", num_dfs="{num_dfs}")
