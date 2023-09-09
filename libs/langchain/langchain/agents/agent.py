@@ -15,7 +15,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    TypedDict,
     Union,
 )
 
@@ -318,16 +317,10 @@ class AgentOutputParser(BaseOutputParser):
         """Parse text into agent action/finish."""
 
 
-class AgentInput(TypedDict):
-    """Input for an agent."""
-
-    intermediate_steps: List[Tuple[AgentAction, str]]
-
-
 class RunnableAgent(BaseSingleActionAgent):
     """Agent powered by runnables."""
 
-    runnable: Runnable[AgentInput, Union[AgentAction, AgentFinish]]
+    runnable: Runnable[dict, Union[AgentAction, AgentFinish]]
     """Runnable to call to get agent action."""
     _input_keys: List[str] = []
     """Input keys."""
@@ -363,7 +356,7 @@ class RunnableAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = AgentInput(**kwargs, **{"intermediate_steps": intermediate_steps})
+        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
         output = self.runnable.invoke(inputs, config={"callbacks": callbacks})
         return output
 
@@ -384,7 +377,7 @@ class RunnableAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = AgentInput(**kwargs, **{"intermediate_steps": intermediate_steps})
+        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
         output = await self.runnable.ainvoke(inputs, config={"callbacks": callbacks})
         return output
 
