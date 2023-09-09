@@ -10,7 +10,11 @@ from langchain.schema import Generation, LLMResult
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.output import ChatGeneration
 from langchain.schema.messages import AIMessage
+from langchain.embeddings.base import Embeddings
 from langchain.load.dump import dumps
+from langchain.schema import Generation, LLMResult
+from langchain.schema.messages import AIMessage
+from langchain.schema.output import ChatGeneration
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
@@ -60,7 +64,9 @@ def test_redis_cache_chat() -> None:
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    langchain.llm_cache.update(dumps("foo"), llm_string, [ChatGeneration(message=AIMessage(content="fizz"))])
+    langchain.llm_cache.update(
+        dumps("foo"), llm_string, [ChatGeneration(message=AIMessage(content="fizz"))]
+    )
     output = llm.generate(["foo"])
     expected_output = LLMResult(
         generations=[[ChatGeneration(message=AIMessage(content="fizz"))]],
@@ -128,7 +134,9 @@ def test_redis_semantic_cache_chat() -> None:
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    langchain.llm_cache.update(dumps("foo"), llm_string, [ChatGeneration(message=AIMessage(content="fizz"))])
+    langchain.llm_cache.update(
+        dumps("foo"), llm_string, [ChatGeneration(message=AIMessage(content="fizz"))]
+    )
     output = llm.generate(["foo"])
     expected_output = LLMResult(
         generations=[[ChatGeneration(message=AIMessage(content="fizz"))]],
