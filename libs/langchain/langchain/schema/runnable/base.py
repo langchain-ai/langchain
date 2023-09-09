@@ -1258,7 +1258,8 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         gathered_input = None
         if streaming_start_index == 0:
             final_pipeline = steps[streaming_start_index].transform(
-                input, patch_config(config, callbacks=run_manager.get_child(f"seq:step:0"))
+                input,
+                patch_config(config, callbacks=run_manager.get_child("seq:step:1")),
             )
         else:
             try:
@@ -1272,12 +1273,22 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     gathered_input = step.invoke(
                         gathered_input,
                         # mark each step as a child run
-                        patch_config(config, callbacks=run_manager.get_child(f"seq:step:{steps.index(step)+1}")),
+                        patch_config(
+                            config,
+                            callbacks=run_manager.get_child(
+                                f"seq:step:{steps.index(step)+1}"
+                            ),
+                        ),
                     )
                 # stream the first of the last steps with the final non-streaming input
                 final_pipeline = steps[streaming_start_index].stream(
                     gathered_input,
-                    patch_config(config, callbacks=run_manager.get_child(f"seq:step:{streaming_start_index+1}")),
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(
+                            f"seq:step:{streaming_start_index+1}"
+                        ),
+                    ),
                 )
             except (KeyboardInterrupt, Exception) as e:
                 run_manager.on_chain_error(e)
@@ -1346,7 +1357,8 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         gathered_input = None
         if streaming_start_index == 0:
             final_pipeline = steps[0].atransform(
-                input, patch_config(config, callbacks=run_manager.get_child(f"seq:step:1"))
+                input,
+                patch_config(config, callbacks=run_manager.get_child("seq:step:1")),
             )
         else:
             try:
@@ -1360,12 +1372,22 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     gathered_input = await step.ainvoke(
                         gathered_input,
                         # mark each step as a child run
-                        patch_config(config, callbacks=run_manager.get_child(f"seq:step:{steps.index(step)+1}")),
+                        patch_config(
+                            config,
+                            callbacks=run_manager.get_child(
+                                f"seq:step:{steps.index(step)+1}"
+                            ),
+                        ),
                     )
                 # stream the first of the last steps with the final non-streaming input
                 final_pipeline = steps[streaming_start_index].astream(
                     gathered_input,
-                    patch_config(config, callbacks=run_manager.get_child(f"seq:step:{streaming_start_index+1}")),
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(
+                            f"seq:step:{streaming_start_index+1}"
+                        ),
+                    ),
                 )
             except (KeyboardInterrupt, Exception) as e:
                 await run_manager.on_chain_error(e)
