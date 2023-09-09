@@ -217,12 +217,15 @@ class BedrockBase(BaseModel, ABC):
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
 
-        response = self.client.invoke_model_with_response_stream(
-            body=body,
-            modelId=self.model_id,
-            accept="application/json",
-            contentType="application/json",
-        )
+        try:
+            response = self.client.invoke_model_with_response_stream(
+                body=body,
+                modelId=self.model_id,
+                accept="application/json",
+                contentType="application/json",
+            )
+        except Exception as e:
+            raise ValueError(f"Error raised by bedrock service: {e}")
 
         for chunk in LLMInputOutputAdapter.prepare_output_stream(
             provider, response, stop
