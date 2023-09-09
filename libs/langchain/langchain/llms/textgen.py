@@ -184,6 +184,7 @@ class TextGen(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        print_output: bool = True,  # New parameter for printing control
         **kwargs: Any,
     ) -> str:
         """Call the textgen web API and return the output.
@@ -191,6 +192,7 @@ class TextGen(LLM):
         Args:
             prompt: The prompt to use for generation.
             stop: A list of strings to stop generation when encountered.
+            print_output (bool, optional): Whether to print the output to the terminal (default is True).
 
         Returns:
             The generated text.
@@ -208,7 +210,8 @@ class TextGen(LLM):
                 prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
             ):
                 combined_text_output += chunk.text
-            print(prompt + combined_text_output)
+            if print_output:  # Conditionally print the output
+                print(prompt + combined_text_output)
             result = combined_text_output
 
         else:
@@ -220,7 +223,8 @@ class TextGen(LLM):
 
             if response.status_code == 200:
                 result = response.json()["results"][0]["text"]
-                print(prompt + result)
+                if print_output:  # Conditionally print the output
+                    print(prompt + result)
             else:
                 print(f"ERROR: response: {response}")
                 result = ""
@@ -353,6 +357,7 @@ class TextGen(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        print_output: bool = True,  # New parameter for printing control
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         """Yields results objects as they are generated in real time.
@@ -363,6 +368,7 @@ class TextGen(LLM):
         Args:
             prompt: The prompts to pass into the model.
             stop: Optional list of stop words to use when generating.
+            print_output (bool, optional): Whether to print the output to the terminal (default is True).
 
         Returns:
             A generator representing the stream of tokens being generated.
@@ -413,6 +419,8 @@ class TextGen(LLM):
                     text=result["text"],
                     generation_info=None,
                 )
+                if print_output:  # Conditionally print the output
+                    print(prompt + chunk.text)
                 yield chunk
             elif result["event"] == "stream_end":
                 websocket_client.close()
