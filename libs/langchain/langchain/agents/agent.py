@@ -7,7 +7,17 @@ import logging
 import time
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypedDict,
+    Union,
+)
 
 import yaml
 
@@ -26,7 +36,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.pydantic_v1 import BaseModel, root_validator, Field
+from langchain.pydantic_v1 import BaseModel, Field, root_validator, validator
 from langchain.schema import (
     AgentAction,
     AgentFinish,
@@ -308,13 +318,24 @@ class AgentOutputParser(BaseOutputParser):
         """Parse text into agent action/finish."""
 
 
+class AgentInput(TypedDict):
+    """Input for an agent."""
+
+    intermediate_steps: List[Tuple[AgentAction, str]]
+
+
 class RunnableAgent(BaseSingleActionAgent):
     """Agent powered by runnables."""
 
-    runnable: Runnable
+    runnable: Runnable[AgentInput, Union[AgentAction, AgentFinish]]
     """Runnable to call to get agent action."""
-    _input_keys: List[str] = Field(default_factory=list)
+    _input_keys: List[str] = []
     """Input keys."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     @property
     def input_keys(self) -> List[str]:
@@ -343,7 +364,7 @@ class RunnableAgent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
-        output = self.runnable.invoke(inputs, )
+        output = self.runnable.invoke(inputs, config={"callbacks": callbacks})
         return output
 
     async def aplan(
@@ -364,7 +385,7 @@ class RunnableAgent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
-        output = await self.runnable.ainvoke(inputs, )
+        output = await self.runnable.ainvoke(inputs, config={"callbacks": callbacks})
         return output
 
 
@@ -784,6 +805,14 @@ s
                         "Tools that have `return_direct=True` are not allowed "
                         "in multi-action agents"
                     )
+        return values
+
+    @root_validator(pre=True)
+    def validate_runnable_agent(cls, values: Dict) -> Dict:
+        """Convert runnable to agent if passed in."""
+        agent = values["agent"]
+        if isinstance(agent, Runnable):
+            values["agent"] = RunnableAgent(runnable=agent)
         return values
 
     def save(self, file_path: Union[Path, str]) -> None:
