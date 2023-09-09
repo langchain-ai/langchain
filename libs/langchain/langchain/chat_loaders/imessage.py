@@ -1,14 +1,3 @@
-"""IMessage Chat Loader.
-
-This class is used to load chat sessions from the iMessage chat.db SQLite file.
-It only works on macOS when you have iMessage enabled and have the chat.db file.
-
-The chat.db file is likely located at ~/Library/Messages/chat.db. However, your
-terminal may not have permission to access this file. To resolve this, you can
-copy the file to a different location, change the permissions of the file, or
-grant full disk access for your terminal emulator in System Settings > Security
-and Privacy > Full Disk Access.
-"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -22,6 +11,17 @@ if TYPE_CHECKING:
 
 
 class IMessageChatLoader(chat_loaders.BaseChatLoader):
+    """Load chat sessions from the `iMessage` chat.db SQLite file.
+
+    It only works on macOS when you have iMessage enabled and have the chat.db file.
+
+    The chat.db file is likely located at ~/Library/Messages/chat.db. However, your
+    terminal may not have permission to access this file. To resolve this, you can
+    copy the file to a different location, change the permissions of the file, or
+    grant full disk access for your terminal emulator in System Settings > Security
+    and Privacy > Full Disk Access.
+    """
+
     def __init__(self, path: Optional[Union[str, Path]] = None):
         """
         Initialize the IMessageChatLoader.
