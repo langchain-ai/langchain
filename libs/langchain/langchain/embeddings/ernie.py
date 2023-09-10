@@ -61,7 +61,7 @@ class ErnieEmbeddings(BaseModel, Embeddings):
     def _refresh_access_token_with_lock(self) -> None:
         with self._lock:
             logger.debug("Refreshing access token")
-            base_url: str = "https://aip.baidubce.com/oauth/2.0/token"
+            base_url: str = f"{self.ernie_api_base}/oauth/2.0/token"
             resp = requests.post(
                 base_url,
                 headers={
