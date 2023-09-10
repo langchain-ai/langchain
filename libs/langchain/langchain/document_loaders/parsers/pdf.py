@@ -270,17 +270,64 @@ class DocumentIntelligenceParser(BaseBlobParser):
         self.model = model
 
     def _generate_docs(self, blob: Blob, result: Any) -> Iterator[Document]:
-        for p in result.pages:
-            content = " ".join([line.content for line in p.lines])
+        page_content_dict = dict()
 
+        for paragraph in result.paragraphs:
+            page_number = paragraph.bounding_regions[0].page_number
+
+            if page_number not in page_content_dict:
+                page_content_dict[page_number] = ""
+
+            page_content_dict[page_number] += paragraph.content + "\n\n"
+
+        for page, content in page_content_dict.items():
             d = Document(
                 page_content=content,
                 metadata={
                     "source": blob.source,
-                    "page": p.page_number,
+                    "page": page,
+                    "type": "TEXT",
                 },
             )
             yield d
+
+        if self.model in ["prebuilt-document", "prebuilt-layout", "prebuilt-invoice"]:
+            for table_idx, table in enumerate(result.tables):
+                page_num = table.bounding_regions[0].page_number
+                headers = list()
+                rows = dict()
+
+                for cell in table.cells:
+                    if cell.kind == "columnHeader":
+                        headers.append(cell.content)
+                    elif cell.kind == "content":
+                        if cell.row_index not in rows:
+                            rows[cell.row_index] = list()
+                        rows[cell.row_index].append(cell.content)
+
+                if headers:
+                    hd = Document(
+                        page_content=",".join(headers),
+                        metadata={
+                            "source": blob.source,
+                            "page": page_num,
+                            "type": "TABLE_HEADER",
+                            "table_index": table_idx,
+                        },
+                    )
+                    yield hd
+
+                for _, row_cells in sorted(rows.items()):
+                    rd = Document(
+                        page_content=",".join(row_cells),
+                        metadata={
+                            "source": blob.source,
+                            "page": page_num,
+                            "type": "TABLE_ROW",
+                            "table_index": table_idx,
+                        },
+                    )
+                    yield rd
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
