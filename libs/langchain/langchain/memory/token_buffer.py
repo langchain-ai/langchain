@@ -55,5 +55,4 @@ class ConversationTokenBufferMemory(BaseChatMemory):
             pruned_memory = []
             while curr_buffer_length > self.max_token_limit:
                 pruned_memory.append(buffer.pop(0))
-                curr_buffer_length = self.llm.get_num_tokens_from_messages(
-                    buffer)
+                curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
