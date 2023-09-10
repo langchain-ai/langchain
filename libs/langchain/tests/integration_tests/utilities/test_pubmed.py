@@ -20,8 +20,16 @@ def api_client() -> PubMedAPIWrapper:
 def test_run_success(api_client: PubMedAPIWrapper) -> None:
     """Test that returns the correct answer"""
 
-    output = api_client.run("chatgpt")
-    assert "Performance of ChatGPT on the Situational Judgement Test-A" in output
+    search_string = (
+        "Examining the Validity of ChatGPT in Identifying "
+        "Relevant Nephrology Literature"
+    )
+    output = api_client.run(search_string)
+    test_string = (
+        "Examining the Validity of ChatGPT in Identifying "
+        "Relevant Nephrology Literature: Findings and Implications"
+    )
+    assert test_string in output
     assert len(output) == api_client.doc_content_chars_max
 
 
@@ -30,6 +38,53 @@ def test_run_returns_no_result(api_client: PubMedAPIWrapper) -> None:
 
     output = api_client.run("1605.08386WWW")
     assert "No good PubMed Result was found" == output
+
+
+def test_retrieve_article_returns_book_abstract(api_client: PubMedAPIWrapper) -> None:
+    """Test that returns the excerpt of a book."""
+
+    output_nolabel = api_client.retrieve_article("25905357", "")
+    output_withlabel = api_client.retrieve_article("29262144", "")
+    test_string_nolabel = (
+        "Osteoporosis is a multifactorial disorder associated with low bone mass and "
+        "enhanced skeletal fragility. Although"
+    )
+    assert test_string_nolabel in output_nolabel["Summary"]
+    assert (
+        "Wallenberg syndrome was first described in 1808 by Gaspard Vieusseux. However,"
+        in output_withlabel["Summary"]
+    )
+
+
+def test_retrieve_article_returns_article_abstract(
+    api_client: PubMedAPIWrapper,
+) -> None:
+    """Test that returns the abstract of an article."""
+
+    output_nolabel = api_client.retrieve_article("37666905", "")
+    output_withlabel = api_client.retrieve_article("37666551", "")
+    test_string_nolabel = (
+        "This work aims to: (1) Provide maximal hand force data on six different "
+        "grasp types for healthy subjects; (2) detect grasp types with maximal "
+        "force significantly affected by hand osteoarthritis (HOA) in women; (3) "
+        "look for predictors to detect HOA from the maximal forces using discriminant "
+        "analyses."
+    )
+    assert test_string_nolabel in output_nolabel["Summary"]
+    test_string_withlabel = (
+        "OBJECTIVES: To assess across seven hospitals from six different countries "
+        "the extent to which the COVID-19 pandemic affected the volumes of orthopaedic "
+        "hospital admissions and patient outcomes for non-COVID-19 patients admitted "
+        "for orthopaedic care."
+    )
+    assert test_string_withlabel in output_withlabel["Summary"]
+
+
+def test_retrieve_article_no_abstract_available(api_client: PubMedAPIWrapper) -> None:
+    """Test that returns 'No abstract available'."""
+
+    output = api_client.retrieve_article("10766884", "")
+    assert "No abstract available" == output["Summary"]
 
 
 def assert_docs(docs: List[Document]) -> None:
@@ -87,8 +142,16 @@ def _load_pubmed_from_universal_entry(**kwargs: Any) -> BaseTool:
 
 def test_load_pupmed_from_universal_entry() -> None:
     pubmed_tool = _load_pubmed_from_universal_entry()
-    output = pubmed_tool("chatgpt")
-    assert "Performance of ChatGPT on the Situational Judgement Test-A" in output
+    search_string = (
+        "Examining the Validity of ChatGPT in Identifying "
+        "Relevant Nephrology Literature"
+    )
+    output = pubmed_tool(search_string)
+    test_string = (
+        "Examining the Validity of ChatGPT in Identifying "
+        "Relevant Nephrology Literature: Findings and Implications"
+    )
+    assert test_string in output
 
 
 def test_load_pupmed_from_universal_entry_with_params() -> None:
