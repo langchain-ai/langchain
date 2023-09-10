@@ -21,7 +21,7 @@ class ConversationTokenBufferMemory(BaseChatMemory):
 
     @property
     def buffer_as_str(self) -> str:
-        """Exposes the buffer as a string in case return_messages is True."""
+        """Exposes the buffer as a string in case return_messages is False."""
         return get_buffer_string(
             self.chat_memory.messages,
             human_prefix=self.human_prefix,
@@ -30,7 +30,7 @@ class ConversationTokenBufferMemory(BaseChatMemory):
 
     @property
     def buffer_as_messages(self) -> List[BaseMessage]:
-        """Exposes the buffer as a list of messages in case return_messages is False."""
+        """Exposes the buffer as a list of messages in case return_messages is True."""
         return self.chat_memory.messages
 
     @property
@@ -55,4 +55,5 @@ class ConversationTokenBufferMemory(BaseChatMemory):
             pruned_memory = []
             while curr_buffer_length > self.max_token_limit:
                 pruned_memory.append(buffer.pop(0))
-                curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
+                curr_buffer_length = self.llm.get_num_tokens_from_messages(
+                    buffer)
