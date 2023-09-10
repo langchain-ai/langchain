@@ -263,7 +263,8 @@ class AmazonTextractPDFParser(BaseBlobParser):
 
 class DocumentIntelligenceParser(BaseBlobParser):
     """Loads a PDF with Azure Document Intelligence
-    (formerly Forms Recognizer) and chunks at character level."""
+    (formerly Forms Recognizer). Returns Document
+    with paragraphs, table headers, and rows."""
 
     def __init__(self, client: Any, model: str):
         self.client = client
