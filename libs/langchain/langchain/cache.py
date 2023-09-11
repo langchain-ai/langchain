@@ -296,7 +296,6 @@ class RedisCache(BaseCache):
 
     def _key(self, prompt: str, llm_string: str) -> str:
         """Compute key from prompt and llm_string"""
-        print(prompt + llm_string)
         return _hash(prompt + llm_string)
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
