@@ -2,6 +2,7 @@ import os
 from typing import Iterator, List
 
 import pytest
+from . import is_libcublas_available
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -10,6 +11,12 @@ def check_spacy_model() -> Iterator[None]:
 
     if not spacy.util.is_package("en_core_web_lg"):
         pytest.skip(reason="Spacy model 'en_core_web_lg' not installed")
+    yield
+
+@pytest.fixture(scope="module", autouse=True)
+def check_libcublas() -> Iterator[None]:
+    if not is_libcublas_available():
+        pytest.skip(reason="libcublas.so is not available")
     yield
 
 
