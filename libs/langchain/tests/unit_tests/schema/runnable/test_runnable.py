@@ -1507,7 +1507,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         await runnable.with_retry(
             stop_after_attempt=2,
-            retry_if_exception_type=(ValueError,),
+            retry_if_exception_type=(ValueError, KeyError),
         ).ainvoke(1)
 
     assert _lambda_mock.call_count == 2  # retried
