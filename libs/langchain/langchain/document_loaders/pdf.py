@@ -62,12 +62,17 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
 class BasePDFLoader(BaseLoader, ABC):
     """Base Loader class for `PDF` files.
 
-    Defaults to check for local file, but if the file is a web path, it will download it
-    to a temporary file, use it, then clean up the temporary file after completion
+    If the file is a web path, it will download it to a temporary file, use it, then
+        clean up the temporary file after completion.
     """
 
     def __init__(self, file_path: str, *, headers: Optional[Dict] = None):
-        """Initialize with a file path."""
+        """Initialize with a file path.
+
+        Args:
+            file_path: Either a local, S3 or web path to a PDF file.
+            headers: Headers to use for GET request to download a file from a web path.
+        """
         self.file_path = file_path
         self.web_path = None
         self.headers = headers
@@ -79,18 +84,15 @@ class BasePDFLoader(BaseLoader, ABC):
             self.temp_dir = tempfile.TemporaryDirectory()
             _, suffix = os.path.splitext(self.file_path)
             temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
-            if self._is_s3_url(self.file_path):
-                self.web_path = self.file_path
-            else:
+            self.web_path = self.file_path
+            if not self._is_s3_url(self.file_path):
                 r = requests.get(self.file_path, headers=self.headers)
-
                 if r.status_code != 200:
                     raise ValueError(
                         "Check the url of your file; returned status code %s"
                         % r.status_code
                     )
 
-                self.web_path = self.file_path
                 with open(temp_pdf, mode="wb") as f:
                     f.write(r.content)
                 self.file_path = str(temp_pdf)
@@ -345,11 +347,14 @@ class MathpixPDFLoader(BasePDFLoader):
         self.mathpix_api_id = get_from_dict_or_env(
             kwargs, "mathpix_api_id", "MATHPIX_API_ID"
         )
-        headers = {"app_id": self.mathpix_api_id, "app_key": self.mathpix_api_key}
-        super().__init__(file_path, headers=headers)
+        super().__init__(file_path, **kwargs)
         self.processed_file_format = processed_file_format
         self.max_wait_time_seconds = max_wait_time_seconds
         self.should_clean_pdf = should_clean_pdf
+
+    @property
+    def _mathpix_headers(self) -> Dict[str, str]:
+        return {"app_id": self.mathpix_api_id, "app_key": self.mathpix_api_key}
 
     @property
     def url(self) -> str:
@@ -364,7 +369,7 @@ class MathpixPDFLoader(BasePDFLoader):
         with open(self.file_path, "rb") as f:
             files = {"file": f}
             response = requests.post(
-                self.url, headers=self.headers, files=files, data=self.data
+                self.url, headers=self._mathpix_headers, files=files, data=self.data
             )
         response_data = response.json()
         if "pdf_id" in response_data:
