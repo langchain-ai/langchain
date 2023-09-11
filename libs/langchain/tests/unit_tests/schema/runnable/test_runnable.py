@@ -327,6 +327,8 @@ async def test_prompt() -> None:
         ]
     )
 
+    assert prompt.input_keys == ["question"]
+
     assert prompt.invoke({"question": "What is your name?"}) == expected
 
     assert prompt.batch(
@@ -381,6 +383,7 @@ async def test_prompt_with_chat_model(
 
     chain = prompt | chat
 
+    assert chain.input_keys == ["question"]
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == []
@@ -481,6 +484,7 @@ async def test_prompt_with_llm(
 
     chain = prompt | llm
 
+    assert chain.input_keys == ["question"]
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == []
@@ -576,6 +580,7 @@ async def test_prompt_with_llm_and_async_lambda(
 
     chain = prompt | llm | passthrough
 
+    assert chain.input_keys == ["question"]
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [llm]
@@ -617,6 +622,7 @@ def test_prompt_with_chat_model_and_parser(
 
     chain = prompt | chat | parser
 
+    assert chain.input_keys == ["question"]
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [chat]
@@ -656,6 +662,7 @@ def test_combining_sequences(
 
     chain = prompt | chat | parser
 
+    assert chain.input_keys == ["question"]
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [chat]
@@ -734,6 +741,7 @@ Question:
         | parser
     )
 
+    assert chain.input_keys is None
     assert isinstance(chain, RunnableSequence)
     assert isinstance(chain.first, RunnableMap)
     assert chain.middle == [prompt, chat]
@@ -797,6 +805,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
         }
     )
 
+    assert chain.input_keys == ["question"]
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]

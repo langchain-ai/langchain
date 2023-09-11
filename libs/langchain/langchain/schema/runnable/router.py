@@ -96,6 +96,10 @@ class RouterRunnable(
     ) -> RunnableSequence[Other, Output]:
         return RunnableSequence(first=coerce_to_runnable(other), last=self)
 
+    @property
+    def input_keys(self) -> List[str]:
+        return ["key", "input"]
+
     def invoke(
         self, input: RouterInput, config: Optional[RunnableConfig] = None
     ) -> Output:

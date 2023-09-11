@@ -87,6 +87,10 @@ class Runnable(Generic[Input, Output], ABC):
 
     """ --- Public API --- """
 
+    @property
+    def input_keys(self) -> Optional[List[str]]:
+        return None
+
     @abstractmethod
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         ...
@@ -671,6 +675,10 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         yield self.runnable
         yield from self.fallbacks
 
+    @property
+    def input_keys(self) -> Optional[List[str]]:
+        return self.runnable.input_keys
+
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         # setup callbacks
         config = ensure_config(config)
@@ -934,6 +942,10 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 middle=[self.first] + self.middle,
                 last=self.last,
             )
+
+    @property
+    def input_keys(self) -> Optional[List[str]]:
+        return self.first.input_keys
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         # setup callbacks
@@ -1458,6 +1470,13 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     class Config:
         arbitrary_types_allowed = True
 
+    @property
+    def input_keys(self) -> Optional[List[str]]:
+        for step in self.steps.values():
+            input_keys = step.input_keys
+            if input_keys is not None:
+                return input_keys
+
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None
     ) -> Dict[str, Any]:
@@ -1930,6 +1949,10 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             kwargs=self.kwargs,
             config=self.config,
         )
+
+    @property
+    def input_keys(self) -> Optional[List[str]]:
+        return self.bound.input_keys
 
     def invoke(
         self,

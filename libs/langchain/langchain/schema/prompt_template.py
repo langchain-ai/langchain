@@ -35,6 +35,10 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
 
         arbitrary_types_allowed = True
 
+    @property
+    def input_keys(self) -> List[str]:
+        return self.input_variables
+
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:
         return self._call_with_config(
             lambda inner_input: self.format_prompt(**inner_input),
