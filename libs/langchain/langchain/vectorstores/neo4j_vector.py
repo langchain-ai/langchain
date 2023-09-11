@@ -21,8 +21,7 @@ from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
-
-distance_mapping = {
+DISTANCE_MAPPING = {
     DistanceStrategy.EUCLIDEAN_DISTANCE: "euclidean",
     DistanceStrategy.COSINE: "cosine",
 }
@@ -38,6 +37,29 @@ class SearchType(str, enum.Enum):
 DEFAULT_SEARCH_TYPE = SearchType.VECTOR
 
 
+def _get_search_index_query(search_type: SearchType) -> str:
+    type_to_query_map = {
+        SearchType.VECTOR: (
+            "CALL db.index.vector.queryNodes($index, $k, $embedding) YIELD node, score "
+        ),
+        SearchType.HYBRID: (
+            "CALL { "
+            "CALL db.index.vector.queryNodes($index, $k, $embedding) "
+            "YIELD node, score "
+            "RETURN node, score UNION"
+            "CALL db.index.fulltext.queryNodes($keyword_index, $query, {limit: $k}) "
+            "YIELD node, score "
+            "WITH collect({node:node, score:score}) AS nodes, max(score) AS max "
+            "UNWIND nodes AS n "
+            "RETURN n.node AS node, (n.score / max) AS score "  # We use 0 as min
+            "} "
+            "WITH node, score ORDER BY score DESC "
+            "WITH node, collect(score)[0] AS score LIMIT $k "  # deduplicate
+        ),
+    }
+    return type_to_query_map[search_type]
+
+
 def check_if_not_null(props: List[str], values: List[Any]) -> None:
     for prop, value in zip(props, values):
         if not value:
@@ -49,23 +71,6 @@ def sort_by_index_name(
 ) -> List[Dict[str, Any]]:
     """Sort first element to match the index_name if exists"""
     return sorted(lst, key=lambda x: x.get("index_name") != index_name)
-
-
-index_query = dict()
-index_query[
-    SearchType.VECTOR
-] = "CALL db.index.vector.queryNodes($index, $k, $embedding) YIELD node, score "
-
-index_query[SearchType.HYBRID] = (
-    "CALL { " + index_query[SearchType.VECTOR] + "RETURN node, score UNION "
-    "CALL db.index.fulltext.queryNodes($keyword_index, $query, {limit: $k}) "
-    "YIELD node, score "
-    "WITH collect({node:node, score:score}) AS nodes, max(score) AS max "
-    "UNWIND nodes AS n "
-    "RETURN n.node AS node, (n.score / max) AS score } "  # We use 0 as min
-    "WITH node, score ORDER BY score DESC "
-    "WITH node, collect(score)[0] AS score LIMIT $k "  # deduplicate
-)
 
 
 class Neo4jVector(VectorStore):
@@ -110,7 +115,7 @@ class Neo4jVector(VectorStore):
         self,
         embedding: Embeddings,
         *,
-        search_type: SearchType,
+        search_type: SearchType = SearchType.VECTOR,
         username: Optional[str] = None,
         password: Optional[str] = None,
         url: Optional[str] = None,
@@ -347,7 +352,7 @@ class Neo4jVector(VectorStore):
             "node_label": self.node_label,
             "embedding_node_property": self.embedding_node_property,
             "embedding_dimension": self.embedding_dimension,
-            "similarity_metric": distance_mapping[self._distance_strategy],
+            "similarity_metric": DISTANCE_MAPPING[self._distance_strategy],
         }
         self.query(index_query, params=parameters)
 
@@ -571,7 +576,7 @@ class Neo4jVector(VectorStore):
             self.retrieval_query if self.retrieval_query else default_retrieval
         )
 
-        read_query = index_query[self.search_type] + retrieval_query
+        read_query = _get_search_index_query(self.search_type) + retrieval_query
         parameters = {
             "index": self.index_name,
             "k": k,
