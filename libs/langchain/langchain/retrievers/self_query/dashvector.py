@@ -9,6 +9,7 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+from langchain.chains.query_constructor.schema import VirtualColumnName
 
 
 class DashvectorTranslator(Visitor):
@@ -44,15 +45,22 @@ class DashvectorTranslator(Visitor):
         return self._format_func(operation.operator).join(args)
 
     def visit_comparison(self, comparison: Comparison) -> str:
+        if type(comparison.attribute) is VirtualColumnName:
+            attribute = comparison.attribute()
+        elif type(comparison.attribute) is str:
+            attribute = comparison.attribute
+        else:
+            raise TypeError(
+                f"Unknown type {type(comparison.attribute)} for `comparison.attribute`!"
+            )
+
         value = comparison.value
         if isinstance(value, str):
             if comparison.comparator == Comparator.LIKE:
                 value = f"'%{value}%'"
             else:
                 value = f"'{value}'"
-        return (
-            f"{comparison.attribute}{self._format_func(comparison.comparator)}{value}"
-        )
+        return f"{attribute}{self._format_func(comparison.comparator)}{value}"
 
     def visit_structured_query(
         self, structured_query: StructuredQuery

@@ -65,9 +65,14 @@ class DeepLakeTranslator(Visitor):
 
     def visit_comparison(self, comparison: Comparison) -> str:
         if type(comparison.attribute) is VirtualColumnName:
+            attribute = comparison.attribute()
+        elif type(comparison.attribute) is str:
+            attribute = comparison.attribute
+        else:
             raise TypeError(
-                "`VirtualColumnName` is not supported for `QdrantTranslator`s!"
+                f"Unknown type {type(comparison.attribute)} for `comparison.attribute`!"
             )
+
         comparator = self._format_func(comparison.comparator)
         values = comparison.value
         if isinstance(values, list):
@@ -80,7 +85,7 @@ class DeepLakeTranslator(Visitor):
 
         if not can_cast_to_float(comparison.value):
             values = f"'{values}'"
-        return f"metadata['{comparison.attribute}'] {comparator} {values}"
+        return f"metadata['{attribute}'] {comparator} {values}"
 
     def visit_structured_query(
         self, structured_query: StructuredQuery

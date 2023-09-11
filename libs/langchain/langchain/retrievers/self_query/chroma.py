@@ -36,14 +36,15 @@ class ChromaTranslator(Visitor):
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
         if type(comparison.attribute) is VirtualColumnName:
+            attribute = comparison.attribute()
+        elif type(comparison.attribute) is str:
+            attribute = comparison.attribute
+        else:
             raise TypeError(
-                "`VirtualColumnName` is not supported for `QdrantTranslator`s!"
+                f"Unknown type {type(comparison.attribute)} for `comparison.attribute`!"
             )
-        return {
-            comparison.attribute: {
-                self._format_func(comparison.comparator): comparison.value
-            }
-        }
+
+        return {attribute: {self._format_func(comparison.comparator): comparison.value}}
 
     def visit_structured_query(
         self, structured_query: StructuredQuery

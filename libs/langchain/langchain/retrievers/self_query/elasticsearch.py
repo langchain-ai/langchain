@@ -51,13 +51,17 @@ class ElasticsearchTranslator(Visitor):
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
         if type(comparison.attribute) is VirtualColumnName:
+            attribute = comparison.attribute()
+        elif type(comparison.attribute) is str:
+            attribute = comparison.attribute
+        else:
             raise TypeError(
-                "`VirtualColumnName` is not supported for `QdrantTranslator`s!"
+                f"Unknown type {type(comparison.attribute)} for `comparison.attribute`!"
             )
 
         # ElasticsearchStore filters require to target
         # the metadata object field
-        field = f"metadata.{comparison.attribute}"
+        field = f"metadata.{attribute}"
 
         is_range_comparator = comparison.comparator in [
             Comparator.GT,

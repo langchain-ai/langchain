@@ -10,6 +10,7 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+from langchain.chains.query_constructor.schema import VirtualColumnName
 from langchain.vectorstores.redis import Redis
 from langchain.vectorstores.redis.filters import (
     RedisFilterExpression,
@@ -67,7 +68,15 @@ class RedisTranslator(Visitor):
             )
 
     def visit_comparison(self, comparison: Comparison) -> RedisFilterExpression:
-        filter_field = self._attribute_to_filter_field(comparison.attribute)
+        if type(comparison.attribute) is VirtualColumnName:
+            attribute = comparison.attribute()
+        elif type(comparison.attribute) is str:
+            attribute = comparison.attribute
+        else:
+            raise TypeError(
+                f"Unknown type {type(comparison.attribute)} for `comparison.attribute`!"
+            )
+        filter_field = self._attribute_to_filter_field(attribute)
         comparison_method = _COMPARATOR_TO_BUILTIN_METHOD[comparison.comparator]
         return getattr(filter_field, comparison_method)(comparison.value)
 

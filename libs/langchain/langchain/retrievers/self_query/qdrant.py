@@ -10,6 +10,7 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+from langchain.chains.query_constructor.schema import VirtualColumnName
 
 if TYPE_CHECKING:
     from qdrant_client.http import models as rest
@@ -56,12 +57,17 @@ class QdrantTranslator(Visitor):
                 "qdrant-client`."
             ) from e
 
-        assert (
-            type(comparison.attribute) is str
-        ), "`VirtualColumnName` is not supported for `QdrantTranslator`s!"
+        if type(comparison.attribute) is VirtualColumnName:
+            attribute = comparison.attribute()
+        elif type(comparison.attribute) is str:
+            attribute = comparison.attribute
+        else:
+            raise TypeError(
+                f"Unknown type {type(comparison.attribute)} for `comparison.attribute`!"
+            )
 
         self._validate_func(comparison.comparator)
-        attribute = self.metadata_key + "." + comparison.attribute
+        attribute = self.metadata_key + "." + attribute
         if comparison.comparator == Comparator.EQ:
             return rest.FieldCondition(
                 key=attribute, match=rest.MatchValue(value=comparison.value)

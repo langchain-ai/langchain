@@ -8,6 +8,7 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+from langchain.chains.query_constructor.schema import VirtualColumnName
 
 
 class SupabaseVectorTranslator(Visitor):
@@ -64,6 +65,15 @@ class SupabaseVectorTranslator(Visitor):
         return f"{operation.operator.value}({','.join(args)})"
 
     def visit_comparison(self, comparison: Comparison) -> str:
+        if type(comparison.attribute) is VirtualColumnName:
+            attribute = comparison.attribute()
+        elif type(comparison.attribute) is str:
+            attribute = comparison.attribute
+        else:
+            raise TypeError(
+                f"Unknown type {type(comparison.attribute)} for `comparison.attribute`!"
+            )
+
         if isinstance(comparison.value, list):
             return self.visit_operation(
                 Operation(
@@ -71,7 +81,7 @@ class SupabaseVectorTranslator(Visitor):
                     arguments=(
                         Comparison(
                             comparator=comparison.comparator,
-                            attribute=comparison.attribute,
+                            attribute=attribute,
                             value=value,
                         )
                         for value in comparison.value
@@ -81,7 +91,7 @@ class SupabaseVectorTranslator(Visitor):
 
         return ".".join(
             [
-                f"{self.metadata_column}{self._get_json_operator(comparison.value)}{comparison.attribute}",
+                f"{self.metadata_column}{self._get_json_operator(comparison.value)}{attribute}",
                 f"{self._map_comparator(comparison.comparator)}",
                 f"{comparison.value}",
             ]
