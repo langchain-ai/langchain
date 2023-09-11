@@ -114,9 +114,9 @@ class Neo4jVector(VectorStore):
         username: Optional[str] = None,
         password: Optional[str] = None,
         url: Optional[str] = None,
+        keyword_index_name: Optional[str] = "keyword",
         database: str = "neo4j",
         index_name: str = "vector",
-        keyword_index_name: str = "keyword",
         node_label: str = "Chunk",
         embedding_node_property: str = "embedding",
         text_node_property: str = "text",
@@ -541,7 +541,7 @@ class Neo4jVector(VectorStore):
         return docs
 
     def similarity_search_with_score_by_vector(
-        self, embedding: List[float], query: str, k: int = 4
+        self, embedding: List[float], k: int = 4, **kwargs
     ) -> List[Tuple[Document, float]]:
         """
         Perform a similarity search in the Neo4j database using a
@@ -572,13 +572,12 @@ class Neo4jVector(VectorStore):
         )
 
         read_query = index_query[self.search_type] + retrieval_query
-
         parameters = {
             "index": self.index_name,
             "k": k,
             "embedding": embedding,
             "keyword_index": self.keyword_index_name,
-            "query": query,
+            "query": kwargs["query"],
         }
 
         results = self.query(read_query, params=parameters)
@@ -600,7 +599,6 @@ class Neo4jVector(VectorStore):
     def similarity_search_by_vector(
         self,
         embedding: List[float],
-        query: str,
         k: int = 4,
         **kwargs: Any,
     ) -> List[Document]:
@@ -614,7 +612,7 @@ class Neo4jVector(VectorStore):
             List of Documents most similar to the query vector.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, query=query
+            embedding=embedding, k=k, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
