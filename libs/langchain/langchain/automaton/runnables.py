@@ -11,6 +11,7 @@ from langchain.automaton.typedefs import (
     RetrievalResponse,
     RetrievalRequest,
 )
+from langchain.automaton.prompt_generator import PromptGenerator
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.schema import AIMessage, BaseMessage, PromptValue, Document
 from langchain.schema.language_model import BaseLanguageModel
@@ -182,6 +183,7 @@ def create_llm_program(
         Callable[
             [Sequence[MessageLike]], Union[str, PromptValue, Sequence[BaseMessage]]
         ],
+        PromptGenerator,
         Runnable,
     ],
     *,
@@ -206,13 +208,15 @@ def create_llm_program(
         invoke_tools: Whether to invoke tools on the output of the LLM
 
     Returns:
-        A runnable that returns a list of messages
+        A runnable that returns a list of new messages
     """
 
-    if not isinstance(prompt_generator, Runnable):
-        _prompt_generator = RunnableLambda(prompt_generator)
-    else:
+    if isinstance(prompt_generator, PromptGenerator):
+        _prompt_generator = RunnableLambda(prompt_generator.to_prompt_value)
+    elif isinstance(prompt_generator, Runnable):
         _prompt_generator = prompt_generator
+    else:  # Otherwise attempt to convert to a runnable lambda
+        _prompt_generator = RunnableLambda(prompt_generator)
 
     if stop:
         llm = llm.bind(stop=stop)

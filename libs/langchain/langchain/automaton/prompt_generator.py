@@ -1,13 +1,11 @@
 """Prompt generation for the automaton."""
 from __future__ import annotations
-import json
 
 import abc
 from typing import Mapping, Any, Callable, List, Sequence, Optional, Union
 
 from langchain.automaton.typedefs import MessageLike
-from langchain.schema import BaseMessage, PromptValue, FunctionMessage
-from langchain.automaton.typedefs import FunctionCallResponse
+from langchain.schema import BaseMessage, PromptValue
 
 
 class BoundPromptValue(PromptValue):
@@ -25,7 +23,7 @@ class BoundPromptValue(PromptValue):
         return self.as_messages()
 
 
-class Translator(abc.ABC):
+class PromptGenerator(abc.ABC):
     @abc.abstractmethod
     def to_messages(
         self, original_messages: Sequence[MessageLike]
@@ -44,7 +42,7 @@ class Translator(abc.ABC):
         )
 
 
-class AdapterBasedTranslator(Translator):
+class AdapterBasedGenerator(PromptGenerator):
     def __init__(
         self,
         *,

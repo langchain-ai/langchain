@@ -3,19 +3,25 @@ from __future__ import annotations
 import json
 from typing import List, Sequence
 
-from langchain.automaton.chat_agent import ChatAgent
-from langchain.automaton.prompt_generation import AdapterBasedTranslator
+from langchain.automaton.chat_agent import ChatAgent, SimpleAutomaton
+from langchain.automaton.prompt_generator import AdapterBasedGenerator
 from langchain.automaton.typedefs import (
     AgentFinish,
     FunctionCallRequest,
     FunctionCallResponse,
-    MessageLike,
 )
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.schema import AIMessage, BaseMessage, FunctionMessage, Generation
+from langchain.schema.language_model import (
+    BaseLanguageModel,
+    LanguageModelInput,
+    LanguageModelOutput,
+)
 from langchain.schema.output_parser import BaseGenerationOutputParser
+from langchain.schema.runnable import Runnable
 from langchain.tools import BaseTool, format_tool_to_openai_function
+from langchain.automaton.runnables import create_llm_program
 
 
 class OpenAIFunctionsParser(BaseGenerationOutputParser):
@@ -41,24 +47,26 @@ class OpenAIFunctionsParser(BaseGenerationOutputParser):
         )
 
 
-def prompt_generator(input_messages: Sequence[MessageLike]) -> List[BaseMessage]:
-    """Generate a prompt from a log of message like objects."""
-    messages = []
-    for message in input_messages:
-        if isinstance(message, BaseMessage):
-            messages.append(message)
-        elif isinstance(message, FunctionCallResponse):
-            messages.append(
-                FunctionMessage(name=message.name, content=json.dumps(message.result))
-            )
-        else:
-            pass
-    return messages
+def create_openai_agent(llm: ChatOpenAI, tools: Sequence[BaseTool]) -> ChatAgent:
+    """Create an agent that uses OpenAI's API."""
+    openai_funcs = [format_tool_to_openai_function(tool_) for tool_ in tools]
+    adapter = create_openai_functions_adapter()
+    return ChatAgent(
+        llm.bind(functions=openai_funcs),
+        prompt_generator=adapter.to_messages,
+        tools=tools,
+        parser=OpenAIFunctionsParser(),
+    )
 
 
-def create_openai_functions_adapter() -> AdapterBasedTranslator:
-    """Create an adapter for using OpenAI functions."""
-    return AdapterBasedTranslator(
+def create_openai_agent_2(
+    llm: BaseLanguageModel[LanguageModelInput, LanguageModelOutput]
+    | Runnable[LanguageModelInput, LanguageModelOutput],
+    tools: Sequence[BaseTool],
+) -> SimpleAutomaton:
+    """Create an agent that uses OpenAI's API."""
+    openai_funcs = [format_tool_to_openai_function(tool_) for tool_ in tools]
+    prompt_generator = AdapterBasedGenerator(
         msg_adapters={
             FunctionCallResponse: lambda message: FunctionMessage(
                 name=message.name, content=json.dumps(message.result)
@@ -66,14 +74,15 @@ def create_openai_functions_adapter() -> AdapterBasedTranslator:
             # No need to translate function call requests
         },
     )
-
-
-def create_openai_agent(llm: ChatOpenAI, tools: Sequence[BaseTool]) -> ChatAgent:
-    """Create an agent that uses OpenAI's API."""
-    openai_funcs = [format_tool_to_openai_function(tool_) for tool_ in tools]
-    return ChatAgent(
+    llm_program = create_llm_program(
         llm.bind(functions=openai_funcs),
         prompt_generator=prompt_generator,
         tools=tools,
         parser=OpenAIFunctionsParser(),
+    )
+    return SimpleAutomaton(
+        states={
+            "program": llm_program,
+        },
+        router=lambda state, message: "program",
     )

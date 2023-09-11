@@ -1,7 +1,7 @@
 """Generalized chat agent, works with any chat model."""
 from __future__ import annotations
 
-from typing import Callable, Iterator, Optional, Sequence, TypeVar, Union, List
+from typing import Callable, Iterator, Optional, Sequence, TypeVar, Union, List, Mapping
 
 from langchain.automaton.runnables import create_llm_program
 from langchain.automaton.typedefs import (
@@ -15,6 +15,7 @@ from langchain.schema.language_model import (
     LanguageModelInput,
     LanguageModelOutput,
 )
+from langchain.automaton.processors import WorkingMemoryManager
 from langchain.schema.messages import BaseMessage
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.runnable import (
@@ -48,6 +49,7 @@ class ChatAgent(Agent):
             BaseOutputParser,
             None,
         ] = None,
+        memory_processor: Optional[WorkingMemoryManager] = None,
     ) -> None:
         """Initialize the chat agent."""
         invoke_tools = bool(tools)
@@ -62,6 +64,7 @@ class ChatAgent(Agent):
             stop=stop,
             invoke_tools=invoke_tools,
         )
+        self.memory_processor = memory_processor
 
     def step(
         self,
@@ -69,22 +72,43 @@ class ChatAgent(Agent):
         *,
         config: Optional[RunnableConfig] = None,
     ) -> List[MessageLike]:
-        """"""
+        """Implement a single step of the agent."""
+        last_message = messages[-1] if messages else None
+        if not last_message:
+            return []
+
+        new_messages = self.memory_processor.process(messages)
+
+        match last_message:
+            case AgentFinish():
+                return []
+            case _:
+                return self.llm_program.invoke(new_messages, config=config)
+
+
+WorkingMemoryProcessor = Runnable[Sequence[MessageLike], List[MessageLike]]
+
+
+class SimpleAutomaton:
+    def __init__(
+        self,
+        router: Callable[[Sequence[MessageLike]], Optional[WorkingMemoryProcessor]],
+    ) -> None:
+        """Initialize the automaton."""
+        self.router = router
 
     def run(
         self,
         messages: Sequence[MessageLike],
         *,
-        max_iterations: int = 100,
-    ) -> Iterator[MessageLike]:
-        """Run the agent."""
-        all_messages = list(messages)
-
+        config: Optional[RunnableConfig] = None,
+        max_iterations: int = 10,
+    ) -> List[MessageLike]:
+        """Run the automaton."""
+        new_messages = list(messages)
         for _ in range(max_iterations):
-            if all_messages and isinstance(all_messages[-1], AgentFinish):
+            runnable = self.router(new_messages)
+            if not runnable:
                 break
-
-            new_messages = self.llm_program.invoke(all_messages)
-
-            yield from new_messages
-            all_messages.extend(new_messages)
+            new_messages.extend(runnable.invoke(new_messages, config=config))
+        return new_messages

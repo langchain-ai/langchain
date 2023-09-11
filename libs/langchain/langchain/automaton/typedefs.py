@@ -96,8 +96,6 @@ class AgentFinish(InternalMessage):
 
 MessageLike = Union[BaseMessage, InternalMessage]
 
-WorkingMemory = Sequence[MessageLike]
-
 
 class Agent(abc.ABC):
     @abc.abstractmethod
