@@ -1,5 +1,5 @@
 import pytest
-from pydantic import BaseModel
+from langchain.pydantic_v1 import BaseModel
 
 from langchain import FewShotPromptTemplate
 from langchain.chains.data_generation.base import SyntheticDataGenerator
