@@ -50,7 +50,6 @@ _EXPECTED = [
     "GoogleSearchRun",
     "GoogleSerperResults",
     "GoogleSerperRun",
-    "HuggingFaceInjectionIdentifier",
     "HumanInputRun",
     "IFTTTWebhook",
     "InfoPowerBITool",

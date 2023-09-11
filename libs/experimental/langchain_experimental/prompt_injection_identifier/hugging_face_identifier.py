@@ -2,9 +2,8 @@
 
 from enum import Enum
 
-from transformers import Pipeline, pipeline
-
 from langchain.tools.base import BaseTool
+from transformers import Pipeline, pipeline
 
 
 class PromptInjectionModelOutput(str, Enum):
