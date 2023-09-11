@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 import logging
 import uuid
 from typing import (
@@ -27,6 +28,17 @@ distance_mapping = {
 }
 
 
+class SearchType(str, enum.Enum):
+    """Enumerator of the Distance strategies."""
+
+    VECTOR = "vector"
+    KEYWORD = "keyword"
+    HYBRID = "hybrid"
+
+
+DEFAULT_SEARCH_TYPE = SearchType.VECTOR
+
+
 def check_if_not_null(props: List[str], values: List[Any]) -> None:
     for prop, value in zip(props, values):
         if not value:
@@ -38,6 +50,28 @@ def sort_by_index_name(
 ) -> List[Dict[str, Any]]:
     """Sort first element to match the index_name if exists"""
     return sorted(lst, key=lambda x: x.get("index_name") != index_name)
+
+
+index_query = dict()
+index_query[SearchType.VECTOR] = (
+    "CALL db.index.vector.queryNodes($index, $k, $embedding) " "YIELD node, score "
+)
+
+index_query[SearchType.KEYWORD] = (
+    "CALL db.index.fulltext.queryNodes($index, $query, {limit: $k}) "
+    "YIELD node, score "
+)
+index_query[SearchType.HYBRID] = (
+    "CALL { "
+    + index_query[SearchType.VECTOR]
+    + "UNION "
+    + index_query[SearchType.KEYWORD]
+    + "WITH collect({node:node, score:score}) AS nodes, max(score) AS max "
+    "UNWIND nodes a n "
+    "RETURN n.node AS node, (score / max) AS score } "  # We use 0 as min
+    "WITH node, score ORDER BY score DESC "
+    "WITH node, collect(score)[0] AS score LIMIT $k "  # deduplicate
+)
 
 
 class Neo4jVector(VectorStore):
@@ -86,7 +120,9 @@ class Neo4jVector(VectorStore):
         password: Optional[str] = None,
         url: Optional[str] = None,
         database: str = "neo4j",
+        search_type: SearchType = DEFAULT_SEARCH_TYPE,
         index_name: str = "vector",
+        keyword_index_name: str = "keyword",
         node_label: str = "Chunk",
         embedding_node_property: str = "embedding",
         text_node_property: str = "text",
@@ -153,12 +189,14 @@ class Neo4jVector(VectorStore):
         self.embedding = embedding
         self._distance_strategy = distance_strategy
         self.index_name = index_name
+        self.keyword_index_name = keyword_index_name
         self.node_label = node_label
         self.embedding_node_property = embedding_node_property
         self.text_node_property = text_node_property
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
         self.retrieval_query = retrieval_query
+        self.search_type = search_type
         # Calculate embedding dimension
         self.embedding_dimension = len(embedding.embed_query("foo"))
 
@@ -263,6 +301,33 @@ class Neo4jVector(VectorStore):
         except IndexError:
             return None
 
+    def retrieve_existing_fts_index(self) -> bool:
+        """
+        Check if the fulltext index exists in the Neo4j database
+
+        This method queries the Neo4j database for existing fts indexes
+        with the specified name.
+
+        Returns:
+            bool: True if the index exists
+        """
+
+        index_information = self.query(
+            "SHOW INDEXES YIELD name, type, labelsOrTypes, properties, options "
+            "WHERE type = 'FULLTEXT' AND (name = $keyword_index_name "
+            "OR (labelsOrTypes = [$node_label] AND "
+            "properties = [$text_node_property])) "
+            "RETURN name, labelsOrTypes, properties, options ",
+            params={
+                "keyword_index_name": self.index_name,
+                "node_label": self.node_label,
+                "text_node_property": self.text_node_property,
+            },
+        )
+        # sort by index_name
+        index_information = sort_by_index_name(index_information, self.index_name)
+        return True if index_information else False
+
     def create_new_index(self) -> None:
         """
         This method constructs a Cypher query and executes it
@@ -286,6 +351,19 @@ class Neo4jVector(VectorStore):
         }
         self.query(index_query, params=parameters)
 
+    def create_new_keyword_index(self) -> None:
+        """
+        This method constructs a Cypher query and executes it
+        to create a new full text index in Neo4j.
+        """
+        fts_index_query = (
+            f"CREATE FULLTEXT INDEX {self.keyword_index_name} "
+            f"FOR (n:`{self.node_label}`) ON EACH "
+            f"[n.`{self.text_node_property}`]"
+        )
+
+        self.query(fts_index_query)
+
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding
@@ -299,6 +377,7 @@ class Neo4jVector(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         create_id_index: bool = True,
+        search_type: SearchType = SearchType.VECTOR,
         **kwargs: Any,
     ) -> Neo4jVector:
         if ids is None:
@@ -311,22 +390,28 @@ class Neo4jVector(VectorStore):
             embedding=embedding,
             **kwargs,
         )
+        if search_type in [SearchType.VECTOR, SearchType.HYBRID]:
+            # Check if the vector index already exists
+            embedding_dimension = store.retrieve_existing_index()
 
-        # Check if the index already exists
-        embedding_dimension = store.retrieve_existing_index()
+            # If the vector index doesn't exist yet
+            if not embedding_dimension:
+                store.create_new_index()
+            # If the index already exists, check if embedding dimensions match
+            elif not store.embedding_dimension == embedding_dimension:
+                raise ValueError(
+                    f"Index with name {store.index_name} already exists."
+                    "The provided embedding function and vector index "
+                    "dimensions do not match.\n"
+                    f"Embedding function dimension: {store.embedding_dimension}\n"
+                    f"Vector index dimension: {embedding_dimension}"
+                )
 
-        # If the index doesn't exist yet
-        if not embedding_dimension:
-            store.create_new_index()
-        # If the index already exists, check if embedding dimensions match
-        elif not store.embedding_dimension == embedding_dimension:
-            raise ValueError(
-                f"Index with name {store.index_name} already exists."
-                "The provided embedding function and vector index "
-                "dimensions do not match.\n"
-                f"Embedding function dimension: {store.embedding_dimension}\n"
-                f"Vector index dimension: {embedding_dimension}"
-            )
+        if search_type in [SearchType.KEYWORD, SearchType.HYBRID]:
+            existing_fts = store.retrieve_existing_fts_index()
+            # If the FTS index doesn't exist yet
+            if not existing_fts:
+                store.create_new_keyword_index()
 
         # Create unique constraint for faster import
         if create_id_index:
@@ -429,6 +514,7 @@ class Neo4jVector(VectorStore):
         return self.similarity_search_by_vector(
             embedding=embedding,
             k=k,
+            query=query,
         )
 
     def similarity_search_with_score(
@@ -444,11 +530,13 @@ class Neo4jVector(VectorStore):
             List of Documents most similar to the query and score for each
         """
         embedding = self.embedding.embed_query(query)
-        docs = self.similarity_search_with_score_by_vector(embedding=embedding, k=k)
+        docs = self.similarity_search_with_score_by_vector(
+            embedding=embedding, k=k, query=query
+        )
         return docs
 
     def similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4
+        self, embedding: List[float], query: str, k: int = 4
     ) -> List[Tuple[Document, float]]:
         """
         Perform a similarity search in the Neo4j database using a
@@ -478,12 +566,15 @@ class Neo4jVector(VectorStore):
             self.retrieval_query if self.retrieval_query else default_retrieval
         )
 
-        read_query = (
-            "CALL db.index.vector.queryNodes($index, $k, $embedding) "
-            "YIELD node, score "
-        ) + retrieval_query
+        read_query = index_query[self.search_type] + retrieval_query
 
-        parameters = {"index": self.index_name, "k": k, "embedding": embedding}
+        parameters = {
+            "index": self.index_name,
+            "k": k,
+            "embedding": embedding,
+            "keyword_index": self.keyword_index_name,
+            "query": query,
+        }
 
         results = self.query(read_query, params=parameters)
 
@@ -504,6 +595,7 @@ class Neo4jVector(VectorStore):
     def similarity_search_by_vector(
         self,
         embedding: List[float],
+        query: str,
         k: int = 4,
         **kwargs: Any,
     ) -> List[Document]:
@@ -517,7 +609,7 @@ class Neo4jVector(VectorStore):
             List of Documents most similar to the query vector.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k
+            embedding=embedding, k=k, query=query
         )
         return [doc for doc, _ in docs_and_scores]
 
