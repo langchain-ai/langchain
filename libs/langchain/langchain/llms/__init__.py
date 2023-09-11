@@ -37,6 +37,7 @@ from langchain.llms.chatglm import ChatGLM
 from langchain.llms.clarifai import Clarifai
 from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
+from langchain.llms.ctranslate2 import CTranslate2
 from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.deepsparse import DeepSparse
@@ -100,6 +101,7 @@ __all__ = [
     "Beam",
     "Bedrock",
     "CTransformers",
+    "CTranslate2",
     "CerebriumAI",
     "ChatGLM",
     "Clarifai",
@@ -178,6 +180,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "clarifai": Clarifai,
     "cohere": Cohere,
     "ctransformers": CTransformers,
+    "ctranslate2": CTranslate2,
     "databricks": Databricks,
     "deepinfra": DeepInfra,
     "deepsparse": DeepSparse,

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from enum import Enum
 from pathlib import Path
@@ -5,18 +7,18 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import yaml
-
-# ignore type error here as it's a redis-py type problem
-from redis.commands.search.field import (  # type: ignore
-    NumericField,
-    TagField,
-    TextField,
-    VectorField,
-)
-from typing_extensions import Literal
+from typing_extensions import TYPE_CHECKING, Literal
 
 from langchain.pydantic_v1 import BaseModel, Field, validator
 from langchain.vectorstores.redis.constants import REDIS_VECTOR_DTYPE_MAP
+
+if TYPE_CHECKING:
+    from redis.commands.search.field import (  # type: ignore
+        NumericField,
+        TagField,
+        TextField,
+        VectorField,
+    )
 
 
 class RedisDistanceMetric(str, Enum):
@@ -38,6 +40,8 @@ class TextFieldSchema(RedisField):
     sortable: Optional[bool] = False
 
     def as_field(self) -> TextField:
+        from redis.commands.search.field import TextField  # type: ignore
+
         return TextField(
             self.name,
             weight=self.weight,
@@ -55,6 +59,8 @@ class TagFieldSchema(RedisField):
     sortable: Optional[bool] = False
 
     def as_field(self) -> TagField:
+        from redis.commands.search.field import TagField  # type: ignore
+
         return TagField(
             self.name,
             separator=self.separator,
@@ -69,6 +75,8 @@ class NumericFieldSchema(RedisField):
     sortable: Optional[bool] = False
 
     def as_field(self) -> NumericField:
+        from redis.commands.search.field import NumericField  # type: ignore
+
         return NumericField(self.name, sortable=self.sortable, no_index=self.no_index)
 
 
@@ -97,6 +105,8 @@ class FlatVectorField(RedisVectorField):
     block_size: int = Field(default=1000)
 
     def as_field(self) -> VectorField:
+        from redis.commands.search.field import VectorField  # type: ignore
+
         return VectorField(
             self.name,
             self.algorithm,
@@ -118,6 +128,8 @@ class HNSWVectorField(RedisVectorField):
     epsilon: float = Field(default=0.8)
 
     def as_field(self) -> VectorField:
+        from redis.commands.search.field import VectorField  # type: ignore
+
         return VectorField(
             self.name,
             self.algorithm,
