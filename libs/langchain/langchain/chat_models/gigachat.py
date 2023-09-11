@@ -23,7 +23,7 @@ from langchain.schema.messages import (
 )
 from langchain.schema.output import ChatGenerationChunk
 
-LATEST_MODEL = "latest"
+LATEST_MODEL = "GigaChat:latest"
 
 
 class GigaChat(SimpleChatModel):
@@ -166,7 +166,7 @@ class GigaChat(SimpleChatModel):
         if not self.token:
             self._authorize()
 
-        if self.model == LATEST_MODEL:
+        if self.model is None:
             self.model = self.get_models()[0]
 
         headers = {
