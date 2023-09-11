@@ -1,5 +1,3 @@
-#origanl langchain textlaoder code
-
 import logging
 from typing import List, Optional
 
