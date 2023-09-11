@@ -82,7 +82,7 @@ from langchain.llms.symblai_nebula import Nebula
 from langchain.llms.textgen import TextGen
 from langchain.llms.titan_takeoff import TitanTakeoff
 from langchain.llms.tongyi import Tongyi
-from langchain.llms.vertexai import VertexAI
+from langchain.llms.vertexai import VertexAI, VertexAIModelGarden
 from langchain.llms.vllm import VLLM, VLLMOpenAI
 from langchain.llms.writer import Writer
 from langchain.llms.xinference import Xinference
@@ -154,6 +154,7 @@ __all__ = [
     "TitanTakeoff",
     "Tongyi",
     "VertexAI",
+    "VertexAIModelGarden",
     "VLLM",
     "VLLMOpenAI",
     "Writer",
@@ -220,6 +221,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "tongyi": Tongyi,
     "titan_takeoff": TitanTakeoff,
     "vertexai": VertexAI,
+    "vertexai_model_garden": VertexAIModelGarden,
     "openllm": OpenLLM,
     "openllm_client": OpenLLM,
     "vllm": VLLM,

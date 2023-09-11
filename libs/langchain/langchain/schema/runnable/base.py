@@ -946,11 +946,13 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
 
         # invoke all steps in sequence
         try:
-            for step in self.steps:
+            for i, step in enumerate(self.steps):
                 input = step.invoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
+                    ),
                 )
         # finish the root run
         except (KeyboardInterrupt, Exception) as e:
@@ -976,11 +978,13 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
 
         # invoke all steps in sequence
         try:
-            for step in self.steps:
+            for i, step in enumerate(self.steps):
                 input = await step.ainvoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
+                    ),
                 )
         # finish the root run
         except (KeyboardInterrupt, Exception) as e:
@@ -1031,7 +1035,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 # If an input has failed it will be present in this map,
                 # and the value will be the exception that was raised.
                 failed_inputs_map: Dict[int, Exception] = {}
-                for step in self.steps:
+                for stepidx, step in enumerate(self.steps):
                     # Assemble the original indexes of the remaining inputs
                     # (i.e. the ones that haven't failed yet)
                     remaining_idxs = [
@@ -1046,7 +1050,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                         ],
                         [
                             # each step a child run of the corresponding root run
-                            patch_config(config, callbacks=rm.get_child())
+                            patch_config(
+                                config, callbacks=rm.get_child(f"seq:step:{stepidx+1}")
+                            )
                             for i, (rm, config) in enumerate(zip(run_managers, configs))
                             if i not in failed_inputs_map
                         ],
@@ -1071,12 +1077,14 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     else:
                         inputs.append(inputs_copy.pop(0))
             else:
-                for step in self.steps:
+                for i, step in enumerate(self.steps):
                     inputs = step.batch(
                         inputs,
                         [
                             # each step a child run of the corresponding root run
-                            patch_config(config, callbacks=rm.get_child())
+                            patch_config(
+                                config, callbacks=rm.get_child(f"seq:step:{i+1}")
+                            )
                             for rm, config in zip(run_managers, configs)
                         ],
                     )
@@ -1148,7 +1156,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 # If an input has failed it will be present in this map,
                 # and the value will be the exception that was raised.
                 failed_inputs_map: Dict[int, Exception] = {}
-                for step in self.steps:
+                for stepidx, step in enumerate(self.steps):
                     # Assemble the original indexes of the remaining inputs
                     # (i.e. the ones that haven't failed yet)
                     remaining_idxs = [
@@ -1163,7 +1171,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                         ],
                         [
                             # each step a child run of the corresponding root run
-                            patch_config(config, callbacks=rm.get_child())
+                            patch_config(
+                                config, callbacks=rm.get_child(f"seq:step:{stepidx+1}")
+                            )
                             for i, (rm, config) in enumerate(zip(run_managers, configs))
                             if i not in failed_inputs_map
                         ],
@@ -1188,12 +1198,14 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     else:
                         inputs.append(inputs_copy.pop(0))
             else:
-                for step in self.steps:
+                for i, step in enumerate(self.steps):
                     inputs = await step.abatch(
                         inputs,
                         [
                             # each step a child run of the corresponding root run
-                            patch_config(config, callbacks=rm.get_child())
+                            patch_config(
+                                config, callbacks=rm.get_child(f"seq:step:{i+1}")
+                            )
                             for rm, config in zip(run_managers, configs)
                         ],
                     )
@@ -1248,7 +1260,12 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 input = step.invoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(
+                            f"seq:step:{steps.index(step)+1}"
+                        ),
+                    ),
                 )
         except (KeyboardInterrupt, Exception) as e:
             run_manager.on_chain_error(e)
@@ -1260,13 +1277,24 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         try:
             # stream the first of the last steps with non-streaming input
             final_pipeline = steps[streaming_start_index].stream(
-                input, patch_config(config, callbacks=run_manager.get_child())
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(
+                        f"seq:step:{streaming_start_index+1}"
+                    ),
+                ),
             )
             # stream the rest of the last steps with streaming input
             for step in steps[streaming_start_index + 1 :]:
                 final_pipeline = step.transform(
                     final_pipeline,
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(
+                            f"seq:step:{steps.index(step)+1}"
+                        ),
+                    ),
                 )
             for output in final_pipeline:
                 yield output
@@ -1317,7 +1345,12 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 input = await step.ainvoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(
+                            f"seq:step:{steps.index(step)+1}"
+                        ),
+                    ),
                 )
         except (KeyboardInterrupt, Exception) as e:
             await run_manager.on_chain_error(e)
@@ -1329,13 +1362,24 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         try:
             # stream the first of the last steps with non-streaming input
             final_pipeline = steps[streaming_start_index].astream(
-                input, patch_config(config, callbacks=run_manager.get_child())
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(
+                        f"seq:step:{streaming_start_index+1}"
+                    ),
+                ),
             )
             # stream the rest of the last steps with streaming input
             for step in steps[streaming_start_index + 1 :]:
                 final_pipeline = step.atransform(
                     final_pipeline,
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(
+                            f"seq:step:{steps.index(step)+1}"
+                        ),
+                    ),
                 )
             async for output in final_pipeline:
                 yield output
@@ -1448,10 +1492,10 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                         patch_config(
                             config,
                             deep_copy_locals=True,
-                            callbacks=run_manager.get_child(),
+                            callbacks=run_manager.get_child(f"map:key:{key}"),
                         ),
                     )
-                    for step in steps.values()
+                    for key, step in steps.items()
                 ]
                 output = {key: future.result() for key, future in zip(steps, futures)}
         # finish the root run
@@ -1485,9 +1529,11 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                     step.ainvoke(
                         input,
                         # mark each step as a child run
-                        patch_config(config, callbacks=run_manager.get_child()),
+                        patch_config(
+                            config, callbacks=run_manager.get_child(f"map:key:{key}")
+                        ),
                     )
-                    for step in steps.values()
+                    for key, step in steps.items()
                 )
             )
             output = {key: value for key, value in zip(steps, results)}
@@ -1517,7 +1563,9 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                     name,
                     step.transform(
                         input_copies.pop(),
-                        patch_config(config, callbacks=run_manager.get_child()),
+                        patch_config(
+                            config, callbacks=run_manager.get_child(f"map:key:{name}")
+                        ),
                     ),
                 )
                 for name, step in steps.items()
@@ -1579,7 +1627,9 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                 name,
                 step.atransform(
                     input_copies.pop(),
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config, callbacks=run_manager.get_child(f"map:key:{name}")
+                    ),
                 ),
             )
             for name, step in steps.items()
@@ -1668,6 +1718,9 @@ class RunnableLambda(Runnable[Input, Output]):
                 return False
         else:
             return False
+
+    def __repr__(self) -> str:
+        return "RunnableLambda(...)"
 
     def _invoke(
         self,
