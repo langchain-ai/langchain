@@ -1476,6 +1476,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             input_keys = step.input_keys
             if input_keys is not None:
                 return input_keys
+        return None
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None
