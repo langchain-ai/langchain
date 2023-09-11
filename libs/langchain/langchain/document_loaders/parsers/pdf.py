@@ -306,10 +306,13 @@ class DocumentIntelligenceParser(BaseBlobParser):
                 yield d
 
         if self.model in ["prebuilt-document", "prebuilt-layout", "prebuilt-invoice"]:
+            import csv  # noqa: F401
+            from io import StringIO  # noqa: F401
+
             for table_idx, table in enumerate(result.tables):
                 page_num = table.bounding_regions[0].page_number
-                headers = list()
-                rows = dict()
+                headers: list[str] = list()
+                rows: dict[int, list[str]] = dict()
 
                 for cell in table.cells:
                     if cell.kind == "columnHeader":
@@ -320,8 +323,11 @@ class DocumentIntelligenceParser(BaseBlobParser):
                         rows[cell.row_index].append(cell.content)
 
                 if headers:
+                    h_op = StringIO()
+                    csv.writer(h_op, quoting=csv.QUOTE_MINIMAL).writerow(headers)
+                    header_string = h_op.getvalue().strip()
                     hd = Document(
-                        page_content=",".join(headers),
+                        page_content=header_string,
                         metadata={
                             "source": blob.source,
                             "page": page_num,
@@ -332,8 +338,11 @@ class DocumentIntelligenceParser(BaseBlobParser):
                     yield hd
 
                 for _, row_cells in sorted(rows.items()):
+                    r_op = StringIO()
+                    csv.writer(r_op, quoting=csv.QUOTE_MINIMAL).writerow(row_cells)
+                    row_string = r_op.getvalue().strip()
                     rd = Document(
-                        page_content=",".join(row_cells),
+                        page_content=row_string,
                         metadata={
                             "source": blob.source,
                             "page": page_num,
