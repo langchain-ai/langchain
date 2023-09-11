@@ -146,13 +146,13 @@ class NeptuneGraph:
 
     def _get_triples(self, e_labels: List[str]) -> List[str]:
         triple_query = """
-        MATCH (a)-[e:{e_label}]->(b)
+        MATCH (a)-[e:`{e_label}`]->(b)
         WITH a,e,b LIMIT 3000
         RETURN DISTINCT labels(a) AS from, type(e) AS edge, labels(b) AS to
         LIMIT 10
         """
 
-        triple_template = "(:{a})-[:{e}]->(:{b})"
+        triple_template = "(:`{a}`)-[:`{e}`]->(:`{b}`)"
         triple_schema = []
         for label in e_labels:
             q = triple_query.format(e_label=label)
@@ -167,7 +167,7 @@ class NeptuneGraph:
 
     def _get_node_properties(self, n_labels: List[str], types: Dict) -> List:
         node_properties_query = """
-        MATCH (a:{n_label})
+        MATCH (a:`{n_label}`)
         RETURN properties(a) AS props
         LIMIT 100
         """
@@ -190,7 +190,7 @@ class NeptuneGraph:
 
     def _get_edge_properties(self, e_labels: List[str], types: Dict[str, Any]) -> List:
         edge_properties_query = """
-        MATCH ()-[e:{e_label}]->()
+        MATCH ()-[e:`{e_label}`]->()
         RETURN properties(e) AS props
         LIMIT 100
         """
@@ -222,6 +222,7 @@ class NeptuneGraph:
             "int": "INTEGER",
             "list": "LIST",
             "dict": "MAP",
+            "bool": "BOOLEAN",
         }
         n_labels, e_labels = self._get_labels()
         triple_schema = self._get_triples(e_labels)
