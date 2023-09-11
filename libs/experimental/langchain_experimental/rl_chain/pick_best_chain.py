@@ -308,7 +308,6 @@ class PickBest(base.RLChain[PickBestEvent]):
             ]
 
         kwargs["vw_cmd"] = vw_cmd
-        logger.info(f"vw_cmd: {vw_cmd}")
 
         super().__init__(*args, **kwargs)
 
