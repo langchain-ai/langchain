@@ -32,7 +32,6 @@ class SearchType(str, enum.Enum):
     """Enumerator of the Distance strategies."""
 
     VECTOR = "vector"
-    KEYWORD = "keyword"
     HYBRID = "hybrid"
 
 
@@ -53,22 +52,17 @@ def sort_by_index_name(
 
 
 index_query = dict()
-index_query[SearchType.VECTOR] = (
-    "CALL db.index.vector.queryNodes($index, $k, $embedding) " "YIELD node, score "
-)
+index_query[
+    SearchType.VECTOR
+] = "CALL db.index.vector.queryNodes($index, $k, $embedding) YIELD node, score "
 
-index_query[SearchType.KEYWORD] = (
-    "CALL db.index.fulltext.queryNodes($index, $query, {limit: $k}) "
-    "YIELD node, score "
-)
 index_query[SearchType.HYBRID] = (
-    "CALL { "
-    + index_query[SearchType.VECTOR]
-    + "UNION "
-    + index_query[SearchType.KEYWORD]
-    + "WITH collect({node:node, score:score}) AS nodes, max(score) AS max "
-    "UNWIND nodes a n "
-    "RETURN n.node AS node, (score / max) AS score } "  # We use 0 as min
+    "CALL { " + index_query[SearchType.VECTOR] + "RETURN node, score UNION "
+    "CALL db.index.fulltext.queryNodes($keyword_index, $query, {limit: $k}) "
+    "YIELD node, score "
+    "WITH collect({node:node, score:score}) AS nodes, max(score) AS max "
+    "UNWIND nodes AS n "
+    "RETURN n.node AS node, (n.score / max) AS score } "  # We use 0 as min
     "WITH node, score ORDER BY score DESC "
     "WITH node, collect(score)[0] AS score LIMIT $k "  # deduplicate
 )
@@ -116,11 +110,11 @@ class Neo4jVector(VectorStore):
         self,
         embedding: Embeddings,
         *,
+        search_type: SearchType,
         username: Optional[str] = None,
         password: Optional[str] = None,
         url: Optional[str] = None,
         database: str = "neo4j",
-        search_type: SearchType = DEFAULT_SEARCH_TYPE,
         index_name: str = "vector",
         keyword_index_name: str = "keyword",
         node_label: str = "Chunk",
@@ -301,7 +295,7 @@ class Neo4jVector(VectorStore):
         except IndexError:
             return None
 
-    def retrieve_existing_fts_index(self) -> bool:
+    def retrieve_existing_fts_index(self) -> Optional[str]:
         """
         Check if the fulltext index exists in the Neo4j database
 
@@ -309,7 +303,7 @@ class Neo4jVector(VectorStore):
         with the specified name.
 
         Returns:
-            bool: True if the index exists
+            (Tuple): keyword index information
         """
 
         index_information = self.query(
@@ -319,14 +313,20 @@ class Neo4jVector(VectorStore):
             "properties = [$text_node_property])) "
             "RETURN name, labelsOrTypes, properties, options ",
             params={
-                "keyword_index_name": self.index_name,
+                "keyword_index_name": self.keyword_index_name,
                 "node_label": self.node_label,
                 "text_node_property": self.text_node_property,
             },
         )
         # sort by index_name
         index_information = sort_by_index_name(index_information, self.index_name)
-        return True if index_information else False
+        try:
+            self.keyword_index_name = index_information[0]["name"]
+            self.text_node_property = index_information[0]["properties"][0]
+            node_label = index_information[0]["labelsOrTypes"][0]
+            return node_label
+        except IndexError:
+            return None
 
     def create_new_index(self) -> None:
         """
@@ -388,30 +388,35 @@ class Neo4jVector(VectorStore):
 
         store = cls(
             embedding=embedding,
+            search_type=search_type,
             **kwargs,
         )
-        if search_type in [SearchType.VECTOR, SearchType.HYBRID]:
-            # Check if the vector index already exists
-            embedding_dimension = store.retrieve_existing_index()
+        # Check if the vector index already exists
+        embedding_dimension = store.retrieve_existing_index()
 
-            # If the vector index doesn't exist yet
-            if not embedding_dimension:
-                store.create_new_index()
-            # If the index already exists, check if embedding dimensions match
-            elif not store.embedding_dimension == embedding_dimension:
-                raise ValueError(
-                    f"Index with name {store.index_name} already exists."
-                    "The provided embedding function and vector index "
-                    "dimensions do not match.\n"
-                    f"Embedding function dimension: {store.embedding_dimension}\n"
-                    f"Vector index dimension: {embedding_dimension}"
-                )
+        # If the vector index doesn't exist yet
+        if not embedding_dimension:
+            store.create_new_index()
+        # If the index already exists, check if embedding dimensions match
+        elif not store.embedding_dimension == embedding_dimension:
+            raise ValueError(
+                f"Index with name {store.index_name} already exists."
+                "The provided embedding function and vector index "
+                "dimensions do not match.\n"
+                f"Embedding function dimension: {store.embedding_dimension}\n"
+                f"Vector index dimension: {embedding_dimension}"
+            )
 
-        if search_type in [SearchType.KEYWORD, SearchType.HYBRID]:
-            existing_fts = store.retrieve_existing_fts_index()
+        if search_type == SearchType.HYBRID:
+            fts_node_label = store.retrieve_existing_fts_index()
             # If the FTS index doesn't exist yet
-            if not existing_fts:
+            if not fts_node_label:
                 store.create_new_keyword_index()
+            else:  # Validate that FTS and Vector index use the same information
+                if not fts_node_label == store.node_label:
+                    raise ValueError(
+                        "Vector and keyword index don't index the same node label"
+                    )
 
         # Create unique constraint for faster import
         if create_id_index:
@@ -688,6 +693,8 @@ class Neo4jVector(VectorStore):
         cls: Type[Neo4jVector],
         embedding: Embeddings,
         index_name: str,
+        search_type: SearchType = DEFAULT_SEARCH_TYPE,
+        keyword_index_name: Optional[str] = None,
         **kwargs: Any,
     ) -> Neo4jVector:
         """
@@ -699,9 +706,17 @@ class Neo4jVector(VectorStore):
         the `index_name` definition.
         """
 
+        if search_type == SearchType.HYBRID and not keyword_index_name:
+            raise ValueError(
+                "keyword_index name has to be specified "
+                "when using hybrid search option"
+            )
+
         store = cls(
             embedding=embedding,
             index_name=index_name,
+            keyword_index_name=keyword_index_name,
+            search_type=search_type,
             **kwargs,
         )
 
@@ -721,6 +736,20 @@ class Neo4jVector(VectorStore):
                 f"Embedding function dimension: {store.embedding_dimension}\n"
                 f"Vector index dimension: {embedding_dimension}"
             )
+
+        if search_type == SearchType.HYBRID:
+            fts_node_label = store.retrieve_existing_fts_index()
+            # If the FTS index doesn't exist yet
+            if not fts_node_label:
+                raise ValueError(
+                    "The specified keyword index name does not exist. "
+                    "Make sure to check if you spelled it correctly"
+                )
+            else:  # Validate that FTS and Vector index use the same information
+                if not fts_node_label == store.node_label:
+                    raise ValueError(
+                        "Vector and keyword index don't index the same node label"
+                    )
 
         return store
 
