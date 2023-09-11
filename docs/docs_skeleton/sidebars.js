@@ -74,8 +74,7 @@ module.exports = {
         type: 'generated-index',
         slug: "additional_resources",
       },
-    },
-    'community'
+    }
   ],
   integrations: [
     {

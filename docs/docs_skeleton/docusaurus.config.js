@@ -175,6 +175,11 @@ const config = {
             position: "left",
           },
           {
+            to: "/docs/community",
+            label: "Community",
+            position: "left",
+          },
+          {
             to: "https://smith.langchain.com",
             label: "LangSmith",
             position: "right",

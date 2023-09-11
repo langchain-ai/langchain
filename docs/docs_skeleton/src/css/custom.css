@@ -23,6 +23,8 @@
   --ifm-color-primary-lighter: #359962;
   --ifm-color-primary-lightest: #3cad6e;
   --ifm-code-font-size: 95%;
+  --ifm-base-font-size: 95%;
+  --doc-sidebar-width: 250px;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
