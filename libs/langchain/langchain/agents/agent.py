@@ -322,7 +322,7 @@ class RunnableAgent(BaseSingleActionAgent):
 
     runnable: Runnable[dict, Union[AgentAction, AgentFinish]]
     """Runnable to call to get agent action."""
-    _input_keys: List[str] = []
+    specified_input_keys: List[str] = []
     """Input keys."""
 
     class Config:
@@ -337,7 +337,7 @@ class RunnableAgent(BaseSingleActionAgent):
         Returns:
             List of input keys.
         """
-        return self._input_keys
+        return self.specified_input_keys
 
     def plan(
         self,
