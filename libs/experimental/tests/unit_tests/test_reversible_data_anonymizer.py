@@ -13,6 +13,7 @@ def check_spacy_model() -> Iterator[None]:
         pytest.skip(reason="Spacy model 'en_core_web_lg' not installed")
     yield
 
+
 @pytest.fixture(scope="module", autouse=True)
 def check_libcublas() -> Iterator[None]:
     if not is_libcublas_available():
