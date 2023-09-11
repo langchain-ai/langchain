@@ -2,22 +2,35 @@
 from __future__ import annotations
 
 from typing import (
-    Callable, Iterator, Optional, Sequence, TypeVar, Union, List,
+    Callable,
+    Iterator,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    List,
 )
 
 from langchain.automaton.processors import WorkingMemoryManager
 from langchain.automaton.runnables import create_llm_program, create_retriever
 from langchain.automaton.typedefs import (
-    Agent, AgentFinish, MessageLike, RetrievalRequest, RetrievalResponse,
+    Agent,
+    AgentFinish,
+    MessageLike,
+    RetrievalRequest,
+    RetrievalResponse,
 )
 from langchain.schema import PromptValue, BaseRetriever
 from langchain.schema.language_model import (
-    BaseLanguageModel, LanguageModelInput, LanguageModelOutput,
+    BaseLanguageModel,
+    LanguageModelInput,
+    LanguageModelOutput,
 )
 from langchain.schema.messages import BaseMessage, HumanMessage, AIMessage
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.runnable import (
-    Runnable, RunnableConfig,
+    Runnable,
+    RunnableConfig,
 )
 from langchain.tools import BaseTool
 
@@ -37,10 +50,10 @@ def prompt_generator(input_messages: Sequence[MessageLike]) -> List[BaseMessage]
                 for idx, doc in enumerate(message.results):
                     prompt += f"--- Result {idx} ---\n"
                     prompt += "Text:\n"
-                    # prompt += f"{doc.page_content}"
-                    prompt += f"{doc.metadata['title']}"
-                    prompt += f"{doc.metadata['description']}"
-                    prompt += f"{doc.metadata['source']}"
+                    prompt += f"{doc.page_content}"
+                    for field in ["title", "description", "source"]:
+                        if field in doc.metadata:
+                            prompt += f"{doc.metadata[field]}\n"
                     prompt += f"--- End Result {idx} ---\n"
             else:
                 prompt = "Found no results for the query."
