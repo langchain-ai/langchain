@@ -81,6 +81,7 @@ class Comparator(str, Enum):
     """Enumerator of the comparison operators."""
 
     EQ = "eq"
+    NE = "ne"
     GT = "gt"
     GTE = "gte"
     LT = "lt"
