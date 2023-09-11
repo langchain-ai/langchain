@@ -3,7 +3,7 @@ from typing import List, Union
 import pytest
 from test_utils import MockEncoder
 
-import langchain.chains.rl_chain.base as base
+import langchain_experimental.rl_chain.base as base
 
 encoded_keyword = "[encoded]"
 
