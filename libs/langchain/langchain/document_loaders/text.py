@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class TextLoader(BaseLoader):
-    """Load text files.
+    """Load text file.
 
 
     Args:
@@ -43,7 +43,7 @@ class TextLoader(BaseLoader):
             if self.autodetect_encoding:
                 detected_encodings = detect_file_encodings(self.file_path)
                 for encoding in detected_encodings:
-                    logger.debug("Trying encoding: ", encoding.encoding)
+                    logger.debug(f"Trying encoding: {encoding.encoding}")
                     try:
                         with open(self.file_path, encoding=encoding.encoding) as f:
                             text = f.read()
