@@ -1001,7 +1001,7 @@ class LLM(BaseLLM):
                 if new_arg_supported
                 else self._call(prompt, stop=stop, **kwargs)
             )
-            generations.append([Generation(text=text)])
+            generations.append([Generation(text=text['text'], generation_info=text)])
         return LLMResult(generations=generations)
 
     async def _agenerate(
