@@ -87,6 +87,7 @@ class ChatAgent(Agent):
 
 
 WorkingMemoryProcessor = Runnable[Sequence[MessageLike], List[MessageLike]]
+Router = Callable[[Sequence[MessageLike], ...], Optional[WorkingMemoryProcessor]]
 
 
 class SimpleAutomaton:
