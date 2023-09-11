@@ -263,12 +263,13 @@ class AmazonTextractPDFParser(BaseBlobParser):
 
 class DocumentIntelligenceParser(BaseBlobParser):
     """Loads a PDF with Azure Document Intelligence
-    (formerly Forms Recognizer). Returns Document
-    with paragraphs, table headers, and rows."""
+    (formerly Forms Recognizer). Returns Document with
+    pages or paragraphs, table headers, and rows."""
 
-    def __init__(self, client: Any, model: str):
+    def __init__(self, client: Any, model: str, split_mode: str):
         self.client = client
         self.model = model
+        self.split_mode = split_mode
 
     def _generate_docs(self, blob: Blob, result: Any) -> Iterator[Document]:
         page_content_dict = dict()
@@ -276,21 +277,33 @@ class DocumentIntelligenceParser(BaseBlobParser):
         for paragraph in result.paragraphs:
             page_number = paragraph.bounding_regions[0].page_number
 
-            if page_number not in page_content_dict:
-                page_content_dict[page_number] = ""
+            if self.split_mode == "page":
+                if page_number not in page_content_dict:
+                    page_content_dict[page_number] = str()
 
-            page_content_dict[page_number] += paragraph.content + "\n\n"
+                page_content_dict[page_number] += paragraph.content + "\n\n"
+            elif self.split_mode == "paragraph":
+                d = Document(
+                    page_content=paragraph.content,
+                    metadata={
+                        "source": blob.source,
+                        "page": page_number,
+                        "type": "PARAGRAPH",
+                    },
+                )
+                yield d
 
-        for page, content in page_content_dict.items():
-            d = Document(
-                page_content=content,
-                metadata={
-                    "source": blob.source,
-                    "page": page,
-                    "type": "TEXT",
-                },
-            )
-            yield d
+        if self.split_mode == "page":
+            for page, content in page_content_dict.items():
+                d = Document(
+                    page_content=content.strip(),
+                    metadata={
+                        "source": blob.source,
+                        "page": page,
+                        "type": "PAGE",
+                    },
+                )
+                yield d
 
         if self.model in ["prebuilt-document", "prebuilt-layout", "prebuilt-invoice"]:
             for table_idx, table in enumerate(result.tables):

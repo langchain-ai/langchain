@@ -608,7 +608,11 @@ class DocumentIntelligenceLoader(BasePDFLoader):
     """Loads a PDF with Azure Document Intelligence"""
 
     def __init__(
-        self, file_path: str, client: Any, model: str = "prebuilt-document"
+        self,
+        file_path: str,
+        client: Any,
+        model: str = "prebuilt-document",
+        split_mode: str = "page",
     ) -> None:
         """
         Initialize the object for file processing with Azure Document Intelligence
@@ -627,6 +631,8 @@ class DocumentIntelligenceLoader(BasePDFLoader):
             A DocumentAnalysisClient to perform the analysis of the blob
         model : str
             The model name or ID to be used for form recognition in Azure.
+        split_mode : str
+            Whether to split by `paragraph` or `page`. Defaults to `page`.
 
         Examples:
         ---------
@@ -634,11 +640,19 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         ...     file_path="path/to/file",
         ...     client=client,
         ...     model="prebuilt-document"
+        ...     split_mode="page | paragraph"
         ... )
         """
 
-        self.parser = DocumentIntelligenceParser(client=client, model=model)
         super().__init__(file_path)
+        if split_mode not in ["page", "paragraph"]:
+            raise ValueError(
+                f"Invalid split option {split_mode}, "
+                "valid values are `page` or `paragraph`."
+            )
+        self.parser = DocumentIntelligenceParser(
+            client=client, model=model, split_mode=split_mode
+        )
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
