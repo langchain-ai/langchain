@@ -2,28 +2,19 @@
 from __future__ import annotations
 
 import logging
-from concurrent.futures import Future, ThreadPoolExecutor, wait
+from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, Dict, List, Optional, Sequence, Set, Union
 from uuid import UUID
 
 import langsmith
 from langsmith import schemas as langsmith_schemas
 
-from langchain.callbacks.manager import tracing_v2_enabled
+from langchain.callbacks import manager
+from langchain.callbacks.tracers import langchain as langchain_tracer
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.langchain import _get_client
 from langchain.callbacks.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
-
-_TRACERS: List[EvaluatorCallbackHandler] = []
-
-
-def wait_for_all_evaluators() -> None:
-    """Wait for all tracers to finish."""
-    global _TRACERS
-    for tracer in _TRACERS:
-        tracer.wait_for_futures()
 
 
 class EvaluatorCallbackHandler(BaseTracer):
@@ -79,17 +70,13 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.client = client or _get_client()
+        self.client = client or langchain_tracer.get_client()
         self.evaluators = evaluators
-        self.executor = ThreadPoolExecutor(
-            max_workers=max(max_workers or len(evaluators), 1)
-        )
+        self.max_workers = max_workers or len(evaluators)
         self.futures: Set[Future] = set()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
         self.logged_feedback: Dict[str, List[langsmith_schemas.Feedback]] = {}
-        global _TRACERS
-        _TRACERS.append(self)
 
     def _evaluate_in_project(self, run: Run, evaluator: langsmith.RunEvaluator) -> None:
         """Evaluate the run in the project.
@@ -105,7 +92,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         try:
             if self.project_name is None:
                 feedback = self.client.evaluate_run(run, evaluator)
-            with tracing_v2_enabled(
+            with manager.tracing_v2_enabled(
                 project_name=self.project_name, tags=["eval"], client=self.client
             ):
                 feedback = self.client.evaluate_run(run, evaluator)
@@ -133,14 +120,15 @@ class EvaluatorCallbackHandler(BaseTracer):
             return
         run_ = run.copy()
         run_.reference_example_id = self.example_id
-        for evaluator in self.evaluators:
-            self.futures.add(
-                self.executor.submit(self._evaluate_in_project, run_, evaluator)
-            )
-
-    def wait_for_futures(self) -> None:
-        """Wait for all futures to complete."""
-        futures = list(self.futures)
-        wait(futures)
-        for future in futures:
-            self.futures.remove(future)
+        if self.max_workers > 0:
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                list(
+                    executor.map(
+                        self._evaluate_in_project,
+                        [run_ for _ in range(len(self.evaluators))],
+                        self.evaluators,
+                    )
+                )
+        else:
+            for evaluator in self.evaluators:
+                self._evaluate_in_project(run_, evaluator)
