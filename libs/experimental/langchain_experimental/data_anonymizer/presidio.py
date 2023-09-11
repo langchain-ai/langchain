@@ -17,6 +17,7 @@ from langchain_experimental.data_anonymizer.deanonymizer_mapping import (
 )
 from langchain_experimental.data_anonymizer.deanonymizer_matching_strategies import (
     default_matching_strategy,
+    fuzzy_matching_strategy,
 )
 from langchain_experimental.data_anonymizer.faker_presidio_mapping import (
     get_pseudoanonymizer_mapping,
@@ -289,7 +290,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         text_to_deanonymize: str,
         deanonymizer_matching_strategy: Callable[
             [str, MappingDataType], str
-        ] = default_matching_strategy,
+        ] = fuzzy_matching_strategy,
     ) -> str:
         """Deanonymize text.
         Each anonymized entity is replaced with its original value.
