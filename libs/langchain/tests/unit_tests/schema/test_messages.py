@@ -1,4 +1,4 @@
-from langchain.schema.messages import AIMessageChunk, HumanMessageChunk
+from langchain.schema.messages import AIMessageChunk, HumanMessageChunk, ChatMessageChunk
 
 
 def test_message_chunks() -> None:
@@ -36,3 +36,37 @@ def test_message_chunks() -> None:
             }
         },
     ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"  # noqa: E501
+
+    assert (ChatMessageChunk(content="Hello ", role="user")
+            + ChatMessageChunk(content="World", role="user")
+            == ChatMessageChunk(content="Hello World", role="user")), \
+        "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
+
+    assert (ChatMessageChunk(content="I am robot", role="ai")
+            + HumanMessageChunk(content="I am User")
+            == ChatMessageChunk(content="I am robot", role="ai"),
+            "Message Chunk + Message Chunk should be a MessageChunk of same class as the left side")
+
+    assert (ChatMessageChunk(content="", role="ai")
+            + ChatMessageChunk(content="", role="user")
+            == ChatMessageChunk(content="", role="ai")), \
+        "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk of same role field as left side"
+
+    assert ChatMessageChunk(
+        content="", role="user", additional_kwargs={"function_call": {"name": "web_search"}}
+    ) + ChatMessageChunk(
+        content="", role="user", additional_kwargs={"function_call": {"arguments": "{\n"}}
+    ) + ChatMessageChunk(
+        content="",
+        role="user",
+        additional_kwargs={"function_call": {"arguments": '  "query": "turtles"\n}'}},
+    ) == ChatMessageChunk(
+        content="",
+        role="user",
+        additional_kwargs={
+            "function_call": {
+                "name": "web_search",
+                "arguments": '{\n  "query": "turtles"\n}',
+            }
+        },
+    ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"
