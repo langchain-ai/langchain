@@ -1,13 +1,16 @@
 from __future__ import annotations
-import math
 
-from typing import Any, AsyncIterator, Callable, Optional, TypedDict, Union
+import asyncio
+import math
+from typing import Any, AsyncIterator, Callable, Dict, Optional, TypedDict, Union
+from uuid import UUID
 
 import jsonpatch
 from anyio import create_memory_object_stream
 
-from langchain.callbacks.tracers.base import BaseTracer
+from langchain.callbacks.tracers.base_async import AsyncBaseTracer
 from langchain.callbacks.tracers.schemas import Run
+from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
 
 class Message(TypedDict):
@@ -31,18 +34,20 @@ class MessageLog:
     patch_log: list[dict]
     """List of jsonpatch operations that created the messages."""
 
-    def __init__(self, patch_log: list[dict], state: Optional[MessageState]) -> None:
+    def __init__(
+        self, patch_log: list[dict], state: Optional[MessageState] = None
+    ) -> None:
         self.patch_log = patch_log
         self.state = state
 
-    def __add__(self, other: Union[MessageLog, Any]) -> None:
+    def __add__(self, other: Union[MessageLog, Any]) -> MessageLog:
         if isinstance(other, MessageLog):
             patch_log = self.patch_log + other.patch_log
             if self.state is None:
                 return MessageLog(
                     patch_log,
                     jsonpatch.apply_patch(
-                        MessageState(messages=[], final_output=None), patch_log
+                        MessageState(messages=[], output=None), patch_log
                     ),
                 )
             else:
@@ -50,25 +55,34 @@ class MessageLog:
                     patch_log, jsonpatch.apply_patch(self.state, other.patch_log)
                 )
 
-        return super().__add__(other)
+        raise TypeError(
+            f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
+        )
+
+    def __repr__(self) -> str:
+        from pprint import pformat
+
+        if self.state is None:
+            return f"MessageLog(patch_log={pformat(self.patch_log)})"
+        else:
+            return f"MessageLog(state={pformat(self.state)})"
 
 
-class MessageLogCallbackHandler(BaseTracer):
+class MessageLogCallbackHandler(AsyncBaseTracer):
     def __init__(self, run_filter: Callable[[Run], bool]) -> None:
         super().__init__()
 
         send_stream, receive_stream = create_memory_object_stream[MessageLog](math.inf)
+        self.lock = asyncio.Lock()
         self.send_stream = send_stream
         self.receive_stream = receive_stream
         self.run_filter = run_filter
+        self.index_map: Dict[UUID, int] = {}
 
     def __aiter__(self) -> AsyncIterator[MessageLog]:
         return self.receive_stream.__aiter__()
 
-    def _persist_run(self, run: Run) -> None:
-        """The Langchain Tracer uses Post/Patch rather than persist."""
-
-    def _persist_run_single(self, run: Run) -> None:
+    async def _on_run_create(self, run: Run) -> None:
         """Start a run."""
         if run.parent_run_id is None:
             return
@@ -76,13 +90,22 @@ class MessageLogCallbackHandler(BaseTracer):
         if not self.run_filter(run):
             return
 
-        self.send_stream.send_nowait(
+        # Determine previous index, increment by 1
+        async with self.lock:
+            previous_index = next(reversed(self.index_map.values()), -1)
+            self.index_map[run.id] = previous_index + 1
+
+        # Add the message to the stream
+        await self.send_stream.send(
             MessageLog(
                 patch_log=[
                     {
                         "op": "add",
-                        "path": "/messages/-",
+                        "path": f"/messages/{self.index_map[run.id]}",
                         "value": Message(
+                            name=run.name,
+                            run_type=run.run_type,
+                            tags=run.tags or [],
                             metadata=run.extra.get("metadata", {}),
                             streamed_output=[],
                             final_output=None,
@@ -92,7 +115,7 @@ class MessageLogCallbackHandler(BaseTracer):
             )
         )
 
-    def _update_run_single(self, run: Run) -> None:
+    async def _on_run_update(self, run: Run) -> None:
         """Finish a run."""
         if run.parent_run_id is None:
             self.send_stream.send_nowait(
@@ -106,88 +129,51 @@ class MessageLogCallbackHandler(BaseTracer):
                     ],
                 )
             )
-            self.send_stream.close()
+            return self.send_stream.close()
 
         if not self.run_filter(run):
             return
 
-        self.send_stream.send_nowait(
+        index = self.index_map.get(run.id)
+
+        if index is None:
+            return
+
+        await self.send_stream.send(
             MessageLog(
                 patch_log=[
                     {
                         "op": "add",
-                        "path": "/messages/-/final_output",
+                        "path": f"/messages/{index}/final_output",
                         "value": run.outputs,
                     }
                 ],
             )
         )
 
-    def _on_llm_new_token(self, run: Run, token: str) -> None:
+    async def _on_llm_new_token(
+        self,
+        run: Run,
+        token: str,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
+    ) -> None:
         """Process new LLM token."""
         if not self.run_filter(run):
             return
 
-        self.send_stream.send_nowait(
+        index = self.index_map.get(run.id)
+
+        if index is None:
+            return
+
+        await self.send_stream.send(
             MessageLog(
                 patch_log=[
                     {
                         "op": "add",
-                        "path": "/-/streamed_output/-",
+                        "path": f"/messages/{index}/streamed_output/-",
                         "value": token,
                     }
                 ],
             )
         )
-
-    def _on_llm_start(self, run: Run) -> None:
-        """Persist an LLM run."""
-        self._persist_run_single(run)
-
-    def _on_chat_model_start(self, run: Run) -> None:
-        """Persist an LLM run."""
-        self._persist_run_single(run)
-
-    def _on_llm_end(self, run: Run) -> None:
-        """Process the LLM Run."""
-        self._update_run_single(run)
-
-    def _on_llm_error(self, run: Run) -> None:
-        """Process the LLM Run upon error."""
-        self._update_run_single(run)
-
-    def _on_chain_start(self, run: Run) -> None:
-        """Process the Chain Run upon start."""
-        self._persist_run_single(run)
-
-    def _on_chain_end(self, run: Run) -> None:
-        """Process the Chain Run."""
-        self._update_run_single(run)
-
-    def _on_chain_error(self, run: Run) -> None:
-        """Process the Chain Run upon error."""
-        self._update_run_single(run)
-
-    def _on_tool_start(self, run: Run) -> None:
-        """Process the Tool Run upon start."""
-        self._persist_run_single(run)
-
-    def _on_tool_end(self, run: Run) -> None:
-        """Process the Tool Run."""
-        self._update_run_single(run)
-
-    def _on_tool_error(self, run: Run) -> None:
-        """Process the Tool Run upon error."""
-        self._update_run_single(run)
-
-    def _on_retriever_start(self, run: Run) -> None:
-        """Process the Retriever Run upon start."""
-        self._persist_run_single(run)
-
-    def _on_retriever_end(self, run: Run) -> None:
-        """Process the Retriever Run."""
-        self._update_run_single(run)
-
-    def _on_retriever_error(self, run: Run) -> None:
-        """Process the Retriever Run upon error."""
-        self._update_run_single(run)

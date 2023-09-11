@@ -832,10 +832,12 @@ s
         Default implementation of astream, which calls ainvoke.
         Subclasses should override this method if they support streaming output.
         """
-        stream = MessageLogCallbackHandler(lambda run: False)
+        stream = MessageLogCallbackHandler(lambda run: True)
 
         config = config or {}
-        callbacks = config.get("callbacks", [])
+        callbacks = config.get("callbacks")
+        if callbacks is None:
+            config["callbacks"] = [stream]
         if isinstance(callbacks, list):
             callbacks.append(stream)
         if isinstance(callbacks, BaseCallbackManager):
