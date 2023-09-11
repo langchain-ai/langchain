@@ -282,7 +282,12 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             text, filtered_analyzer_results, anonymizer_results
         )
 
-        return anonymizer_results.text
+        anonymizer_mapping = {
+            key: {v: k for k, v in inner_dict.items()}
+            for key, inner_dict in self.deanonymizer_mapping.items()
+        }
+
+        return default_matching_strategy(text, anonymizer_mapping)
 
     def _deanonymize(
         self,
