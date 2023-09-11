@@ -42,10 +42,10 @@ def test_message_chunks() -> None:
             == ChatMessageChunk(content="Hello World", role="user")), \
         "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
 
-    assert (ChatMessageChunk(content="I am robot", role="ai")
-            + HumanMessageChunk(content="I am User")
-            == ChatMessageChunk(content="I am robot", role="ai"),
-            "Message Chunk + Message Chunk should be a MessageChunk of same class as the left side")
+    assert (ChatMessageChunk(content="I am ", role="ai")
+            + HumanMessageChunk(content="user")
+            == ChatMessageChunk(content="I am user", role="ai")), \
+        "Message Chunk + Message Chunk should be a MessageChunk of same class as the left side"
 
     assert (ChatMessageChunk(content="", role="ai")
             + ChatMessageChunk(content="", role="user")
