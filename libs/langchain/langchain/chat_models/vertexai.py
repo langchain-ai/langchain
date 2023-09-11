@@ -1,6 +1,7 @@
 """Wrapper around Google VertexAI chat-based models."""
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Iterator
+
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
@@ -15,8 +16,10 @@ from langchain.schema.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
+    AIMessageChunk,
 )
 from langchain.utilities.vertexai import raise_vertex_import_error
+from langchain.schema.output import ChatGenerationChunk
 
 if TYPE_CHECKING:
     from vertexai.language_models import ChatMessage, InputOutputTextPair
@@ -54,9 +57,7 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
             vertex_message = ChatMessage(content=message.content, author="user")
             vertex_messages.append(vertex_message)
         else:
-            raise ValueError(
-                f"Unexpected message with type {type(message)} at the position {i}."
-            )
+            raise ValueError(f"Unexpected message with type {type(message)} at the position {i}.")
     chat_history = _ChatHistory(context=context, history=vertex_messages)
     return chat_history
 
@@ -65,9 +66,7 @@ def _parse_examples(examples: List[BaseMessage]) -> List["InputOutputTextPair"]:
     from vertexai.language_models import InputOutputTextPair
 
     if len(examples) % 2 != 0:
-        raise ValueError(
-            f"Expect examples to have an even amount of messages, got {len(examples)}."
-        )
+        raise ValueError(f"Expect examples to have an even amount of messages, got {len(examples)}.")
     example_pairs = []
     input_text = None
     for i, example in enumerate(examples):
@@ -84,9 +83,7 @@ def _parse_examples(examples: List[BaseMessage]) -> List["InputOutputTextPair"]:
                     f"Expected the second message in a part to be from AI, got "
                     f"{type(example)} for the {i}th message."
                 )
-            pair = InputOutputTextPair(
-                input_text=input_text, output_text=example.content
-            )
+            pair = InputOutputTextPair(input_text=input_text, output_text=example.content)
             example_pairs.append(pair)
     return example_pairs
 
@@ -95,6 +92,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     """`Vertex AI` Chat large language models API."""
 
     model_name: str = "chat-bison"
+    streaming: Optional[bool] = False
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -118,6 +116,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = False,
         **kwargs: Any,
     ) -> ChatResult:
         """Generate next turn in the conversation.
@@ -134,15 +133,13 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         Raises:
             ValueError: if the last message in the list is not from human.
         """
+        if stream if stream is not None else self.streaming:
+            return ChatResult(generations=list(self._stream(messages, stop, run_manager, **kwargs)))
         if not messages:
-            raise ValueError(
-                "You should provide at least one message to start the chat!"
-            )
+            raise ValueError("You should provide at least one message to start the chat!")
         question = messages[-1]
         if not isinstance(question, HumanMessage):
-            raise ValueError(
-                f"Last message in the list should be from human, got {question.type}."
-            )
+            raise ValueError(f"Last message in the list should be from human, got {question.type}.")
         history = _parse_chat_history(messages[:-1])
         context = history.context if history.context else None
         params = {**self._default_params, **kwargs}
@@ -150,11 +147,40 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         if examples:
             params["examples"] = _parse_examples(examples)
         if not self.is_codey_model:
-            chat = self.client.start_chat(
-                context=context, message_history=history.history, **params
-            )
+            chat = self.client.start_chat(context=context, message_history=history.history, **params)
         else:
             chat = self.client.start_chat(message_history=history.history, **params)
         response = chat.send_message(question.content)
         text = self._enforce_stop_words(response.text, stop)
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGeneration]:
+        if not messages:
+            raise ValueError("You should provide at least one message to start the chat!")
+        question = messages[-1]
+        if not isinstance(question, HumanMessage):
+            raise ValueError(f"Last message in the list should be from human, got {question.type}.")
+        history = _parse_chat_history(messages[:-1])
+        context = history.context if history.context else None
+        params = {**self._default_params, **kwargs}
+        examples = kwargs.get("examples", None)
+        if examples:
+            params["examples"] = _parse_examples(examples)
+
+        if not self.is_codey_model:
+            chat = self.client.start_chat(context=context, message_history=history.history, **params)
+        else:
+            chat = self.client.start_chat(message_history=history.history, **params)
+
+        responses = chat.send_message_streaming(question.content, **params)
+        for response in responses:
+            text = self._enforce_stop_words(response.text, stop)
+            if run_manager:
+                run_manager.on_llm_new_token(text)
+            yield ChatGenerationChunk(message=AIMessageChunk(content=text))
