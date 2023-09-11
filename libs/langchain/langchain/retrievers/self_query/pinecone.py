@@ -36,6 +36,11 @@ class PineconeTranslator(Visitor):
         return {self._format_func(operation.operator): args}
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
+        if comparison.comparator in (Comparator.IN, Comparator.NIN) and not isinstance(
+            comparison.value, list
+        ):
+            comparison.value = [comparison.value]
+
         return {
             comparison.attribute: {
                 self._format_func(comparison.comparator): comparison.value
