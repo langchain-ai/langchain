@@ -21,7 +21,7 @@ class DeanonymizerMapping:
 
     def update(self, new_mapping: MappingDataType) -> None:
         """Update the deanonymizer mapping with new values
-        Duplicate values will not be added
+        Duplicated values will not be added
         """
         new_values_seen = set()
 

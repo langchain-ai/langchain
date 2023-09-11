@@ -197,6 +197,15 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         """Return the deanonymizer mapping"""
         return self._deanonymizer_mapping.data
 
+    @property
+    def anonymizer_mapping(self) -> MappingDataType:
+        """Return the anonymizer mapping
+        This is just the reverse version of the deanonymizer mapping."""
+        return {
+            key: {v: k for k, v in inner_dict.items()}
+            for key, inner_dict in self.deanonymizer_mapping.items()
+        }
+
     def _anonymize(self, text: str, language: Optional[str] = None) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
@@ -246,11 +255,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         )
         self._deanonymizer_mapping.update(new_deanonymizer_mapping)
 
-        anonymizer_mapping = {
-            key: {v: k for k, v in inner_dict.items()}
-            for key, inner_dict in self.deanonymizer_mapping.items()
-        }
-        return default_matching_strategy(text, anonymizer_mapping)
+        return default_matching_strategy(text, self.anonymizer_mapping)
 
     def _deanonymize(
         self,
