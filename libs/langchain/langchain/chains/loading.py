@@ -20,6 +20,7 @@ from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
+from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 from langchain.llms.loading import load_llm, load_llm_from_config
@@ -424,6 +425,30 @@ def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
     )
 
 
+def _load_retrieval_qa_with_sources_chain(
+    config: dict, **kwargs: Any
+) -> RetrievalQAWithSourcesChain:
+    if "retriever" in kwargs:
+        retriever = kwargs.pop("retriever")
+    else:
+        raise ValueError("`retriever` must be present.")
+    if "combine_documents_chain" in config:
+        combine_documents_chain_config = config.pop("combine_documents_chain")
+        combine_documents_chain = load_chain_from_config(combine_documents_chain_config)
+    elif "combine_documents_chain_path" in config:
+        combine_documents_chain = load_chain(config.pop("combine_documents_chain_path"))
+    else:
+        raise ValueError(
+            "One of `combine_documents_chain` or "
+            "`combine_documents_chain_path` must be present."
+        )
+    return RetrievalQAWithSourcesChain(
+        combine_documents_chain=combine_documents_chain,
+        retriever=retriever,
+        **config,
+    )
+
+
 def _load_vector_db_qa(config: dict, **kwargs: Any) -> VectorDBQA:
     if "vectorstore" in kwargs:
         vectorstore = kwargs.pop("vectorstore")
@@ -537,6 +562,7 @@ type_to_loader_dict = {
     "vector_db_qa_with_sources_chain": _load_vector_db_qa_with_sources_chain,
     "vector_db_qa": _load_vector_db_qa,
     "retrieval_qa": _load_retrieval_qa,
+    "retrieval_qa_with_sources_chain": _load_retrieval_qa_with_sources_chain,
     "graph_cypher_chain": _load_graph_cypher_chain,
 }
 
