@@ -115,6 +115,13 @@ class VearchDb(VectorStore):
         Return:
             code,0 for success,1 for failed
         """
+        try:
+            import vearch
+        except ImportError:
+            raise ValueError(
+                "Could not import vearch python package. "
+                "Please install it with `pip install vearch`."
+            )
         type_dict = {"int": vearch.dataType.INT, "str": vearch.dataType.STRING}
         engine_info = {
             "index_size": 10000,
