@@ -1,8 +1,8 @@
 import pytest
 from test_utils import MockEncoder
 
-import langchain.chains.rl_chain.base as rl_chain
-import langchain.chains.rl_chain.pick_best_chain as pick_best_chain
+import langchain_experimental.rl_chain.base as rl_chain
+import langchain_experimental.rl_chain.pick_best_chain as pick_best_chain
 
 encoded_keyword = "[encoded]"
 

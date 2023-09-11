@@ -1,6 +1,6 @@
 import logging
 
-from langchain.chains.rl_chain.base import (
+from langchain_experimental.rl_chain.base import (
     AutoSelectionScorer,
     BasedOn,
     Embed,
@@ -12,7 +12,7 @@ from langchain.chains.rl_chain.base import (
     embed,
     stringify_embedding,
 )
-from langchain.chains.rl_chain.pick_best_chain import (
+from langchain_experimental.rl_chain.pick_best_chain import (
     PickBest,
     PickBestEvent,
     PickBestFeatureEmbedder,

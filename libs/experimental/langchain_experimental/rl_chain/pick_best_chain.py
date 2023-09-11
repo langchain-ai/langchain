@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-import langchain.chains.rl_chain.base as base
+import langchain_experimental.rl_chain.base as base
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.llm import LLMChain
@@ -307,6 +307,7 @@ class PickBest(base.RLChain[PickBestEvent]):
             ]
 
         kwargs["vw_cmd"] = vw_cmd
+        logger.info(f"vw_cmd: {vw_cmd}")
 
         super().__init__(*args, **kwargs)
 
