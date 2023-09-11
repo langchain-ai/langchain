@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, List, Optional, Type, cast
 
-from langchain import LLMChain
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.chains import LLMChain
 from langchain.chains.query_constructor.base import load_query_constructor_chain
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
@@ -16,6 +16,9 @@ from langchain.retrievers.self_query.milvus import MilvusTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
+from langchain.retrievers.self_query.redis import RedisTranslator
+from langchain.retrievers.self_query.supabase import SupabaseVectorTranslator
+from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
@@ -28,6 +31,9 @@ from langchain.vectorstores import (
     MyScale,
     Pinecone,
     Qdrant,
+    Redis,
+    SupabaseVectorStore,
+    Vectara,
     VectorStore,
     Weaviate,
 )
@@ -35,28 +41,32 @@ from langchain.vectorstores import (
 
 def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
-    vectorstore_cls = vectorstore.__class__
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         Pinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
         DashVector: DashvectorTranslator,
         Weaviate: WeaviateTranslator,
+        Vectara: VectaraTranslator,
         Qdrant: QdrantTranslator,
         MyScale: MyScaleTranslator,
         DeepLake: DeepLakeTranslator,
         ElasticsearchStore: ElasticsearchTranslator,
         Milvus: MilvusTranslator,
+        SupabaseVectorStore: SupabaseVectorTranslator,
     }
-    if vectorstore_cls not in BUILTIN_TRANSLATORS:
-        raise ValueError(
-            f"Self query retriever with Vector Store type {vectorstore_cls}"
-            f" not supported."
-        )
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
     elif isinstance(vectorstore, MyScale):
         return MyScaleTranslator(metadata_key=vectorstore.metadata_column)
-    return BUILTIN_TRANSLATORS[vectorstore_cls]()
+    elif isinstance(vectorstore, Redis):
+        return RedisTranslator.from_vectorstore(vectorstore)
+    elif vectorstore.__class__ in BUILTIN_TRANSLATORS:
+        return BUILTIN_TRANSLATORS[vectorstore.__class__]()
+    else:
+        raise ValueError(
+            f"Self query retriever with Vector Store type {vectorstore.__class__}"
+            f" not supported."
+        )
 
 
 class SelfQueryRetriever(BaseRetriever, BaseModel):
@@ -74,8 +84,9 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
     structured_query_translator: Visitor
     """Translator for turning internal query language into vectorstore search params."""
     verbose: bool = False
-    """Use original query instead of the revised new query from LLM"""
+
     use_original_query: bool = False
+    """Use original query instead of the revised new query from LLM"""
 
     class Config:
         """Configuration for this pydantic object."""
