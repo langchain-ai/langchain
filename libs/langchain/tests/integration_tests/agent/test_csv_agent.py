@@ -36,7 +36,7 @@ def csv_list(tmp_path_factory: TempPathFactory) -> DataFrame:
 
 
 @pytest.fixture(scope="module")
-def csv_file_like(tmp_path_factory: TempPathFactory) -> DataFrame:
+def csv_file_like(tmp_path_factory: TempPathFactory) -> io.BytesIO:
     random_data = np.random.rand(4, 4)
     df = DataFrame(random_data, columns=["name", "age", "food", "sport"])
     buffer = io.BytesIO()
@@ -67,7 +67,7 @@ def test_multi_csv(csv_list: list) -> None:
     assert result.group(1) is not None
 
 
-def test_file_like(file_like: bytes) -> None:
+def test_file_like(file_like: io.BytesIO) -> None:
     agent = create_csv_agent(OpenAI(temperature=0), file_like, verbose=True)
     assert isinstance(agent, AgentExecutor)
     response = agent.run("How many rows in the csv? Give me a number.")
