@@ -114,7 +114,13 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
     def __init__(self, **data: Any) -> None:
         """Initializes private fields."""
-        from google.cloud.discoveryengine_v1beta import SearchServiceClient
+        try:
+            from google.cloud.discoveryengine_v1beta import SearchServiceClient
+        except ImportError:
+            raise ImportError(
+                "google.cloud.discoveryengine is not installed."
+                "Please install it with pip install google-cloud-discoveryengine"
+            )
 
         super().__init__(**data)
         self._client = SearchServiceClient(credentials=self.credentials)
@@ -137,7 +143,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             document_dict = MessageToDict(
                 result.document._pb, preserving_proto_field_name=True
             )
-            derived_struct_data = document_dict.get("derived_struct_data", None)
+            derived_struct_data = document_dict.get("derived_struct_data")
             if not derived_struct_data:
                 continue
 
@@ -150,7 +156,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
                 else "extractive_segments"
             )
 
-            for chunk in getattr(derived_struct_data, chunk_type, []):
+            for chunk in derived_struct_data.get(chunk_type, []):
                 doc_metadata["source"] = derived_struct_data.get("link", "")
 
                 if chunk_type == "extractive_answers":

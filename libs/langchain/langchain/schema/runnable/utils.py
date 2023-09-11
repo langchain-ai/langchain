@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import asyncio
 from inspect import signature
-from typing import Any, Callable, Coroutine, Union
+from typing import Any, Callable, Coroutine, TypeVar, Union
+
+Input = TypeVar("Input")
+# Output type should implement __concat__, as eg str, list, dict do
+Output = TypeVar("Output")
 
 
 async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
@@ -26,8 +30,8 @@ def accepts_run_manager(callable: Callable[..., Any]) -> bool:
         return False
 
 
-def accepts_run_manager_and_config(callable: Callable[..., Any]) -> bool:
-    return (
-        accepts_run_manager(callable)
-        and signature(callable).parameters.get("config") is not None
-    )
+def accepts_config(callable: Callable[..., Any]) -> bool:
+    try:
+        return signature(callable).parameters.get("config") is not None
+    except ValueError:
+        return False

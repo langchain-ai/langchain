@@ -227,7 +227,7 @@ class SimpleRequestChain(Chain):
             response = (
                 f"{api_response.status_code}: {api_response.reason}"
                 + f"\nFor {name} "
-                + f"Called with args: {args['params']}"
+                + f"Called with args: {args.get('params','')}"
             )
         else:
             try:
