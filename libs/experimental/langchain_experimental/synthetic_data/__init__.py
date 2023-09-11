@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.chains.llm import LLMChain
+
 from langchain_experimental.synthetic_data.prompts import SENTENCE_PROMPT
 
 if TYPE_CHECKING:
