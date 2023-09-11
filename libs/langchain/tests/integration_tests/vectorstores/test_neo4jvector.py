@@ -413,3 +413,60 @@ def test_neo4jvector_hybrid_retrieval_query2() -> None:
     assert output == [Document(page_content="foo", metadata={"test": "test"})]
 
     drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_missing_keyword() -> None:
+    """Test hybrid search with missing keyword_index_search."""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+    )
+    try:
+        Neo4jVector.from_existing_index(
+            embedding=FakeEmbeddingsWithOsDimension(),
+            url=url,
+            username=username,
+            password=password,
+            index_name="vector",
+            search_type=SearchType.HYBRID,
+        )
+    except ValueError as e:
+        assert str(e) == (
+            "keyword_index name has to be specified when " "using hybrid search option"
+        )
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_hybrid_from_existing() -> None:
+    """Test hybrid search with missing keyword_index_search."""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+        search_type=SearchType.HYBRID,
+    )
+    existing = Neo4jVector.from_existing_index(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="vector",
+        keyword_index_name="keyword",
+        search_type=SearchType.HYBRID,
+    )
+
+    output = existing.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+    drop_vector_indexes(existing)
