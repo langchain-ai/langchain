@@ -1,6 +1,6 @@
 import ctypes
 
-def is_libcublas_available():
+def is_libcublas_available() -> bool:
     try:
         ctypes.CDLL("libcublas.so")
         return True
