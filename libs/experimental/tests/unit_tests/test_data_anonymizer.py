@@ -78,6 +78,8 @@ def test_add_recognizer_operator() -> None:
     assert anonymized_text == "<TITLE> Jane Doe was here."
 
     # anonymizing with custom recognizer and operator
+    anonymizer = PresidioAnonymizer(analyzed_fields=[])
+    anonymizer.add_recognizer(custom_recognizer)
     custom_operator = {"TITLE": OperatorConfig("replace", {"new_value": "Dear"})}
     anonymizer.add_operators(custom_operator)
     anonymized_text = anonymizer.anonymize(text)
