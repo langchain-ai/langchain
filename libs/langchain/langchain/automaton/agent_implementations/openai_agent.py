@@ -4,6 +4,7 @@ import json
 from typing import List, Sequence
 
 from langchain.automaton.chat_agent import ChatAgent
+from langchain.automaton.prompt_generation import AdapterBasedTranslator
 from langchain.automaton.typedefs import (
     AgentFinish,
     FunctionCallRequest,
@@ -53,6 +54,18 @@ def prompt_generator(input_messages: Sequence[MessageLike]) -> List[BaseMessage]
         else:
             pass
     return messages
+
+
+def create_openai_functions_adapter() -> AdapterBasedTranslator:
+    """Create an adapter for using OpenAI functions."""
+    return AdapterBasedTranslator(
+        msg_adapters={
+            FunctionCallResponse: lambda message: FunctionMessage(
+                name=message.name, content=json.dumps(message.result)
+            ),
+            # No need to translate function call requests
+        },
+    )
 
 
 def create_openai_agent(llm: ChatOpenAI, tools: Sequence[BaseTool]) -> ChatAgent:

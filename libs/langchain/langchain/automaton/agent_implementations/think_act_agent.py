@@ -32,8 +32,8 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool, Tool
 
 TEMPLATE_ = """\
-Respond to the human as helpfully and accurately as 
-possible. You have access to the following tools:
+Respond to the human as helpfully and accurately as possible. \
+You have access to the following tools:
 {tools_description}
 Use a blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
 
@@ -69,9 +69,8 @@ Thought: I know what to respond
 Begin:
 
 Reminder to ALWAYS respond with a valid blob of a single action. \
-Use tools if necessary. \
-Respond directly if appropriate. \
-Format is <action>$BLOB</action> then Observation. \
+Use tools if necessary. Respond directly if appropriate. \
+Format is <action>$BLOB</action> then Observation.\
 """
 
 

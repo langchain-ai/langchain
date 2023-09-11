@@ -1,14 +1,18 @@
 """Prompt generation for the automaton."""
 from __future__ import annotations
+import json
 
 import abc
-from typing import Mapping, Any, Callable, List, Sequence, Optional
+from typing import Mapping, Any, Callable, List, Sequence, Optional, Union
 
 from langchain.automaton.typedefs import MessageLike
-from langchain.schema import BaseMessage, PromptValue
+from langchain.schema import BaseMessage, PromptValue, FunctionMessage
+from langchain.automaton.typedefs import FunctionCallResponse
 
 
 class BoundPromptValue(PromptValue):
+    """A prompt value that is bound to a specific value."""
+
     as_string: Callable[[], str]
     as_messages: Callable[[], List[BaseMessage]]
 
@@ -21,7 +25,7 @@ class BoundPromptValue(PromptValue):
         return self.as_messages()
 
 
-class PromptGenerator(abc.ABC):
+class Translator(abc.ABC):
     @abc.abstractmethod
     def to_messages(
         self, original_messages: Sequence[MessageLike]
@@ -40,35 +44,38 @@ class PromptGenerator(abc.ABC):
         )
 
 
-class AdapterBasedGenerator(PromptGenerator):
+class AdapterBasedTranslator(Translator):
     def __init__(
         self,
         *,
-        adapters: Optional[
-            Mapping[Any, Callable[[MessageLike], List[BaseMessage]]]
+        msg_adapters: Optional[
+            Mapping[Any, Callable[[MessageLike], Union[BaseMessage, List[BaseMessage]]]]
         ] = None,
         str_adapters: Optional[Mapping[Any, Callable[[MessageLike], str]]] = None,
-        pass_through_base_messages: bool = True,
     ) -> None:
         """Initialize the adapter based generator."""
-        self.adapters = adapters
-        self.str_adapters = str_adapters
-        self.pass_through_base_messages = pass_through_base_messages
+        self.msg_adapters = msg_adapters or {}
+        self.str_adapters = str_adapters or {}
 
     def to_messages(self, messages: Sequence[MessageLike]) -> List[BaseMessage]:
         """Generate a prompt from message like objects."""
         new_messages = []
 
         for original_message in messages:
-            adapter = self.adapters.get(type(original_message), None)
+            adapter = self.msg_adapters.get(type(original_message), None)
             if adapter:
-                new_messages.extend(adapter(original_message))
+                translated = adapter(original_message)
+                if isinstance(translated, BaseMessage):
+                    new_messages.append(translated)
+                else:
+                    new_messages.extend(translated)
                 continue
 
-            if self.pass_through_base_messages:
+            if isinstance(original_message, BaseMessage):
+                # Only adds BaseMessages by default,
+                # internal messages are ignored
                 new_messages.append(original_message)
-            else:
-                raise RuntimeError(f"Adapter not found for {type(original_message)}")
+
         return new_messages
 
     def to_string(self, messages: Sequence[MessageLike]) -> str:
@@ -85,17 +92,3 @@ class AdapterBasedGenerator(PromptGenerator):
                 )
 
         return "\n".join(string_prompts)
-
-
-#
-# def create_standard_generator(overrided_adapters: Mapping[]) -> AdapterBasedGenerator:
-#     """Create the standard prompt generator."""
-#     return AdapterBasedGenerator(
-#         adapters={
-#             FunctionResult: (lambda result: [HumanMessage(content=f"Observation: result.content)])
-#         },
-#         str_adapters={
-#             BaseMessage: lambda message: message.to_string(),
-#         },
-#         pass_through_base_messages=True,
-#     )

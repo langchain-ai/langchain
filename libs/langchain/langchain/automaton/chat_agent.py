@@ -31,7 +31,8 @@ class ChatAgent(Agent):
 
     def __init__(
         self,
-        llm: BaseLanguageModel[LanguageModelInput, LanguageModelOutput],
+        llm: BaseLanguageModel[LanguageModelInput, LanguageModelOutput]
+        | Runnable[LanguageModelInput, LanguageModelOutput],
         prompt_generator: Union[
             Callable[
                 [Sequence[MessageLike]], Union[str, PromptValue, List[BaseMessage]]
