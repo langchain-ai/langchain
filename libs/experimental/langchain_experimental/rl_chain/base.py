@@ -19,19 +19,20 @@ from typing import (
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain_experimental.rl_chain.metrics import (
-    MetricsTrackerAverage,
-    MetricsTrackerRollingWindow,
-)
-from langchain_experimental.rl_chain.model_repository import ModelRepository
-from langchain_experimental.rl_chain.vw_logger import VwLogger
 from langchain.prompts import (
     BasePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+
 from langchain_experimental.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_experimental.rl_chain.metrics import (
+    MetricsTrackerAverage,
+    MetricsTrackerRollingWindow,
+)
+from langchain_experimental.rl_chain.model_repository import ModelRepository
+from langchain_experimental.rl_chain.vw_logger import VwLogger
 
 if TYPE_CHECKING:
     import vowpal_wabbit_next as vw
