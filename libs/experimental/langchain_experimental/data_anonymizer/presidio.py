@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 
@@ -14,6 +13,7 @@ from langchain_experimental.data_anonymizer.base import (
 from langchain_experimental.data_anonymizer.deanonymizer_mapping import (
     DeanonymizerMapping,
     MappingDataType,
+    create_anonymizer_mapping,
 )
 from langchain_experimental.data_anonymizer.deanonymizer_matching_strategies import (
     default_matching_strategy,
@@ -43,8 +43,7 @@ except ImportError as e:
     ) from e
 
 if TYPE_CHECKING:
-    from presidio_analyzer import EntityRecognizer, RecognizerResult
-    from presidio_anonymizer.entities import EngineResult
+    from presidio_analyzer import EntityRecognizer
 
 # Configuring Anonymizer for multiple languages
 # Detailed description and examples can be found here:
@@ -156,17 +155,30 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
                 "Change your language configuration file to add more languages."
             )
 
-        results = self._analyzer.analyze(
+        analyzer_results = self._analyzer.analyze(
             text,
             entities=self.analyzed_fields,
             language=language,
         )
 
-        return self._anonymizer.anonymize(
+        filtered_analyzer_results = (
+            self._anonymizer._remove_conflicts_and_get_text_manipulation_data(
+                analyzer_results
+            )
+        )
+
+        anonymizer_results = self._anonymizer.anonymize(
             text,
-            analyzer_results=results,
+            analyzer_results=analyzer_results,
             operators=self.operators,
-        ).text
+        )
+
+        anonymizer_mapping = create_anonymizer_mapping(
+            text,
+            filtered_analyzer_results,
+            anonymizer_results,
+        )
+        return default_matching_strategy(text, anonymizer_mapping)
 
 
 class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerBase):
@@ -184,58 +196,6 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
     def deanonymizer_mapping(self) -> MappingDataType:
         """Return the deanonymizer mapping"""
         return self._deanonymizer_mapping.data
-
-    def _update_deanonymizer_mapping(
-        self,
-        original_text: str,
-        analyzer_results: List[RecognizerResult],
-        anonymizer_results: EngineResult,
-    ) -> None:
-        """Creates or updates the mapping used to de-anonymize text.
-
-        This method exploits the results returned by the
-        analysis and anonymization processes.
-
-        It constructs a mapping from each anonymized entity
-        back to its original text value.
-
-        Mapping will be stored as "deanonymizer_mapping" property.
-
-        Example of "deanonymizer_mapping":
-        {
-            "PERSON": {
-                "<anonymized>": "<original>",
-                "John Doe": "Slim Shady"
-            },
-            "PHONE_NUMBER": {
-                "111-111-1111": "555-555-5555"
-            }
-            ...
-        }
-        """
-
-        # We are able to zip and loop through both lists because we expect
-        # them to return corresponding entities for each identified piece
-        # of analyzable data from our input.
-
-        # We sort them by their 'start' attribute because it allows us to
-        # match corresponding entities by their position in the input text.
-        analyzer_results = sorted(analyzer_results, key=lambda d: d.start)
-        anonymizer_results.items = sorted(
-            anonymizer_results.items, key=lambda d: d.start
-        )
-
-        new_deanonymizer_mapping: MappingDataType = defaultdict(dict)
-
-        for analyzed_entity, anonymized_entity in zip(
-            analyzer_results, anonymizer_results.items
-        ):
-            original_value = original_text[analyzed_entity.start : analyzed_entity.end]
-            new_deanonymizer_mapping[anonymized_entity.entity_type][
-                anonymized_entity.text
-            ] = original_value
-
-        self._deanonymizer_mapping.update(new_deanonymizer_mapping)
 
     def _anonymize(self, text: str, language: Optional[str] = None) -> str:
         """Anonymize text.
@@ -278,15 +238,18 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             operators=self.operators,
         )
 
-        self._update_deanonymizer_mapping(
-            text, filtered_analyzer_results, anonymizer_results
+        new_deanonymizer_mapping = create_anonymizer_mapping(
+            text,
+            filtered_analyzer_results,
+            anonymizer_results,
+            reversed=True,
         )
+        self._deanonymizer_mapping.update(new_deanonymizer_mapping)
 
         anonymizer_mapping = {
             key: {v: k for k, v in inner_dict.items()}
             for key, inner_dict in self.deanonymizer_mapping.items()
         }
-
         return default_matching_strategy(text, anonymizer_mapping)
 
     def _deanonymize(
