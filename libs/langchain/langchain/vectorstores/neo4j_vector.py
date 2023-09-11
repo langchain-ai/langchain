@@ -541,7 +541,7 @@ class Neo4jVector(VectorStore):
         return docs
 
     def similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs
+        self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """
         Perform a similarity search in the Neo4j database using a
