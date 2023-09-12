@@ -1,4 +1,4 @@
-"""Retriever wrapper for Google Cloud Enterprise Search on Gen App Builder."""
+"""Retriever wrapper for Google Cloud Vertex AI Search."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
@@ -16,10 +16,10 @@ if TYPE_CHECKING:
     )
 
 
-class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
-    """`Google Cloud Enterprise Search API` retriever.
+class GoogleCloudVertexAISearchRetriever(BaseRetriever):
+    """`Google Cloud Vertex AI Search API` retriever.
 
-    For a detailed explanation of the Enterprise Search concepts
+    For a detailed explanation of the Vertex AI Search concepts
     and configuration parameters, refer to the product documentation.
     https://cloud.google.com/generative-ai-app-builder/docs/enterprise-search-introduction
     """
@@ -27,11 +27,11 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     project_id: str
     """Google Cloud Project ID."""
     search_engine_id: str
-    """Enterprise Search engine ID."""
+    """Vertex AI Search engine ID."""
     serving_config_id: str = "default_config"
-    """Enterprise Search serving config ID."""
+    """Vertex AI Search serving config ID."""
     location_id: str = "global"
-    """Enterprise Search engine location."""
+    """Vertex AI Search engine location."""
     filter: Optional[str] = None
     """Filter expression."""
     get_extractive_answers: bool = False
@@ -71,7 +71,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
     # TODO: Add extra data type handling for type website
     engine_data_type: int = Field(default=0, ge=0, le=1)
-    """ Defines the enterprise search data type
+    """ Defines the Vertex AI Search data type
     0 - Unstructured data 
     1 - Structured data
     """
@@ -273,3 +273,19 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             )
 
         return documents
+
+
+class GoogleCloudEnterpriseSearchRetriever(GoogleCloudVertexAISearchRetriever):
+    """`Google Cloud Vertex Search API` retriever alias for backwards compatibility.
+
+    DEPRECATED: Use `GoogleCloudVertexAISearchRetriever` instead.
+    """
+
+    def __init__(self, **data: Any):
+        import warnings
+
+        warnings.warn(
+            "GoogleCloudEnterpriseSearchRetriever is deprecated, use GoogleCloudVertexAISearchRetriever",
+            DeprecationWarning,
+        )
+        super().__init__(**data)
