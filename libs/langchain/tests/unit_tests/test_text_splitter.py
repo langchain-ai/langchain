@@ -498,6 +498,73 @@ public class HelloWorld {
     ]
 
 
+def test_csharp_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.CSHARP, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+using System;
+class Program
+{
+    static void Main()
+    {
+        int age = 30; // Change the age value as needed
+
+        // Categorize the age without any console output
+        if (age < 18)
+        {
+            // Age is under 18
+        }
+        else if (age >= 18 && age < 65)
+        {
+            // Age is an adult
+        }
+        else
+        {
+            // Age is a senior citizen
+        }
+    }
+}
+    """
+
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "using System;",
+        "class Program\n{",
+        "static void",
+        "Main()",
+        "{",
+        "int age",
+        "= 30; // Change",
+        "the age value",
+        "as needed",
+        "//",
+        "Categorize the",
+        "age without any",
+        "console output",
+        "if (age",
+        "< 18)",
+        "{",
+        "//",
+        "Age is under 18",
+        "}",
+        "else if",
+        "(age >= 18 &&",
+        "age < 65)",
+        "{",
+        "//",
+        "Age is an adult",
+        "}",
+        "else",
+        "{",
+        "//",
+        "Age is a senior",
+        "citizen",
+        "}\n    }",
+        "}",
+    ]
+
+
 def test_cpp_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.CPP, chunk_size=CHUNK_SIZE, chunk_overlap=0
