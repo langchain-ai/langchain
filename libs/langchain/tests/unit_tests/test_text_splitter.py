@@ -10,7 +10,8 @@ from langchain.text_splitter import (
     Language,
     MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
-    RecursiveCharacterTextSplitter, SplittedText,
+    RecursiveCharacterTextSplitter,
+    SplittedText,
 )
 
 FAKE_PYTHON_TEXT = """
@@ -59,7 +60,7 @@ def test_character_text_splitter_long() -> None:
     text = "foo bar baz a a"
     splitter = CharacterTextSplitter(separator=" ", chunk_size=3, chunk_overlap=1)
     output = splitter.split_text(text)
-    expected_output = ["foo", "bar", "baz", "a a"]
+    expected_output = ["foo", "bar", "baz", "a", "a a"]
     assert output == expected_output
 
 
@@ -99,7 +100,7 @@ def test_character_text_splitter_keep_separator_regex(
         is_separator_regex=is_separator_regex,
     )
     output = splitter.split_text(text)
-    expected_output = ["foo", ".bar", ".baz", ".123"]
+    expected_output = ["foo", ".", "bar", ".", "baz", ".", "123"]
     assert output == expected_output
 
 
@@ -134,7 +135,7 @@ def test_merge_splits() -> None:
     """Test merging splits with a given separator."""
     splitter = CharacterTextSplitter(separator=" ", chunk_size=9, chunk_overlap=2)
     splits = [SplittedText(text=text) for text in ["foo", "bar", "baz"]]
-    expected_output = ["foo bar", "baz"]
+    expected_output = ["foobarbaz"]
     output = splitter._merge_splits(splits)
     assert output == expected_output
 
@@ -199,13 +200,7 @@ def test_iterative_text_splitter_keep_separator() -> None:
     chunk_size = 5
     output = __test_iterative_text_splitter(chunk_size=chunk_size, keep_separator=True)
 
-    assert output == [
-        "....5",
-        "X..3",
-        "Y...4",
-        "X....5",
-        "Y...",
-    ]
+    assert output == ["....5X", "X..3Y", "Y...4X", "X....5", "....5Y", "Y..."]
 
 
 def test_iterative_text_splitter_discard_separator() -> None:
@@ -243,29 +238,29 @@ def test_iterative_text_splitter() -> None:
 This is a weird text to write, but gotta test the splittingggg some how.
 
 Bye!\n\n-H."""
-    splitter = RecursiveCharacterTextSplitter(chunk_size=10, chunk_overlap=1)
+    chunk_size = 10
+    splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=1)
     output = splitter.split_text(text)
     expected_output = [
-        "Hi.",
-        "I'm",
+        "Hi.\n\nI'm H",
         "Harrison.",
-        "How? Are?",
-        "You?",
+        ".\n\nHow? Ar",
+        "re? You?\nO",
         "Okay then",
         "f f f f.",
         "This is a",
-        "weird",
-        "text to",
-        "write,",
-        "but gotta",
-        "test the",
-        "splitting",
-        "gggg",
+        "a weird te",
+        "ext to wri",
+        "ite, but g",
+        "gotta test",
+        "t the spli",
+        "ittingggg",
         "some how.",
-        "Bye!",
+        ".\n\nBye!\n\n-",
         "-H.",
     ]
     assert output == expected_output
+    assert all(len(chunk) <= chunk_size for chunk in output)
 
 
 def test_split_documents() -> None:
@@ -317,12 +312,9 @@ hello_world()
     """
     chunks = splitter.split_text(code)
     assert chunks == [
-        "def",
-        "hello_world():",
-        'print("Hello,',
-        'World!")',
-        "# Call the",
-        "function",
+        "def hello_world():",
+        'print("Hello, World!")',
+        "# Call the function",
         "hello_world()",
     ]
 
