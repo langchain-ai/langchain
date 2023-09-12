@@ -1,6 +1,6 @@
 """Unittests for langchain.agents.chat package."""
 from textwrap import dedent
-from typing import Tuple
+from typing import Any, Tuple
 
 from langchain.agents.structured_chat.base import StructuredChatAgent
 from langchain.agents.structured_chat.output_parser import StructuredChatOutputParser
@@ -59,7 +59,7 @@ def test_parse_without_language() -> None:
 # Test: StructuredChatAgent.create_prompt() method.
 class TestCreatePrompt:
     # Test: Output should be a ChatPromptTemplate with sys and human messages.
-    def test_create_prompt_output(self):
+    def test_create_prompt_output(self) -> None:
         prompt = StructuredChatAgent.create_prompt(
             [Tool(name="foo", description="Test tool FOO", func=lambda x: x)]
         )
@@ -70,11 +70,10 @@ class TestCreatePrompt:
         assert isinstance(prompt.messages[1], HumanMessagePromptTemplate)
 
     # Test: Format with a single tool.
-    def test_system_message_single_tool(self):
-        prompt = StructuredChatAgent.create_prompt(
+    def test_system_message_single_tool(self) -> None:
+        prompt: Any = StructuredChatAgent.create_prompt(
             [Tool(name="foo", description="Test tool FOO", func=lambda x: x)]
         )
-
         actual = prompt.messages[0].prompt.format()
 
         expected = dedent(
@@ -133,8 +132,8 @@ class TestCreatePrompt:
     #
     #   Valid "action" values: "Final Answer" or ...
     #
-    def test_system_message_multiple_tools(self):
-        prompt = StructuredChatAgent.create_prompt(
+    def test_system_message_multiple_tools(self) -> None:
+        prompt: Any = StructuredChatAgent.create_prompt(
             [
                 Tool(name="foo", description="Test tool FOO", func=lambda x: x),
                 Tool(name="bar", description="Test tool BAR", func=lambda x: x),
