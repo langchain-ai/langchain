@@ -10,7 +10,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM, create_base_retry_decorator
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import BaseModel, root_validator
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.schema import (
     Generation,
     LLMResult,
@@ -72,7 +72,7 @@ class _VertexAIBase(BaseModel):
     "Default is 5."
     max_retries: int = 6
     """The maximum number of retries to make when generating."""
-    task_executor: ClassVar[Optional[Executor]] = None
+    task_executor: ClassVar[Optional[Executor]] = Field(default=None, exclude=True)
     stop: Optional[List[str]] = None
     "Optional list of stop words to use when generating."
     model_name: Optional[str] = None
@@ -106,10 +106,14 @@ class _VertexAICommon(_VertexAIBase):
     top_k: int = 40
     "How the model selects tokens for output, the next token is selected from "
     "among the top-k most probable tokens. Top-k is ignored for Codey models."
-    credentials: Any = None
+    credentials: Any = Field(default=None, exclude=True)
     "The default custom credentials (google.auth.credentials.Credentials) to use "
     "when making API calls. If not provided, credentials will be ascertained from "
     "the environment."
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"credentials": "GOOGLE_APPLICATION_CREDENTIALS"}
 
     @property
     def is_codey_model(self) -> bool:
@@ -161,6 +165,10 @@ class VertexAI(_VertexAICommon, LLM):
     "The name of the Vertex AI large language model."
     tuned_model_name: Optional[str] = None
     "The name of a tuned model. If provided, model_name is ignored."
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

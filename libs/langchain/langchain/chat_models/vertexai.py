@@ -96,6 +96,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
     model_name: str = "chat-bison"
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
