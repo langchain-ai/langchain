@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -82,7 +82,7 @@ class Replicate(LLM):
         return values
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model": self.model,
@@ -126,7 +126,7 @@ class Replicate(LLM):
 
             self.prompt_key = input_properties[0][0]
 
-        inputs = {self.prompt_key: prompt, **self.input}
+        inputs: Dict = {self.prompt_key: prompt, **self.input}
 
         prediction = replicate_python.predictions.create(
             version=version, input={**inputs, **kwargs}
