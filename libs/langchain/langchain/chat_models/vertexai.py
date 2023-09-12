@@ -116,7 +116,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     """`Vertex AI` Chat large language models API."""
 
     model_name: str = "chat-bison"
-    streaming: Optional[bool] = False
+    streaming: bool = False
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
