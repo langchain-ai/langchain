@@ -298,10 +298,22 @@ def test_python_text_splitter() -> None:
 CHUNK_SIZE = 16
 
 
-def test_python_code_splitter() -> None:
+def __test_language_splitter(
+    language: Language,
+    code: str,
+    expected: List[str],
+    chunk_size=CHUNK_SIZE,
+    chunk_overlap=0,
+):
     splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.PYTHON, chunk_size=CHUNK_SIZE, chunk_overlap=0
+        language, chunk_size=chunk_size, chunk_overlap=chunk_overlap
     )
+    actual = splitter.split_text(code)
+
+    assert expected == actual
+
+
+def test_python_code_splitter() -> None:
     code = """
 def hello_world():
     print("Hello, World!")
@@ -309,8 +321,7 @@ def hello_world():
 # Call the function
 hello_world()
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "def",
         "hello_world():",
         'print("Hello,',
@@ -318,12 +329,10 @@ hello_world()
         "the function",
         "hello_world()",
     ]
+    __test_language_splitter(Language.PYTHON, code, expected)
 
 
 def test_golang_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.GO, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 package main
 
@@ -337,8 +346,7 @@ func main() {
     helloWorld()
 }
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "package main",
         'import "fmt"',
         "func",
@@ -349,12 +357,10 @@ func main() {
         "helloWorld()",
         "}",
     ]
+    __test_language_splitter(Language.GO, code, expected)
 
 
 def test_rst_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.RST, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 Sample Document
 ===============
@@ -377,8 +383,7 @@ Not a comment
 
 .. This is a comment
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "Sample Document",
         "===============",
         "Section",
@@ -393,16 +398,15 @@ Not a comment
         ".. This is a",
         "comment",
     ]
+    __test_language_splitter(Language.RST, code, expected)
+
     # Special test for special characters
     code = "harry\n***\nbabylon is"
-    chunks = splitter.split_text(code)
-    assert chunks == ["harry\n***", "babylon is"]
+    expected = ["harry\n***", "babylon is"]
+    __test_language_splitter(Language.RST, code, expected)
 
 
 def test_proto_file_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.PROTO, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 syntax = "proto3";
 
@@ -414,8 +418,7 @@ message Person {
     repeated string hobbies = 3;
 }
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "syntax =",
         '"proto3";',
         "package example;",
@@ -427,12 +430,10 @@ message Person {
         "string hobbies =",
         "3;\n}",
     ]
+    __test_language_splitter(Language.PROTO, code, expected)
 
 
 def test_javascript_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.JS, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 function helloWorld() {
   console.log("Hello, World!");
@@ -441,8 +442,7 @@ function helloWorld() {
 // Call the function
 helloWorld();
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "function",
         "helloWorld() {",
         'console.log("Hello,',
@@ -451,12 +451,10 @@ helloWorld();
         "function",
         "helloWorld();",
     ]
+    __test_language_splitter(Language.JS, code, expected)
 
 
 def test_java_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.JAVA, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 public class HelloWorld {
     public static void main(String[] args) {
@@ -464,8 +462,7 @@ public class HelloWorld {
     }
 }
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "public class",
         "HelloWorld {",
         "public",
@@ -476,12 +473,10 @@ public class HelloWorld {
         'World!");\n    }',
         "}",
     ]
+    __test_language_splitter(Language.JAVA, code, expected)
 
 
 def test_cpp_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.CPP, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 #include <iostream>
 
@@ -490,8 +485,7 @@ int main() {
     return 0;
 }
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "#include",
         "<iostream>\n\nint",
         "main() {",
@@ -500,12 +494,10 @@ int main() {
         "<< std::endl;",
         "return 0;\n}",
     ]
+    __test_language_splitter(Language.CPP, code, expected)
 
 
 def test_scala_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.SCALA, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 object HelloWorld {
   def main(args: Array[String]): Unit = {
@@ -513,8 +505,7 @@ object HelloWorld {
   }
 }
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "object",
         "HelloWorld {",
         "def main(args:",
@@ -523,12 +514,10 @@ object HelloWorld {
         'println("Hello,',
         'World!")\n  }\n}',
     ]
+    __test_language_splitter(Language.SCALA, code, expected)
 
 
 def test_ruby_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.RUBY, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 def hello_world
   puts "Hello, World!"
@@ -536,14 +525,11 @@ end
 
 hello_world
     """
-    chunks = splitter.split_text(code)
-    assert chunks == ["def hello_world", 'puts "Hello,', 'World!"\nend', "hello_world"]
+    expected = ["def hello_world", 'puts "Hello,', 'World!"\nend', "hello_world"]
+    __test_language_splitter(Language.RUBY, code, expected)
 
 
 def test_php_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.PHP, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 <?php
 function hello_world() {
@@ -553,8 +539,7 @@ function hello_world() {
 hello_world();
 ?>
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "<?php\nfunction",
         "hello_world() {",
         'echo "Hello,',
@@ -562,12 +547,10 @@ hello_world();
         "hello_world();",
         "?>",
     ]
+    __test_language_splitter(Language.PHP, code, expected)
 
 
 def test_swift_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.SWIFT, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 func helloWorld() {
     print("Hello, World!")
@@ -575,33 +558,27 @@ func helloWorld() {
 
 helloWorld()
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "func",
         "helloWorld() {",
         'print("Hello,',
         'World!")\n}',
         "helloWorld()",
     ]
+    __test_language_splitter(Language.SWIFT, code, expected)
 
 
 def test_rust_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.RUST, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 fn main() {
     println!("Hello, World!");
 }
     """
-    chunks = splitter.split_text(code)
-    assert chunks == ["fn main() {", 'println!("Hello,', 'World!");\n}']
+    expected = ["fn main() {", 'println!("Hello,', 'World!");\n}']
+    __test_language_splitter(Language.RUST, code, expected)
 
 
 def test_markdown_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.MARKDOWN, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 # Sample Document
 
@@ -626,8 +603,7 @@ ____________
 This is a code block
 ```
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "# Sample",
         "Document\n\n##",
         "Section\n\nThis is",
@@ -645,28 +621,24 @@ This is a code block
         "is a code block",
         "```",
     ]
+    __test_language_splitter(Language.MARKDOWN, code, expected)
+
     # Special test for special characters
     code = "harry\n***\nbabylon is"
-    chunks = splitter.split_text(code)
-    assert chunks == ["harry\n***", "babylon is"]
+    expected = ["harry\n***", "babylon is"]
+    __test_language_splitter(Language.MARKDOWN, code, expected)
 
 
 def test_latex_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.LATEX, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 Hi Harrison!
 \\chapter{1}
 """
-    chunks = splitter.split_text(code)
-    assert chunks == ["Hi Harrison!", "\\chapter{1}"]
+    expected = ["Hi Harrison!", "\\chapter{1}"]
+    __test_language_splitter(Language.LATEX, code, expected)
 
 
 def test_html_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.HTML, chunk_size=60, chunk_overlap=0
-    )
     code = """
 <h1>Sample Document</h1>
     <h2>Section</h2>
@@ -685,8 +657,7 @@ def test_html_code_splitter() -> None:
                 <p>Some more text</p>
             </div>
     """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "<h1>Sample Document</h1>\n    <h2>Section</h2>\n        <p",
         'id="1234">Reference content.</p>\n\n    <h2>Lists</h2>',
         "<ul>\n            <li>Item 1</li>",
@@ -695,11 +666,11 @@ def test_html_code_splitter() -> None:
         "<p>Some text</p>\n                <p>Some",
         "more text</p>\n            </div>",
     ]
+    __test_language_splitter(Language.HTML, code, expected, chunk_size=60)
 
 
 def test_md_header_text_splitter_1() -> None:
     """Test markdown splitter by header: Case 1."""
-
     markdown_document = (
         "# Foo\n\n"
         "    ## Bar\n\n"
@@ -824,9 +795,6 @@ def test_md_header_text_splitter_3() -> None:
 
 
 def test_solidity_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.SOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """pragma solidity ^0.8.20;
   contract HelloWorld {
     function add(uint a, uint b) pure public returns(uint) {
@@ -834,8 +802,7 @@ def test_solidity_code_splitter() -> None:
     }
   }
   """
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "pragma solidity",
         "^0.8.20;",
         "contract",
@@ -847,3 +814,4 @@ def test_solidity_code_splitter() -> None:
         "return  a",
         "+ b;\n    }\n  }",
     ]
+    __test_language_splitter(Language.SOL, code, expected)
