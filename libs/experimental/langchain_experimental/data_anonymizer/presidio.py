@@ -142,10 +142,10 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
         PresidioAnonymizer has no built-in memory -
         so it will not remember the effects of anonymizing previous texts.
         >>> anonymizer = PresidioAnonymizer()
-        >>> anonymizer.anonymize("John Doe")
-        'Noah Rhodes'
-        >>> anonymizer.anonymize("John Doe")
-        'Brett Russell'
+        >>> anonymizer.anonymize("My name is John Doe. Hi John Doe!")
+        'My name is Noah Rhodes. Hi Noah Rhodes!'
+        >>> anonymizer.anonymize("My name is John Doe. Hi John Doe!")
+        'My name is Brett Russell. Hi Brett Russell!'
 
         Args:
             text: text to anonymize
@@ -224,10 +224,10 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         Thanks to the built-in memory, all previously anonymised entities
         will be remembered and replaced by the same fake values:
         >>> anonymizer = PresidioReversibleAnonymizer()
-        >>> anonymizer.anonymize("John Doe")
-        'Noah Rhodes'
-        >>> anonymizer.anonymize("John Doe")
-        'Noah Rhodes'
+        >>> anonymizer.anonymize("My name is John Doe. Hi John Doe!")
+        'My name is Noah Rhodes. Hi Noah Rhodes!'
+        >>> anonymizer.anonymize("My name is John Doe. Hi John Doe!")
+        'My name is Noah Rhodes. Hi Noah Rhodes!'
 
         Args:
             text: text to anonymize
