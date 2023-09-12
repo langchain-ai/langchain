@@ -79,14 +79,14 @@ class Xinference(LLM):
     """URL of the xinference server"""
     model_uid: Optional[str]
     """UID of the launched model"""
-    llm_kwargs: Dict[str, Any]
+    model_kwargs: Dict[str, Any]
     """Key word arguments to be passed to xinference.LLM"""
 
     def __init__(
         self,
         server_url: Optional[str] = None,
         model_uid: Optional[str] = None,
-        **llm_kwargs: Any,
+        **model_kwargs: Any,
     ):
         try:
             from xinference.client import RESTfulClient
@@ -96,13 +96,13 @@ class Xinference(LLM):
                 " with `pip install xinference`."
             ) from e
 
-        llm_kwargs = llm_kwargs or {}
+        model_kwargs = model_kwargs or {}
 
         super().__init__(
             **{
                 "server_url": server_url,
                 "model_uid": model_uid,
-                "llm_kwargs": llm_kwargs,
+                "model_kwargs": model_kwargs,
             }
         )
 
@@ -125,7 +125,7 @@ class Xinference(LLM):
         return {
             **{"server_url": self.server_url},
             **{"model_uid": self.model_uid},
-            **{"llm_kwargs": self.llm_kwargs},
+            **{"model_kwargs": self.model_kwargs},
         }
 
     def _call(
@@ -150,7 +150,7 @@ class Xinference(LLM):
 
         generate_config: "LlamaCppGenerateConfig" = kwargs.get("generate_config", {})
 
-        generate_config = {**self.llm_kwargs, **generate_config}
+        generate_config = {**self.model_kwargs, **generate_config}
 
         if stop:
             generate_config["stop"] = stop
