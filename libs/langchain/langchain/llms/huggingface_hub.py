@@ -60,7 +60,7 @@ class HuggingFaceHub(LLM):
                 values["task"] = model_info.pipeline_tag
             if values["task"] not in VALID_TASKS:
                 raise ValueError(
-                    f"Got invalid task {values.get('task')}, "
+                    f"Got invalid task {values['task']}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
             values["client"] = client
