@@ -132,7 +132,7 @@ class OnlinePDFLoader(BasePDFLoader):
 
 
 class PyPDFLoader(BasePDFLoader):
-    """Load PDF using pypdf into array of documents, where each document contains the page content and metadata with page number.
+    """Load PDF using pypdf into array of documents, where each document contains the page content.
 
     Loader also stores page numbers in metadata.
     """
