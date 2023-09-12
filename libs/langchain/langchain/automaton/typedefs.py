@@ -99,14 +99,6 @@ MessageLike = Union[BaseMessage, InternalMessage]
 
 class Agent(abc.ABC):
     @abc.abstractmethod
-    def step(
-        self,
-        messages: Sequence[MessageLike],
-        *,
-        config: Optional[RunnableConfig] = None,
-    ) -> List[MessageLike]:
-        """Implement a single step of the agent."""
-
     def run(
         self,
         messages: Sequence[MessageLike],
@@ -115,10 +107,4 @@ class Agent(abc.ABC):
         max_iterations: int = 100,
     ) -> Iterator[MessageLike]:
         """Run the agent."""
-        all_messages = list(messages)
-        for _ in range(max_iterations):
-            new_messages = self.step(all_messages, config=config)
-            if not new_messages:
-                break
-            yield from new_messages
-            all_messages.extend(new_messages)
+        raise NotImplementedError()

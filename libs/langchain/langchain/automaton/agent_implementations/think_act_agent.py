@@ -211,8 +211,8 @@ class ThinkActAgent(Agent):
         self,
         messages: Sequence[MessageLike],
         *,
+        config: Optional[dict] = None,
         max_iterations: int = 100,
-        config,
     ) -> Iterator[MessageLike]:
         """Run the agent."""
         all_messages = list(messages)

@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import List, Sequence, Union
+from typing import List, Sequence, Union, Optional
 
-from langchain.automaton.chat_agent import ChatAgent
+from langchain.automaton.agent import SequentialAgent
+from langchain.automaton.agent import WorkingMemoryProcessor
+from langchain.automaton.prompt_generator import AdapterBasedGenerator
+from langchain.automaton.runnables import create_llm_program
 from langchain.automaton.tool_utils import generate_tool_info
 from langchain.automaton.typedefs import (
     AgentFinish,
@@ -73,34 +76,30 @@ def _decode(text: Union[BaseMessage, str]) -> MessageLike:
         return AgentFinish(result=text)
 
 
-def generate_prompt(current_messages: Sequence[MessageLike]) -> List[BaseMessage]:
-    """Generate a prompt from a log of message like objects."""
-    messages = []
-    for message in current_messages:
-        if isinstance(message, BaseMessage):
-            messages.append(message)
-        elif isinstance(message, FunctionCallResponse):
-            messages.append(
-                HumanMessage(
-                    content=f"Observation: {message.result}",
-                )
-            )
-        else:
-            pass
-    return messages
-
-
 # PUBLIC API
 
 
 def create_xml_agent(
     llm: BaseLanguageModel,
     tools: Sequence[BaseTool],
-) -> ChatAgent:
+    memory_processor: Optional[WorkingMemoryProcessor] = None,
+) -> SequentialAgent:
     """XML based chat agent."""
-    return ChatAgent(
-        llm=llm,
+    prompt_generator = AdapterBasedGenerator(
+        msg_adapters={
+            FunctionCallResponse: lambda msg: HumanMessage(
+                content=f"Observation: {msg.result}"
+            ),
+        }
+    )
+
+    llm_program = create_llm_program(
+        llm,
+        prompt_generator=prompt_generator,
         tools=tools,
-        prompt_generator=generate_prompt,
         parser=_decode,
+    )
+    return SequentialAgent(
+        llm_program,
+        memory_processor=memory_processor,
     )

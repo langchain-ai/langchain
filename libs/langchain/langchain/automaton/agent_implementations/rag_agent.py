@@ -2,17 +2,15 @@
 from __future__ import annotations
 
 from typing import (
-    Callable,
     Iterator,
     Optional,
     Sequence,
     TypeVar,
-    Union,
     List,
 )
 
 from langchain.automaton.processors import WorkingMemoryManager
-from langchain.automaton.runnables import create_llm_program, create_retriever
+from langchain.automaton.runnables import create_retriever
 from langchain.automaton.typedefs import (
     Agent,
     AgentFinish,
@@ -20,19 +18,12 @@ from langchain.automaton.typedefs import (
     RetrievalRequest,
     RetrievalResponse,
 )
-from langchain.schema import PromptValue, BaseRetriever
-from langchain.schema.language_model import (
-    BaseLanguageModel,
-    LanguageModelInput,
-    LanguageModelOutput,
-)
+from langchain.schema import BaseRetriever
 from langchain.schema.messages import BaseMessage, HumanMessage, AIMessage
-from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.runnable import (
     Runnable,
     RunnableConfig,
 )
-from langchain.tools import BaseTool
 
 T = TypeVar("T")
 
@@ -73,35 +64,12 @@ class RagAgent(Agent):
 
     def __init__(
         self,
-        llm: BaseLanguageModel[LanguageModelInput, LanguageModelOutput],
-        prompt_generator: Union[
-            Callable[
-                [Sequence[MessageLike]], Union[str, PromptValue, List[BaseMessage]]
-            ],
-            Runnable,
-        ],
-        *,
-        tools: Optional[Sequence[BaseTool]] = None,
-        stop: Optional[Sequence[str]] = None,
-        parser: Union[
-            Runnable[Union[BaseMessage, str], MessageLike],
-            Callable[[Union[BaseMessage, str]], MessageLike],
-            BaseOutputParser,
-            None,
-        ] = None,
+        llm_program: Runnable[Sequence[MessageLike], List[MessageLike]],
         retriever: Optional[BaseRetriever] = None,
         memory_manager: WorkingMemoryManager = None,
     ) -> None:
         """Initialize the chat agent."""
-        invoke_tools = bool(tools)
-        self.llm_program = create_llm_program(
-            llm,
-            prompt_generator=prompt_generator,
-            tools=tools,
-            parser=parser,
-            stop=stop,
-            invoke_tools=invoke_tools,
-        )
+        self.llm_program = llm_program
         self.retriever = create_retriever(retriever)
         self.memory_manager = memory_manager
 
