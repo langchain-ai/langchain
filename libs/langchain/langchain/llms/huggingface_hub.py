@@ -49,17 +49,18 @@ class HuggingFaceHub(LLM):
             values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
         )
         try:
-            from huggingface_hub.inference_api import InferenceApi
+            from huggingface_hub import HfApi, InferenceClient
 
             repo_id = values["repo_id"]
-            client = InferenceApi(
-                repo_id=repo_id,
-                token=huggingfacehub_api_token,
-                task=values.get("task"),
+            client = InferenceClient(model=repo_id, token=huggingfacehub_api_token)
+            model_info = HfApi(token=huggingfacehub_api_token).model_info(
+                repo_id=repo_id
             )
-            if client.task not in VALID_TASKS:
+            if not values["task"]:
+                values["task"] = model_info.pipeline_tag
+            if values["task"] not in VALID_TASKS:
                 raise ValueError(
-                    f"Got invalid task {client.task}, "
+                    f"Got invalid task {values.get('task')}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
             values["client"] = client
@@ -107,15 +108,17 @@ class HuggingFaceHub(LLM):
         """
         _model_kwargs = self.model_kwargs or {}
         params = {**_model_kwargs, **kwargs}
-        response = self.client(inputs=prompt, params=params)
+        response = self.client.post(
+            json={"inputs": prompt, "params": params}, task=self.task
+        ).json()
         if "error" in response:
             raise ValueError(f"Error raised by inference API: {response['error']}")
-        if self.client.task == "text-generation":
+        if self.task == "text-generation":
             # Text generation return includes the starter text.
             text = response[0]["generated_text"][len(prompt) :]
-        elif self.client.task == "text2text-generation":
+        elif self.task == "text2text-generation":
             text = response[0]["generated_text"]
-        elif self.client.task == "summarization":
+        elif self.task == "summarization":
             text = response[0]["summary_text"]
         else:
             raise ValueError(
