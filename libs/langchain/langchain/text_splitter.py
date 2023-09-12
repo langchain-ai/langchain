@@ -46,9 +46,8 @@ from typing import (
     cast,
 )
 
-from pydantic.main import BaseModel
-
 from langchain.docstore.document import Document
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema import BaseDocumentTransformer
 
 logger = logging.getLogger(__name__)
@@ -60,10 +59,10 @@ class SplittedText(BaseModel):
     text: str
     is_separator: bool = False
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.text)
 
-    def __add__(self, other):
+    def __add__(self, other: SplittedText) -> SplittedText:
         return SplittedText(text=self.text + other.text)
 
 
@@ -164,8 +163,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         return self.create_documents(texts, metadatas=metadatas)
 
     def _join_splits(self, splits: List[SplittedText]) -> str:
-        splits = [split.text for split in splits]
-        text = "".join(splits)
+        splits_str = [split.text for split in splits]
+        text = "".join(splits_str)
         if self._strip_whitespace:
             text = text.strip()
         return text
@@ -200,7 +199,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         current_doc_length = len(splits[0])
         next_split_length = 0
 
-        def append_doc():
+        def append_doc() -> None:
             nonlocal left_split_idx, right_split_idx, current_doc_length
 
             if left_split_idx > right_split_idx:
@@ -215,7 +214,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
             if current_doc_length > self._chunk_size:
                 logger.warning(
-                    f"Created a chunk of size {current_doc_length}, which is longer than the specified {self._chunk_size}"
+                    f"Created a chunk of size {current_doc_length}, which is longer "
+                    f"than the specified {self._chunk_size}"
                 )
 
             # create a new chunk
@@ -235,7 +235,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             if current_doc_length + next_split_length > self._chunk_size:
                 append_doc()
 
-                # reduce doc length to self._chunk_overlap by removing splits from the left
+                # reduce doc length to self._chunk_overlap by removing splits from the
+                # left
                 while (
                     right_split_idx >= left_split_idx
                     and current_doc_length > self._chunk_overlap
@@ -1086,12 +1087,12 @@ class TokenCharacterTextSplitter(TextSplitter, ABC):
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
-        splits = self._text_split(text)
+        splits_str = self._text_split(text)
         splits = [
             SplittedText(text=self._separator, is_separator=True)
             if i % 2 != 0
-            else SplittedText(text=splits[i // 2], is_separator=False)
-            for i in range(len(splits) * 2 - 1)
+            else SplittedText(text=splits_str[i // 2], is_separator=False)
+            for i in range(len(splits_str) * 2 - 1)
         ]
         return self._merge_splits(splits)
 

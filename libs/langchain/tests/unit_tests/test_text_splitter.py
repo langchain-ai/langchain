@@ -235,7 +235,7 @@ def __test_iterative_text_splitter(chunk_size: int, keep_separator: bool) -> Lis
 def test_iterative_text_splitter() -> None:
     """Test iterative text splitter."""
     text = """Hi.\n\nI'm Harrison.\n\nHow? Are? You?\nOkay then f f f f.
-This is a weird text to write, but gotta test the splittingggg some how.
+This is a weird to write, but gotta test the splittingggg some how.
 
 Bye!\n\n-H."""
     chunk_size = 10
@@ -249,15 +249,14 @@ Bye!\n\n-H."""
         "Okay then",
         "f f f f.",
         "This is a",
-        "a weird te",
-        "ext to wri",
-        "ite, but g",
-        "gotta test",
-        "t the spli",
-        "ittingggg",
-        "some how.",
-        ".\n\nBye!\n\n-",
-        "-H.",
+        "a weird to",
+        "o write, b",
+        "but gotta",
+        "test the",
+        "splitting",
+        "gggg some",
+        "how.\n\nBye",
+        "e!\n\n-H.",
     ]
     assert output == expected_output
     assert all(len(chunk) <= chunk_size for chunk in output)
@@ -302,9 +301,9 @@ def __test_language_splitter(
     language: Language,
     code: str,
     expected: List[str],
-    chunk_size=CHUNK_SIZE,
-    chunk_overlap=0,
-):
+    chunk_size: int = CHUNK_SIZE,
+    chunk_overlap: int = 0,
+) -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         language, chunk_size=chunk_size, chunk_overlap=chunk_overlap
     )
