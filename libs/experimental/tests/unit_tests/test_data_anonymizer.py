@@ -40,6 +40,22 @@ def test_anonymize_multiple() -> None:
 
 
 @pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
+def test_check_instances() -> None:
+    """Test anonymizing multiple items in a sentence"""
+    from langchain_experimental.data_anonymizer import PresidioAnonymizer
+
+    text = (
+        "This is John Smith. John Smith works in a bakery." "John Smith is a good guy"
+    )
+    anonymizer = PresidioAnonymizer(["PERSON"], faker_seed=42)
+    anonymized_text = anonymizer.anonymize(text)
+    assert anonymized_text.count("Noah Rhodes") == 3
+
+    anonymized_text = anonymizer.anonymize(text)
+    assert anonymized_text.count("Noah Rhodes") == 0
+
+
+@pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
 def test_anonymize_with_custom_operator() -> None:
     """Test anonymize a name with a custom operator"""
     from presidio_anonymizer.entities import OperatorConfig
