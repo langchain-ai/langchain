@@ -447,7 +447,9 @@ class Milvus(VectorStore):
             for d in metadatas:
                 for key, value in d.items():
                     if key in self.fields:
-                        insert_dict.setdefault(key, []).append(value)
+                        val = insert_dict.setdefault(key, [])
+                        if isinstance(val, list):
+                            val.append(value)
 
         # Total insert count
         vectors: list = insert_dict[self._vector_field]
