@@ -1,9 +1,9 @@
 """Generic utility functions."""
 import contextlib
 import datetime
+import functools
 import importlib
 import warnings
-import functools
 from importlib.metadata import version
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
