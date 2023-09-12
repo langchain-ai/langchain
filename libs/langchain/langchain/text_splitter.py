@@ -99,13 +99,6 @@ def _split_text_with_regex(text: str, separator: str) -> List[SplittedText]:
     ]
 
 
-def _join_splits(splits: List[SplittedText]) -> str:
-    splits = [split.text for split in splits]
-    text = "".join(splits)
-    text = text.strip()
-    return text
-
-
 class TextSplitter(BaseDocumentTransformer, ABC):
     """Interface for splitting text into chunks."""
 
@@ -116,6 +109,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         length_function: Callable[[str], int] = len,
         keep_separator: bool = False,
         add_start_index: bool = False,
+        strip_whitespace: bool = True,
     ) -> None:
         """Create a new TextSplitter.
 
@@ -125,6 +119,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             length_function: Function that measures the length of given chunks
             keep_separator: Whether to keep the separator in the chunks
             add_start_index: If `True`, includes chunk's start index in metadata
+            strip_whitespace: If `True`, strips whitespace from the start and end of
+                              every document
         """
         if chunk_overlap > chunk_size:
             raise ValueError(
@@ -136,6 +132,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._length_function = length_function
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
+        self._strip_whitespace = strip_whitespace
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
@@ -165,6 +162,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             texts.append(doc.page_content)
             metadatas.append(doc.metadata)
         return self.create_documents(texts, metadatas=metadatas)
+
+    def _join_splits(self, splits: List[SplittedText]) -> str:
+        splits = [split.text for split in splits]
+        text = "".join(splits)
+        if self._strip_whitespace:
+            text = text.strip()
+        return text
 
     def _merge_splits(self, splits: List[SplittedText]) -> List[str]:
         """Merge splits into chunks.
@@ -215,7 +219,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 )
 
             # create a new chunk
-            doc = _join_splits(splits[left_split_idx : right_split_idx + 1])
+            doc = self._join_splits(splits[left_split_idx : right_split_idx + 1])
             if doc:
                 docs.append(doc)
 
@@ -675,6 +679,7 @@ class Language(str, Enum):
     LATEX = "latex"
     HTML = "html"
     SOL = "sol"
+    CSHARP = "csharp"
 
 
 class RecursiveCharacterTextSplitter(CharacterTextSplitter):
@@ -1024,6 +1029,41 @@ class RecursiveCharacterTextSplitter(CharacterTextSplitter):
                 # "\nwhile ",
                 # "\ndo while ",
                 # "\nassembly ",
+                # Split by the normal type of lines
+                "\n+",
+                " +",
+            ]
+        elif language == Language.CSHARP:
+            return [
+                # "\ninterface ",
+                # "\nenum ",
+                # "\nimplements ",
+                # "\ndelegate ",
+                # "\nevent ",
+                # Split along class definitions
+                # "\nclass ",
+                # "\nabstract ",
+                # Split along method definitions
+                # "\npublic ",
+                # "\nprotected ",
+                # "\nprivate ",
+                # "\nstatic ",
+                # "\nreturn ",
+                # Split along control flow statements
+                # "\nif ",
+                # "\ncontinue ",
+                # "\nfor ",
+                # "\nforeach ",
+                # "\nwhile ",
+                # "\nswitch ",
+                # "\nbreak ",
+                # "\ncase ",
+                # "\nelse ",
+                # Split by exceptions
+                # "\ntry ",
+                # "\nthrow ",
+                # "\nfinally ",
+                # "\ncatch ",
                 # Split by the normal type of lines
                 "\n+",
                 " +",

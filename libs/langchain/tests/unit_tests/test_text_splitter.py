@@ -477,9 +477,6 @@ public class HelloWorld {
 
 
 def test_csharp_code_splitter() -> None:
-    splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.CSHARP, chunk_size=CHUNK_SIZE, chunk_overlap=0
-    )
     code = """
 using System;
 class Program
@@ -504,25 +501,21 @@ class Program
     }
 }
     """
-
-    chunks = splitter.split_text(code)
-    assert chunks == [
+    expected = [
         "using System;",
         "class Program\n{",
         "static void",
-        "Main()",
-        "{",
+        "Main()\n    {",
         "int age",
         "= 30; // Change",
-        "the age value",
-        "as needed",
+        "the age value as",
+        "needed",
         "//",
         "Categorize the",
         "age without any",
         "console output",
         "if (age",
-        "< 18)",
-        "{",
+        "< 18)\n        {",
         "//",
         "Age is under 18",
         "}",
@@ -538,9 +531,9 @@ class Program
         "//",
         "Age is a senior",
         "citizen",
-        "}\n    }",
-        "}",
+        "}\n    }\n}",
     ]
+    __test_language_splitter(Language.CSHARP, code, expected)
 
 
 def test_cpp_code_splitter() -> None:
