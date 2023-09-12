@@ -23,10 +23,21 @@ from langchain.schema.messages import (
 )
 from langchain.schema.output import ChatGenerationChunk
 
-LATEST_MODEL = "latest"
+LATEST_MODEL = "GigaChat:latest"
 
 
 class GigaChat(SimpleChatModel):
+    """`GigaChat` large language models API.
+
+    To use, you should pass login and password to access GigaChat API or use token.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.chat_models import GigaChat
+            giga = GigaChat(user="username", password="password")
+    """
+
     api_url: str = "https://beta.saluteai.sberdevices.ru"
     model: str = LATEST_MODEL
     profanity: bool = True
@@ -41,6 +52,8 @@ class GigaChat(SimpleChatModel):
     stop_on_censor: bool = True
     """ Stop generation and throw exception if censor is detected """
     censor_finish_reason: List[str] = ["request_censor", "request_blacklist"]
+    """ Check certificates for all rrequests """
+    verify_tsl: bool = True
 
     logger = logging.getLogger(__name__)
 
@@ -96,6 +109,7 @@ class GigaChat(SimpleChatModel):
             auth=(self.user, self.password),
             data=[],
             timeout=self.timeout,
+            verify=self.verify_tsl,
         )
         if not response.ok:
             raise ValueError(
@@ -121,6 +135,7 @@ class GigaChat(SimpleChatModel):
             f"{self.api_url}/v1/models",
             headers=headers,
             timeout=600,
+            verify=self.verify_tsl,
         )
         if not response.ok:
             if self.verbose:
@@ -151,7 +166,7 @@ class GigaChat(SimpleChatModel):
         if not self.token:
             self._authorize()
 
-        if self.model == LATEST_MODEL:
+        if self.model is None:
             self.model = self.get_models()[0]
 
         headers = {
@@ -178,6 +193,7 @@ class GigaChat(SimpleChatModel):
             headers=headers,
             json=payload,
             timeout=600,
+            verify=self.verify_tsl,
         )
         if not response.ok:
             if self.verbose:

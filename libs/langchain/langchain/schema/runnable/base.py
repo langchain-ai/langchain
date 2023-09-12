@@ -39,6 +39,8 @@ from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
 from langchain.schema.runnable.config import (
     RunnableConfig,
+    acall_func_with_variable_args,
+    call_func_with_variable_args,
     ensure_config,
     get_async_callback_manager_for_config,
     get_callback_manager_for_config,
@@ -47,16 +49,15 @@ from langchain.schema.runnable.config import (
     patch_config,
 )
 from langchain.schema.runnable.utils import (
+    Input,
+    Output,
+    accepts_config,
     accepts_run_manager,
-    accepts_run_manager_and_config,
     gather_with_concurrency,
 )
 from langchain.utils.aiter import atee, py_anext
 from langchain.utils.iter import safetee
 
-Input = TypeVar("Input")
-# Output type should implement __concat__, as eg str, list, dict do
-Output = TypeVar("Output")
 Other = TypeVar("Other")
 
 
@@ -253,7 +254,7 @@ class Runnable(Generic[Input, Output], ABC):
     def with_retry(
         self,
         *,
-        retry_if_exception_type: Tuple[Type[BaseException]] = (Exception,),
+        retry_if_exception_type: Tuple[Type[BaseException], ...] = (Exception,),
         wait_exponential_jitter: bool = True,
         stop_after_attempt: int = 3,
     ) -> Runnable[Input, Output]:
@@ -279,7 +280,7 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         fallbacks: Sequence[Runnable[Input, Output]],
         *,
-        exceptions_to_handle: Tuple[Type[BaseException]] = (Exception,),
+        exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,),
     ) -> RunnableWithFallbacks[Input, Output]:
         return RunnableWithFallbacks(
             runnable=self,
@@ -311,16 +312,7 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name"),
         )
         try:
-            if accepts_run_manager_and_config(func):
-                output = func(
-                    input,
-                    run_manager=run_manager,
-                    config=config,
-                )  # type: ignore[call-arg]
-            elif accepts_run_manager(func):
-                output = func(input, run_manager=run_manager)  # type: ignore[call-arg]
-            else:
-                output = func(input)  # type: ignore[call-arg]
+            output = call_func_with_variable_args(func, input, run_manager, config)
         except Exception as e:
             run_manager.on_chain_error(e)
             raise
@@ -353,19 +345,9 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name"),
         )
         try:
-            if accepts_run_manager_and_config(func):
-                output = await func(
-                    input,
-                    run_manager=run_manager,
-                    config=config,
-                )  # type: ignore[call-arg]
-            elif accepts_run_manager(func):
-                output = await func(
-                    input,
-                    run_manager=run_manager,
-                )  # type: ignore[call-arg]
-            else:
-                output = await func(input)  # type: ignore[call-arg]
+            output = await acall_func_with_variable_args(
+                func, input, run_manager, config
+            )
         except Exception as e:
             await run_manager.on_chain_error(e)
             raise
@@ -408,16 +390,15 @@ class Runnable(Generic[Input, Output], ABC):
             )
         ]
         try:
-            if accepts_run_manager_and_config(func):
-                output = func(
-                    input,
-                    run_manager=run_managers,
-                    config=configs,
-                )  # type: ignore[call-arg]
-            elif accepts_run_manager(func):
-                output = func(input, run_manager=run_managers)  # type: ignore[call-arg]
-            else:
-                output = func(input)  # type: ignore[call-arg]
+            kwargs: Dict[str, Any] = {}
+            if accepts_config(func):
+                kwargs["config"] = [
+                    patch_config(c, callbacks=rm.get_child())
+                    for c, rm in zip(configs, run_managers)
+                ]
+            if accepts_run_manager(func):
+                kwargs["run_manager"] = run_managers
+            output = func(input, **kwargs)  # type: ignore[call-arg]
         except Exception as e:
             for run_manager in run_managers:
                 run_manager.on_chain_error(e)
@@ -479,16 +460,15 @@ class Runnable(Generic[Input, Output], ABC):
             )
         )
         try:
-            if accepts_run_manager_and_config(func):
-                output = await func(
-                    input,
-                    run_manager=run_managers,
-                    config=configs,
-                )  # type: ignore[call-arg]
-            elif accepts_run_manager(func):
-                output = await func(input, run_manager=run_managers)  # type: ignore
-            else:
-                output = await func(input)  # type: ignore[call-arg]
+            kwargs: Dict[str, Any] = {}
+            if accepts_config(func):
+                kwargs["config"] = [
+                    patch_config(c, callbacks=rm.get_child())
+                    for c, rm in zip(configs, run_managers)
+                ]
+            if accepts_run_manager(func):
+                kwargs["run_manager"] = run_managers
+            output = await func(input, **kwargs)  # type: ignore[call-arg]
         except Exception as e:
             await asyncio.gather(
                 *(run_manager.on_chain_error(e) for run_manager in run_managers)
@@ -550,19 +530,16 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name"),
         )
         try:
-            if accepts_run_manager_and_config(transformer):
-                iterator = transformer(
-                    input_for_transform,
-                    run_manager=run_manager,
-                    config=config,
-                )  # type: ignore[call-arg]
-            elif accepts_run_manager(transformer):
-                iterator = transformer(
-                    input_for_transform,
-                    run_manager=run_manager,
-                )  # type: ignore[call-arg]
-            else:
-                iterator = transformer(input_for_transform)  # type: ignore[call-arg]
+            kwargs: Dict[str, Any] = {}
+            if accepts_config(transformer):
+                kwargs["config"] = patch_config(
+                    config, callbacks=run_manager.get_child()
+                )
+            if accepts_run_manager(transformer):
+                kwargs["run_manager"] = run_manager
+            iterator = transformer(
+                input_for_transform, **kwargs
+            )  # type: ignore[call-arg]
             for chunk in iterator:
                 yield chunk
                 if final_output_supported:
@@ -631,21 +608,16 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name"),
         )
         try:
-            # mypy can't quite work out thew type guard here, but this is safe,
-            # check implementations of the accepts_* functions
-            if accepts_run_manager_and_config(transformer):
-                iterator = transformer(
-                    input_for_transform,
-                    run_manager=run_manager,
-                    config=config,
-                )  # type: ignore[call-arg]
-            elif accepts_run_manager(transformer):
-                iterator = transformer(
-                    input_for_transform,
-                    run_manager=run_manager,
-                )  # type: ignore[call-arg]
-            else:
-                iterator = transformer(input_for_transform)  # type: ignore[call-arg]
+            kwargs: Dict[str, Any] = {}
+            if accepts_config(transformer):
+                kwargs["config"] = patch_config(
+                    config, callbacks=run_manager.get_child()
+                )
+            if accepts_run_manager(transformer):
+                kwargs["run_manager"] = run_manager
+            iterator = transformer(
+                input_for_transform, **kwargs
+            )  # type: ignore[call-arg]
             async for chunk in iterator:
                 yield chunk
                 if final_output_supported:
@@ -681,7 +653,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
 
     runnable: Runnable[Input, Output]
     fallbacks: Sequence[Runnable[Input, Output]]
-    exceptions_to_handle: Tuple[Type[BaseException]] = (Exception,)
+    exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,)
 
     class Config:
         arbitrary_types_allowed = True
@@ -974,11 +946,13 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
 
         # invoke all steps in sequence
         try:
-            for step in self.steps:
+            for i, step in enumerate(self.steps):
                 input = step.invoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
+                    ),
                 )
         # finish the root run
         except (KeyboardInterrupt, Exception) as e:
@@ -1004,11 +978,13 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
 
         # invoke all steps in sequence
         try:
-            for step in self.steps:
+            for i, step in enumerate(self.steps):
                 input = await step.ainvoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
+                    ),
                 )
         # finish the root run
         except (KeyboardInterrupt, Exception) as e:
@@ -1059,7 +1035,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 # If an input has failed it will be present in this map,
                 # and the value will be the exception that was raised.
                 failed_inputs_map: Dict[int, Exception] = {}
-                for step in self.steps:
+                for stepidx, step in enumerate(self.steps):
                     # Assemble the original indexes of the remaining inputs
                     # (i.e. the ones that haven't failed yet)
                     remaining_idxs = [
@@ -1074,7 +1050,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                         ],
                         [
                             # each step a child run of the corresponding root run
-                            patch_config(config, callbacks=rm.get_child())
+                            patch_config(
+                                config, callbacks=rm.get_child(f"seq:step:{stepidx+1}")
+                            )
                             for i, (rm, config) in enumerate(zip(run_managers, configs))
                             if i not in failed_inputs_map
                         ],
@@ -1099,12 +1077,14 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     else:
                         inputs.append(inputs_copy.pop(0))
             else:
-                for step in self.steps:
+                for i, step in enumerate(self.steps):
                     inputs = step.batch(
                         inputs,
                         [
                             # each step a child run of the corresponding root run
-                            patch_config(config, callbacks=rm.get_child())
+                            patch_config(
+                                config, callbacks=rm.get_child(f"seq:step:{i+1}")
+                            )
                             for rm, config in zip(run_managers, configs)
                         ],
                     )
@@ -1176,7 +1156,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 # If an input has failed it will be present in this map,
                 # and the value will be the exception that was raised.
                 failed_inputs_map: Dict[int, Exception] = {}
-                for step in self.steps:
+                for stepidx, step in enumerate(self.steps):
                     # Assemble the original indexes of the remaining inputs
                     # (i.e. the ones that haven't failed yet)
                     remaining_idxs = [
@@ -1191,7 +1171,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                         ],
                         [
                             # each step a child run of the corresponding root run
-                            patch_config(config, callbacks=rm.get_child())
+                            patch_config(
+                                config, callbacks=rm.get_child(f"seq:step:{stepidx+1}")
+                            )
                             for i, (rm, config) in enumerate(zip(run_managers, configs))
                             if i not in failed_inputs_map
                         ],
@@ -1216,12 +1198,14 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     else:
                         inputs.append(inputs_copy.pop(0))
             else:
-                for step in self.steps:
+                for i, step in enumerate(self.steps):
                     inputs = await step.abatch(
                         inputs,
                         [
                             # each step a child run of the corresponding root run
-                            patch_config(config, callbacks=rm.get_child())
+                            patch_config(
+                                config, callbacks=rm.get_child(f"seq:step:{i+1}")
+                            )
                             for rm, config in zip(run_managers, configs)
                         ],
                     )
@@ -1276,7 +1260,12 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 input = step.invoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(
+                            f"seq:step:{steps.index(step)+1}"
+                        ),
+                    ),
                 )
         except (KeyboardInterrupt, Exception) as e:
             run_manager.on_chain_error(e)
@@ -1288,13 +1277,24 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         try:
             # stream the first of the last steps with non-streaming input
             final_pipeline = steps[streaming_start_index].stream(
-                input, patch_config(config, callbacks=run_manager.get_child())
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(
+                        f"seq:step:{streaming_start_index+1}"
+                    ),
+                ),
             )
             # stream the rest of the last steps with streaming input
             for step in steps[streaming_start_index + 1 :]:
                 final_pipeline = step.transform(
                     final_pipeline,
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(
+                            f"seq:step:{steps.index(step)+1}"
+                        ),
+                    ),
                 )
             for output in final_pipeline:
                 yield output
@@ -1345,7 +1345,12 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 input = await step.ainvoke(
                     input,
                     # mark each step as a child run
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(
+                            f"seq:step:{steps.index(step)+1}"
+                        ),
+                    ),
                 )
         except (KeyboardInterrupt, Exception) as e:
             await run_manager.on_chain_error(e)
@@ -1357,13 +1362,24 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         try:
             # stream the first of the last steps with non-streaming input
             final_pipeline = steps[streaming_start_index].astream(
-                input, patch_config(config, callbacks=run_manager.get_child())
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(
+                        f"seq:step:{streaming_start_index+1}"
+                    ),
+                ),
             )
             # stream the rest of the last steps with streaming input
             for step in steps[streaming_start_index + 1 :]:
                 final_pipeline = step.atransform(
                     final_pipeline,
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(
+                            f"seq:step:{steps.index(step)+1}"
+                        ),
+                    ),
                 )
             async for output in final_pipeline:
                 yield output
@@ -1476,10 +1492,10 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                         patch_config(
                             config,
                             deep_copy_locals=True,
-                            callbacks=run_manager.get_child(),
+                            callbacks=run_manager.get_child(f"map:key:{key}"),
                         ),
                     )
-                    for step in steps.values()
+                    for key, step in steps.items()
                 ]
                 output = {key: future.result() for key, future in zip(steps, futures)}
         # finish the root run
@@ -1513,9 +1529,11 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                     step.ainvoke(
                         input,
                         # mark each step as a child run
-                        patch_config(config, callbacks=run_manager.get_child()),
+                        patch_config(
+                            config, callbacks=run_manager.get_child(f"map:key:{key}")
+                        ),
                     )
-                    for step in steps.values()
+                    for key, step in steps.items()
                 )
             )
             output = {key: value for key, value in zip(steps, results)}
@@ -1545,7 +1563,9 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                     name,
                     step.transform(
                         input_copies.pop(),
-                        patch_config(config, callbacks=run_manager.get_child()),
+                        patch_config(
+                            config, callbacks=run_manager.get_child(f"map:key:{name}")
+                        ),
                     ),
                 )
                 for name, step in steps.items()
@@ -1607,7 +1627,9 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                 name,
                 step.atransform(
                     input_copies.pop(),
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(
+                        config, callbacks=run_manager.get_child(f"map:key:{name}")
+                    ),
                 ),
             )
             for name, step in steps.items()
@@ -1697,13 +1719,16 @@ class RunnableLambda(Runnable[Input, Output]):
         else:
             return False
 
+    def __repr__(self) -> str:
+        return "RunnableLambda(...)"
+
     def _invoke(
         self,
         input: Input,
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> Output:
-        output = self.func(input)
+        output = call_func_with_variable_args(self.func, input, run_manager, config)
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
@@ -1727,7 +1752,9 @@ class RunnableLambda(Runnable[Input, Output]):
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> Output:
-        output = await self.afunc(input)
+        output = await acall_func_with_variable_args(
+            self.afunc, input, run_manager, config
+        )
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
@@ -1745,6 +1772,21 @@ class RunnableLambda(Runnable[Input, Output]):
             )
         return output
 
+    def _config(
+        self, config: Optional[RunnableConfig], callable: Callable[..., Any]
+    ) -> RunnableConfig:
+        config = config or {}
+
+        if config.get("run_name") is None:
+            try:
+                run_name = callable.__name__
+            except AttributeError:
+                run_name = None
+            if run_name is not None:
+                return patch_config(config, run_name=run_name)
+
+        return config
+
     def invoke(
         self,
         input: Input,
@@ -1752,7 +1794,11 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         if hasattr(self, "func"):
-            return self._call_with_config(self._invoke, input, config)
+            return self._call_with_config(
+                self._invoke,
+                input,
+                self._config(config, self.func),
+            )
         else:
             raise TypeError(
                 "Cannot invoke a coroutine function synchronously."
@@ -1766,7 +1812,11 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         if hasattr(self, "afunc"):
-            return await self._acall_with_config(self._ainvoke, input, config)
+            return await self._acall_with_config(
+                self._ainvoke,
+                input,
+                self._config(config, self.afunc),
+            )
         else:
             # Delegating to super implementation of ainvoke.
             # Uses asyncio executor to run the sync version (invoke)
