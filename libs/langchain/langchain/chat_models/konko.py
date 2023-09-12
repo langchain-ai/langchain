@@ -222,7 +222,8 @@ class ChatKonko(ChatOpenAI):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if stream if stream is not None else self.streaming:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
             generation: Optional[ChatGenerationChunk] = None
             for chunk in self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
