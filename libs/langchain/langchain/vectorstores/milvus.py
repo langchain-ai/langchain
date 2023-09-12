@@ -446,7 +446,7 @@ class Milvus(VectorStore):
         if metadatas is not None:
             for d in metadatas:
                 for key, value in d.items():
-                    if key in self.fields:
+                    if key in self.fields and key not in [self._text_field, self._vector_field]:
                         val = insert_dict.setdefault(key, [])
                         if isinstance(val, list):
                             val.append(value)
