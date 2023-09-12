@@ -117,6 +117,6 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             ) from e
 
         try:
-            self.table.delete_item(Key={"SessionId": self.session_id})
+            self.table.delete_item(Key=self.key)
         except ClientError as err:
             logger.error(err)
