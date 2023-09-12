@@ -139,6 +139,14 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
         Each PII entity is replaced with a fake value.
         Each time fake values will be different, as they are generated randomly.
 
+        PresidioAnonymizer has no built-in memory -
+        so it will not remember the effects of anonymizing previous texts.
+        >>> anonymizer = PresidioAnonymizer()
+        >>> anonymizer.anonymize("John Doe")
+        'Noah Rhodes'
+        >>> anonymizer.anonymize("John Doe")
+        'Brett Russell'
+
         Args:
             text: text to anonymize
             language: language to use for analysis of PII
@@ -212,6 +220,14 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         Each time fake values will be different, as they are generated randomly.
         At the same time, we will create a mapping from each anonymized entity
         back to its original text value.
+
+        Thanks to the built-in memory, all previously anonymised entities
+        will be remembered and replaced by the same fake values:
+        >>> anonymizer = PresidioReversibleAnonymizer()
+        >>> anonymizer.anonymize("John Doe")
+        'Noah Rhodes'
+        >>> anonymizer.anonymize("John Doe")
+        'Noah Rhodes'
 
         Args:
             text: text to anonymize
