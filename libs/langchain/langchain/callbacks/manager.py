@@ -336,7 +336,9 @@ async def atrace_as_chain_group(
     )
     cm = AsyncCallbackManager.configure(inheritable_callbacks=cb, inheritable_tags=tags)
 
-    run_manager = await cm.on_chain_start({"name": group_name}, {}, run_id=run_id)
+    run_manager = await cm.on_chain_start(
+        {"name": group_name}, inputs or {}, run_id=run_id
+    )
     try:
         child_cm = run_manager.get_child()
         group_cm = AsyncChainGroupCallbackManager(
