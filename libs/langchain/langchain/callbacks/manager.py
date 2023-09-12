@@ -218,7 +218,7 @@ def trace_as_chain_group(
     example_id: Optional[Union[str, UUID]] = None,
     run_id: Optional[UUID] = None,
     tags: Optional[List[str]] = None,
-) -> Generator[ChainGroupCallbackManager, None, None]:
+) -> Generator[CallbackManagerForChainGroup, None, None]:
     """Get a callback manager for a chain group in a context manager.
     Useful for grouping different calls together as a single run even if
     they aren't composed in a single chain.
@@ -236,7 +236,7 @@ def trace_as_chain_group(
             Defaults to None.
 
     Returns:
-        CallbackManager: The callback manager for the chain group.
+        CallbackManagerForChainGroup: The callback manager for the chain group.
 
     Example:
         .. code-block:: python
@@ -265,7 +265,7 @@ def trace_as_chain_group(
 
     run_manager = cm.on_chain_start({"name": group_name}, inputs or {}, run_id=run_id)
     child_cm = run_manager.get_child()
-    group_cm = ChainGroupCallbackManager(
+    group_cm = CallbackManagerForChainGroup(
         child_cm.handlers,
         child_cm.inheritable_handlers,
         child_cm.parent_run_id,
@@ -295,7 +295,7 @@ async def atrace_as_chain_group(
     example_id: Optional[Union[str, UUID]] = None,
     run_id: Optional[UUID] = None,
     tags: Optional[List[str]] = None,
-) -> AsyncGenerator[AsyncCallbackManager, None]:
+) -> AsyncGenerator[AsyncCallbackManagerForChainGroup, None]:
     """Get an async callback manager for a chain group in a context manager.
     Useful for grouping different async calls together as a single run even if
     they aren't composed in a single chain.
@@ -341,7 +341,7 @@ async def atrace_as_chain_group(
     )
     try:
         child_cm = run_manager.get_child()
-        group_cm = AsyncChainGroupCallbackManager(
+        group_cm = AsyncCallbackManagerForChainGroup(
             child_cm.handlers,
             child_cm.inheritable_handlers,
             child_cm.parent_run_id,
@@ -351,9 +351,9 @@ async def atrace_as_chain_group(
             metadata=child_cm.metadata,
             inheritable_metadata=child_cm.inheritable_metadata,
         )
-        yield child_cm
+        yield group_cm
     except Exception as e:
-        run_manager.on_chain_error(e)
+        await run_manager.on_chain_error(e)
         raise e
     else:
         if not group_cm.ended:
@@ -1390,7 +1390,7 @@ class CallbackManager(BaseCallbackManager):
         )
 
 
-class ChainGroupCallbackManager(CallbackManager):
+class CallbackManagerForChainGroup(CallbackManager):
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
@@ -1711,7 +1711,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         )
 
 
-class AsyncChainGroupCallbackManager(AsyncCallbackManager):
+class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
@@ -1739,7 +1739,7 @@ class AsyncChainGroupCallbackManager(AsyncCallbackManager):
             outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
         """
         self.ended = True
-        return self.parent_run_manager.on_chain_end(outputs, **kwargs)
+        await self.parent_run_manager.on_chain_end(outputs, **kwargs)
 
 
 T = TypeVar("T", CallbackManager, AsyncCallbackManager)
