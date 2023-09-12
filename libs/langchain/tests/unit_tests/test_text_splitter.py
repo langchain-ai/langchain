@@ -200,7 +200,7 @@ def test_iterative_text_splitter_keep_separator() -> None:
     chunk_size = 5
     output = __test_iterative_text_splitter(chunk_size=chunk_size, keep_separator=True)
 
-    assert output == ["....5X", "X..3Y", "Y...4X", "X....5", "....5Y", "Y..."]
+    assert output == ["....5X", "..3Y", "...4X", "....5Y", "..."]
 
 
 def test_iterative_text_splitter_discard_separator() -> None:
@@ -288,12 +288,11 @@ def test_split_documents() -> None:
 def test_python_text_splitter() -> None:
     splitter = PythonCodeTextSplitter(chunk_size=30, chunk_overlap=0)
     splits = splitter.split_text(FAKE_PYTHON_TEXT)
-    split_0 = """class Foo:\n\n    def bar():"""
-    split_1 = """def foo():"""
-    split_2 = """def testing_func():"""
-    split_3 = """def bar():"""
-    expected_splits = [split_0, split_1, split_2, split_3]
-    assert splits == expected_splits
+    assert splits == [
+        "class Foo:\n\n    def bar():",
+        "def foo():\n\ndef",
+        "testing_func():\n\ndef bar():",
+    ]
 
 
 CHUNK_SIZE = 16
@@ -312,9 +311,11 @@ hello_world()
     """
     chunks = splitter.split_text(code)
     assert chunks == [
-        "def hello_world():",
-        'print("Hello, World!")',
-        "# Call the function",
+        "def",
+        "hello_world():",
+        'print("Hello,',
+        'World!")\n\n# Call',
+        "the function",
         "hello_world()",
     ]
 
@@ -342,10 +343,8 @@ func main() {
         'import "fmt"',
         "func",
         "helloWorld() {",
-        'fmt.Println("He',
-        "llo,",
-        'World!")',
-        "}",
+        'fmt.Println("Hello,',
+        'World!")\n}',
         "func main() {",
         "helloWorld()",
         "}",
@@ -383,17 +382,13 @@ Not a comment
         "Sample Document",
         "===============",
         "Section",
-        "-------",
-        "This is the",
-        "content of the",
-        "section.",
-        "Lists",
-        "-----",
-        "- Item 1",
-        "- Item 2",
+        "-------\n\nThis",
+        "is the content",
+        "of the section.",
+        "Lists\n-----\n\n-",
+        "Item 1\n- Item 2",
         "- Item 3",
-        "Comment",
-        "*******",
+        "Comment\n*******",
         "Not a comment",
         ".. This is a",
         "comment",
@@ -401,7 +396,7 @@ Not a comment
     # Special test for special characters
     code = "harry\n***\nbabylon is"
     chunks = splitter.split_text(code)
-    assert chunks == ["harry", "***\nbabylon is"]
+    assert chunks == ["harry\n***", "babylon is"]
 
 
 def test_proto_file_splitter() -> None:
@@ -423,18 +418,14 @@ message Person {
     assert chunks == [
         "syntax =",
         '"proto3";',
-        "package",
-        "example;",
+        "package example;",
         "message Person",
-        "{",
-        "string name",
-        "= 1;",
-        "int32 age =",
-        "2;",
+        "{\n    string",
+        "name = 1;",
+        "int32 age = 2;",
         "repeated",
-        "string hobbies",
-        "= 3;",
-        "}",
+        "string hobbies =",
+        "3;\n}",
     ]
 
 
@@ -454,11 +445,9 @@ helloWorld();
     assert chunks == [
         "function",
         "helloWorld() {",
-        'console.log("He',
-        "llo,",
-        'World!");',
-        "}",
-        "// Call the",
+        'console.log("Hello,',
+        'World!");\n}\n\n//',
+        "Call the",
         "function",
         "helloWorld();",
     ]
@@ -483,10 +472,9 @@ public class HelloWorld {
         "static void",
         "main(String[]",
         "args) {",
-        "System.out.prin",
-        'tln("Hello,',
-        'World!");',
-        "}\n}",
+        'System.out.println("Hello,',
+        'World!");\n    }',
+        "}",
     ]
 
 
@@ -505,12 +493,11 @@ int main() {
     chunks = splitter.split_text(code)
     assert chunks == [
         "#include",
-        "<iostream>",
-        "int main() {",
-        "std::cout",
-        '<< "Hello,',
-        'World!" <<',
-        "std::endl;",
+        "<iostream>\n\nint",
+        "main() {",
+        "std::cout <<",
+        '"Hello, World!"',
+        "<< std::endl;",
         "return 0;\n}",
     ]
 
@@ -530,13 +517,11 @@ object HelloWorld {
     assert chunks == [
         "object",
         "HelloWorld {",
-        "def",
-        "main(args:",
+        "def main(args:",
         "Array[String]):",
         "Unit = {",
         'println("Hello,',
-        'World!")',
-        "}\n}",
+        'World!")\n  }\n}',
     ]
 
 
@@ -552,13 +537,7 @@ end
 hello_world
     """
     chunks = splitter.split_text(code)
-    assert chunks == [
-        "def hello_world",
-        'puts "Hello,',
-        'World!"',
-        "end",
-        "hello_world",
-    ]
+    assert chunks == ["def hello_world", 'puts "Hello,', 'World!"\nend', "hello_world"]
 
 
 def test_php_code_splitter() -> None:
@@ -576,13 +555,10 @@ hello_world();
     """
     chunks = splitter.split_text(code)
     assert chunks == [
-        "<?php",
-        "function",
+        "<?php\nfunction",
         "hello_world() {",
-        "echo",
-        '"Hello,',
-        'World!";',
-        "}",
+        'echo "Hello,',
+        'World!";\n}',
         "hello_world();",
         "?>",
     ]
@@ -604,8 +580,7 @@ helloWorld()
         "func",
         "helloWorld() {",
         'print("Hello,',
-        'World!")',
-        "}",
+        'World!")\n}',
         "helloWorld()",
     ]
 
@@ -620,7 +595,7 @@ fn main() {
 }
     """
     chunks = splitter.split_text(code)
-    assert chunks == ["fn main() {", 'println!("Hello', ",", 'World!");', "}"]
+    assert chunks == ["fn main() {", 'println!("Hello,', 'World!");\n}']
 
 
 def test_markdown_code_splitter() -> None:
@@ -654,32 +629,26 @@ This is a code block
     chunks = splitter.split_text(code)
     assert chunks == [
         "# Sample",
-        "Document",
-        "## Section",
-        "This is the",
-        "content of the",
-        "section.",
-        "## Lists",
-        "- Item 1",
-        "- Item 2",
-        "- Item 3",
-        "### Horizontal",
-        "lines",
+        "Document\n\n##",
+        "Section\n\nThis is",
+        "the content of",
+        "the section.\n\n##",
+        "Lists\n\n- Item 1",
+        "- Item 2\n- Item",
+        "3\n\n###",
+        "Horizontal lines",
         "***********",
         "____________",
-        "---------------",
-        "----",
+        "-------------------",
         "#### Code",
-        "blocks",
-        "```",
-        "This is a code",
-        "block",
+        "blocks\n```\nThis",
+        "is a code block",
         "```",
     ]
     # Special test for special characters
     code = "harry\n***\nbabylon is"
     chunks = splitter.split_text(code)
-    assert chunks == ["harry", "***\nbabylon is"]
+    assert chunks == ["harry\n***", "babylon is"]
 
 
 def test_latex_code_splitter() -> None:
@@ -718,15 +687,13 @@ def test_html_code_splitter() -> None:
     """
     chunks = splitter.split_text(code)
     assert chunks == [
-        "<h1>Sample Document</h1>\n    <h2>Section</h2>",
-        '<p id="1234">Reference content.</p>',
-        "<h2>Lists</h2>\n        <ul>",
-        "<li>Item 1</li>\n            <li>Item 2</li>",
-        "<li>Item 3</li>\n        </ul>",
-        "<h3>A block</h3>",
-        '<div class="amazing">',
-        "<p>Some text</p>",
-        "<p>Some more text</p>\n            </div>",
+        "<h1>Sample Document</h1>\n    <h2>Section</h2>\n        <p",
+        'id="1234">Reference content.</p>\n\n    <h2>Lists</h2>',
+        "<ul>\n            <li>Item 1</li>",
+        "<li>Item 2</li>\n            <li>Item 3</li>\n        </ul>",
+        '<h3>A block</h3>\n            <div class="amazing">',
+        "<p>Some text</p>\n                <p>Some",
+        "more text</p>\n            </div>",
     ]
 
 
@@ -874,11 +841,9 @@ def test_solidity_code_splitter() -> None:
         "contract",
         "HelloWorld {",
         "function",
-        "add(uint a,",
-        "uint b) pure",
-        "public",
+        "add(uint a, uint",
+        "b) pure public",
         "returns(uint) {",
         "return  a",
-        "+ b;",
-        "}\n  }",
+        "+ b;\n    }\n  }",
     ]
