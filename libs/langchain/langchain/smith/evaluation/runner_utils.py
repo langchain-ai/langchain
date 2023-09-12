@@ -82,6 +82,8 @@ class TestResult(dict):
         _quantiles = df[feedback_cols].quantile(
             quantiles or [0.25, 0.5, 0.75], numeric_only=True
         )
+        _quantiles.loc["mean"] = df[feedback_cols].mean()
+        _quantiles.loc["mode"] = df[feedback_cols].mode().iloc[0]
         return _quantiles.transpose()
 
     def to_dataframe(self) -> pd.DataFrame:
