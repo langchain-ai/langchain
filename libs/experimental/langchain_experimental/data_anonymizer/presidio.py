@@ -251,7 +251,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             text,
             filtered_analyzer_results,
             anonymizer_results,
-            reversed=True,
+            is_reversed=True,
         )
         self._deanonymizer_mapping.update(new_deanonymizer_mapping)
 

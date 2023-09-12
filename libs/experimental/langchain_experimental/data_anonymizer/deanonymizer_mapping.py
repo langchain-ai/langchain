@@ -40,17 +40,17 @@ def create_anonymizer_mapping(
     original_text: str,
     analyzer_results: List[RecognizerResult],
     anonymizer_results: EngineResult,
-    reversed: bool = False,
+    is_reversed: bool = False,
 ) -> MappingDataType:
     """Creates or updates the mapping used to anonymize and/or deanonymize text.
 
     This method exploits the results returned by the
     analysis and anonymization processes.
 
-    If reversed is True, it constructs a mapping from each original
+    If is_reversed is True, it constructs a mapping from each original
     entity to its anonymized value.
 
-    If reversed is False, it constructs a mapping from each
+    If is_reversed is False, it constructs a mapping from each
     anonymized entity back to its original text value.
 
     Example of mapping:
@@ -82,7 +82,7 @@ def create_anonymizer_mapping(
     ):
         original_value = original_text[analyzed_entity.start : analyzed_entity.end]
 
-        if reversed:
+        if is_reversed:
             new_anonymizer_mapping[anonymized_entity.entity_type][
                 anonymized_entity.text
             ] = original_value
