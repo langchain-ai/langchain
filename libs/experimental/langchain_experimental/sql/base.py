@@ -136,8 +136,8 @@ class SQLDatabaseChain(Chain):
                 intermediate_steps.append(
                     sql_cmd
                 )  # output: sql generation (no checker)
-                intermediate_steps.append({"sql_cmd": sql_cmd})  # input: sql exec
                 result = self.database.run(sql_cmd)
+                intermediate_steps.append({"sql_cmd": checked_sql_command, "sql_result": str(result)}) # input: sql exec
                 intermediate_steps.append(str(result))  # output: sql exec
             else:
                 query_checker_prompt = self.query_checker_prompt or PromptTemplate(
@@ -159,10 +159,9 @@ class SQLDatabaseChain(Chain):
                 _run_manager.on_text(
                     checked_sql_command, color="green", verbose=self.verbose
                 )
-                intermediate_steps.append(
-                    {"sql_cmd": checked_sql_command}
-                )  # input: sql exec
+                 
                 result = self.database.run(checked_sql_command)
+                intermediate_steps.append({"sql_cmd": checked_sql_command, "sql_result": str(result)}) # input: sql exec
                 intermediate_steps.append(str(result))  # output: sql exec
                 sql_cmd = checked_sql_command
 
