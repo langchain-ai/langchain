@@ -1,6 +1,8 @@
 """Wrapper around Google VertexAI chat-based models."""
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
@@ -21,7 +23,12 @@ from langchain.schema.output import ChatGenerationChunk
 from langchain.utilities.vertexai import raise_vertex_import_error
 
 if TYPE_CHECKING:
-    from vertexai.language_models import ChatMessage, InputOutputTextPair
+    from vertexai.language_models import (
+        ChatMessage,
+        ChatSession,
+        CodeChatSession,
+        InputOutputTextPair,
+    )
 
 
 @dataclass
@@ -93,6 +100,18 @@ def _parse_examples(examples: List[BaseMessage]) -> List["InputOutputTextPair"]:
     return example_pairs
 
 
+def _get_question(messages: List[BaseMessage]) -> HumanMessage:
+    """Get the human message at the end of a list of input messages to a chat model."""
+    if not messages:
+        raise ValueError("You should provide at least one message to start the chat!")
+    question = messages[-1]
+    if not isinstance(question, HumanMessage):
+        raise ValueError(
+            f"Last message in the list should be from human, got {question.type}."
+        )
+    return question
+
+
 class ChatVertexAI(_VertexAICommon, BaseChatModel):
     """`Vertex AI` Chat large language models API."""
 
@@ -138,31 +157,20 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         Raises:
             ValueError: if the last message in the list is not from human.
         """
-        if stream if stream is not None else self.streaming:
-            return ChatResult(
-                generations=list(self._stream(messages, stop, run_manager, **kwargs))
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
+            return self._generate_from_stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
             )
-        if not messages:
-            raise ValueError(
-                "You should provide at least one message to start the chat!"
-            )
-        question = messages[-1]
-        if not isinstance(question, HumanMessage):
-            raise ValueError(
-                f"Last message in the list should be from human, got {question.type}."
-            )
+
+        question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
-        context = history.context if history.context else None
         params = {**self._default_params, **kwargs}
         examples = kwargs.get("examples", None)
         if examples:
             params["examples"] = _parse_examples(examples)
-        if not self.is_codey_model:
-            chat = self.client.start_chat(
-                context=context, message_history=history.history, **params
-            )
-        else:
-            chat = self.client.start_chat(message_history=history.history, **params)
+
+        chat = self._start_chat(history, params)
         response = chat.send_message(question.content)
         text = self._enforce_stop_words(response.text, stop)
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
@@ -174,32 +182,27 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        if not messages:
-            raise ValueError(
-                "You should provide at least one message to start the chat!"
-            )
-        question = messages[-1]
-        if not isinstance(question, HumanMessage):
-            raise ValueError(
-                f"Last message in the list should be from human, got {question.type}."
-            )
+        question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
-        context = history.context if history.context else None
         params = {**self._default_params, **kwargs}
         examples = kwargs.get("examples", None)
         if examples:
             params["examples"] = _parse_examples(examples)
 
-        if not self.is_codey_model:
-            chat = self.client.start_chat(
-                context=context, message_history=history.history, **params
-            )
-        else:
-            chat = self.client.start_chat(message_history=history.history, **params)
-
+        chat = self._start_chat(history, params)
         responses = chat.send_message_streaming(question.content, **params)
         for response in responses:
             text = self._enforce_stop_words(response.text, stop)
             if run_manager:
                 run_manager.on_llm_new_token(text)
             yield ChatGenerationChunk(message=AIMessageChunk(content=text))
+
+    def _start_chat(
+        self, history: _ChatHistory, params: dict
+    ) -> Union[ChatSession, CodeChatSession]:
+        if not self.is_codey_model:
+            return self.client.start_chat(
+                context=history.context, message_history=history.history, **params
+            )
+        else:
+            return self.client.start_chat(message_history=history.history, **params)

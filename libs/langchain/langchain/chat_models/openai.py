@@ -330,16 +330,9 @@ class ChatOpenAI(BaseChatModel):
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
-            generation: Optional[ChatGenerationChunk] = None
-            for chunk in self._stream(
-                messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            ):
-                if generation is None:
-                    generation = chunk
-                else:
-                    generation += chunk
-            assert generation is not None
-            return ChatResult(generations=[generation])
+            return self._generate_from_stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}

@@ -523,6 +523,24 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         """Top Level call"""
         raise NotImplementedError()
 
+    def _generate_from_stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        generation: Optional[ChatGenerationChunk] = None
+        for chunk in self._stream(
+            messages=messages, stop=stop, run_manager=run_manager, **kwargs
+        ):
+            if generation is None:
+                generation = chunk
+            else:
+                generation += chunk
+        assert generation is not None
+        return ChatResult(generations=[generation])
+
     def _stream(
         self,
         messages: List[BaseMessage],
