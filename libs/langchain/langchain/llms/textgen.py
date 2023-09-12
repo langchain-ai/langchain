@@ -208,7 +208,6 @@ class TextGen(LLM):
                 prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
             ):
                 combined_text_output += chunk.text
-            print(prompt + combined_text_output)
             result = combined_text_output
 
         else:
@@ -220,7 +219,6 @@ class TextGen(LLM):
 
             if response.status_code == 200:
                 result = response.json()["results"][0]["text"]
-                print(prompt + result)
             else:
                 print(f"ERROR: response: {response}")
                 result = ""
@@ -256,7 +254,6 @@ class TextGen(LLM):
                 prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
             ):
                 combined_text_output += chunk.text
-            print(prompt + combined_text_output)
             result = combined_text_output
 
         else:
@@ -268,7 +265,6 @@ class TextGen(LLM):
 
             if response.status_code == 200:
                 result = response.json()["results"][0]["text"]
-                print(prompt + result)
             else:
                 print(f"ERROR: response: {response}")
                 result = ""
