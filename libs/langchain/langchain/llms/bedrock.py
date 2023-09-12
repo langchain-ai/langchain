@@ -16,7 +16,7 @@ class LLMInputOutputAdapter:
     It also provides helper function to extract
     the generated text from the model response."""
 
-    provder_to_output_key_map = {
+    provider_to_output_key_map = {
         "anthropic": "completion",
         "amazon": "outputText",
     }
@@ -62,7 +62,7 @@ class LLMInputOutputAdapter:
         if not stream:
             return
 
-        if provider not in cls.provder_to_output_key_map:
+        if provider not in cls.provider_to_output_key_map:
             raise ValueError(
                 f"Unknown streaming response output key for provider: {provider}"
             )
@@ -74,7 +74,7 @@ class LLMInputOutputAdapter:
 
                 # chunk obj format varies with provider
                 yield GenerationChunk(
-                    text=chunk_obj[cls.provder_to_output_key_map[provider]]
+                    text=chunk_obj[cls.provider_to_output_key_map[provider]]
                 )
 
 
@@ -203,16 +203,17 @@ class BedrockBase(BaseModel, ABC):
         _model_kwargs = self.model_kwargs or {}
         provider = self._get_provider()
 
-        stop_sequence_key_name = self.provider_stop_sequence_key_name_map.get(provider)
         if stop:
-            if stop_sequence_key_name is None:
+            if provider not in self.provider_stop_sequence_key_name_map:
                 raise ValueError(
                     f"Stop sequence key name for {provider} is not supported."
                 )
 
             # stop sequence from _generate() overrides
             # stop sequences in the class attribute
-            _model_kwargs[stop_sequence_key_name] = stop
+            _model_kwargs[
+                self.provider_stop_sequence_key_name_map.get(provider),
+            ] = stop
 
         params = {**_model_kwargs, **kwargs}
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
