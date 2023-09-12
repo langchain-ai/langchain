@@ -121,6 +121,10 @@ class Replicate(LLM):
             ].items(),
             key=lambda item: item[1].get("x-order", 0),
         )
+
+        # filter out replicate internal inputs, e.g. "replicate_weights" for fine-tuned models
+        input_properties = [i for i in input_properties if "replicate" not in i[0]]
+
         first_input_name = input_properties[0][0]
         inputs = {first_input_name: prompt, **self.input}
 
