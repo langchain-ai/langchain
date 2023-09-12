@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import BaseChatModel
+from langchain.chat_models.base import BaseChatModel, _generate_from_stream
 from langchain.llms.vertexai import _VertexAICommon, is_codey_model
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import (
@@ -159,9 +159,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         """
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
-            return self._generate_from_stream(
+            stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
+            return _generate_from_stream(stream_iter)
 
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])

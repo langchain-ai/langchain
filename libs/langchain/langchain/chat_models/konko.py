@@ -21,6 +21,7 @@ from langchain.adapters.openai import convert_dict_to_message, convert_message_t
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
+from langchain.chat_models.base import _generate_from_stream
 from langchain.chat_models.openai import ChatOpenAI, _convert_delta_to_message_chunk
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import ChatGeneration, ChatResult
@@ -224,9 +225,10 @@ class ChatKonko(ChatOpenAI):
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
-            return self._generate_from_stream(
+            stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
+            return _generate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
