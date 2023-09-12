@@ -112,10 +112,6 @@ class _VertexAICommon(_VertexAIBase):
     "the environment."
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"credentials": "GOOGLE_APPLICATION_CREDENTIALS"}
-
-    @property
     def is_codey_model(self) -> bool:
         return is_codey_model(self.model_name)
 
