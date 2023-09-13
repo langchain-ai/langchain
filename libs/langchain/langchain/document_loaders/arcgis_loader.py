@@ -71,7 +71,7 @@ class ArcGISLoader(BaseLoader):
         self.return_all_records = return_all_records
         self.kwargs = kwargs
 
-    def _get_layer_properties(self, lyr_desc: str) -> dict:
+    def _get_layer_properties(self, lyr_desc: Optional[str] = None) -> dict:
         """Get the layer properties from the FeatureLayer."""
         import arcgis
 
