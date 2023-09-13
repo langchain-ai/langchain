@@ -40,9 +40,10 @@ class Replicate(LLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     replicate_api_token: Optional[str] = None
     prompt_key: Optional[str] = None
-    version_obj: Any = None
+    version_obj: Any = Field(default=None, exclude=True)
     """Optionally pass in the model version object during initialization to avoid 
-        having to make an extra API call to retrieve it during streaming.
+        having to make an extra API call to retrieve it during streaming. NOTE: not
+        serializable, is excluded from serialization.
     """
 
     streaming: bool = Field(default=False)
