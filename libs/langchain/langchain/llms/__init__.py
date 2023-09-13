@@ -42,6 +42,7 @@ from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.deepsparse import DeepSparse
 from langchain.llms.edenai import EdenAI
+from langchain.llms.exllama import Exllama
 from langchain.llms.fake import FakeListLLM
 from langchain.llms.fireworks import Fireworks, FireworksChat
 from langchain.llms.forefrontai import ForefrontAI
