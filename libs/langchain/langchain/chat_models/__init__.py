@@ -24,7 +24,7 @@ from langchain.chat_models.bedrock import BedrockChat
 from langchain.chat_models.ernie import ErnieBotChat
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.chat_models.google_palm import ChatGooglePalm
-from langchain.chat_models.huggingface_llama2 import ChatLlama2Hf
+from langchain.chat_models.huggingface_pipeline import ChatHFLlama2Pipeline
 from langchain.chat_models.human import HumanInputChatModel
 from langchain.chat_models.jinachat import JinaChat
 from langchain.chat_models.litellm import ChatLiteLLM
@@ -44,7 +44,7 @@ __all__ = [
     "ChatGooglePalm",
     "ChatMLflowAIGateway",
     "ChatOllama",
-    "ChatLlama2Hf",
+    "ChatHFLlama2Pipeline",
     "ChatVertexAI",
     "JinaChat",
     "HumanInputChatModel",

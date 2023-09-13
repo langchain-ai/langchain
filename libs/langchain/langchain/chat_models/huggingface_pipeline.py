@@ -1,4 +1,5 @@
 import importlib.util
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
@@ -17,29 +18,18 @@ from langchain.schema.messages import (
 from langchain.schema.output import ChatGeneration
 
 
-class InstructionTokens(Enum):
-    def __str__(self) -> str:
-        return self.value
-
-    B_INST = "[INST]"
-    E_INST = "[/INST]"
-
-
-class SystemTokens(Enum):
-    def __str__(self) -> str:
-        return self.value
-
-    B_SYS = "<<SYS>>"
-    E_SYS = "<</SYS>>"
-
-
-class ChatLlama2Hf(BaseChatModel):
+class ChatHuggingFacePipeline(BaseChatModel, ABC):
     pipeline: Any
 
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "llama-2-chat-hf"
+        return "huggingface_pipeline_chat"
+
+    @abstractmethod
+    def format_messages_as_text(self, messages: List[BaseMessage]) -> str:
+        """Method for parsing the list of LangChain Messages into string"""
+        ...
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -50,54 +40,6 @@ class ChatLlama2Hf(BaseChatModel):
             raise ValueError("The pipeline task should be 'text-generation'.")
 
         return values
-
-    @staticmethod
-    def format_messages_as_text(messages: List[BaseMessage]) -> str:
-        """
-        Transform List of Chat Messages to text following Meta's prompt guidelines.
-
-        Prompt template with System Message:
-        ```
-        <s>[INST] <<SYS>>
-        {{ system_prompt }}
-        <</SYS>>
-
-        {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
-        ```
-
-        Prompt template without System Message:
-        ```
-        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
-        ```
-        Source:
-        https://github.com/facebookresearch/llama-recipes/blob/df77625e48c3994aef19702fb331215f7fb83494/docs/inference.md?plain=1#L124
-        """
-        prompt = ""
-
-        for i, message in enumerate(messages):
-            if isinstance(message, SystemMessage) and i != 0:
-                raise ValueError(
-                    "SystemMessage can only appear as the first message in the list."
-                )
-            elif isinstance(message, SystemMessage) and i == 0:
-                prompt += (
-                    f"<s>{InstructionTokens.B_INST} "
-                    f"{SystemTokens.B_SYS}\n{message.content}\n"
-                    f"{SystemTokens.E_SYS}\n\n"
-                )
-            elif isinstance(message, HumanMessage) and i > 0:
-                prompt += f"{message.content} {InstructionTokens.E_INST} "
-            elif isinstance(message, HumanMessage) and i == 0:
-                prompt += (
-                    f"<s>{InstructionTokens.B_INST} "
-                    f"{message.content} {InstructionTokens.E_INST} "
-                )
-            elif isinstance(message, AIMessage):
-                prompt += f"{message.content} </s><s>{InstructionTokens.B_INST} "
-            else:
-                raise ValueError(f"Unsupported Message type: {type(message)}")
-
-        return prompt
 
     def _generate(
         self,
@@ -192,3 +134,66 @@ class ChatLlama2Hf(BaseChatModel):
             message=AIMessage(content=response),
         )
         return ChatResult(generations=[chat_generation])
+
+
+class ChatHFLlama2Pipeline(ChatHuggingFacePipeline):
+    class InstructionTokens(Enum):
+        def __str__(self) -> str:
+            return self.value
+
+        B_INST = "[INST]"
+        E_INST = "[/INST]"
+
+    class SystemTokens(Enum):
+        def __str__(self) -> str:
+            return self.value
+
+        B_SYS = "<<SYS>>"
+        E_SYS = "<</SYS>>"
+
+    def format_messages_as_text(self, messages: List[BaseMessage]) -> str:
+        """
+        Transform List of Chat Messages to text following Meta's prompt guidelines.
+
+        Prompt template with System Message:
+        ```
+        <s>[INST] <<SYS>>
+        {{ system_prompt }}
+        <</SYS>>
+
+        {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
+        ```
+
+        Prompt template without System Message:
+        ```
+        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
+        ```
+        Source:
+        https://github.com/facebookresearch/llama-recipes/blob/df77625e48c3994aef19702fb331215f7fb83494/docs/inference.md?plain=1#L124
+        """
+        prompt = ""
+
+        for i, message in enumerate(messages):
+            if isinstance(message, SystemMessage) and i != 0:
+                raise ValueError(
+                    "SystemMessage can only appear as the first message in the list."
+                )
+            elif isinstance(message, SystemMessage) and i == 0:
+                prompt += (
+                    f"<s>{self.InstructionTokens.B_INST} "
+                    f"{self.SystemTokens.B_SYS}\n{message.content}\n"
+                    f"{self.SystemTokens.E_SYS}\n\n"
+                )
+            elif isinstance(message, HumanMessage) and i > 0:
+                prompt += f"{message.content} {self.InstructionTokens.E_INST} "
+            elif isinstance(message, HumanMessage) and i == 0:
+                prompt += (
+                    f"<s>{self.InstructionTokens.B_INST} "
+                    f"{message.content} {self.InstructionTokens.E_INST} "
+                )
+            elif isinstance(message, AIMessage):
+                prompt += f"{message.content} </s><s>{self.InstructionTokens.B_INST} "
+            else:
+                raise ValueError(f"Unsupported Message type: {type(message)}")
+
+        return prompt
