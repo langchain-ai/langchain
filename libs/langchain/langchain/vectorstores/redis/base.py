@@ -17,8 +17,10 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
+import numpy as np
 import yaml
 
 from langchain._api import deprecated
@@ -30,6 +32,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utilities.redis import (
     _array_to_buffer,
+    _buffer_to_array,
     check_redis_module_exist,
     get_client,
 )
@@ -39,6 +42,7 @@ from langchain.vectorstores.redis.constants import (
     REDIS_REQUIRED_MODULES,
     REDIS_TAG_SEPARATOR,
 )
+from langchain.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
 
@@ -370,6 +374,11 @@ class Redis(VectorStore):
         if "generate" in kwargs:
             kwargs.pop("generate")
 
+        # see if the user specified keys
+        keys = None
+        if "keys" in kwargs:
+            keys = kwargs.pop("keys")
+
         # Name of the search index if not given
         if not index_name:
             index_name = uuid.uuid4().hex
@@ -418,7 +427,7 @@ class Redis(VectorStore):
         instance._create_index(dim=len(embeddings[0]))
 
         # Add data to Redis
-        keys = instance.add_texts(texts, metadatas, embeddings)
+        keys = instance.add_texts(texts, metadatas, embeddings, keys=keys)
         return instance, keys
 
     @classmethod
@@ -803,8 +812,10 @@ class Redis(VectorStore):
                 + "score_threshold will be removed in a future release.",
             )
 
+        query_embedding = self._embeddings.embed_query(query)
+
         redis_query, params_dict = self._prepare_query(
-            query,
+            query_embedding,
             k=k,
             filter=filter,
             with_metadata=return_metadata,
@@ -858,13 +869,48 @@ class Redis(VectorStore):
                 Defaults to None.
             return_metadata (bool, optional): Whether to return metadata.
                 Defaults to True.
-            distance_threshold (Optional[float], optional): Distance threshold
-                for vector distance from query vector. Defaults to None.
+            distance_threshold (Optional[float], optional): Maximum vector distance
+                between selected documents and the query vector. Defaults to None.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query
                 text.
+        """
+        query_embedding = self._embeddings.embed_query(query)
+        return self.similarity_search_by_vector(
+            query_embedding,
+            k=k,
+            filter=filter,
+            return_metadata=return_metadata,
+            distance_threshold=distance_threshold,
+            **kwargs,
+        )
 
+    def similarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[RedisFilterExpression] = None,
+        return_metadata: bool = True,
+        distance_threshold: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Run similarity search between a query vector and the indexed vectors.
+
+        Args:
+            embedding (List[float]): The query vector for which to find similar
+                documents.
+            k (int): The number of documents to return. Default is 4.
+            filter (RedisFilterExpression, optional): Optional metadata filter.
+                Defaults to None.
+            return_metadata (bool, optional): Whether to return metadata.
+                Defaults to True.
+            distance_threshold (Optional[float], optional): Maximum vector distance
+                between selected documents and the query vector. Defaults to None.
+
+        Returns:
+            List[Document]: A list of documents that are most similar to the query
+                text.
         """
         try:
             import redis
@@ -884,7 +930,7 @@ class Redis(VectorStore):
             )
 
         redis_query, params_dict = self._prepare_query(
-            query,
+            embedding,
             k=k,
             filter=filter,
             distance_threshold=distance_threshold,
@@ -920,6 +966,74 @@ class Redis(VectorStore):
             )
         return docs
 
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[RedisFilterExpression] = None,
+        return_metadata: bool = True,
+        distance_threshold: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            query (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (RedisFilterExpression, optional): Optional metadata filter.
+                Defaults to None.
+            return_metadata (bool, optional): Whether to return metadata.
+                Defaults to True.
+            distance_threshold (Optional[float], optional): Maximum vector distance
+                between selected documents and the query vector. Defaults to None.
+
+        Returns:
+            List[Document]: A list of Documents selected by maximal marginal relevance.
+        """
+        # Embed the query
+        query_embedding = self._embeddings.embed_query(query)
+
+        # Fetch the initial documents
+        prefetch_docs = self.similarity_search_by_vector(
+            query_embedding,
+            k=fetch_k,
+            filter=filter,
+            return_metadata=return_metadata,
+            distance_threshold=distance_threshold,
+            **kwargs,
+        )
+        prefetch_ids = [doc.metadata["id"] for doc in prefetch_docs]
+
+        # Get the embeddings for the fetched documents
+        prefetch_embeddings = [
+            _buffer_to_array(
+                cast(
+                    bytes,
+                    self.client.hget(prefetch_id, self._schema.content_vector_key),
+                ),
+                dtype=self._schema.vector_dtype,
+            )
+            for prefetch_id in prefetch_ids
+        ]
+
+        # Select documents using maximal marginal relevance
+        selected_indices = maximal_marginal_relevance(
+            np.array(query_embedding), prefetch_embeddings, lambda_mult=lambda_mult, k=k
+        )
+        selected_docs = [prefetch_docs[i] for i in selected_indices]
+
+        return selected_docs
+
     def _collect_metadata(self, result: "Document") -> Dict[str, Any]:
         """Collect metadata from Redis.
 
@@ -952,19 +1066,16 @@ class Redis(VectorStore):
 
     def _prepare_query(
         self,
-        query: str,
+        query_embedding: List[float],
         k: int = 4,
         filter: Optional[RedisFilterExpression] = None,
         distance_threshold: Optional[float] = None,
         with_metadata: bool = True,
         with_distance: bool = False,
     ) -> Tuple["Query", Dict[str, Any]]:
-        # Creates embedding vector from user query
-        embedding = self._embeddings.embed_query(query)
-
         # Creates Redis query
         params_dict: Dict[str, Union[str, bytes, float]] = {
-            "vector": _array_to_buffer(embedding, self._schema.vector_dtype),
+            "vector": _array_to_buffer(query_embedding, self._schema.vector_dtype),
         }
 
         # prepare return fields including score

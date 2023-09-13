@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Optional
 
+import requests
+
 from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, Field
 
@@ -58,7 +60,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         except ImportError as exc:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence_transformers`."
+                "Please install it with `pip install sentence-transformers`."
             ) from exc
 
         self.client = sentence_transformers.SentenceTransformer(
@@ -266,3 +268,71 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             self.query_instruction + text, **self.encode_kwargs
         )
         return embedding.tolist()
+
+
+class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
+    """Embed texts using the HuggingFace API.
+
+    Requires a HuggingFace Inference API key and a model name.
+    """
+
+    api_key: str
+    """Your API key for the HuggingFace Inference API."""
+    model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
+    """The name of the model to use for text embeddings."""
+
+    @property
+    def _api_url(self) -> str:
+        return (
+            "https://api-inference.huggingface.co"
+            "/pipeline"
+            "/feature-extraction"
+            f"/{self.model_name}"
+        )
+
+    @property
+    def _headers(self) -> dict:
+        return {"Authorization": f"Bearer {self.api_key}"}
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Get the embeddings for a list of texts.
+
+        Args:
+            texts (Documents): A list of texts to get embeddings for.
+
+        Returns:
+            Embedded texts as List[List[float]], where each inner List[float]
+                corresponds to a single input text.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.embeddings import HuggingFaceInferenceAPIEmbeddings
+
+                hf_embeddings = HuggingFaceInferenceAPIEmbeddings(
+                    api_key="your_api_key",
+                    model_name="sentence-transformers/all-MiniLM-l6-v2"
+                )
+                texts = ["Hello, world!", "How are you?"]
+                hf_embeddings.embed_documents(texts)
+        """
+        response = requests.post(
+            self._api_url,
+            headers=self._headers,
+            json={
+                "inputs": texts,
+                "options": {"wait_for_model": True, "use_cache": True},
+            },
+        )
+        return response.json()
+
+    def embed_query(self, text: str) -> List[float]:
+        """Compute query embeddings using a HuggingFace transformer model.
+
+        Args:
+            text: The text to embed.
+
+        Returns:
+            Embeddings for the text.
+        """
+        return self.embed_documents([text])[0]

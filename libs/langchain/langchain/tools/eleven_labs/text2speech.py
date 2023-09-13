@@ -1,18 +1,29 @@
-from typing import Dict, Optional, Union
+import tempfile
+from enum import Enum
+from typing import Any, Dict, Optional, Union
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
 from langchain.tools.audio_utils import load_audio, save_audio
 from langchain.tools.base import BaseTool
-from langchain.tools.eleven_labs.models import ElevenLabsModel
 from langchain.utils import get_from_dict_or_env
 
-try:
-    import elevenlabs
-except ImportError:
-    raise ImportError(
-        "elevenlabs is not installed. " "Run `pip install elevenlabs` to install."
-    )
+
+def _import_elevenlabs() -> Any:
+    try:
+        import elevenlabs
+    except ImportError as e:
+        raise ImportError(
+            "Cannot import elevenlabs, please install `pip install elevenlabs`."
+        ) from e
+    return elevenlabs
+
+
+class ElevenLabsModel(str, Enum):
+    """Models available for Eleven Labs Text2Speech."""
+
+    MULTI_LINGUAL = "eleven_multilingual_v1"
+    MONO_LINGUAL = "eleven_monolingual_v1"
 
 
 class ElevenLabsText2SpeechTool(BaseTool):
@@ -39,18 +50,13 @@ class ElevenLabsText2SpeechTool(BaseTool):
 
         return values
 
-    def _text2speech(self, text: str) -> bytes:
-        speech = elevenlabs.generate(text=text, model=self.model)
-        return speech
-
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
+        elevenlabs = _import_elevenlabs()
         try:
-            speech = self._text2speech(query)
+            speech = elevenlabs.generate(text=query, model=self.model)
             self.play(speech)
             return "Speech has been generated"
         except Exception as e:
@@ -58,11 +64,13 @@ class ElevenLabsText2SpeechTool(BaseTool):
 
     def play(self, speech: bytes) -> None:
         """Play the text as speech."""
+        elevenlabs = _import_elevenlabs()
         elevenlabs.play(speech)
 
     def stream_speech(self, query: str) -> None:
         """Stream the text as speech as it is generated.
         Play the text in your speakers."""
+        elevenlabs = _import_elevenlabs()
         speech_stream = elevenlabs.generate(text=query, model=self.model, stream=True)
         elevenlabs.stream(speech_stream)
 
