@@ -43,6 +43,7 @@ extended_testing = [
  "presidio-anonymizer",
  "presidio-analyzer",
  "faker",
+ "langdetect"
 ]
 
 [tool.ruff]
