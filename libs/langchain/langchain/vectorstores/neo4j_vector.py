@@ -53,8 +53,7 @@ def _get_search_index_query(search_type: SearchType) -> str:
             "UNWIND nodes AS n "
             "RETURN n.node AS node, (n.score / max) AS score "  # We use 0 as min
             "} "
-            "WITH node, max(score) AS score ORDER BY score DESC LIMIT $k " # deduplicate
-              
+            "WITH node, max(score) AS score ORDER BY score DESC LIMIT $k "  # deduplicate
         ),
     }
     return type_to_query_map[search_type]
