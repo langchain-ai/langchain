@@ -99,8 +99,6 @@ class AutoGPT:
 
             # Print Assistant thoughts
             print(assistant_reply)
-            self.chat_history_memory.add_message(HumanMessage(content=user_input))
-            self.chat_history_memory.add_message(AIMessage(content=assistant_reply))
 
             # Get command name and arguments
             action = self.output_parser.parse(assistant_reply)
@@ -129,15 +127,39 @@ class AutoGPT:
                     f"commands and only respond in the specified JSON format."
                 )
 
-            memory_to_add = (
-                f"Assistant Reply: {assistant_reply} " f"\nResult: {result} "
-            )
+            # show result so user actually know their answer
+            print(result)
+
+            self.chat_history_memory.add_message(HumanMessage(content=user_input))
+            self.chat_history_memory.add_message(AIMessage(content=assistant_reply))
+            self.chat_history_memory.add_message(SystemMessage(content=result))
+
             if self.feedback_tool is not None:
                 feedback = f"\n{self.feedback_tool.run('Input: ')}"
                 if feedback in {"q", "stop"}:
                     print("EXITING")
                     return "EXITING"
-                memory_to_add += feedback
+                # append feedback to chat history
+                self.chat_history_memory.add_message(HumanMessage(content=feedback))
 
-            self.memory.add_documents([Document(page_content=memory_to_add)])
-            self.chat_history_memory.add_message(SystemMessage(content=result))
+            # Memory management
+            memory_to_add = ()
+            token_count = sum([len(a.content.split()) for a in self.chat_history_memory.messages])
+
+            # print(self.chat_history_memory)
+            while True:
+                # print('message token: ', token_count)
+                if token_count > 1000:  # move oldest chat to memory
+                    oldest_user_input = self.chat_history_memory.messages.pop(0).content
+                    oldest_assistant_reply = self.chat_history_memory.messages.pop(0).content
+                    oldest_result = self.chat_history_memory.messages.pop(0).content
+                    memory_to_add = (
+                        f"Assistant Reply: {oldest_assistant_reply} " f"\nResult: {oldest_result} "
+                    )
+                    if self.feedback_tool is not None:
+                        oldest_feedback = self.chat_history_memory.messages.pop(0).content
+                        memory_to_add += f"\n Feedback: {oldest_feedback}"
+                    self.memory.add_documents([Document(page_content=memory_to_add)])
+                    token_count = sum([len(a.content.split()) for a in self.chat_history_memory.messages])
+                else:
+                    break
