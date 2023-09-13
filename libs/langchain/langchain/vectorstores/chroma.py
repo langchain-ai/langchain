@@ -217,7 +217,7 @@ class Chroma(VectorStore):
                     if "Expected metadata value to be" in str(e):
                         msg = (
                             "Try filtering complex metadata from the document using "
-                            "langchain.vectorstore.utils.filter_complex_metadata."
+                            "langchain.vectorstores.utils.filter_complex_metadata."
                         )
                         raise ValueError(e.args[0] + "\n\n" + msg)
                     else:
