@@ -69,6 +69,8 @@ class ChatLlama2Hf(BaseChatModel):
         ```
         <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
         ```
+        Source:
+        https://github.com/facebookresearch/llama-recipes/blob/df77625e48c3994aef19702fb331215f7fb83494/docs/inference.md?plain=1#L124
         """
         prompt = ""
 
@@ -123,7 +125,7 @@ class ChatLlama2Hf(BaseChatModel):
             # need to be on the same device:
             device = f"{device}:{self.pipeline.device.index}"
 
-        class StoppingCriteriaSub(StoppingCriteria):
+        class CustomStoppingCriteria(StoppingCriteria):
             """
             A subclass of StoppingCriteria, used for defining custom stopping criteria
             for the generation process, apart from the standard End Of Sentence (EOS)
@@ -175,7 +177,11 @@ class ChatLlama2Hf(BaseChatModel):
             ]
 
             stopping_criteria = StoppingCriteriaList(
-                [StoppingCriteriaSub(stops=stopping_criteria_tokenized, device=device)]
+                [
+                    CustomStoppingCriteria(
+                        stops=stopping_criteria_tokenized, device=device
+                    )
+                ]
             )
         else:
             stopping_criteria = None
