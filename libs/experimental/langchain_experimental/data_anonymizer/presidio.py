@@ -8,16 +8,13 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 import yaml
 
 from langchain_experimental.data_anonymizer.base import (
+    DEFAULT_DEANONYMIZER_MATCHING_STRATEGY,
     AnonymizerBase,
     ReversibleAnonymizerBase,
 )
 from langchain_experimental.data_anonymizer.deanonymizer_mapping import (
     DeanonymizerMapping,
     MappingDataType,
-)
-from langchain_experimental.data_anonymizer.deanonymizer_matching_strategies import (
-    default_matching_strategy,
-    fuzzy_matching_strategy,
 )
 from langchain_experimental.data_anonymizer.faker_presidio_mapping import (
     get_pseudoanonymizer_mapping,
@@ -290,7 +287,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         text_to_deanonymize: str,
         deanonymizer_matching_strategy: Callable[
             [str, MappingDataType], str
-        ] = fuzzy_matching_strategy,
+        ] = DEFAULT_DEANONYMIZER_MATCHING_STRATEGY,
     ) -> str:
         """Deanonymize text.
         Each anonymized entity is replaced with its original value.
