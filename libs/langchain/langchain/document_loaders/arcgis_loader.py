@@ -79,7 +79,8 @@ class ArcGISLoader(BaseLoader):
         props = self.layer.properties
 
         if lyr_desc is None:
-            try: # retrieve description from the FeatureLayer if the user has not provided one
+            # retrieve description from the FeatureLayer if not provided
+            try:
                 if self.BEAUTIFULSOUP:
                     lyr_desc = self.BEAUTIFULSOUP(props["description"]).text
                 else:
@@ -112,12 +113,12 @@ class ArcGISLoader(BaseLoader):
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load records from FeatureLayer."""
         query_response = self.layer.query(
-        where=self.where,
-        out_fields=self.out_fields,
-        return_geometry=self.return_geometry,
-        return_all_records=self.return_all_records,
-        **self.kwargs,
-    )
+            where=self.where,
+            out_fields=self.out_fields,
+            return_geometry=self.return_geometry,
+            return_all_records=self.return_all_records,
+            **self.kwargs,
+        )
         features = (feature.as_dict for feature in query_response)
         for feature in features:
             attributes = feature["attributes"]
@@ -131,18 +132,17 @@ class ArcGISLoader(BaseLoader):
                 "item_description": self.layer_properties["item_description"],
                 "layer_properties": self.layer_properties["layer_properties"],
             }
-            
+
             if self.return_geometry:
                 try:
                     geometry = feature["geometry"]
                     metadata.update({"geometry": geometry})
                 except KeyError:
-                    warnings.warn("Geometry could not be retrieved from the feature layer.")
+                    warnings.warn(
+                        "Geometry could not be retrieved from the feature layer."
+                    )
 
-            yield Document(
-                page_content=page_content,
-                metadata=metadata
-            )
+            yield Document(page_content=page_content, metadata=metadata)
 
     def load(self) -> List[Document]:
         """Load all records from FeatureLayer."""
