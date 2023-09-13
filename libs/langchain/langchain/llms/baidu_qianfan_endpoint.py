@@ -7,7 +7,6 @@ from typing import (
     Dict,
     Iterator,
     List,
-    Mapping,
     Optional,
 )
 
@@ -41,7 +40,7 @@ class QianfanLLMEndpoint(LLM):
                 endpoint="your_endpoint", ak="your_ak", sk="your_sk")
     """
 
-    model_kwargs: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     client: Any
 
@@ -104,7 +103,7 @@ class QianfanLLMEndpoint(LLM):
         return values
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         return {
             **{"endpoint": self.endpoint, "model": self.model},
             **super()._identifying_params,
@@ -132,7 +131,7 @@ class QianfanLLMEndpoint(LLM):
         self,
         prompt: str,
         **kwargs: Any,
-    ):
+    ) -> dict:
         return {
             **{"prompt": prompt, "model": self.model},
             **self._default_params,

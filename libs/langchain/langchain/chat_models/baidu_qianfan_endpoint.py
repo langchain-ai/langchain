@@ -83,7 +83,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 endpoint="your_endpoint", ak="your_ak", sk="your_sk")
     """
 
-    model_kwargs: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     client: Any
 
@@ -146,7 +146,7 @@ class QianfanChatEndpoint(BaseChatModel):
         return values
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         return {
             **{"endpoint": self.endpoint, "model": self.model},
             **super()._identifying_params,
@@ -174,7 +174,7 @@ class QianfanChatEndpoint(BaseChatModel):
         self,
         messages: List[BaseMessage],
         **kwargs: Any,
-    ):
+    ) -> dict:
         return {
             **{"messages": [convert_message_to_dict(m) for m in messages]},
             **self._default_params,
