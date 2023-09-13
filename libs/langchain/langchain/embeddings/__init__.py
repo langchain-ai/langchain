@@ -35,6 +35,7 @@ from langchain.embeddings.gpt4all import GPT4AllEmbeddings
 from langchain.embeddings.huggingface import (
     HuggingFaceBgeEmbeddings,
     HuggingFaceEmbeddings,
+    HuggingFaceInferenceAPIEmbeddings,
     HuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
@@ -69,6 +70,7 @@ __all__ = [
     "CohereEmbeddings",
     "ElasticsearchEmbeddings",
     "HuggingFaceEmbeddings",
+    "HuggingFaceInferenceAPIEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
     "HuggingFaceHubEmbeddings",
