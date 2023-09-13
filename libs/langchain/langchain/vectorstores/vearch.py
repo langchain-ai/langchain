@@ -173,8 +173,8 @@ class VearchDb(VectorStore):
                 profiles: dict[str, Any] = {}
                 profiles["text"] = text
                 profiles["metadata"] = metadata["source"]
-                embed = np.array(embed)
-                profiles["text_embedding"] = embed / np.linalg.norm(embed) 
+                embed_np = np.array(embed)
+                profiles["text_embedding"] = embed_np / np.linalg.norm(embed_np) 
                 doc_items.append(profiles)
 
             docid = self.vearch_engine.add(doc_items)
