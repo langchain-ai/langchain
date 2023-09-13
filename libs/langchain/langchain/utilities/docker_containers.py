@@ -52,11 +52,16 @@ class DockerImage:
     def __init__(self, name: str):
         """Note that it does not pull the image from the internet.
         It only represents a tag so it must exist on your system.
+        It throws ValueError if docker image by that name does not exist locally.
         """
-        self.name = name
-        # check if image exists
-        docker_client = get_docker_client()
-        if len(docker_client.images.list(name=name)) < 1:
+        splitted_name = name.split(":")
+        if len(splitted_name) == 1:
+            # by default, image has latest tag.
+            self.name = name + ":latest"
+        else:
+            self.name = name
+
+        if not self.exists(name):
             raise ValueError(
                 f"Invalid value: name={name} does not exist on your system."
                 "Use DockerImage.from_tag() to pull it."
@@ -64,6 +69,21 @@ class DockerImage:
 
     def __repr__(self) -> str:
         return f"DockerImage(name={self.name})"
+
+    @classmethod
+    def exists(cls, name: str) -> bool:
+        """Checks if the docker image exists"""
+        docker_client = get_docker_client()
+        return len(docker_client.images.list(name=name)) > 0
+
+    @classmethod
+    def remove(cls, name: str) -> None:
+        """WARNING: Removes image from the system, be cautious with this function.
+        It is irreversible operation!.
+        """
+        if cls.exists(name):
+            docker_client = get_docker_client()
+            docker_client.images.remove(name)
 
     @classmethod
     def from_tag(
@@ -78,10 +98,13 @@ class DockerImage:
         Example: repository = "python" tag = "3.9-slim"
         """
         docker_client = get_docker_client()
+        name = f"{repository}:{tag}"
+        if len(docker_client.images.list(name=name)) > 0:
+            return cls(name=name)
         docker_client.images.pull(
             repository=repository, tag=tag, auth_config=auth_config
         )
-        return cls(name=f"{repository}:{tag}")
+        return cls(name=name)
 
     @classmethod
     def from_dockerfile(
@@ -146,6 +169,13 @@ class DockerContainer:
         """Enters container context. It means that container is started and you can
         execute commands inside it.
         """
+        self.unsafe_start()
+        return self
+
+    def unsafe_start(self) -> None:
+        """Starts container without entering it.
+        Please prefer to use with DockerContainer statement.
+        """
         assert self._container is None, "You cannot re-entry container"
         # tty=True is required to keep container alive
         self._container = self._client.containers.run(
@@ -154,7 +184,6 @@ class DockerContainer:
             tty=True,
             **self._run_kwargs,
         )
-        return self
 
     def __exit__(
         self,
@@ -163,6 +192,7 @@ class DockerContainer:
         traceback: Optional[TracebackType],
     ) -> bool:
         """Cleanup container on exit."""
+        assert self._container is not None, "You cannot exit unstarted container."
         if exc_type is not None:
             # re-throw exception. try to stop container and remove it
             try:
@@ -171,9 +201,15 @@ class DockerContainer:
                 print("Failed to stop and remove container to cleanup exception.", e)
             return False
         else:
-            self._cleanup()
-            self._container = None
+            self.unsafe_exit()
             return True
+
+    def unsafe_exit(self):
+        """Cleanup container on exit. Please prefer to use `with` statement."""
+        if self._container is None:
+            return
+        self._cleanup()
+        self._container = None
 
     def spawn_run(
         self, command: Union[str, List[str]], **kwargs: Any
