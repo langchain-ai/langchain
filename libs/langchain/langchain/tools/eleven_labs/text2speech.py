@@ -76,7 +76,8 @@ class ElevenLabsText2SpeechTool(BaseTool):
 
     def generate_and_save(self, query: str) -> str:
         """Save the text as speech to a temporary file."""
-        speech = self._text2speech(query)
+        elevenlabs = _import_elevenlabs()
+        speech = elevenlabs.generate(text=query, model=self.model)
         path = save_audio(speech)
         return path
 
