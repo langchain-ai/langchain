@@ -28,7 +28,7 @@ class ArcGISLoader(BaseLoader):
         out_fields: Optional[Union[List[str], str]] = None,
         return_geometry: bool = False,
         return_all_records: bool = True,
-        lyr_desc: str = None,
+        lyr_desc: Optional[str] = None,
         **kwargs: Any,
     ):
         try:
