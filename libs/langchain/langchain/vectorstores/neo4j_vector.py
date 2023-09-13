@@ -46,15 +46,15 @@ def _get_search_index_query(search_type: SearchType) -> str:
             "CALL { "
             "CALL db.index.vector.queryNodes($index, $k, $embedding) "
             "YIELD node, score "
-            "RETURN node, score UNION"
+            "RETURN node, score UNION "
             "CALL db.index.fulltext.queryNodes($keyword_index, $query, {limit: $k}) "
             "YIELD node, score "
             "WITH collect({node:node, score:score}) AS nodes, max(score) AS max "
             "UNWIND nodes AS n "
             "RETURN n.node AS node, (n.score / max) AS score "  # We use 0 as min
             "} "
-            "WITH node, score ORDER BY score DESC "
-            "WITH node, collect(score)[0] AS score LIMIT $k "  # deduplicate
+            "WITH node, max(score) AS score ORDER BY score DESC LIMIT $k " # deduplicate
+              
         ),
     }
     return type_to_query_map[search_type]
