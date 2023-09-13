@@ -1,4 +1,6 @@
 import re
+from typing import List
+
 from langchain_experimental.data_anonymizer.deanonymizer_mapping import MappingDataType
 
 
@@ -23,7 +25,8 @@ def case_insensitive_matching_strategy(
 ) -> str:
     """
     Case insensitive matching strategy for deanonymization.
-    It replaces all the anonymized entities with the original ones irrespective of their letter case.
+    It replaces all the anonymized entities with the original ones
+        irrespective of their letter case.
 
     Args:
         text: text to deanonymize
@@ -54,7 +57,7 @@ def ngram_fuzzy_matching_strategy(
         fuzzy_threshold: fuzzy matching threshold
     """
 
-    def generate_ngrams(words_list, n):
+    def generate_ngrams(words_list: List[str], n: int) -> list:
         """Generate n-grams from a list of words"""
         return [
             " ".join(words_list[i : i + n]) for i in range(len(words_list) - (n - 1))
