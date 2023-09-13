@@ -22,6 +22,7 @@ def _import_azure_speech() -> Any:
         )
     return speechsdk
 
+
 logger = logging.getLogger(__name__)
 
 
