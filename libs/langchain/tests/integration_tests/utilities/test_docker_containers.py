@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+
 from langchain.utilities.docker_containers import (
     DockerContainer,
     DockerImage,
@@ -31,14 +32,11 @@ def run_container_cowsay(image: DockerImage) -> None:
     # by ENTRYPOINT defined in dockerfile.
     try:
         container = DockerContainer(image)
-        ret_code, log = container.spawn_run("I like langchain!")
+        ret_code, log = container.spawn_run('-t "I like langchain!"')
         assert ret_code == 0
-        assert (
-            log.find(b"moo I like langchain") >= 0
-        ), "Cowsay should say same words with moo"
+        assert log.find(b"I like langchain") >= 0, "Cowsay should say same words"
     finally:
-        docker_client = get_docker_client()
-        docker_client.images.remove(image.name)
+        DockerImage.remove(image)
 
 
 @pytest.mark.requires("docker")
