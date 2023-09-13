@@ -173,7 +173,8 @@ class VearchDb(VectorStore):
                 profiles: dict[str, Any] = {}
                 profiles["text"] = text
                 profiles["metadata"] = metadata["source"]
-                profiles["text_embedding"] = embed
+                embed = np.array(embed)
+		profiles["text_embedding"] = embed / np.linalg.norm(embed) 
                 doc_items.append(profiles)
 
             docid = self.vearch_engine.add(doc_items)
@@ -253,11 +254,12 @@ class VearchDb(VectorStore):
             The k most similar documents to the specified text query.
             0 is dissimilar, 1 is the most similar.
         """
+	embed = np.array(embedding)
         query_data = {
             "vector": [
                 {
                     "field": "text_embedding",
-                    "feature": np.array(embedding),
+                    "feature": embed / np.linalg.norm(embed),
                 }
             ],
             "fields": [],
@@ -299,11 +301,12 @@ class VearchDb(VectorStore):
         if self.embedding_func is None:
             raise ValueError("embedding_func is None!!!")
         embeddings = self.embedding_func.embed_query(query)
-        query_data = {
+        embed = np.array(embedding)
+	 query_data = {
             "vector": [
                 {
                     "field": "text_embedding",
-                    "feature": np.array(embeddings),
+                    "feature": embed / np.linalg.norm(embed),
                 }
             ],
             "fields": [],
