@@ -38,6 +38,9 @@ def test_detect_many_languages(text: str, languages: List[str]) -> None:
     lang_detector = LangDetector()
     predicted = lang_detector.detect_many_languages(text)
     if len(predicted) > 1:
-        assert predicted[0][1] > predicted[1][1]  # assert first language is more probable
-    assert sorted([x[0] for x in predicted]) == languages  # sort languages alphabetically due to randomness of results 
-    
+        assert (
+            predicted[0][1] > predicted[1][1]
+        )  # assert first language is more probable
+    assert (
+        sorted([x[0] for x in predicted]) == languages
+    )  # sort languages alphabetically due to randomness of results
