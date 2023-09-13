@@ -1,6 +1,6 @@
 # Vearch
 
-Vearch is a scalable distributed system for efficient similarity search of deep learning vectors.
+[Vearch](https://github.com/vearch/vearch) is a scalable distributed system for efficient similarity search of deep learning vectors.
 
 # Installation and Setup
 
