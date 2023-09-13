@@ -21,5 +21,6 @@ class PythonREPL(BaseModel):
             output = mystdout.getvalue()
         except Exception as e:
             sys.stdout = old_stdout
-            output = str(e)
+            output = repr(e)
+        print(output)
         return output

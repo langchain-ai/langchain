@@ -122,6 +122,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Maximum number of retries to make when generating."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout in seconds for the OpenAPI request."""
+    headers: Any = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -210,6 +211,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     input=tokens[i : i + _chunk_size],
                     engine=self.deployment,
                     request_timeout=self.request_timeout,
+                    headers=self.headers,
                 )
                 batched_embeddings += [r["embedding"] for r in response["data"]]
 
@@ -227,6 +229,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         input="",
                         engine=self.deployment,
                         request_timeout=self.request_timeout,
+                        headers=self.headers,
                     )["data"][0]["embedding"]
                 else:
                     average = np.average(
@@ -254,7 +257,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 # replace newlines, which can negatively affect performance.
                 text = text.replace("\n", " ")
             return embed_with_retry(
-                self, input=[text], engine=engine, request_timeout=self.request_timeout
+                self,
+                input=[text],
+                engine=engine,
+                request_timeout=self.request_timeout,
+                headers=self.headers,
             )["data"][0]["embedding"]
 
     def embed_documents(

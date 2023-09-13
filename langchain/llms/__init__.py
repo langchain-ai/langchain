@@ -4,11 +4,13 @@ from typing import Dict, Type
 from langchain.llms.ai21 import AI21
 from langchain.llms.aleph_alpha import AlephAlpha
 from langchain.llms.anthropic import Anthropic
+from langchain.llms.anyscale import Anyscale
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
 from langchain.llms.cerebriumai import CerebriumAI
 from langchain.llms.cohere import Cohere
 from langchain.llms.deepinfra import DeepInfra
+from langchain.llms.fake import FakeListLLM
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.google_palm import GooglePalm
 from langchain.llms.gooseai import GooseAI
@@ -37,6 +39,7 @@ from langchain.llms.writer import Writer
 __all__ = [
     "Anthropic",
     "AlephAlpha",
+    "Anyscale",
     "Banana",
     "CerebriumAI",
     "Cohere",
@@ -69,12 +72,14 @@ __all__ = [
     "PredictionGuard",
     "HumanInputLLM",
     "HuggingFaceTextGenInference",
+    "FakeListLLM",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ai21": AI21,
     "aleph_alpha": AlephAlpha,
     "anthropic": Anthropic,
+    "anyscale": Anyscale,
     "bananadev": Banana,
     "cerebriumai": CerebriumAI,
     "cohere": Cohere,
@@ -102,4 +107,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "writer": Writer,
     "rwkv": RWKV,
     "huggingface_textgen_inference": HuggingFaceTextGenInference,
+    "fake-list": FakeListLLM,
 }

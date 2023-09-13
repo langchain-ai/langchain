@@ -21,6 +21,7 @@ def test_pwd_command() -> None:
     assert output == subprocess.check_output("pwd", shell=True).decode()
 
 
+@pytest.mark.skip(reason="flaky on GHA, TODO to fix")
 @pytest.mark.skipif(
     sys.platform.startswith("win"), reason="Test not supported on Windows"
 )

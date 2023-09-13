@@ -29,4 +29,4 @@ class FakeListLLM(LLM):
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
-        return {}
+        return {"responses": self.responses}

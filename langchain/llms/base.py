@@ -4,7 +4,7 @@ import json
 import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import yaml
 from pydantic import Extra, Field, root_validator, validator
@@ -19,7 +19,14 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
-from langchain.schema import Generation, LLMResult, PromptValue
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    Generation,
+    LLMResult,
+    PromptValue,
+    get_buffer_string,
+)
 
 
 def _get_verbosity() -> bool:
@@ -285,6 +292,24 @@ class BaseLLM(BaseLanguageModel, ABC):
             .generations[0][0]
             .text
         )
+
+    def predict(self, text: str, *, stop: Optional[Sequence[str]] = None) -> str:
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        return self(text, stop=_stop)
+
+    def predict_messages(
+        self, messages: List[BaseMessage], *, stop: Optional[Sequence[str]] = None
+    ) -> BaseMessage:
+        text = get_buffer_string(messages)
+        if stop is None:
+            _stop = None
+        else:
+            _stop = list(stop)
+        content = self(text, stop=_stop)
+        return AIMessage(content=content)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

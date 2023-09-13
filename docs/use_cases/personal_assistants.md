@@ -46,3 +46,4 @@ Specific examples of agents include:
 - [Plug-and-PlAI (Plugins Database)](agents/custom_agent_with_plugin_retrieval_using_plugnplai.ipynb): an implementation of an agent that is designed to be able to use all AI Plugins retrieved from PlugNPlAI.
 - [Wikibase Agent](agents/wikibase_agent.ipynb): an implementation of an agent that is designed to interact with Wikibase.
 - [Sales GPT](agents/sales_agent_with_context.ipynb): This notebook demonstrates an implementation of a Context-Aware AI Sales agent.
+- [Multi-Modal Output Agent](agents/multi_modal_output_agent.ipynb): an implementation of a multi-modal output agent that can generate text and images.

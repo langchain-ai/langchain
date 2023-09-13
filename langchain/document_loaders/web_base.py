@@ -76,7 +76,7 @@ class WebBaseLoader(BaseLoader):
             self.session.headers = dict(headers)
         except ImportError:
             logger.info(
-                "fake_useragent not found, using default user agent."
+                "fake_useragent not found, using default user agent. "
                 "To get a realistic header for requests, `pip install fake_useragent`."
             )
 

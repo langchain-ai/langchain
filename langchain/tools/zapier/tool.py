@@ -105,6 +105,7 @@ class ZapierNLARunAction(BaseTool):
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
     action_id: str
     params: Optional[dict] = None
+    base_prompt: str = BASE_ZAPIER_TOOL_PROMPT
     zapier_description: str
     params_schema: Dict[str, str] = Field(default_factory=dict)
     name = ""
@@ -116,8 +117,17 @@ class ZapierNLARunAction(BaseTool):
         params_schema = values["params_schema"]
         if "instructions" in params_schema:
             del params_schema["instructions"]
+
+        # Ensure base prompt (if overrided) contains necessary input fields
+        necessary_fields = {"{zapier_description}", "{params}"}
+        if not all(field in values["base_prompt"] for field in necessary_fields):
+            raise ValueError(
+                "Your custom base Zapier prompt must contain input fields for "
+                "{zapier_description} and {params}."
+            )
+
         values["name"] = zapier_description
-        values["description"] = BASE_ZAPIER_TOOL_PROMPT.format(
+        values["description"] = values["base_prompt"].format(
             zapier_description=zapier_description,
             params=str(list(params_schema.keys())),
         )

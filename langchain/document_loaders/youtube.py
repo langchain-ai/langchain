@@ -70,8 +70,8 @@ class GoogleApiClient:
                 "You must run"
                 "`pip install --upgrade "
                 "google-api-python-client google-auth-httplib2 "
-                "google-auth-oauthlib"
-                "youtube-transcript-api`"
+                "google-auth-oauthlib "
+                "youtube-transcript-api` "
                 "to use the Google Drive loader"
             )
 
@@ -239,8 +239,8 @@ class GoogleApiYoutubeLoader(BaseLoader):
                 "You must run"
                 "`pip install --upgrade "
                 "google-api-python-client google-auth-httplib2 "
-                "google-auth-oauthlib"
-                "youtube-transcript-api`"
+                "google-auth-oauthlib "
+                "youtube-transcript-api` "
                 "to use the Google Drive loader"
             )
 
@@ -305,7 +305,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
             raise ImportError(
                 "You must run"
                 "`pip install --upgrade "
-                "youtube-transcript-api`"
+                "youtube-transcript-api` "
                 "to use the youtube loader"
             )
 
