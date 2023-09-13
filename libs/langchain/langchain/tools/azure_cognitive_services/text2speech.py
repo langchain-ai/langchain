@@ -11,13 +11,16 @@ from langchain.tools.audio_utils import load_audio, save_audio
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
 
-try:
-    import azure.cognitiveservices.speech as speechsdk
-except ImportError:
-    raise ImportError(
-        "azure.cognitiveservices.speech is not installed. "
-        "Run `pip install azure-cognitiveservices-speech` to install."
-    )
+
+def _import_azure_speech() -> Any:
+    try:
+        import azure.cognitiveservices.speech as speechsdk
+    except ImportError:
+        raise ImportError(
+            "azure.cognitiveservices.speech is not installed. "
+            "Run `pip install azure-cognitiveservices-speech` to install."
+        )
+    return speechsdk
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +46,7 @@ class AzureCogsText2SpeechTool(BaseTool):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
+        speechsdk = _import_azure_speech()
         azure_cogs_key = get_from_dict_or_env(
             values, "azure_cogs_key", "AZURE_COGS_KEY"
         )
@@ -57,6 +61,7 @@ class AzureCogsText2SpeechTool(BaseTool):
         return values
 
     def _text2speech(self, text: str, speech_language: str) -> bytes:
+        speechsdk = _import_azure_speech()
         self.speech_config.speech_synthesis_language = speech_language
         speech_synthesizer = speechsdk.SpeechSynthesizer(
             speech_config=self.speech_config, audio_config=None
