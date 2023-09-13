@@ -8,7 +8,7 @@ import pytest
     "text,language",
     [
         ("Hello, my name is John Doe.", "en"),
-        ("Hallo, mein Name ist John Doe.", "de"),
+        ("Hallo, Ich bin John Doe.", "de"),
     ],
 )
 def test_detect_single_language(text: str, language: str) -> None:
