@@ -138,7 +138,7 @@ class PyPDFLoader(BasePDFLoader):
     """
 
     def __init__(
-        self, file_path: str, password: Optional[Union[str, bytes]] = None
+        self, file_path: str, password: Optional[Union[str, bytes]] = None, extract_images = False
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -147,7 +147,7 @@ class PyPDFLoader(BasePDFLoader):
             raise ImportError(
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
-        self.parser = PyPDFParser(password=password)
+        self.parser = PyPDFParser(password=password, extract_images=extract_images)
         super().__init__(file_path)
 
     def load(self) -> List[Document]:
@@ -165,10 +165,10 @@ class PyPDFLoader(BasePDFLoader):
 class PyPDFium2Loader(BasePDFLoader):
     """Load `PDF` using `pypdfium2` and chunks at character level."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, extract_images: bool = False):
         """Initialize with a file path."""
         super().__init__(file_path)
-        self.parser = PyPDFium2Parser()
+        self.parser = PyPDFium2Parser(extract_images=extract_images)
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
@@ -195,12 +195,14 @@ class PyPDFDirectoryLoader(BaseLoader):
         silent_errors: bool = False,
         load_hidden: bool = False,
         recursive: bool = False,
+        extract_images: bool = False,
     ):
         self.path = path
         self.glob = glob
         self.load_hidden = load_hidden
         self.recursive = recursive
         self.silent_errors = silent_errors
+        self.extract_images = extract_images
 
     @staticmethod
     def _is_visible(path: Path) -> bool:
@@ -214,7 +216,7 @@ class PyPDFDirectoryLoader(BaseLoader):
             if i.is_file():
                 if self._is_visible(i.relative_to(p)) or self.load_hidden:
                     try:
-                        loader = PyPDFLoader(str(i))
+                        loader = PyPDFLoader(str(i), self.extract_images)
                         sub_docs = loader.load()
                         for doc in sub_docs:
                             doc.metadata["source"] = str(i)
@@ -292,7 +294,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 class PyMuPDFLoader(BasePDFLoader):
     """Load `PDF` files using `PyMuPDF`."""
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, extract_images = False) -> None:
         """Initialize with a file path."""
         try:
             import fitz  # noqa:F401
@@ -303,11 +305,11 @@ class PyMuPDFLoader(BasePDFLoader):
             )
 
         super().__init__(file_path)
+        self.extract_images = extract_images   
 
     def load(self, **kwargs: Optional[Any]) -> List[Document]:
         """Load file."""
-
-        parser = PyMuPDFParser(text_kwargs=kwargs)
+        parser = PyMuPDFParser(text_kwargs=kwargs, extract_images=self.extract_images)
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 

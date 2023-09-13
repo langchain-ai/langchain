@@ -12,11 +12,40 @@ if TYPE_CHECKING:
     import pdfplumber.page
 
 
+def extract_from_images_with_rapidocr(images: list[np.array, bytes]) -> str:
+    
+    try:
+        from rapidocr_onnxruntime import RapidOCR
+    except ImportError:
+        raise ImportError(
+            "`rapidocr-onnxruntime` package not found, please install it with "
+            "`pip install rapidocr-onnxruntime`"
+        )
+    ocr = RapidOCR()
+    text = ""
+    for img in images:
+        result, _ = ocr(img)
+        result = [text[1] for text in result]
+        text += "\n".join(result)
+    return text
+
 class PyPDFParser(BaseBlobParser):
     """Load `PDF` using `pypdf` and chunk at character level."""
 
-    def __init__(self, password: Optional[Union[str, bytes]] = None):
+    def __init__(self, password: Optional[Union[str, bytes]] = None, extract_images: bool = False):
         self.password = password
+        self.extract_images = extract_images
+
+    def _extract_images_from_page(self, page) -> str:
+        """Extract images from page and get the text with RapidOCR."""
+        if not self.extract_images: return ""
+
+        xObject = page['/Resources']['/XObject'].get_object()
+        images = []
+        for obj in xObject:
+            if xObject[obj]['/Subtype'] == '/Image':
+                images.append(xObject[obj].get_data())
+        return extract_from_images_with_rapidocr(images)
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -26,7 +55,7 @@ class PyPDFParser(BaseBlobParser):
             pdf_reader = pypdf.PdfReader(pdf_file_obj, password=self.password)
             yield from [
                 Document(
-                    page_content=page.extract_text(),
+                    page_content=page.extract_text() + self._extract_images_from_page(page),
                     metadata={"source": blob.source, "page": page_number},
                 )
                 for page_number, page in enumerate(pdf_reader.pages)
@@ -36,37 +65,95 @@ class PyPDFParser(BaseBlobParser):
 class PDFMinerParser(BaseBlobParser):
     """Parse `PDF` using `PDFMiner`."""
 
+    def _extract_images_from_page(self, page) -> str:
+        """Extract images from page and get the text with RapidOCR."""
+        # if not self.extract_images: return ""
+
+        import pdfminer
+
+        def get_image(layout_object):
+            if isinstance(layout_object, pdfminer.layout.LTImage):
+                return layout_object
+            if isinstance(layout_object, pdfminer.layout.LTContainer):
+                for child in layout_object:
+                    return get_image(child)
+            else:
+                return None
+        
+        # images = list(filter(bool, map(get_image, page)))
+        images = get_image(page)
+        print(type(images))
+
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
-        from pdfminer.high_level import extract_text
-
+        # from pdfminer.high_level import extract_text, extract_pages
+        # from pdfminer.pdfpage import PDFPage
+        # with blob.as_bytes_io() as pdf_file_obj:
+        #     text = extract_text(pdf_file_obj)
+        #     metadata = {"source": blob.source}
+        #     yield Document(page_content=text, metadata=metadata)
+        # with blob.as_bytes_io() as pdf_file_obj:
+        #     pages = list(extract_pages(pdf_file_obj))
+        #     for page in pages:
+        #         self._extract_images_from_page(page)
+        from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+        from pdfminer.pdfpage import PDFPage
+        from pdfminer.converter import TextConverter
+        from pdfminer.layout import LAParams
+        import io
+        rsrcmgr = PDFResourceManager()
+        retstr = io.StringIO()
+        # codec = 'utf-8'
+        laparams = LAParams()
+        device = TextConverter(rsrcmgr, retstr, laparams=laparams)
+        interpreter = PDFPageInterpreter(rsrcmgr, device)
         with blob.as_bytes_io() as pdf_file_obj:
-            text = extract_text(pdf_file_obj)
-            metadata = {"source": blob.source}
-            yield Document(page_content=text, metadata=metadata)
+            pages = PDFPage.get_pages(pdf_file_obj)
+            for page in pages:
+                self._extract_images_from_page(page)
+                interpreter.process_page(page)
+                data = retstr.getvalue()
+                retstr.truncate(0)
+                retstr.seek(0)
+                metadata = {"source": blob.source}
+                yield Document(page_content=data, metadata=metadata)
 
 
 class PyMuPDFParser(BaseBlobParser):
     """Parse `PDF` using `PyMuPDF`."""
 
-    def __init__(self, text_kwargs: Optional[Mapping[str, Any]] = None) -> None:
+    def __init__(self, text_kwargs: Optional[Mapping[str, Any]] = None, extract_images: bool = False) -> None:
         """Initialize the parser.
 
         Args:
             text_kwargs: Keyword arguments to pass to ``fitz.Page.get_text()``.
         """
         self.text_kwargs = text_kwargs or {}
+        self.extract_images = extract_images
+
+    def _extract_images_from_page(self, doc, page) -> str:
+        """Extract images from page and get the text with RapidOCR."""
+        if not self.extract_images: return ""
+        import fitz
+        img_list = page.get_images()
+        imgs = []
+        for img in img_list:
+            xref = img[0]
+            pix = fitz.Pixmap(doc, xref)
+            imgs.append(np.frombuffer(pix.samples, dtype = np.uint8) \
+                        .reshape(pix.height, pix.width, -1))
+        return extract_from_images_with_rapidocr(imgs)
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
         import fitz
-
         with blob.as_bytes_io() as file_path:
             doc = fitz.open(file_path)  # open document
 
             yield from [
                 Document(
-                    page_content=page.get_text(**self.text_kwargs),
+                    page_content=page.get_text(**self.text_kwargs) \
+                                 + self._extract_images_from_page(doc, page),
                     metadata=dict(
                         {
                             "source": blob.source,
@@ -88,7 +175,7 @@ class PyMuPDFParser(BaseBlobParser):
 class PyPDFium2Parser(BaseBlobParser):
     """Parse `PDF` with `PyPDFium2`."""
 
-    def __init__(self) -> None:
+    def __init__(self, extract_images: bool = False) -> None:
         """Initialize the parser."""
         try:
             import pypdfium2  # noqa:F401
@@ -97,6 +184,20 @@ class PyPDFium2Parser(BaseBlobParser):
                 "pypdfium2 package not found, please install it with"
                 " `pip install pypdfium2`"
             )
+        self.extract_images = extract_images
+
+    def _extract_images_from_page(self, page) -> str:
+        """Extract images from page and get the text with RapidOCR."""
+        if not self.extract_images: return ""
+
+        import pypdfium2.raw as pdfium_c
+
+        images = list(page.get_objects(
+            filter = (pdfium_c.FPDF_PAGEOBJ_IMAGE, )
+        ))
+
+        images = list(map(lambda x: x.get_bitmap().to_numpy(), images))
+        return extract_from_images_with_rapidocr(images)
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -111,6 +212,7 @@ class PyPDFium2Parser(BaseBlobParser):
                     text_page = page.get_textpage()
                     content = text_page.get_text_range()
                     text_page.close()
+                    content += self._extract_images_from_page(page)
                     page.close()
                     metadata = {"source": blob.source, "page": page_number}
                     yield Document(page_content=content, metadata=metadata)
