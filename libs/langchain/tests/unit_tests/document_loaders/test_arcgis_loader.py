@@ -49,9 +49,9 @@ def test_lazy_load(arcgis_mocks, mock_feature_layer, mock_gis):  # type: ignore
     # Add more assertions based on your expected behavior
 
 
-def test_initialization_with_string_layer(
+def test_initialization_with_string_layer(  # type: ignore
     arcgis_mocks, mock_feature_layer, mock_gis
-):  # type: ignore
+):
     layer_url = "https://example.com/layer_url"
 
     with patch("arcgis.features.FeatureLayer", return_value=mock_feature_layer):
@@ -60,9 +60,9 @@ def test_initialization_with_string_layer(
     assert loader.url == layer_url
 
 
-def test_layer_description_provided_by_user(
+def test_layer_description_provided_by_user(  # type: ignore
     arcgis_mocks, mock_feature_layer, mock_gis
-):  # type: ignore
+):
     custom_description = "Custom Layer Description"
     loader = ArcGISLoader(
         layer=mock_feature_layer, gis=mock_gis, lyr_desc=custom_description
@@ -81,9 +81,9 @@ def test_initialization_without_arcgis(mock_feature_layer, mock_gis):  # type: i
             ArcGISLoader(layer=mock_feature_layer, gis=mock_gis)
 
 
-def test_get_layer_properties_with_description(
+def test_get_layer_properties_with_description(  # type: ignore
     arcgis_mocks, mock_feature_layer, mock_gis
-):  # type: ignore
+):
     loader = ArcGISLoader(
         layer=mock_feature_layer, gis=mock_gis, lyr_desc="Custom Description"
     )
@@ -117,9 +117,9 @@ def test_geometry_returned(arcgis_mocks, mock_feature_layer, mock_gis):  # type:
     assert "geometry" in documents[0].metadata
 
 
-def test_geometry_not_returned(
+def test_geometry_not_returned(  # type: ignore
     arcgis_mocks, mock_feature_layer, mock_gis
-):  # type: ignore
+):
     loader = ArcGISLoader(layer=mock_feature_layer, gis=mock_gis, return_geometry=False)
 
     documents = list(loader.lazy_load())
