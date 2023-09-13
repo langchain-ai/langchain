@@ -266,12 +266,14 @@ class OpenLLM(LLM):
         )
         if self._client:
             o = self._client.query(prompt, **config.model_dump(flatten=True))
-            if isinstance(o, dict) and 'text' in o: return o['text']
+            if isinstance(o, dict) and "text" in o:
+                return o["text"]
             return o
         else:
             assert self._runner is not None
             o = self._runner(prompt, **config.model_dump(flatten=True))
-            if isinstance(o, dict) and 'text' in o: return o['text']
+            if isinstance(o, dict) and "text" in o:
+                return o["text"]
             return o
 
     async def _acall(
@@ -298,7 +300,8 @@ class OpenLLM(LLM):
             o = await self._client.acall(
                 "generate", prompt, **config.model_dump(flatten=True)
             )
-            if isinstance(o, dict) and 'text' in o: return o['text']
+            if isinstance(o, dict) and "text" in o:
+                return o["text"]
             return o
         else:
             assert self._runner is not None
@@ -313,5 +316,6 @@ class OpenLLM(LLM):
             o = self._runner.llm.postprocess_generate(
                 prompt, generated_result, **postprocess_kwargs
             )
-            if isinstance(o, dict) and 'text' in o: return o['text']
+            if isinstance(o, dict) and "text" in o:
+                return o["text"]
             return o
