@@ -60,6 +60,19 @@ def test_initialization_with_string_layer(
     assert loader.url == layer_url
 
 
+def test_layer_description_provided_by_user(
+    arcgis_mocks, mock_feature_layer, mock_gis
+):  # type: ignore
+    custom_description = "Custom Layer Description"
+    loader = ArcGISLoader(
+        layer=mock_feature_layer, gis=mock_gis, lyr_desc=custom_description
+    )
+
+    layer_properties = loader._get_layer_properties(lyr_desc=custom_description)
+
+    assert layer_properties["layer_description"] == custom_description
+
+
 def test_initialization_without_arcgis(mock_feature_layer, mock_gis):  # type: ignore
     with patch.dict("sys.modules", {"arcgis": None}):
         with pytest.raises(
