@@ -61,9 +61,9 @@ def test_cassandra_with_score() -> None:
     docs = [o[0] for o in output]
     scores = [o[1] for o in output]
     assert docs == [
-        Document(page_content="foo", metadata={"page": 0}),
-        Document(page_content="bar", metadata={"page": 1}),
-        Document(page_content="baz", metadata={"page": 2}),
+        Document(page_content="foo", metadata={"page": '0.0'}),
+        Document(page_content="bar", metadata={"page": '1.0'}),
+        Document(page_content="baz", metadata={"page": '2.0'}),
     ]
     assert scores[0] > scores[1] > scores[2]
 
