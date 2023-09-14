@@ -37,6 +37,7 @@ def test_replicate_model_kwargs() -> None:
     )
     short_output = llm("What is LangChain")
     assert len(short_output) < len(long_output)
+    assert llm.model_kwargs == {"max_length": 10, "temperature": 0.01}
 
 
 def test_replicate_input() -> None:

@@ -79,7 +79,7 @@ class Replicate(LLM):
             logger.warning(
                 "Init param `input` is deprecated, please use `model_kwargs` instead."
             )
-        extra = {**values.get("model_kwargs", {}), **input}
+        extra = {**values.pop("model_kwargs", {}), **input}
         for field_name in list(values):
             if field_name not in all_required_field_names:
                 if field_name in extra:
