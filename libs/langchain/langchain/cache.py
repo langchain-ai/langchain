@@ -163,7 +163,7 @@ def _loads_generations(generations_str: str) -> Union[RETURN_VAL_TYPE, None]:
         return generations
     except (json.JSONDecodeError, TypeError):
         logger.warning(
-            f"Malformed/unparseable cached blob encountered: '{generations_str}'"
+            f"Malformed/unparsable cached blob encountered: '{generations_str}'"
         )
         return None
 
