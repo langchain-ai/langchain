@@ -686,12 +686,15 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
 
     def __init__(
         self,
-        *branches: Union[
-            Tuple[
-                Union[Runnable[Input, bool], Callable[[Input], bool]],
-                RunnableLike,
+        *branches: Tuple[
+            Union[
+                Tuple[
+                    Union[Runnable[Input, bool], Callable[[Input], bool]],
+                    RunnableLike,
+                ],
+                RunnableLike,  # To accommodate the default branch
             ],
-            RunnableLike,  # To accommodate the default branch
+            ...,
         ],
     ) -> None:
         """A Runnable that runs one of two branches based on a condition."""
@@ -702,7 +705,7 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
 
         if not isinstance(default, (Runnable, Callable, Mapping)):
             raise TypeError(
-                f"RunnableBranch default must be runnable, callable or mapping."
+                "RunnableBranch default must be runnable, callable or mapping."
             )
 
         _branches = []
