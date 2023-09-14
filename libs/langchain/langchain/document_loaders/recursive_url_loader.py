@@ -1,6 +1,6 @@
 import asyncio
 import re
-from typing import Callable, Iterator, List, Optional, Set, Union
+from typing import Callable, Iterable, Iterator, List, Optional, Set, Union
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -18,7 +18,7 @@ class RecursiveUrlLoader(BaseLoader):
         max_depth: Optional[int] = None,
         use_async: Optional[bool] = None,
         extractor: Optional[Callable[[str], str]] = None,
-        exclude_dirs: Optional[str] = None,
+        exclude_dirs: Optional[Iterable[str]] = None,
         timeout: Optional[int] = None,
         prevent_outside: Optional[bool] = None,
     ) -> None:
