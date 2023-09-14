@@ -646,6 +646,156 @@ class Runnable(Generic[Input, Output], ABC):
             await run_manager.on_chain_end(final_output, inputs=final_input)
 
 
+# Output type should implement __concat__, as eg str, list, dict do
+OutputT = TypeVar("OutputT")
+OutputF = TypeVar("OutputF")
+
+
+class RunnableBranch(Serializable, Runnable[Input, Output]):
+    """A Runnable that selects which branch to run based on a condition.
+
+    The runnable is initialized with a list of (condition, runnable) pairs and
+    a default branch.
+
+    When operating on an input, the first condition that evaluates to True is
+    selected, and the corresponding runnable is run on the input.
+
+    If no condition evaluates to True, the default branch is run on the input.
+
+    Examples:
+
+        .. code-block:: python
+
+            from langchain.schema.runnable import RunnableBranch
+
+            branch = RunnableBranch(
+                (lambda x: isinstance(x, str), lambda x: x.upper()),
+                (lambda x: isinstance(x, int), lambda x: x + 1),
+                (lambda x: isinstance(x, float), lambda x: x * 2),
+                lambda x: "goodbye",
+            )
+
+            branch.invoke("hello") # "HELLO"
+            branch.invoke(None) # "goodbye"
+    """
+
+    branches: Sequence[
+        Tuple[Runnable[Input, bool], Runnable[Input, Output]]
+    ]  # How to type this?
+    default: Runnable[Input, Union[Output]]
+
+    def __init__(
+        self,
+        *branches: Tuple[
+            Union[Runnable[Input, bool], Callable[[Input], bool]],
+            Union[Runnable[Input, Output], Callable[[Input], Output]],
+        ],
+    ) -> None:
+        """A Runnable that runs one of two branches based on a condition."""
+        if len(branches) < 2:
+            raise ValueError("RunnableBranch requires at least two branches")
+
+        default = branches[-1]
+
+        _branches = []
+        for branch in branches[:-1]:
+            condition, runnable = branch
+            condition = cast(Runnable[Input, bool], coerce_to_runnable(condition))
+            runnable = coerce_to_runnable(runnable)
+            _branches.append((condition, runnable))
+
+        super().__init__(branches=_branches, default=coerce_to_runnable(default))
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @property
+    def lc_serializable(self) -> bool:
+        """RunnableBranch is serializable if all its branches are serializable."""
+        return True
+
+    @property
+    def lc_namespace(self) -> List[str]:
+        """The namespace of a RunnableBranch is the namespace of its default branch."""
+        return self.__class__.__module__.split(".")[:-1]
+
+    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+        """First evaluates the condition, then delegate to true or false branch."""
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self),
+            input,
+            name=config.get("run_name"),
+        )
+
+        for idx, branch in enumerate(self.branches):
+            condition, runnable = branch
+
+            expression_value = condition.invoke(
+                input,
+                config=patch_config(
+                    config, callbacks=run_manager.get_child(tag="condition:{idx}")
+                ),
+            )
+
+            if expression_value:
+                return runnable.invoke(
+                    input,
+                    config=patch_config(
+                        config, callbacks=run_manager.get_child(tag=f"body:{idx}")
+                    ),
+                )
+
+        output = self.default.invoke(
+            input,
+            config=patch_config(
+                config, callbacks=run_manager.get_child(tag="branch:default")
+            ),
+        )
+        return output
+
+    async def ainvoke(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Output:
+        """Async version of invoke."""
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self),
+            input,
+            name=config.get("run_name"),
+        )
+
+        for idx, branch in enumerate(self.branches):
+            condition, runnable = branch
+
+            expression_value = condition.invoke(
+                input,
+                config=patch_config(
+                    config, callbacks=run_manager.get_child(tag="condition:{idx}")
+                ),
+            )
+
+            if expression_value:
+                return await runnable.ainvoke(
+                    input,
+                    config=patch_config(
+                        config, callbacks=run_manager.get_child(tag=f"body:{idx}")
+                    ),
+                    **kwargs,
+                )
+
+        output = await self.default.ainvoke(
+            input,
+            config=patch_config(
+                config, callbacks=run_manager.get_child(tag="branch:default")
+            ),
+            **kwargs,
+        )
+        return output
+
+
 class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
     """
     A Runnable that can fallback to other Runnables if it fails.

@@ -1,5 +1,7 @@
 from operator import itemgetter
 from typing import Any, Dict, List, Optional, Union
+
+from types import GeneratorType
 from uuid import UUID
 
 import pytest
@@ -34,6 +36,7 @@ from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
     RouterRunnable,
     Runnable,
+    RunnableBranch,
     RunnableConfig,
     RunnableLambda,
     RunnableMap,
@@ -1785,3 +1788,126 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
+
+
+def test_runnable_branch_init() -> None:
+    """Verify that runnable branch gets initialized properly."""
+    add = RunnableLambda(lambda x: x + 1)
+    condition = RunnableLambda(lambda x: x > 0)
+
+    # Test failure with less than 2 branches
+    with pytest.raises(ValueError):
+        RunnableBranch((condition, add))
+
+    # Test failure with less than 2 branches
+    with pytest.raises(ValueError):
+        RunnableBranch(condition)
+
+
+@pytest.mark.parametrize(
+    "branches",
+    [
+        [
+            (RunnableLambda(lambda x: x > 0), RunnableLambda(lambda x: x + 1)),
+            RunnableLambda(lambda x: x - 1),
+        ],
+        [
+            (RunnableLambda(lambda x: x > 0), RunnableLambda(lambda x: x + 1)),
+            (RunnableLambda(lambda x: x > 5), RunnableLambda(lambda x: x + 1)),
+            RunnableLambda(lambda x: x - 1),
+        ],
+        [
+            (lambda x: x > 0, lambda x: x + 1),
+            (lambda x: x > 5, lambda x: x + 1),
+            lambda x: x - 1,
+        ],
+    ],
+)
+def test_runnable_branch_init_coercion(branches) -> None:
+    """Verify that runnable branch gets initialized properly."""
+    runnable = RunnableBranch(*branches)
+    for branch in runnable.branches:
+        condition, body = branch
+        assert isinstance(condition, Runnable)
+        assert isinstance(body, Runnable)
+
+    assert isinstance(runnable.default, Runnable)
+
+
+def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:
+    """Verify that runnables are invoked only when necessary."""
+    # Test with single branch
+    add = RunnableLambda(lambda x: x + 1)
+    sub = RunnableLambda(lambda x: x - 1)
+    condition = RunnableLambda(lambda x: x > 0)
+    spy = mocker.spy(condition, "invoke")
+    add_spy = mocker.spy(add, "invoke")
+
+    branch = RunnableBranch((condition, add), (condition, add), sub)
+    assert spy.call_count == 0
+    assert add_spy.call_count == 0
+
+    assert branch.invoke(1) == 2
+    assert add_spy.call_count == 1
+    assert spy.call_count == 1
+
+    assert branch.invoke(2) == 3
+    assert spy.call_count == 2
+    assert add_spy.call_count == 2
+
+    assert branch.invoke(-3) == -4
+    # Should fall through to default branch with condition being evaluated twice!
+    assert spy.call_count == 4
+    # Add should not be invoked
+    assert add_spy.call_count == 2
+
+
+def test_runnable_branch_invoke() -> None:
+    # Test with single branch
+    branch = RunnableBranch(
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert branch.invoke(1) == 2
+    assert branch.invoke(10) == 100
+    assert branch.invoke(0) == -1
+
+
+def test_runnable_branch_batch() -> None:
+    """Test batch variant."""
+    # Test with single branch
+    branch = RunnableBranch(
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert branch.batch([1, 10, 0]) == [2, 100, -1]
+
+
+@pytest.mark.asyncio
+async def test_runnable_branch_ainvoke() -> None:
+    """Test async variant of invoke."""
+    branch = RunnableBranch(
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert await branch.ainvoke(1) == 2
+    assert await branch.ainvoke(10) == 100
+    assert await branch.ainvoke(0) == -1
+
+
+@pytest.mark.asyncio
+async def test_runnable_branch_abatch() -> None:
+    """Test async variant of invoke."""
+    branch = RunnableBranch(
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert await branch.abatch([1, 10, 0]) == [2, 100, -1]
