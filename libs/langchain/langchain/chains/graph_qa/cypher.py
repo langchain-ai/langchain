@@ -41,7 +41,7 @@ def construct_schema(
 ) -> str:
     """Filter the schema based on included or excluded types"""
 
-    def filter_func(x):
+    def filter_func(x: str) -> bool:
         return x in include_types if include_types else x not in exclude_types
 
     filtered_schema = {

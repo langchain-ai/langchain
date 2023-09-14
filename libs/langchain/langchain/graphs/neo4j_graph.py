@@ -45,8 +45,8 @@ class Neo4jGraph:
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
-        self.schema = ""
-        self._structured_schema = {}
+        self.schema: str = ""
+        self._structured_schema: Dict[str, Any] = {}
         # Verify connection
         try:
             self._driver.verify_connectivity()
