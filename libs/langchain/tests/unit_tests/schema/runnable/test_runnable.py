@@ -1799,7 +1799,7 @@ def test_runnable_branch_init() -> None:
 
     # Test failure with less than 2 branches
     with pytest.raises(ValueError):
-        RunnableBranch(con, condition)
+        RunnableBranch(condition)
 
 
 @pytest.mark.parametrize(
