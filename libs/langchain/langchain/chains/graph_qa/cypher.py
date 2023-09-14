@@ -143,7 +143,8 @@ class GraphCypherQAChain(Chain):
         if exclude_types and include_types:
             raise ValueError(
                 "Either `exclude_types` or `include_types` "
-                "can be provided, but not both")
+                "can be provided, but not both"
+            )
 
         graph_schema = construct_schema(
             kwargs["graph"].structured_schema, include_types, exclude_types
