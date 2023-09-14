@@ -23,7 +23,7 @@ class Replicate(LLM):
     You can find your token here: https://replicate.com/account
 
     The model param is required, but any other model parameters can also
-    be passed in with the format input={model_param: value, ...}
+    be passed in with the format model_kwargs={model_param: value, ...}
 
     Example:
         .. code-block:: python
@@ -35,7 +35,7 @@ class Replicate(LLM):
                     "stability-ai/stable-diffusion: "
                     "27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
                 ),
-                input={"image_dimensions": "512x512"}
+                model_kwargs={"image_dimensions": "512x512"}
             )
     """
 
