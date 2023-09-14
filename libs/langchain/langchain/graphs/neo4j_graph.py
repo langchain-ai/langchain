@@ -46,7 +46,7 @@ class Neo4jGraph:
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
         self.schema = ""
-        self.structured_schema = {}
+        self._structured_schema = {}
         # Verify connection
         try:
             self._driver.verify_connectivity()
@@ -76,9 +76,9 @@ class Neo4jGraph:
         return self.schema
 
     @property
-    def get_structured_schema(self) -> Dict[str, Any]:
+    def structured_schema(self) -> Dict[str, Any]:
         """Returns the structured schema of the Neo4j database"""
-        return self.structured_schema
+        return self._structured_schema
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""
@@ -99,12 +99,11 @@ class Neo4jGraph:
         rel_properties = [el["output"] for el in self.query(rel_properties_query)]
         relationships = [el["output"] for el in self.query(rel_query)]
 
-        self.structured_schema = {
-            "node_props": node_properties,
-            "rel_props": rel_properties,
+        self._structured_schema = {
+            "node_props": {el["labels"]: el["properties"] for el in node_properties},
+            "rel_props": {el["type"]: el["properties"] for el in rel_properties},
             "relationships": relationships,
         }
-
         self.schema = f"""
         Node properties are the following:
         {node_properties}

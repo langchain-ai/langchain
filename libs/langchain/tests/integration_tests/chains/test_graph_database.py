@@ -232,7 +232,11 @@ def test_cypher_return_correct_schema() -> None:
 
     assert node_properties == expected_node_properties
     assert relationships_properties == expected_relationships_properties
-    assert relationships == expected_relationships
+    # Order is not guaranteed with Neo4j returns
+    assert (
+        sorted(relationships, key=lambda x: x["output"]["end"])
+        == expected_relationships
+    )
 
 
 def test_cypher_save_load() -> None:
@@ -259,3 +263,118 @@ def test_cypher_save_load() -> None:
     qa_loaded = load_chain(FILE_PATH, graph=graph)
 
     assert qa_loaded == chain
+
+
+def test_exclude_types() -> None:
+    """Test exclude types from schema."""
+    url = os.environ.get("NEO4J_URL")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(
+        url=url,
+        username=username,
+        password=password,
+    )
+    # Delete all nodes in the graph
+    graph.query("MATCH (n) DETACH DELETE n")
+    # Create two nodes and a relationship
+    graph.query(
+        "CREATE (a:Actor {name:'Bruce Willis'})"
+        "-[:ACTED_IN]->(:Movie {title: 'Pulp Fiction'})"
+        "<-[:DIRECTED]-(p:Person {name:'John'})"
+    )
+    # Refresh schema information
+    graph.refresh_schema()
+    print(graph.structured_schema)
+
+    chain = GraphCypherQAChain.from_llm(
+        OpenAI(temperature=0), graph=graph, exclude_types=["Person", "DIRECTED"]
+    )
+    expected_schema = """Node properties are the following: 
+ {'Movie': [{'property': 'title', 'type': 'STRING'}], 'Actor': [{'property': 'name', 'type': 'STRING'}]}
+Relationships properties are the following: 
+ {}
+Relationships are: 
+['(:Actor)-[:ACTED_IN]->(:Movie)']"""
+
+    assert chain.graph_schema == expected_schema
+
+
+def test_include_types() -> None:
+    """Test include types from schema."""
+    url = os.environ.get("NEO4J_URL")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(
+        url=url,
+        username=username,
+        password=password,
+    )
+    # Delete all nodes in the graph
+    graph.query("MATCH (n) DETACH DELETE n")
+    # Create two nodes and a relationship
+    graph.query(
+        "CREATE (a:Actor {name:'Bruce Willis'})"
+        "-[:ACTED_IN]->(:Movie {title: 'Pulp Fiction'})"
+        "<-[:DIRECTED]-(p:Person {name:'John'})"
+    )
+    # Refresh schema information
+    graph.refresh_schema()
+
+    chain = GraphCypherQAChain.from_llm(
+        OpenAI(temperature=0), graph=graph, include_types=["Movie", "Actor", "ACTED_IN"]
+    )
+    expected_schema = """Node properties are the following: 
+ {'Movie': [{'property': 'title', 'type': 'STRING'}], 'Actor': [{'property': 'name', 'type': 'STRING'}]}
+Relationships properties are the following: 
+ {}
+Relationships are: 
+['(:Actor)-[:ACTED_IN]->(:Movie)']"""
+
+    assert chain.graph_schema == expected_schema
+
+
+def test_include_types2() -> None:
+    """Test include types from schema."""
+    url = os.environ.get("NEO4J_URL")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(
+        url=url,
+        username=username,
+        password=password,
+    )
+    # Delete all nodes in the graph
+    graph.query("MATCH (n) DETACH DELETE n")
+    # Create two nodes and a relationship
+    graph.query(
+        "CREATE (a:Actor {name:'Bruce Willis'})"
+        "-[:ACTED_IN]->(:Movie {title: 'Pulp Fiction'})"
+        "<-[:DIRECTED]-(p:Person {name:'John'})"
+    )
+    # Refresh schema information
+    graph.refresh_schema()
+
+    chain = GraphCypherQAChain.from_llm(
+        OpenAI(temperature=0), graph=graph, include_types=["Movie", "ACTED_IN"]
+    )
+    expected_schema = """Node properties are the following: 
+ {'Movie': [{'property': 'title', 'type': 'STRING'}]}
+Relationships properties are the following: 
+ {}
+Relationships are: 
+[]"""
+
+    assert chain.graph_schema == expected_schema
