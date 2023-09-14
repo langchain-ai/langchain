@@ -96,7 +96,7 @@ class Replicate(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         replicate_api_token = get_from_dict_or_env(
-            values, "REPLICATE_API_TOKEN", "REPLICATE_API_TOKEN"
+            values, "replicate_api_token", "REPLICATE_API_TOKEN"
         )
         values["replicate_api_token"] = replicate_api_token
         return values
