@@ -261,7 +261,7 @@ def _process_input_variables(
         }
 
     _input_variables = list(input_variables)
-    
+
     return _input_variables
 
 
