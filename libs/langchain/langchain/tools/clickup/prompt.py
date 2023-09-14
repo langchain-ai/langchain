@@ -33,3 +33,9 @@ CLICKUP_GET_FOLDERS_PROMPT = """
     useful when you need to get a specific folder for the user. Given the user's workspace id you want to create a request similar to the following dictionary:
     payload = {{"space_id": "90130119692"}}
     """
+
+CLICKUP_GET_SPACES_PROMPT = """
+    This tool is a wrapper around clickup's API, 
+    useful when you need to get all the spaces available to a user. Given the user's workspace id you want to create a request similar to the following dictionary:
+    payload = {{"team_id": "90130119692"}}
+    """

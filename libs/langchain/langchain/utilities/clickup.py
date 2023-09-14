@@ -58,17 +58,81 @@ class ClickupAPIWrapper(BaseModel):
 
         values["access_token"] = "61681706_dc747044a6941fc9aa645a4f3bca2ba5576e7dfb516a3d1889553fe96a4084f6"
 
+        # Get all the teams that the user has access to
+        url = "https://api.clickup.com/api/v2/team"
+
+        headers = {"Authorization": values["access_token"]}
+
+        response = requests.get(url, headers=headers)
+
+        data = response.json()
+        if "teams" in data.keys() and len(data["teams"]) > 0:
+            values["team_id"] = data["teams"][0]["id"]
+
         return values
 
 
-    def process_task(self, data):
+    def parse_task(self, data):
         """
             Formats a task
         """
+        parsed = []
+        for issue in issues["issues"]:
+            key = issue["key"]
+            summary = issue["fields"]["summary"]
+            created = issue["fields"]["created"][0:10]
+            priority = issue["fields"]["priority"]["name"]
+            status = issue["fields"]["status"]["name"]
+            try:
+                assignee = issue["fields"]["assignee"]["displayName"]
+            except Exception:
+                assignee = "None"
+            rel_issues = {}
+            for related_issue in issue["fields"]["issuelinks"]:
+                if "inwardIssue" in related_issue.keys():
+                    rel_type = related_issue["type"]["inward"]
+                    rel_key = related_issue["inwardIssue"]["key"]
+                    rel_summary = related_issue["inwardIssue"]["fields"]["summary"]
+                if "outwardIssue" in related_issue.keys():
+                    rel_type = related_issue["type"]["outward"]
+                    rel_key = related_issue["outwardIssue"]["key"]
+                    rel_summary = related_issue["outwardIssue"]["fields"]["summary"]
+                rel_issues = {"type": rel_type, "key": rel_key, "summary": rel_summary}
+            parsed.append(
+                {
+                    "key": key,
+                    "summary": summary,
+                    "created": created,
+                    "assignee": assignee,
+                    "priority": priority,
+                    "status": status,
+                    "related_issues": rel_issues,
+                }
+            )
+        return parsed
+
+    def parse_teams(self, data):
+        """
+            Parse appropriate content from the list of teams
+        """
+        pass 
+
+    def parse_folders(self, data):
+        """
+            Parse appropriate content from the list of folders
+        """
         pass
 
+    def parse_spaces(self, data):
+        """
+            Parse appropriate content from the list of spaces
+        """
+        pass
 
-    def get_authorized_teams(self, query: str) -> str:
+    
+
+
+    def get_authorized_teams(self) -> str:
         """
             Get all teams for the user
         """
@@ -86,7 +150,7 @@ class ClickupAPIWrapper(BaseModel):
         """
             Get all spaces for the team 
         """
-        url = "https://api.clickup.com/api/v2/team/" + team_id + "/space"
+        url = "https://api.clickup.com/api/v2/team/" + self.team_id + "/space"
 
         query = {
             "archived": "false"
@@ -104,10 +168,10 @@ class ClickupAPIWrapper(BaseModel):
         """
             Get all the folders for the team
         """
-        url = "https://api.clickup.com/api/v2/team/" + team_id + "/space"
+        url = "https://api.clickup.com/api/v2/team/" + self.team_id + "/space"
 
         query = {
-        "archived": "false"
+            "archived": "false"
         }
 
         headers = {"Authorization": self.access_token}
@@ -134,7 +198,7 @@ class ClickupAPIWrapper(BaseModel):
 
         query = {
             "custom_task_ids": "true",
-            "team_id": "9013051928",
+            "team_id": self.team_id,
             "include_subtasks": "true"
         }
 
@@ -180,6 +244,8 @@ class ClickupAPIWrapper(BaseModel):
             return self.get_list(query)
         elif mode == "get_folders":
             return self.get_folders(query)
+        elif mode == "get_spaces":
+            return self.get_spaces(query)
         else:
             raise ValueError(f"Got unexpected mode {mode}")
 

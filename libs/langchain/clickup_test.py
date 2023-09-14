@@ -20,10 +20,17 @@ agent = initialize_agent(
     toolkit.get_tools(), llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
 )
 
+print("Can you get all the teams that the user is authorized to access?")
+agent.run("Can you get all the teams that the user is authorized to access?")
+
+print("Can you get all the folders for the team?")
+agent.run("Can you get all the folders for the team?")
+
+print("Can you get all the spaces available to the team?")
+agent.run("Can you get all the spaces available to the team?")
+
+print("Can you get a task with id 86a0t44tq")
 agent.run("Can you get a task with id 86a0t44tq")
-# agent.run("Can you assign the issue Test Issue 2 to to asankar@clickup.com")
-
-
 
 """
 Testing the clickup API
