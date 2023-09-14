@@ -1077,6 +1077,10 @@
       "destination": "/docs/integrations/tools/zapier"
     },
     {
+      "source": "/docs/integrations/tools/sqlite",
+      "destination": "/docs/use_cases/sql/sqlite"
+    },
+    {
       "source": "/en/latest/modules/callbacks/filecallbackhandler.html",
       "destination": "/docs/modules/callbacks/how_to/filecallbackhandler"
     },

@@ -17,6 +17,10 @@ def _array_to_buffer(array: List[float], dtype: Any = np.float32) -> bytes:
     return np.array(array).astype(dtype).tobytes()
 
 
+def _buffer_to_array(buffer: bytes, dtype: Any = np.float32) -> List[float]:
+    return np.frombuffer(buffer, dtype=dtype).tolist()
+
+
 class TokenEscaper:
     """
     Escape punctuation within an input string.

@@ -36,6 +36,7 @@ _EXPECTED = [
     "EdenAiTextModerationTool",
     "EdenAiTextToSpeechTool",
     "EdenaiTool",
+    "ElevenLabsText2SpeechTool",
     "ExtractHyperlinksTool",
     "ExtractTextTool",
     "FileSearchTool",

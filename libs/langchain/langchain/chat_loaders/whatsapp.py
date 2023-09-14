@@ -5,13 +5,13 @@ import zipfile
 from typing import Iterator, List, Union
 
 from langchain import schema
-from langchain.chat_loaders import base as chat_loaders
+from langchain.chat_loaders.base import BaseChatLoader, ChatSession
 from langchain.schema import messages
 
 logger = logging.getLogger(__name__)
 
 
-class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
+class WhatsAppChatLoader(BaseChatLoader):
     """Load `WhatsApp` conversations from a dump zip file or directory."""
 
     def __init__(self, path: str):
@@ -42,7 +42,7 @@ class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
             flags=re.IGNORECASE,
         )
 
-    def _load_single_chat_session(self, file_path: str) -> chat_loaders.ChatSession:
+    def _load_single_chat_session(self, file_path: str) -> ChatSession:
         """Load a single chat session from a file.
 
         Args:
@@ -84,7 +84,7 @@ class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
                     )
             else:
                 logger.debug(f"Could not parse line: {line}")
-        return chat_loaders.ChatSession(messages=results)
+        return ChatSession(messages=results)
 
     def _iterate_files(self, path: str) -> Iterator[str]:
         """Iterate over the files in a directory or zip file.
@@ -108,7 +108,7 @@ class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
                     if file.endswith(".txt"):
                         yield zip_file.extract(file)
 
-    def lazy_load(self) -> Iterator[chat_loaders.ChatSession]:
+    def lazy_load(self) -> Iterator[ChatSession]:
         """Lazy load the messages from the chat file and yield
         them as chat sessions.
 
