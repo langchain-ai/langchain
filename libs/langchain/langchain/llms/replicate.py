@@ -131,7 +131,10 @@ class Replicate(LLM):
             prediction.wait()
             if prediction.status == "failed":
                 raise RuntimeError(prediction.error)
-            completion = prediction.output
+            if isinstance(prediction.output, str):
+                completion = prediction.output
+            else:
+                completion = "".join(prediction.output)
         assert completion is not None
         stop_conditions = stop or self.stop
         for s in stop_conditions:
