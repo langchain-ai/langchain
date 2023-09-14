@@ -129,7 +129,7 @@ def _dumps_generations(generations: RETURN_VAL_TYPE) -> str:
     return json.dumps([dumps(_item) for _item in generations])
 
 
-def _loads_generations(generations_str: str) -> RETURN_VAL_TYPE:
+def _loads_generations(generations_str: str) -> Union[RETURN_VAL_TYPE, None]:
     """
     Deserialization of a string into a generic RETURN_VAL_TYPE
     (i.e. a sequence of `Generation`).
@@ -139,18 +139,33 @@ def _loads_generations(generations_str: str) -> RETURN_VAL_TYPE:
     Args:
         generations_str (str): A string representing a list of generations.
 
-    Raises:
-        ValueError: Could not decode input string to list of generations.
+    Compatible with the legacy cache-blob format
+    Does not raise exceptions for malformed entries, just logs a warning
+    and returns none: the caller should be prepared for such a cache miss.
 
     Returns:
         RETURN_VAL_TYPE: A list of generations.
     """
     try:
-        return [loads(_item_str) for _item_str in json.loads(generations_str)]
-    except json.JSONDecodeError:
-        raise ValueError(
-            f"Could not decode json to list of generations: {generations_str}"
+        generations = [loads(_item_str) for _item_str in json.loads(generations_str)]
+        return generations
+    except (json.JSONDecodeError, TypeError):
+        # deferring the (soft) handling to after the legacy-format attempt
+        pass
+
+    try:
+        gen_dicts = json.loads(generations_str)
+        # not relying on `_load_generations_from_json` (which could disappear):
+        generations = [Generation(**generation_dict) for generation_dict in gen_dicts]
+        logger.warning(
+            f"Legacy 'Generation' cached blob encountered: '{generations_str}'"
         )
+        return generations
+    except (json.JSONDecodeError, TypeError):
+        logger.warning(
+            f"Malformed/unparseable cached blob encountered: '{generations_str}'"
+        )
+        return None
 
 
 class InMemoryCache(BaseCache):
@@ -825,8 +840,13 @@ class CassandraCache(BaseCache):
             llm_string=_hash(llm_string),
             prompt=_hash(prompt),
         )
-        if item:
-            return _loads_generations(item["body_blob"])
+        if item is not None:
+            generations = _loads_generations(item["body_blob"])
+            # this protects against malformed cached items:
+            if generations is not None:
+                return generations
+            else:
+                return None
         else:
             return None
 
@@ -886,10 +906,10 @@ class CassandraSemanticCache(BaseCache):
 
     def __init__(
         self,
+        session: Optional[CassandraSession],
+        keyspace: Optional[str],
         embedding: Embeddings,
         table_name: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME,
-        session: Optional[CassandraSession] = None,
-        keyspace: Optional[str] = None,
         distance_metric: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC,
         score_threshold: float = CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD,
         ttl_seconds: Optional[int] = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS,
@@ -999,11 +1019,15 @@ class CassandraSemanticCache(BaseCache):
         )
         if hits:
             hit = hits[0]
-            generations_str = hit["body_blob"]
-            return (
-                hit["row_id"],
-                _loads_generations(generations_str),
-            )
+            generations = _loads_generations(hit["body_blob"])
+            if generations is not None:
+                # this protects against malformed cached items:
+                return (
+                    hit["row_id"],
+                    generations,
+                )
+            else:
+                return None
         else:
             return None
 
