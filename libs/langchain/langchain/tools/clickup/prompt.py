@@ -3,18 +3,18 @@ CLICKUP_TASK_CREATE_PROMPT = """
     This tool is a wrapper around clickup's create_task API, useful when you need to create a CLICKUP task. 
     The input to this tool is a dictionary specifying the fields of the CLICKUP task, and will be passed into clickup's CLICKUP `create_task` function.
     For example, to create a task with priority 3 called "New Task Name" with description "New Task Description", with status "open" you would pass in the following dictionary: 
-    payload = {
+    payload = {{
         "name": "New Task Name",
         "description": "New Task Description",
         "status": "Open",
         "priority": 3,
-    }
+    }}
     """
 
 CLICKUP_GET_TASK_PROMPT = """
     This tool is a wrapper around clickup's API, 
-    useful when you need to get a specific task for the user. Given the task id you want to create a request similar to the following dictionary:
-    payload = {"task_id": "86a0t44tq"}
+    useful when you need to get a specific task for the user. Here's the input: {input}. Given the task id you want to create a request similar to the following dictionary:
+    payload = {{"task_id": "86a0t44tq"}}
     """
 
 CLICKUP_GET_ALL_TEAMS_PROMPT = """
@@ -25,11 +25,11 @@ CLICKUP_GET_ALL_TEAMS_PROMPT = """
 CLICKUP_GET_LIST_PROMPT = """
     This tool is a wrapper around clickup's API, 
     useful when you need to get a specific list for the user. Given the list id you want to create a request similar to the following dictionary:
-    payload = {"list_id": "901300608424"}
+    payload = {{"list_id": "901300608424"}}
     """
 
 CLICKUP_GET_FOLDERS_PROMPT = """
     This tool is a wrapper around clickup's API, 
     useful when you need to get a specific folder for the user. Given the user's workspace id you want to create a request similar to the following dictionary:
-    payload = {"space_id": "90130119692"}
+    payload = {{"space_id": "90130119692"}}
     """

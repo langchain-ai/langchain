@@ -14,7 +14,7 @@ os.environ["JIRA_INSTANCE_URL"] = "https://testing-clickup.atlassian.net/"
 
 jira = JiraAPIWrapper()
 toolkit = JiraToolkit.from_jira_api_wrapper(JiraAPIWrapper())
-llm = OpenAI(temperature=0, openai_api_key="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")
+llm = OpenAI(temperature=0, openai_api_key="")
 
 agent = initialize_agent(
     toolkit.get_tools(), llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
@@ -29,7 +29,7 @@ from atlassian import Confluence, Jira
 # Define your Jira instance URL and credentials
 jira_url = 'https://testing-clickup.atlassian.net/'
 jira_username = 'asankar@clickup.com'
-jira_api_token = "ATATT3xFfGF0d4A0QKjxYxM4vvu9DRjIl7N04456LlK7NizKbWHmkkDPV70ofC-3xZaG5g4z6nKeKu_u5n5jQ-TNxUf63TmZyn4DaQtrcCiUo4IuzaCTMJGRhYTN-hG79ZqTg2TyRrDzNHP6AgHNj3SzAvU4ex4pfEd_W1uqvlbm6ZaKAl297LU=BFFCFA45"
+jira_api_token = ""
 
 # Create a Jira client
 # jira = JIRA(server=jira_url, basic_auth=(username, password))

@@ -11,13 +11,13 @@ Below is a sample script that uses the Clickup tool:
 ```python
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent
-from langchain.agents.agent_toolkits.jira.toolkit import ClickupToolkit
+from langchain.agents.agent_toolkits.clickup.toolkit import ClickupToolkit
 from langchain.llms import OpenAI
-from langchain.utilities.jira import ClickupAPIWrapper
+from langchain.utilities.clickup import ClickupAPIWrapper
 
 llm = OpenAI(temperature=0)
-jira = ClickupAPIWrapper()
-toolkit = ClickupToolkit.from_jira_api_wrapper(jira)
+clickup = ClickupAPIWrapper()
+toolkit = ClickupToolkit.from_clickup_api_wrapper(clickup)
 agent = initialize_agent(
     toolkit.get_tools(),
     llm,
@@ -31,7 +31,7 @@ from typing import Optional
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
-from langchain.utilities.jira import ClickupAPIWrapper
+from langchain.utilities.clickup import ClickupAPIWrapper
 
 
 class ClickupAction(BaseTool):

@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
+import requests
 
 
 class ClickupAPIWrapper(BaseModel):
@@ -23,7 +24,7 @@ class ClickupAPIWrapper(BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
 
-        oauth_client_secret = get_from_dict_or_env(values, "oauth_client_secret", "client_secret")
+        oauth_client_secret = get_from_dict_or_env(values, "oauth_client_secret", "ouath_client_secret")
         values["oauth_client_secret"] = oauth_client_secret
 
         oauth_client_id = get_from_dict_or_env(
@@ -55,8 +56,16 @@ class ClickupAPIWrapper(BaseModel):
         response = requests.post(url, params=query)
         data = response.json()
 
-        values["access_token"] = data["access_token"]
+        values["access_token"] = "61681706_dc747044a6941fc9aa645a4f3bca2ba5576e7dfb516a3d1889553fe96a4084f6"
+
         return values
+
+
+    def process_task(self, data):
+        """
+            Formats a task
+        """
+        pass
 
 
     def get_authorized_teams(self, query: str) -> str:
@@ -65,12 +74,12 @@ class ClickupAPIWrapper(BaseModel):
         """
         url = "https://api.clickup.com/api/v2/team"
 
-        headers = {"Authorization": values["access_token"]}
+        headers = {"Authorization": self.access_token}
 
         response = requests.get(url, headers=headers)
 
         data = response.json()
-        print(data)
+        return data
 
 
     def get_spaces(self, query: str) -> str:
@@ -83,12 +92,12 @@ class ClickupAPIWrapper(BaseModel):
             "archived": "false"
         }
 
-        headers = {"Authorization": values["access_token"]}
+        headers = {"Authorization": self.access_token}
 
         response = requests.get(url, headers=headers, params=query)
 
         data = response.json()
-        print(data)
+        return data
 
 
     def get_folders(self, query: str) -> str:
@@ -101,19 +110,27 @@ class ClickupAPIWrapper(BaseModel):
         "archived": "false"
         }
 
-        headers = {"Authorization": values["access_token"]}
+        headers = {"Authorization": self.access_token}
 
         response = requests.get(url, headers=headers, params=query)
 
         data = response.json()
-        print(data)
+        return data
 
 
     def get_task(self, query: str) -> str:
         """
             Retrieve a specific task 
         """
-        url = "https://api.clickup.com/api/v2/task/" + task_id
+        try:
+            import json
+        except ImportError:
+            raise ImportError(
+                "json is not installed. Please install it with `pip install json`"
+            )
+
+        params = json.loads(query)
+        url = "https://api.clickup.com/api/v2/task/" + params['task_id']
 
         query = {
             "custom_task_ids": "true",
@@ -121,31 +138,38 @@ class ClickupAPIWrapper(BaseModel):
             "include_subtasks": "true"
         }
 
-        headers = {"Authorization": values["access_token"]}
+        headers = {"Authorization": self.access_token}
 
         response = requests.get(url, headers=headers, params=query)
 
         data = response.json()
-        print(data)
+        return data
 
 
     def query_tasks(self, query: str) -> str:
         """
             Query tasks that match certain fields
         """
+        try:
+            import json
+        except ImportError:
+            raise ImportError(
+                "json is not installed. Please install it with `pip install json`"
+            )
         url = "https://api.clickup.com/api/v2/list/" + list_id + "/task"
 
         query = {}
 
-        headers = {"Authorization": values["access_token"]}
+        headers = {"Authorization": self.access_token}
 
         response = requests.get(url, headers=headers, params=query)
 
         data = response.json()
-        print(data)
+        return data
 
 
     def run(self, mode: str, query: str) -> str:
+
         if mode == "get_task":
             return self.get_task(query)
         elif mode == "get_teams":

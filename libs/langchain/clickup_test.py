@@ -1,217 +1,249 @@
 import os
-import requests
 
-# Fill in your data values
+from langchain.agents.agent_toolkits.clickup.toolkit import ClickupToolkit
 
-app_name="TestAuth"
-client_id = "VR9ER2KI35L9SL4QWQD3VXK5UUUQBCD9"
-client_secret = "O5E2F09WQG4BVDF283ZYLWBWT4OPJPNL0KDKKU08U3EJ3MH00FXVF1II9UOCS5KG"
-redirect_url = "https://google.com"
-code = "S695H3CSYBXDDZU8JKO6M79QNQES7N6G"
-access_token = "61681706_dc747044a6941fc9aa645a4f3bca2ba5576e7dfb516a3d1889553fe96a4084f6"
+from langchain.agents import AgentType, initialize_agent
+from langchain.llms import OpenAI
+from langchain.utilities.clickup import ClickupAPIWrapper
 
+os.environ["oauth_client_id"] = "VR9ER2KI35L9SL4QWQD3VXK5UUUQBCD9"
 
-# Get the authorization access token
-url = "https://api.clickup.com/api/v2/oauth/token"
+os.environ["ouath_client_secret"] = "O5E2F09WQG4BVDF283ZYLWBWT4OPJPNL0KDKKU08U3EJ3MH00FXVF1II9UOCS5KG"
 
-query = {
-  "client_id": client_id,
-  "client_secret": client_secret,
-  "code": code,
-}
+os.environ["code"] = "S695H3CSYBXDDZU8JKO6M79QNQES7N6G"
 
-response = requests.post(url, params=query)
+clickup = ClickupAPIWrapper()
+toolkit = ClickupToolkit.from_clickup_api_wrapper(ClickupAPIWrapper())
+llm = OpenAI(temperature=0, openai_api_key="")
 
-data = response.json()
-print(data)
+agent = initialize_agent(
+    toolkit.get_tools(), llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+)
 
-# Get the authorized user
+agent.run("Can you get a task with id 86a0t44tq")
+# agent.run("Can you assign the issue Test Issue 2 to to asankar@clickup.com")
 
-import requests
 
-url = "https://api.clickup.com/api/v2/user"
 
-headers = {"Authorization": "61681706_dc747044a6941fc9aa645a4f3bca2ba5576e7dfb516a3d1889553fe96a4084f6"}
+"""
+Testing the clickup API
+"""
 
-response = requests.get(url, headers=headers)
 
-data = response.json()
-print(data)
+# import os
+# import requests
 
+# # Fill in your data values
 
-# Get authorized teams
+# app_name="TestAuth"
+# client_id = "VR9ER2KI35L9SL4QWQD3VXK5UUUQBCD9"
+# client_secret = "O5E2F09WQG4BVDF283ZYLWBWT4OPJPNL0KDKKU08U3EJ3MH00FXVF1II9UOCS5KG"
+# redirect_url = "https://google.com"
+# code = "S695H3CSYBXDDZU8JKO6M79QNQES7N6G"
+# access_token = "61681706_dc747044a6941fc9aa645a4f3bca2ba5576e7dfb516a3d1889553fe96a4084f6"
 
-print("Authorized teams")
-import requests
 
-url = "https://api.clickup.com/api/v2/team"
+# # Get the authorization access token
+# url = "https://api.clickup.com/api/v2/oauth/token"
 
-headers = {"Authorization": access_token}
+# query = {
+#   "client_id": client_id,
+#   "client_secret": client_secret,
+#   "code": code,
+# }
 
-response = requests.get(url, headers=headers)
+# response = requests.post(url, params=query)
 
-data = response.json()
-print(data)
+# data = response.json()
+# print(data)
 
+# # Get the authorized user
 
-# Get spaces 
+# import requests
 
-import requests
+# url = "https://api.clickup.com/api/v2/user"
 
-team_id = "9013051928"
-url = "https://api.clickup.com/api/v2/team/" + team_id + "/space"
+# headers = {"Authorization": "61681706_dc747044a6941fc9aa645a4f3bca2ba5576e7dfb516a3d1889553fe96a4084f6"}
 
-query = {
-  "archived": "false"
-}
+# response = requests.get(url, headers=headers)
 
-headers = {"Authorization": access_token}
+# data = response.json()
+# print(data)
 
-response = requests.get(url, headers=headers, params=query)
 
-data = response.json()
-print(data)
+# # Get authorized teams
 
+# print("Authorized teams")
+# import requests
 
-# Get folders for workspace
-print("Folders for workspace")
-import requests
+# url = "https://api.clickup.com/api/v2/team"
 
-space_id = "90130119692"
-url = "https://api.clickup.com/api/v2/space/" + space_id + "/folder"
+# headers = {"Authorization": access_token}
 
-query = {
-  "archived": "false"
-}
+# response = requests.get(url, headers=headers)
 
-headers = {"Authorization": access_token}
+# data = response.json()
+# print(data)
 
-response = requests.get(url, headers=headers, params=query)
 
-data = response.json()
-print(data)
+# # Get spaces 
 
+# import requests
 
-# Get folderless lists
+# team_id = "9013051928"
+# url = "https://api.clickup.com/api/v2/team/" + team_id + "/space"
 
-print("Folderless lists")
+# query = {
+#   "archived": "false"
+# }
 
-space_id = "90130119692"
-url = "https://api.clickup.com/api/v2/space/" + space_id + "/list"
+# headers = {"Authorization": access_token}
 
-query = {
-  "archived": "false"
-}
+# response = requests.get(url, headers=headers, params=query)
 
-headers = {"Authorization": access_token}
+# data = response.json()
+# print(data)
 
-response = requests.get(url, headers=headers, params=query)
 
-data = response.json()
-print(data)
+# # Get folders for workspace
+# print("Folders for workspace")
+# import requests
 
-# Get the list
+# space_id = "90130119692"
+# url = "https://api.clickup.com/api/v2/space/" + space_id + "/folder"
 
-print("The List")
-list_id = "901300608424"
-url = "https://api.clickup.com/api/v2/list/" + list_id
+# query = {
+#   "archived": "false"
+# }
 
-headers = {"Authorization": access_token}
+# headers = {"Authorization": access_token}
 
-response = requests.get(url, headers=headers)
+# response = requests.get(url, headers=headers, params=query)
 
-data = response.json()
-print(data)
+# data = response.json()
+# print(data)
 
 
-# Get task
+# # Get folderless lists
 
-import requests
-print("The Task")
+# print("Folderless lists")
 
-task_id = "86a0t44tq"
-url = "https://api.clickup.com/api/v2/task/" + task_id
+# space_id = "90130119692"
+# url = "https://api.clickup.com/api/v2/space/" + space_id + "/list"
 
-query = {
-  "custom_task_ids": "true",
-  "team_id": "9013051928",
-  "include_subtasks": "true"
-}
+# query = {
+#   "archived": "false"
+# }
 
-headers = {"Authorization": access_token}
+# headers = {"Authorization": access_token}
 
-response = requests.get(url, headers=headers, params=query)
+# response = requests.get(url, headers=headers, params=query)
 
-data = response.json()
-print(data)
+# data = response.json()
+# print(data)
 
+# # Get the list
 
-# Get tasks in a list
+# print("The List")
+# list_id = "901300608424"
+# url = "https://api.clickup.com/api/v2/list/" + list_id
 
-print("Tasks in the list ")
-list_id = "901300608424"
-url = "https://api.clickup.com/api/v2/list/" + list_id + "/task"
+# headers = {"Authorization": access_token}
 
+# response = requests.get(url, headers=headers)
 
-query = {
-#   "statuses": ["open"],
-}
+# data = response.json()
+# print(data)
 
-headers = {"Authorization": access_token}
 
-response = requests.get(url, headers=headers, params=query)
+# # Get task
 
-data = response.json()
-print(data)
+# import requests
+# print("The Task")
 
+# task_id = "86a0t44tq"
+# url = "https://api.clickup.com/api/v2/task/" + task_id
 
-import requests
+# query = {
+#   "custom_task_ids": "true",
+#   "team_id": "9013051928",
+#   "include_subtasks": "true"
+# }
 
-list_id = "YOUR_list_id_PARAMETER"
-url = "https://api.clickup.com/api/v2/list/" + list_id + "/task"
+# headers = {"Authorization": access_token}
 
-query = {
-  "custom_task_ids": "true",
-  "team_id": "123"
-}
+# response = requests.get(url, headers=headers, params=query)
 
-payload = {
-  "name": "New Task Name",
-  "description": "New Task Description",
-  "assignees": [
-    183
-  ],
-  "tags": [
-    "tag name 1"
-  ],
-  "status": "Open",
-  "priority": 3,
-  "due_date": 1508369194377,
-  "due_date_time": False,
-  "time_estimate": 8640000,
-  "start_date": 1567780450202,
-  "start_date_time": False,
-  "notify_all": True,
-  "parent": None,
-  "links_to": None,
-  "check_required_custom_fields": True,
-  "custom_fields": [
-    {
-      "id": "0a52c486-5f05-403b-b4fd-c512ff05131c",
-      "value": "This is a string of text added to a Custom Field."
-    }
-  ]
-}
+# data = response.json()
+# print(data)
 
-headers = {
-  "Content-Type": "application/json",
-  "Authorization": "YOUR_API_KEY_HERE"
-}
 
-response = requests.post(url, json=payload, headers=headers, params=query)
+# # Get tasks in a list
 
-data = response.json()
-print(data)
+# print("Tasks in the list ")
+# list_id = "901300608424"
+# url = "https://api.clickup.com/api/v2/list/" + list_id + "/task"
+
+
+# query = {
+# #   "statuses": ["open"],
+# }
+
+# headers = {"Authorization": access_token}
+
+# response = requests.get(url, headers=headers, params=query)
+
+# data = response.json()
+# print(data)
+
+
+# import requests
+
+# list_id = "YOUR_list_id_PARAMETER"
+# url = "https://api.clickup.com/api/v2/list/" + list_id + "/task"
+
+# query = {
+#   "custom_task_ids": "true",
+#   "team_id": "123"
+# }
+
+# payload = {
+#   "name": "New Task Name",
+#   "description": "New Task Description",
+#   "assignees": [
+#     183
+#   ],
+#   "tags": [
+#     "tag name 1"
+#   ],
+#   "status": "Open",
+#   "priority": 3,
+#   "due_date": 1508369194377,
+#   "due_date_time": False,
+#   "time_estimate": 8640000,
+#   "start_date": 1567780450202,
+#   "start_date_time": False,
+#   "notify_all": True,
+#   "parent": None,
+#   "links_to": None,
+#   "check_required_custom_fields": True,
+#   "custom_fields": [
+#     {
+#       "id": "0a52c486-5f05-403b-b4fd-c512ff05131c",
+#       "value": "This is a string of text added to a Custom Field."
+#     }
+#   ]
+# }
+
+# headers = {
+#   "Content-Type": "application/json",
+#   "Authorization": "YOUR_API_KEY_HERE"
+# }
+
+# response = requests.post(url, json=payload, headers=headers, params=query)
+
+# data = response.json()
+# print(data)
 
 
 
