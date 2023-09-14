@@ -20,6 +20,8 @@ an interface where "chat messages" are the inputs and outputs.
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.anyscale import ChatAnyscale
 from langchain.chat_models.azure_openai import AzureChatOpenAI
+from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
+from langchain.chat_models.bedrock import BedrockChat
 from langchain.chat_models.ernie import ErnieBotChat
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.chat_models.google_palm import ChatGooglePalm
@@ -35,6 +37,7 @@ from langchain.chat_models.vertexai import ChatVertexAI
 
 __all__ = [
     "ChatOpenAI",
+    "BedrockChat",
     "AzureChatOpenAI",
     "FakeListChatModel",
     "PromptLayerChatOpenAI",
@@ -49,4 +52,5 @@ __all__ = [
     "ChatLiteLLM",
     "ErnieBotChat",
     "ChatKonko",
+    "QianfanChatEndpoint",
 ]
