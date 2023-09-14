@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any, Sequence
 
 from langchain.chains import ArcGISRowSummaryChain
