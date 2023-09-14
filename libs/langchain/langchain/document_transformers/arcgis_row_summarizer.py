@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+from typing import Any, Sequence
+
 from langchain.chains import ArcGISRowSummaryChain
 from langchain.schema import BaseDocumentTransformer, Document
-from typing import Sequence, Any
 
 
 class ArcGISRowSummaryTransformer(BaseDocumentTransformer):
     """
-    A class to produce bullet-point summaries for geospatial data rows using a Large Language Model.
+    A class to produce bullet-point summaries for
+    geospatial data rows using a Large Language Model.
 
     Attributes:
         chain (LLMChain): A chain of language models.
@@ -16,7 +18,7 @@ class ArcGISRowSummaryTransformer(BaseDocumentTransformer):
     def __init__(
         self,
         chain: ArcGISRowSummaryChain,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         self.chain = chain
@@ -48,7 +50,8 @@ class ArcGISRowSummaryTransformer(BaseDocumentTransformer):
             docs (list[Document]): List of documents representing geospatial data rows.
 
         Returns:
-            list[dict]: A list of dictionaries, each representing an input for the summarizer.
+            list[dict]: A list of dictionaries, each representing
+            an input for the summarizer.
         """
         return [
             {
@@ -86,7 +89,9 @@ class ArcGISRowSummaryTransformer(BaseDocumentTransformer):
         return [result["text"] for result in await self.chain.aapply(inputs)]
 
     @classmethod
-    def return_docs(cls, docs: Sequence[Document], summaries: Sequence[str]) -> Sequence[Document]:
+    def return_docs(
+        cls, docs: Sequence[Document], summaries: Sequence[str]
+    ) -> Sequence[Document]:
         """
         Returns documents with summaries.
 
@@ -102,7 +107,9 @@ class ArcGISRowSummaryTransformer(BaseDocumentTransformer):
         return docs
 
     def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any,
+        self,
+        documents: Sequence[Document],
+        **kwargs: Any,
     ) -> Sequence[Document]:
         summaries = self.summarize(list(documents))
         return self.return_docs(documents, summaries)

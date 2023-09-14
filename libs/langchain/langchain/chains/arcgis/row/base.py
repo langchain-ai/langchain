@@ -1,18 +1,22 @@
 from __future__ import annotations
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain import LLMChain
-from langchain.callbacks.manager import CallbackManagerForChainRun, AsyncCallbackManagerForChainRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
+from langchain.chains.arcgis.row.prompts import PROMPT
 from langchain.chat_models.base import BaseChatModel
 from langchain.prompts import ChatPromptTemplate
 
-from langchain.chains.arcgis.row.prompts import PROMPT
 
 class ArcGISRowSummaryChain(LLMChain):
     """
     An example of a custom chain.
     """
+
     llm: BaseChatModel
     prompt: ChatPromptTemplate = PROMPT
     output_key: str = "text"  #: :meta private:

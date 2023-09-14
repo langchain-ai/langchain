@@ -1,7 +1,7 @@
-from langchain.prompts import ChatPromptTemplate
 from langchain.prompts import (
-    SystemMessagePromptTemplate,
+    ChatPromptTemplate,
     HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
 )
 
 system_template = """You are the text generator powering an
