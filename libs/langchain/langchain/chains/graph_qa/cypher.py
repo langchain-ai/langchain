@@ -40,9 +40,8 @@ def construct_schema(
     exclude_types: List[str],
 ) -> str:
     """Filter the schema based on included or excluded types"""
-    filter_func = (
-        lambda x: x in include_types if include_types else x not in exclude_types
-    )
+    def filter_func(x):
+        return x in include_types if include_types else x not in exclude_types
 
     filtered_schema = {
         "node_props": {
@@ -63,8 +62,8 @@ def construct_schema(
     }
 
     return (
-        f"Node properties are the following: \n {filtered_schema['node_props']}"
-        f"\nRelationships properties are the following: \n {filtered_schema['rel_props']}"
+        f"Node properties are the following: \n {filtered_schema['node_props']}\n"
+        f"Relationships properties are the following: \n {filtered_schema['rel_props']}"
         "\nRelationships are: \n"
         + str(
             [

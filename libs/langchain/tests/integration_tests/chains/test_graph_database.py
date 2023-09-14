@@ -289,17 +289,18 @@ def test_exclude_types() -> None:
     )
     # Refresh schema information
     graph.refresh_schema()
-    print(graph.structured_schema)
 
     chain = GraphCypherQAChain.from_llm(
         OpenAI(temperature=0), graph=graph, exclude_types=["Person", "DIRECTED"]
     )
-    expected_schema = """Node properties are the following: 
- {'Movie': [{'property': 'title', 'type': 'STRING'}], 'Actor': [{'property': 'name', 'type': 'STRING'}]}
-Relationships properties are the following: 
- {}
-Relationships are: 
-['(:Actor)-[:ACTED_IN]->(:Movie)']"""
+    expected_schema = (
+        "Node properties are the following: \n"
+        " {'Movie': [{'property': 'title', 'type': 'STRING'}], "
+        "'Actor': [{'property': 'name', 'type': 'STRING'}]}\n"
+        "Relationships properties are the following: \n"
+        " {}\nRelationships are: \n"
+        "['(:Actor)-[:ACTED_IN]->(:Movie)']"
+    )
 
     assert chain.graph_schema == expected_schema
 
@@ -332,12 +333,14 @@ def test_include_types() -> None:
     chain = GraphCypherQAChain.from_llm(
         OpenAI(temperature=0), graph=graph, include_types=["Movie", "Actor", "ACTED_IN"]
     )
-    expected_schema = """Node properties are the following: 
- {'Movie': [{'property': 'title', 'type': 'STRING'}], 'Actor': [{'property': 'name', 'type': 'STRING'}]}
-Relationships properties are the following: 
- {}
-Relationships are: 
-['(:Actor)-[:ACTED_IN]->(:Movie)']"""
+    expected_schema = (
+        "Node properties are the following: \n"
+        " {'Movie': [{'property': 'title', 'type': 'STRING'}], "
+        "'Actor': [{'property': 'name', 'type': 'STRING'}]}\n"
+        "Relationships properties are the following: \n"
+        " {}\nRelationships are: \n"
+        "['(:Actor)-[:ACTED_IN]->(:Movie)']"
+    )
 
     assert chain.graph_schema == expected_schema
 
@@ -370,11 +373,12 @@ def test_include_types2() -> None:
     chain = GraphCypherQAChain.from_llm(
         OpenAI(temperature=0), graph=graph, include_types=["Movie", "ACTED_IN"]
     )
-    expected_schema = """Node properties are the following: 
- {'Movie': [{'property': 'title', 'type': 'STRING'}]}
-Relationships properties are the following: 
- {}
-Relationships are: 
-[]"""
+    expected_schema = (
+        "Node properties are the following: \n"
+        " {'Movie': [{'property': 'title', 'type': 'STRING'}]}\n"
+        "Relationships properties are the following: \n"
+        " {}\nRelationships are: \n"
+        "[]"
+    )
 
     assert chain.graph_schema == expected_schema
