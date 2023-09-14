@@ -686,15 +686,12 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
 
     def __init__(
         self,
-        *branches: Tuple[
-            Union[
-                Tuple[
-                    Union[Runnable[Input, bool], Callable[[Input], bool]],
-                    RunnableLike,
-                ],
-                RunnableLike,  # To accommodate the default branch
+        *branches: Union[
+            Tuple[
+                Union[Runnable[Input, bool], Callable[[Input], bool]],
+                RunnableLike,
             ],
-            ...,
+            RunnableLike,  # To accommodate the default branch
         ],
     ) -> None:
         """A Runnable that runs one of two branches based on a condition."""
@@ -703,14 +700,19 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
 
         default = branches[-1]
 
-        if not isinstance(default, (Runnable, Callable, Mapping)):
+        if not isinstance(
+            default, (Runnable, Callable, Mapping)  # type: ignore[arg-type]
+        ):
             raise TypeError(
                 "RunnableBranch default must be runnable, callable or mapping."
             )
 
+        default_ = coerce_to_runnable(cast(RunnableLike, default))
+
         _branches = []
+
         for branch in branches[:-1]:
-            if not isinstance(branch, (tuple, list)):
+            if not isinstance(branch, (tuple, list)):  # type: ignore[arg-type]
                 raise TypeError(
                     f"RunnableBranch branches must be "
                     f"tuples or lists, not {type(branch)}"
@@ -726,7 +728,7 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
             runnable = coerce_to_runnable(runnable)
             _branches.append((condition, runnable))
 
-        super().__init__(branches=_branches, default=coerce_to_runnable(default))
+        super().__init__(branches=_branches, default=default_)
 
     class Config:
         arbitrary_types_allowed = True
