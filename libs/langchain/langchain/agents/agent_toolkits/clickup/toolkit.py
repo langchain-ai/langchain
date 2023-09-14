@@ -8,6 +8,7 @@ from langchain.tools.clickup.prompt import (
     CLICKUP_TASK_CREATE_PROMPT,
     CLICKUP_GET_LIST_PROMPT,
     CLICKUP_GET_FOLDERS_PROMPT,
+    CLICKUP_GET_SPACES_PROMPT,
     CLICKUP_UPDATE_TASK_PROMPT
 )
 from langchain.tools.clickup.tool import ClickupAction
@@ -46,6 +47,11 @@ class ClickupToolkit(BaseToolkit):
                 "mode": "get_folders",
                 "name": "Get all folders in the workspace",
                 "description": CLICKUP_GET_FOLDERS_PROMPT,
+            },
+            {
+                "mode": "get_spaces",
+                "name": "Get all spaces in the workspace",
+                "description": CLICKUP_GET_SPACES_PROMPT,
             },
             {
                 "mode": "update_task",
