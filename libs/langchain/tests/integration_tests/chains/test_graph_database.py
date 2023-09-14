@@ -211,16 +211,23 @@ def test_cypher_return_correct_schema() -> None:
 
     expected_node_properties = [
         {
-            "properties": [{"property": "property_a", "type": "STRING"}],
-            "labels": "LabelA",
+            "output": {
+                "properties": [{"property": "property_a", "type": "STRING"}],
+                "labels": "LabelA",
+            }
         }
     ]
     expected_relationships_properties = [
-        {"type": "REL_TYPE", "properties": [{"property": "rel_prop", "type": "STRING"}]}
+        {
+            "output": {
+                "type": "REL_TYPE",
+                "properties": [{"property": "rel_prop", "type": "STRING"}],
+            }
+        }
     ]
     expected_relationships = [
-        "(:LabelA)-[:REL_TYPE]->(:LabelB)",
-        "(:LabelA)-[:REL_TYPE]->(:LabelC)",
+        {"output": {"start": "LabelA", "type": "REL_TYPE", "end": "LabelB"}},
+        {"output": {"start": "LabelA", "type": "REL_TYPE", "end": "LabelC"}},
     ]
 
     assert node_properties == expected_node_properties
