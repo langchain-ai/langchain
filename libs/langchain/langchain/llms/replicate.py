@@ -40,8 +40,7 @@ class Replicate(LLM):
     """
 
     model: str
-    input: Dict[str, Any] = Field(default_factory=dict)
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict, alias="input")
     replicate_api_token: Optional[str] = None
     prompt_key: Optional[str] = None
     version_obj: Any = Field(default=None, exclude=True)
@@ -59,6 +58,7 @@ class Replicate(LLM):
     class Config:
         """Configuration for this pydantic config."""
 
+        allow_population_by_field_name = True
         extra = Extra.forbid
 
     @property
@@ -74,7 +74,12 @@ class Replicate(LLM):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = {field.alias for field in cls.__fields__.values()}
 
-        extra = values.get("model_kwargs", {})
+        input = values.pop("input", {})
+        if input:
+            logger.warning(
+                "Init param `input` is deprecated, please use `model_kwargs` instead."
+            )
+        extra = {**values.get("model_kwargs", {}), **input}
         for field_name in list(values):
             if field_name not in all_required_field_names:
                 if field_name in extra:
@@ -204,7 +209,6 @@ class Replicate(LLM):
 
         input_: Dict = {
             self.prompt_key: prompt,
-            **self.input,
             **self.model_kwargs,
             **kwargs,
         }
