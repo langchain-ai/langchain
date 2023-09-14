@@ -13,7 +13,7 @@ CLICKUP_TASK_CREATE_PROMPT = """
 
 CLICKUP_GET_TASK_PROMPT = """
     This tool is a wrapper around clickup's API, 
-    useful when you need to get a specific task for the user. Here's the input: {input}. Given the task id you want to create a request similar to the following dictionary:
+    useful when you need to get a specific task for the user. Given the task id you want to create a request similar to the following dictionary:
     payload = {{"task_id": "86a0t44tq"}}
     """
 
@@ -39,3 +39,11 @@ CLICKUP_GET_SPACES_PROMPT = """
     useful when you need to get all the spaces available to a user. Given the user's workspace id you want to create a request similar to the following dictionary:
     payload = {{"team_id": "90130119692"}}
     """
+    
+CLICKUP_UPDATE_TASK_PROMPT = """
+    This tool is a wrapper around clickup's API, 
+    useful when you need to update a specific attribute of a task. Given the task id, desired attribute to change and the new value you want to create a request similar to the following dictionary:
+    payload = {{"task_id": "86a0t44tq", "attribute_name": "priority", "new_value": "1"}}
+    """
+
+

@@ -6,13 +6,11 @@ from langchain.agents import AgentType, initialize_agent
 from langchain.llms import OpenAI
 from langchain.utilities.clickup import ClickupAPIWrapper
 
-os.environ["oauth_client_id"] = "VR9ER2KI35L9SL4QWQD3VXK5UUUQBCD9"
+oauth_client_id = "VR9ER2KI35L9SL4QWQD3VXK5UUUQBCD9"
+ouath_client_secret = "O5E2F09WQG4BVDF283ZYLWBWT4OPJPNL0KDKKU08U3EJ3MH00FXVF1II9UOCS5KG"
+code = "S695H3CSYBXDDZU8JKO6M79QNQES7N6G"
 
-os.environ["ouath_client_secret"] = "O5E2F09WQG4BVDF283ZYLWBWT4OPJPNL0KDKKU08U3EJ3MH00FXVF1II9UOCS5KG"
-
-os.environ["code"] = "S695H3CSYBXDDZU8JKO6M79QNQES7N6G"
-
-clickup = ClickupAPIWrapper()
+clickup = ClickupAPIWrapper(oauth_client_id=oauth_client_id, ouath_client_secret=ouath_client_secret, code=code)
 toolkit = ClickupToolkit.from_clickup_api_wrapper(ClickupAPIWrapper())
 llm = OpenAI(temperature=0, openai_api_key="")
 
