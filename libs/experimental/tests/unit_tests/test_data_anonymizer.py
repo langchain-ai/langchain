@@ -89,8 +89,8 @@ def test_exact_matching_strategy() -> None:
     """
     Test exact matching strategy for deanonymization.
     """
-    from langchain_experimental.data_anonymizer.deanonymizer_matching_strategies import (
-        exact_matching_strategy,
+    from langchain_experimental.data_anonymizer import (
+        deanonymizer_matching_strategies as dms,
     )
 
     deanonymizer_mapping = {
@@ -106,7 +106,7 @@ def test_exact_matching_strategy() -> None:
         "Is this your email address: wdavis@example.net"
     )
 
-    deanonymized_text = exact_matching_strategy(text, deanonymizer_mapping)
+    deanonymized_text = dms.exact_matching_strategy(text, deanonymizer_mapping)
 
     for original_value in [
         "Slim Shady",
@@ -122,8 +122,8 @@ def test_best_matching_strategy() -> None:
     """
     Test exact matching strategy for deanonymization.
     """
-    from langchain_experimental.data_anonymizer.deanonymizer_matching_strategies import (
-        combined_exact_fuzzy_matching_strategy,
+    from langchain_experimental.data_anonymizer import (
+        deanonymizer_matching_strategies as dms,
     )
 
     deanonymizer_mapping = {
@@ -144,7 +144,7 @@ def test_best_matching_strategy() -> None:
         "Is this your email address: wdavis@example.net"
     )
 
-    deanonymized_text = combined_exact_fuzzy_matching_strategy(
+    deanonymized_text = dms.combined_exact_fuzzy_matching_strategy(
         text, deanonymizer_mapping
     )
 
