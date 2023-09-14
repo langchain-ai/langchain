@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional, Union
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
-from langchain.tools.audio_utils import load_audio, save_audio
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
 
@@ -72,15 +71,3 @@ class ElevenLabsText2SpeechTool(BaseTool):
         elevenlabs = _import_elevenlabs()
         speech_stream = elevenlabs.generate(text=query, model=self.model, stream=True)
         elevenlabs.stream(speech_stream)
-
-    def generate_and_save(self, query: str) -> str:
-        """Save the text as speech to a temporary file."""
-        elevenlabs = _import_elevenlabs()
-        speech = elevenlabs.generate(text=query, model=self.model)
-        path = save_audio(speech)
-        return path
-
-    def load_and_play(self, path: str) -> None:
-        """Load the text as speech from a temporary file and play it."""
-        speech = load_audio(path)
-        self.play(speech)

@@ -7,7 +7,6 @@ from IPython import display
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
-from langchain.tools.audio_utils import load_audio, save_audio
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
 
@@ -102,14 +101,3 @@ class AzureCogsText2SpeechTool(BaseTool):
         """Play the speech."""
         audio = display.Audio(speech)
         display.display(audio)
-
-    def generate_and_save(self, query: str) -> str:
-        """Save the text as speech to a temporary file."""
-        speech = self._text2speech(query, self.speech_language)
-        path = save_audio(speech)
-        return path
-
-    def load_and_play(self, path: str) -> None:
-        """Load the text as speech from a temporary file and play it."""
-        speech = load_audio(path)
-        self.play(speech)
