@@ -149,6 +149,29 @@ class ClickupAPIWrapper(BaseModel):
 
         data = response.json()
         return data
+    
+    def update_task(self, query: str) -> str:
+        """
+            Update an attribute of a specified task
+        """
+        task = self.get_task(query)
+        
+        params = json.loads(query)
+        url = "https://api.clickup.com/api/v2/task/" + params['task_id']
+
+        query = {
+            "custom_task_ids": "true",
+            "team_id": self.team_id,
+            "include_subtasks": "true"
+        }
+
+        headers = {"Content-Type": "application/json", "Authorization": self.access_token}
+        payload = {params['attribute_name']: params['new_value']}
+        
+        response = requests.put(url, headers=headers, params=query, json=payload)
+
+        print(response)
+        return response
 
     def run(self, mode: str, query: str) -> str:
 
@@ -162,6 +185,8 @@ class ClickupAPIWrapper(BaseModel):
             return self.get_list(query)
         elif mode == "get_folders":
             return self.get_folders(query)
+        elif mode == "update_task":
+            return self.update_task(query)
         else:
             raise ValueError(f"Got unexpected mode {mode}")
 
