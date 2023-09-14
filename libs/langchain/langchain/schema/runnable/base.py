@@ -686,9 +686,12 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
 
     def __init__(
         self,
-        *branches: Tuple[
-            Union[Runnable[Input, bool], Callable[[Input], bool]],
-            Union[Runnable[Input, Output], Callable[[Input], Output]],
+        *branches: Union[
+            Tuple[
+                Union[Runnable[Input, bool], Callable[[Input], bool]],
+                RunnableLike,
+            ],
+            RunnableLike,  # To accommodate the default branch
         ],
     ) -> None:
         """A Runnable that runs one of two branches based on a condition."""
@@ -697,8 +700,24 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
 
         default = branches[-1]
 
+        if not isinstance(default, (Runnable, Callable, Mapping)):
+            raise TypeError(
+                f"RunnableBranch default must be runnable, callable or mapping."
+            )
+
         _branches = []
         for branch in branches[:-1]:
+            if not isinstance(branch, (tuple, list)):
+                raise TypeError(
+                    f"RunnableBranch branches must be "
+                    f"tuples or lists, not {type(branch)}"
+                )
+
+            if not len(branch) == 2:
+                raise ValueError(
+                    f"RunnableBranch branches must be "
+                    f"tuples or lists of length 2, not {len(branch)}"
+                )
             condition, runnable = branch
             condition = cast(Runnable[Input, bool], coerce_to_runnable(condition))
             runnable = coerce_to_runnable(runnable)
@@ -2206,14 +2225,14 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
 
 RunnableBinding.update_forward_refs(RunnableConfig=RunnableConfig)
 
+RunnableLike = Union[
+    Runnable[Input, Output],
+    Callable[[Input], Output],
+    Mapping[str, Any],
+]
 
-def coerce_to_runnable(
-    thing: Union[
-        Runnable[Input, Output],
-        Callable[[Input], Output],
-        Mapping[str, Any],
-    ]
-) -> Runnable[Input, Output]:
+
+def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
     if isinstance(thing, Runnable):
         return thing
     elif callable(thing):
