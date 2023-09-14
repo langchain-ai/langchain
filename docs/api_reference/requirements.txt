@@ -1,0 +1,15 @@
+-e libs/langchain
+-e libs/experimental
+pydantic<2
+autodoc_pydantic==1.8.0
+myst_parser
+nbsphinx==0.8.9
+sphinx==4.5.0
+sphinx-autobuild==2021.3.14
+sphinx_rtd_theme==1.0.0
+sphinx-typlog-theme==0.8.0
+sphinx-panels
+toml
+myst_nb
+sphinx_copybutton
+pydata-sphinx-theme==0.13.1
