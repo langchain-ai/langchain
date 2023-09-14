@@ -275,10 +275,19 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(self.get_custom_callback_meta())
 
         inputs_res = deepcopy(inputs)
-
-        self._run.track(
-            aim.Text(inputs_res["input"]), name="on_chain_start", context=resp
-        )
+        for key, value in inputs_res.items():
+            if key == "input_documents":
+                self._run.track(
+                    {key: [aim.Text(document.page_content) for document in value]},
+                    step=resp["step"],
+                    context=resp,
+                )
+            else:
+                self._run.track(
+                    {key: aim.Text(value)},
+                    step=resp["step"],
+                    context=resp,
+                )
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
@@ -293,7 +302,9 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         outputs_res = deepcopy(outputs)
 
         self._run.track(
-            aim.Text(outputs_res["output"]), name="on_chain_end", context=resp
+            {"outputs": [aim.Text(document) for document in outputs_res["outputs"]]},
+            context=resp,
+            step=resp["step"],
         )
 
     def on_chain_error(
