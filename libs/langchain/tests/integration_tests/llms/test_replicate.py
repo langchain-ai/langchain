@@ -24,3 +24,8 @@ def test_replicate_streaming_call() -> None:
     output = llm("What is LangChain")
     assert output
     assert isinstance(output, str)
+
+def test_replicate_model_kwargs() -> None:
+    llm = Replicate(model=TEST_MODEL, model_kwargs={"max_token_length": 10})
+    output = llm("What is LangChain")
+    assert len(output) == 10
