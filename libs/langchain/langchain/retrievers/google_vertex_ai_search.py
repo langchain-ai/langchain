@@ -1,4 +1,4 @@
-"""Retriever wrapper for Google Cloud Vertex AI Search."""
+"""Retriever wrapper for Google Vertex AI Search."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     )
 
 
-class GoogleCloudVertexAISearchRetriever(BaseRetriever):
-    """`Google Cloud Vertex AI Search API` retriever.
+class GoogleVertexAISearchRetriever(BaseRetriever):
+    """`Google Vertex AI Search` retriever.
 
     For a detailed explanation of the Vertex AI Search concepts
     and configuration parameters, refer to the product documentation.
@@ -31,7 +31,7 @@ class GoogleCloudVertexAISearchRetriever(BaseRetriever):
     data_store_id: str
     """Vertex AI Search data store ID."""
     search_engine_id: str
-    """Vertex AI Search Datastore ID.
+    """Vertex AI Search data store ID.
     TODO: To be remapped to search engine ID in the future.
     """
     serving_config_id: str = "default_config"
@@ -307,10 +307,10 @@ class GoogleCloudVertexAISearchRetriever(BaseRetriever):
         return documents
 
 
-class GoogleCloudEnterpriseSearchRetriever(GoogleCloudVertexAISearchRetriever):
-    """`Google Cloud Vertex Search API` retriever alias for backwards compatibility.
+class GoogleCloudEnterpriseSearchRetriever(GoogleVertexAISearchRetriever):
+    """`Google Vertex Search API` retriever alias for backwards compatibility.
 
-    DEPRECATED: Use `GoogleCloudVertexAISearchRetriever` instead.
+    DEPRECATED: Use `GoogleVertexAISearchRetriever` instead.
     """
 
     def __init__(self, **data: Any):
@@ -318,7 +318,7 @@ class GoogleCloudEnterpriseSearchRetriever(GoogleCloudVertexAISearchRetriever):
 
         warnings.warn(
             "GoogleCloudEnterpriseSearchRetriever is deprecated, \
-                use GoogleCloudVertexAISearchRetriever",
+                use GoogleVertexAISearchRetriever",
             DeprecationWarning,
         )
         super().__init__(**data)

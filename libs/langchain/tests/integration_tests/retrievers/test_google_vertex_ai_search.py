@@ -1,9 +1,9 @@
-"""Test Google Cloud Vertex AI Search retriever.
+"""Test Google Vertex AI Search retriever.
 
 You need to create a Vertex AI Search app and populate it 
 with data to run the integration tests.
 Follow the instructions in the example notebook:
-google_cloud_vertex_ai_search.ipynb
+google_vertex_ai_search.ipynb
 to set up the app and configure authentication.
 
 Set the following environment variables before the tests:
@@ -13,17 +13,17 @@ DATA_STORE_ID - the ID of the search engine to use for the test
 
 import pytest
 
-from langchain.retrievers.google_cloud_vertex_ai_search import (
+from langchain.retrievers.google_vertex_ai_search import (
     GoogleCloudEnterpriseSearchRetriever,
-    GoogleCloudVertexAISearchRetriever,
+    GoogleVertexAISearchRetriever,
 )
 from langchain.schema import Document
 
 
 @pytest.mark.requires("google_api_core")
-def test_google_cloud_vertex_ai_search_get_relevant_documents() -> None:
+def test_google_vertex_ai_search_get_relevant_documents() -> None:
     """Test the get_relevant_documents() method."""
-    retriever = GoogleCloudVertexAISearchRetriever()
+    retriever = GoogleVertexAISearchRetriever()
     documents = retriever.get_relevant_documents("What are Alphabet's Other Bets?")
     assert len(documents) > 0
     for doc in documents:
@@ -34,12 +34,12 @@ def test_google_cloud_vertex_ai_search_get_relevant_documents() -> None:
 
 
 @pytest.mark.requires("google_api_core")
-def test_google_cloud_vertex_ai_search_enterprise_search_deprecation() -> None:
+def test_google_vertex_ai_search_enterprise_search_deprecation() -> None:
     """Test the deprecation of GoogleCloudEnterpriseSearchRetriever."""
     with pytest.warns(
         DeprecationWarning,
         match="GoogleCloudEnterpriseSearchRetriever is deprecated, use \
-            GoogleCloudVertexAISearchRetriever",
+            GoogleVertexAISearchRetriever",
     ):
         retriever = GoogleCloudEnterpriseSearchRetriever()
 

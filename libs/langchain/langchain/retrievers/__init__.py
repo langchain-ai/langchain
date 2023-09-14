@@ -27,8 +27,8 @@ from langchain.retrievers.contextual_compression import ContextualCompressionRet
 from langchain.retrievers.docarray import DocArrayRetriever
 from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
 from langchain.retrievers.ensemble import EnsembleRetriever
-from langchain.retrievers.google_cloud_vertex_ai_search import (
-    GoogleCloudVertexAISearchRetriever,
+from langchain.retrievers.google_vertex_ai_search import (
+    GoogleVertexAISearchRetriever,
 )
 from langchain.retrievers.kendra import AmazonKendraRetriever
 from langchain.retrievers.knn import KNNRetriever
@@ -67,7 +67,7 @@ __all__ = [
     "ContextualCompressionRetriever",
     "ChaindeskRetriever",
     "ElasticSearchBM25Retriever",
-    "GoogleCloudVertexAISearchRetriever",
+    "GoogleVertexAISearchRetriever",
     "KNNRetriever",
     "LlamaIndexGraphRetriever",
     "LlamaIndexRetriever",

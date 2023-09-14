@@ -792,8 +792,8 @@
         "ChatGPT Plugin": "https://python.langchain.com/docs/integrations/retrievers/chatgpt-plugin",
         "OpenAI": "https://python.langchain.com/docs/integrations/providers/openai"
     },
-    "GoogleCloudVertexAISearchRetriever": {
-        "Google Cloud Vertex AI Search": "https://python.langchain.com/docs/integrations/retrievers/google_cloud_vertex_ai_search"
+    "GoogleVertexAISearchRetriever": {
+        "Google Vertex AI Search": "https://python.langchain.com/docs/integrations/retrievers/google_vertex_ai_search"
     },
     "DocArrayRetriever": {
         "DocArray Retriever": "https://python.langchain.com/docs/integrations/retrievers/docarray_retriever"
