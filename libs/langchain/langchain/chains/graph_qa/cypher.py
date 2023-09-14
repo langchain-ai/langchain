@@ -141,7 +141,9 @@ class GraphCypherQAChain(Chain):
         cypher_generation_chain = LLMChain(llm=cypher_llm or llm, prompt=cypher_prompt)
 
         if exclude_types and include_types:
-            raise ValueError("Either `exclude_types` or `include_types`, but not both")
+            raise ValueError(
+                "Either `exclude_types` or `include_types` "
+                "can be provided, but not both")
 
         graph_schema = construct_schema(
             kwargs["graph"].structured_schema, include_types, exclude_types
