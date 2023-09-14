@@ -374,6 +374,11 @@ class Redis(VectorStore):
         if "generate" in kwargs:
             kwargs.pop("generate")
 
+        # see if the user specified keys
+        keys = None
+        if "keys" in kwargs:
+            keys = kwargs.pop("keys")
+
         # Name of the search index if not given
         if not index_name:
             index_name = uuid.uuid4().hex
@@ -422,7 +427,7 @@ class Redis(VectorStore):
         instance._create_index(dim=len(embeddings[0]))
 
         # Add data to Redis
-        keys = instance.add_texts(texts, metadatas, embeddings)
+        keys = instance.add_texts(texts, metadatas, embeddings, keys=keys)
         return instance, keys
 
     @classmethod
@@ -1215,7 +1220,7 @@ class Redis(VectorStore):
             )
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
