@@ -1,7 +1,6 @@
 from operator import itemgetter
-from typing import Any, Dict, List, Optional, Union
-
 from types import GeneratorType
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import pytest

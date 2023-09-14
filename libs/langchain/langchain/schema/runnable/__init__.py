@@ -2,11 +2,11 @@ from langchain.schema.runnable._locals import GetLocalVar, PutLocalVar
 from langchain.schema.runnable.base import (
     Runnable,
     RunnableBinding,
+    RunnableBranch,
     RunnableLambda,
     RunnableMap,
     RunnableSequence,
     RunnableWithFallbacks,
-    RunnableBranch,
 )
 from langchain.schema.runnable.config import RunnableConfig, patch_config
 from langchain.schema.runnable.passthrough import RunnablePassthrough
