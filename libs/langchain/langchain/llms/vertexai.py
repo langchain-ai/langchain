@@ -157,7 +157,7 @@ class _VertexAICommon(_VertexAIBase):
 class VertexAI(_VertexAICommon, LLM):
     """Google Vertex AI large language models."""
 
-    model_name: str = "text-bison"
+    model_name: str = "text-bison@001"
     "The name of the Vertex AI large language model."
     tuned_model_name: Optional[str] = None
     "The name of a tuned model. If provided, model_name is ignored."
