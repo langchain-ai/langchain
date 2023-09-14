@@ -30,7 +30,7 @@ def test_exclude_types() -> None:
     }
     exclude_types = ["Person", "DIRECTED"]
     output = construct_schema(structured_schema, [], exclude_types)
-    expected_schema =(
+    expected_schema = (
         "Node properties are the following: \n"
         " {'Movie': [{'property': 'title', 'type': 'STRING'}], "
         "'Actor': [{'property': 'name', 'type': 'STRING'}]}\n"
