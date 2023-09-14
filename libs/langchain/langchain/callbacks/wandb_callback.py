@@ -283,7 +283,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     self.run.log(generation_resp)
 
     def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when LLM errors."""
         self.step += 1
@@ -338,7 +338,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             self.run.log(resp)
 
     def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when chain errors."""
         self.step += 1
@@ -378,7 +378,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             self.run.log(resp)
 
     def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when tool errors."""
         self.step += 1

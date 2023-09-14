@@ -122,7 +122,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
                 )
 
     def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when LLM errors."""
         self.metrics["step"] += 1
@@ -165,7 +165,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
         self.jsonf(resp, self.temp_dir, f"chain_end_{chain_ends}")
 
     def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when chain errors."""
         self.metrics["step"] += 1
@@ -203,7 +203,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
         self.jsonf(resp, self.temp_dir, f"tool_end_{tool_ends}")
 
     def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when tool errors."""
         self.metrics["step"] += 1

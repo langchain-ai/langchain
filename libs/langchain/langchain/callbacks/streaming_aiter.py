@@ -38,7 +38,7 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
         self.done.set()
 
     async def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         self.done.set()
 

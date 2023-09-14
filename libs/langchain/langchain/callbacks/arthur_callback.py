@@ -258,7 +258,7 @@ class ArthurCallbackHandler(BaseCallbackHandler):
         """On chain end, do nothing."""
 
     def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Do nothing when LLM outputs an error."""
 
@@ -266,7 +266,7 @@ class ArthurCallbackHandler(BaseCallbackHandler):
         """On new token, pass."""
 
     def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Do nothing when LLM chain outputs an error."""
 
@@ -291,7 +291,7 @@ class ArthurCallbackHandler(BaseCallbackHandler):
         """Do nothing when tool ends."""
 
     def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Do nothing when tool outputs an error."""
 

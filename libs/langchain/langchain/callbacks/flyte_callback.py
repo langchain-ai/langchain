@@ -222,7 +222,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     self.deck.append(self.markdown_renderer().to_html(generation.text))
 
     def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when LLM errors."""
         self.step += 1
@@ -267,7 +267,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
 
     def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when chain errors."""
         self.step += 1
@@ -307,7 +307,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
 
     def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when tool errors."""
         self.step += 1

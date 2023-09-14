@@ -256,7 +256,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.llm_streams += 1
 
     def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when LLM errors."""
         self.step += 1
@@ -297,7 +297,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
 
     def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when chain errors."""
         self.step += 1
@@ -330,7 +330,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self._run.track(aim.Text(output), name="on_tool_end", context=resp)
 
     def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when tool errors."""
         self.step += 1

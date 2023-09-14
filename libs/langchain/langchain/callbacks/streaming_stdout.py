@@ -32,7 +32,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """Run when LLM ends running."""
 
     def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when LLM errors."""
 
@@ -45,7 +45,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """Run when chain ends running."""
 
     def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when chain errors."""
 
@@ -62,7 +62,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """Run when tool ends running."""
 
     def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when tool errors."""
 

@@ -237,7 +237,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             self.dataset.push_to_argilla()
 
     def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Do nothing when LLM outputs an error."""
         pass
@@ -314,7 +314,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             self.dataset.push_to_argilla()
 
     def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Do nothing when LLM chain outputs an error."""
         pass
@@ -343,7 +343,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         pass
 
     def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Do nothing when tool outputs an error."""
         pass

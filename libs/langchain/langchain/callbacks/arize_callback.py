@@ -164,7 +164,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
                     print(f'❌ Logging failed "{response_from_arize.text}"')
 
     def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Do nothing."""
         pass
@@ -179,7 +179,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
         pass
 
     def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Do nothing."""
         pass
@@ -206,7 +206,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
         pass
 
     def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Union[Exception, BaseException, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         pass
 
