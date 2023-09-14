@@ -121,9 +121,8 @@ class GoogleCloudVertexAISearchRetriever(BaseRetriever):
 
             warnings.warn(
                 "SEARCH_ENGINE_ID environment variable should not be used for the \
-                    data store ID."
-                "Use DATA_STORE_ID instead.",
-                "For now, SEARCH_ENGINE_ID is mapped to DATA_STORE_ID to prevent \
+                    data store ID. Use DATA_STORE_ID instead. \
+                    For now, SEARCH_ENGINE_ID is mapped to DATA_STORE_ID to prevent \
                     breaking changes.",
                 DeprecationWarning,
             )
@@ -149,9 +148,8 @@ class GoogleCloudVertexAISearchRetriever(BaseRetriever):
 
             warnings.warn(
                 "search_engine_id should not be used for the \
-                    data store ID."
-                "Use data_store_id instead.",
-                "For now, search_engine_id is mapped to data_store_id to prevent \
+                    data store ID. Use data_store_id instead. \
+                    For now, search_engine_id is mapped to data_store_id to prevent \
                     breaking changes.",
                 DeprecationWarning,
             )
