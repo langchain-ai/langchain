@@ -8,7 +8,7 @@ to set up the app and configure authentication.
 
 Set the following environment variables before the tests:
 PROJECT_ID - set to your Google Cloud project ID
-SEARCH_ENGINE_ID - the ID of the search engine to use for the test
+DATA_STORE_ID - the ID of the search engine to use for the test
 """
 
 import pytest

@@ -26,12 +26,16 @@ class GoogleCloudVertexAISearchRetriever(BaseRetriever):
 
     project_id: str
     """Google Cloud Project ID."""
+    location_id: str = "global"
+    """Vertex AI Search data store location."""
+    data_store_id: str
+    """Vertex AI Search data store ID."""
     search_engine_id: str
-    """Vertex AI Search engine ID."""
+    """Vertex AI Search Datastore ID.
+    TODO: To be remapped to search engine ID in the future.
+    """
     serving_config_id: str = "default_config"
     """Vertex AI Search serving config ID."""
-    location_id: str = "global"
-    """Vertex AI Search engine location."""
     filter: Optional[str] = None
     """Filter expression."""
     get_extractive_answers: bool = False
@@ -109,6 +113,19 @@ class GoogleCloudVertexAISearchRetriever(BaseRetriever):
         values["search_engine_id"] = get_from_dict_or_env(
             values, "search_engine_id", "SEARCH_ENGINE_ID"
         )
+        values["data_store_id"] = get_from_dict_or_env(
+            values, "data_store_id", "DATA_STORE_ID"
+        )
+        if values["search_engine_id"] and not values["data_store_id"]:
+            import warnings
+
+            warnings.warn(
+                "SEARCH_ENGINE_ID environment variable should not be used for the data store ID."
+                "Use DATA_STORE_ID instead.",
+                "For now, SEARCH_ENGINE_ID is mapped to DATA_STORE_ID to prevent breaking changes.",
+                DeprecationWarning,
+            )
+            values["data_store_id"] = values["search_engine_id"]
 
         return values
 
@@ -116,18 +133,30 @@ class GoogleCloudVertexAISearchRetriever(BaseRetriever):
         """Initializes private fields."""
         try:
             from google.cloud.discoveryengine_v1beta import SearchServiceClient
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
                 "google.cloud.discoveryengine is not installed."
                 "Please install it with pip install google-cloud-discoveryengine"
-            )
+            ) from exc
 
         super().__init__(**data)
         self._client = SearchServiceClient(credentials=self.credentials)
+
+        if self.search_engine_id and not self.data_store_id:
+            import warnings
+
+            warnings.warn(
+                "search_engine_id should not be used for the data store ID."
+                "Use data_store_id instead.",
+                "For now, search_engine_id is mapped to data_store_id to prevent breaking changes.",
+                DeprecationWarning,
+            )
+            self.data_store_id = self.search_engine_id
+
         self._serving_config = self._client.serving_config_path(
             project=self.project_id,
             location=self.location_id,
-            data_store=self.search_engine_id,
+            data_store=self.data_store_id,
             serving_config=self.serving_config_id,
         )
 
@@ -255,9 +284,10 @@ class GoogleCloudVertexAISearchRetriever(BaseRetriever):
 
         try:
             response = self._client.search(search_request)
-        except InvalidArgument as e:
-            raise type(e)(
-                e.message + " This might be due to engine_data_type not set correctly."
+        except InvalidArgument as exc:
+            raise type(exc)(
+                exc.message
+                + " This might be due to engine_data_type not set correctly."
             )
 
         if self.engine_data_type == 0:
