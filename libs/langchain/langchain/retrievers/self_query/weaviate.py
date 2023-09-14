@@ -53,7 +53,9 @@ class WeaviateTranslator(Visitor):
             value_type = "valueNumber"
         elif isinstance(comparison.value, int):
             value_type = "valueInt"
-        elif isinstance(comparison.value, datetime) or isinstance(comparison.value, date):
+        elif isinstance(comparison.value, datetime) or isinstance(
+            comparison.value, date
+        ):
             value_type = "valueDate"
             # ISO 8601 timestamp, formatted as RFC3339
             comparison.value = comparison.value.strftime("%Y-%m-%dT%H:%M:%SZ")
