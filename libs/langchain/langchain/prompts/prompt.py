@@ -260,7 +260,9 @@ def _process_input_variables(
             var for var in input_variables if var not in partial_variables
         }
 
-    return input_variables
+    _input_variables = list(input_variables)
+    
+    return _input_variables
 
 
 # For backwards compatibility.
