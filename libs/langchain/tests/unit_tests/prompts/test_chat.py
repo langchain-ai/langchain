@@ -104,6 +104,29 @@ def test_message_prompt_template_from_template_file() -> None:
         role="human",
     )
     assert expected == actual
+    # If input variables are not provided, they are inferred from the template.
+    actual = ChatMessagePromptTemplate.from_template_file(
+        Path(__file__).parent.parent / "data" / "prompt_file.txt",
+        role="human",
+    )
+    assert expected == actual
+
+
+def test_message_prompt_template_from_template_file_partial() -> None:
+    expected = ChatMessagePromptTemplate(
+        prompt=PromptTemplate(
+            template="Question: {question}\nAnswer:", input_variables=["question"]
+        ),
+        role="human",
+        partial_variables={"question": "foo"},
+    )
+    actual = ChatMessagePromptTemplate.from_template_file(
+        Path(__file__).parent.parent / "data" / "prompt_file.txt",
+        ["question"],
+        role="human",
+        partial_variables={"question": "foo"},
+    )
+    assert expected == actual
 
 
 def test_chat_prompt_template() -> None:

@@ -108,6 +108,9 @@ def test_prompt_from_file() -> None:
     input_variables = ["question"]
     prompt = PromptTemplate.from_file(template_file, input_variables)
     assert prompt.template == "Question: {question}\nAnswer:"
+    # If input variables are not provided, they are inferred from the template.
+    prompt = PromptTemplate.from_file(template_file)
+    assert prompt.template == "Question: {question}\nAnswer:"
 
 
 def test_partial_init_string() -> None:

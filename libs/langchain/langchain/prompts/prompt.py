@@ -157,7 +157,12 @@ class PromptTemplate(StringPromptTemplate):
 
     @classmethod
     def from_file(
-        cls, template_file: Union[str, Path], input_variables: List[str], **kwargs: Any
+        cls,
+        template_file: Union[str, Path],
+        input_variables: Optional[List[str]] = None,
+        template_format: str = "f-string",
+        partial_variables: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> PromptTemplate:
         """Load a prompt from a file.
 
@@ -165,13 +170,34 @@ class PromptTemplate(StringPromptTemplate):
             template_file: The path to the file containing the prompt template.
             input_variables: A list of variable names the final prompt template
                 will expect.
+            template_format: The format of the template. Use `jinja2` for jinja2,
+                                and `f-string` or None for f-strings.
+            partial_variables: A dictionary of variables that can be used to partially
+                                 fill in the template. For example, if the template is
+                                `"{variable1} {variable2}"`, and `partial_variables` is
+                                `{"variable1": "foo"}`, then the final prompt will be
+                                `"foo {variable2}"`.
 
         Returns:
             The prompt loaded from the file.
         """
         with open(str(template_file), "r") as f:
             template = f.read()
-        return cls(input_variables=input_variables, template=template, **kwargs)
+
+        if not input_variables:
+            input_variables = _process_input_variables(
+                template, template_format, partial_variables
+            )
+
+        _partial_variables = partial_variables or {}
+
+        return cls(
+            input_variables=input_variables,
+            template=template,
+            template_format=template_format,
+            partial_variables=_partial_variables,
+            **kwargs,
+        )
 
     @classmethod
     def from_template(
@@ -197,22 +223,12 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt template loaded from the template.
         """
-        if template_format == "jinja2":
-            # Get the variables for the template
-            input_variables = _get_jinja2_variables_from_template(template)
-        elif template_format == "f-string":
-            input_variables = {
-                v for _, v, _, _ in Formatter().parse(template) if v is not None
-            }
-        else:
-            raise ValueError(f"Unsupported template format: {template_format}")
+
+        input_variables = _process_input_variables(
+            template, template_format, partial_variables
+        )
 
         _partial_variables = partial_variables or {}
-
-        if _partial_variables:
-            input_variables = {
-                var for var in input_variables if var not in _partial_variables
-            }
 
         return cls(
             input_variables=sorted(input_variables),
@@ -221,6 +237,26 @@ class PromptTemplate(StringPromptTemplate):
             partial_variables=_partial_variables,
             **kwargs,
         )
+
+
+def _process_input_variables(template, template_format, partial_variables=None):
+    """Get the input variables from the template."""
+    if template_format == "jinja2":
+        # Get the variables for the template
+        input_variables = _get_jinja2_variables_from_template(template)
+    elif template_format == "f-string":
+        input_variables = {
+            v for _, v, _, _ in Formatter().parse(template) if v is not None
+        }
+    else:
+        raise ValueError(f"Unsupported template format: {template_format}")
+
+    if partial_variables:
+        input_variables = {
+            var for var in input_variables if var not in partial_variables
+        }
+
+    return input_variables
 
 
 # For backwards compatibility.

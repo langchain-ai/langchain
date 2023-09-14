@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Optional,
     Sequence,
     Set,
     Tuple,
@@ -158,7 +159,8 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     def from_template_file(
         cls: Type[MessagePromptTemplateT],
         template_file: Union[str, Path],
-        input_variables: List[str],
+        input_variables: Optional[List[str]] = None,
+        template_format: str = "f-string",
         **kwargs: Any,
     ) -> MessagePromptTemplateT:
         """Create a class from a template file.
@@ -166,12 +168,15 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         Args:
             template_file: path to a template file. String or Path.
             input_variables: list of input variables.
+            template_format: format of the template.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
             A new instance of this class.
         """
-        prompt = PromptTemplate.from_file(template_file, input_variables)
+        prompt = PromptTemplate.from_file(
+            template_file, input_variables, template_format
+        )
         return cls(prompt=prompt, **kwargs)
 
     @abstractmethod
