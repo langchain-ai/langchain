@@ -11,7 +11,7 @@ def save_audio(audio: bytes) -> str:
 
 def load_audio(audio_file_path: str) -> bytes:
     """Load audio from a file into bytes."""
-    if Path(audio_file_path).exists():
+    if Path(audio_file_path).is_file():
         with open(audio_file_path, mode="rb") as f:
             audio = f.read()
         return audio
