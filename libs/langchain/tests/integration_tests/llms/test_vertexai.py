@@ -9,6 +9,10 @@ Your end-user credentials would be used to make the calls (make sure you've run
 """
 import os
 
+from google.cloud.aiplatform_v1beta1.types import prediction_service
+
+from langchain.chains.summarize import load_summarize_chain
+from langchain.docstore.document import Document
 from langchain.llms import VertexAI, VertexAIModelGarden
 from langchain.schema import LLMResult
 
@@ -50,3 +54,24 @@ def test_model_garden_batch() -> None:
     output = llm._generate(["What is the meaning of life?", "How much is 2+2"])
     assert isinstance(output, LLMResult)
     assert len(output.generations) == 2
+
+
+def test_vertex_call_trigger_count_tokens(mocker) -> None:
+    m1 = mocker.patch(
+        "google.cloud.aiplatform_v1beta1.services.prediction_service.client.PredictionServiceClient.count_tokens",
+        return_value=prediction_service.CountTokensResponse(
+            total_tokens=1, total_billable_characters=2
+        ),
+    )
+    llm = VertexAI()
+    chain = load_summarize_chain(
+        llm,
+        chain_type="map_reduce",
+        return_intermediate_steps=False,
+    )
+    doc = Document(page_content="Hi")
+    output = chain({"input_documents": [doc]})
+    assert isinstance(output["output_text"], str)
+    m1.assert_called_once()
+    assert llm._llm_type == "vertexai"
+    assert llm.model_name == llm.client._model_id

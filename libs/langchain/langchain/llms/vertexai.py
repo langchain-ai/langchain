@@ -94,6 +94,7 @@ class _VertexAIBase(BaseModel):
 
 class _VertexAICommon(_VertexAIBase):
     client: "_LanguageModel" = None  #: :meta private:
+    prediction_client: "PredictionServiceClient" = None  #: :meta private:
     model_name: str
     "Underlying model name."
     temperature: float = 0.0
@@ -187,9 +188,39 @@ class VertexAI(_VertexAICommon, LLM):
                     )
                 else:
                     values["client"] = CodeGenerationModel.from_pretrained(model_name)
+            from google.cloud.aiplatform_v1beta1 import PredictionServiceClient
+
+            if values["project"] is None:
+                import google.auth
+
+                _, project_id = google.auth.default()
+                values["project"] = project_id
+            client_options = {
+                "api_endpoint": f"{values['location']}-aiplatform.googleapis.com"
+            }
+            values["prediction_client"] = PredictionServiceClient(
+                credentials=values["credentials"], client_options=client_options
+            )
+
         except ImportError:
             raise_vertex_import_error()
         return values
+
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text.
+
+        Useful for checking if an input will fit in a model's context window.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            The integer number of tokens in the text.
+        """
+        result = self.prediction_client.count_tokens(
+            endpoint=self.client._model_resource_name, instances=[{"content": text}]
+        )
+        return result.total_tokens
 
     def _call(
         self,
