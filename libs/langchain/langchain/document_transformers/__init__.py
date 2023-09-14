@@ -15,6 +15,9 @@
     Document
 """  # noqa: E501
 
+from langchain.document_transformers.arcgis_row_summarizer import (
+    ArcGISRowSummaryTransformer,
+)
 from langchain.document_transformers.beautiful_soup_transformer import (
     BeautifulSoupTransformer,
 )
@@ -34,6 +37,7 @@ from langchain.document_transformers.nuclia_text_transform import NucliaTextTran
 from langchain.document_transformers.openai_functions import OpenAIMetadataTagger
 
 __all__ = [
+    "ArcGISRowSummaryTransformer",
     "BeautifulSoupTransformer",
     "DoctranQATransformer",
     "DoctranTextTranslator",
