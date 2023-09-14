@@ -206,7 +206,7 @@ class Replicate(LLM):
             self.prompt_key: prompt,
             **self.input,
             **self.model_kwargs,
-            **kwargs
+            **kwargs,
         }
         return replicate_python.predictions.create(
             version=self.version_obj, input=input_
