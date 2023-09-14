@@ -452,7 +452,7 @@ class ChatOpenAI(BaseChatModel):
         if self.openai_log_level:
             import openai
 
-            openai.log = self.openai_log_level
+            openai.log = self.openai_log_level # type: ignore
         return {**self._default_params, **openai_creds}
 
     def _get_invocation_params(
