@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Optional
 
-from IPython import display
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
 from langchain.tools.base import BaseTool
@@ -99,5 +97,11 @@ class AzureCogsText2SpeechTool(BaseTool):
 
     def play(self, speech: bytes) -> None:
         """Play the speech."""
+        try:
+            from IPython import display
+        except ImportError:
+            raise ImportError(
+                "IPython is not installed. " "Run `pip install ipython` to install."
+            )
         audio = display.Audio(speech)
         display.display(audio)
