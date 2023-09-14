@@ -1,6 +1,5 @@
 from operator import itemgetter
-from types import GeneratorType
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
 import pytest
@@ -543,7 +542,7 @@ async def test_prompt_with_llm(
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
 
-    # Test stream
+    # Test stream#
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
     llm_spy = mocker.spy(llm.__class__, "astream")
     tracer = FakeTracer()
@@ -1822,9 +1821,9 @@ def test_runnable_branch_init() -> None:
         ],
     ],
 )
-def test_runnable_branch_init_coercion(branches) -> None:
+def test_runnable_branch_init_coercion(branches: Sequence[Any]) -> None:
     """Verify that runnable branch gets initialized properly."""
-    runnable = RunnableBranch(*branches)
+    runnable = RunnableBranch[int, int](*branches)
     for branch in runnable.branches:
         condition, body = branch
         assert isinstance(condition, Runnable)
@@ -1842,7 +1841,7 @@ def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:
     spy = mocker.spy(condition, "invoke")
     add_spy = mocker.spy(add, "invoke")
 
-    branch = RunnableBranch((condition, add), (condition, add), sub)
+    branch = RunnableBranch[int, int]((condition, add), (condition, add), sub)
     assert spy.call_count == 0
     assert add_spy.call_count == 0
 
@@ -1864,7 +1863,8 @@ def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:
 def test_runnable_branch_invoke() -> None:
     # Test with single branch
     branch = RunnableBranch(
-        (lambda x: x > 0 and x < 5, lambda x: x + 1),
+        # mypy cannot infer types from the lambda
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),  # type: ignore[misc]
         (lambda x: x > 5, lambda x: x * 10),
         lambda x: x - 1,
     )
@@ -1877,7 +1877,7 @@ def test_runnable_branch_invoke() -> None:
 def test_runnable_branch_batch() -> None:
     """Test batch variant."""
     # Test with single branch
-    branch = RunnableBranch(
+    branch = RunnableBranch[int, int](
         (lambda x: x > 0 and x < 5, lambda x: x + 1),
         (lambda x: x > 5, lambda x: x * 10),
         lambda x: x - 1,
@@ -1889,7 +1889,7 @@ def test_runnable_branch_batch() -> None:
 @pytest.mark.asyncio
 async def test_runnable_branch_ainvoke() -> None:
     """Test async variant of invoke."""
-    branch = RunnableBranch(
+    branch = RunnableBranch[int, int](
         (lambda x: x > 0 and x < 5, lambda x: x + 1),
         (lambda x: x > 5, lambda x: x * 10),
         lambda x: x - 1,
@@ -1903,7 +1903,7 @@ async def test_runnable_branch_ainvoke() -> None:
 @pytest.mark.asyncio
 async def test_runnable_branch_abatch() -> None:
     """Test async variant of invoke."""
-    branch = RunnableBranch(
+    branch = RunnableBranch[int, int](
         (lambda x: x > 0 and x < 5, lambda x: x + 1),
         (lambda x: x > 5, lambda x: x * 10),
         lambda x: x - 1,
