@@ -127,7 +127,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
         else:
             tool_input = _tool_input
 
-        content_msg = "responded: {content}\n" if message.content else "\n"
+        content_msg = f"responded: {message.content}\n" if message.content else "\n"
 
         return _FunctionsAgentAction(
             tool=function_name,
