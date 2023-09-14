@@ -239,7 +239,11 @@ class PromptTemplate(StringPromptTemplate):
         )
 
 
-def _process_input_variables(template, template_format, partial_variables=None):
+def _process_input_variables(
+    template: str,
+    template_format: str,
+    partial_variables: Optional[Dict[str, Any]] = None,
+) -> List[str]:
     """Get the input variables from the template."""
     if template_format == "jinja2":
         # Get the variables for the template
