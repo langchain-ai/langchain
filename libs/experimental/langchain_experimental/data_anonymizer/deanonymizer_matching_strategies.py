@@ -148,7 +148,7 @@ def ngram_fuzzy_matching_strategy(
 
     text_words = text.split()
     replacements = []
-    matched_indices = []
+    matched_indices: List[int] = []
 
     for entity_type in deanonymizer_mapping:
         for anonymized, original in deanonymizer_mapping[entity_type].items():
