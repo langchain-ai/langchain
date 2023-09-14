@@ -17,7 +17,7 @@ interactive Streamlit app. Try it out with the running app below using the [MRKL
 ## Installation and Setup
 
 ```bash
-pip install langchain streamlit
+pip install gigachain streamlit
 ```
 
 You can run `streamlit hello` to load a sample app and validate your install succeeded. See full instructions in Streamlit's
