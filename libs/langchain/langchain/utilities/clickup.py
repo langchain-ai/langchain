@@ -5,6 +5,7 @@ from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 import requests
 import json
+import warnings
 
 class ClickupAPIWrapper(BaseModel):
     """Wrapper for Clickup API."""
@@ -13,7 +14,7 @@ class ClickupAPIWrapper(BaseModel):
     oauth_client_secret: Optional[str] = None
     redirect_url: Optional[str] = None
     access_token: Optional[str] = None
-    url: Optional[str] = "https://api.clickup.com/api/v2/oauth/token"
+    url: Optional[str] = None
     team_id: Optional[str] = None
  
     class Config:
@@ -21,12 +22,13 @@ class ClickupAPIWrapper(BaseModel):
 
         extra = Extra.forbid
     
-    def post_init(self) -> None:
-        self.team_id = "9013051928"
+    @classmethod
+    def get_access_code_url(cls, oauth_client_id, redirect_uri='https://google.com'):
+        return f"https://app.clickup.com/api?client_id={oauth_client_id}&redirect_uri={redirect_uri}"
     
     @classmethod
     def get_access_token(cls, oauth_client_id, oauth_client_secret, code):
-        url = "https://api.clickup.com/api/v2/oauth/token" # TODO: can we define this as a default and allow passing in?
+        url = "https://api.clickup.com/api/v2/oauth/token"
         
         query = {
             "client_id": oauth_client_id,
@@ -36,7 +38,15 @@ class ClickupAPIWrapper(BaseModel):
 
         response = requests.post(url, params=query)
         data = response.json()
-        return data['access_token']
+        
+        try:
+            return data['access_token']
+        except:
+            print(f'Error: {data}')
+            if 'ECODE' in data.keys() and data['ECODE'] == 'OAUTH_014':
+                print('You already used this code once. Go back a step and generate a new code.')
+                print(f'Our best guess for the url to get a new code is:\n{ClickupAPIWrapper.get_access_code_url(oauth_client_id)}')
+            return None
         
 
     @root_validator()
@@ -52,6 +62,8 @@ class ClickupAPIWrapper(BaseModel):
 
         data = response.json()
         if "teams" in data.keys() and len(data["teams"]) > 0:
+            if len(data["teams"]) > 1:
+                warnings.warn(f'Found multiple teams: {data["teams"]}. Defaulting to first team.')
             values["team_id"] = data["teams"][0]["id"]
         
         return values
