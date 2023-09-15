@@ -102,7 +102,12 @@ class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
         try:
             import magic  # noqa: F401
 
-            is_doc = detect_filetype(self.file_path, file=self.unstructured_kwargs.get("file", None)) == FileType.DOC
+            is_doc = (
+                detect_filetype(
+                    self.file_path, file=self.unstructured_kwargs.get("file", None)
+                )
+                == FileType.DOC
+            )
         except ImportError:
             _, extension = os.path.splitext(str(self.file_path))
             is_doc = extension == ".doc"

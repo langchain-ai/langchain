@@ -55,7 +55,9 @@ class UnstructuredEmailLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.file_utils.filetype import FileType, detect_filetype
 
-        filetype = detect_filetype(self.file_path, file=self.unstructured_kwargs.get("file", None))
+        filetype = detect_filetype(
+            self.file_path, file=self.unstructured_kwargs.get("file", None)
+        )
 
         if filetype == FileType.EML:
             from unstructured.partition.email import partition_email
