@@ -1315,6 +1315,37 @@ async def test_deep_astream() -> None:
     assert "".join(chunks) == "foo-lish"
 
 
+def test_runnable_sequence_transform() -> None:
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = llm | StrOutputParser()
+
+    stream = chain.transform(llm.stream("Hi there!"))
+
+    chunks = []
+    for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
+@pytest.mark.asyncio
+async def test_runnable_sequence_atransform() -> None:
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = llm | StrOutputParser()
+
+    stream = chain.atransform(llm.astream("Hi there!"))
+
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
 @pytest.fixture()
 def llm_with_fallbacks() -> RunnableWithFallbacks:
     error_llm = FakeListLLM(responses=["foo"], i=1)
