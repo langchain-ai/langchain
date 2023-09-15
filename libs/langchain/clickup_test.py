@@ -10,9 +10,10 @@ oauth_client_id = "VR9ER2KI35L9SL4QWQD3VXK5UUUQBCD9"
 ouath_client_secret = "O5E2F09WQG4BVDF283ZYLWBWT4OPJPNL0KDKKU08U3EJ3MH00FXVF1II9UOCS5KG"
 code = "S695H3CSYBXDDZU8JKO6M79QNQES7N6G"
 
-clickup = ClickupAPIWrapper(oauth_client_id=oauth_client_id, ouath_client_secret=ouath_client_secret, code=code)
-toolkit = ClickupToolkit.from_clickup_api_wrapper(ClickupAPIWrapper())
-llm = OpenAI(temperature=0, openai_api_key="")
+clickup = ClickupAPIWrapper(oauth_client_id=oauth_client_id, oauth_client_secret=ouath_client_secret, code=code)
+
+toolkit = ClickupToolkit.from_clickup_api_wrapper(clickup)
+llm = OpenAI(temperature=0, openai_api_key="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")
 
 agent = initialize_agent(
     toolkit.get_tools(), llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
@@ -47,6 +48,7 @@ Testing the clickup API
 # code = "S695H3CSYBXDDZU8JKO6M79QNQES7N6G"
 # access_token = "61681706_dc747044a6941fc9aa645a4f3bca2ba5576e7dfb516a3d1889553fe96a4084f6"
 
+# # Fill in your data values
 
 # # Get the authorization access token
 # url = "https://api.clickup.com/api/v2/oauth/token"
@@ -160,6 +162,7 @@ Testing the clickup API
 # data = response.json()
 # print(data)
 
+# response = requests.get(url, headers=headers)
 
 # # Get task
 
