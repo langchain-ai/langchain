@@ -41,6 +41,7 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
+from langchain.schema.runnable.config import get_executor_for_config
 
 
 class FakeTracer(BaseTracer):
@@ -111,6 +112,48 @@ class FakeRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         return [Document(page_content="foo"), Document(page_content="bar")]
+
+
+@pytest.mark.timeout(2, method="thread")
+def test_get_executor_for_config_max_workers_1() -> None:
+    def outer_call() -> int:
+        with get_executor_for_config(config) as executor:
+            return executor.submit(lambda: 1).result()
+
+    config = RunnableConfig(max_concurrency=1)
+    with get_executor_for_config(config) as executor:
+        result = executor.submit(outer_call).result()
+
+    assert result == 1
+
+
+@pytest.mark.timeout(2, method="thread")
+def test_get_executor_for_config_max_workers_1_parallel() -> None:
+    def outer_call() -> List[int]:
+        with get_executor_for_config(config) as executor:
+            return list(executor.map(lambda _: 1, [None, None, None]))
+
+    config = RunnableConfig(max_concurrency=1)
+    with get_executor_for_config(config) as executor:
+        result = executor.submit(outer_call).result()
+
+    assert result == [1, 1, 1]
+
+
+@pytest.mark.timeout(2, method="thread")
+def test_get_executor_for_config_max_workers_n() -> None:
+    def outer_call(i: int = 1) -> int:
+        with get_executor_for_config(config) as executor:
+            if i < 3:
+                return executor.submit(outer_call, i + 1).result()
+            else:
+                return executor.submit(lambda: 1).result()
+
+    config = RunnableConfig(max_concurrency=3)
+    with get_executor_for_config(config) as executor:
+        result = executor.submit(outer_call).result()
+
+    assert result == 1
 
 
 @pytest.mark.asyncio

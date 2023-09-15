@@ -148,6 +148,7 @@ pandas = "^2.0.0"
 pytest-mock  = "^3.10.0"
 pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
+pytest-timeout = "^2.1.0"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"

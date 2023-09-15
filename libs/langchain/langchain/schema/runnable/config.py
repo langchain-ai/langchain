@@ -76,6 +76,11 @@ class RunnableConfig(TypedDict, total=False):
     Maximum number of times a call can recurse. If not provided, defaults to 10.
     """
 
+    _executor: Optional[ThreadPoolExecutor]
+    """
+    Private variable used to store the executor for an inflight call.
+    """
+
 
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     empty = RunnableConfig(
@@ -204,5 +209,31 @@ def get_async_callback_manager_for_config(
 
 @contextmanager
 def get_executor_for_config(config: RunnableConfig) -> Generator[Executor, None, None]:
-    with ThreadPoolExecutor(max_workers=config.get("max_concurrency")) as executor:
-        yield executor
+    """Create an Executor for a given RunnableConfig, or use an existing one if
+    nested inside another call to get_executor_for_config().
+
+    This is used to enforce max_concurrency across the entire computation graph.
+    This requires patching max_workers on the ThreadPoolExecutor, otherwise it
+    would deadlock whenever it enters a nested call to get_executor_for_config()
+    while already at max_workers.
+    """
+    if "_executor" in config and isinstance(config["_executor"], ThreadPoolExecutor):
+        executor = config["_executor"]
+        with executor._shutdown_lock:
+            executor._max_workers += 1
+
+        try:
+            yield executor
+        finally:
+            with executor._shutdown_lock:
+                executor._max_workers -= 1
+    else:
+        with ThreadPoolExecutor(max_workers=config.get("max_concurrency")) as executor:
+            with executor._shutdown_lock:
+                config["_executor"] = executor
+
+            try:
+                yield executor
+            finally:
+                with executor._shutdown_lock:
+                    del config["_executor"]
