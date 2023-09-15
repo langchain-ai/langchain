@@ -42,18 +42,6 @@ class ClickupAPIWrapper(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        # oauth_client_secret = get_from_dict_or_env(values, "oauth_client_secret", "oauth_client_secret")
-        # oauth_client_id = get_from_dict_or_env(
-        #     values, "oauth_client_id", "oauth_client_id"
-        # )
-        # access_token = get_from_dict_or_env(
-        #     values, "access_token", "access_token"
-        # )
-        
-        # values["oauth_client_secret"] = oauth_client_secret
-        # values["oauth_client_id"] = oauth_client_id
-        # values["access_token"] = access_token
-        
 
         # Get all the teams that the user has access to
         url = "https://api.clickup.com/api/v2/team"
