@@ -147,7 +147,7 @@ def test_person_with_kwargs(snapshot: Any) -> None:
     assert dumps(person, separators=(",", ":")) == snapshot
 
 
-def test_person_with_invalid_kwargs(snapshot: Any) -> None:
+def test_person_with_invalid_kwargs() -> None:
     person = Person(secret="hello")
     with pytest.raises(TypeError):
         dumps(person, invalid_kwarg="hello")
