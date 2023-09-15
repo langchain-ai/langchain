@@ -116,10 +116,12 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         inputs = self.llm_chain.prep_inputs({"query": query})
         structured_query = cast(
             StructuredQuery,
-            self.llm_chain.predict_and_parse(
-                callbacks=run_manager.get_child(), **inputs
-            ),
+            self.llm_chain.predict(callbacks=run_manager.get_child(), **inputs),
         )
+        if self.llm_chain.prompt.output_parser is not None:
+            structured_query = self.llm_chain.prompt.output_parser.parse(
+                structured_query
+            )
         if self.verbose:
             print(structured_query)
         new_query, new_kwargs = self.structured_query_translator.visit_structured_query(
