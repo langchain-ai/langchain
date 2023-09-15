@@ -2,7 +2,7 @@ import asyncio
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic.class_validators import root_validator
-from pydantic.main import BaseModel
+from langchain.pydantic_v1 import BaseModel
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain

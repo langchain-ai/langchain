@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Type, Union
 
-from pydantic.main import BaseModel
+from langchain.pydantic_v1 import BaseModel
 
 from langchain import BasePromptTemplate, PromptTemplate
 from langchain.chains.data_generation.base import SyntheticDataGenerator
