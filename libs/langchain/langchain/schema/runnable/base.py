@@ -1524,9 +1524,10 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
             steps = dict(self.steps)
-            results = await asyncio.gather(
-                *(
-                    step.ainvoke(
+            async with get_aexecutor_for_config(config) as aexecutor:
+                awaitables = [
+                    aexecutor.submit(
+                        step.ainvoke,
                         input,
                         # mark each step as a child run
                         patch_config(
@@ -1534,9 +1535,8 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                         ),
                     )
                     for key, step in steps.items()
-                )
-            )
-            output = {key: value for key, value in zip(steps, results)}
+                ]
+                output = {key: await value for key, value in zip(steps, awaitables)}
         # finish the root run
         except (KeyboardInterrupt, Exception) as e:
             await run_manager.on_chain_error(e)
@@ -1621,45 +1621,65 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         # Each step gets a copy of the input iterator,
         # which is consumed in parallel in a separate thread.
         input_copies = list(atee(input, len(steps), lock=asyncio.Lock()))
-        # Create the transform() generator for each step
-        named_generators = [
-            (
-                name,
-                step.atransform(
-                    input_copies.pop(),
-                    patch_config(
-                        config, callbacks=run_manager.get_child(f"map:key:{name}")
+        async with get_aexecutor_for_config(config) as aexecutor:
+            # Create the transform() generator for each step
+            named_generators = [
+                (
+                    name,
+                    step.atransform(
+                        input_copies.pop(),
+                        patch_config(
+                            config, callbacks=run_manager.get_child(f"map:key:{name}")
+                        ),
                     ),
-                ),
-            )
-            for name, step in steps.items()
-        ]
+                )
+                for name, step in steps.items()
+            ]
 
-        # Wrap in a coroutine to satisfy linter
-        async def get_next_chunk(generator: AsyncIterator) -> Optional[Output]:
-            return await py_anext(generator)
+            stop = object()
 
-        # Start the first iteration of each generator
-        tasks = {
-            asyncio.create_task(get_next_chunk(generator)): (step_name, generator)
-            for step_name, generator in named_generators
-        }
-        # Yield chunks from each as they become available,
-        # and start the next iteration of the generator that yielded it.
-        # When all generators are exhausted, stop.
-        while tasks:
-            completed_tasks, _ = await asyncio.wait(
-                tasks, return_when=asyncio.FIRST_COMPLETED
-            )
-            for task in completed_tasks:
-                (step_name, generator) = tasks.pop(task)
+            # Catch StopAsyncIteration and return a sentinel value
+            # This prevents end of iteration from cancelling all other tasks
+            # in the async executor.
+            async def catch_stop_anext(
+                generator: AsyncIterator,
+            ) -> Optional[Union[Output, object]]:
                 try:
-                    chunk = RunnableMapChunk({step_name: task.result()})
-                    yield chunk
-                    new_task = asyncio.create_task(get_next_chunk(generator))
-                    tasks[new_task] = (step_name, generator)
+                    return await py_anext(generator)
                 except StopAsyncIteration:
-                    pass
+                    return stop
+
+            # Submit to async executor and re-raise StopAsyncIteration as normal
+            async def get_next_chunk(
+                generator: AsyncIterator,
+            ) -> Optional[Output]:
+                res = await aexecutor.submit(catch_stop_anext, generator)
+                if res is stop:
+                    raise StopAsyncIteration
+                else:
+                    return cast(Output, res)
+
+            # Start the first iteration of each generator
+            tasks = {
+                asyncio.create_task(get_next_chunk(generator)): (step_name, generator)
+                for step_name, generator in named_generators
+            }
+            # Yield chunks from each as they become available,
+            # and start the next iteration of the generator that yielded it.
+            # When all generators are exhausted, stop.
+            while tasks:
+                completed_tasks, _ = await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+                for task in completed_tasks:
+                    (step_name, generator) = tasks.pop(task)
+                    try:
+                        chunk = RunnableMapChunk({step_name: task.result()})
+                        yield chunk
+                        new_task = asyncio.create_task(get_next_chunk(generator))
+                        tasks[new_task] = (step_name, generator)
+                    except StopAsyncIteration:
+                        pass
 
     async def atransform(
         self,
