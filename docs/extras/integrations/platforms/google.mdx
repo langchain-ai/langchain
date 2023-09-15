@@ -6,8 +6,6 @@
 >[Google BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data.
 `BigQuery` is a part of the `Google Cloud Platform`.
 
-## Installation and Setup
-
 First, you need to install `google-cloud-bigquery` python package.
 
 ```bash
@@ -24,9 +22,7 @@ from langchain.document_loaders import BigQueryLoader
 
 >[Google Cloud Storage](https://en.wikipedia.org/wiki/Google_Cloud_Storage) is a managed service for storing unstructured data.
 
-## Installation and Setup
-
-First, you need to install `google-cloud-bigquery` python package.
+First, you need to install `google-cloud-storage` python package.
 
 ```bash
 pip install google-cloud-storage
@@ -51,18 +47,13 @@ from langchain.document_loaders import GCSFileLoader
 
 Currently, only `Google Docs` are supported.
 
-## Installation and Setup
-
 First, you need to install several python package.
 
 ```bash
 pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 ```
 
-## Document Loader
-
 See a [usage example and authorizing instructions](/docs/integrations/document_loaders/google_drive.html).
-
 
 ```python
 from langchain.document_loaders import GoogleDriveLoader
@@ -74,8 +65,6 @@ from langchain.document_loaders import GoogleDriveLoader
 > [Google Vertex AI Matching Engine](https://cloud.google.com/vertex-ai/docs/matching-engine/overview) provides
 > the industry's leading high-scale low latency vector database. These vector databases are commonly
 > referred to as vector similarity-matching or an approximate nearest neighbor (ANN) service.
-
-## Installation and Setup
 
 We need to install several python packages.
 
@@ -89,24 +78,9 @@ See a [usage example](/docs/integrations/vectorstores/matchingengine).
 from langchain.vectorstores import MatchingEngine
 ```
 
-### Microsoft PowerPoint
-
->[Microsoft PowerPoint](https://en.wikipedia.org/wiki/Microsoft_PowerPoint) is a presentation program by Microsoft.
-
-## Installation and Setup
-
-There isn't any special setup for it.
-
-See a [usage example](/docs/integrations/document_loaders/microsoft_powerpoint).
-
-```python
-from langchain.document_loaders import UnstructuredPowerPointLoader
-```
-
 ## Tools
 ### Google Search
 
-## Installation and Setup
 - Install requirements with `pip install google-api-python-client`
 - Set up a Custom Search Engine, following [these instructions](https://stackoverflow.com/questions/37083058/programmatically-searching-google-in-python-using-custom-search)
 - Get an API Key and Custom Search Engine ID from the previous step, and set them as environment variables `GOOGLE_API_KEY` and `GOOGLE_CSE_ID` respectively
@@ -116,7 +90,6 @@ There exists a GoogleSearchAPIWrapper utility which wraps this API. To import th
 ```python
 from langchain.utilities import GoogleSearchAPIWrapper
 ```
-
 For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/google_search.html).
 
 You can easily load this wrapper as a Tool (to use with an Agent). You can do this with:
@@ -124,5 +97,3 @@ You can easily load this wrapper as a Tool (to use with an Agent). You can do th
 from langchain.agents import load_tools
 tools = load_tools(["google-search"])
 ```
-
-For more information on tools, see [this page](/docs/modules/agents/tools/).
