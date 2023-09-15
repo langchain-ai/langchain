@@ -225,7 +225,7 @@ class ClickupAPIWrapper(BaseModel):
 
     def update_task_assignees(self, query: str) -> str:
         """
-            Update an attribute of a specified task
+            Add or remove assignees of a specified task
         """        
         params = json.loads(query)
         url = "https://api.clickup.com/api/v2/task/" + params['task_id']
