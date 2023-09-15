@@ -27,7 +27,7 @@ class ArcGISLoader(BaseLoader):
         where: str = "1=1",
         out_fields: Optional[Union[List[str], str]] = None,
         return_geometry: bool = False,
-        return_all_records: bool = True,
+        result_record_count: Optional[int] = None,
         lyr_desc: Optional[str] = None,
         **kwargs: Any,
     ):
@@ -68,7 +68,10 @@ class ArcGISLoader(BaseLoader):
             self.out_fields = ",".join(out_fields)
 
         self.return_geometry = return_geometry
-        self.return_all_records = return_all_records
+
+        self.result_record_count = result_record_count
+        self.return_all_records = not isinstance(result_record_count, int)
+
         self.kwargs = kwargs
 
     def _get_layer_properties(self, lyr_desc: Optional[str] = None) -> dict:
