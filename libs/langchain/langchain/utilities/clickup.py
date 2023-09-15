@@ -12,7 +12,6 @@ class ClickupAPIWrapper(BaseModel):
     oauth_client_id: Optional[str] = None
     oauth_client_secret: Optional[str] = None
     redirect_url: Optional[str] = None
-    code: Optional[str] = None
     access_token: Optional[str] = None
     url: Optional[str] = "https://api.clickup.com/api/v2/oauth/token"
     team_id: Optional[str] = None
@@ -24,33 +23,37 @@ class ClickupAPIWrapper(BaseModel):
     
     def post_init(self) -> None:
         self.team_id = "9013051928"
+    
+    @classmethod
+    def get_access_token(cls, oauth_client_id, oauth_client_secret, code):
+        url = "https://api.clickup.com/api/v2/oauth/token" # TODO: can we define this as a default and allow passing in?
+        
+        query = {
+            "client_id": oauth_client_id,
+            "client_secret": oauth_client_secret,
+            "code": code,
+        }
+
+        response = requests.post(url, params=query)
+        data = response.json()
+        return data['access_token']
+        
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        oauth_client_secret = get_from_dict_or_env(values, "oauth_client_secret", "ouath_client_secret")
-        oauth_client_id = get_from_dict_or_env(
-            values, "oauth_client_id", "oauth_client_id"
-        )
-        code = get_from_dict_or_env(values, "code", "code")
-
-        # url = "https://api.clickup.com/api/v2/oauth/token" # TODO: can we define this as a default and allow passing in?
-
-        #TODO: You could ask for the code, client_id and secret and use those values to generate the access token or you could ask the user to provide that upfront
-        # query = {
-        #     "client_id": oauth_client_id,
-        #     "client_secret": oauth_client_secret,
-        #     "code": code,
-        # }
-
-        # response = requests.post(url, params=query)
-        # data = response.json()
-        # print(data)
-
-        values["oauth_client_secret"] = oauth_client_secret
-        values["oauth_client_id"] = oauth_client_id
-        values["code"] = code
-        values["access_token"] = "61681706_dc747044a6941fc9aa645a4f3bca2ba5576e7dfb516a3d1889553fe96a4084f6"
+        # oauth_client_secret = get_from_dict_or_env(values, "oauth_client_secret", "oauth_client_secret")
+        # oauth_client_id = get_from_dict_or_env(
+        #     values, "oauth_client_id", "oauth_client_id"
+        # )
+        # access_token = get_from_dict_or_env(
+        #     values, "access_token", "access_token"
+        # )
+        
+        # values["oauth_client_secret"] = oauth_client_secret
+        # values["oauth_client_id"] = oauth_client_id
+        # values["access_token"] = access_token
+        
 
         # Get all the teams that the user has access to
         url = "https://api.clickup.com/api/v2/team"
@@ -62,7 +65,7 @@ class ClickupAPIWrapper(BaseModel):
         data = response.json()
         if "teams" in data.keys() and len(data["teams"]) > 0:
             values["team_id"] = data["teams"][0]["id"]
-
+        
         return values
 
 
@@ -122,9 +125,6 @@ class ClickupAPIWrapper(BaseModel):
             Parse appropriate content from the list of spaces
         """
         pass
-
-    
-
 
     def get_authorized_teams(self) -> str:
         """
@@ -195,6 +195,7 @@ class ClickupAPIWrapper(BaseModel):
         response = requests.get(url, headers=headers, params=query)
 
         data = response.json()
+        
         return data
 
 
@@ -217,9 +218,7 @@ class ClickupAPIWrapper(BaseModel):
     def update_task(self, query: str) -> str:
         """
             Update an attribute of a specified task
-        """
-        task = self.get_task(query)
-        
+        """        
         params = json.loads(query)
         url = "https://api.clickup.com/api/v2/task/" + params['task_id']
 
@@ -230,11 +229,36 @@ class ClickupAPIWrapper(BaseModel):
         }
 
         headers = {"Content-Type": "application/json", "Authorization": self.access_token}
-        payload = {params['attribute_name']: params['new_value']}
+        payload = {params['attribute_name']: params['value']}
         
         response = requests.put(url, headers=headers, params=query, json=payload)
 
-        print(response)
+        return response
+
+    def update_task_assignees(self, query: str) -> str:
+        """
+            Update an attribute of a specified task
+        """        
+        params = json.loads(query)
+        url = "https://api.clickup.com/api/v2/task/" + params['task_id']
+
+        query = {
+            "custom_task_ids": "true",
+            "team_id": self.team_id,
+            "include_subtasks": "true"
+        }
+
+        headers = {"Content-Type": "application/json", "Authorization": self.access_token}
+        if params['operation'] == 'add':
+            assigne_payload = {"add": params['users'], "rem": []}
+        elif params['operation'] == 'rem':
+            assigne_payload = {"add": [], "rem": params['users']}
+        else:
+            raise ValueError(f"Invalid operation ({params['operation']}). Valid options ['add', 'rem'].")
+        
+        payload = {"assignees": assigne_payload}
+        response = requests.put(url, headers=headers, params=query, json=payload)
+
         return response
 
     def run(self, mode: str, query: str) -> str:
@@ -253,6 +277,8 @@ class ClickupAPIWrapper(BaseModel):
             return self.get_spaces(query)
         elif mode == "update_task":
             return self.update_task(query)
+        elif mode == "update_task_assignees":
+            return self.update_task_assignees(query)
         else:
             raise ValueError(f"Got unexpected mode {mode}")
 

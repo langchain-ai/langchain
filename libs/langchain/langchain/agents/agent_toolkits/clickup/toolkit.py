@@ -9,7 +9,8 @@ from langchain.tools.clickup.prompt import (
     CLICKUP_GET_LIST_PROMPT,
     CLICKUP_GET_FOLDERS_PROMPT,
     CLICKUP_GET_SPACES_PROMPT,
-    CLICKUP_UPDATE_TASK_PROMPT
+    CLICKUP_UPDATE_TASK_PROMPT,
+    CLICKUP_UPDATE_TASK_ASSIGNEE_PROMPT
 )
 from langchain.tools.clickup.tool import ClickupAction
 from langchain.utilities.clickup import ClickupAPIWrapper
@@ -57,6 +58,11 @@ class ClickupToolkit(BaseToolkit):
                 "mode": "update_task",
                 "name": "Update task",
                 "description": CLICKUP_UPDATE_TASK_PROMPT,
+            },
+            {
+                "mode": "update_task_assignees",
+                "name": "Update task assignees",
+                "description": CLICKUP_UPDATE_TASK_ASSIGNEE_PROMPT,
             },
         ]
         tools = [
