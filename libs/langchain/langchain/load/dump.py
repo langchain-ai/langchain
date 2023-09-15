@@ -13,12 +13,12 @@ def default(obj: Any) -> Any:
         return to_json_not_implemented(obj)
 
 
-def dumps(obj: Any, *, pretty: bool = False) -> str:
+def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
     """Return a json string representation of an object."""
     if pretty:
-        return json.dumps(obj, default=default, indent=2)
+        return json.dumps(obj, default=default, indent=2, **kwargs)
     else:
-        return json.dumps(obj, default=default)
+        return json.dumps(obj, default=default, **kwargs)
 
 
 def dumpd(obj: Any) -> Dict[str, Any]:
