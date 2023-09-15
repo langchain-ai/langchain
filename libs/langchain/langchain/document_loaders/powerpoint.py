@@ -42,7 +42,7 @@ class UnstructuredPowerPointLoader(UnstructuredFileLoader):
         try:
             import magic  # noqa: F401
 
-            is_ppt = detect_filetype(self.file_path) == FileType.PPT
+            is_ppt = detect_filetype(self.file_path, file=self.unstructured_kwargs.get("file", None)) == FileType.PPT
         except ImportError:
             _, extension = os.path.splitext(str(self.file_path))
             is_ppt = extension == ".ppt"
