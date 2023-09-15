@@ -114,6 +114,9 @@ class Runnable(Generic[Input, Output], ABC):
         Default implementation of batch, which calls invoke N times.
         Subclasses should override this method if they can batch more efficiently.
         """
+        if not inputs:
+            return []
+
         configs = get_config_list(config, len(inputs))
 
         def invoke(input: Input, config: RunnableConfig) -> Union[Output, Exception]:
@@ -144,6 +147,9 @@ class Runnable(Generic[Input, Output], ABC):
         Default implementation of abatch, which calls ainvoke N times.
         Subclasses should override this method if they can batch more efficiently.
         """
+        if not inputs:
+            return []
+
         configs = get_config_list(config, len(inputs))
 
         async def ainvoke(
@@ -376,6 +382,9 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> List[Output]:
         """Helper method to transform an Input value to an Output value,
         with callbacks. Use this method to implement invoke() in subclasses."""
+        if not input:
+            return []
+
         configs = get_config_list(config, len(input))
         callback_managers = [get_callback_manager_for_config(c) for c in configs]
         run_managers = [
@@ -444,6 +453,9 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> List[Output]:
         """Helper method to transform an Input value to an Output value,
         with callbacks. Use this method to implement invoke() in subclasses."""
+        if not input:
+            return []
+
         configs = get_config_list(config, len(input))
         callback_managers = [get_async_callback_manager_for_config(c) for c in configs]
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
@@ -748,6 +760,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         if return_exceptions:
             raise NotImplementedError()
 
+        if not inputs:
+            return []
+
         # setup callbacks
         configs = get_config_list(config, len(inputs))
         callback_managers = [
@@ -812,6 +827,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
 
         if return_exceptions:
             raise NotImplementedError()
+
+        if not inputs:
+            return []
 
         # setup callbacks
         configs = get_config_list(config, len(inputs))
@@ -1004,6 +1022,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
     ) -> List[Output]:
         from langchain.callbacks.manager import CallbackManager
 
+        if not inputs:
+            return []
+
         # setup callbacks
         configs = get_config_list(config, len(inputs))
         callback_managers = [
@@ -1121,6 +1142,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         from langchain.callbacks.manager import (
             AsyncCallbackManager,
         )
+
+        if not inputs:
+            return []
 
         # setup callbacks
         configs = get_config_list(config, len(inputs))
