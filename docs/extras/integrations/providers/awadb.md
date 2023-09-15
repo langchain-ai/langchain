@@ -9,13 +9,20 @@ pip install awadb
 ```
 
 
-## VectorStore
+## Vector Store
 
-There exists a wrapper around AwaDB vector databases, allowing you to use it as a vectorstore,
-whether for semantic search or example selection.
 
 ```python
 from langchain.vectorstores import AwaDB
 ```
 
-For a more detailed walkthrough of the AwaDB wrapper, see [here](/docs/integrations/vectorstores/awadb.html).
+See a [usage example](/docs/integrations/vectorstores/awadb).
+
+
+## Text Embedding Model
+
+```python
+from langchain.embeddings import AwaEmbeddings
+```
+
+See a [usage example](/docs/integrations/text_embedding/awadb).
