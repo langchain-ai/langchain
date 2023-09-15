@@ -55,8 +55,10 @@ class LLMRouterChain(RouterChain):
         callbacks = _run_manager.get_child()
         output = cast(
             Dict[str, Any],
-            self.llm_chain.predict_and_parse(callbacks=callbacks, **inputs),
+            self.llm_chain.predict(callbacks=callbacks, **inputs),
         )
+        if self.llm_chain.prompt.output_parser is not None:
+            output = self.llm_chain.prompt.output_parser.parse(output)
         return output
 
     async def _acall(
@@ -68,8 +70,10 @@ class LLMRouterChain(RouterChain):
         callbacks = _run_manager.get_child()
         output = cast(
             Dict[str, Any],
-            await self.llm_chain.apredict_and_parse(callbacks=callbacks, **inputs),
+            await self.llm_chain.apredict(callbacks=callbacks, **inputs),
         )
+        if self.llm_chain.prompt.output_parser is not None:
+            output = self.llm_chain.prompt.output_parser.parse(output)
         return output
 
     @classmethod
