@@ -1,18 +1,26 @@
 # Redis
 
+>[Redis](https://redis.com) is an open-source key-value store that can be used as a cache, 
+> message broker, database, vector database and more.
+
 This page covers how to use the [Redis](https://redis.com) ecosystem within LangChain.
 It is broken into two parts: installation and setup, and then references to specific Redis wrappers.
 
 ## Installation and Setup
-- Install the Redis Python SDK with `pip install redis`
+
+Install the Python SDK:
+
+```bash
+pip install redis
+```
 
 ## Wrappers
 
-All wrappers needing a redis url connection string to connect to the database support either a stand alone Redis server
+All wrappers need a redis url connection string to connect to the database support either a stand alone Redis server
 or a High-Availability setup with Replication and Redis Sentinels.
 
 ### Redis Standalone connection url
-For standalone Redis server the official redis connection url formats can be used as describe in the python redis modules
+For standalone `Redis` server, the official redis connection url formats can be used as describe in the python redis modules
 "from_url()" method [Redis.from_url](https://redis-py.readthedocs.io/en/stable/connections.html#redis.Redis.from_url)
 
 Example: `redis_url = "redis://:secret-pass@localhost:6379/0"`
@@ -20,7 +28,7 @@ Example: `redis_url = "redis://:secret-pass@localhost:6379/0"`
 ### Redis Sentinel connection url
 
 For [Redis sentinel setups](https://redis.io/docs/management/sentinel/) the connection scheme is "redis+sentinel". 
-This is an un-offical extensions to the official IANA registered protocol schemes as long as there is no connection url
+This is an unofficial extensions to the official IANA registered protocol schemes as long as there is no connection url
 for Sentinels available.
 
 Example: `redis_url = "redis+sentinel://:secret-pass@sentinel-host:26379/mymaster/0"`
