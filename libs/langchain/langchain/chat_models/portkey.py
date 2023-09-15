@@ -1,38 +1,91 @@
 from __future__ import annotations
 
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Union, Iterator, TypedDict)
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, TypedDict, Union, cast, Mapping, Dict, Tuple
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import SimpleChatModel
+from langchain.chat_models.base import BaseMessage, SimpleChatModel
 from langchain.pydantic_v1 import Field, PrivateAttr
-from langchain.schema.messages import BaseMessage
-from langchain.schema.output import GenerationChunk
+from langchain.schema.output import GenerationChunk, ChatGenerationChunk, BaseMessageChunk
+from langchain.schema.messages import (
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessageChunk,
+    FunctionMessageChunk,
+    HumanMessageChunk,
+    SystemMessageChunk,
+    ChatMessage,
+    HumanMessage,
+    AIMessage,
+    SystemMessage,
+    FunctionMessage,
+)
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import portkey
-    from portkey import (
-        LLMOptions,
-        CacheLiteral,
-        CacheType,
-        Modes,
-        ModesLiteral,
-        PortkeyResponse,
-    )
-
-
+    from portkey import LLMOptions, Modes, ModesLiteral
 
 
 IMPORT_ERROR_MESSAGE = (
     "Portkey is not installed.Please install it with `pip install portkey-ai`."
 )
 
+def _convert_delta_to_message_chunk(
+    _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    role = _dict.get("role") or ""
+    content = _dict.get("content") or ""
+    if _dict.get("function_call"):
+        additional_kwargs = {"function_call": dict(_dict["function_call"])}
+    else:
+        additional_kwargs = {}
+
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content)
+    elif role == "assistant" or default_class == AIMessageChunk:
+        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content)
+    elif role == "function" or default_class == FunctionMessageChunk:
+        return FunctionMessageChunk(content=content, name=_dict["name"])
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role)
+    else:
+        return default_class(content=content)
+
+def convert_message_to_dict(message: BaseMessage) -> dict:
+    message_dict: Dict[str, Any]
+    if isinstance(message, ChatMessage):
+        message_dict = {"role": message.role, "content": message.content}
+    elif isinstance(message, HumanMessage):
+        message_dict = {"role": "user", "content": message.content}
+    elif isinstance(message, AIMessage):
+        message_dict = {"role": "assistant", "content": message.content}
+        if "function_call" in message.additional_kwargs:
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
+            # If function call only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
+    elif isinstance(message, SystemMessage):
+        message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, FunctionMessage):
+        message_dict = {
+            "role": "function",
+            "content": message.content,
+            "name": message.name,
+        }
+    else:
+        raise TypeError(f"Got unknown type {message}")
+    if "name" in message.additional_kwargs:
+        message_dict["name"] = message.additional_kwargs["name"]
+    return message_dict
+
+
 class Message(TypedDict):
     role: str
     content: str
-
 
 
 class ChatPortkey(SimpleChatModel):
@@ -53,20 +106,22 @@ class ChatPortkey(SimpleChatModel):
             # Simplest invocation for an openai provider. Can be extended to
             # others as well
             llm_option = portkey.LLMOptions(
-                provider="openai",  
-                virtual_key="openai-virtual-key", # Checkout the docs for the virtual-api-key
+                provider="openai",
+                # Checkout the docs for the virtual-api-key
+                virtual_key="openai-virtual-key",
                 model="text-davinci-003"
             )
 
             # Initialise the client
             client = ChatPortkey(
-                api_key="PORTKEY_API_KEY", 
+                api_key="PORTKEY_API_KEY",
                 mode="single"
             ).add_llms(llms=llm_option)
 
             response = client("What are the biggest risks facing humanity?")
 
     """
+
     mode: Optional[Union["Modes", "ModesLiteral"]] = Field(
         description="The mode for using the Portkey integration", default=None
     )
@@ -77,7 +132,7 @@ class ChatPortkey(SimpleChatModel):
 
     llms: List["LLMOptions"] = Field(description="LLM parameters", default_factory=list)
 
-    _portkey: portkey = PrivateAttr()
+    _portkey: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -103,9 +158,10 @@ class ChatPortkey(SimpleChatModel):
         self._portkey = portkey
         self.model = None
         self.mode = mode
-        
 
-    def add_llms(self, llm_params: Union[LLMOptions, List[LLMOptions]]) -> "Portkey":
+    def add_llms(
+        self, llm_params: Union[LLMOptions, List[LLMOptions]]
+    ) -> "ChatPortkey":
         """
         Adds the specified LLM parameters to the list of LLMs. This may be used for
         fallbacks or load-balancing as specified in the mode.
@@ -142,22 +198,22 @@ class ChatPortkey(SimpleChatModel):
         if self.model is None:
             self.model = self.llms[0].model
         return self
-    
+
     def _call(
         self,
-        messages: List[Message],
+        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Call Portkey's chatCompletions endpoint. 
+        """Call Portkey's chatCompletions endpoint.
 
         Args:
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
         Returns:
             The string generated by the provider set in the initialisation of the LLM.
-        
+
         Example:
             .. code-block:: python
                 message = [{
@@ -166,17 +222,15 @@ class ChatPortkey(SimpleChatModel):
                 }]
                 response = portkey(message)
         """
-        try:
-            from portkey import Config
-        except ImportError as exc:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
-        self._client.config = Config(llms=self.llms)
-        response = self._client.ChatCompletions.create(messages=messages, stream=False, stop=stop, **kwargs)
+        _messages = [cast(Message, i) for i in messages]
+        response = self._client.ChatCompletions.create(
+            messages=_messages, stream=False, stop=stop, **kwargs
+        )
         message = response.choices[0].message
-        return message.get("content", "") if message else "" 
+        return message.get("content", "") if message else ""
 
     @property
-    def _client(self):
+    def _client(self) -> Any:
         try:
             from portkey import Config
         except ImportError as exc:
@@ -184,16 +238,22 @@ class ChatPortkey(SimpleChatModel):
         self._portkey.config = Config(llms=self.llms)
         return self._portkey
     
+    def _create_message_dicts(
+        self, messages: List[BaseMessage]
+    ) -> List[Dict[str, Any]]:
+        message_dicts = [convert_message_to_dict(m) for m in messages]
+        return message_dicts
+
     def _stream(
         self,
-        prompt: str,
+        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[GenerationChunk]:
+    ) -> Iterator[ChatGenerationChunk]:
         """Call Portkey completion_stream and return the resulting generator.
 
-        Args:
+        Args:   
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
         Returns:
@@ -206,16 +266,18 @@ class ChatPortkey(SimpleChatModel):
                 for token in generator:
                     yield token
         """
-        response = self._client.Completions.create(stream=True, prompt=prompt, stop=stop, **kwargs)
+        _messages = cast(Message, self._create_message_dicts(messages))
+        response = self._client.ChatCompletions.create(
+            messages=_messages, stream=True, stop=stop, **kwargs
+        )
         for token in response:
-            chunk = GenerationChunk(text = token.choices[0].text or "")
+            _content = token.choices[0].delta.get("content") or ""
+            chunk = ChatGenerationChunk(message=AIMessageChunk(content=_content))
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
-
 
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "portkey-ai-gateway"
-    
