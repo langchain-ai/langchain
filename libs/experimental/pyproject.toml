@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-experimental"
-version = "0.0.14"
+version = "0.0.17"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -23,6 +23,7 @@ black = "^23.1.0"
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
 types-pyyaml = "^6.0.12.2"
+types-requests = "^2.28.11.5"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"

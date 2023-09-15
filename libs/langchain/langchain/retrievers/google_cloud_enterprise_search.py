@@ -156,7 +156,10 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
                 else "extractive_segments"
             )
 
-            for chunk in derived_struct_data.get(chunk_type, []):
+            if chunk_type not in derived_struct_data:
+                continue
+
+            for chunk in derived_struct_data[chunk_type]:
                 doc_metadata["source"] = derived_struct_data.get("link", "")
 
                 if chunk_type == "extractive_answers":

@@ -1,19 +1,19 @@
 import json
 import logging
 import os
+import tempfile
 import zipfile
 from pathlib import Path
 from typing import Iterator, List, Union
 
 from langchain import schema
-from langchain.chat_loaders import base as chat_loaders
+from langchain.chat_loaders.base import BaseChatLoader, ChatSession
 
 logger = logging.getLogger(__name__)
 
 
-class TelegramChatLoader(chat_loaders.BaseChatLoader):
-    """A loading utility for converting telegram conversations
-    to LangChain chat messages.
+class TelegramChatLoader(BaseChatLoader):
+    """Load `telegram` conversations to LangChain chat messages.
 
     To export, use the Telegram Desktop app from
     https://desktop.telegram.org/, select a conversation, click the three dots
@@ -35,16 +35,14 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
         """
         self.path = path if isinstance(path, str) else str(path)
 
-    def _load_single_chat_session_html(
-        self, file_path: str
-    ) -> chat_loaders.ChatSession:
+    def _load_single_chat_session_html(self, file_path: str) -> ChatSession:
         """Load a single chat session from an HTML file.
 
         Args:
             file_path (str): Path to the HTML file.
 
         Returns:
-            chat_loaders.ChatSession: The loaded chat session.
+            ChatSession: The loaded chat session.
         """
         try:
             from bs4 import BeautifulSoup
@@ -81,18 +79,16 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
             )
             previous_sender = from_name
 
-        return chat_loaders.ChatSession(messages=results)
+        return ChatSession(messages=results)
 
-    def _load_single_chat_session_json(
-        self, file_path: str
-    ) -> chat_loaders.ChatSession:
+    def _load_single_chat_session_json(self, file_path: str) -> ChatSession:
         """Load a single chat session from a JSON file.
 
         Args:
             file_path (str): Path to the JSON file.
 
         Returns:
-            chat_loaders.ChatSession: The loaded chat session.
+            ChatSession: The loaded chat session.
         """
         with open(file_path, "r", encoding="utf-8") as file:
             data = json.load(file)
@@ -114,7 +110,7 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
                 )
             )
 
-        return chat_loaders.ChatSession(messages=results)
+        return ChatSession(messages=results)
 
     def _iterate_files(self, path: str) -> Iterator[str]:
         """Iterate over files in a directory or zip file.
@@ -136,14 +132,15 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
             with zipfile.ZipFile(path) as zip_file:
                 for file in zip_file.namelist():
                     if file.endswith((".html", ".json")):
-                        yield zip_file.extract(file)
+                        with tempfile.TemporaryDirectory() as temp_dir:
+                            yield zip_file.extract(file, path=temp_dir)
 
-    def lazy_load(self) -> Iterator[chat_loaders.ChatSession]:
+    def lazy_load(self) -> Iterator[ChatSession]:
         """Lazy load the messages from the chat file and yield them
         in as chat sessions.
 
         Yields:
-            chat_loaders.ChatSession: The loaded chat session.
+            ChatSession: The loaded chat session.
         """
         for file_path in self._iterate_files(self.path):
             if file_path.endswith(".html"):
