@@ -707,7 +707,9 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                 "RunnableBranch default must be runnable, callable or mapping."
             )
 
-        default_ = coerce_to_runnable(cast(RunnableLike, default))
+        default_ = cast(
+            Runnable[Input, Output], coerce_to_runnable(cast(RunnableLike, default))
+        )
 
         _branches = []
 
