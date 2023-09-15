@@ -145,7 +145,7 @@ class PyPDFLoader(BasePDFLoader):
         file_path: str,
         password: Optional[Union[str, bytes]] = None,
         headers: Optional[Dict] = None,
-        extract_images: bool = False
+        extract_images: bool = False,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -172,7 +172,13 @@ class PyPDFLoader(BasePDFLoader):
 class PyPDFium2Loader(BasePDFLoader):
     """Load `PDF` using `pypdfium2` and chunks at character level."""
 
-    def __init__(self, file_path: str, *, headers: Optional[Dict] = None, extract_images: bool = False):
+    def __init__(
+        self,
+        file_path: str,
+        *,
+        headers: Optional[Dict] = None,
+        extract_images: bool = False,
+    ):
         """Initialize with a file path."""
         super().__init__(file_path, headers=headers)
         self.parser = PyPDFium2Parser(extract_images=extract_images)
@@ -223,7 +229,7 @@ class PyPDFDirectoryLoader(BaseLoader):
             if i.is_file():
                 if self._is_visible(i.relative_to(p)) or self.load_hidden:
                     try:
-                        loader = PyPDFLoader(str(i), self.extract_images)
+                        loader = PyPDFLoader(str(i), extract_images=self.extract_images)
                         sub_docs = loader.load()
                         for doc in sub_docs:
                             doc.metadata["source"] = str(i)
@@ -239,7 +245,13 @@ class PyPDFDirectoryLoader(BaseLoader):
 class PDFMinerLoader(BasePDFLoader):
     """Load `PDF` files using `PDFMiner`."""
 
-    def __init__(self, file_path: str, *, headers: Optional[Dict] = None) -> None:
+    def __init__(
+        self,
+        file_path: str,
+        *,
+        headers: Optional[Dict] = None,
+        extract_images: bool = False,
+    ) -> None:
         """Initialize with file path."""
         try:
             from pdfminer.high_level import extract_text  # noqa:F401
@@ -250,7 +262,7 @@ class PDFMinerLoader(BasePDFLoader):
             )
 
         super().__init__(file_path, headers=headers)
-        self.parser = PDFMinerParser()
+        self.parser = PDFMinerParser(extract_images=extract_images)
 
     def load(self) -> List[Document]:
         """Eagerly load the content."""
@@ -301,7 +313,9 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 class PyMuPDFLoader(BasePDFLoader):
     """Load `PDF` files using `PyMuPDF`."""
 
-    def __init__(self, file_path: str, *, headers: Optional[Dict] = None, extract_images = False) -> None:
+    def __init__(
+        self, file_path: str, *, headers: Optional[Dict] = None, extract_images=False
+    ) -> None:
         """Initialize with a file path."""
         try:
             import fitz  # noqa:F401
@@ -312,7 +326,7 @@ class PyMuPDFLoader(BasePDFLoader):
             )
 
         super().__init__(file_path, headers=headers)
-        self.extract_images = extract_images  
+        self.extract_images = extract_images
 
     def load(self, **kwargs: Optional[Any]) -> List[Document]:
         """Load file."""
@@ -451,6 +465,7 @@ class PDFPlumberLoader(BasePDFLoader):
         text_kwargs: Optional[Mapping[str, Any]] = None,
         dedupe: bool = False,
         headers: Optional[Dict] = None,
+        extract_images: bool = False,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -464,11 +479,16 @@ class PDFPlumberLoader(BasePDFLoader):
         super().__init__(file_path, headers=headers)
         self.text_kwargs = text_kwargs or {}
         self.dedupe = dedupe
+        self.extract_images = extract_images
 
     def load(self) -> List[Document]:
         """Load file."""
 
-        parser = PDFPlumberParser(text_kwargs=self.text_kwargs, dedupe=self.dedupe)
+        parser = PDFPlumberParser(
+            text_kwargs=self.text_kwargs,
+            dedupe=self.dedupe,
+            extract_images=self.extract_images,
+        )
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
