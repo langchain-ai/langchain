@@ -19,8 +19,6 @@ The Chain interface makes it easy to create apps that are:
 
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
-from langchain.chains.arcgis.layer.base import ArcGISLayerStuffSummaryChain
-from langchain.chains.arcgis.row.base import ArcGISRowSummaryChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
@@ -84,8 +82,6 @@ __all__ = [
     "APIChain",
     "AnalyzeDocumentChain",
     "ArangoGraphQAChain",
-    "ArcGISLayerStuffSummaryChain",
-    "ArcGISRowSummaryChain",
     "ChatVectorDBChain",
     "ConstitutionalChain",
     "ConversationChain",
