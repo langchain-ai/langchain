@@ -15,8 +15,11 @@ def default(obj: Any) -> Any:
 
 def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
     """Return a json string representation of an object."""
+    if "default" in kwargs:
+        raise ValueError("`default` should not be passed to dumps")
     if pretty:
-        return json.dumps(obj, default=default, indent=2, **kwargs)
+        indent = kwargs.pop("indent", 2)
+        return json.dumps(obj, default=default, indent=indent, **kwargs)
     else:
         return json.dumps(obj, default=default, **kwargs)
 
