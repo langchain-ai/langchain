@@ -245,7 +245,7 @@ def trace_as_chain_group(
             with trace_as_chain_group("group_name", inputs={"input": llm_input}) as manager:
                 # Use the callback manager for the chain group
                 res = llm.predict(llm_input, callbacks=manager)
-                manager.on_group_end({"output": res})
+                manager.on_chain_end({"output": res})
     """  # noqa: E501
     cb = cast(
         Callbacks,
@@ -278,7 +278,8 @@ def trace_as_chain_group(
     try:
         yield group_cm
     except Exception as e:
-        run_manager.on_chain_error(e)
+        if not group_cm.ended:
+            run_manager.on_chain_error(e)
         raise e
     else:
         if not group_cm.ended:
@@ -321,7 +322,7 @@ async def atrace_as_chain_group(
             async with atrace_as_chain_group("group_name", inputs={"input": llm_input}) as manager:
                 # Use the async callback manager for the chain group
                 res = await llm.apredict(llm_input, callbacks=manager)
-                await manager.on_group_end({"output": res})
+                await manager.on_chain_end({"output": res})
     """  # noqa: E501
     cb = cast(
         Callbacks,
@@ -1409,14 +1410,29 @@ class CallbackManagerForChainGroup(CallbackManager):
         self.parent_run_manager = parent_run_manager
         self.ended = False
 
-    def on_group_end(self, outputs: Union[Dict[str, Any], Any], **kwargs: Any) -> None:
+    def on_chain_end(self, outputs: Union[Dict[str, Any], Any], **kwargs: Any) -> None:
         """Run when traced chain group ends.
 
         Args:
             outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
         """
         self.ended = True
+        super().on_chain_end(outputs, **kwargs)
         return self.parent_run_manager.on_chain_end(outputs, **kwargs)
+
+    def on_chain_error(
+        self,
+        error: BaseException,
+        **kwargs: Any,
+    ) -> None:
+        """Run when chain errors.
+
+        Args:
+            error (Exception or KeyboardInterrupt): The error.
+        """
+        self.ended = True
+        super().on_chain_error(error, **kwargs)
+        return self.parent_run_manager.on_chain_error(error, **kwargs)
 
 
 class AsyncCallbackManager(BaseCallbackManager):
@@ -1730,7 +1746,7 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         self.parent_run_manager = parent_run_manager
         self.ended = False
 
-    async def on_group_end(
+    async def on_chain_end(
         self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
     ) -> None:
         """Run when traced chain group ends.
@@ -1739,7 +1755,22 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
             outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
         """
         self.ended = True
+        await super().on_chain_end(outputs, **kwargs)
         await self.parent_run_manager.on_chain_end(outputs, **kwargs)
+
+    async def on_chain_error(
+        self,
+        error: BaseException,
+        **kwargs: Any,
+    ) -> None:
+        """Run when chain errors.
+
+        Args:
+            error (Exception or KeyboardInterrupt): The error.
+        """
+        self.ended = True
+        await super().on_chain_error(error, **kwargs)
+        await self.parent_run_manager.on_chain_error(error, **kwargs)
 
 
 T = TypeVar("T", CallbackManager, AsyncCallbackManager)
