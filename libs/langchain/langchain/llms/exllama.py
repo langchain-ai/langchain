@@ -1,10 +1,11 @@
 import glob
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema.output import GenerationChunk
 
 
 class Exllama(LLM):
@@ -31,16 +32,16 @@ class Exllama(LLM):
 
     ##Langchain parameters
     logfunc = print
-    stop_sequences: Optional[List[str]] = Field("")
+    stop_sequences: List[str] = Field("")
     """Sequences that immediately will stop the generator."""
-    
+
     streaming: Optional[bool] = Field(True)
     """Whether to stream the results, token by token."""
 
     ##Generator parameters
     disallowed_tokens: Optional[List[int]] = Field(None)
     """List of tokens to disallow during generation."""
-    
+
     temperature: Optional[float] = Field(None)
     """Temperature for sampling diversity."""
 
@@ -50,7 +51,7 @@ class Exllama(LLM):
     top_p: Optional[float] = Field(None)
     """Consider tokens up to a cumulative probabiltiy of top_p, 
     0.0 to disable top_p sampling."""
-    
+
     min_p: Optional[float] = Field(None)
     """Do not consider tokens with probability less than this."""
 
@@ -73,7 +74,7 @@ class Exllama(LLM):
     """Length of beams for beam search."""
 
     ##Config overrides
-    max_seq_len: Optional[int] = Field(2048)
+    max_seq_len: int = Field(2048)
     """Reduce to save memory. Can also be increased, 
     ideally while also using compress_pos_emn and a compatible model/LoRA"""
 
@@ -106,7 +107,7 @@ class Exllama(LLM):
     lora_path: Optional[str] = Field(None, description="Path to your lora.")
 
     @staticmethod
-    def get_model_path_at(path):
+    def get_model_path_at(path: str) -> Optional[str]:
         patterns = ["*.safetensors", "*.bin", "*.pt"]
         model_paths = []
         for pattern in patterns:
@@ -120,10 +121,12 @@ class Exllama(LLM):
             return None  # Return None if no matching files were found
 
     @staticmethod
-    def configure_object(params, values, logfunc):
+    def configure_object(
+        params: List[str], values: Dict[str, Any], logfunc: Callable[[str], None]
+    ) -> Callable[[str], None]:
         obj_params = {k: values.get(k) for k in params}
 
-        def apply_to(obj):
+        def apply_to(obj: str) -> None:
             for key, value in obj_params.items():
                 if value:
                     if hasattr(obj, key):
@@ -135,7 +138,7 @@ class Exllama(LLM):
         return apply_to
 
     @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         try:
             from exllama.generator import ExLlamaGenerator
             from exllama.lora import ExLlamaLora
@@ -144,8 +147,7 @@ class Exllama(LLM):
         except ImportError:
             raise ImportError(
                 "Could not import exllama library. "
-                "Please install the exllama library with "
-                "!pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu118"
+                "Please install the exllama library with (cuda 11.8 is required)"
                 "!python -m pip install git+https://github.com/jllllll/exllama"
             )
         model_path = values["model_path"]
@@ -258,8 +260,8 @@ class Exllama(LLM):
         **kwargs: Any,
     ) -> str:
         combined_text_output = ""
-        for token in self.stream(prompt=prompt, stop=stop, run_manager=run_manager):
-            combined_text_output += token
+        for chunk in self._stream(prompt=prompt, stop=stop, run_manager=run_manager):
+            combined_text_output += chunk.text
         return combined_text_output
 
     from enum import Enum
@@ -269,7 +271,7 @@ class Exllama(LLM):
         PARTIAL_MATCH = 0
         NO_MATCH = 2
 
-    def match_status(self, sequence: str, banned_sequences: List[str]):
+    def match_status(self, sequence: str, banned_sequences: List[str]) -> MatchStatus:
         sequence = sequence.strip().lower()
         for banned_seq in banned_sequences:
             if banned_seq == sequence:
@@ -278,12 +280,13 @@ class Exllama(LLM):
                 return self.MatchStatus.PARTIAL_MATCH
         return self.MatchStatus.NO_MATCH
 
-    def stream(
+    def _stream(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-    ) -> str:
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
         # config = self.config
         generator = self.generator
         beam_search = (
@@ -312,7 +315,7 @@ class Exllama(LLM):
 
         while generator.gen_num_tokens() <= (
             self.max_seq_len - 4
-        ):  # Slight extra padding space as we seem to occasionally get a 
+        ):  # Slight extra padding space as we seem to occasionally get a
             # few more than 1-2 tokens
             # Fetch a token
             token = token_getter()
@@ -324,7 +327,7 @@ class Exllama(LLM):
                     generator.end_beam_search()
                 return
 
-            # Tokenize the string from the last new line, we can't just decode the 
+            # Tokenize the string from the last new line, we can't just decode the
             # last token due to how sentencepiece decodes.
             stuff = generator.tokenizer.decode(
                 generator.sequence_actual[0][last_newline_pos:]
@@ -363,6 +366,9 @@ class Exllama(LLM):
                         token=match_buffer,
                         verbose=self.verbose,
                     )
-                yield match_buffer  # Not a stop, yield the match buffer.
+                chunk = GenerationChunk(text=match_buffer)
+                yield chunk  # Not a stop, yield the match buffer.
+                if run_manager:
+                    run_manager.on_llm_new_token(token=chunk.text, verbose=self.verbose)
                 match_buffer = ""
         return

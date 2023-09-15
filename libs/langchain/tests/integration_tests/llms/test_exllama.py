@@ -1,7 +1,6 @@
 # flake8: noqa
 """Test Llama.cpp wrapper."""
 import os
-from typing import Generator
 from urllib.request import urlretrieve
 
 import pytest
@@ -18,15 +17,21 @@ def get_model() -> str:
     username = "iambestfeed"
     repo_name = "open_llama_3b_4bit_128g"
     model_url = f"https://huggingface.co/{username}/{repo_name}/resolve/main"
-    model_files = ['config.json', 'generation_config.json', 'model.safetensors', 
-                   'special_tokens_map.json', 'tokenizer.model', 'tokenizer_config.json']
-    if not os.path.exists(f'/tmp/{repo_name}'):
-        os.mkdir(f'/tmp/{repo_name}')
+    model_files = [
+        "config.json",
+        "generation_config.json",
+        "model.safetensors",
+        "special_tokens_map.json",
+        "tokenizer.model",
+        "tokenizer_config.json",
+    ]
+    if not os.path.exists(f"/tmp/{repo_name}"):
+        os.mkdir(f"/tmp/{repo_name}")
     for file in model_files:
-        local_filename = f'/tmp/{repo_name}/{file}'
+        local_filename = f"/tmp/{repo_name}/{file}"
         if not os.path.exists(local_filename):
-            urlretrieve(f'{model_url}/{file}', local_filename)
-    return f'/tmp/{repo_name}'
+            urlretrieve(f"{model_url}/{file}", local_filename)
+    return f"/tmp/{repo_name}"
 
 
 def test_llamacpp_inference() -> None:
