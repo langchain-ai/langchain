@@ -12,6 +12,7 @@ from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.pydantic_v1 import Extra
 from langchain.schema import RUN_KEY
 from langchain.schema.language_model import BaseLanguageModel
+import string
 
 
 def _get_score(text: str) -> Optional[Tuple[str, int]]:
@@ -22,12 +23,18 @@ def _get_score(text: str) -> Optional[Tuple[str, int]]:
         elif match.group(1).upper() == "INCORRECT":
             return "INCORRECT", 0
     try:
-        first_word = text.strip().split()[0]
+        first_word = (
+            text.strip().split()[0].translate(str.maketrans("", "", string.punctuation))
+        )
         if first_word.upper() == "CORRECT":
             return "CORRECT", 1
         elif first_word.upper() == "INCORRECT":
             return "INCORRECT", 0
-        last_word = text.strip().split()[-1]
+        last_word = (
+            text.strip()
+            .split()[-1]
+            .translate(str.maketrans("", "", string.punctuation))
+        )
         if last_word.upper() == "CORRECT":
             return "CORRECT", 1
         elif last_word.upper() == "INCORRECT":

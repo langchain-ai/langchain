@@ -118,6 +118,13 @@ GRADE:""",
                 "score": 1,
             },
         ),
+        (
+            """The student's answer is "Regent's Park," which matches the correct answer given in the context. Therefore, the student's answer is CORRECT.""",
+            {
+                "value": "CORRECT",
+                "score": 1,
+            },
+        )
     ],
 )
 def test_qa_output_parser(output: str, expected: dict) -> str:
