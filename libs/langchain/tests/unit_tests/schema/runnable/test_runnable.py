@@ -41,7 +41,10 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
-from langchain.schema.runnable.config import get_executor_for_config
+from langchain.schema.runnable.config import (
+    get_aexecutor_for_config,
+    get_executor_for_config,
+)
 
 
 class FakeTracer(BaseTracer):
@@ -152,6 +155,60 @@ def test_get_executor_for_config_max_workers_n() -> None:
     config = RunnableConfig(max_concurrency=3)
     with get_executor_for_config(config) as executor:
         result = executor.submit(outer_call).result()
+
+    assert result == 1
+
+
+@pytest.mark.timeout(2, method="thread")
+@pytest.mark.asyncio
+async def test_get_aexecutor_for_config_max_workers_1() -> None:
+    async def return_one() -> int:
+        return 1
+
+    async def outer_call() -> int:
+        async with get_aexecutor_for_config(config) as aexecutor:
+            return await aexecutor.submit(return_one)
+
+    config = RunnableConfig(max_concurrency=1)
+    async with get_aexecutor_for_config(config) as aexecutor:
+        result = await aexecutor.submit(outer_call)
+
+    assert result == 1
+
+
+@pytest.mark.timeout(2, method="thread")
+@pytest.mark.asyncio
+async def test_get_aexecutor_for_config_max_workers_1_parallel() -> None:
+    async def return_one(_: None) -> int:
+        return 1
+
+    async def outer_call() -> List[int]:
+        async with get_aexecutor_for_config(config) as aexecutor:
+            return await aexecutor.map(return_one, [None, None, None])
+
+    config = RunnableConfig(max_concurrency=1)
+    async with get_aexecutor_for_config(config) as aexecutor:
+        result = await aexecutor.submit(outer_call)
+
+    assert result == [1, 1, 1]
+
+
+@pytest.mark.timeout(2, method="thread")
+@pytest.mark.asyncio
+async def test_get_aexecutor_for_config_max_workers_n() -> None:
+    async def return_one() -> int:
+        return 1
+
+    async def outer_call(i: int = 1) -> int:
+        async with get_aexecutor_for_config(config) as aexecutor:
+            if i < 3:
+                return await aexecutor.submit(outer_call, i + 1)
+            else:
+                return await aexecutor.submit(return_one)
+
+    config = RunnableConfig(max_concurrency=3)
+    async with get_aexecutor_for_config(config) as aexecutor:
+        result = await aexecutor.submit(outer_call)
 
     assert result == 1
 
