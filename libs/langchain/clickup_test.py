@@ -5,6 +5,7 @@ from langchain.agents.agent_toolkits.clickup.toolkit import ClickupToolkit
 from langchain.agents import AgentType, initialize_agent
 from langchain.llms import OpenAI
 from langchain.utilities.clickup import ClickupAPIWrapper
+import requests
 
 oauth_client_id = "VR9ER2KI35L9SL4QWQD3VXK5UUUQBCD9"
 ouath_client_secret = "O5E2F09WQG4BVDF283ZYLWBWT4OPJPNL0KDKKU08U3EJ3MH00FXVF1II9UOCS5KG"
@@ -13,7 +14,7 @@ code = "S695H3CSYBXDDZU8JKO6M79QNQES7N6G"
 clickup = ClickupAPIWrapper(oauth_client_id=oauth_client_id, oauth_client_secret=ouath_client_secret, code=code)
 
 toolkit = ClickupToolkit.from_clickup_api_wrapper(clickup)
-llm = OpenAI(temperature=0, openai_api_key="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")
+llm = OpenAI(temperature=0, openai_api_key="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")
 
 agent = initialize_agent(
     toolkit.get_tools(), llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
@@ -30,6 +31,16 @@ agent.run("Can you get all the spaces available to the team?")
 
 print("Can you get a task with id 86a0t44tq")
 agent.run("Can you get a task with id 86a0t44tq")
+
+print("Create a task")
+agent.run("Can you create a task called Test Task with description My test task with high priority and status open?")
+
+print("Create a list")
+agent.run("Can you create a list called Test List with content My test list with high priority and status red?")
+
+
+print("Create a folder")
+agent.run("Can you create a folder called Test Folder")
 
 """
 Testing the clickup API
@@ -207,45 +218,24 @@ Testing the clickup API
 
 # import requests
 
-# list_id = "YOUR_list_id_PARAMETER"
+# list_id = "901300608424"
 # url = "https://api.clickup.com/api/v2/list/" + list_id + "/task"
 
 # query = {
 #   "custom_task_ids": "true",
-#   "team_id": "123"
+#   "team_id": "9013051928"
 # }
 
 # payload = {
 #   "name": "New Task Name",
 #   "description": "New Task Description",
-#   "assignees": [
-#     183
-#   ],
-#   "tags": [
-#     "tag name 1"
-#   ],
 #   "status": "Open",
 #   "priority": 3,
-#   "due_date": 1508369194377,
-#   "due_date_time": False,
-#   "time_estimate": 8640000,
-#   "start_date": 1567780450202,
-#   "start_date_time": False,
-#   "notify_all": True,
-#   "parent": None,
-#   "links_to": None,
-#   "check_required_custom_fields": True,
-#   "custom_fields": [
-#     {
-#       "id": "0a52c486-5f05-403b-b4fd-c512ff05131c",
-#       "value": "This is a string of text added to a Custom Field."
-#     }
-#   ]
 # }
 
 # headers = {
 #   "Content-Type": "application/json",
-#   "Authorization": "YOUR_API_KEY_HERE"
+#   "Authorization": "61681706_dc747044a6941fc9aa645a4f3bca2ba5576e7dfb516a3d1889553fe96a4084f6"
 # }
 
 # response = requests.post(url, json=payload, headers=headers, params=query)

@@ -6,6 +6,8 @@ from langchain.tools.clickup.prompt import (
     CLICKUP_GET_ALL_TEAMS_PROMPT,
     CLICKUP_GET_TASK_PROMPT,
     CLICKUP_TASK_CREATE_PROMPT,
+    CLICKUP_FOLDER_CREATE_PROMPT,
+    CLICKUP_LIST_CREATE_PROMPT,
     CLICKUP_GET_LIST_PROMPT,
     CLICKUP_GET_FOLDERS_PROMPT,
     CLICKUP_GET_SPACES_PROMPT,
@@ -37,6 +39,16 @@ class ClickupToolkit(BaseToolkit):
                 "mode": "create_task",
                 "name": "Create Task",
                 "description": CLICKUP_TASK_CREATE_PROMPT,
+            },
+            {
+                "mode": "create_list",
+                "name": "Create List",
+                "description": CLICKUP_LIST_CREATE_PROMPT,
+            },
+            {
+                "mode": "create_folder",
+                "name": "Create Folder",
+                "description": CLICKUP_FOLDER_CREATE_PROMPT,
             },
             {
                 "mode": "get_list",
@@ -73,4 +85,5 @@ class ClickupToolkit(BaseToolkit):
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
         return self.tools
+
 
