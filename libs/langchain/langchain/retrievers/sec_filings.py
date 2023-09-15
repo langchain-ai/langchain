@@ -6,9 +6,9 @@ from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 
 
-class KayAiRetriever(BaseRetriever):
+class SecFilingsRetriever(BaseRetriever):
     """
-        Retriever for Kay.ai datasets.
+        Retriever for SEC filings, powered by Kay.ai and Cybersyn.
 
         To work properly, expects you to have KAY_API_KEY env variable set.
         You can get one for free at https://kay.ai/.
@@ -18,19 +18,13 @@ class KayAiRetriever(BaseRetriever):
     num_contexts: int
 
     @classmethod
-    def create(
-        cls, dataset_id: str, data_sources: List[str], num_contexts: int = 6,
-    ) -> KayAiRetriever:
+    def create(cls, num_contexts: int = 3) -> SecFilingsRetriever:
         """
         Create a KayRetriever given a Kay dataset id and a list of datasources.
 
         Args:
-            dataset_id: A dataset id category in Kay, like "company"
-            data_sources: A list of datasources present within a dataset. For
-                "company" the corresponding datasources could be
-                ["10-K", "10-Q", "8-K", "PressRelease"].
             num_contexts: The number of documents to retrieve on each query.
-                Defaults to 6.
+                Defaults to 3.
         """
         try:
             from kay.rag.retrievers import KayRetriever
@@ -40,7 +34,7 @@ class KayAiRetriever(BaseRetriever):
                 "`pip install kay`.",
             )
 
-        client = KayRetriever(dataset_id, data_types=data_sources)
+        client = KayRetriever(dataset_id="company", data_types=["10-K", "10-Q"])
         return cls(client=client, num_contexts=num_contexts)
 
     def _get_relevant_documents(
@@ -54,3 +48,4 @@ class KayAiRetriever(BaseRetriever):
                 continue
             docs.append(Document(page_content=page_content, metadata={**ctx}))
         return docs
+ 

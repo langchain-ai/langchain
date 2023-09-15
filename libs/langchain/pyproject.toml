@@ -129,7 +129,7 @@ markdownify = {version = "^0.11.6", optional = true}
 assemblyai = {version = "^0.17.0", optional = true}
 dashvector = {version = "^1.0.1", optional = true}
 sqlite-vss = {version = "^0.1.2", optional = true}
-kay = {version = "^0.0.3", optional = true}
+kay = {version = "^0.1.0", optional = true}
 
 
 [tool.poetry.group.test.dependencies]
@@ -295,6 +295,7 @@ all = [
     "amadeus",
     "librosa",
     "python-arango",
+    "kay",
 ]
 
 # An extra used to be able to add extended testing.
@@ -346,6 +347,7 @@ extended_testing = [
  "markdownify",
  "dashvector",
  "sqlite-vss",
+ "kay",
 ]
 
 [tool.ruff]
