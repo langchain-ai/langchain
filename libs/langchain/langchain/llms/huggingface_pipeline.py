@@ -164,7 +164,7 @@ class HuggingFacePipeline(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        response = self.pipeline(prompt)
+        response = self.pipeline(prompt, self.pipeline_kwargs)
         if self.pipeline.task == "text-generation":
             # Text generation return includes the starter text.
             text = response[0]["generated_text"][len(prompt) :]
