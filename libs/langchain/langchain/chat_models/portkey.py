@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Union, Iterator, Mapping)
+from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Union, Iterator, TypedDict)
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.chat_models.base import SimpleChatModel
 from langchain.pydantic_v1 import Field, PrivateAttr
-from langchain.schema import Generation, LLMResult
+from langchain.schema.messages import BaseMessage
 from langchain.schema.output import GenerationChunk
 
 logger = logging.getLogger(__name__)
@@ -23,13 +23,20 @@ if TYPE_CHECKING:
     )
 
 
+
+
 IMPORT_ERROR_MESSAGE = (
     "Portkey is not installed.Please install it with `pip install portkey-ai`."
 )
 
+class Message(TypedDict):
+    role: str
+    content: str
 
-class Portkey(LLM):
-    """Portkey Service models
+
+
+class ChatPortkey(SimpleChatModel):
+    """`Portkey` Chat large language models.
 
     To use, you should have the ``portkey-ai`` python package installed, and the
     environment variable ``PORTKEY_API_KEY``, set with your API key, or pass
@@ -41,7 +48,7 @@ class Portkey(LLM):
         .. code-block:: python
 
             import portkey
-            from langchain.llms import Portkey
+            from langchain.chat_models import ChatPortkey
 
             # Simplest invocation for an openai provider. Can be extended to
             # others as well
@@ -52,7 +59,7 @@ class Portkey(LLM):
             )
 
             # Initialise the client
-            client = Portkey(
+            client = ChatPortkey(
                 api_key="PORTKEY_API_KEY", 
                 mode="single"
             ).add_llms(llms=llm_option)
@@ -70,7 +77,7 @@ class Portkey(LLM):
 
     llms: List["LLMOptions"] = Field(description="LLM parameters", default_factory=list)
 
-    _portkey: Any = PrivateAttr()
+    _portkey: portkey = PrivateAttr()
 
     def __init__(
         self,
@@ -138,12 +145,12 @@ class Portkey(LLM):
     
     def _call(
         self,
-        prompt: str,
+        messages: List[Message],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Call Portkey's completions endpoint. 
+        """Call Portkey's chatCompletions endpoint. 
 
         Args:
             prompt: The prompt to pass into the model.
@@ -153,16 +160,20 @@ class Portkey(LLM):
         
         Example:
             .. code-block:: python
-                response = portkey("Tell me a joke.")
+                message = [{
+                    "role": "user",
+                    "content": "Tell me a joke."
+                }]
+                response = portkey(message)
         """
         try:
             from portkey import Config
         except ImportError as exc:
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         self._client.config = Config(llms=self.llms)
-        response = self._client.Completions.create(prompt=prompt, stream=False, stop=stop, **kwargs)
-        text = response.choices[0].text
-        return text or ""
+        response = self._client.ChatCompletions.create(messages=messages, stream=False, stop=stop, **kwargs)
+        message = response.choices[0].message
+        return message.get("content", "") if message else "" 
 
     @property
     def _client(self):
