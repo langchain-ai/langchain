@@ -1898,7 +1898,7 @@ graph = ["objgraph (>=1.7.2)"]
 name = "dnspython"
 version = "2.4.2"
 description = "DNS toolkit"
-optional = false
+optional = true
 python-versions = ">=3.8,<4.0"
 files = [
     {file = "dnspython-2.4.2-py3-none-any.whl", hash = "sha256:57c6fbaaeaaf39c891292012060beb141791735dbb4004798328fc2c467402d8"},
@@ -4580,7 +4580,7 @@ files = [
 name = "motor"
 version = "3.3.1"
 description = "Non-blocking MongoDB driver for Tornado or asyncio"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "motor-3.3.1-py3-none-any.whl", hash = "sha256:a0dee83ad0d47b353932ac37467ba397b1e649ce7e3eea7f5a90554883d7cdbe"},
@@ -6689,7 +6689,7 @@ tests = ["duckdb", "ml_dtypes", "pandas (>=1.4)", "polars[pandas,pyarrow]", "pyt
 name = "pymongo"
 version = "4.5.0"
 description = "Python driver for MongoDB <http://www.mongodb.org>"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "pymongo-4.5.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:2d4fa1b01fa7e5b7bb8d312e3542e211b320eb7a4e3d8dc884327039d93cb9e0"},
@@ -10506,7 +10506,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["amazon-textract-caller", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "markdownify", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "openapi-schema-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "tqdm", "xata", "xmltodict"]
+extended-testing = ["amazon-textract-caller", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "markdownify", "motor", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "openapi-schema-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "tqdm", "xata", "xmltodict"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -10516,4 +10516,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e3891dcf3baa5826bbc2643a62d7e8f753164afcb2248a243898882f7c8cbcc3"
+content-hash = "ff864098c73920349d0b10e2cd8295e76e9e30ba61b50c7ff06f1afa47d477ae"
