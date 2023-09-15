@@ -114,6 +114,9 @@ class Runnable(Generic[Input, Output], ABC):
         Default implementation of batch, which calls invoke N times.
         Subclasses should override this method if they can batch more efficiently.
         """
+        if not inputs:
+            return []
+
         configs = get_config_list(config, len(inputs))
 
         def invoke(input: Input, config: RunnableConfig) -> Union[Output, Exception]:
@@ -144,6 +147,9 @@ class Runnable(Generic[Input, Output], ABC):
         Default implementation of abatch, which calls ainvoke N times.
         Subclasses should override this method if they can batch more efficiently.
         """
+        if not inputs:
+            return []
+
         configs = get_config_list(config, len(inputs))
 
         async def ainvoke(
@@ -376,6 +382,9 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> List[Output]:
         """Helper method to transform an Input value to an Output value,
         with callbacks. Use this method to implement invoke() in subclasses."""
+        if not input:
+            return []
+
         configs = get_config_list(config, len(input))
         callback_managers = [get_callback_manager_for_config(c) for c in configs]
         run_managers = [
@@ -444,6 +453,9 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> List[Output]:
         """Helper method to transform an Input value to an Output value,
         with callbacks. Use this method to implement invoke() in subclasses."""
+        if not input:
+            return []
+
         configs = get_config_list(config, len(input))
         callback_managers = [get_async_callback_manager_for_config(c) for c in configs]
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
@@ -748,6 +760,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         if return_exceptions:
             raise NotImplementedError()
 
+        if not inputs:
+            return []
+
         # setup callbacks
         configs = get_config_list(config, len(inputs))
         callback_managers = [
@@ -812,6 +827,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
 
         if return_exceptions:
             raise NotImplementedError()
+
+        if not inputs:
+            return []
 
         # setup callbacks
         configs = get_config_list(config, len(inputs))
@@ -1004,6 +1022,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
     ) -> List[Output]:
         from langchain.callbacks.manager import CallbackManager
 
+        if not inputs:
+            return []
+
         # setup callbacks
         configs = get_config_list(config, len(inputs))
         callback_managers = [
@@ -1122,6 +1143,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             AsyncCallbackManager,
         )
 
+        if not inputs:
+            return []
+
         # setup callbacks
         configs = get_config_list(config, len(inputs))
         callback_managers = [
@@ -1231,11 +1255,11 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             else:
                 raise first_exception
 
-    def stream(
+    def _transform(
         self,
-        input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        input: Iterator[Input],
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
     ) -> Iterator[Output]:
         # setup callbacks
         config = ensure_config(config)
@@ -1254,37 +1278,50 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             else:
                 break
 
-        # invoke the first steps
-        try:
-            for step in steps[0:streaming_start_index]:
-                input = step.invoke(
-                    input,
-                    # mark each step as a child run
+        final_pipeline = None
+        gathered_input = None
+        if streaming_start_index == 0:
+            final_pipeline = steps[streaming_start_index].transform(
+                input,
+                patch_config(config, callbacks=run_manager.get_child("seq:step:1")),
+            )
+        else:
+            try:
+                for input_chunk in input:
+                    if gathered_input is None:
+                        gathered_input = input_chunk
+                    else:
+                        gathered_input += input_chunk
+                        # invoke the first steps
+                for step in steps[0:streaming_start_index]:
+                    gathered_input = step.invoke(
+                        gathered_input,
+                        # mark each step as a child run
+                        patch_config(
+                            config,
+                            callbacks=run_manager.get_child(
+                                f"seq:step:{steps.index(step)+1}"
+                            ),
+                        ),
+                    )
+                # stream the first of the last steps with the final non-streaming input
+                final_pipeline = steps[streaming_start_index].stream(
+                    gathered_input,
                     patch_config(
                         config,
                         callbacks=run_manager.get_child(
-                            f"seq:step:{steps.index(step)+1}"
+                            f"seq:step:{streaming_start_index+1}"
                         ),
                     ),
                 )
-        except (KeyboardInterrupt, Exception) as e:
-            run_manager.on_chain_error(e)
-            raise
+            except (KeyboardInterrupt, Exception) as e:
+                run_manager.on_chain_error(e)
+                raise
 
         # stream the last steps
         final: Union[Output, None] = None
         final_supported = True
         try:
-            # stream the first of the last steps with non-streaming input
-            final_pipeline = steps[streaming_start_index].stream(
-                input,
-                patch_config(
-                    config,
-                    callbacks=run_manager.get_child(
-                        f"seq:step:{streaming_start_index+1}"
-                    ),
-                ),
-            )
             # stream the rest of the last steps with streaming input
             for step in steps[streaming_start_index + 1 :]:
                 final_pipeline = step.transform(
@@ -1296,6 +1333,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                         ),
                     ),
                 )
+
             for output in final_pipeline:
                 yield output
                 # Accumulate output if possible, otherwise disable accumulation
@@ -1316,11 +1354,11 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         else:
             run_manager.on_chain_end(final)
 
-    async def astream(
+    async def _atransform(
         self,
-        input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        input: AsyncIterator[Input],
+        run_manager: AsyncCallbackManagerForChainRun,
+        config: RunnableConfig,
     ) -> AsyncIterator[Output]:
         # setup callbacks
         config = ensure_config(config)
@@ -1334,42 +1372,55 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         streaming_start_index = len(steps) - 1
 
         for i in range(len(steps) - 1, 0, -1):
-            if type(steps[i]).transform != Runnable.transform:
+            if type(steps[i]).atransform != Runnable.atransform:
                 streaming_start_index = i - 1
             else:
                 break
 
-        # invoke the first steps
-        try:
-            for step in steps[0:streaming_start_index]:
-                input = await step.ainvoke(
-                    input,
-                    # mark each step as a child run
+        final_pipeline = None
+        gathered_input = None
+        if streaming_start_index == 0:
+            final_pipeline = steps[0].atransform(
+                input,
+                patch_config(config, callbacks=run_manager.get_child("seq:step:1")),
+            )
+        else:
+            try:
+                async for input_chunk in input:
+                    if gathered_input is None:
+                        gathered_input = input_chunk
+                    else:
+                        gathered_input += input_chunk
+                # invoke the first steps
+                for step in steps[0:streaming_start_index]:
+                    gathered_input = await step.ainvoke(
+                        gathered_input,
+                        # mark each step as a child run
+                        patch_config(
+                            config,
+                            callbacks=run_manager.get_child(
+                                f"seq:step:{steps.index(step)+1}"
+                            ),
+                        ),
+                    )
+                # stream the first of the last steps with the final non-streaming input
+                final_pipeline = steps[streaming_start_index].astream(
+                    gathered_input,
                     patch_config(
                         config,
                         callbacks=run_manager.get_child(
-                            f"seq:step:{steps.index(step)+1}"
+                            f"seq:step:{streaming_start_index+1}"
                         ),
                     ),
                 )
-        except (KeyboardInterrupt, Exception) as e:
-            await run_manager.on_chain_error(e)
-            raise
+            except (KeyboardInterrupt, Exception) as e:
+                await run_manager.on_chain_error(e)
+                raise
 
         # stream the last steps
         final: Union[Output, None] = None
         final_supported = True
         try:
-            # stream the first of the last steps with non-streaming input
-            final_pipeline = steps[streaming_start_index].astream(
-                input,
-                patch_config(
-                    config,
-                    callbacks=run_manager.get_child(
-                        f"seq:step:{streaming_start_index+1}"
-                    ),
-                ),
-            )
             # stream the rest of the last steps with streaming input
             for step in steps[streaming_start_index + 1 :]:
                 final_pipeline = step.atransform(
@@ -1400,6 +1451,47 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             raise
         else:
             await run_manager.on_chain_end(final)
+
+    def transform(
+        self,
+        input: Iterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        yield from self._transform_stream_with_config(
+            input, self._transform, config, **kwargs
+        )
+
+    def stream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        yield from self.transform(iter([input]), config, **kwargs)
+
+    async def atransform(
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        async for chunk in self._atransform_stream_with_config(
+            input, self._atransform, config, **kwargs
+        ):
+            yield chunk
+
+    async def astream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        async def input_aiter() -> AsyncIterator[Input]:
+            yield input
+
+        async for chunk in self.atransform(input_aiter(), config, **kwargs):
+            yield chunk
 
 
 class RunnableMapChunk(Dict[str, Any]):
