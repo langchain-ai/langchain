@@ -1,25 +1,38 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, TypedDict, Union, cast, Mapping, Dict, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    TypedDict,
+    Union,
+    cast,
+)
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import BaseMessage, SimpleChatModel
+from langchain.chat_models.base import SimpleChatModel
 from langchain.pydantic_v1 import Field, PrivateAttr
-from langchain.schema.output import GenerationChunk, ChatGenerationChunk, BaseMessageChunk
 from langchain.schema.messages import (
+    AIMessage,
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
-    ChatMessageChunk,
-    FunctionMessageChunk,
-    HumanMessageChunk,
-    SystemMessageChunk,
     ChatMessage,
-    HumanMessage,
-    AIMessage,
-    SystemMessage,
+    ChatMessageChunk,
     FunctionMessage,
+    FunctionMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
+)
+from langchain.schema.output import (
+    ChatGenerationChunk,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,6 +44,7 @@ if TYPE_CHECKING:
 IMPORT_ERROR_MESSAGE = (
     "Portkey is not installed.Please install it with `pip install portkey-ai`."
 )
+
 
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
@@ -54,6 +68,7 @@ def _convert_delta_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)
     else:
         return default_class(content=content)
+
 
 def convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
@@ -237,7 +252,7 @@ class ChatPortkey(SimpleChatModel):
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         self._portkey.config = Config(llms=self.llms)
         return self._portkey
-    
+
     def _create_message_dicts(
         self, messages: List[BaseMessage]
     ) -> List[Dict[str, Any]]:
@@ -253,7 +268,7 @@ class ChatPortkey(SimpleChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         """Call Portkey completion_stream and return the resulting generator.
 
-        Args:   
+        Args:
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
         Returns:
