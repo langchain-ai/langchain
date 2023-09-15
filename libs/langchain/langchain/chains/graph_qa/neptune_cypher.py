@@ -22,18 +22,22 @@ INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 def trim_query(query: str) -> str:
     keywords = (
-        "MATCH",
-        "CREATE",
-        "MERGE",
-        "WITH",
-        "UNWIND",
-        "RETURN",
-        "DELETE",
-        "OPTIONAL",
-        "WHERE",
-        "LIMIT",
-        "ORDER",
         "CALL",
+        "CREATE",
+        "DELETE",
+        "DETACH",
+        "LIMIT",
+        "MATCH",
+        "MERGE",
+        "OPTIONAL",
+        "ORDER",
+        "REMOVE",
+        "RETURN",
+        "SET",
+        "SKIP",
+        "UNWIND",
+        "WITH",
+        "WHERE",
         "//",
     )
 
