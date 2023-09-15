@@ -5,13 +5,15 @@ from langchain.tools import BaseTool
 from langchain.tools.clickup.prompt import (
     CLICKUP_GET_ALL_TEAMS_PROMPT,
     CLICKUP_GET_TASK_PROMPT,
+    CLICKUP_GET_TASK_ATTRIBUTE_PROMPT,
     CLICKUP_TASK_CREATE_PROMPT,
     CLICKUP_FOLDER_CREATE_PROMPT,
     CLICKUP_LIST_CREATE_PROMPT,
     CLICKUP_GET_LIST_PROMPT,
     CLICKUP_GET_FOLDERS_PROMPT,
     CLICKUP_GET_SPACES_PROMPT,
-    CLICKUP_UPDATE_TASK_PROMPT
+    CLICKUP_UPDATE_TASK_PROMPT,
+    CLICKUP_UPDATE_TASK_ASSIGNEE_PROMPT
 )
 from langchain.tools.clickup.tool import ClickupAction
 from langchain.utilities.clickup import ClickupAPIWrapper
@@ -29,6 +31,11 @@ class ClickupToolkit(BaseToolkit):
                 "mode": "get_task",
                 "name": "Get task",
                 "description": CLICKUP_GET_TASK_PROMPT,
+            },
+            {
+                "mode": "get_task_attribute",
+                "name": "Get task attribute",
+                "description": CLICKUP_GET_TASK_ATTRIBUTE_PROMPT,
             },
             {
                 "mode": "get_teams",
@@ -69,6 +76,11 @@ class ClickupToolkit(BaseToolkit):
                 "mode": "update_task",
                 "name": "Update task",
                 "description": CLICKUP_UPDATE_TASK_PROMPT,
+            },
+            {
+                "mode": "update_task_assignees",
+                "name": "Update task assignees",
+                "description": CLICKUP_UPDATE_TASK_ASSIGNEE_PROMPT,
             },
         ]
         tools = [
