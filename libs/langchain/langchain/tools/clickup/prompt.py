@@ -12,9 +12,25 @@ CLICKUP_TASK_CREATE_PROMPT = """
     """
 
 CLICKUP_GET_TASK_PROMPT = """
-    This tool is a wrapper around clickup's API, 
+    This tool is a wrapper around clickup's API,
+    Do NOT use to get a task specific attribute. Use get task attribute isntead. 
     useful when you need to get a specific task for the user. Given the task id you want to create a request similar to the following dictionary:
     payload = {{"task_id": "86a0t44tq"}}
+    """
+
+CLICKUP_GET_TASK_ATTRIBUTE_PROMPT = """
+    This tool is a wrapper around clickup's API, 
+    useful when you need to get a specific attribute from a task. Given the task id and desired attribute create a request similar to the following dictionary:
+    payload = {{"task_id": "<task_id_to_update>", "attribute_name": "<attribute_name_to_update>"}}
+
+    Here are some example queries their corresponding payloads:
+    Get the name of task 23jn23kjn -> {{"task_id": "23jn23kjn", "attribute_name": "name"}}
+    What is the priority of task 86a0t44tq? -> {{"task_id": "86a0t44tq", "attribute_name": "priority"}}
+    Output the description of task sdc9ds9jc -> {{"task_id": "sdc9ds9jc", "attribute_name": "description"}}
+    Who is assigned to task bgjfnbfg0 -> {{"task_id": "bgjfnbfg0", "attribute_name": "assignee"}}
+    Which is the status of task kjnsdcjc? -> {{"task_id": "kjnsdcjc", "attribute_name": "description"}}
+    How long is the time estimate of task sjncsd999? -> {{"task_id": "sjncsd999", "attribute_name": "time_estimate"}}
+    Is task jnsd98sd archived?-> {{"task_id": "jnsd98sd", "attribute_name": "archive"}}
     """
 
 CLICKUP_GET_ALL_TEAMS_PROMPT = """
@@ -50,8 +66,8 @@ CLICKUP_UPDATE_TASK_PROMPT = """
     Update the priority of task 86a0t44tq to 1 -> {{"task_id": "86a0t44tq", "attribute_name": "priority", "value": 1}}
     Re-write the description of task sdc9ds9jc to 'a new task description' -> {{"task_id": "sdc9ds9jc", "attribute_name": "description", "value": "a new task description"}}
     Forward the status of task kjnsdcjc to done -> {{"task_id": "kjnsdcjc", "attribute_name": "description", "status": "done"}}
-    Increase the time estimate of task sjncsd999 to 3h -> {{"task_id": "sjncsd999", "attribute_name": "description", "time_estimate": 8000}}
-    Archive task jnsd98sd -> {{"task_id": "jnsd98sd", "attribute_name": "description", "time_estimate": true}}
+    Increase the time estimate of task sjncsd999 to 3h -> {{"task_id": "sjncsd999", "attribute_name": "time_estimate", "value": 8000}}
+    Archive task jnsd98sd -> {{"task_id": "jnsd98sd", "attribute_name": "archive", "value": true}}
     *IMPORTANT*: Pay attention to the exact syntax above and the correct use of quotes. 
     For changing priority and time estimates, we expect integers (int).
     For name, description and status we expect strings (str).

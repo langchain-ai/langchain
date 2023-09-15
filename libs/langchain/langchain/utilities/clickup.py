@@ -1,11 +1,26 @@
 """Util that calls clickup."""
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 import requests
 import json
 import warnings
+
+
+def robust_load_params(query: str) -> Tuple[Optional[Any], Optional[str]]:
+        """
+        Attempts to parse a JSON string and return the parsed object.
+        If parsing fails, returns an error message.
+
+        :param query: The JSON string to parse.
+        :return: A tuple containing the parsed object or None and an error message or None.
+        """
+        try:
+            return json.loads(query), None
+        except json.JSONDecodeError as e:
+            return None, f'Input must be a valid JSON. Got the following error: {str(e)}. Please reformat and try again.'
+
 
 class ClickupAPIWrapper(BaseModel):
     """Wrapper for Clickup API."""
@@ -67,7 +82,6 @@ class ClickupAPIWrapper(BaseModel):
             values["team_id"] = data["teams"][0]["id"]
         
         return values
-
 
     def parse_task(self, data):
         """
@@ -181,7 +195,10 @@ class ClickupAPIWrapper(BaseModel):
             Retrieve a specific task 
         """
 
-        params = json.loads(query)
+        params, error = robust_load_params(query)
+        if params is None:
+            return error
+            
         url = "https://api.clickup.com/api/v2/task/" + params['task_id']
 
         query = {
@@ -197,13 +214,14 @@ class ClickupAPIWrapper(BaseModel):
         data = response.json()
         
         return data
-
-
+    
     def query_tasks(self, query: str) -> str:
         """
             Query tasks that match certain fields
         """
-        params = json.loads(query)
+        params, error = robust_load_params(query)
+        if params is None:
+            return error
         url = "https://api.clickup.com/api/v2/list/" + params['list_id'] + "/task"
 
         query = {}
@@ -215,11 +233,24 @@ class ClickupAPIWrapper(BaseModel):
         data = response.json()
         return data
     
+    def get_task_attribute(self, query: str) -> str:
+        """
+            Update an attribute of a specified task
+        """        
+        task = self.get_task(query)
+        params, _ = robust_load_params(query)
+        
+        if params['attribute_name'] not in task.keys():
+            return f"Error: attribute_name = {params['attribute_name']} was not found in task keys {task.keys()}. Please call again with one of the key names."
+        return task[params['attribute_name']]
+
     def update_task(self, query: str) -> str:
         """
             Update an attribute of a specified task
         """        
-        params = json.loads(query)
+        params, error = robust_load_params(query)
+        if params is None:
+            return error
         url = "https://api.clickup.com/api/v2/task/" + params['task_id']
 
         query = {
@@ -234,12 +265,18 @@ class ClickupAPIWrapper(BaseModel):
         response = requests.put(url, headers=headers, params=query, json=payload)
 
         return response
-
+        
     def update_task_assignees(self, query: str) -> str:
         """
             Add or remove assignees of a specified task
         """        
-        params = json.loads(query)
+        params, error = robust_load_params(query)
+        if params is None:
+            return error
+        for user in params['users']:
+            if not isinstance(user, int):
+                return 'All users must be integers, not strings! Got user {user} that does not follow this convention'
+            
         url = "https://api.clickup.com/api/v2/task/" + params['task_id']
 
         query = {
@@ -258,13 +295,14 @@ class ClickupAPIWrapper(BaseModel):
         
         payload = {"assignees": assigne_payload}
         response = requests.put(url, headers=headers, params=query, json=payload)
-
         return response
 
     def run(self, mode: str, query: str) -> str:
 
         if mode == "get_task":
             return self.get_task(query)
+        elif mode == "get_task_attribute":
+            return self.get_task_attribute(query)
         elif mode == "get_teams":
             return self.get_authorized_teams()
         elif mode == "create_task":

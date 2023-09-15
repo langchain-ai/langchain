@@ -5,6 +5,7 @@ from langchain.tools import BaseTool
 from langchain.tools.clickup.prompt import (
     CLICKUP_GET_ALL_TEAMS_PROMPT,
     CLICKUP_GET_TASK_PROMPT,
+    CLICKUP_GET_TASK_ATTRIBUTE_PROMPT,
     CLICKUP_TASK_CREATE_PROMPT,
     CLICKUP_GET_LIST_PROMPT,
     CLICKUP_GET_FOLDERS_PROMPT,
@@ -28,6 +29,11 @@ class ClickupToolkit(BaseToolkit):
                 "mode": "get_task",
                 "name": "Get task",
                 "description": CLICKUP_GET_TASK_PROMPT,
+            },
+            {
+                "mode": "get_task_attribute",
+                "name": "Get task attribute",
+                "description": CLICKUP_GET_TASK_ATTRIBUTE_PROMPT,
             },
             {
                 "mode": "get_teams",
