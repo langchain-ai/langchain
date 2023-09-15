@@ -1,27 +1,25 @@
 from __future__ import annotations
-from langchain.llms.base import LLM
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun
-)
-from langchain.schema.output import GenerationChunk
-from langchain.schema import Generation, LLMResult
-from typing import List, Optional, Union, TYPE_CHECKING, Dict, Any
-
-from langchain.pydantic_v1 import Field, PrivateAttr
 
 import logging
+from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Union, Iterator)
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Field, PrivateAttr
+from langchain.schema import Generation, LLMResult
+from langchain.schema.output import GenerationChunk
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import portkey
     from portkey import (
-        LLMBase,
-        PortkeyModes,
-        PortkeyCacheType,
-        PortkeyCacheLiteral,
+        LLMOptions,
+        CacheLiteral,
+        CacheType,
+        Modes,
+        ModesLiteral,
         PortkeyResponse,
-        PortkeyModesLiteral,
     )
 
 
@@ -31,101 +29,184 @@ IMPORT_ERROR_MESSAGE = (
 
 
 class Portkey(LLM):
-    mode: Optional[Union["PortkeyModes", "PortkeyModesLiteral"]] = Field(
-        description="The mode for using the Portkey integration"
+    """Portkey Service models
+
+    To use, you should have the ``portkey-ai`` python package installed, and the
+    environment variable ``PORTKEY_API_KEY``, set with your API key, or pass
+    it as a named parameter to the `Portkey` constructor.
+
+    NOTE: You can install portkey using ``pip install portkey-ai``
+
+    Example:
+        .. code-block:: python
+
+            import portkey
+            from langchain.llms import Portkey
+
+            client = Portkey(api_key="PORTKEY_API_KEY", mode="single")
+
+            # Simplest invocation for any openai provider. Can be extended to
+            # others as well
+            llm_option = portkey.LLMOptions(
+                provider="openai",  
+                virtual_key="openai-virtual-key", # Checkout the docs for the virtual-api-key
+                model="text-davinci-003"
+            )
+            response = model("What are the biggest risks facing humanity?")
+
+            # Or if you want to use the chat mode, build a few-shot-prompt, or
+            # put words in the Assistant's mouth, use HUMAN_PROMPT and AI_PROMPT:
+            raw_prompt = "What are the biggest risks facing humanity?"
+            prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}"
+            response = model(prompt)
+    
+    """
+    mode: Optional[Union["Modes", "ModesLiteral"]] = Field(
+        description="The mode for using the Portkey integration", default=None
     )
 
     model: Optional[str] = Field(default="gpt-3.5-turbo")
-    llm: "LLMBase" = Field(description="LLM parameter", default_factory=dict)
+    llm: "LLMOptions" = Field(description="LLM parameter", default_factory=dict)
+    streaming: bool = False
 
-    llms: List["LLMBase"] = Field(description="LLM parameters", default_factory=list)
+    llms: List["LLMOptions"] = Field(description="LLM parameters", default_factory=list)
 
-    _client: "portkey" = PrivateAttr()
-    stream: Optional[bool] = Field(default=False)
+    _portkey: portkey = PrivateAttr()
 
     def __init__(
         self,
         *,
-        mode: Optional[Union["PortkeyModes", "PortkeyModesLiteral"]] = None,
-        api_key: str = "",
-        cache_status: Optional[Union["PortkeyCacheType", "PortkeyCacheLiteral"]] = None,
-        trace_id: Optional[str] = "",
-        cache_age: Optional[int] = None,
-        cache_force_refresh: Optional[bool] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        mode: Union["Modes", "ModesLiteral"],
+        api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        stream: Optional[bool] = False,
-        **kwargs
     ) -> None:
         try:
             import portkey
-            from portkey import Params
-        except ImportError:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from None
-        super().__init__()
-        self._client = portkey
-        self._client.api_key = api_key
-        self._client.mode = mode
-        if base_url is not None:
-            self._client.base_url = base_url
-        self.model = None
-        self._client.params = Params(
-            cache_status=cache_status,
-            trace_id=trace_id,
-            cache_age=cache_age,
-            metadata=metadata,
-            cache_force_refresh=cache_force_refresh,
-            **kwargs
-        )
-        self.stream = stream
-
-    def add_llms(self, llm_params: Union[LLMBase, List[LLMBase]]) -> "Portkey":
-        try:
-            from portkey import LLMBase, Config
         except ImportError as exc:
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc
-        if isinstance(llm_params, LLMBase):
+
+        super().__init__()
+        if api_key is not None:
+            portkey.api_key = api_key
+
+        if base_url is not None:
+            portkey.base_url = base_url
+
+        portkey.mode = mode
+
+        self._portkey = portkey
+        self.model = None
+        self.mode = mode
+        
+
+    def add_llms(self, llm_params: Union[LLMOptions, List[LLMOptions]]) -> "Portkey":
+        """
+        Adds the specified LLM parameters to the list of LLMs. This may be used for
+        fallbacks or load-balancing as specified in the mode.
+
+        Args:
+            llm_params (Union[LLMOptions, List[LLMOptions]]): A single LLM parameter \
+            set or a list of LLM parameter sets. Each set should be an instance of \
+            LLMOptions with
+            the specified attributes.
+                > provider: Optional[ProviderTypes]
+                > model: str
+                > temperature: float
+                > max_tokens: Optional[int]
+                > max_retries: int
+                > trace_id: Optional[str]
+                > cache_status: Optional[CacheType]
+                > cache: Optional[bool]
+                > metadata: Dict[str, Any]
+                > weight: Optional[float]
+                > **kwargs : Other additional parameters that are supported by \
+                    LLMOptions in portkey-ai
+
+            NOTE: User may choose to pass additional params as well.
+        Returns:
+            self
+        """
+        try:
+            from portkey import LLMOptions
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
+        if isinstance(llm_params, LLMOptions):
             llm_params = [llm_params]
         self.llms.extend(llm_params)
         if self.model is None:
             self.model = self.llms[0].model
-        self._client.config = Config(
-            llms=self.llms
-        )
         return self
-
-    def _generate(
+    
+    def _call(
         self,
-        prompts: List[str],
+        prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> LLMResult:
-        if self.streaming:
-            generation: Optional[GenerationChunk] = None
-            for chunk in self._stream(prompts[0], stop, run_manager, **kwargs):
-                if generation is None:
-                    generation = chunk
-                else:
-                    generation += chunk
-            assert generation is not None
-            return LLMResult(generations=[[generation]])
+    ) -> str:
+        """Call Portkey's completions endpoint. 
 
-        messages, params = self._get_chat_params(prompts, stop)
-        params = {**params, **kwargs}
-        full_response = completion_with_retry(
-            self, messages=messages, run_manager=run_manager, **params
-        )
-        llm_output = {
-            "token_usage": full_response["usage"],
-            "model_name": self.model_name,
-        }
-        return LLMResult(
-            generations=[
-                [Generation(text=full_response["choices"][0]["message"]["content"])]
-            ],
-            llm_output=llm_output,
-        )
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: Optional list of stop words to use when generating.
+        Returns:
+            A generator representing the stream of tokens from Anthropic.
+        Example:
+            .. code-block:: python
+                prompt = "Write a poem about a stream."
+                prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
+                generator = anthropic.stream(prompt)
+                for token in generator:
+                    yield token
+        """
+        try:
+            from portkey import Config
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
+        self._client.config = Config(llms=self.llms)
+        response = self._client.Completions.create(prompt=prompt, stream=False, stop=stop, **kwargs)
+        text = response.choices[0].text
+        return text or ""
+
+    @property
+    def _client(self):
+        try:
+            from portkey import Config
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
+        self._portkey.config = Config(llms=self.llms)
+        return self._portkey
+    
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        """Call Portkey completion_stream and return the resulting generator.
+
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: Optional list of stop words to use when generating.
+        Returns:
+            A generator representing the stream of tokens from Anthropic.
+        Example:
+            .. code-block:: python
+
+                prompt = "Write a poem about a stream."
+                prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
+                generator = anthropic.stream(prompt)
+                for token in generator:
+                    yield token
+        """
+        response = self._client.Completions.create(stream=True, prompt=prompt, stop=stop, **kwargs)
+        for token in response:
+            chunk = GenerationChunk(text = token.choices[0].text or "")
+            yield chunk
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+
 
     @property
     def _llm_type(self) -> str:

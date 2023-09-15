@@ -68,6 +68,7 @@ from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
 from langchain.llms.petals import Petals
 from langchain.llms.pipelineai import PipelineAI
+from langchain.llms.portkey import Portkey
 from langchain.llms.predibase import Predibase
 from langchain.llms.predictionguard import PredictionGuard
 from langchain.llms.promptlayer_openai import PromptLayerOpenAI, PromptLayerOpenAIChat
@@ -158,6 +159,7 @@ __all__ = [
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
+    "Portkey",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -225,4 +227,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "vllm_openai": VLLMOpenAI,
     "writer": Writer,
     "xinference": Xinference,
+    "portkey": Portkey,
 }
