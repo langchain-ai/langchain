@@ -71,3 +71,19 @@ async def test_aexecutor_several_tasks_exception() -> None:
         async with AsyncExecutor() as executor:
             tasks = [executor.submit(identity, i) for i in range(1, 6)]
             assert [await task for task in tasks] == [1, 2, 3, 4, 5]
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(2)
+async def test_aexecutor_map() -> None:
+    """Test that we can run submit several tasks, and then await them afterwards."""
+
+    async def identity(arg: int) -> int:
+        await asyncio.sleep(1)
+        return arg
+
+    async with AsyncExecutor() as executor:
+        assert await executor.map(identity, range(1, 6)) == [1, 2, 3, 4, 5]
+
+    with pytest.raises(RuntimeError):
+        executor.submit(identity, 1)

@@ -42,6 +42,7 @@ from langchain.schema.runnable.config import (
     acall_func_with_variable_args,
     call_func_with_variable_args,
     ensure_config,
+    get_aexecutor_for_config,
     get_async_callback_manager_for_config,
     get_callback_manager_for_config,
     get_config_list,
@@ -157,8 +158,8 @@ class Runnable(Generic[Input, Output], ABC):
             else:
                 return await self.ainvoke(input, config, **kwargs)
 
-        coros = map(ainvoke, inputs, configs)
-        return await gather_with_concurrency(configs[0].get("max_concurrency"), *coros)
+        async with get_aexecutor_for_config(configs[0]) as aexecutor:
+            return cast(List[Output], await aexecutor.map(ainvoke, inputs, configs))
 
     def stream(
         self,

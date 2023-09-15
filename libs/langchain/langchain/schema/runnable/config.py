@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from concurrent.futures import Executor, ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     Awaitable,
     Callable,
     Dict,
@@ -23,6 +24,7 @@ from langchain.schema.runnable.utils import (
     accepts_config,
     accepts_run_manager,
 )
+from langchain.utils.aexecutor import AsyncExecutor
 
 if TYPE_CHECKING:
     from langchain.callbacks.base import BaseCallbackManager, Callbacks
@@ -79,6 +81,11 @@ class RunnableConfig(TypedDict, total=False):
     _executor: Optional[ThreadPoolExecutor]
     """
     Private variable used to store the executor for an inflight call.
+    """
+
+    _aexecutor: Optional[AsyncExecutor]
+    """
+    Private variable used to store the async executor for an inflight call.
     """
 
 
@@ -237,3 +244,33 @@ def get_executor_for_config(config: RunnableConfig) -> Generator[Executor, None,
             finally:
                 with executor._shutdown_lock:
                     del config["_executor"]
+
+
+@asynccontextmanager
+async def get_aexecutor_for_config(
+    config: RunnableConfig,
+) -> AsyncGenerator[AsyncExecutor, None]:
+    """Create an AsyncExecutor for a given RunnableConfig, or use an existing one if
+    nested inside another call to get_aexecutor_for_config().
+
+    This is used to enforce max_concurrency across the entire computation graph.
+    This requires increasing total_tokens on the AsyncExecutor, otherwise it
+    would deadlock whenever it enters a nested call to get_aexecutor_for_config()
+    while already at total_tokens.
+    """
+    if "_aexecutor" in config and isinstance(config["_aexecutor"], AsyncExecutor):
+        executor = config["_aexecutor"]
+        executor.limiter.total_tokens += 1
+
+        try:
+            yield executor
+        finally:
+            executor.limiter.total_tokens -= 1
+    else:
+        async with AsyncExecutor(max_workers=config.get("max_concurrency")) as executor:
+            config["_aexecutor"] = executor
+
+            try:
+                yield executor
+            finally:
+                del config["_aexecutor"]

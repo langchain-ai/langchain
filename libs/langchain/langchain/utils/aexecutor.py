@@ -77,9 +77,7 @@ class AsyncExecutor:
         # return an awaitable for result
         return AsyncExecutorAwaitable[T](done, self.results)
 
-    async def map(
-        self, fn: Callable[..., Awaitable[T]], *iterables: Any
-    ) -> List[AsyncExecutorAwaitable[T]]:
+    async def map(self, fn: Callable[..., Awaitable[T]], *iterables: Any) -> List[T]:
         """Returns an iterator equivalent to map(fn, iter).
 
         Args:
@@ -87,13 +85,16 @@ class AsyncExecutor:
                 passed iterables.
 
         Returns:
-            A list of awaitables that return the result of each call.
+            An iterator of results of calling fn on *iterables.
 
         Raises:
             Exception: If fn(*args) raises for any values.
         """
 
-        return [self.submit(fn, *args) for args in zip(*iterables)]
+        # submit all tasks
+        tasks = [self.submit(fn, *args) for args in zip(*iterables)]
+        # return a list of results
+        return [await task for task in tasks]
 
     async def __aenter__(self) -> AsyncExecutor:
         await self.task_group.__aenter__()
