@@ -1150,7 +1150,7 @@
     },
     {
       "source": "/docs/integrations/tools/sqlite",
-      "destination": "/docs/use_cases/sql/sqlite"
+      "destination": "/docs/use_cases/qa_structured/sqlite"
     },
     {
       "source": "/en/latest/modules/callbacks/filecallbackhandler.html",
