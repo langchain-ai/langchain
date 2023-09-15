@@ -79,6 +79,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "pytest-dotenv",
         "pytest-mock",
         "pytest-socket",
+        "pytest-timeout",
         "pytest-watcher",
         "responses",
         "syrupy",
