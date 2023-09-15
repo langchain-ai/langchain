@@ -78,9 +78,8 @@ class ArcGISLoader(BaseLoader):
             return_geometry=self.return_geometry,
             return_all_records=self.return_all_records,
             result_record_count=self.result_record_count,
-            **kwargs
+            **kwargs,
         )
-
 
     def _get_layer_properties(self, lyr_desc: Optional[str] = None) -> dict:
         """Get the layer properties from the FeatureLayer."""
