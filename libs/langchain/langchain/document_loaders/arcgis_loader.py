@@ -72,14 +72,15 @@ class ArcGISLoader(BaseLoader):
         self.result_record_count = result_record_count
         self.return_all_records = not isinstance(result_record_count, int)
 
-        self.query_params = dict(
+        query_params = dict(
             where=self.where,
             out_fields=self.out_fields,
             return_geometry=self.return_geometry,
             return_all_records=self.return_all_records,
             result_record_count=self.result_record_count,
-            **kwargs,
         )
+        query_params.update(kwargs)
+        self.query_params = query_params
 
     def _get_layer_properties(self, lyr_desc: Optional[str] = None) -> dict:
         """Get the layer properties from the FeatureLayer."""
