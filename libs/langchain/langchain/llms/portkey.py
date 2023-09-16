@@ -51,7 +51,7 @@ class Portkey(LLM):
             client = Portkey(
                 api_key="PORTKEY_API_KEY",
                 mode="single"
-            ).add_llms(llms=llm_option)
+            ).add_llms(llm_params=llm_option)
 
             response = client("What are the biggest risks facing humanity?")
 
