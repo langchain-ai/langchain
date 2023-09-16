@@ -242,15 +242,13 @@ class SQLDatabaseSequentialChain(Chain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        database: SQLDatabase,
+        db: SQLDatabase,
         query_prompt: BasePromptTemplate = PROMPT,
         decider_prompt: BasePromptTemplate = DECIDER_PROMPT,
         **kwargs: Any,
     ) -> SQLDatabaseSequentialChain:
         """Load the necessary chains."""
-        sql_chain = SQLDatabaseChain.from_llm(
-            llm, database, prompt=query_prompt, **kwargs
-        )
+        sql_chain = SQLDatabaseChain.from_llm(llm, db, prompt=query_prompt, **kwargs)
         decider_chain = LLMChain(
             llm=llm, prompt=decider_prompt, output_key="table_names"
         )
