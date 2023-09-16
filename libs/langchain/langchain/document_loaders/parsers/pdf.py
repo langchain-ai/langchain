@@ -153,7 +153,7 @@ class PDFMinerParser(BaseBlobParser):
                     )
                     text_io.truncate(0)
                     text_io.seek(0)
-                    metadata = {"source": blob.source, "page": (i)}
+                    metadata = {"source": blob.source, "page": str(i)}
                     yield Document(page_content=content, metadata=metadata)
 
     def _extract_images_from_page(self, page: pdfminer.layout.LTPage) -> str:
