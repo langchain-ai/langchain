@@ -646,11 +646,6 @@ class Runnable(Generic[Input, Output], ABC):
             await run_manager.on_chain_end(final_output, inputs=final_input)
 
 
-# Output type should implement __concat__, as eg str, list, dict do
-OutputT = TypeVar("OutputT")
-OutputF = TypeVar("OutputF")
-
-
 class RunnableBranch(Serializable, Runnable[Input, Output]):
     """A Runnable that selects which branch to run based on a condition.
 
@@ -679,16 +674,18 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
             branch.invoke(None) # "goodbye"
     """
 
-    branches: Sequence[
-        Tuple[Runnable[Input, bool], Runnable[Input, Output]]
-    ]  # How to type this?
-    default: Runnable[Input, Union[Output]]
+    branches: Sequence[Tuple[Runnable[Input, bool], Runnable[Input, Output]]]
+    default: Runnable[Input, Output]
 
     def __init__(
         self,
         *branches: Union[
             Tuple[
-                Union[Runnable[Input, bool], Callable[[Input], bool]],
+                Union[
+                    Runnable[Input, bool],
+                    Callable[[Input], bool],
+                    Callable[[Input], Awaitable[bool]],
+                ],
                 RunnableLike,
             ],
             RunnableLike,  # To accommodate the default branch
@@ -2244,6 +2241,7 @@ RunnableBinding.update_forward_refs(RunnableConfig=RunnableConfig)
 RunnableLike = Union[
     Runnable[Input, Output],
     Callable[[Input], Output],
+    Callable[[Input], Awaitable[Output]],
     Mapping[str, Any],
 ]
 
