@@ -28,7 +28,7 @@ def create_index(
     sparse_encoder: Any,
     ids: Optional[List[str]] = None,
     metadatas: Optional[List[dict]] = None,
-    namespace: str = None,
+    namespace: Optional[str] = None
 ) -> None:
     """Create an index from a list of contexts.
 
@@ -109,7 +109,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     """Number of documents to return."""
     alpha: float = 0.5
     """Alpha value for hybrid search."""
-    namespace: str = None
+    namespace: Optional[str] = None
     """Namespace value for index partition."""
 
     class Config:
@@ -123,7 +123,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
         texts: List[str],
         ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
-        namespace: str = None,
+        namespace: Optional[str] = None
     ) -> None:
         create_index(
             texts,
