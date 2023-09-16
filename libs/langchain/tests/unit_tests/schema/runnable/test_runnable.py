@@ -1862,7 +1862,12 @@ def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:
 
 def test_runnable_branch_invoke() -> None:
     # Test with single branch
+    def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
     branch = RunnableBranch(
+        (lambda x: x > 100, raise_value_error),
         # mypy cannot infer types from the lambda
         (lambda x: x > 0 and x < 5, lambda x: x + 1),  # type: ignore[misc]
         (lambda x: x > 5, lambda x: x * 10),
@@ -1872,6 +1877,9 @@ def test_runnable_branch_invoke() -> None:
     assert branch.invoke(1) == 2
     assert branch.invoke(10) == 100
     assert branch.invoke(0) == -1
+    # Should raise an exception
+    with pytest.raises(ValueError):
+        branch.invoke(1000)
 
 
 def test_runnable_branch_batch() -> None:
@@ -1898,6 +1906,76 @@ async def test_runnable_branch_ainvoke() -> None:
     assert await branch.ainvoke(1) == 2
     assert await branch.ainvoke(10) == 100
     assert await branch.ainvoke(0) == -1
+
+    # Verify that the async variant is used if available
+    async def condition(x: int) -> bool:
+        return x > 0
+
+    async def add(x: int) -> int:
+        return x + 1
+
+    async def sub(x: int) -> int:
+        return x - 1
+
+    branch = RunnableBranch[int, int]((condition, add), sub)
+
+    assert await branch.ainvoke(1) == 2
+    assert await branch.ainvoke(-10) == -11
+
+
+def test_runnable_branch_invoke_callbacks() -> None:
+    """Verify that callbacks are correctly used in invoke."""
+    tracer = FakeTracer()
+
+    def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 100, raise_value_error),
+        lambda x: x - 1,
+    )
+
+    assert branch.invoke(1, config={"callbacks": [tracer]}) == 0
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error == None
+    assert tracer.runs[0].outputs == {"output": 0}
+
+    # Check that the chain on end is invoked
+    with pytest.raises(ValueError):
+        branch.invoke(1000, config={"callbacks": [tracer]})
+
+    assert len(tracer.runs) == 2
+    assert tracer.runs[1].error == "ValueError('x is too large')"
+    assert tracer.runs[1].outputs == None
+
+
+@pytest.mark.asyncio
+async def test_runnable_branch_ainvoke_callbacks() -> None:
+    """Verify that callbacks are invoked correctly in ainvoke."""
+    tracer = FakeTracer()
+
+    async def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 100, raise_value_error),
+        lambda x: x - 1,
+    )
+
+    assert await branch.ainvoke(1, config={"callbacks": [tracer]}) == 0
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error == None
+    assert tracer.runs[0].outputs == {"output": 0}
+
+    # Check that the chain on end is invoked
+    with pytest.raises(ValueError):
+        await branch.ainvoke(1000, config={"callbacks": [tracer]})
+
+    assert len(tracer.runs) == 2
+    assert tracer.runs[1].error == "ValueError('x is too large')"
+    assert tracer.runs[1].outputs == None
 
 
 @pytest.mark.asyncio

@@ -755,30 +755,35 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
             name=config.get("run_name"),
         )
 
-        for idx, branch in enumerate(self.branches):
-            condition, runnable = branch
+        try:
+            for idx, branch in enumerate(self.branches):
+                condition, runnable = branch
 
-            expression_value = condition.invoke(
-                input,
-                config=patch_config(
-                    config, callbacks=run_manager.get_child(tag=f"condition:{idx}")
-                ),
-            )
-
-            if expression_value:
-                return runnable.invoke(
+                expression_value = condition.invoke(
                     input,
                     config=patch_config(
-                        config, callbacks=run_manager.get_child(tag=f"branch:{idx}")
+                        config, callbacks=run_manager.get_child(tag=f"condition:{idx}")
                     ),
                 )
 
-        output = self.default.invoke(
-            input,
-            config=patch_config(
-                config, callbacks=run_manager.get_child(tag="branch:default")
-            ),
-        )
+                if expression_value:
+                    return runnable.invoke(
+                        input,
+                        config=patch_config(
+                            config, callbacks=run_manager.get_child(tag=f"branch:{idx}")
+                        ),
+                    )
+
+            output = self.default.invoke(
+                input,
+                config=patch_config(
+                    config, callbacks=run_manager.get_child(tag="branch:default")
+                ),
+            )
+        except Exception as e:
+            run_manager.on_chain_error(e)
+            raise
+        run_manager.on_chain_end(dumpd(output))
         return output
 
     async def ainvoke(
@@ -792,33 +797,37 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
             input,
             name=config.get("run_name"),
         )
+        try:
+            for idx, branch in enumerate(self.branches):
+                condition, runnable = branch
 
-        for idx, branch in enumerate(self.branches):
-            condition, runnable = branch
-
-            expression_value = condition.invoke(
-                input,
-                config=patch_config(
-                    config, callbacks=run_manager.get_child(tag=f"condition:{idx}")
-                ),
-            )
-
-            if expression_value:
-                return await runnable.ainvoke(
+                expression_value = await condition.ainvoke(
                     input,
                     config=patch_config(
-                        config, callbacks=run_manager.get_child(tag=f"branch:{idx}")
+                        config, callbacks=run_manager.get_child(tag=f"condition:{idx}")
                     ),
-                    **kwargs,
                 )
 
-        output = await self.default.ainvoke(
-            input,
-            config=patch_config(
-                config, callbacks=run_manager.get_child(tag="branch:default")
-            ),
-            **kwargs,
-        )
+                if expression_value:
+                    return await runnable.ainvoke(
+                        input,
+                        config=patch_config(
+                            config, callbacks=run_manager.get_child(tag=f"branch:{idx}")
+                        ),
+                        **kwargs,
+                    )
+
+            output = await self.default.ainvoke(
+                input,
+                config=patch_config(
+                    config, callbacks=run_manager.get_child(tag="branch:default")
+                ),
+                **kwargs,
+            )
+        except Exception as e:
+            run_manager.on_chain_error(e)
+            raise
+        run_manager.on_chain_end(dumpd(output))
         return output
 
 
