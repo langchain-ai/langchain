@@ -2,7 +2,16 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+)
 from urllib.parse import urlparse
 
 import numpy as np
@@ -12,7 +21,11 @@ from langchain.document_loaders.blob_loaders import Blob
 from langchain.schema import Document
 
 if TYPE_CHECKING:
+    import fitz.fitz
+    import pdfminer.layout
     import pdfplumber.page
+    import pypdf._page
+    import pypdfium2._helpers.page
 
 
 _PDF_FILTER_WITH_LOSS = ["DCTDecode", "DCT", "JPXDecode"]
@@ -33,7 +46,9 @@ _PDF_FILTER_WITHOUT_LOSS = [
 ]
 
 
-def extract_from_images_with_rapidocr(images: list[Union[np.ndarray, bytes]]) -> str:
+def extract_from_images_with_rapidocr(
+    images: Sequence[Union[Iterable[np.ndarray], bytes]]
+) -> str:
     try:
         from rapidocr_onnxruntime import RapidOCR
     except ImportError:
@@ -75,7 +90,7 @@ class PyPDFParser(BaseBlobParser):
                 for page_number, page in enumerate(pdf_reader.pages)
             ]
 
-    def _extract_images_from_page(self, page) -> str:
+    def _extract_images_from_page(self, page: pypdf._page.PageObject) -> str:
         """Extract images from page and get the text with RapidOCR."""
         if not self.extract_images or "/XObject" not in page["/Resources"].keys():
             return ""
@@ -138,14 +153,14 @@ class PDFMinerParser(BaseBlobParser):
                     )
                     text_io.truncate(0)
                     text_io.seek(0)
-                    metadata = {"source": blob.source, "page": i}
+                    metadata = {"source": blob.source, "page": (i)}
                     yield Document(page_content=content, metadata=metadata)
 
-    def _extract_images_from_page(self, page) -> str:
+    def _extract_images_from_page(self, page: pdfminer.layout.LTPage) -> str:
         """Extract images from page and get the text with RapidOCR."""
         import pdfminer
 
-        def get_image(layout_object):
+        def get_image(layout_object: Any) -> Any:
             if isinstance(layout_object, pdfminer.layout.LTImage):
                 return layout_object
             if isinstance(layout_object, pdfminer.layout.LTContainer):
@@ -214,7 +229,9 @@ class PyMuPDFParser(BaseBlobParser):
                 for page in doc
             ]
 
-    def _extract_images_from_page(self, doc, page) -> str:
+    def _extract_images_from_page(
+        self, doc: fitz.fitz.Document, page: fitz.fitz.Page
+    ) -> str:
         """Extract images from page and get the text with RapidOCR."""
         if not self.extract_images:
             return ""
@@ -267,7 +284,7 @@ class PyPDFium2Parser(BaseBlobParser):
             finally:
                 pdf_reader.close()
 
-    def _extract_images_from_page(self, page) -> str:
+    def _extract_images_from_page(self, page: pypdfium2._helpers.page.PdfPage) -> str:
         """Extract images from page and get the text with RapidOCR."""
         if not self.extract_images:
             return ""
@@ -334,7 +351,7 @@ class PDFPlumberParser(BaseBlobParser):
             return page.dedupe_chars().extract_text(**self.text_kwargs)
         return page.extract_text(**self.text_kwargs)
 
-    def _extract_images_from_page(self, page) -> str:
+    def _extract_images_from_page(self, page: pdfplumber.page.Page) -> str:
         """Extract images from page and get the text with RapidOCR."""
         if not self.extract_images:
             return ""

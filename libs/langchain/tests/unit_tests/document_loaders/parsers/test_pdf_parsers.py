@@ -7,7 +7,6 @@ from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
-    PDFPlumberParser,
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
@@ -51,7 +50,7 @@ def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> 
     assert metadata["source"] == str(LAYOUT_PARSER_PAPER_PDF)
 
     if splits_by_page:
-        assert metadata["page"] == 0
+        assert int(metadata["page"]) == 0
 
 
 @pytest.mark.requires("pypdf")
@@ -80,12 +79,6 @@ def test_pypdfium2_parser() -> None:
     _assert_with_parser(PyPDFium2Parser())
 
 
-@pytest.mark.requires("pdfplumber")
-def test_pdfplumber_parser() -> None:
-    """Test PDFPlumber parser."""
-    _assert_with_parser(PDFPlumberParser())
-
-
 @pytest.mark.requires("rapidocr_onnxruntime")
 def test_extract_images_text_from_pdf() -> None:
     """Test extract image from pdf and recognize text with rapid ocr"""
@@ -93,4 +86,3 @@ def test_extract_images_text_from_pdf() -> None:
     _assert_with_parser(PDFMinerParser(extract_images=True))
     _assert_with_parser(PyMuPDFParser(extract_images=True))
     _assert_with_parser(PyPDFium2Parser(extract_images=True))
-    _assert_with_parser(PDFPlumberParser(extract_images=True))

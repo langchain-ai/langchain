@@ -314,7 +314,11 @@ class PyMuPDFLoader(BasePDFLoader):
     """Load `PDF` files using `PyMuPDF`."""
 
     def __init__(
-        self, file_path: str, *, headers: Optional[Dict] = None, extract_images=False
+        self,
+        file_path: str,
+        *,
+        headers: Optional[Dict] = None,
+        extract_images: bool = False,
     ) -> None:
         """Initialize with a file path."""
         try:
