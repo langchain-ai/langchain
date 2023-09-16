@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 from typing import Iterator, List, Union
 
-from langchain import schema
+from langchain.schema import HumanMessage, BaseMessage
 from langchain.chat_loaders.base import BaseChatLoader, ChatSession
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ class TelegramChatLoader(BaseChatLoader):
                 from_name = from_name_element.text.strip()
             text = message.select_one(".text").text.strip()
             results.append(
-                schema.HumanMessage(
+                HumanMessage(
                     content=text,
                     additional_kwargs={
                         "sender": from_name,
@@ -94,14 +94,14 @@ class TelegramChatLoader(BaseChatLoader):
             data = json.load(file)
 
         messages = data.get("messages", [])
-        results: List[schema.BaseMessage] = []
+        results: List[BaseMessage] = []
         for message in messages:
             text = message.get("text", "")
             timestamp = message.get("date", "")
             from_name = message.get("from", "")
 
             results.append(
-                schema.HumanMessage(
+                HumanMessage(
                     content=text,
                     additional_kwargs={
                         "sender": from_name,

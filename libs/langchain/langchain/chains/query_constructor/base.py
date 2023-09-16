@@ -4,7 +4,8 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, List, Optional, Sequence
 
-from langchain import FewShotPromptTemplate, LLMChain
+from langchain.prompts.few_shot import FewShotPromptTemplate
+from langchain.chains.llm import LLMChain
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Operator,

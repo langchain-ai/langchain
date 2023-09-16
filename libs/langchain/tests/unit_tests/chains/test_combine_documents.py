@@ -4,7 +4,7 @@ from typing import Any, List
 
 import pytest
 
-from langchain import PromptTemplate
+from langchain.prompts.prompt import PromptTemplate
 from langchain.chains.combine_documents.reduce import (
     _collapse_docs,
     _split_list_of_docs,

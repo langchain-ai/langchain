@@ -2,7 +2,7 @@ from typing import Any, Callable, Type
 
 import pytest
 
-from langchain import PromptTemplate
+from langchain.prompts import PromptTemplate
 from langchain.llms import FakeListLLM
 from langchain.schema.runnable import (
     GetLocalVar,

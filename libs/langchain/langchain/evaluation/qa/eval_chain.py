@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any, List, Optional, Sequence
 
-from langchain import PromptTemplate
+from langchain.prompts import PromptTemplate
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT

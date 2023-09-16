@@ -593,7 +593,7 @@ class FAISS(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import FAISS
+                from langchain.vectorstores import FAISS
                 from langchain.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
@@ -630,7 +630,7 @@ class FAISS(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import FAISS
+                from langchain.vectorstores import FAISS
                 from langchain.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()

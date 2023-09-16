@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from langchain import LLMChain
+from langchain.chains.llm import LLMChain
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.utilities.requests import TextRequestsWrapper

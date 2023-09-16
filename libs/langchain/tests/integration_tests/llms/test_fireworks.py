@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from langchain import LLMChain, PromptTemplate
+from langchain.chains.llm import LLMChain
+from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
 from langchain.document_loaders import TextLoader
 from langchain.embeddings.openai import OpenAIEmbeddings

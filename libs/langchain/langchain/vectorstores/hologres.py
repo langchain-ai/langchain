@@ -403,7 +403,7 @@ class Hologres(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Hologres
+                from langchain.vectorstores import Hologres
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
