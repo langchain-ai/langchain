@@ -3,13 +3,42 @@ CLICKUP_TASK_CREATE_PROMPT = """
     This tool is a wrapper around clickup's create_task API, useful when you need to create a CLICKUP task. 
     The input to this tool is a dictionary specifying the fields of the CLICKUP task, and will be passed into clickup's CLICKUP `create_task` function.
     For example, to create a task with priority 3 called "New Task Name" with description "New Task Description", with status "open" you would pass in the following dictionary: 
-    payload = {{
-        "name": "New Task Name",
-        "description": "New Task Description",
-        "status": "Open",
-        "priority": 3,
-    }}
+    {{"name": "New Task Name", "description": "New Task Description", "status": "Open", "priority": 3}}
+    Use the following mapping in order to map the user's priority to the clickup priority: {{
+            Urgent = 1,
+            High = 2,
+            Normal = 3,
+            Low = 4,
+        }}. If the user passes in "urgent" replace the priority value as 1. 
     """
+
+CLICKUP_LIST_CREATE_PROMPT = """
+    This tool is a wrapper around clickup's create_list API, useful when you need to create a CLICKUP list.
+    The input to this tool is a dictionary specifying the fields of a clickup list, and will be passed to clickup's create_list function.
+    For example, to create a list with name "List name", content "List content", priority 2, and status "red" you would pass in the following dictionary:
+    {{
+        "name": "List name",
+        "content": "List content",
+        "priority": 2,
+        "status": "red"
+    }} 
+    Use the following mapping in order to map the user's priority to the clickup priority: {{
+        Urgent = 1,
+        High = 2,
+        Normal = 3,
+        Low = 4,
+    }}. If the user passes in "urgent" replace the priority value as 1. 
+
+"""
+
+CLICKUP_FOLDER_CREATE_PROMPT = """
+    This tool is a wrapper around clickup's create_folder API, useful when you need to create a CLICKUP folder.
+    The input to this tool is a dictionary specifying the fields of a clickup folder, and will be passed to clickup's create_folder function.
+    For example, to create a folder with name "Folder name" you would pass in the following dictionary:
+    {{
+        "name": "Folder name",
+    }} 
+"""
 
 CLICKUP_GET_TASK_PROMPT = """
     This tool is a wrapper around clickup's API,
@@ -47,7 +76,13 @@ CLICKUP_GET_LIST_PROMPT = """
 CLICKUP_GET_FOLDERS_PROMPT = """
     This tool is a wrapper around clickup's API, 
     useful when you need to get a specific folder for the user. Given the user's workspace id you want to create a request similar to the following dictionary:
-    payload = {{"space_id": "90130119692"}}
+    payload = {{"folder_id": "90130119692"}}
+    """
+
+CLICKUP_GET_SPACES_PROMPT = """
+    This tool is a wrapper around clickup's API, 
+    useful when you need to get all the spaces available to a user. Given the user's workspace id you want to create a request similar to the following dictionary:
+    payload = {{"team_id": "90130119692"}}
     """
 
 CLICKUP_GET_SPACES_PROMPT = """
