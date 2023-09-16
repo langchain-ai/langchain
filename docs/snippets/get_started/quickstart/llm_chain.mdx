@@ -21,6 +21,6 @@ chat_prompt = ChatPromptTemplate.from_messages([
     ("human", human_template),
 ])
 chain = chat_prompt | ChatOpenAI() | CommaSeparatedListOutputParser()
-chain.run("colors")
+chain.invoke({"text": "colors"})
 # >> ['red', 'blue', 'green', 'yellow', 'orange']
 ```
