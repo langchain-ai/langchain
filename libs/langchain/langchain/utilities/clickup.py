@@ -25,8 +25,8 @@ class Task:
     watcher_username: str
     watcher_email: str
     priority: str
-    due_date: Optional[str]  # assuming it might be nullable
-    start_date: Optional[str]  # assuming it might be nullable
+    due_date: Optional[str]
+    start_date: Optional[str]
     points: int
     team_id: int
     project_id: int
