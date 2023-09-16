@@ -28,7 +28,7 @@ def create_index(
     sparse_encoder: Any,
     ids: Optional[List[str]] = None,
     metadatas: Optional[List[dict]] = None,
-    namespace: str = None
+    namespace: str = None,
 ) -> None:
     """Create an index from a list of contexts.
 
@@ -123,7 +123,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
         texts: List[str],
         ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
-        namespace: str = None
+        namespace: str = None,
     ) -> None:
         create_index(
             texts,
@@ -132,7 +132,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
             self.sparse_encoder,
             ids=ids,
             metadatas=metadatas,
-            namespace=namespace
+            namespace=namespace,
         )
 
     @root_validator()
@@ -167,7 +167,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
             sparse_vector=sparse_vec,
             top_k=self.top_k,
             include_metadata=True,
-            namespace=self.namespace
+            namespace=self.namespace,
         )
         final_result = []
         for res in result["matches"]:
