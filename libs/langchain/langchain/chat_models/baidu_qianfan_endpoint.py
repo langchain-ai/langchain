@@ -175,7 +175,7 @@ class QianfanChatEndpoint(BaseChatModel):
         self,
         messages: List[BaseMessage],
         **kwargs: Any,
-    ):
+    ) -> Dict[str, Any]:
         """
         Converts a list of messages into a dictionary containing the message content
         and default parameters.
@@ -190,7 +190,7 @@ class QianfanChatEndpoint(BaseChatModel):
             parameters.
 
         """
-        messages_dict = {
+        messages_dict: Dict[str, Any] = {
             "messages": [
                 convert_message_to_dict(m)
                 for m in messages
