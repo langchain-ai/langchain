@@ -1866,7 +1866,7 @@ def test_runnable_branch_invoke() -> None:
         """Raise a value error."""
         raise ValueError("x is too large")
 
-    branch = RunnableBranch(
+    branch = RunnableBranch[int, int](
         (lambda x: x > 100, raise_value_error),
         # mypy cannot infer types from the lambda
         (lambda x: x > 0 and x < 5, lambda x: x + 1),  # type: ignore[misc]
