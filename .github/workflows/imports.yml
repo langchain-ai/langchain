@@ -1,20 +1,18 @@
----
-name: Imports
+name: Check Imports
 
 on:
   push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+    branches:
+      - main  # or replace 'main' with the name of your default branch
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Run Bash script
-      run: git grep 'from langchain import' | grep -vE 'from langchain import (__version__)'
-
+    - name: Run import check
+      run: |
+        git grep 'from langchain import' | grep -vE 'from langchain import (__version__)' && exit 1 || exit 0

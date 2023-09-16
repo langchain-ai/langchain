@@ -6,8 +6,8 @@ from typing import Sequence
 
 import pytest
 
-from langchain.schema import BaseMessage, HumanMessage, AIMessage
 from langchain.chat_loaders import telegram, utils
+from langchain.schema import AIMessage, BaseMessage, HumanMessage
 
 
 def _assert_messages_are_equal(
