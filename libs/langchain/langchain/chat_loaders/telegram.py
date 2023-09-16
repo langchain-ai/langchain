@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Iterator, List, Union
 
 from langchain.chat_loaders.base import BaseChatLoader, ChatSession
-from langchain.schema import BaseMessage, HumanMessage
+from langchain.schema import AIMessage, BaseMessage, HumanMessage
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ class TelegramChatLoader(BaseChatLoader):
         with open(file_path, "r", encoding="utf-8") as file:
             soup = BeautifulSoup(file, "html.parser")
 
-        results: List[Union[schema.HumanMessage, schema.AIMessage]] = []
+        results: List[Union[HumanMessage, AIMessage]] = []
         previous_sender = None
         for message in soup.select(".message.default"):
             timestamp = message.select_one(".pull_right.date.details")["title"]
