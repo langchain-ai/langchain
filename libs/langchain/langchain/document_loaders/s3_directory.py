@@ -114,7 +114,7 @@ class S3DirectoryLoader(BaseLoader):
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
             aws_session_token=self.aws_session_token,
-            boto_config=self.boto_config,
+            config=self.boto_config,
         )
         bucket = s3.Bucket(self.bucket)
         docs = []

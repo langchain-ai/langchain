@@ -948,7 +948,7 @@ async def test_higher_order_lambda_runnable(
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 2
     router_run = parent_run.child_runs[1]
-    assert router_run.name == "RunnableLambda"
+    assert router_run.name == "router"
     assert len(router_run.child_runs) == 1
     math_run = router_run.child_runs[0]
     assert math_run.name == "RunnableSequence"
@@ -980,7 +980,7 @@ async def test_higher_order_lambda_runnable(
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 2
     router_run = parent_run.child_runs[1]
-    assert router_run.name == "RunnableLambda"
+    assert router_run.name == "arouter"
     assert len(router_run.child_runs) == 1
     math_run = router_run.child_runs[0]
     assert math_run.name == "RunnableSequence"
@@ -1315,6 +1315,37 @@ async def test_deep_astream() -> None:
     assert "".join(chunks) == "foo-lish"
 
 
+def test_runnable_sequence_transform() -> None:
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = llm | StrOutputParser()
+
+    stream = chain.transform(llm.stream("Hi there!"))
+
+    chunks = []
+    for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
+@pytest.mark.asyncio
+async def test_runnable_sequence_atransform() -> None:
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = llm | StrOutputParser()
+
+    stream = chain.atransform(llm.astream("Hi there!"))
+
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
 @pytest.fixture()
 def llm_with_fallbacks() -> RunnableWithFallbacks:
     error_llm = FakeListLLM(responses=["foo"], i=1)
@@ -1507,7 +1538,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         await runnable.with_retry(
             stop_after_attempt=2,
-            retry_if_exception_type=(ValueError,),
+            retry_if_exception_type=(ValueError, KeyError),
         ).ainvoke(1)
 
     assert _lambda_mock.call_count == 2  # retried
