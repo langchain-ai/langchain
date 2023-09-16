@@ -1,6 +1,78 @@
 {
   "redirects": [
     {
+      "source":  "/docs/integrations/providers/amazon_api_gateway",
+      "destination": "/docs/integrations/platform/aws"
+    },
+    {
+      "source":  "/docs/integrations/providers/azure_blob_storage",
+      "destination": "/docs/integrations/platform/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/google_vertexai_matchingengine",
+      "destination": "/docs/integrations/platform/google"
+    },
+    {
+      "source":  "/docs/integrations/providers/aws_s3",
+      "destination": "/docs/integrations/platform/aws"
+    },
+    {
+      "source":  "/docs/integrations/providers/azure_openai",
+      "destination": "/docs/integrations/platform/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/azure_blob_storage",
+      "destination": "/docs/integrations/platform/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/azure_cognitive_search_",
+      "destination": "/docs/integrations/platform/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/bedrock",
+      "destination": "/docs/integrations/platform/aws"
+    },
+    {
+      "source":  "/docs/integrations/providers/google_bigquery",
+      "destination": "/docs/integrations/platform/google"
+    },
+    {
+      "source":  "/docs/integrations/providers/google_cloud_storage",
+      "destination": "/docs/integrations/platform/google"
+    },
+    {
+      "source":  "/docs/integrations/providers/google_drive",
+      "destination": "/docs/integrations/platform/google"
+    },
+    {
+      "source":  "/docs/integrations/providers/google_search",
+      "destination": "/docs/integrations/platform/google"
+    },
+    {
+      "source":  "/docs/integrations/providers/microsoft_onedrive",
+      "destination": "/docs/integrations/platform/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/microsoft_powerpoint",
+      "destination": "/docs/integrations/platform/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/microsoft_word",
+      "destination": "/docs/integrations/platform/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/sagemaker_endpoint",
+      "destination": "/docs/integrations/platform/aws"
+    },
+    {
+      "source":  "/docs/integrations/providers/sagemaker_tracking",
+      "destination": "/docs/integrations/callbacks/sagemaker_tracking"
+    },
+    {
+      "source":  "/docs/integrations/providers/openai",
+      "destination": "/docs/integrations/callbacks/openai"
+    },
+    {
       "source": "/docs/modules/data_connection/caching_embeddings(/?)",
       "destination": "/docs/modules/data_connection/text_embedding/caching_embeddings"
     },
@@ -1078,7 +1150,7 @@
     },
     {
       "source": "/docs/integrations/tools/sqlite",
-      "destination": "/docs/use_cases/sql/sqlite"
+      "destination": "/docs/use_cases/qa_structured/sqlite"
     },
     {
       "source": "/en/latest/modules/callbacks/filecallbackhandler.html",
