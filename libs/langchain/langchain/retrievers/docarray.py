@@ -5,7 +5,7 @@ import numpy as np
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 

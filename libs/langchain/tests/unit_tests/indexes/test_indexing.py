@@ -8,7 +8,7 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.indexes import index
 from langchain.indexes._sql_record_manager import SQLRecordManager
 from langchain.schema import Document
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VST, VectorStore
 
 

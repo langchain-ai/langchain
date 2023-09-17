@@ -5,7 +5,7 @@ from functools import partial
 from typing import Any, Dict, List, Optional
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 
 
 class BedrockEmbeddings(BaseModel, Embeddings):

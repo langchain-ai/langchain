@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 
 from langchain.pydantic_v1 import BaseModel, Extra
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):

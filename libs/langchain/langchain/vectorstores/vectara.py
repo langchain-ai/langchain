@@ -10,7 +10,7 @@ import requests
 
 from langchain.pydantic_v1 import Field
 from langchain.schema import Document
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 logger = logging.getLogger(__name__)

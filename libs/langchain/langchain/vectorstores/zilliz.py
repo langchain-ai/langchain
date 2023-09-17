@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.milvus import Milvus
 
 logger = logging.getLogger(__name__)

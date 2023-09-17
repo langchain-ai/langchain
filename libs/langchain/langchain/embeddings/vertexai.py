@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from langchain.llms.vertexai import _VertexAICommon
 from langchain.pydantic_v1 import root_validator
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.utilities.vertexai import raise_vertex_import_error
 
 

@@ -8,7 +8,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from langchain.docstore.document import Document
 from langchain.pydantic_v1 import BaseSettings
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()

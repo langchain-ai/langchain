@@ -2,7 +2,7 @@
 import math
 from typing import List
 
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 
 fake_texts = ["foo", "bar", "baz"]
 

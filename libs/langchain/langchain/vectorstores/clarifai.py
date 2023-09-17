@@ -9,7 +9,7 @@ from typing import Any, Iterable, List, Optional, Tuple
 import requests
 
 from langchain.docstore.document import Document
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger(__name__)

@@ -13,7 +13,7 @@ from langchain.evaluation.string_distance.base import (
     StringDistance as StringDistanceEnum,
 )
 from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 

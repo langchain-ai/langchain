@@ -7,7 +7,7 @@ import pytest
 import langchain
 from langchain.cache import RedisCache, RedisSemanticCache
 from langchain.schema import Generation, LLMResult
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,

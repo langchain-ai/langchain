@@ -13,7 +13,7 @@ from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.chains.llm import LLMChain
 from langchain.pydantic_v1 import Extra
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.schema.language_model import BaseLanguageModel
 
 

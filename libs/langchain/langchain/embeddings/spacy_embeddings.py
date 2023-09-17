@@ -2,7 +2,7 @@ import importlib.util
 from typing import Any, Dict, List
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 
 
 class SpacyEmbeddings(BaseModel, Embeddings):

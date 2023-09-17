@@ -55,8 +55,8 @@ from langchain.llms.base import LLM, get_prompts
 from langchain.load.dump import dumps
 from langchain.load.load import loads
 from langchain.schema import ChatGeneration, Generation
-from langchain.schema.base import Embeddings
 from langchain.schema.cache import RETURN_VAL_TYPE, BaseCache
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_env
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 
