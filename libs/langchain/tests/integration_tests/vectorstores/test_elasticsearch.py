@@ -6,7 +6,7 @@ from typing import Generator, List, Union
 
 import pytest
 
-from langchain.docstore.document import Document
+from langchain.schema.document import Document
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,

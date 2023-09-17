@@ -1,7 +1,11 @@
-"""**Utilities** are the integrations with third-part systems and packages.
+"""**Utilities** are the integrations with third-party systems and packages.
 
 Other LangChain classes use **Utilities** to interact with third-part systems
 and packages.
+
+These cover interactions with third-party packages that are used as TOOLS.
+Integrations with third-party packages that are used as integrations
+for LLMs/ChatModels/Vectorstores/Embeddings models go in utils.
 """
 from langchain.utilities.alpha_vantage import AlphaVantageAPIWrapper
 from langchain.utilities.apify import ApifyWrapper
@@ -25,7 +29,6 @@ from langchain.utilities.portkey import Portkey
 from langchain.utilities.powerbi import PowerBIDataset
 from langchain.utilities.pubmed import PubMedAPIWrapper
 from langchain.utilities.python import PythonREPL
-from langchain.utilities.requests import Requests, RequestsWrapper, TextRequestsWrapper
 from langchain.utilities.scenexplain import SceneXplainAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
@@ -36,6 +39,7 @@ from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.zapier import ZapierNLAWrapper
+from langchain.utils.requests import Requests, RequestsWrapper, TextRequestsWrapper
 
 __all__ = [
     "AlphaVantageAPIWrapper",

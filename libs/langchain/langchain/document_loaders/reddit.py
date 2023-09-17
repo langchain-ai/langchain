@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 
 if TYPE_CHECKING:
     import praw

@@ -2,9 +2,9 @@ from typing import List, Optional
 
 import requests
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.web_base import WebBaseLoader
+from langchain.schema.document import Document
 
 IFIXIT_BASE_URL = "https://www.ifixit.com/api/2.0"
 

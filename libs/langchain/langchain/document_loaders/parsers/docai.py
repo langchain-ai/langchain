@@ -9,9 +9,9 @@ import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
+from langchain.schema.document import Document
 from langchain.utils.iter import batch_iterate
 
 if TYPE_CHECKING:

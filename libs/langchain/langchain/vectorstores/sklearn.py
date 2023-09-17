@@ -10,8 +10,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Type
 from uuid import uuid4
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.document import Document
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import guard_import
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance

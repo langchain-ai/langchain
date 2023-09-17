@@ -8,8 +8,8 @@ import warnings
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Union
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 
 if TYPE_CHECKING:
     import arcgis

@@ -1,12 +1,12 @@
 import os
 from typing import Any, List
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredFileLoader,
     satisfies_min_unstructured_version,
 )
+from langchain.schema.document import Document
 
 
 class UnstructuredEmailLoader(UnstructuredFileLoader):

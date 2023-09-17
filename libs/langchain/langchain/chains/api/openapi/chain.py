@@ -14,7 +14,7 @@ from langchain.chains.llm import LLMChain
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.openapi.utils.api_models import APIOperation
-from langchain.utilities.requests import Requests
+from langchain.utils.requests import Requests
 
 
 class _ParamMapping(NamedTuple):

@@ -1,9 +1,9 @@
 import logging
 from typing import List, Optional
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.helpers import detect_file_encodings
+from langchain.schema.document import Document
 
 logger = logging.getLogger(__name__)
 

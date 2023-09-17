@@ -7,7 +7,7 @@ from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.pydantic_v1 import BaseModel, Extra
 
 if TYPE_CHECKING:
-    from langchain.embeddings.base import Embeddings
+    from langchain.schema.embeddings import Embeddings
     from langchain.vectorstores.base import VectorStore
 
 

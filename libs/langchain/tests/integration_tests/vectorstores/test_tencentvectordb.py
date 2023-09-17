@@ -2,7 +2,7 @@
 import time
 from typing import List, Optional
 
-from langchain.docstore.document import Document
+from langchain.schema.document import Document
 from langchain.vectorstores import TencentVectorDB
 from langchain.vectorstores.tencentvectordb import ConnectionParams
 from tests.integration_tests.vectorstores.fake_embeddings import (

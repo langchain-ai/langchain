@@ -1,9 +1,9 @@
 # coding:utf-8
 from typing import List, Optional
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.obs_file import OBSFileLoader
+from langchain.schema.document import Document
 
 
 class OBSDirectoryLoader(BaseLoader):

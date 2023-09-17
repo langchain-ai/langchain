@@ -13,7 +13,7 @@ from langchain.chains.llm import LLMChain
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.utilities.requests import TextRequestsWrapper
+from langchain.utils.requests import TextRequestsWrapper
 
 
 class APIChain(Chain):

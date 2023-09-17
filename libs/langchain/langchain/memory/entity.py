@@ -14,7 +14,7 @@ from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, get_buffer_string
-from langchain.utilities.redis import get_client
+from langchain.utils.redis import get_client
 
 logger = logging.getLogger(__name__)
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Dict,
@@ -15,7 +16,6 @@ from typing import (
 
 from typing_extensions import Literal
 
-from langchain.chat_loaders.base import ChatSession
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
@@ -26,6 +26,9 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+
+if TYPE_CHECKING:
+    from langchain.chat_loaders.base import ChatSession
 
 
 async def aenumerate(

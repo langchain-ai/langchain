@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Iterator, List, Optional, Sequence
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 from langchain.utilities.max_compute import MaxComputeAPIWrapper
 
 

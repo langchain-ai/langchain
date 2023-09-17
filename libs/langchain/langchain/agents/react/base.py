@@ -9,9 +9,9 @@ from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
 from langchain.docstore.base import Docstore
-from langchain.docstore.document import Document
 from langchain.pydantic_v1 import Field
 from langchain.schema import BasePromptTemplate
+from langchain.schema.document import Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 

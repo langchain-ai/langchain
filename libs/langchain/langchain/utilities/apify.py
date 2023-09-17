@@ -50,7 +50,7 @@ class ApifyWrapper(BaseModel):
         build: Optional[str] = None,
         memory_mbytes: Optional[int] = None,
         timeout_secs: Optional[int] = None,
-    ) -> ApifyDatasetLoader:
+    ) -> "ApifyDatasetLoader":
         """Run an Actor on the Apify platform and wait for results to be ready.
         Args:
             actor_id (str): The ID or name of the Actor on the Apify platform.
@@ -90,7 +90,7 @@ class ApifyWrapper(BaseModel):
         build: Optional[str] = None,
         memory_mbytes: Optional[int] = None,
         timeout_secs: Optional[int] = None,
-    ) -> ApifyDatasetLoader:
+    ) -> "ApifyDatasetLoader":
         """Run an Actor on the Apify platform and wait for results to be ready.
         Args:
             actor_id (str): The ID or name of the Actor on the Apify platform.
@@ -130,7 +130,7 @@ class ApifyWrapper(BaseModel):
         build: Optional[str] = None,
         memory_mbytes: Optional[int] = None,
         timeout_secs: Optional[int] = None,
-    ) -> ApifyDatasetLoader:
+    ) -> "ApifyDatasetLoader":
         """Run a saved Actor task on Apify and wait for results to be ready.
         Args:
             task_id (str): The ID or name of the task on the Apify platform.
@@ -171,7 +171,7 @@ class ApifyWrapper(BaseModel):
         build: Optional[str] = None,
         memory_mbytes: Optional[int] = None,
         timeout_secs: Optional[int] = None,
-    ) -> ApifyDatasetLoader:
+    ) -> "ApifyDatasetLoader":
         """Run a saved Actor task on Apify and wait for results to be ready.
         Args:
             task_id (str): The ID or name of the task on the Apify platform.

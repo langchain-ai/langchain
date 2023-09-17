@@ -3,8 +3,8 @@ import re
 from pathlib import Path
 from typing import Any, Iterator, List, Mapping, Optional
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 from langchain.utilities.bibtex import BibtexparserWrapper
 
 logger = logging.getLogger(__name__)

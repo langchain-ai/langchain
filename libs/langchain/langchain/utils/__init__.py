@@ -2,6 +2,8 @@
 **Utility functions** for LangChain.
 
 These functions do not depend on any other LangChain module.
+
+These also contain utils for working with common integration partners.
 """
 
 from langchain.utils.env import get_from_dict_or_env, get_from_env

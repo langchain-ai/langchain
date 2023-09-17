@@ -3,8 +3,8 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 
 if TYPE_CHECKING:
     import mastodon

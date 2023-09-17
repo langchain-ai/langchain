@@ -1,8 +1,8 @@
 from typing import Any, Iterator, List
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.tencent_cos_file import TencentCOSFileLoader
+from langchain.schema.document import Document
 
 
 class TencentCOSDirectoryLoader(BaseLoader):

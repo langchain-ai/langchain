@@ -4,7 +4,7 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
-from langchain.docstore.document import Document
+from langchain.schema.document import Document
 from langchain.vectorstores.pgvector import PGVector
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 

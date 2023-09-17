@@ -2,8 +2,8 @@ import json
 import urllib.request
 from typing import Any, List
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 from langchain.utils import stringify_dict
 
 

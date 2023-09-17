@@ -2,8 +2,8 @@ import email
 import logging
 from typing import Dict, List, Union
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 
 logger = logging.getLogger(__name__)
 

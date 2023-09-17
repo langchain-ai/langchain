@@ -2,7 +2,7 @@
 
 import pytest
 
-from langchain.docstore.document import Document
+from langchain.schema.document import Document
 from langchain.vectorstores.opensearch_vector_search import (
     PAINLESS_SCRIPTING_SEARCH,
     SCRIPT_SCORING_SEARCH,

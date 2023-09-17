@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.csv_loader import CSVLoader
+from langchain.schema.document import Document
 
 
 class TestCSVLoader:

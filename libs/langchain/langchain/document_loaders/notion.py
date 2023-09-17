@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import List
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 
 
 class NotionDirectoryLoader(BaseLoader):

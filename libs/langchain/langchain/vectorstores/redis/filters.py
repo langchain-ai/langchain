@@ -3,7 +3,7 @@ from functools import wraps
 from numbers import Number
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from langchain.utilities.redis import TokenEscaper
+from langchain.utils.redis import TokenEscaper
 
 # disable mypy error for dunder method overrides
 # mypy: disable-error-code="override"

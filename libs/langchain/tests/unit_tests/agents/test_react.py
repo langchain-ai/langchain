@@ -5,10 +5,10 @@ from typing import Union
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
 from langchain.agents.tools import Tool
 from langchain.docstore.base import Docstore
-from langchain.docstore.document import Document
 from langchain.llms.fake import FakeListLLM
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AgentAction
+from langchain.schema.document import Document
 
 _PAGE_CONTENT = """This is a page about LangChain.
 

@@ -5,8 +5,8 @@ import tempfile
 
 import pytest
 
-from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
+from langchain.schema.document import Document
 from langchain.vectorstores.faiss import FAISS
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 from tests.unit_tests.agents.test_react import FakeDocstore

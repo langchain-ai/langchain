@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, List
 import numpy as np
 import pytest
 
-from langchain.docstore.document import Document
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.schema.document import Document
 from langchain.vectorstores.pinecone import Pinecone
 
 if TYPE_CHECKING:

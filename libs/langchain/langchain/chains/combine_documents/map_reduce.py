@@ -8,8 +8,8 @@ from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
-from langchain.docstore.document import Document
 from langchain.pydantic_v1 import Extra, root_validator
+from langchain.schema.document import Document
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):

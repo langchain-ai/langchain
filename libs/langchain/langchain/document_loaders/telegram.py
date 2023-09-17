@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 if TYPE_CHECKING:

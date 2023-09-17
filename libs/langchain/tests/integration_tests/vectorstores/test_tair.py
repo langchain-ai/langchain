@@ -1,6 +1,6 @@
 """Test tair functionality."""
 
-from langchain.docstore.document import Document
+from langchain.schema.document import Document
 from langchain.vectorstores.tair import Tair
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 

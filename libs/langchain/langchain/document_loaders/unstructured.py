@@ -3,8 +3,8 @@ import collections
 from abc import ABC, abstractmethod
 from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Union
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 
 
 def satisfies_min_unstructured_version(min_version: str) -> bool:

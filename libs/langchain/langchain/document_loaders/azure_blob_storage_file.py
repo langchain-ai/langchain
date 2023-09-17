@@ -2,9 +2,9 @@ import os
 import tempfile
 from typing import List
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.schema.document import Document
 
 
 class AzureBlobStorageFileLoader(BaseLoader):

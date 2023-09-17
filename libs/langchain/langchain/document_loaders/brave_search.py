@@ -1,7 +1,7 @@
 from typing import Iterator, List, Optional
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 from langchain.utilities.brave_search import BraveSearchWrapper
 
 

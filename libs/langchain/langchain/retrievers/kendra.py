@@ -3,9 +3,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.docstore.document import Document
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator, validator
 from langchain.schema import BaseRetriever
+from langchain.schema.document import Document
 
 
 def clean_excerpt(excerpt: str) -> str:

@@ -2,7 +2,7 @@
 from typing import Dict, List, Optional, Union
 
 from langchain.docstore.base import AddableMixin, Docstore
-from langchain.docstore.document import Document
+from langchain.schema.document import Document
 
 
 class InMemoryDocstore(Docstore, AddableMixin):

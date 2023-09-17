@@ -11,7 +11,6 @@ from urllib.parse import urlparse
 
 import requests
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
@@ -24,6 +23,7 @@ from langchain.document_loaders.parsers.pdf import (
     PyPDFParser,
 )
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.schema.document import Document
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__file__)

@@ -2,8 +2,8 @@ import re
 from pathlib import Path
 from typing import Iterator, List
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 
 
 class AcreomLoader(BaseLoader):

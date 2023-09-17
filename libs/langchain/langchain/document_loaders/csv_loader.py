@@ -1,12 +1,12 @@
 import csv
 from typing import Any, Dict, List, Optional
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredFileLoader,
     validate_unstructured_version,
 )
+from langchain.schema.document import Document
 
 
 class CSVLoader(BaseLoader):

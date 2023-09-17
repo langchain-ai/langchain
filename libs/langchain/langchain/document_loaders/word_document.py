@@ -7,9 +7,9 @@ from urllib.parse import urlparse
 
 import requests
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.schema.document import Document
 
 
 class Docx2txtLoader(BaseLoader, ABC):

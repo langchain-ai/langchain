@@ -1,7 +1,7 @@
 """Test Milvus functionality."""
 from typing import List, Optional
 
-from langchain.docstore.document import Document
+from langchain.schema.document import Document
 from langchain.vectorstores import Milvus
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,

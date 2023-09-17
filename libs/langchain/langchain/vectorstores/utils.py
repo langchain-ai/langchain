@@ -5,7 +5,7 @@ from typing import List, Tuple, Type
 
 import numpy as np
 
-from langchain.docstore.document import Document
+from langchain.schema.document import Document
 from langchain.utils.math import cosine_similarity
 
 

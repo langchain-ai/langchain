@@ -1,7 +1,7 @@
 from typing import List
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.web_base import WebBaseLoader
+from langchain.schema.document import Document
 
 
 class AZLyricsLoader(WebBaseLoader):

@@ -18,8 +18,8 @@ if TYPE_CHECKING:
     import bagel.config
     from bagel.api.types import ID, OneOrMany, Where, WhereDocument
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.document import Document
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import xor_args
 from langchain.vectorstores.base import VectorStore
 

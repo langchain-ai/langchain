@@ -1,9 +1,9 @@
 import logging
 from typing import Any, Iterator, List, Optional, Sequence
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.news import NewsURLLoader
+from langchain.schema.document import Document
 
 logger = logging.getLogger(__name__)
 

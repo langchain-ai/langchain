@@ -8,8 +8,8 @@ from base64 import b64decode
 from time import strptime
 from typing import Any, Dict, Iterator, List, Optional
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 
 logger = logging.getLogger(__name__)
 

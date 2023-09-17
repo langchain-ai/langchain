@@ -28,15 +28,15 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.utilities.redis import (
+from langchain.schema.document import Document
+from langchain.schema.embeddings import Embeddings
+from langchain.utils import get_from_dict_or_env
+from langchain.utils.redis import (
     _array_to_buffer,
     _buffer_to_array,
     check_redis_module_exist,
     get_client,
 )
-from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 from langchain.vectorstores.redis.constants import (
     REDIS_REQUIRED_MODULES,

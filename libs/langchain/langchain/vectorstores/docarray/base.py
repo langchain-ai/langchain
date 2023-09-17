@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import Field
 from langchain.schema import Document
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 

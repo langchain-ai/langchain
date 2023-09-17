@@ -19,7 +19,7 @@ from langchain.tools.requests.tool import (
     RequestsPostTool,
     RequestsPutTool,
 )
-from langchain.utilities.requests import TextRequestsWrapper
+from langchain.utils.requests import TextRequestsWrapper
 
 
 class RequestsToolkit(BaseToolkit):

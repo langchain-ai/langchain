@@ -1,7 +1,7 @@
 """Wrapper around Xinference embedding models."""
 from typing import Any, List, Optional
 
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 
 
 class XinferenceEmbeddings(Embeddings):

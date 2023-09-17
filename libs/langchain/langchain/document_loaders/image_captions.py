@@ -2,8 +2,8 @@ from typing import Any, List, Tuple, Union
 
 import requests
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.schema.document import Document
 
 
 class ImageCaptionLoader(BaseLoader):

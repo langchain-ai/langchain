@@ -46,8 +46,8 @@ from typing import (
     cast,
 )
 
-from langchain.docstore.document import Document
 from langchain.schema import BaseDocumentTransformer
+from langchain.schema.document import Document
 
 logger = logging.getLogger(__name__)
 

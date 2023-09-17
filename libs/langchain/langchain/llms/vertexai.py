@@ -15,7 +15,7 @@ from langchain.schema import (
     Generation,
     LLMResult,
 )
-from langchain.utilities.vertexai import (
+from langchain.utils.vertexai import (
     init_vertexai,
     raise_vertex_import_error,
 )

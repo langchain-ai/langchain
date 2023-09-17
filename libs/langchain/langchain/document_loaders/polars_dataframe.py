@@ -1,7 +1,7 @@
 from typing import Any, Iterator
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.dataframe import BaseDataFrameLoader
+from langchain.schema.document import Document
 
 
 class PolarsDataFrameLoader(BaseDataFrameLoader):

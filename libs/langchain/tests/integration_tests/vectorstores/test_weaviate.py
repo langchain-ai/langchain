@@ -6,8 +6,8 @@ from typing import Generator, Union
 
 import pytest
 
-from langchain.docstore.document import Document
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.schema.document import Document
 from langchain.vectorstores.weaviate import Weaviate
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 

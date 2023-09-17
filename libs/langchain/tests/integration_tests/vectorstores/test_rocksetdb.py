@@ -1,7 +1,7 @@
 import logging
 import os
 
-from langchain.docstore.document import Document
+from langchain.schema.document import Document
 from langchain.vectorstores.rocksetdb import Rockset
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,

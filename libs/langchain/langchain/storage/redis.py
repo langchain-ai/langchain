@@ -1,7 +1,7 @@
 from typing import Any, Iterator, List, Optional, Sequence, Tuple, cast
 
 from langchain.schema import BaseStore
-from langchain.utilities.redis import get_client
+from langchain.utils.redis import get_client
 
 
 class RedisStore(BaseStore[str, bytes]):

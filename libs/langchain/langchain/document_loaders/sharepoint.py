@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from typing import Iterator, List, Optional, Sequence
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base_o365 import (
     O365BaseLoader,
     _FileType,
 )
 from langchain.document_loaders.parsers.registry import get_parser
 from langchain.pydantic_v1 import Field
+from langchain.schema.document import Document
 
 
 class SharePointLoader(O365BaseLoader):

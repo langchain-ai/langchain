@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.confluence import ConfluenceLoader, ContentFormat
+from langchain.schema.document import Document
 
 
 @pytest.fixture

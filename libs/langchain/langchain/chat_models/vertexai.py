@@ -16,7 +16,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.utilities.vertexai import raise_vertex_import_error
+from langchain.utils.vertexai import raise_vertex_import_error
 
 if TYPE_CHECKING:
     from vertexai.language_models import ChatMessage, InputOutputTextPair

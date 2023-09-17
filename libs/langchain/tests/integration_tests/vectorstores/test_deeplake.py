@@ -2,7 +2,7 @@
 import pytest
 from pytest import FixtureRequest
 
-from langchain.docstore.document import Document
+from langchain.schema.document import Document
 from langchain.vectorstores import DeepLake
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 

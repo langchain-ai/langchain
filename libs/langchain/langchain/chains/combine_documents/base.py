@@ -8,8 +8,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from langchain.docstore.document import Document
 from langchain.pydantic_v1 import Field
+from langchain.schema.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
