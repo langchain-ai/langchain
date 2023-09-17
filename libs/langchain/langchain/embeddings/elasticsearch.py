@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
     from elasticsearch.client import MlClient
 
-from langchain.embeddings.base import Embeddings
+from langchain.schema.base import Embeddings
 
 
 class ElasticsearchEmbeddings(Embeddings):
