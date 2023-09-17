@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/expression_language/cookbook/routing",
+      "destination": "/docs/expression_language/how_to/routing"
+    },
+    {
       "source":  "/docs/integrations/providers/amazon_api_gateway",
       "destination": "/docs/integrations/platform/aws"
     },
