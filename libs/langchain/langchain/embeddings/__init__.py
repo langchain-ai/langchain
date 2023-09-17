@@ -49,6 +49,7 @@ from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
 from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 from langchain.embeddings.nlpcloud import NLPCloudEmbeddings
 from langchain.embeddings.octoai_embeddings import OctoAIEmbeddings
+from langchain.embeddings.ollama import OllamaEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
@@ -106,6 +107,7 @@ __all__ = [
     "AwaEmbeddings",
     "HuggingFaceBgeEmbeddings",
     "ErnieEmbeddings",
+    "OllamaEmbeddings",
     "QianfanEmbeddingsEndpoint",
 ]
 

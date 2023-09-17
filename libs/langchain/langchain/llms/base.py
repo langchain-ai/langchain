@@ -267,6 +267,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         return_exceptions: bool = False,
         **kwargs: Any,
     ) -> List[str]:
+        if not inputs:
+            return []
+
         config = get_config_list(config, len(inputs))
         max_concurrency = config[0].get("max_concurrency")
 
@@ -306,6 +309,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         return_exceptions: bool = False,
         **kwargs: Any,
     ) -> List[str]:
+        if not inputs:
+            return []
+
         if type(self)._agenerate == BaseLLM._agenerate:
             # model doesn't implement async batch, so use default implementation
             return await asyncio.get_running_loop().run_in_executor(

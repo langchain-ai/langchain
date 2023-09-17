@@ -1,8 +1,9 @@
 import langchain.utilities.opaqueprompts as op
-from langchain import LLMChain, PromptTemplate
+from langchain.chains.llm import LLMChain
 from langchain.llms import OpenAI
 from langchain.llms.opaqueprompts import OpaquePrompts
 from langchain.memory import ConversationBufferWindowMemory
+from langchain.prompts import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableMap
 

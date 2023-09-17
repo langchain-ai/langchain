@@ -137,18 +137,7 @@ class ZeroShotAgent(Agent):
 
 
 class MRKLChain(AgentExecutor):
-    """Chain that implements the MRKL system.
-
-    Example:
-        .. code-block:: python
-
-            from langchain import OpenAI, MRKLChain
-            from langchain.chains.mrkl.base import ChainConfig
-            llm = OpenAI(temperature=0)
-            prompt = PromptTemplate(...)
-            chains = [...]
-            mrkl = MRKLChain.from_chains(llm=llm, prompt=prompt)
-    """
+    """[Deprecated] Chain that implements the MRKL system."""
 
     @classmethod
     def from_chains(
@@ -166,28 +155,6 @@ class MRKLChain(AgentExecutor):
 
         Returns:
             An initialized MRKL chain.
-
-        Example:
-            .. code-block:: python
-
-                from langchain import LLMMathChain, OpenAI, SerpAPIWrapper, MRKLChain
-                from langchain.chains.mrkl.base import ChainConfig
-                llm = OpenAI(temperature=0)
-                search = SerpAPIWrapper()
-                llm_math_chain = LLMMathChain(llm=llm)
-                chains = [
-                    ChainConfig(
-                        action_name = "Search",
-                        action=search.search,
-                        action_description="useful for searching"
-                    ),
-                    ChainConfig(
-                        action_name="Calculator",
-                        action=llm_math_chain.run,
-                        action_description="useful for doing math"
-                    )
-                ]
-                mrkl = MRKLChain.from_chains(llm, chains)
         """
         tools = [
             Tool(

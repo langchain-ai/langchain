@@ -62,7 +62,7 @@ class ElasticVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain import ElasticVectorSearch
+            from langchain.vectorstores import ElasticVectorSearch
             from langchain.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
@@ -98,7 +98,7 @@ class ElasticVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain import ElasticVectorSearch
+            from langchain.vectorstores import ElasticVectorSearch
             from langchain.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
@@ -282,7 +282,7 @@ class ElasticVectorSearch(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import ElasticVectorSearch
+                from langchain.vectorstores import ElasticVectorSearch
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 elastic_vector_search = ElasticVectorSearch.from_texts(
