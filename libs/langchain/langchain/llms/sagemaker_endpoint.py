@@ -83,7 +83,7 @@ class SagemakerEndpoint(LLM):
     Example:
         .. code-block:: python
 
-            from langchain import SagemakerEndpoint
+            from langchain.llms import SagemakerEndpoint
             endpoint_name = (
                 "my-endpoint-name"
             )
