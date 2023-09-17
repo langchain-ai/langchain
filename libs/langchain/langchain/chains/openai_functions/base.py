@@ -220,11 +220,13 @@ def create_openai_fn_chain(
     Example:
         .. code-block:: python
 
+                from typing import Optional
+
                 from langchain.chains.openai_functions import create_openai_fn_chain
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate
 
-                from pydantic_v1 import BaseModel, Field
+                from langchain.pydantic_v1 import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -306,11 +308,13 @@ def create_structured_output_chain(
     Example:
         .. code-block:: python
 
+                from typing import Optional
+
                 from langchain.chains.openai_functions import create_structured_output_chain
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate
 
-                from pydantic_v1 import BaseModel, Field
+                from langchain.pydantic_v1 import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"

@@ -63,8 +63,8 @@ class ContextCallbackHandler(BaseCallbackHandler):
         >>> chat(messages)
 
     Chain Example:
-        >>> from langchain import LLMChain
-        >>> from langchain.llms import ChatOpenAI
+        >>> from langchain.chains import LLMChain
+        >>> from langchain.chat_models import ChatOpenAI
         >>> from langchain.callbacks import ContextCallbackHandler
         >>> context_callback = ContextCallbackHandler(
         ...     token="<CONTEXT_TOKEN_HERE>",
