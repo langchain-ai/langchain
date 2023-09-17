@@ -40,7 +40,7 @@ class Annoy(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain import Annoy
+            from langchain.vectorstores import Annoy
             db = Annoy(embedding_function, index, docstore, index_to_docstore_id)
 
     """
@@ -350,7 +350,7 @@ class Annoy(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Annoy
+                from langchain.vectorstores import Annoy
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 index = Annoy.from_texts(texts, embeddings)
@@ -390,7 +390,7 @@ class Annoy(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Annoy
+                from langchain.vectorstores import Annoy
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)

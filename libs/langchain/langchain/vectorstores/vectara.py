@@ -388,7 +388,7 @@ class Vectara(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Vectara
+                from langchain.vectorstores import Vectara
                 vectara = Vectara.from_texts(
                     texts,
                     vectara_customer_id=customer_id,
@@ -420,7 +420,7 @@ class Vectara(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Vectara
+                from langchain.vectorstores import Vectara
                 vectara = Vectara.from_files(
                     files_list,
                     vectara_customer_id=customer_id,

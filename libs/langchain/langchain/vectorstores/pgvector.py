@@ -523,7 +523,7 @@ class PGVector(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import PGVector
+                from langchain.vectorstores import PGVector
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)

@@ -286,7 +286,7 @@ class Dingo(VectorStore):
                 Example:
                     .. code-block:: python
 
-                        from langchain import Dingo
+                        from langchain.vectorstores import Dingo
                         from langchain.embeddings import OpenAIEmbeddings
                         import dingodb
         sss
