@@ -34,10 +34,10 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     # Embedding params
     model: str = "luminous-base"
     """Model name to use."""
-    compress_to_size: Optional[int] = None
+    compress_to_size: Optional[int] = 128
     """Should the returned embeddings come back as an original 5120-dim vector, 
     or should it be compressed to 128-dim."""
-    normalize: Optional[bool] = None
+    normalize: Optional[bool] = True
     """Should returned embeddings be normalized"""
     contextual_control_threshold: Optional[int] = None
     """Attention control parameters only apply to those tokens that have 
