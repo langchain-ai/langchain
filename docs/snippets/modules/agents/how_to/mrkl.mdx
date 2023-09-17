@@ -1,5 +1,5 @@
 ```python
-from langchain import LLMMathChain, OpenAI, SerpAPIWrapper, SQLDatabase, SQLDatabaseChain
+from langchain.chains import LLMMathChain\nfrom langchain.llms import OpenAI\nfrom langchain.utilities import SerpAPIWrapper\nfrom langchain.utilities import SQLDatabase\nfrom langchain_experimental.sql import SQLDatabaseChain
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
 ```

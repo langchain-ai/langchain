@@ -683,7 +683,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         yield self.runnable
         yield from self.fallbacks
 
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+    def invoke(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Output:
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -697,6 +699,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 output = runnable.invoke(
                     input,
                     patch_config(config, callbacks=run_manager.get_child()),
+                    **kwargs,
                 )
             except self.exceptions_to_handle as e:
                 if first_error is None:
@@ -732,6 +735,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 output = await runnable.ainvoke(
                     input,
                     patch_config(config, callbacks=run_manager.get_child()),
+                    **kwargs,
                 )
             except self.exceptions_to_handle as e:
                 if first_error is None:
@@ -797,6 +801,8 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                         patch_config(config, callbacks=rm.get_child())
                         for rm, config in zip(run_managers, configs)
                     ],
+                    return_exceptions=return_exceptions,
+                    **kwargs,
                 )
             except self.exceptions_to_handle as e:
                 if first_error is None:
@@ -867,6 +873,8 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                         patch_config(config, callbacks=rm.get_child())
                         for rm, config in zip(run_managers, configs)
                     ],
+                    return_exceptions=return_exceptions,
+                    **kwargs,
                 )
             except self.exceptions_to_handle as e:
                 if first_error is None:

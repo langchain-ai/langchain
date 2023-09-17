@@ -1,4 +1,4 @@
-from langchain import HuggingFaceTextGenInference
+from langchain.llms import HuggingFaceTextGenInference
 
 
 def test_invocation_params_stop_sequences() -> None:
