@@ -175,7 +175,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_organization: Optional[str] = None
     allowed_special: Union[Literal["all"], Set[str]] = set()
     disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
-    chunk_size: int = 1000
+    chunk_size: Optional[int] = None
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
@@ -257,8 +257,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
             default_api_version = "2022-12-01"
+            # Azure OpenAI embedding models allow a maximum of 16 texts
+            # at a time in each batch
+            # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
+            default_chunk_size = 16
         else:
             default_api_version = ""
+            default_chunk_size = 1000
         values["openai_api_version"] = get_from_dict_or_env(
             values,
             "openai_api_version",
@@ -271,6 +276,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_ORGANIZATION",
             default="",
         )
+        if not values["chunk_size"]:
+            values["chunk_size"] = default_chunk_size
         try:
             import openai
 
