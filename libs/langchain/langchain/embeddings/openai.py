@@ -257,6 +257,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
             default_api_version = "2022-12-01"
+            if not values["chunk_size"]:
+                # Azure OpenAI embedding models allow a maximum of 16 texts
+                # at a time in each batch
+                # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
+                values["chunk_size"] = 16
         else:
             default_api_version = ""
         values["openai_api_version"] = get_from_dict_or_env(
