@@ -1,9 +1,11 @@
-name: Check Imports
+---
+name: Imports
 
 on:
   push:
-    branches:
-      - main  # or replace 'main' with the name of your default branch
+    branches: [master]
+  pull_request:
+    branches: [master]
 
 jobs:
   check:
