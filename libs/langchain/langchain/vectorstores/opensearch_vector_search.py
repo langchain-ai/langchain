@@ -319,7 +319,7 @@ class OpenSearchVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain import OpenSearchVectorSearch
+            from langchain.vectorstores import OpenSearchVectorSearch
             opensearch_vector_search = OpenSearchVectorSearch(
                 "http://localhost:9200",
                 "embeddings",
@@ -670,7 +670,7 @@ class OpenSearchVectorSearch(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import OpenSearchVectorSearch
+                from langchain.vectorstores import OpenSearchVectorSearch
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 opensearch_vector_search = OpenSearchVectorSearch.from_texts(

@@ -1,0 +1,23 @@
+---
+name: Imports
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Run import check
+      run: |
+        # We should not encourage imports directly from main init file
+        # Expect for __version__ and hub
+        # And of course expect for this file
+        git grep 'from langchain import' | grep -vE 'from langchain import (__version__|hub)' | grep -v '.github/workflows/check-imports.yml' && exit 1 || exit 0
