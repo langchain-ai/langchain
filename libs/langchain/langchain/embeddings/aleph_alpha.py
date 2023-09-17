@@ -127,6 +127,9 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
             )
         document_embeddings = []
 
+        if self.normalize is None or self.compress_to_size is None:
+            raise ValueError("Normalize and compress_to_size must be set. Example: AlephAlphaAsymmetricSemanticEmbedding(normalize=True, compress_to_size=128)")
+
         for text in texts:
             document_params = {
                 "prompt": Prompt.from_text(text),
@@ -165,6 +168,10 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
+        
+        if self.normalize is None or self.compress_to_size is None:
+            raise ValueError("Normalize and compress_to_size must be set. Example: AlephAlphaAsymmetricSemanticEmbedding(normalize=True, compress_to_size=128)")
+        
         symmetric_params = {
             "prompt": Prompt.from_text(text),
             "representation": SemanticRepresentation.Query,
@@ -213,6 +220,10 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
+        
+        if self.normalize is None or self.compress_to_size is None:
+            raise ValueError("Normalize and compress_to_size must be set. Example: AlephAlphaSymmetricSemanticEmbedding(normalize=True, compress_to_size=128)")
+
         query_params = {
             "prompt": Prompt.from_text(text),
             "representation": SemanticRepresentation.Symmetric,
