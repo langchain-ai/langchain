@@ -1,5 +1,5 @@
 ---
-name: Imports
+name: Documentation Lint
 
 on:
   push:
@@ -18,6 +18,5 @@ jobs:
     - name: Run import check
       run: |
         # We should not encourage imports directly from main init file
-        # Expect for __version__ and hub
-        # And of course expect for this file
-        git grep 'from langchain import' | grep -vE 'from langchain import (__version__|hub)' | grep -v '.github/workflows/check-imports.yml' && exit 1 || exit 0
+        # Expect for hub
+        git grep 'from langchain import' docs | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
