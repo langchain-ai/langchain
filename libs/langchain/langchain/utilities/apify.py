@@ -1,9 +1,11 @@
-from typing import Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
-from langchain.document_loaders import ApifyDatasetLoader
-from langchain.document_loaders.base import Document
 from langchain.pydantic_v1 import BaseModel, root_validator
+from langchain.schema.document import Document
 from langchain.utils import get_from_dict_or_env
+
+if TYPE_CHECKING:
+    from langchain.document_loaders import ApifyDatasetLoader
 
 
 class ApifyWrapper(BaseModel):
@@ -65,6 +67,8 @@ class ApifyWrapper(BaseModel):
             ApifyDatasetLoader: A loader that will fetch the records from the
                 Actor run's default dataset.
         """
+        from langchain.document_loaders import ApifyDatasetLoader
+
         actor_call = self.apify_client.actor(actor_id).call(
             run_input=run_input,
             build=build,
@@ -103,6 +107,8 @@ class ApifyWrapper(BaseModel):
             ApifyDatasetLoader: A loader that will fetch the records from the
                 Actor run's default dataset.
         """
+        from langchain.document_loaders import ApifyDatasetLoader
+
         actor_call = await self.apify_client_async.actor(actor_id).call(
             run_input=run_input,
             build=build,
@@ -142,6 +148,8 @@ class ApifyWrapper(BaseModel):
             ApifyDatasetLoader: A loader that will fetch the records from the
                 task run's default dataset.
         """
+        from langchain.document_loaders import ApifyDatasetLoader
+
         task_call = self.apify_client.task(task_id).call(
             task_input=task_input,
             build=build,
@@ -181,6 +189,8 @@ class ApifyWrapper(BaseModel):
             ApifyDatasetLoader: A loader that will fetch the records from the
                 task run's default dataset.
         """
+        from langchain.document_loaders import ApifyDatasetLoader
+
         task_call = await self.apify_client_async.task(task_id).call(
             task_input=task_input,
             build=build,

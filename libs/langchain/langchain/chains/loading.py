@@ -29,7 +29,7 @@ from langchain.prompts.loading import (
     load_prompt,
     load_prompt_from_config,
 )
-from langchain.utilities.loading import try_load_from_hub
+from langchain.utils.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
 

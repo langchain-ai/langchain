@@ -1,12 +1,14 @@
 """Example selector that selects examples based on SemanticSimilarity."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
 
-from langchain.embeddings.base import Embeddings
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.pydantic_v1 import BaseModel, Extra
-from langchain.vectorstores.base import VectorStore
+
+if TYPE_CHECKING:
+    from langchain.embeddings.base import Embeddings
+    from langchain.vectorstores.base import VectorStore
 
 
 def sorted_values(values: Dict[str, str]) -> List[Any]:
