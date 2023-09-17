@@ -17,4 +17,6 @@ jobs:
 
     - name: Run import check
       run: |
-        git grep 'from langchain import' | grep -vE 'from langchain import (__version__)' && exit 1 || exit 0
+        # We should not encourage imports directly from main init file
+        # Expect for __version__ and hub
+        git grep 'from langchain import' | grep -vE 'from langchain import (__version__|hub)' && exit 1 || exit 0
