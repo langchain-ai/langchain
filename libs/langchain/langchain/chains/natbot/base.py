@@ -19,7 +19,7 @@ class NatBotChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import NatBotChain
+            from langchain.chains import NatBotChain
             natbot = NatBotChain.from_default("Buy me a new hat.")
     """
 
