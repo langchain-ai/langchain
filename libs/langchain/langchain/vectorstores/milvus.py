@@ -822,7 +822,6 @@ class Milvus(VectorStore):
             index_params=index_params,
             search_params=search_params,
             drop_old=drop_old,
-            **kwargs,
         )
-        vector_db.add_texts(texts=texts, metadatas=metadatas)
+        vector_db.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         return vector_db
