@@ -340,21 +340,22 @@ async def atrace_as_chain_group(
     run_manager = await cm.on_chain_start(
         {"name": group_name}, inputs or {}, run_id=run_id
     )
+    child_cm = run_manager.get_child()
+    group_cm = AsyncCallbackManagerForChainGroup(
+        child_cm.handlers,
+        child_cm.inheritable_handlers,
+        child_cm.parent_run_id,
+        parent_run_manager=run_manager,
+        tags=child_cm.tags,
+        inheritable_tags=child_cm.inheritable_tags,
+        metadata=child_cm.metadata,
+        inheritable_metadata=child_cm.inheritable_metadata,
+    )
     try:
-        child_cm = run_manager.get_child()
-        group_cm = AsyncCallbackManagerForChainGroup(
-            child_cm.handlers,
-            child_cm.inheritable_handlers,
-            child_cm.parent_run_id,
-            parent_run_manager=run_manager,
-            tags=child_cm.tags,
-            inheritable_tags=child_cm.inheritable_tags,
-            metadata=child_cm.metadata,
-            inheritable_metadata=child_cm.inheritable_metadata,
-        )
         yield group_cm
     except Exception as e:
-        await run_manager.on_chain_error(e)
+        if not group_cm.ended:
+            await run_manager.on_chain_error(e)
         raise e
     else:
         if not group_cm.ended:
@@ -1417,7 +1418,6 @@ class CallbackManagerForChainGroup(CallbackManager):
             outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
         """
         self.ended = True
-        super().on_chain_end(outputs, **kwargs)
         return self.parent_run_manager.on_chain_end(outputs, **kwargs)
 
     def on_chain_error(
@@ -1431,7 +1431,6 @@ class CallbackManagerForChainGroup(CallbackManager):
             error (Exception or KeyboardInterrupt): The error.
         """
         self.ended = True
-        super().on_chain_error(error, **kwargs)
         return self.parent_run_manager.on_chain_error(error, **kwargs)
 
 
@@ -1755,7 +1754,6 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
             outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
         """
         self.ended = True
-        await super().on_chain_end(outputs, **kwargs)
         await self.parent_run_manager.on_chain_end(outputs, **kwargs)
 
     async def on_chain_error(
@@ -1769,7 +1767,6 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
             error (Exception or KeyboardInterrupt): The error.
         """
         self.ended = True
-        await super().on_chain_error(error, **kwargs)
         await self.parent_run_manager.on_chain_error(error, **kwargs)
 
 
