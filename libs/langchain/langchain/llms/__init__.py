@@ -234,5 +234,4 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "xinference": Xinference,
     "javelin-ai-gateway": JavelinAIGateway,
     "qianfan_endpoint": QianfanLLMEndpoint,
->>>>>>> origin/master
 }
