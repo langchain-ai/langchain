@@ -186,7 +186,7 @@ class LLMChain(Chain):
         )
         try:
             response = self.generate(input_list, run_manager=run_manager)
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             run_manager.on_chain_error(e)
             raise e
         outputs = self.create_outputs(response)
@@ -206,7 +206,7 @@ class LLMChain(Chain):
         )
         try:
             response = await self.agenerate(input_list, run_manager=run_manager)
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             await run_manager.on_chain_error(e)
             raise e
         outputs = self.create_outputs(response)
