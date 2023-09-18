@@ -79,7 +79,7 @@ def test_returns_expected_results(
 QUESTION: according to the passage, what is the main reason that the author wrote this passage?
 STUDENT ANSWER: to explain the importance of washing your hands
 TRUE ANSWER: to explain the importance of washing your hands
-GRADE:""",
+GRADE:""",  # noqa: E501
             {
                 "value": "CORRECT",
                 "score": 1,
@@ -100,7 +100,7 @@ GRADE:""",
 
 6. Therefore, the student's answer contains the same factual information as the true answer, so it should be graded as correct.
 
-GRADE: CORRECT""",
+GRADE: CORRECT""",  # noqa: E501
             {
                 "value": "CORRECT",
                 "score": 1,
@@ -119,14 +119,14 @@ GRADE:""",
             },
         ),
         (
-            """The student's answer is "Regent's Park," which matches the correct answer given in the context. Therefore, the student's answer is CORRECT.""",
+            """The student's answer is "Regent's Park," which matches the correct answer given in the context. Therefore, the student's answer is CORRECT.""",  # noqa: E501
             {
                 "value": "CORRECT",
                 "score": 1,
             },
-        )
+        ),
     ],
 )
-def test_qa_output_parser(output: str, expected: dict) -> str:
+def test_qa_output_parser(output: str, expected: dict) -> None:
     expected["reasoning"] = output.strip()
     assert _parse_string_eval_output(output) == expected

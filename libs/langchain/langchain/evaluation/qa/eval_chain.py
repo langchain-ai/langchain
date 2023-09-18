@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import string
 from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain import PromptTemplate
@@ -12,7 +13,6 @@ from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.pydantic_v1 import Extra
 from langchain.schema import RUN_KEY
 from langchain.schema.language_model import BaseLanguageModel
-import string
 
 
 def _get_score(text: str) -> Optional[Tuple[str, int]]:
