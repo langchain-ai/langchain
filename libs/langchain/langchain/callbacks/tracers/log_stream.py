@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import math
-from ast import List
 from typing import (
     Any,
     AsyncIterator,
     Dict,
+    List,
     Optional,
     Sequence,
     TypedDict,
@@ -179,6 +179,7 @@ class LogStreamCallbackHandler(AsyncBaseTracer):
                             ),
                             streamed_output_str=[],
                             final_output=None,
+                            end_time=None,
                         ),
                     }
                 ]

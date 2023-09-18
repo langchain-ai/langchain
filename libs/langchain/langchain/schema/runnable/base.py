@@ -234,8 +234,9 @@ class Runnable(Generic[Input, Output], ABC):
         elif isinstance(callbacks, list):
             config["callbacks"] = callbacks + [stream]
         elif isinstance(callbacks, AsyncCallbackManager):
-            config["callbacks"] = callbacks.copy()
-            config["callbacks"].inheritable_handlers.append(stream)
+            callbacks = callbacks.copy()
+            callbacks.inheritable_handlers.append(stream)
+            config["callbacks"] = callbacks
         elif isinstance(callbacks, CallbackManager):
             raise ValueError(
                 "Cannot stream logs from a synchronous callback manager. "
@@ -249,7 +250,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         # Call the runnable in streaming mode,
         # add each chunk to the output stream
-        async def consume_astream() -> AsyncIterator[None]:
+        async def consume_astream() -> None:
             try:
                 async for chunk in self.astream(input, config, **kwargs):
                     await stream.send_stream.send(
