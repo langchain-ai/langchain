@@ -5,6 +5,8 @@ All functionality related to Anthropic models.
 [Anthropic](https://www.anthropic.com/) is an AI safety and research company, and is the creator of Claude.
 This page covers all integrations between Anthropic models and LangChain.
 
+## Prompting Overview
+
 Claude is chat-based model, meaning it is trained on conversation data.
 However, it is a text based API, meaning it takes in single string.
 It expects this string to be in a particular format.
@@ -23,6 +25,26 @@ It is generally recommended to use the `ChatAnthropic` wrapper, and format your 
 This is because it keeps your prompt in a general format that you can easily then also use with other models (should you want to).
 However, if you want more fine-grained control over the prompt, you can use the `Anthropic` wrapper - we will show and example of this as well.
 The `Anthropic` wrapper however is deprecated, as all functionality can be achieved in a more generic way using `ChatAnthropic`.
+
+## Prompting Best Practices
+
+Anthropic models have several prompting best practices compared to OpenAI models.
+
+**No System Messages**
+
+Anthropic models are not trained on the concept of a "system message".
+We have worked with the Anthropic team to handle them somewhat appropriately (a Human message with an `admin` tag)
+but this is largely a hack and it is recommended that you do not use system messages.
+
+**AI Messages Can Continue**
+
+A completion from Claude is a continuation of the last text in the string which allows you further control over Claude's output.
+For example, putting words in Claude's mouth in a prompt like this:
+
+`\n\nHuman: Tell me a joke about bears\n\nAssistant: What do you call a bear with no teeth?`
+
+This will return a completion like this `A gummy bear!` instead of a whole new assistant message with a different random bear joke.
+
 
 ## `ChatAnthropic`
 
@@ -140,4 +162,4 @@ This outputs:
 '\n\nHuman: Tell me a joke about bears'
 ```
 
-We can see that we detect that they are trying to use the special tokens, and so we don't do any formatting.
+We can see that we detect that the user is trying to use the special tokens, and so we don't do any formatting.
