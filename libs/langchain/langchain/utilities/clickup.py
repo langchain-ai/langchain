@@ -22,8 +22,7 @@ class Task:
     creator_username: str
     creator_email: str
     assignees: List[Dict[str, Any]]
-    watcher_username: str
-    watcher_email: str
+    watchers: List[Dict[str, Any]]
     priority: str
     due_date: Optional[str]
     start_date: Optional[str]
@@ -43,8 +42,7 @@ class Task:
             creator_username=data['creator']['username'],
             creator_email=data['creator']['email'],
             assignees=data['assignees'],
-            watcher_username=data['watchers'][0]['username'],
-            watcher_email=data['watchers'][0]['email'],
+            watchers=data['watchers'],
             priority=data['priority']['priority'],
             due_date=data['due_date'],
             start_date=data['start_date'],
@@ -142,6 +140,7 @@ def parse_dict_through_dataclass(data: dict, dataclass: dataclass, fault_toleran
         return asdict(dataclass.from_data(data))
     except Exception as e:
         if fault_tolerant:
+            # This is not really an issue, we can make this into a .info when we add a logger
             warnings.warn(f'Error encountered while trying to parse {dataclass}: {e}\n Falling back to returning input data.')
             return data
         else: raise e
@@ -333,16 +332,14 @@ class ClickupAPIWrapper(BaseModel):
         response = requests.get(url, headers=headers, params=query)
         data = response.json()
         parsed_task = parse_dict_through_dataclass(data, Task, fault_tolerant=True)
+        
         return parsed_task
 
 
-    def get_lists(self, query: str) -> str:
+    def get_lists(self) -> str:
         """
             Get all available lists
         """
-        params, error = load_params(query, fault_tolerant=True)
-        if params is None:
-            return error
 
         url = "https://api.clickup.com/api/v2/folder/" + self.folder_id + "/list"
         query = {
@@ -374,7 +371,7 @@ class ClickupAPIWrapper(BaseModel):
         return data
 
 
-    def get_spaces(self, query: str) -> str:
+    def get_spaces(self) -> str:
         """
             Get all spaces for the team 
         """
@@ -429,6 +426,7 @@ class ClickupAPIWrapper(BaseModel):
         params, error = load_params(query, fault_tolerant=True)
         if params is None:
             return error
+        
         for user in params['users']:
             if not isinstance(user, int):
                 return 'All users must be integers, not strings! Got user {user} that does not follow this convention'
@@ -501,6 +499,8 @@ class ClickupAPIWrapper(BaseModel):
         response = requests.post(url, json=payload, headers=headers)
         data = response.json()
         parsed_list = parse_dict_through_dataclass(data, CUList, fault_tolerant=True)
+        # set list id to new list
+        if 'id' in parsed_list.keys(): self.list_id = parsed_list['id']
         return parsed_list
 
 
@@ -525,6 +525,8 @@ class ClickupAPIWrapper(BaseModel):
         }
         response = requests.post(url, json=payload, headers=headers)
         data = response.json()
+        
+        if 'id' in data.keys(): self.list_id = data['id']
         return data
     
 
@@ -542,16 +544,16 @@ class ClickupAPIWrapper(BaseModel):
             return self.create_list(query)
         elif mode == "create_folder":
             return self.create_folder(query)
-        elif mode == "get_list":
-            return self.get_list(query)
+        elif mode == "get_lists":
+            return self.get_lists()
         elif mode == "get_folders":
             return self.get_folders(query)
         elif mode == "get_spaces":
-            return self.get_spaces(query)
+            return self.get_spaces()
         elif mode == "update_task":
             return self.update_task(query)
         elif mode == "update_task_assignees":
             return self.update_task_assignees(query)
         else:
-            raise ValueError(f"Got unexpected mode {mode}")
+            return f"Got unexpected mode {mode}."
 
