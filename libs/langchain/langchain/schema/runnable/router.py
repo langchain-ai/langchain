@@ -129,6 +129,9 @@ class RouterRunnable(
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
+        if not inputs:
+            return []
+
         keys = [input["key"] for input in inputs]
         actual_inputs = [input["input"] for input in inputs]
         if any(key not in self.runnables for key in keys):
@@ -161,6 +164,9 @@ class RouterRunnable(
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
+        if not inputs:
+            return []
+
         keys = [input["key"] for input in inputs]
         actual_inputs = [input["input"] for input in inputs]
         if any(key not in self.runnables for key in keys):

@@ -84,7 +84,7 @@ class Milvus(VectorStore):
     Example:
         .. code-block:: python
 
-        from langchain import Milvus
+        from langchain.vectorstores import Milvus
         from langchain.embeddings import OpenAIEmbeddings
 
         embedding = OpenAIEmbeddings()
