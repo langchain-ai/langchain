@@ -2,6 +2,7 @@
 CLICKUP_TASK_CREATE_PROMPT = """
     This tool is a wrapper around clickup's create_task API, useful when you need to create a CLICKUP task. 
     The input to this tool is a dictionary specifying the fields of the CLICKUP task, and will be passed into clickup's CLICKUP `create_task` function.
+    Only add fields described by the user.
     Use the following mapping in order to map the user's priority to the clickup priority: {{
             Urgent = 1,
             High = 2,
@@ -23,6 +24,7 @@ CLICKUP_TASK_CREATE_PROMPT = """
 CLICKUP_LIST_CREATE_PROMPT = """
     This tool is a wrapper around clickup's create_list API, useful when you need to create a CLICKUP list.
     The input to this tool is a dictionary specifying the fields of a clickup list, and will be passed to clickup's create_list function.
+    Only add fields described by the user.
     Use the following mapping in order to map the user's priority to the clickup priority: {{
         Urgent = 1,
         High = 2,
