@@ -319,7 +319,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
         try:
             output = call_func_with_variable_args(func, input, run_manager, config)
-        except Exception as e:
+        except BaseException as e:
             run_manager.on_chain_error(e)
             raise
         else:
@@ -354,7 +354,7 @@ class Runnable(Generic[Input, Output], ABC):
             output = await acall_func_with_variable_args(
                 func, input, run_manager, config
             )
-        except Exception as e:
+        except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
         else:
@@ -408,7 +408,7 @@ class Runnable(Generic[Input, Output], ABC):
             if accepts_run_manager(func):
                 kwargs["run_manager"] = run_managers
             output = func(input, **kwargs)  # type: ignore[call-arg]
-        except Exception as e:
+        except BaseException as e:
             for run_manager in run_managers:
                 run_manager.on_chain_error(e)
             if return_exceptions:
@@ -481,7 +481,7 @@ class Runnable(Generic[Input, Output], ABC):
             if accepts_run_manager(func):
                 kwargs["run_manager"] = run_managers
             output = await func(input, **kwargs)  # type: ignore[call-arg]
-        except Exception as e:
+        except BaseException as e:
             await asyncio.gather(
                 *(run_manager.on_chain_error(e) for run_manager in run_managers)
             )
@@ -573,7 +573,7 @@ class Runnable(Generic[Input, Output], ABC):
                         except TypeError:
                             final_input = None
                             final_input_supported = False
-        except Exception as e:
+        except BaseException as e:
             run_manager.on_chain_error(e, inputs=final_input)
             raise
         else:
@@ -651,7 +651,7 @@ class Runnable(Generic[Input, Output], ABC):
                         except TypeError:
                             final_input = None
                             final_input_supported = False
-        except Exception as e:
+        except BaseException as e:
             await run_manager.on_chain_error(e, inputs=final_input)
             raise
         else:
@@ -981,7 +981,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     ),
                 )
         # finish the root run
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             run_manager.on_chain_error(e)
             raise
         else:
@@ -1013,7 +1013,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     ),
                 )
         # finish the root run
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
         else:
@@ -1119,7 +1119,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     )
 
         # finish the root runs
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             for rm in run_managers:
                 rm.on_chain_error(e)
             if return_exceptions:
@@ -1242,7 +1242,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                         ],
                     )
         # finish the root runs
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             await asyncio.gather(*(rm.on_chain_error(e) for rm in run_managers))
             if return_exceptions:
                 return cast(List[Output], [e for _ in inputs])
@@ -1450,7 +1450,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                 ]
                 output = {key: future.result() for key, future in zip(steps, futures)}
         # finish the root run
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             run_manager.on_chain_error(e)
             raise
         else:
@@ -1489,7 +1489,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             )
             output = {key: value for key, value in zip(steps, results)}
         # finish the root run
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
         else:
