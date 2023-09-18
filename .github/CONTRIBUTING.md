@@ -9,7 +9,7 @@ to contributions, whether they be in the form of new features, improved infra, b
 ### 👩‍💻 Contributing Code
 
 To contribute to this project, please follow a ["fork and pull request"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow.
-Please do not try to push directly to this repo unless you are maintainer.
+Please do not try to push directly to this repo unless you are a maintainer.
 
 Please follow the checked-in pull request template when opening pull requests. Note related issues and tag relevant
 maintainers.
@@ -21,7 +21,7 @@ It's essential that we maintain great documentation and testing. If you:
 - Fix a bug
   - Add a relevant unit or integration test when possible. These live in `tests/unit_tests` and `tests/integration_tests`.
 - Make an improvement
-  - Update any affected example notebooks and documentation. These lives in `docs`.
+  - Update any affected example notebooks and documentation. These live in `docs`.
   - Update unit and integration tests when relevant.
 - Add a feature
   - Add a demo notebook in `docs/modules`.
@@ -43,7 +43,7 @@ If you start working on an issue, please assign it to yourself.
 If you are adding an issue, please try to keep it focused on a single, modular bug/improvement/feature.
 If two issues are related, or blocking, please link them rather than combining them.
 
-We will try to keep these issues as up to date as possible, though
+We will try to keep these issues as up-to-date as possible, though
 with the rapid rate of development in this field some may get out of date.
 If you notice this happening, please let us know.
 
@@ -63,7 +63,7 @@ we do not want these to get in the way of getting good code into the codebase.
 
 This project uses [Poetry](https://python-poetry.org/) v1.5.1 as a dependency manager. Check out Poetry's [documentation on how to install it](https://python-poetry.org/docs/#installation) on your system before proceeding.
 
-❗Note: If you use `Conda` or `Pyenv` as your environment / package manager, avoid dependency conflicts by doing the following first:
+❗Note: If you use `Conda` or `Pyenv` as your environment/package manager, avoid dependency conflicts by doing the following first:
 1. *Before installing Poetry*, create and activate a new Conda env (e.g. `conda create -n langchain python=3.9`)
 2. Install Poetry v1.5.1 (see above)
 3. Tell Poetry to use the virtualenv python environment (`poetry config virtualenvs.prefer-active-python true`)
@@ -174,7 +174,7 @@ Langchain relies heavily on optional dependencies to keep the Langchain package 
 If you're adding a new dependency to Langchain, assume that it will be an optional dependency, and
 that most users won't have it installed.
 
-Users that do not have the dependency installed should be able to **import** your code without
+Users who do not have the dependency installed should be able to **import** your code without
 any side effects (no warnings, no errors, no exceptions).
 
 To introduce the dependency to the pyproject.toml file correctly, please do the following:
@@ -188,7 +188,7 @@ To introduce the dependency to the pyproject.toml file correctly, please do the 
   ```bash
   poetry lock --no-update
   ```
-4. Add a unit test that the very least attempts to import the new code. Ideally the unit
+4. Add a unit test that the very least attempts to import the new code. Ideally, the unit
 test makes use of lightweight fixtures to test the logic of the code.
 5. Please use the `@pytest.mark.requires(package_name)` decorator for any tests that require the dependency.
 
@@ -238,7 +238,7 @@ If you add support for a new external API, please add a new integration test.
 
 ### Adding a Jupyter Notebook
 
-If you are adding a Jupyter notebook example, you'll want to install the optional `dev` dependencies.
+If you are adding a Jupyter Notebook example, you'll want to install the optional `dev` dependencies.
 
 To install dev dependencies:
 

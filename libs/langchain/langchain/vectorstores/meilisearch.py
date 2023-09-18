@@ -281,7 +281,7 @@ class Meilisearch(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Meilisearch
+                from langchain.vectorstores import Meilisearch
                 from langchain.embeddings import OpenAIEmbeddings
                 import meilisearch
 

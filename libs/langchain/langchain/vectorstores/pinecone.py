@@ -396,7 +396,7 @@ class Pinecone(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Pinecone
+                from langchain.vectorstores import Pinecone
                 from langchain.embeddings import OpenAIEmbeddings
                 import pinecone
 

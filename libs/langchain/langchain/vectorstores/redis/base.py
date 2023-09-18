@@ -1220,7 +1220,7 @@ class Redis(VectorStore):
             )
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
@@ -1425,6 +1425,7 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
         "similarity",
         "similarity_distance_threshold",
         "similarity_score_threshold",
+        "mmr",
     ]
     """Allowed search types."""
 
@@ -1438,7 +1439,6 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
-
         elif self.search_type == "similarity_distance_threshold":
             if self.search_kwargs["distance_threshold"] is None:
                 raise ValueError(
@@ -1454,6 +1454,10 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
+        elif self.search_type == "mmr":
+            docs = self.vectorstore.max_marginal_relevance_search(
+                query, **self.search_kwargs
+            )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
