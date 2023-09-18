@@ -64,9 +64,7 @@ class _AnthropicCommon(BaseLanguageModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["anthropic_api_key"] = SecretStr(
-                get_from_dict_or_env(
-                values, "anthropic_api_key", "ANTHROPIC_API_KEY"
-            )
+            get_from_dict_or_env(values, "anthropic_api_key", "ANTHROPIC_API_KEY")
         )
         # Get custom api url from environment.
         values["anthropic_api_url"] = get_from_dict_or_env(
