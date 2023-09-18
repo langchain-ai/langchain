@@ -382,7 +382,7 @@ class ScaNN(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import ScaNN
+                from langchain.vectorstores import ScaNN
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 scann = ScaNN.from_texts(texts, embeddings)
@@ -418,7 +418,7 @@ class ScaNN(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import ScaNN
+                from langchain.vectorstores import ScaNN
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)

@@ -7,7 +7,6 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
-from langchain import PromptTemplate
 from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
@@ -16,6 +15,7 @@ from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
+from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     ChatPromptValue,
@@ -1309,6 +1309,37 @@ async def test_deep_astream() -> None:
 
     chunks = []
     async for chunk in (chain | RunnablePassthrough()).astream({"question": "What up"}):
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
+def test_runnable_sequence_transform() -> None:
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = llm | StrOutputParser()
+
+    stream = chain.transform(llm.stream("Hi there!"))
+
+    chunks = []
+    for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
+@pytest.mark.asyncio
+async def test_runnable_sequence_atransform() -> None:
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = llm | StrOutputParser()
+
+    stream = chain.atransform(llm.astream("Hi there!"))
+
+    chunks = []
+    async for chunk in stream:
         chunks.append(chunk)
 
     assert len(chunks) == len("foo-lish")
