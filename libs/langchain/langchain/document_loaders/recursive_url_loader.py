@@ -1,12 +1,37 @@
 import asyncio
+import logging
 import re
-from typing import Callable, Iterator, List, Optional, Set, Union
+from typing import Callable, Iterator, List, Optional, Sequence, Set, Union
 from urllib.parse import urljoin, urlparse
 
 import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+
+logger = logging.getLogger(__name__)
+
+
+def _gen_metadata(raw_html: str, url: str) -> dict:
+    """Build metadata from BeautifulSoup output."""
+    metadata = {"source": url}
+
+    try:
+        from bs4 import BeautifulSoup
+    except ImportError:
+        logger.warning(
+            "The bs4 package is required for default metadata extraction. "
+            "Please install it with `pip install bs4`."
+        )
+        return metadata
+    soup = BeautifulSoup(raw_html, "html.parser")
+    if title := soup.find("title"):
+        metadata["title"] = title.get_text()
+    if description := soup.find("meta", attrs={"name": "description"}):
+        metadata["description"] = description.get("content", None)
+    if html := soup.find("html"):
+        metadata["language"] = html.get("lang", None)
+    return metadata
 
 
 class RecursiveUrlLoader(BaseLoader):
@@ -18,7 +43,8 @@ class RecursiveUrlLoader(BaseLoader):
         max_depth: Optional[int] = None,
         use_async: Optional[bool] = None,
         extractor: Optional[Callable[[str], str]] = None,
-        exclude_dirs: Optional[str] = None,
+        metadata_extractor: Optional[Callable[[str, str], str]] = None,
+        exclude_dirs: Optional[Sequence[str]] = None,
         timeout: Optional[int] = None,
         prevent_outside: Optional[bool] = None,
     ) -> None:
@@ -26,26 +52,27 @@ class RecursiveUrlLoader(BaseLoader):
         Args:
             url: The URL to crawl.
             exclude_dirs: A list of subdirectories to exclude.
-            use_async: Whether to use asynchronous loading,
-            if use_async is true, this function will not be lazy,
-            but it will still work in the expected way, just not lazy.
-            extractor: A function to extract the text from the html,
-            when extract function returns empty string, the document will be ignored.
+            use_async: Whether to use asynchronous loading.
+                If True, this function will not be lazy, but it will still work in the
+                expected way, just not lazy.
+            extractor: A function to extract the text from the html.
+                When extract function returns empty string, the document will be
+                ignored.
             max_depth: The max depth of the recursive loading.
             timeout: The timeout for the requests, in the unit of seconds.
         """
 
         self.url = url
-        self.exclude_dirs = exclude_dirs
+        self.exclude_dirs = exclude_dirs or ()
         self.use_async = use_async if use_async is not None else False
         self.extractor = extractor if extractor is not None else lambda x: x
+        self.metadata_extractor = metadata_extractor or _gen_metadata
         self.max_depth = max_depth if max_depth is not None else 2
         self.timeout = timeout if timeout is not None else 10
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
 
     def _get_sub_links(self, raw_html: str, base_url: str) -> List[str]:
-        """This function extracts all the links from the raw html,
-        and convert them into absolute paths.
+        """Extract all links from a raw html string and convert into absolute paths.
 
         Args:
             raw_html (str): original html
@@ -75,54 +102,18 @@ class RecursiveUrlLoader(BaseLoader):
             if link.startswith(invalid_prefixes) or link.endswith(invalid_suffixes):
                 continue
             # Some may be absolute links like https://to/path
-            if link.startswith("http"):
+            elif link.startswith("http"):
                 if (not self.prevent_outside) or (
                     self.prevent_outside and link.startswith(base_url)
                 ):
                     absolute_paths.append(link)
+            # Some may have omitted the protocol like //to/path
+            elif link.startswith("//"):
+                absolute_paths.append(f"{urlparse(base_url).scheme}:{link}")
             else:
                 absolute_paths.append(urljoin(base_url, link))
-
-            # Some may be relative links like /to/path
-            if link.startswith("/") and not link.startswith("//"):
-                absolute_paths.append(urljoin(base_url, link))
-                continue
-            # Some may have omitted the protocol like //to/path
-            if link.startswith("//"):
-                absolute_paths.append(f"{urlparse(base_url).scheme}:{link}")
-                continue
         # Remove duplicates
-        # also do another filter to prevent outside links
-        absolute_paths = list(
-            set(
-                [
-                    path
-                    for path in absolute_paths
-                    if not self.prevent_outside
-                    or path.startswith(base_url)
-                    and path != base_url
-                ]
-            )
-        )
-
-        return absolute_paths
-
-    def _gen_metadata(self, raw_html: str, url: str) -> dict:
-        """Build metadata from BeautifulSoup output."""
-        try:
-            from bs4 import BeautifulSoup
-        except ImportError:
-            print("The bs4 package is required for the RecursiveUrlLoader.")
-            print("Please install it with `pip install bs4`.")
-        metadata = {"source": url}
-        soup = BeautifulSoup(raw_html, "html.parser")
-        if title := soup.find("title"):
-            metadata["title"] = title.get_text()
-        if description := soup.find("meta", attrs={"name": "description"}):
-            metadata["description"] = description.get("content", None)
-        if html := soup.find("html"):
-            metadata["language"] = html.get("lang", None)
-        return metadata
+        return list(set(p for p in absolute_paths if p.startswith(base_url)))
 
     def _get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None, depth: int = 0
@@ -134,32 +125,28 @@ class RecursiveUrlLoader(BaseLoader):
             visited: A set of visited URLs.
         """
 
-        if depth > self.max_depth:
-            return []
-
-        # Add a trailing slash if not present
-        if not url.endswith("/"):
-            url += "/"
+        if depth >= self.max_depth:
+            return
+        # Exclude the links that start with any of the excluded directories
+        if any(url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs):
+            return
 
         # Exclude the root and parent from a list
         visited = set() if visited is None else visited
-
-        # Exclude the links that start with any of the excluded directories
-        if self.exclude_dirs and any(
-            url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs
-        ):
-            return []
 
         # Get all links that can be accessed from the current URL
         try:
             response = requests.get(url, timeout=self.timeout)
         except Exception:
-            return []
-
-        absolute_paths = self._get_sub_links(response.text, url)
+            logger.warning(f"Unable to load from {url}")
+            return
+        yield Document(
+            page_content=self.extractor(response.text),
+            metadata=self.metadata_extractor(response.text, url),
+        )
 
         # Store the visited links and recursively visit the children
-        for link in absolute_paths:
+        for link in self._get_sub_links(response.text, self.url):
             # Check all unvisited links
             if link not in visited:
                 visited.add(link)
@@ -169,16 +156,17 @@ class RecursiveUrlLoader(BaseLoader):
                     text = response.text
                 except Exception:
                     # unreachable link, so just ignore it
+                    logger.warning(f"Unable to load from {link}")
                     continue
-                loaded_link = Document(
+                yield Document(
                     page_content=self.extractor(text),
-                    metadata=self._gen_metadata(text, link),
+                    metadata=self.metadata_extractor(text, link),
                 )
-                yield loaded_link
                 # If the link is a directory (w/ children) then visit it
-                if link.endswith("/"):
-                    yield from self._get_child_links_recursive(link, visited, depth + 1)
-        return []
+                # if link.endswith("/"):
+                yield from self._get_child_links_recursive(
+                    link, visited=visited, depth=depth + 1
+                )
 
     async def _async_get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None, depth: int = 0
@@ -193,8 +181,10 @@ class RecursiveUrlLoader(BaseLoader):
         try:
             import aiohttp
         except ImportError:
-            print("The aiohttp package is required for the RecursiveUrlLoader.")
-            print("Please install it with `pip install aiohttp`.")
+            raise ImportError(
+                "The aiohttp package is required for the RecursiveUrlLoader. "
+                "Please install it with `pip install aiohttp`."
+            )
         if depth > self.max_depth:
             return []
 
@@ -228,7 +218,7 @@ class RecursiveUrlLoader(BaseLoader):
             except Exception:
                 return []
 
-            absolute_paths = self._get_sub_links(text, url)
+            absolute_paths = self._get_sub_links(text, self.url)
 
             # Worker will be only called within the current function
             # Worker function will process the link
@@ -245,7 +235,7 @@ class RecursiveUrlLoader(BaseLoader):
                         if len(extracted) > 0:
                             return Document(
                                 page_content=extracted,
-                                metadata=self._gen_metadata(text, link),
+                                metadata=self.metadata_extractor(text, link),
                             )
                         else:
                             return None
@@ -256,7 +246,6 @@ class RecursiveUrlLoader(BaseLoader):
                 # There may be some other exceptions, so catch them,
                 # we don't want to stop the whole process
                 except Exception:
-                    # print(e)
                     return None
 
             # The coroutines that will be executed
