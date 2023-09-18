@@ -97,23 +97,27 @@ class RecursiveUrlLoader(BaseLoader):
         )
         # Process the links
         for link in all_links:
+            link = link.split("#")[0]
             # Ignore blacklisted patterns
             # like javascript: or mailto:, files of svg, ico, css, js
             if link.startswith(invalid_prefixes) or link.endswith(invalid_suffixes):
                 continue
             # Some may be absolute links like https://to/path
             elif link.startswith("http"):
-                if (not self.prevent_outside) or (
-                    self.prevent_outside and link.startswith(base_url)
-                ):
-                    absolute_paths.append(link)
+                absolute_paths.append(link)
             # Some may have omitted the protocol like //to/path
             elif link.startswith("//"):
                 absolute_paths.append(f"{urlparse(base_url).scheme}:{link}")
             else:
                 absolute_paths.append(urljoin(base_url, link))
         # Remove duplicates
-        return list(set(p for p in absolute_paths if p.startswith(base_url)))
+        return list(
+            set(
+                p
+                for p in absolute_paths
+                if p.startswith(base_url) or not self.prevent_outside
+            )
+        )
 
     def _get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None, depth: int = 0
@@ -140,7 +144,7 @@ class RecursiveUrlLoader(BaseLoader):
         except Exception:
             logger.warning(f"Unable to load from {url}")
             return
-        visited.add(url)
+        visited.add(url.rstrip("/"))
         yield Document(
             page_content=self.extractor(response.text),
             metadata=self.metadata_extractor(response.text, url),
@@ -149,22 +153,7 @@ class RecursiveUrlLoader(BaseLoader):
         # Store the visited links and recursively visit the children
         for link in self._get_sub_links(response.text, self.url):
             # Check all unvisited links
-            if link not in visited:
-                visited.add(link)
-
-                try:
-                    response = requests.get(link)
-                    text = response.text
-                except Exception:
-                    # unreachable link, so just ignore it
-                    logger.warning(f"Unable to load from {link}")
-                    continue
-                yield Document(
-                    page_content=self.extractor(text),
-                    metadata=self.metadata_extractor(text, link),
-                )
-                # If the link is a directory (w/ children) then visit it
-                # if link.endswith("/"):
+            if link.rstrip("/") not in visited:
                 yield from self._get_child_links_recursive(
                     link, visited=visited, depth=depth + 1
                 )
