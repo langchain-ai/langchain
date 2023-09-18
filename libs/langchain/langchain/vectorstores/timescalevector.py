@@ -22,17 +22,10 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.utils import DistanceStrategy
 
 if TYPE_CHECKING:
     from timescale_vector import Predicates
-
-
-class DistanceStrategy(str, enum.Enum):
-    """Enumerator of the Distance strategies."""
-
-    EUCLIDEAN = "l2"
-    COSINE = "cosine"
-    MAX_INNER_PRODUCT = "inner"
 
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
@@ -50,7 +43,7 @@ class TimescaleVector(VectorStore):
 
     Args:
         service_url: Service url on timescale cloud.
-        embedding_function: Any embedding function implementing
+        embedding: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
         collection_name: The name of the collection to use. (default: langchain_store)
             This will become the table name used for the collection.
@@ -80,7 +73,7 @@ class TimescaleVector(VectorStore):
     def __init__(
         self,
         service_url: str,
-        embedding_function: Embeddings,
+        embedding: Embeddings,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         num_dimensions: int = ADA_TOKEN_COUNT,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
@@ -92,13 +85,13 @@ class TimescaleVector(VectorStore):
         try:
             from timescale_vector import client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import timescale_vector python package. "
                 "Please install it with `pip install timescale-vector`."
             )
 
         self.service_url = service_url
-        self.embedding_function = embedding_function
+        self.embedding = embedding
         self.collection_name = collection_name
         self.num_dimensions = num_dimensions
         self._distance_strategy = distance_strategy
@@ -110,14 +103,14 @@ class TimescaleVector(VectorStore):
             self.service_url,
             self.collection_name,
             self.num_dimensions,
-            self._distance_strategy.value,
+            self._distance_strategy.value.lower(),
             time_partition_interval=self._time_partition_interval,
         )
         self.async_client = client.Async(
             self.service_url,
             self.collection_name,
             self.num_dimensions,
-            self._distance_strategy.value,
+            self._distance_strategy.value.lower(),
             time_partition_interval=self._time_partition_interval,
         )
         self.__post_init__()
@@ -134,7 +127,7 @@ class TimescaleVector(VectorStore):
 
     @property
     def embeddings(self) -> Embeddings:
-        return self.embedding_function
+        return self.embedding
 
     def drop_tables(self) -> None:
         self.sync_client.drop_table()
@@ -168,7 +161,7 @@ class TimescaleVector(VectorStore):
             service_url=service_url,
             num_dimensions=num_dimensions,
             collection_name=collection_name,
-            embedding_function=embedding,
+            embedding=embedding,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
             **kwargs,
@@ -209,7 +202,7 @@ class TimescaleVector(VectorStore):
             service_url=service_url,
             num_dimensions=num_dimensions,
             collection_name=collection_name,
-            embedding_function=embedding,
+            embedding=embedding,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
             **kwargs,
@@ -292,7 +285,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        embeddings = self.embedding_function.embed_documents(list(texts))
+        embeddings = self.embedding.embed_documents(list(texts))
         return self.add_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
@@ -314,7 +307,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        embeddings = self.embedding_function.embed_documents(list(texts))
+        embeddings = self.embedding.embed_documents(list(texts))
         return await self.aadd_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
@@ -337,7 +330,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding_function.embed_query(text=query)
+        embedding = self.embedding.embed_query(text=query)
         return self.similarity_search_by_vector(
             embedding=embedding,
             k=k,
@@ -364,7 +357,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding_function.embed_query(text=query)
+        embedding = self.embedding.embed_query(text=query)
         return await self.asimilarity_search_by_vector(
             embedding=embedding,
             k=k,
@@ -391,7 +384,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        embedding = self.embedding_function.embed_query(query)
+        embedding = self.embedding.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding=embedding,
             k=k,
@@ -419,7 +412,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        embedding = self.embedding_function.embed_query(query)
+        embedding = self.embedding.embed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
             embedding=embedding,
             k=k,
@@ -460,7 +453,7 @@ class TimescaleVector(VectorStore):
         try:
             from timescale_vector import client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import timescale_vector python package. "
                 "Please install it with `pip install timescale-vector`."
             )
@@ -477,7 +470,7 @@ class TimescaleVector(VectorStore):
         try:
             from timescale_vector import client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import timescale_vector python package. "
                 "Please install it with `pip install timescale-vector`."
             )
@@ -513,7 +506,7 @@ class TimescaleVector(VectorStore):
         try:
             from timescale_vector import client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import timescale_vector python package. "
                 "Please install it with `pip install timescale-vector`."
             )
@@ -758,7 +751,7 @@ class TimescaleVector(VectorStore):
         store = cls(
             service_url=service_url,
             collection_name=collection_name,
-            embedding_function=embedding,
+            embedding=embedding,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
         )
@@ -869,7 +862,7 @@ class TimescaleVector(VectorStore):
         try:
             from timescale_vector import client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import timescale_vector python package. "
                 "Please install it with `pip install timescale-vector`."
             )
