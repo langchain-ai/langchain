@@ -1969,7 +1969,7 @@ def test_runnable_branch_invoke_callbacks() -> None:
 
     assert branch.invoke(1, config={"callbacks": [tracer]}) == 0
     assert len(tracer.runs) == 1
-    assert tracer.runs[0].error == None
+    assert tracer.runs[0].error is None
     assert tracer.runs[0].outputs == {"output": 0}
 
     # Check that the chain on end is invoked
@@ -1978,7 +1978,7 @@ def test_runnable_branch_invoke_callbacks() -> None:
 
     assert len(tracer.runs) == 2
     assert tracer.runs[1].error == "ValueError('x is too large')"
-    assert tracer.runs[1].outputs == None
+    assert tracer.runs[1].outputs is None
 
 
 @pytest.mark.asyncio
@@ -1997,7 +1997,7 @@ async def test_runnable_branch_ainvoke_callbacks() -> None:
 
     assert await branch.ainvoke(1, config={"callbacks": [tracer]}) == 0
     assert len(tracer.runs) == 1
-    assert tracer.runs[0].error == None
+    assert tracer.runs[0].error is None
     assert tracer.runs[0].outputs == {"output": 0}
 
     # Check that the chain on end is invoked
@@ -2006,7 +2006,7 @@ async def test_runnable_branch_ainvoke_callbacks() -> None:
 
     assert len(tracer.runs) == 2
     assert tracer.runs[1].error == "ValueError('x is too large')"
-    assert tracer.runs[1].outputs == None
+    assert tracer.runs[1].outputs is None
 
 
 @pytest.mark.asyncio
