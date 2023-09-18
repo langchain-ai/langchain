@@ -159,8 +159,7 @@ class LogStreamCallbackHandler(AsyncBaseTracer):
 
         # Determine previous index, increment by 1
         async with self.lock:
-            previous_index = next(reversed(self._index_map.values()), -1)
-            self._index_map[run.id] = previous_index + 1
+            self._index_map[run.id] = max(self._index_map.values(), default=-1) + 1
 
         # Add the run to the stream
         await self.send_stream.send(
