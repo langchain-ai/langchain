@@ -271,8 +271,10 @@ class Runnable(Generic[Input, Output], ABC):
                 yield log
         finally:
             # Wait for the runnable to finish, if not cancelled (eg. by break)
-            if not task.cancelling():
+            try:
                 await task
+            except asyncio.CancelledError:
+                pass
 
     def transform(
         self,
