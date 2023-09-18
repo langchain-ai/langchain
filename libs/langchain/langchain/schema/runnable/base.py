@@ -1274,7 +1274,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         # transform the input stream of each step with the next
         # steps that don't natively support transforming an input stream will
         # buffer input in memory until all available, and then start emitting output
-        final_pipeline = input
+        final_pipeline = cast(Iterator[Output], input)
         for step in steps:
             final_pipeline = step.transform(
                 final_pipeline,
@@ -1299,7 +1299,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         # transform the input stream of each step with the next
         # steps that don't natively support transforming an input stream will
         # buffer input in memory until all available, and then start emitting output
-        final_pipeline = input
+        final_pipeline = cast(AsyncIterator[Output], input)
         for step in steps:
             final_pipeline = step.atransform(
                 final_pipeline,
