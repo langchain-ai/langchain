@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import asyncio
 import math
+import threading
 from typing import (
     Any,
     AsyncIterator,
@@ -17,7 +17,7 @@ from uuid import UUID
 import jsonpatch
 from anyio import create_memory_object_stream
 
-from langchain.callbacks.tracers.base_async import AsyncBaseTracer
+from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
@@ -74,7 +74,7 @@ class Log:
             return f"Log(state={pformat(self.state)})"
 
 
-class LogStreamCallbackHandler(AsyncBaseTracer):
+class LogStreamCallbackHandler(BaseTracer):
     def __init__(
         self,
         *,
@@ -97,7 +97,7 @@ class LogStreamCallbackHandler(AsyncBaseTracer):
         self.exclude_tags = exclude_tags
 
         send_stream, receive_stream = create_memory_object_stream[Log](math.inf)
-        self.lock = asyncio.Lock()
+        self.lock = threading.Lock()
         self.send_stream = send_stream
         self.receive_stream = receive_stream
         self._index_map: Dict[UUID, int] = {}
@@ -137,10 +137,13 @@ class LogStreamCallbackHandler(AsyncBaseTracer):
 
         return include
 
-    async def _on_run_create(self, run: Run) -> None:
+    def _persist_run(self, run: Run) -> None:
+        pass
+
+    def _on_run_create(self, run: Run) -> None:
         """Start a run."""
         if run.parent_run_id is None:
-            await self.send_stream.send(
+            self.send_stream.send_nowait(
                 Log(
                     [
                         {
@@ -158,11 +161,11 @@ class LogStreamCallbackHandler(AsyncBaseTracer):
             return
 
         # Determine previous index, increment by 1
-        async with self.lock:
+        with self.lock:
             self._index_map[run.id] = max(self._index_map.values(), default=-1) + 1
 
         # Add the run to the stream
-        await self.send_stream.send(
+        self.send_stream.send_nowait(
             Log(
                 [
                     {
@@ -186,7 +189,7 @@ class LogStreamCallbackHandler(AsyncBaseTracer):
             )
         )
 
-    async def _on_run_update(self, run: Run) -> None:
+    def _on_run_update(self, run: Run) -> None:
         """Finish a run."""
         try:
             index = self._index_map.get(run.id)
@@ -194,7 +197,7 @@ class LogStreamCallbackHandler(AsyncBaseTracer):
             if index is None:
                 return
 
-            await self.send_stream.send(
+            self.send_stream.send_nowait(
                 Log(
                     [
                         {
@@ -212,7 +215,7 @@ class LogStreamCallbackHandler(AsyncBaseTracer):
             )
         finally:
             if run.parent_run_id is None:
-                await self.send_stream.send(
+                self.send_stream.send_nowait(
                     Log(
                         [
                             {
@@ -224,9 +227,9 @@ class LogStreamCallbackHandler(AsyncBaseTracer):
                     )
                 )
                 if self.auto_close:
-                    await self.send_stream.aclose()
+                    self.send_stream.close()
 
-    async def _on_llm_new_token(
+    def _on_llm_new_token(
         self,
         run: Run,
         token: str,
@@ -238,7 +241,7 @@ class LogStreamCallbackHandler(AsyncBaseTracer):
         if index is None:
             return
 
-        await self.send_stream.send(
+        self.send_stream.send_nowait(
             Log(
                 [
                     {

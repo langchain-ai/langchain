@@ -58,6 +58,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             else:
                 logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
         self.run_map[str(run.id)] = run
+        self._on_run_create(run)
 
     def _end_trace(self, run: Run) -> None:
         """End a trace for a run."""
@@ -74,6 +75,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             ):
                 parent_run.child_execution_order = run.child_execution_order
         self.run_map.pop(str(run.id))
+        self._on_run_update(run)
 
     def _get_execution_order(self, parent_run_id: Optional[str] = None) -> int:
         """Get the execution order for a run."""
@@ -475,6 +477,12 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def __copy__(self) -> BaseTracer:
         """Copy the tracer."""
         return self
+
+    def _on_run_create(self, run: Run) -> None:
+        """Process a run upon creation."""
+
+    def _on_run_update(self, run: Run) -> None:
+        """Process a run upon update."""
 
     def _on_llm_start(self, run: Run) -> None:
         """Process the LLM Run upon start."""

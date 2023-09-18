@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     )
 
 
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.tracers.log_stream import Log, LogStreamCallbackHandler
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
@@ -213,7 +214,6 @@ class Runnable(Generic[Input, Output], ABC):
 
         The jsonpatch ops can be applied in order to construct state.
         """
-        from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 
         # Create a stream handler that will emit Log objects
         stream = LogStreamCallbackHandler(
@@ -233,15 +233,10 @@ class Runnable(Generic[Input, Output], ABC):
             config["callbacks"] = [stream]
         elif isinstance(callbacks, list):
             config["callbacks"] = callbacks + [stream]
-        elif isinstance(callbacks, AsyncCallbackManager):
+        elif isinstance(callbacks, BaseCallbackManager):
             callbacks = callbacks.copy()
             callbacks.inheritable_handlers.append(stream)
             config["callbacks"] = callbacks
-        elif isinstance(callbacks, CallbackManager):
-            raise ValueError(
-                "Cannot stream logs from a synchronous callback manager. "
-                "Please use an async callback manager."
-            )
         else:
             raise ValueError(
                 f"Unexpected type for callbacks: {callbacks}."
