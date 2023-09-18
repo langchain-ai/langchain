@@ -122,7 +122,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
         """Run when the chat model is started."""
         llm_model = kwargs.get("invocation_params", {}).get("model", None)
         if llm_model is not None:
-            self.metadata["llm_model"] = llm_model
+            self.metadata["model"] = llm_model
 
         if len(messages) == 0:
             return
