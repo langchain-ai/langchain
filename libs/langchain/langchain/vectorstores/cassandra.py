@@ -1,9 +1,19 @@
-"""Wrapper around Cassandra vector-store capabilities, based on cassIO."""
 from __future__ import annotations
 
 import typing
 import uuid
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 
@@ -19,10 +29,12 @@ CVST = TypeVar("CVST", bound="Cassandra")
 
 
 class Cassandra(VectorStore):
-    """Wrapper around Cassandra embeddings platform.
+    """Wrapper around Apache Cassandra(R) for vector-store workloads.
 
-    There is no notion of a default table name, since each embedding
-    function implies its own vector dimension, which is part of the schema.
+    To use it, you need a recent installation of the `cassio` library
+    and a Cassandra cluster / Astra DB instance supporting vector capabilities.
+
+    Visit the cassio.org website for extensive quickstarts and code examples.
 
     Example:
         .. code-block:: python
@@ -31,12 +43,20 @@ class Cassandra(VectorStore):
                 from langchain.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                session = ...
-                keyspace = 'my_keyspace'
-                vectorstore = Cassandra(embeddings, session, keyspace, 'my_doc_archive')
+                session = ...             # create your Cassandra session object
+                keyspace = 'my_keyspace'  # the keyspace should exist already
+                table_name = 'my_vector_store'
+                vectorstore = Cassandra(embeddings, session, keyspace, table_name)
     """
 
-    _embedding_dimension: int | None
+    _embedding_dimension: Union[int, None]
+
+    @staticmethod
+    def _filter_to_metadata(filter_dict: Optional[Dict[str, str]]) -> Dict[str, Any]:
+        if filter_dict is None:
+            return {}
+        else:
+            return filter_dict
 
     def _get_embedding_dimension(self) -> int:
         if self._embedding_dimension is None:
@@ -81,8 +101,18 @@ class Cassandra(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding
 
+    @staticmethod
+    def _dont_flip_the_cos_score(distance: float) -> float:
+        # the identity
+        return distance
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        return self._cosine_relevance_score_fn
+        """
+        The underlying VectorTable already returns a "score proper",
+        i.e. one in [0, 1] where higher means more *similar*,
+        so here the final score transformation is not reversing the interval:
+        """
+        return self._dont_flip_the_cos_score
 
     def delete_collection(self) -> None:
         """
@@ -172,10 +202,9 @@ class Cassandra(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Document, float, str]]:
         """Return docs most similar to embedding vector.
-
-        No support for `filter` query (on metadata) along with vector search.
 
         Args:
             embedding (str): Embedding to look up documents similar to.
@@ -183,11 +212,14 @@ class Cassandra(VectorStore):
         Returns:
             List of (Document, score, id), the most similar to the query vector.
         """
+        search_metadata = self._filter_to_metadata(filter)
+        #
         hits = self.table.search(
             embedding_vector=embedding,
             top_k=k,
             metric="cos",
             metric_threshold=None,
+            metadata=search_metadata,
         )
         # We stick to 'cos' distance as it can be normalized on a 0-1 axis
         # (1=most relevant), as required by this class' contract.
@@ -207,11 +239,13 @@ class Cassandra(VectorStore):
         self,
         query: str,
         k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Document, float, str]]:
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_id_by_vector(
             embedding=embedding_vector,
             k=k,
+            filter=filter,
         )
 
     # id-unaware search facilities
@@ -219,10 +253,9 @@ class Cassandra(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to embedding vector.
-
-        No support for `filter` query (on metadata) along with vector search.
 
         Args:
             embedding (str): Embedding to look up documents similar to.
@@ -235,6 +268,7 @@ class Cassandra(VectorStore):
             for (doc, score, docId) in self.similarity_search_with_score_id_by_vector(
                 embedding=embedding,
                 k=k,
+                filter=filter,
             )
         ]
 
@@ -242,18 +276,21 @@ class Cassandra(VectorStore):
         self,
         query: str,
         k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_by_vector(
             embedding_vector,
             k,
+            filter=filter,
         )
 
     def similarity_search_by_vector(
         self,
         embedding: List[float],
         k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         return [
@@ -261,6 +298,7 @@ class Cassandra(VectorStore):
             for doc, _ in self.similarity_search_with_score_by_vector(
                 embedding,
                 k,
+                filter=filter,
             )
         ]
 
@@ -268,11 +306,13 @@ class Cassandra(VectorStore):
         self,
         query: str,
         k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Document, float]]:
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
             embedding_vector,
             k,
+            filter=filter,
         )
 
     def max_marginal_relevance_search_by_vector(
@@ -281,6 +321,7 @@ class Cassandra(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -296,11 +337,14 @@ class Cassandra(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        search_metadata = self._filter_to_metadata(filter)
+
         prefetchHits = self.table.search(
             embedding_vector=embedding,
             top_k=fetch_k,
             metric="cos",
             metric_threshold=None,
+            metadata=search_metadata,
         )
         # let the mmr utility pick the *indices* in the above array
         mmrChosenIndices = maximal_marginal_relevance(
@@ -328,6 +372,7 @@ class Cassandra(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -350,6 +395,7 @@ class Cassandra(VectorStore):
             k,
             fetch_k,
             lambda_mult=lambda_mult,
+            filter=filter,
         )
 
     @classmethod

@@ -124,7 +124,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         from zep_python import NotFoundError
 
         try:
-            zep_memory: Memory = self.zep_client.get_memory(self.session_id)
+            zep_memory: Memory = self.zep_client.memory.get_memory(self.session_id)
         except NotFoundError:
             logger.warning(
                 f"Session {self.session_id} not found in Zep. Returning None"
@@ -165,7 +165,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         )
         zep_memory = Memory(messages=[zep_message])
 
-        self.zep_client.add_memory(self.session_id, zep_memory)
+        self.zep_client.memory.add_memory(self.session_id, zep_memory)
 
     def search(
         self, query: str, metadata: Optional[Dict] = None, limit: Optional[int] = None
@@ -177,14 +177,16 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
             text=query, metadata=metadata
         )
 
-        return self.zep_client.search_memory(self.session_id, payload, limit=limit)
+        return self.zep_client.memory.search_memory(
+            self.session_id, payload, limit=limit
+        )
 
     def clear(self) -> None:
         """Clear session memory from Zep. Note that Zep is long-term storage for memory
         and this is not advised unless you have specific data retention requirements.
         """
         try:
-            self.zep_client.delete_memory(self.session_id)
+            self.zep_client.memory.delete_memory(self.session_id)
         except NotFoundError:
             logger.warning(
                 f"Session {self.session_id} not found in Zep. Skipping delete."

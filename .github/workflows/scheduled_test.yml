@@ -6,7 +6,7 @@ on:
     - cron:  '0 13 * * *'
 
 env:
-  POETRY_VERSION: "1.4.2"
+  POETRY_VERSION: "1.5.1"
 
 jobs:
   build:
@@ -25,18 +25,37 @@ jobs:
     name: Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
-          poetry-version: "1.4.2"
+          poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: libs/langchain
-          install-command: |
-            echo "Running scheduled tests, installing dependencies with poetry..."
-            poetry install --with=test_integration
+          cache-key: scheduled
+
+      - name: Install dependencies
+        working-directory: libs/langchain
+        shell: bash
+        run: |
+          echo "Running scheduled tests, installing dependencies with poetry..."
+          poetry install --with=test_integration
+
       - name: Run tests
+        shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           make scheduled_tests
+
+      - name: Ensure the tests did not create any additional files
         shell: bash
+        run: |
+          set -eu
+
+          STATUS="$(git status)"
+          echo "$STATUS"
+
+          # grep will exit non-zero if the target message isn't found,
+          # and `set -e` above will cause the step to fail.
+          echo "$STATUS" | grep 'nothing to commit, working tree clean'

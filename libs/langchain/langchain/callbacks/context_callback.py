@@ -37,7 +37,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
 
     Keyword Args:
         token (optional): The token with which to authenticate requests to Context.
-            Visit https://go.getcontext.ai/settings to generate a token.
+            Visit https://with.context.ai/settings to generate a token.
             If not provided, the value of the `CONTEXT_TOKEN` environment
             variable will be used.
 
@@ -63,8 +63,8 @@ class ContextCallbackHandler(BaseCallbackHandler):
         >>> chat(messages)
 
     Chain Example:
-        >>> from langchain import LLMChain
-        >>> from langchain.llms import ChatOpenAI
+        >>> from langchain.chains import LLMChain
+        >>> from langchain.chat_models import ChatOpenAI
         >>> from langchain.callbacks import ContextCallbackHandler
         >>> context_callback = ContextCallbackHandler(
         ...     token="<CONTEXT_TOKEN_HERE>",

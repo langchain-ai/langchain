@@ -26,7 +26,7 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
 
 
 class SVMRetriever(BaseRetriever):
-    """SVM Retriever.
+    """`SVM` retriever.
 
     Largely based on
     https://github.com/karpathy/randomfun/blob/master/knn_vs_svm.ipynb

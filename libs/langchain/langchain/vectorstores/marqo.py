@@ -1,4 +1,3 @@
-"""Wrapper around weaviate vector database."""
 from __future__ import annotations
 
 import json
@@ -25,7 +24,7 @@ if TYPE_CHECKING:
 
 
 class Marqo(VectorStore):
-    """Wrapper around Marqo database.
+    """`Marqo` vector store.
 
     Marqo indexes have their own models associated with them to generate your
     embeddings. This means that you can selected from a range of different models
@@ -78,7 +77,7 @@ class Marqo(VectorStore):
         self._searchable_attributes = searchable_attributes
         self.page_content_builder = page_content_builder
 
-        self._non_tensor_fields = ["metadata"]
+        self.tensor_fields = ["text"]
 
         self._document_batch_size = 1024
 
@@ -132,7 +131,7 @@ class Marqo(VectorStore):
         for i in range(0, num_docs, self._document_batch_size):
             response = self._client.index(self._index_name).add_documents(
                 documents[i : i + self._document_batch_size],
-                non_tensor_fields=self._non_tensor_fields,
+                tensor_fields=self.tensor_fields,
                 **self._add_documents_settings,
             )
             if response["errors"]:
@@ -330,17 +329,15 @@ class Marqo(VectorStore):
             Dict[str, Dict[List[Dict[str, Dict[str, Any]]]]]: A bulk search results
             object
         """
-        bulk_results = self._client.bulk_search(
-            [
-                {
-                    "index": self._index_name,
-                    "q": query,
-                    "searchableAttributes": self._searchable_attributes,
-                    "limit": k,
-                }
+        bulk_results = {
+            "result": [
+                self._client.index(self._index_name).search(
+                    q=query, searchable_attributes=self._searchable_attributes, limit=k
+                )
                 for query in queries
             ]
-        )
+        }
+
         return bulk_results
 
     @classmethod
@@ -375,10 +372,10 @@ class Marqo(VectorStore):
         index_name: str = "",
         url: str = "http://localhost:8882",
         api_key: str = "",
-        add_documents_settings: Optional[Dict[str, Any]] = {},
+        add_documents_settings: Optional[Dict[str, Any]] = None,
         searchable_attributes: Optional[List[str]] = None,
         page_content_builder: Optional[Callable[[Dict[str, str]], str]] = None,
-        index_settings: Optional[Dict[str, Any]] = {},
+        index_settings: Optional[Dict[str, Any]] = None,
         verbose: bool = True,
         **kwargs: Any,
     ) -> Marqo:
@@ -438,7 +435,7 @@ class Marqo(VectorStore):
         client = marqo.Client(url=url, api_key=api_key)
 
         try:
-            client.create_index(index_name, settings_dict=index_settings)
+            client.create_index(index_name, settings_dict=index_settings or {})
             if verbose:
                 print(f"Created {index_name} successfully.")
         except Exception:
@@ -449,7 +446,7 @@ class Marqo(VectorStore):
             client,
             index_name,
             searchable_attributes=searchable_attributes,
-            add_documents_settings=add_documents_settings,
+            add_documents_settings=add_documents_settings or {},
             page_content_builder=page_content_builder,
         )
         instance.add_texts(texts, metadatas)

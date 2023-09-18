@@ -38,6 +38,7 @@ from langchain.callbacks.base import (
 )
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
+from langchain.callbacks.tracers import run_collector
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
@@ -49,6 +50,7 @@ from langchain.schema import (
     LLMResult,
 )
 from langchain.schema.messages import BaseMessage, get_buffer_string
+from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
 if TYPE_CHECKING:
     from langsmith import Client as LangSmithClient
@@ -73,6 +75,11 @@ tracing_v2_callback_var: ContextVar[
     Optional[LangChainTracer]
 ] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
+)
+run_collector_var: ContextVar[
+    Optional[run_collector.RunCollectorCallbackHandler]
+] = ContextVar(  # noqa: E501
+    "run_collector", default=None
 )
 
 
@@ -184,35 +191,62 @@ def tracing_v2_enabled(
 
 
 @contextmanager
+def collect_runs() -> Generator[run_collector.RunCollectorCallbackHandler, None, None]:
+    """Collect all run traces in context.
+
+    Returns:
+        run_collector.RunCollectorCallbackHandler: The run collector callback handler.
+
+    Example:
+        >>> with collect_runs() as runs_cb:
+                chain.invoke("foo")
+                run_id = runs_cb.traced_runs[0].id
+    """
+    cb = run_collector.RunCollectorCallbackHandler()
+    run_collector_var.set(cb)
+    yield cb
+    run_collector_var.set(None)
+
+
+@contextmanager
 def trace_as_chain_group(
     group_name: str,
     callback_manager: Optional[CallbackManager] = None,
     *,
+    inputs: Optional[Dict[str, Any]] = None,
     project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
+    run_id: Optional[UUID] = None,
     tags: Optional[List[str]] = None,
-) -> Generator[CallbackManager, None, None]:
+) -> Generator[CallbackManagerForChainGroup, None, None]:
     """Get a callback manager for a chain group in a context manager.
     Useful for grouping different calls together as a single run even if
     they aren't composed in a single chain.
 
     Args:
         group_name (str): The name of the chain group.
+        callback_manager (CallbackManager, optional): The callback manager to use.
+        inputs (Dict[str, Any], optional): The inputs to the chain group.
         project_name (str, optional): The name of the project.
             Defaults to None.
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
+        run_id (UUID, optional): The ID of the run.
         tags (List[str], optional): The inheritable tags to apply to all runs.
             Defaults to None.
 
     Returns:
-        CallbackManager: The callback manager for the chain group.
+        CallbackManagerForChainGroup: The callback manager for the chain group.
 
     Example:
-        >>> with trace_as_chain_group("group_name") as manager:
-        ...     # Use the callback manager for the chain group
-        ...     llm.predict("Foo", callbacks=manager)
-    """
+        .. code-block:: python
+
+            llm_input = "Foo"
+            with trace_as_chain_group("group_name", inputs={"input": llm_input}) as manager:
+                # Use the callback manager for the chain group
+                res = llm.predict(llm_input, callbacks=manager)
+                manager.on_chain_end({"output": res})
+    """  # noqa: E501
     cb = cast(
         Callbacks,
         [
@@ -229,9 +263,27 @@ def trace_as_chain_group(
         inheritable_tags=tags,
     )
 
-    run_manager = cm.on_chain_start({"name": group_name}, {})
-    yield run_manager.get_child()
-    run_manager.on_chain_end({})
+    run_manager = cm.on_chain_start({"name": group_name}, inputs or {}, run_id=run_id)
+    child_cm = run_manager.get_child()
+    group_cm = CallbackManagerForChainGroup(
+        child_cm.handlers,
+        child_cm.inheritable_handlers,
+        child_cm.parent_run_id,
+        parent_run_manager=run_manager,
+        tags=child_cm.tags,
+        inheritable_tags=child_cm.inheritable_tags,
+        metadata=child_cm.metadata,
+        inheritable_metadata=child_cm.inheritable_metadata,
+    )
+    try:
+        yield group_cm
+    except Exception as e:
+        if not group_cm.ended:
+            run_manager.on_chain_error(e)
+        raise e
+    else:
+        if not group_cm.ended:
+            run_manager.on_chain_end({})
 
 
 @asynccontextmanager
@@ -239,30 +291,39 @@ async def atrace_as_chain_group(
     group_name: str,
     callback_manager: Optional[AsyncCallbackManager] = None,
     *,
+    inputs: Optional[Dict[str, Any]] = None,
     project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
+    run_id: Optional[UUID] = None,
     tags: Optional[List[str]] = None,
-) -> AsyncGenerator[AsyncCallbackManager, None]:
+) -> AsyncGenerator[AsyncCallbackManagerForChainGroup, None]:
     """Get an async callback manager for a chain group in a context manager.
     Useful for grouping different async calls together as a single run even if
     they aren't composed in a single chain.
 
     Args:
         group_name (str): The name of the chain group.
+        callback_manager (AsyncCallbackManager, optional): The async callback manager to use,
+            which manages tracing and other callback behavior.
         project_name (str, optional): The name of the project.
             Defaults to None.
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
+        run_id (UUID, optional): The ID of the run.
         tags (List[str], optional): The inheritable tags to apply to all runs.
             Defaults to None.
     Returns:
         AsyncCallbackManager: The async callback manager for the chain group.
 
     Example:
-        >>> async with atrace_as_chain_group("group_name") as manager:
-        ...     # Use the async callback manager for the chain group
-        ...     await llm.apredict("Foo", callbacks=manager)
-    """
+        .. code-block:: python
+
+            llm_input = "Foo"
+            async with atrace_as_chain_group("group_name", inputs={"input": llm_input}) as manager:
+                # Use the async callback manager for the chain group
+                res = await llm.apredict(llm_input, callbacks=manager)
+                await manager.on_chain_end({"output": res})
+    """  # noqa: E501
     cb = cast(
         Callbacks,
         [
@@ -276,11 +337,29 @@ async def atrace_as_chain_group(
     )
     cm = AsyncCallbackManager.configure(inheritable_callbacks=cb, inheritable_tags=tags)
 
-    run_manager = await cm.on_chain_start({"name": group_name}, {})
+    run_manager = await cm.on_chain_start(
+        {"name": group_name}, inputs or {}, run_id=run_id
+    )
+    child_cm = run_manager.get_child()
+    group_cm = AsyncCallbackManagerForChainGroup(
+        child_cm.handlers,
+        child_cm.inheritable_handlers,
+        child_cm.parent_run_id,
+        parent_run_manager=run_manager,
+        tags=child_cm.tags,
+        inheritable_tags=child_cm.inheritable_tags,
+        metadata=child_cm.metadata,
+        inheritable_metadata=child_cm.inheritable_metadata,
+    )
     try:
-        yield run_manager.get_child()
-    finally:
-        await run_manager.on_chain_end({})
+        yield group_cm
+    except Exception as e:
+        if not group_cm.ended:
+            await run_manager.on_chain_error(e)
+        raise e
+    else:
+        if not group_cm.ended:
+            await run_manager.on_chain_end({})
 
 
 def _handle_event(
@@ -588,6 +667,8 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
     def on_llm_new_token(
         self,
         token: str,
+        *,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -603,6 +684,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
+            chunk=chunk,
             **kwargs,
         )
 
@@ -651,6 +733,8 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     async def on_llm_new_token(
         self,
         token: str,
+        *,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -663,6 +747,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             "on_llm_new_token",
             "ignore_llm",
             token,
+            chunk=chunk,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
@@ -711,11 +796,11 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
     """Callback manager for chain run."""
 
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+    def on_chain_end(self, outputs: Union[Dict[str, Any], Any], **kwargs: Any) -> None:
         """Run when chain ends running.
 
         Args:
-            outputs (Dict[str, Any]): The outputs of the chain.
+            outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
         """
         _handle_event(
             self.handlers,
@@ -793,11 +878,13 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
 class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
     """Async callback manager for chain run."""
 
-    async def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+    async def on_chain_end(
+        self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
+    ) -> None:
         """Run when chain ends running.
 
         Args:
-            outputs (Dict[str, Any]): The outputs of the chain.
+            outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
         """
         await _ahandle_event(
             self.handlers,
@@ -1140,7 +1227,7 @@ class CallbackManager(BaseCallbackManager):
     def on_chain_start(
         self,
         serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        inputs: Union[Dict[str, Any], Any],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> CallbackManagerForChainRun:
@@ -1148,7 +1235,7 @@ class CallbackManager(BaseCallbackManager):
 
         Args:
             serialized (Dict[str, Any]): The serialized chain.
-            inputs (Dict[str, Any]): The inputs to the chain.
+            inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
 
         Returns:
@@ -1156,7 +1243,6 @@ class CallbackManager(BaseCallbackManager):
         """
         if run_id is None:
             run_id = uuid.uuid4()
-
         _handle_event(
             self.handlers,
             "on_chain_start",
@@ -1306,6 +1392,48 @@ class CallbackManager(BaseCallbackManager):
         )
 
 
+class CallbackManagerForChainGroup(CallbackManager):
+    def __init__(
+        self,
+        handlers: List[BaseCallbackHandler],
+        inheritable_handlers: List[BaseCallbackHandler] | None = None,
+        parent_run_id: UUID | None = None,
+        *,
+        parent_run_manager: CallbackManagerForChainRun,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            handlers,
+            inheritable_handlers,
+            parent_run_id,
+            **kwargs,
+        )
+        self.parent_run_manager = parent_run_manager
+        self.ended = False
+
+    def on_chain_end(self, outputs: Union[Dict[str, Any], Any], **kwargs: Any) -> None:
+        """Run when traced chain group ends.
+
+        Args:
+            outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
+        """
+        self.ended = True
+        return self.parent_run_manager.on_chain_end(outputs, **kwargs)
+
+    def on_chain_error(
+        self,
+        error: BaseException,
+        **kwargs: Any,
+    ) -> None:
+        """Run when chain errors.
+
+        Args:
+            error (Exception or KeyboardInterrupt): The error.
+        """
+        self.ended = True
+        return self.parent_run_manager.on_chain_error(error, **kwargs)
+
+
 class AsyncCallbackManager(BaseCallbackManager):
     """Async callback manager that handles callbacks from LangChain."""
 
@@ -1429,7 +1557,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     async def on_chain_start(
         self,
         serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        inputs: Union[Dict[str, Any], Any],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForChainRun:
@@ -1437,7 +1565,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
         Args:
             serialized (Dict[str, Any]): The serialized chain.
-            inputs (Dict[str, Any]): The inputs to the chain.
+            inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
 
         Returns:
@@ -1598,6 +1726,50 @@ class AsyncCallbackManager(BaseCallbackManager):
         )
 
 
+class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
+    def __init__(
+        self,
+        handlers: List[BaseCallbackHandler],
+        inheritable_handlers: List[BaseCallbackHandler] | None = None,
+        parent_run_id: UUID | None = None,
+        *,
+        parent_run_manager: AsyncCallbackManagerForChainRun,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            handlers,
+            inheritable_handlers,
+            parent_run_id,
+            **kwargs,
+        )
+        self.parent_run_manager = parent_run_manager
+        self.ended = False
+
+    async def on_chain_end(
+        self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
+    ) -> None:
+        """Run when traced chain group ends.
+
+        Args:
+            outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
+        """
+        self.ended = True
+        await self.parent_run_manager.on_chain_end(outputs, **kwargs)
+
+    async def on_chain_error(
+        self,
+        error: BaseException,
+        **kwargs: Any,
+    ) -> None:
+        """Run when chain errors.
+
+        Args:
+            error (Exception or KeyboardInterrupt): The error.
+        """
+        self.ended = True
+        await self.parent_run_manager.on_chain_error(error, **kwargs)
+
+
 T = TypeVar("T", CallbackManager, AsyncCallbackManager)
 
 
@@ -1699,6 +1871,7 @@ def _configure(
     tracer_project = os.environ.get(
         "LANGCHAIN_PROJECT", os.environ.get("LANGCHAIN_SESSION", "default")
     )
+    run_collector_ = run_collector_var.get()
     debug = _get_debug()
     if (
         verbose
@@ -1761,4 +1934,9 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(open_ai, True)
+    if run_collector_ is not None and not any(
+        handler is run_collector_  # direct pointer comparison
+        for handler in callback_manager.handlers
+    ):
+        callback_manager.add_handler(run_collector_, False)
     return callback_manager

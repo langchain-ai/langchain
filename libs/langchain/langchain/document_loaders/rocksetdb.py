@@ -17,7 +17,7 @@ class ColumnNotFoundError(Exception):
 
 
 class RocksetLoader(BaseLoader):
-    """Wrapper around Rockset db
+    """Load from a `Rockset` database.
 
     To use, you should have the `rockset` python package installed.
 
@@ -92,6 +92,12 @@ class RocksetLoader(BaseLoader):
         self.metadata_keys = metadata_keys
         self.paginator = QueryPaginator
         self.request_model = QueryRequestSql
+
+        try:
+            self.client.set_application("langchain")
+        except AttributeError:
+            # ignore
+            pass
 
     def load(self) -> List[Document]:
         return list(self.lazy_load())

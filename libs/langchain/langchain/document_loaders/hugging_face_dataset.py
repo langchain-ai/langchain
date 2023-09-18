@@ -1,4 +1,3 @@
-"""Loads HuggingFace datasets."""
 from typing import Iterator, List, Mapping, Optional, Sequence, Union
 
 from langchain.docstore.document import Document
@@ -6,7 +5,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class HuggingFaceDatasetLoader(BaseLoader):
-    """Load Documents from the Hugging Face Hub."""
+    """Load from `Hugging Face Hub` datasets."""
 
     def __init__(
         self,

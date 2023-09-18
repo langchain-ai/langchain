@@ -33,6 +33,7 @@ from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.clarifai import Clarifai
 from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
+from langchain.vectorstores.dashvector import DashVector
 from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.dingo import Dingo
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
@@ -40,6 +41,8 @@ from langchain.vectorstores.elastic_vector_search import (
     ElasticKnnSearch,
     ElasticVectorSearch,
 )
+from langchain.vectorstores.elasticsearch import ElasticsearchStore
+from langchain.vectorstores.epsilla import Epsilla
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
@@ -49,6 +52,7 @@ from langchain.vectorstores.meilisearch import Meilisearch
 from langchain.vectorstores.milvus import Milvus
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 from langchain.vectorstores.myscale import MyScale, MyScaleSettings
+from langchain.vectorstores.neo4j_vector import Neo4jVector
 from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
 from langchain.vectorstores.pgembedding import PGEmbedding
 from langchain.vectorstores.pgvector import PGVector
@@ -59,14 +63,17 @@ from langchain.vectorstores.rocksetdb import Rockset
 from langchain.vectorstores.scann import ScaNN
 from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.sklearn import SKLearnVectorStore
+from langchain.vectorstores.sqlitevss import SQLiteVSS
 from langchain.vectorstores.starrocks import StarRocks
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
+from langchain.vectorstores.tencentvectordb import TencentVectorDB
 from langchain.vectorstores.tigris import Tigris
 from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.usearch import USearch
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
+from langchain.vectorstores.zep import ZepVectorStore
 from langchain.vectorstores.zilliz import Zilliz
 
 __all__ = [
@@ -74,56 +81,63 @@ __all__ = [
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
+    "Annoy",
+    "AtlasDB",
     "AtlasDB",
     "AwaDB",
     "AzureSearch",
     "Bagel",
     "Cassandra",
     "Chroma",
+    "Chroma",
+    "Clarifai",
     "Clickhouse",
     "ClickhouseSettings",
+    "DashVector",
+    "DeepLake",
     "DeepLake",
     "Dingo",
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
-    "ElasticVectorSearch",
     "ElasticKnnSearch",
+    "ElasticVectorSearch",
+    "ElasticsearchStore",
+    "Epsilla",
     "FAISS",
-    "PGEmbedding",
     "Hologres",
     "LanceDB",
-    "MatchingEngine",
     "Marqo",
+    "MatchingEngine",
     "Meilisearch",
     "Milvus",
-    "Zilliz",
-    "SingleStoreDB",
-    "Chroma",
-    "Clarifai",
-    "OpenSearchVectorSearch",
-    "AtlasDB",
-    "DeepLake",
-    "Annoy",
     "MongoDBAtlasVectorSearch",
     "MyScale",
     "MyScaleSettings",
+    "Neo4jVector",
     "OpenSearchVectorSearch",
+    "OpenSearchVectorSearch",
+    "PGEmbedding",
+    "PGVector",
     "Pinecone",
     "Qdrant",
     "Redis",
     "Rockset",
-    "ScaNN",
     "SKLearnVectorStore",
+    "ScaNN",
     "SingleStoreDB",
+    "SingleStoreDB",
+    "SQLiteVSS",
     "StarRocks",
     "SupabaseVectorStore",
     "Tair",
     "Tigris",
     "Typesense",
+    "USearch",
     "Vectara",
     "VectorStore",
     "Weaviate",
+    "ZepVectorStore",
     "Zilliz",
-    "PGVector",
-    "USearch",
+    "Zilliz",
+    "TencentVectorDB",
 ]

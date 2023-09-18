@@ -5,7 +5,7 @@ It is broken into two parts: installation and setup, and then references to spec
 
 ## Installation and Setup
 - Install the Python SDK with `pip install predictionguard`
-- Get an Prediction Guard access token (as described [here](https://docs.predictionguard.com/)) and set it as an environment variable (`PREDICTIONGUARD_TOKEN`)
+- Get a Prediction Guard access token (as described [here](https://docs.predictionguard.com/)) and set it as an environment variable (`PREDICTIONGUARD_TOKEN`)
 
 ## LLM Wrapper
 
@@ -37,7 +37,7 @@ import os
 
 import predictionguard as pg
 from langchain.llms import PredictionGuard
-from langchain import PromptTemplate, LLMChain
+from langchain.prompts import PromptTemplate\nfrom langchain.chains import LLMChain
 
 # Your Prediction Guard API key. Get one at predictionguard.com
 os.environ["PREDICTIONGUARD_TOKEN"] = "<your Prediction Guard access token>"
@@ -49,7 +49,7 @@ Context: EVERY comment, DM + email suggestion has led us to this EXCITING announ
 Exclusive Candle Box - $80 
 Monthly Candle Box - $45 (NEW!)
 Scent of The Month Box - $28 (NEW!)
-Head to stories to get ALLL the deets on each box! 👆 BONUS: Save 50% on your first box with code 50OFF! 🎉
+Head to stories to get ALL the deets on each box! 👆 BONUS: Save 50% on your first box with code 50OFF! 🎉
 
 Query: {query}
 
@@ -76,7 +76,7 @@ Basic LLM Chaining with the Prediction Guard wrapper:
 ```python
 import os
 
-from langchain import PromptTemplate, LLMChain
+from langchain.prompts import PromptTemplate\nfrom langchain.chains import LLMChain
 from langchain.llms import PredictionGuard
 
 # Optional, add your OpenAI API Key. This is optional, as Prediction Guard allows

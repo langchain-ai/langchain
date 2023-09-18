@@ -19,7 +19,8 @@ from langchain.schema.messages import (
     BaseMessage,
     SystemMessage,
 )
-from pydantic import root_validator
+
+from langchain_experimental.pydantic_v1 import root_validator
 
 prompt = """In addition to responding, you can use tools. \
 You have access to the following tools.

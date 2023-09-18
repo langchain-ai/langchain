@@ -1,14 +1,17 @@
-"""VectorStore wrapper around a Postgres/PGVector database."""
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import enum
 import logging
 import uuid
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    Generator,
     Iterable,
     List,
     Optional,
@@ -16,7 +19,9 @@ from typing import (
     Type,
 )
 
+import numpy as np
 import sqlalchemy
+from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Session, declarative_base
 
@@ -24,6 +29,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from langchain.vectorstores._pgvector_data_models import CollectionStore
@@ -46,12 +52,19 @@ _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
 
 class BaseModel(Base):
+    """Base model for the SQL stores."""
+
     __abstract__ = True
     uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 
+def _results_to_docs(docs_and_scores: Any) -> List[Document]:
+    """Return docs from docs and scores."""
+    return [doc for doc, _ in docs_and_scores]
+
+
 class PGVector(VectorStore):
-    """VectorStore implementation using Postgres and pgvector.
+    """`Postgres`/`PGVector` vector store.
 
     To use, you should have the ``pgvector`` python package installed.
 
@@ -167,6 +180,33 @@ class PGVector(VectorStore):
                 self.logger.warning("Collection not found")
                 return
             session.delete(collection)
+            session.commit()
+
+    @contextlib.contextmanager
+    def _make_session(self) -> Generator[Session, None, None]:
+        """Create a context manager for the session, bind to _conn string."""
+        yield Session(self._conn)
+
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Delete vectors by ids or uuids.
+
+        Args:
+            ids: List of ids to delete.
+        """
+        with Session(self._conn) as session:
+            if ids is not None:
+                self.logger.debug(
+                    "Trying to delete vectors by ids (represented by the model "
+                    "using the custom ids field)"
+                )
+                stmt = delete(self.EmbeddingStore).where(
+                    self.EmbeddingStore.custom_id.in_(ids)
+                )
+                session.execute(stmt)
             session.commit()
 
     def get_collection(self, session: Session) -> Optional["CollectionStore"]:
@@ -308,7 +348,7 @@ class PGVector(VectorStore):
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List of Documents most similar to the query and score for each
+            List of Documents most similar to the query and score for each.
         """
         embedding = self.embedding_function.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
@@ -318,16 +358,16 @@ class PGVector(VectorStore):
 
     @property
     def distance_strategy(self) -> Any:
-        if self._distance_strategy == "l2":
+        if self._distance_strategy == DistanceStrategy.EUCLIDEAN:
             return self.EmbeddingStore.embedding.l2_distance
-        elif self._distance_strategy == "cosine":
+        elif self._distance_strategy == DistanceStrategy.COSINE:
             return self.EmbeddingStore.embedding.cosine_distance
-        elif self._distance_strategy == "inner":
+        elif self._distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             return self.EmbeddingStore.embedding.max_inner_product
         else:
             raise ValueError(
                 f"Got unexpected value for distance: {self._distance_strategy}. "
-                f"Should be one of `l2`, `cosine`, `inner`."
+                f"Should be one of {', '.join([ds.value for ds in DistanceStrategy])}."
             )
 
     def similarity_search_with_score_by_vector(
@@ -336,6 +376,31 @@ class PGVector(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
+        results = self.__query_collection(embedding=embedding, k=k, filter=filter)
+
+        return self._results_to_docs_and_scores(results)
+
+    def _results_to_docs_and_scores(self, results: Any) -> List[Tuple[Document, float]]:
+        """Return docs and scores from results."""
+        docs = [
+            (
+                Document(
+                    page_content=result.EmbeddingStore.document,
+                    metadata=result.EmbeddingStore.cmetadata,
+                ),
+                result.distance if self.embedding_function is not None else None,
+            )
+            for result in results
+        ]
+        return docs
+
+    def __query_collection(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+    ) -> List[Any]:
+        """Query the collection."""
         with Session(self._conn) as session:
             collection = self.get_collection(session)
             if not collection:
@@ -379,18 +444,7 @@ class PGVector(VectorStore):
                 .limit(k)
                 .all()
             )
-
-        docs = [
-            (
-                Document(
-                    page_content=result.EmbeddingStore.document,
-                    metadata=result.EmbeddingStore.cmetadata,
-                ),
-                result.distance if self.embedding_function is not None else None,
-            )
-            for result in results
-        ]
-        return docs
+        return results
 
     def similarity_search_by_vector(
         self,
@@ -412,7 +466,7 @@ class PGVector(VectorStore):
         docs_and_scores = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, filter=filter
         )
-        return [doc for doc, _ in docs_and_scores]
+        return _results_to_docs(docs_and_scores)
 
     @classmethod
     def from_texts(
@@ -469,7 +523,7 @@ class PGVector(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import PGVector
+                from langchain.vectorstores import PGVector
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
@@ -609,3 +663,190 @@ class PGVector(VectorStore):
                 f" for distance_strategy of {self._distance_strategy}."
                 "Consider providing relevance_score_fn to PGVector constructor."
             )
+
+    def max_marginal_relevance_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance with score
+            to embedding vector.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
+                Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of Documents selected by maximal marginal
+                relevance to the query and score for each.
+        """
+        results = self.__query_collection(embedding=embedding, k=fetch_k, filter=filter)
+
+        embedding_list = [result.EmbeddingStore.embedding for result in results]
+
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding, dtype=np.float32),
+            embedding_list,
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+
+        candidates = self._results_to_docs_and_scores(results)
+
+        return [r for i, r in enumerate(candidates) if i in mmr_selected]
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            query (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
+                Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Document]: List of Documents selected by maximal marginal relevance.
+        """
+        embedding = self.embedding_function.embed_query(query)
+        return self.max_marginal_relevance_search_by_vector(
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            **kwargs,
+        )
+
+    def max_marginal_relevance_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance with score.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            query (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
+                Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of Documents selected by maximal marginal
+                relevance to the query and score for each.
+        """
+        embedding = self.embedding_function.embed_query(query)
+        docs = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding=embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )
+        return docs
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance
+            to embedding vector.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            embedding (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
+                Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Document]: List of Documents selected by maximal marginal relevance.
+        """
+        docs_and_scores = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )
+
+        return _results_to_docs(docs_and_scores)
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance."""
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(
+            self.max_marginal_relevance_search_by_vector,
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )
+        return await asyncio.get_event_loop().run_in_executor(None, func)

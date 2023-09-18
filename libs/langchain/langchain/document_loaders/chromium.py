@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncChromiumLoader(BaseLoader):
-    """Scrape HTML content from provided URLs using a
-    headless instance of the Chromium browser."""
+    """Scrape HTML pages from URLs using a
+    headless instance of the Chromium."""
 
     def __init__(
         self,

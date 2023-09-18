@@ -17,8 +17,6 @@ from typing import (
     Union,
 )
 
-from pydantic import Field, root_validator
-
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -26,6 +24,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import create_base_retry_decorator
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
     AIMessageChunk,
@@ -118,7 +117,7 @@ def _convert_delta_to_message_chunk(
 
 
 class ChatOpenAI(BaseChatModel):
-    """Wrapper around OpenAI Chat large language models.
+    """`OpenAI` Chat large language models API.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key.
@@ -308,12 +307,18 @@ class ChatOpenAI(BaseChatModel):
         ):
             if len(chunk["choices"]) == 0:
                 continue
-            delta = chunk["choices"][0]["delta"]
-            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            choice = chunk["choices"][0]
+            chunk = _convert_delta_to_message_chunk(
+                choice["delta"], default_chunk_class
+            )
+            finish_reason = choice.get("finish_reason")
+            generation_info = (
+                dict(finish_reason=finish_reason) if finish_reason is not None else None
+            )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+                run_manager.on_llm_new_token(chunk.content, chunk=chunk)
 
     def _generate(
         self,
@@ -323,7 +328,8 @@ class ChatOpenAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if stream if stream is not None else self.streaming:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
             generation: Optional[ChatGenerationChunk] = None
             for chunk in self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
@@ -382,12 +388,18 @@ class ChatOpenAI(BaseChatModel):
         ):
             if len(chunk["choices"]) == 0:
                 continue
-            delta = chunk["choices"][0]["delta"]
-            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            choice = chunk["choices"][0]
+            chunk = _convert_delta_to_message_chunk(
+                choice["delta"], default_chunk_class
+            )
+            finish_reason = choice.get("finish_reason")
+            generation_info = (
+                dict(finish_reason=finish_reason) if finish_reason is not None else None
+            )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content)
+                await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
 
     async def _agenerate(
         self,
@@ -397,7 +409,8 @@ class ChatOpenAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if stream if stream is not None else self.streaming:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
             generation: Optional[ChatGenerationChunk] = None
             async for chunk in self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs

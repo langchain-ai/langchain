@@ -66,6 +66,10 @@ class ArangoGraph:
             col_type: str = collection["type"]
             col_size: int = self.db.collection(col_name).count()
 
+            # Skip collection if empty
+            if col_size == 0:
+                continue
+
             # Set number of ArangoDB documents/edges to retrieve
             limit_amount = ceil(sample_ratio * col_size) or 1
 

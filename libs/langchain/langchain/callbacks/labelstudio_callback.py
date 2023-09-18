@@ -97,7 +97,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         >>> llm.predict('Tell me a story about a dog.')
     """
 
-    DEFAULT_PROJECT_NAME = "LangChain-%Y-%m-%d"
+    DEFAULT_PROJECT_NAME: str = "LangChain-%Y-%m-%d"
 
     def __init__(
         self,

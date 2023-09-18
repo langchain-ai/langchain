@@ -4,8 +4,6 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from pydantic import Extra, Field
-
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,
@@ -16,6 +14,7 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.load.dump import dumpd
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import (
     BaseLLMOutputParser,
     BasePromptTemplate,
@@ -33,7 +32,9 @@ class LLMChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import LLMChain, OpenAI, PromptTemplate
+            from langchain.chains import LLMChain
+            from langchain.llms import OpenAI
+            from langchain.prompts import PromptTemplate
             prompt_template = "Tell me a {adjective} joke"
             prompt = PromptTemplate(
                 input_variables=["adjective"], template=prompt_template

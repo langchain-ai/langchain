@@ -1,5 +1,5 @@
-The LLMAgent is used in an AgentExecutor. This AgentExecutor can largely be thought of as a loop that:
-1. Passes user input and any previous steps to the Agent (in this case, the LLMAgent)
+The LLM Agent is used in an `AgentExecutor`. This `AgentExecutor` can largely be thought of as a loop that:
+1. Passes user input and any previous steps to the Agent (in this case, the LLM Agent)
 2. If the Agent returns an `AgentFinish`, then return that directly to the user
 3. If the Agent returns an `AgentAction`, then use that to call a tool and get an `Observation`
 4. Repeat, passing the `AgentAction` and `Observation` back to the Agent until an `AgentFinish` is emitted.
@@ -27,7 +27,8 @@ pip install openai
 ```python
 from langchain.agents import Tool, AgentExecutor, LLMSingleActionAgent, AgentOutputParser
 from langchain.prompts import BaseChatPromptTemplate
-from langchain import SerpAPIWrapper, LLMChain
+from langchain.utilities import SerpAPIWrapper
+from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
 from typing import List, Union
 from langchain.schema import AgentAction, AgentFinish, HumanMessage
@@ -35,7 +36,7 @@ import re
 from getpass import getpass
 ```
 
-## Set up tool
+## Set up tools
 
 Set up any tools the agent may want to use. This may be necessary to put in the prompt (so that the agent knows to use these tools).
 
@@ -57,7 +58,7 @@ tools = [
 ]
 ```
 
-## Prompt Template
+## Prompt template
 
 This instructs the agent on what to do. Generally, the template should incorporate:
     
@@ -131,11 +132,11 @@ prompt = CustomPromptTemplate(
 )
 ```
 
-## Output Parser
+## Output parser
 
 The output parser is responsible for parsing the LLM output into `AgentAction` and `AgentFinish`. This usually depends heavily on the prompt used.
 
-This is where you can change the parsing to do retries, handle whitespace, etc
+This is where you can change the parsing to do retries, handle whitespace, etc.
 
 
 ```python
@@ -188,7 +189,7 @@ This depends heavily on the prompt and model you are using. Generally, you want 
 
 ## Set up the Agent
 
-We can now combine everything to set up our agent
+We can now combine everything to set up our agent:
 
 
 ```python

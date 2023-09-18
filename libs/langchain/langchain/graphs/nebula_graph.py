@@ -1,6 +1,8 @@
 import logging
 from string import Template
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 rel_query = Template(
     """
@@ -97,22 +99,23 @@ class NebulaGraph:
         try:
             self.session_pool.close()
         except Exception as e:
-            logging.warning(f"Could not close session pool. Error: {e}")
+            logger.warning(f"Could not close session pool. Error: {e}")
 
     @property
     def get_schema(self) -> str:
         """Returns the schema of the NebulaGraph database"""
         return self.schema
 
-    def execute(self, query: str, params: dict = {}, retry: int = 0) -> Any:
+    def execute(self, query: str, params: Optional[dict] = None, retry: int = 0) -> Any:
         """Query NebulaGraph database."""
         from nebula3.Exception import IOErrorException, NoValidSessionException
         from nebula3.fbthrift.transport.TTransport import TTransportException
 
+        params = params or {}
         try:
             result = self.session_pool.execute_parameter(query, params)
             if not result.is_succeeded():
-                logging.warning(
+                logger.warning(
                     f"Error executing query to NebulaGraph. "
                     f"Error: {result.error_msg()}\n"
                     f"Query: {query} \n"
@@ -120,7 +123,7 @@ class NebulaGraph:
             return result
 
         except NoValidSessionException:
-            logging.warning(
+            logger.warning(
                 f"No valid session found in session pool. "
                 f"Please consider increasing the session pool size. "
                 f"Current size: {self.session_pool_size}"
@@ -134,7 +137,7 @@ class NebulaGraph:
         except RuntimeError as e:
             if retry < RETRY_TIMES:
                 retry += 1
-                logging.warning(
+                logger.warning(
                     f"Error executing query to NebulaGraph. "
                     f"Retrying ({retry}/{RETRY_TIMES})...\n"
                     f"query: {query} \n"
@@ -148,7 +151,7 @@ class NebulaGraph:
             # connection issue, try to recreate session pool
             if retry < RETRY_TIMES:
                 retry += 1
-                logging.warning(
+                logger.warning(
                     f"Connection issue with NebulaGraph. "
                     f"Retrying ({retry}/{RETRY_TIMES})...\n to recreate session pool"
                 )

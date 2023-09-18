@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.milvus import Milvus
@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class Zilliz(Milvus):
-    """Initialize wrapper around the Zilliz vector database.
+    """`Zilliz` vector store.
 
-    In order to use this you need to have `pymilvus` installed and a
+    You need to have `pymilvus` installed and a
     running Zilliz database.
 
     See the following documentation for how to run a Zilliz instance:
@@ -66,7 +66,7 @@ class Zilliz(Milvus):
     Example:
         .. code-block:: python
 
-        from langchain import Zilliz
+        from langchain.vectorstores import Zilliz
         from langchain.embeddings import OpenAIEmbeddings
 
         embedding = OpenAIEmbeddings()
@@ -140,7 +140,7 @@ class Zilliz(Milvus):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         collection_name: str = "LangChainCollection",
-        connection_args: dict[str, Any] = {},
+        connection_args: Optional[Dict[str, Any]] = None,
         consistency_level: str = "Session",
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
@@ -173,7 +173,7 @@ class Zilliz(Milvus):
         vector_db = cls(
             embedding_function=embedding,
             collection_name=collection_name,
-            connection_args=connection_args,
+            connection_args=connection_args or {},
             consistency_level=consistency_level,
             index_params=index_params,
             search_params=search_params,

@@ -4,11 +4,11 @@ with open("../../state_of_the_union.txt") as f:
 ```
 
 ## Summarize
-Let's take a look at it in action below, using it summarize a long document.
+Let's take a look at it in action below, using it to summarize a long document.
 
 
 ```python
-from langchain import OpenAI
+from langchain.llms import OpenAI
 from langchain.chains.summarize import load_summarize_chain
 
 llm = OpenAI(temperature=0)

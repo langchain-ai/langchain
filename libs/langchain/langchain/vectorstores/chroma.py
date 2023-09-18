@@ -1,4 +1,3 @@
-"""Wrapper around ChromaDB embeddings platform."""
 from __future__ import annotations
 
 import logging
@@ -50,7 +49,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
 
 
 class Chroma(VectorStore):
-    """Wrapper around ChromaDB embeddings platform.
+    """`ChromaDB` vector store.
 
     To use, you should have the ``chromadb`` python package installed.
 
@@ -76,12 +75,12 @@ class Chroma(VectorStore):
         client: Optional[chromadb.Client] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
-        """Initialize with Chroma client."""
+        """Initialize with a Chroma client."""
         try:
             import chromadb
             import chromadb.config
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
@@ -143,6 +142,7 @@ class Chroma(VectorStore):
         query_embeddings: Optional[List[List[float]]] = None,
         n_results: int = 4,
         where: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Query the chroma collection."""
@@ -158,6 +158,7 @@ class Chroma(VectorStore):
             query_embeddings=query_embeddings,
             n_results=n_results,
             where=where,
+            where_document=where_document,
             **kwargs,
         )
 
@@ -216,7 +217,7 @@ class Chroma(VectorStore):
                     if "Expected metadata value to be" in str(e):
                         msg = (
                             "Try filtering complex metadata from the document using "
-                            "langchain.vectorstore.utils.filter_complex_metadata."
+                            "langchain.vectorstores.utils.filter_complex_metadata."
                         )
                         raise ValueError(e.args[0] + "\n\n" + msg)
                     else:
@@ -265,6 +266,7 @@ class Chroma(VectorStore):
         embedding: List[float],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -276,7 +278,10 @@ class Chroma(VectorStore):
             List of Documents most similar to the query vector.
         """
         results = self.__query_collection(
-            query_embeddings=embedding, n_results=k, where=filter
+            query_embeddings=embedding,
+            n_results=k,
+            where=filter,
+            where_document=where_document,
         )
         return _results_to_docs(results)
 
@@ -285,6 +290,7 @@ class Chroma(VectorStore):
         embedding: List[float],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
@@ -301,7 +307,10 @@ class Chroma(VectorStore):
             Lower score represents more similarity.
         """
         results = self.__query_collection(
-            query_embeddings=embedding, n_results=k, where=filter
+            query_embeddings=embedding,
+            n_results=k,
+            where=filter,
+            where_document=where_document,
         )
         return _results_to_docs_and_scores(results)
 
@@ -310,6 +319,7 @@ class Chroma(VectorStore):
         query: str,
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with Chroma with distance.
@@ -326,12 +336,18 @@ class Chroma(VectorStore):
         """
         if self._embedding_function is None:
             results = self.__query_collection(
-                query_texts=[query], n_results=k, where=filter
+                query_texts=[query],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
             )
         else:
             query_embedding = self._embedding_function.embed_query(query)
             results = self.__query_collection(
-                query_embeddings=[query_embedding], n_results=k, where=filter
+                query_embeddings=[query_embedding],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
             )
 
         return _results_to_docs_and_scores(results)
@@ -375,6 +391,7 @@ class Chroma(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -399,6 +416,7 @@ class Chroma(VectorStore):
             query_embeddings=embedding,
             n_results=fetch_k,
             where=filter,
+            where_document=where_document,
             include=["metadatas", "documents", "distances", "embeddings"],
         )
         mmr_selected = maximal_marginal_relevance(
@@ -420,6 +438,7 @@ class Chroma(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -446,7 +465,12 @@ class Chroma(VectorStore):
 
         embedding = self._embedding_function.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mult=lambda_mult, filter=filter
+            embedding,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            where_document=where_document,
         )
         return docs
 
@@ -473,7 +497,7 @@ class Chroma(VectorStore):
             offset: The offset to start returning results from.
                     Useful for paging results with limit. Optional.
             where_document: A WhereDocument type dict used to filter by the documents.
-                            E.g. `{$contains: {"text": "hello"}}`. Optional.
+                            E.g. `{$contains: "hello"}`. Optional.
             include: A list of what to include in the results.
                      Can contain `"embeddings"`, `"metadatas"`, `"documents"`.
                      Ids are always included.
@@ -517,19 +541,28 @@ class Chroma(VectorStore):
             document_id (str): ID of the document to update.
             document (Document): Document to update.
         """
-        text = document.page_content
-        metadata = document.metadata
+        return self.update_documents([document_id], [document])
+
+    def update_documents(self, ids: List[str], documents: List[Document]) -> None:
+        """Update a document in the collection.
+
+        Args:
+            ids (List[str]): List of ids of the document to update.
+            documents (List[Document]): List of documents to update.
+        """
+        text = [document.page_content for document in documents]
+        metadata = [document.metadata for document in documents]
         if self._embedding_function is None:
             raise ValueError(
                 "For update, you must specify an embedding function on creation."
             )
-        embeddings = self._embedding_function.embed_documents([text])
+        embeddings = self._embedding_function.embed_documents(text)
 
         self._collection.update(
-            ids=[document_id],
+            ids=ids,
             embeddings=embeddings,
-            documents=[text],
-            metadatas=[metadata],
+            documents=text,
+            metadatas=metadata,
         )
 
     @classmethod

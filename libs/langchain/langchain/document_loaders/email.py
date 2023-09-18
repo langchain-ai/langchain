@@ -10,7 +10,7 @@ from langchain.document_loaders.unstructured import (
 
 
 class UnstructuredEmailLoader(UnstructuredFileLoader):
-    """Load email files with `unstructured`.
+    """Load email files using `Unstructured`.
 
     Works with both
     .eml and .msg files. You can process attachments in addition to the
