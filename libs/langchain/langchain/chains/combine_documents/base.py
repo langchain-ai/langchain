@@ -12,7 +12,6 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.pydantic_v1 import BaseModel, Field, create_model
 from langchain.schema.runnable.config import RunnableConfig
@@ -33,7 +32,6 @@ class BaseCombineDocumentsChain(Chain, ABC):
 
     """Base interface for chains combining documents."""
 
-    llm_chain: LLMChain
     input_key: str = "input_documents"  #: :meta private:
     output_key: str = "output_text"  #: :meta private:
 
