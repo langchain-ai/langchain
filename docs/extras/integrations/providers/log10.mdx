@@ -40,7 +40,7 @@ llm = ChatOpenAI(model_name="gpt-3.5-turbo", callbacks=[log10_callback])
 ## How to use tags with Log10
 
 ```python
-from langchain import OpenAI
+from langchain.llms import OpenAI
 from langchain.chat_models import ChatAnthropic
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
@@ -74,7 +74,7 @@ You can also intermix direct OpenAI calls and Langchain LLM calls:
 import os
 from log10.load import log10, log10_session
 import openai
-from langchain import OpenAI
+from langchain.llms import OpenAI
 
 log10(openai)
 

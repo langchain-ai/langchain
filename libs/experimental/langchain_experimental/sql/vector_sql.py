@@ -6,9 +6,9 @@ from typing import Any, Dict, List, Optional, Union
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
-from langchain.embeddings.base import Embeddings
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser, BasePromptTemplate
+from langchain.schema.base import Embeddings
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 from langchain.utilities.sql_database import SQLDatabase
@@ -102,7 +102,7 @@ class VectorSQLDatabaseChain(SQLDatabaseChain):
         .. code-block:: python
 
             from langchain_experimental.sql import SQLDatabaseChain
-            from langchain import OpenAI, SQLDatabase, OpenAIEmbeddings
+            from langchain.llms import OpenAI, SQLDatabase, OpenAIEmbeddings
             db = SQLDatabase(...)
             db_chain = VectorSQLDatabaseChain.from_llm(OpenAI(), db, OpenAIEmbeddings())
 

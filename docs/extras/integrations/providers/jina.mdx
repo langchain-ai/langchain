@@ -37,7 +37,8 @@ from lcserve import serving
 
 @serving
 def ask(input: str) -> str:
-    from langchain import LLMChain, OpenAI
+    from langchain.chains import LLMChain
+    from langchain.llms import OpenAI
     from langchain.agents import AgentExecutor, ZeroShotAgent
     
     tools = [...] # list of tools
