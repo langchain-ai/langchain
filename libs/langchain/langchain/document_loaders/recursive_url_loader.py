@@ -140,6 +140,7 @@ class RecursiveUrlLoader(BaseLoader):
         except Exception:
             logger.warning(f"Unable to load from {url}")
             return
+        visited.add(url)
         yield Document(
             page_content=self.extractor(response.text),
             metadata=self.metadata_extractor(response.text, url),
