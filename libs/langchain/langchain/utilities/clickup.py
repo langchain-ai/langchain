@@ -7,8 +7,154 @@ import requests
 import json
 import warnings
 
+from dataclasses import dataclass, fields, asdict
+from typing import List, Dict, Any, Optional, Union
 
-def robust_load_params(query: str) -> Tuple[Optional[Any], Optional[str]]:
+
+@dataclass
+class Task:
+    id: int
+    name: str
+    text_content: str
+    description: str
+    status: str
+    creator_id: int
+    creator_username: str
+    creator_email: str
+    assignees: List[Dict[str, Any]]
+    watcher_username: str
+    watcher_email: str
+    priority: str
+    due_date: Optional[str]
+    start_date: Optional[str]
+    points: int
+    team_id: int
+    project_id: int
+
+    @classmethod
+    def from_data(cls, data: Dict[str, Any]) -> 'Task':
+        return cls(
+            id=data['id'],
+            name=data['name'],
+            text_content=data['text_content'],
+            description=data['description'],
+            status=data['status']['status'],
+            creator_id=data['creator']['id'],
+            creator_username=data['creator']['username'],
+            creator_email=data['creator']['email'],
+            assignees=data['assignees'],
+            watcher_username=data['watchers'][0]['username'],
+            watcher_email=data['watchers'][0]['email'],
+            priority=data['priority']['priority'],
+            due_date=data['due_date'],
+            start_date=data['start_date'],
+            points=data['points'],
+            team_id=data['team_id'],
+            project_id=data['project']['id']
+        )
+
+
+@dataclass
+class CUList:
+    folder_id: float
+    name: str
+    content: Optional[str] = None
+    due_date: Optional[int] = None
+    due_date_time: Optional[bool] = None
+    priority: Optional[int] = None
+    assignee: Optional[int] = None
+    status: Optional[str] = None
+
+    @classmethod
+    def from_data(cls, data: dict) -> 'CUList':
+        return cls(
+            folder_id=data['folder_id'],
+            name=data['name'],
+            content=data.get('content'),
+            due_date=data.get('due_date'),
+            due_date_time=data.get('due_date_time'),
+            priority=data.get('priority'),
+            assignee=data.get('assignee'),
+            status=data.get('status')
+        )
+        
+@dataclass
+class Member:
+    id: int
+    username: str
+    email: str
+    initials: str
+
+    @classmethod
+    def from_data(cls, data: Dict) -> 'Member':
+        return cls(
+            id=data['user']['id'],
+            username=data['user']['username'],
+            email=data['user']['email'],
+            initials=data['user']['initials']
+        )
+
+@dataclass
+class Team:
+    id: int
+    name: str
+    members: List[Member]
+
+    @classmethod
+    def from_data(cls, data: Dict) -> 'Team':
+        members = [Member.from_data(member_data) for member_data in data['members']]
+        return cls(
+            id=data['id'],
+            name=data['name'],
+            members=members
+        )
+
+@dataclass
+class Space:
+    id: int
+    name: str
+    private: bool
+    enabled_features: Dict[str, Any]
+
+    @classmethod
+    def from_data(cls, data: Dict[str, Any]) -> 'Space':
+        space_data = data['spaces'][0]
+        enabled_features = {
+            feature: value
+            for feature, value in space_data['features'].items()
+            if value['enabled']
+        }
+        return cls(
+            id=space_data['id'],
+            name=space_data['name'],
+            private=space_data['private'],
+            enabled_features=enabled_features
+        )
+
+def parse_dict_through_dataclass(data: dict, dataclass: dataclass, fault_tolerant=False) -> dict:
+    """ This is a helper function that helps us parse a dictionary by creating a dataclass and then turning it
+    back into a dictionary. This might seem silly but it's a nice way to:
+    1. Extract and format data from a dictionary according to a schema
+    2. Provide a central place to do this in a fault tolerant way
+
+    """
+    try:
+        return asdict(dataclass.from_data(data))
+    except Exception as e:
+        if fault_tolerant:
+            warnings.warn(f'Error encountered while trying to parse {dataclass}: {e}\n Falling back to returning input data.')
+            return data
+        else: raise e
+
+def extract_dict_elements_from_dataclass_fields(data: dict, dataclass: dataclass):
+    output = {}
+    for attribute in fields(dataclass):
+            if attribute.name in data.keys():
+                output[attribute.name] = data[attribute.name]
+    return output
+
+
+def load_params(query: str, fault_tolerant=False) -> Tuple[Optional[Any], Optional[str]]:
         """
         Attempts to parse a JSON string and return the parsed object.
         If parsing fails, returns an error message.
@@ -19,7 +165,51 @@ def robust_load_params(query: str) -> Tuple[Optional[Any], Optional[str]]:
         try:
             return json.loads(query), None
         except json.JSONDecodeError as e:
-            return None, f'Input must be a valid JSON. Got the following error: {str(e)}. Please reformat and try again.'
+            if fault_tolerant:
+                return None, f'Input must be a valid JSON. Got the following error: {str(e)}. Please reformat and try again.'
+            else: raise e
+
+def fetch_first_id(data: dict, key: str) -> int:
+    if key in data and len(data[key]) > 0:
+        if len(data[key]) > 1:
+            warnings.warn(f'Found multiple {key}: {data[key]}. Defaulting to first.')
+        return data[key][0]["id"]
+    return None
+
+def fetch_data(url: str, access_token: str, query: dict = None) -> dict:
+    headers = {"Authorization": access_token}
+    response = requests.get(url, headers=headers, params=query)
+    response.raise_for_status()
+    return response.json()
+
+def fetch_team_id(access_token: str) -> int:
+    url = "https://api.clickup.com/api/v2/team"
+    data = fetch_data(url, access_token)
+    return fetch_first_id(data, "teams")
+
+def fetch_space_id(team_id: int, access_token: str) -> int:
+    url = f"https://api.clickup.com/api/v2/team/{team_id}/space"
+    data = fetch_data(url, access_token, query={"archived": "false"})
+    return fetch_first_id(data, "spaces")
+
+def fetch_folder_id(space_id: int, access_token: str) -> int:
+    url = f"https://api.clickup.com/api/v2/space/{space_id}/folder"
+    data = fetch_data(url, access_token, query={"archived": "false"})
+    return fetch_first_id(data, "folders")
+
+def fetch_list_id(space_id: int, folder_id: int, access_token: str) -> int:
+    if folder_id:
+        url = f"https://api.clickup.com/api/v2/folder/{folder_id}/list"
+    else:
+        url = f"https://api.clickup.com/api/v2/space/{space_id}/list"
+    
+    data = fetch_data(url, access_token, query={"archived": "false"})
+    
+    # The structure to fetch list id differs based on whether it's from a folder or folderless
+    if folder_id and "id" in data.keys():
+        return data["id"]
+    else:
+        return fetch_first_id(data, "lists")
 
 
 class ClickupAPIWrapper(BaseModel):
@@ -31,6 +221,9 @@ class ClickupAPIWrapper(BaseModel):
     access_token: Optional[str] = None
     url: Optional[str] = None
     team_id: Optional[str] = None
+    space_id: Optional[str] = None
+    folder_id: Optional[str] = None
+    list_id: Optional[str] = None
  
     class Config:
         """Configuration for this pydantic object."""
@@ -66,150 +259,30 @@ class ClickupAPIWrapper(BaseModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-
-        # Get the team id
-        url = "https://api.clickup.com/api/v2/team"
-        headers = {"Authorization": values["access_token"]}
-        response = requests.get(url, headers=headers)
-        data = response.json()
-        if "teams" in data.keys() and len(data["teams"]) > 0:
-            if len(data["teams"]) > 1:
-                warnings.warn(f'Found multiple teams: {data["teams"]}. Defaulting to first team.')
-            values["team_id"] = data["teams"][0]["id"]
-
-        # Get the space_id 
-        url = "https://api.clickup.com/api/v2/team/" + values["team_id"] + "/space"
-        query = {
-            "archived": "false"
-        }
-        headers = {"Authorization": values["access_token"]}
-        response = requests.get(url, headers=headers, params=query)
-        data = response.json()
-        values["space_id"] = data["spaces"][0]["id"]
-
-        # If a user has a folder, get lists in that folder
-        url = "https://api.clickup.com/api/v2/space/" + values["space_id"] + "/folder"
-        query = {
-            "archived": "false"
-        }
-        headers = {"Authorization": values["access_token"]}
-        response = requests.get(url, headers=headers, params=query)
-        data = response.json()
-
-        if len(data["folders"]) > 0:
-            values["folder_id"] = data["id"]
-            
-            # Get the list_id from this folder
-            url = "https://api.clickup.com/api/v2/folder/" + values["folder_id"] + "/list"
-            query = {
-                "archived": "false"
-            }
-            headers = {"Authorization": values["access_token"]}
-            response = requests.get(url, headers=headers, params=query)
-            data = response.json()
-            values["list_id"] = data["id"]
-
-        else:
-            values["folder_id"] = ""
-            # If a user doesn't have a folder, get folderless lists
-            space_id = values["space_id"]
-            url = "https://api.clickup.com/api/v2/space/" + space_id + "/list"
-            query = {
-                "archived": "false"
-            }
-            headers = {"Authorization": values["access_token"]}
-            response = requests.get(url, headers=headers, params=query)
-            data = response.json()
-            values["list_id"] = data['lists'][0]["id"]
+        """
+            Validate that api key and python package exists in environment
+        """
+        values["team_id"] = fetch_team_id(values["access_token"])
+        values["space_id"] = fetch_space_id(values["team_id"], values["access_token"])
+        values["folder_id"] = fetch_folder_id(values["space_id"], values["access_token"])
+        values["list_id"] = fetch_list_id(values["space_id"], values["folder_id"], values["access_token"])
 
         return values
 
-    def parse_task(self, data):
-        """
-            Formats a task
-        """
-        parsed_task = {
-            'id': data['id'],
-            'name': data['name'],
-            'text_content': data['text_content'],
-            'description': data['description'],
-            'status': data['status']['status'],
-            'creator_id': data['creator']['id'],
-            'creator_username': data['creator']['username'],
-            'creator_email': data['creator']['email'],
-            'assignees': data['assignees'],
-            'watcher_username': data['watchers'][0]['username'],
-            'watcher_email': data['watchers'][0]['email'],
-            'priority': data['priority']['priority'],
-            'due_date': data['due_date'],
-            'start_date': data['start_date'],
-            'points': data['points'],
-            'team_id': data['team_id'],
-            'project_id': data['project']['id']
-        }
-
-        return parsed_task
-
-
-    def parse_teams(self, input_dict):
+    def attempt_parse_teams(self, input_dict):
         """
             Parse appropriate content from the list of teams
         """
 
         parsed_teams = {'teams': []}
         for team in input_dict['teams']:
-            team_info = {
-                'id': team['id'],
-                'name': team['name'],
-                'members': []
-            }
-
-            for member in team['members']:
-                member_info = {
-                    'id': member['user']['id'],
-                    'username': member['user']['username'],
-                    'email': member['user']['email'],
-                    'initials': member['user']['initials']
-                }
-                team_info['members'].append(member_info)
-
-            parsed_teams['teams'].append(team_info)
+            try: 
+                team = parse_dict_through_dataclass(team, Team, fault_tolerant=False)
+                parsed_teams['teams'].append(team)
+            except Exception as e:
+                warnings.warn(f'Error parsing a team {e}')
 
         return parsed_teams
-
-
-    def parse_folders(self, data):
-        """
-            Parse appropriate content from the list of folders
-        """
-        return data
-
-
-    def parse_spaces(self, data):
-        """
-            Parse appropriate content from the list of spaces.  
-        """
-        parsed_spaces = {
-            'id': data['spaces'][0]['id'],
-            'name': data['spaces'][0]['name'],
-            'private': data['spaces'][0]['private']
-        }
-
-        # Extract features with 'enabled' equal to True
-        enabled_features = {feature: value for feature, value in data['spaces'][0]['features'].items() if value['enabled']}
-
-        # Add the enabled features to the output dictionary
-        parsed_spaces['enabled_features'] = enabled_features
-
-        return parsed_spaces
-
-    
-    def parse_lists(self, data):
-        """
-            Parse appropriate content from the list of lists
-        """
-        return data
 
     def get_authorized_teams(self) -> str:
         """
@@ -222,7 +295,7 @@ class ClickupAPIWrapper(BaseModel):
         response = requests.get(url, headers=headers)
 
         data = response.json()
-        parsed_teams = self.parse_teams(data)
+        parsed_teams = self.attempt_parse_teams(data)
 
         return parsed_teams
 
@@ -246,7 +319,7 @@ class ClickupAPIWrapper(BaseModel):
             Retrieve a specific task 
         """
 
-        params, error = robust_load_params(query)
+        params, error = load_params(query, fault_tolerant=True)
         if params is None:
             return error
             
@@ -259,13 +332,18 @@ class ClickupAPIWrapper(BaseModel):
         headers = {"Authorization": self.access_token}
         response = requests.get(url, headers=headers, params=query)
         data = response.json()
-        parsed_task = self.parse_task(data)
+        parsed_task = parse_dict_through_dataclass(data, Task, fault_tolerant=True)
         return parsed_task
 
 
     def get_lists(self, query: str) -> str:
+        """
+            Get all available lists
+        """
+        params, error = load_params(query, fault_tolerant=True)
+        if params is None:
+            return error
 
-        params = json.loads(query)
         url = "https://api.clickup.com/api/v2/folder/" + self.folder_id + "/list"
         query = {
             "archived": "false"
@@ -280,9 +358,10 @@ class ClickupAPIWrapper(BaseModel):
         """
             Query tasks that match certain fields
         """
-        params, error = robust_load_params(query)
+        params, error = load_params(query, fault_tolerant=True)
         if params is None:
             return error
+        
         url = "https://api.clickup.com/api/v2/list/" + params['list_id'] + "/task"
 
         query = {}
@@ -306,7 +385,7 @@ class ClickupAPIWrapper(BaseModel):
         headers = {"Authorization": self.access_token}
         response = requests.get(url, headers=headers, params=query)
         data = response.json()
-        parsed_spaces = self.parse_spaces(data)
+        parsed_spaces = parse_dict_through_dataclass(data, Space, fault_tolerant=True)
         return parsed_spaces
 
     
@@ -315,7 +394,7 @@ class ClickupAPIWrapper(BaseModel):
             Update an attribute of a specified task
         """        
         task = self.get_task(query)
-        params, _ = robust_load_params(query)
+        params, _ = load_params(query, fault_tolerant=True)
         
         if params['attribute_name'] not in task.keys():
             return f"Error: attribute_name = {params['attribute_name']} was not found in task keys {task.keys()}. Please call again with one of the key names."
@@ -325,7 +404,7 @@ class ClickupAPIWrapper(BaseModel):
         """
             Update an attribute of a specified task
         """        
-        params, error = robust_load_params(query)
+        params, error = load_params(query, fault_tolerant=True)
         if params is None:
             return error
         url = "https://api.clickup.com/api/v2/task/" + params['task_id']
@@ -347,7 +426,7 @@ class ClickupAPIWrapper(BaseModel):
         """
             Add or remove assignees of a specified task
         """        
-        params, error = robust_load_params(query)
+        params, error = load_params(query, fault_tolerant=True)
         if params is None:
             return error
         for user in params['users']:
@@ -376,8 +455,13 @@ class ClickupAPIWrapper(BaseModel):
 
 
     def create_task(self, query: str) -> str:
+        """
+            Creates a new task
+        """ 
+        params, error = load_params(query, fault_tolerant=True)
+        if params is None:
+            return error
 
-        params = json.loads(query)
 
         list_id = self.list_id
         url = "https://api.clickup.com/api/v2/list/" + list_id + "/task"
@@ -385,51 +469,50 @@ class ClickupAPIWrapper(BaseModel):
             "custom_task_ids": "true",
             "team_id": self.team_id
         }
-        payload = {
-            "name": params["name"],
-            "description": params["description"],
-            "status": params["status"],
-            "priority": params["priority"],
-        }
+            
+        payload = extract_dict_elements_from_dataclass_fields(params, Task)
         headers = {
             "Content-Type": "application/json",
             "Authorization": self.access_token,
         }
+        
         response = requests.post(url, json=payload, headers=headers, params=query)
         data = response.json()
-        parsed_task = self.parse_task(data)
-        return parsed_task
+        return parse_dict_through_dataclass(data, Task, fault_tolerant=True)
 
     
     def create_list(self, query:str) -> str:
+        """
+            Creates a new list
+        """ 
+        params, error = load_params(query, fault_tolerant=True)
+        if params is None:
+            return error
 
-        params = json.loads(query)
-        if self.folder_id:
-            # Create a list in the folder
-            url = "https://api.clickup.com/api/v2/folder/" + folder_id + "/list"
-        else:
-            # Create a list in the space
-            space_id = self.space_id
-            url = "https://api.clickup.com/api/v2/space/" + space_id + "/list"
-        payload = {
-            "name": params["name"],
-            "content": params["content"],
-            "priority": params["priority"],
-            "status": params["status"]
-        }
+        # Default to using folder as location if it exists. If not, fall back to using the space
+        location = self.folder_id if self.folder_id else self.space_id
+        url = "https://api.clickup.com/api/v2/folder/" + location + "/list"
+        
+        payload = extract_dict_elements_from_dataclass_fields(params, Task)
         headers = {
             "Content-Type": "application/json",
             "Authorization": self.access_token
         }
         response = requests.post(url, json=payload, headers=headers)
         data = response.json()
-        parsed_list = self.parse_lists(data)
+        parsed_list = parse_dict_through_dataclass(data, CUList, fault_tolerant=True)
         return parsed_list
 
 
     def create_folder(self, query:str) -> str:
+        """
+            Creates a new folder
+        """ 
 
-        params = json.loads(query)
+        params, error = load_params(query, fault_tolerant=True)
+        if params is None:
+            return error
+
         space_id = self.space_id
         url = "https://api.clickup.com/api/v2/space/" + space_id + "/folder"
         payload = {

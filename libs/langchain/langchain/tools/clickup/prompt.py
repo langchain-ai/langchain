@@ -2,33 +2,41 @@
 CLICKUP_TASK_CREATE_PROMPT = """
     This tool is a wrapper around clickup's create_task API, useful when you need to create a CLICKUP task. 
     The input to this tool is a dictionary specifying the fields of the CLICKUP task, and will be passed into clickup's CLICKUP `create_task` function.
-    For example, to create a task with priority 3 called "New Task Name" with description "New Task Description", with status "open" you would pass in the following dictionary: 
-    {{"name": "New Task Name", "description": "New Task Description", "status": "Open", "priority": 3}}
     Use the following mapping in order to map the user's priority to the clickup priority: {{
             Urgent = 1,
             High = 2,
             Normal = 3,
             Low = 4,
-        }}. If the user passes in "urgent" replace the priority value as 1. 
+        }}. If the user passes in "urgent" replace the priority value as 1.
+ 
+    Here are a few task descriptions and corresponding input examples:
+    Task: create a task called "Daily report"
+    Example Input: {{"name": "Daily report"}}
+    Task: Make an open task called "ClickUp toolkit refactor" with description "Refactor the clickup toolkit to use dataclasses for parsing", with status "open"
+    Example Input: {{"name": "ClickUp toolkit refactor", "description": "Refactor the clickup toolkit to use dataclasses for parsing", "status": "Open"}}
+    Task: create a task with priority 3 called "New Task Name" with description "New Task Description", with status "open"
+    Example Input: {{"name": "New Task Name", "description": "New Task Description", "status": "Open", "priority": 3}}
+    Task: Add a task called "Bob's task" and assign it to Bob (user id: 81928627)
+    Example Input: {{"name": "Bob's task", "description": "Task for Bob", "assignees": [81928627]}}
     """
 
 CLICKUP_LIST_CREATE_PROMPT = """
     This tool is a wrapper around clickup's create_list API, useful when you need to create a CLICKUP list.
     The input to this tool is a dictionary specifying the fields of a clickup list, and will be passed to clickup's create_list function.
-    For example, to create a list with name "List name", content "List content", priority 2, and status "red" you would pass in the following dictionary:
-    {{
-        "name": "List name",
-        "content": "List content",
-        "priority": 2,
-        "status": "red"
-    }} 
     Use the following mapping in order to map the user's priority to the clickup priority: {{
         Urgent = 1,
         High = 2,
         Normal = 3,
         Low = 4,
-    }}. If the user passes in "urgent" replace the priority value as 1. 
+    }}. If the user passes in "urgent" replace the priority value as 1.
 
+    Here are a few list descriptions and corresponding input examples:
+    Description: make a list with name "General List"
+    Example Input: {{"name": "General List"}} 
+    Description: add a new list ("TODOs") with low priority
+    Example Input: {{"name": "General List", "priority": 4}}
+    Description: create a list with name "List name", content "List content", priority 2, and status "red"
+    Example Input: {{"name": "List name", "content": "List content", "priority": 2, "status": "red"}} 
 """
 
 CLICKUP_FOLDER_CREATE_PROMPT = """
