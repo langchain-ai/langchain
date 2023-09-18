@@ -129,7 +129,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
             else:
                 tool_input = _tool_input
 
-            content_msg = "responded: {content}\n" if message.content else "\n"
+            content_msg = f"responded: {message.content}\n" if message.content else "\n"
             log = f"\nInvoking: `{function_name}` with `{tool_input}`\n{content_msg}\n"
             _tool = _FunctionsAgentAction(
                 tool=function_name,

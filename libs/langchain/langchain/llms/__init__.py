@@ -26,6 +26,7 @@ from langchain.llms.anthropic import Anthropic
 from langchain.llms.anyscale import Anyscale
 from langchain.llms.aviary import Aviary
 from langchain.llms.azureml_endpoint import AzureMLOnlineEndpoint
+from langchain.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
 from langchain.llms.baseten import Baseten
@@ -160,6 +161,7 @@ __all__ = [
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
+    "QianfanLLMEndpoint",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -228,4 +230,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "vllm_openai": VLLMOpenAI,
     "writer": Writer,
     "xinference": Xinference,
+    "qianfan_endpoint": QianfanLLMEndpoint,
 }

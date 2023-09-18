@@ -102,7 +102,7 @@ class VectorSQLDatabaseChain(SQLDatabaseChain):
         .. code-block:: python
 
             from langchain_experimental.sql import SQLDatabaseChain
-            from langchain import OpenAI, SQLDatabase, OpenAIEmbeddings
+            from langchain.llms import OpenAI, SQLDatabase, OpenAIEmbeddings
             db = SQLDatabase(...)
             db_chain = VectorSQLDatabaseChain.from_llm(OpenAI(), db, OpenAIEmbeddings())
 

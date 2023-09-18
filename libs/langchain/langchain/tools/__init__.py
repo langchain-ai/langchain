@@ -44,6 +44,7 @@ from langchain.tools.edenai import (
     EdenAiTextToSpeechTool,
     EdenaiTool,
 )
+from langchain.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
 from langchain.tools.file_management import (
     CopyFileTool,
     DeleteFileTool,
@@ -167,6 +168,7 @@ __all__ = [
     "EdenAiSpeechToTextTool",
     "EdenAiTextModerationTool",
     "EdenaiTool",
+    "ElevenLabsText2SpeechTool",
     "ExtractHyperlinksTool",
     "ExtractTextTool",
     "FileSearchTool",
