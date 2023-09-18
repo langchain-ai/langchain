@@ -26,7 +26,8 @@ class LLMMathChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import LLMMathChain, OpenAI
+            from langchain.chains import LLMMathChain
+            from langchain.llms import OpenAI
             llm_math = LLMMathChain.from_llm(OpenAI())
     """
 

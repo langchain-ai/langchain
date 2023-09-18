@@ -5,12 +5,12 @@ from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import pytest
 
-from langchain.embeddings.base import Embeddings
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
     _get_hours_passed,
 )
 from langchain.schema import Document
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 

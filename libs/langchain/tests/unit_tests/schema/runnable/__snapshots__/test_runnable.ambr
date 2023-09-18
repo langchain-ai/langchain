@@ -573,6 +573,9 @@
           "lc": 1,
           "type": "constructor",
           "id": [
+            "tests",
+            "unit_tests",
+            "schema",
             "runnable",
             "test_runnable",
             "FakeSplitIntoListParser"
@@ -1716,6 +1719,9 @@
                   "lc": 1,
                   "type": "not_implemented",
                   "id": [
+                    "tests",
+                    "unit_tests",
+                    "schema",
                     "runnable",
                     "test_runnable",
                     "FakeRetriever"
