@@ -188,20 +188,6 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class ChatLiteLLM(BaseChatModel):
-    """`LiteLLM` Chat models API.
-
-        1. The ``GOOGLE_API_KEY``` environment variable set with your API key, or
-        2. Pass your API key using the google_api_key kwarg to the ChatGoogle
-           constructor.
-
-    Example:
-        .. code-block:: python
-
-            from langchain.chat_models import ChatGooglePalm
-            chat = ChatGooglePalm()
-
-    """
-
     client: Any  #: :meta private:
     model: str = "gpt-3.5-turbo"
     model_name: Optional[str] = None
@@ -302,6 +288,15 @@ class ChatLiteLLM(BaseChatModel):
         values["openrouter_api_key"] = get_from_dict_or_env(
             values, "openrouter_api_key", "OPENROUTER_API_KEY", default=""
         )
+        values["cohere_api_key"] = get_from_dict_or_env(
+            values, "cohere_api_key", "COHERE_API_KEY", default=""
+        )
+        values["huggingface_api_key"] = get_from_dict_or_env(
+            values, "huggingface_api_key", "HUGGINGFACE_API_KEY", default=""
+        )
+        values["together_ai_api_key"] = get_from_dict_or_env(
+            values, "together_ai_api_key", "TOGETHERAI_API_KEY", default=""
+        )
         values["client"] = litellm
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
@@ -323,7 +318,8 @@ class ChatLiteLLM(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if stream if stream is not None else self.streaming:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
             generation: Optional[ChatGenerationChunk] = None
             for chunk in self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
@@ -423,7 +419,8 @@ class ChatLiteLLM(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if stream if stream is not None else self.streaming:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
             generation: Optional[ChatGenerationChunk] = None
             async for chunk in self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs

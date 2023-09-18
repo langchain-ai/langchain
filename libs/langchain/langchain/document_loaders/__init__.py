@@ -270,7 +270,6 @@ __all__ = [
     "GutenbergLoader",
     "HNLoader",
     "HuggingFaceDatasetLoader",
-    "HuggingFaceDatasetLoader",
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",

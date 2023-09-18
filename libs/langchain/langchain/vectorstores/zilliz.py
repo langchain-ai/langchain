@@ -66,7 +66,7 @@ class Zilliz(Milvus):
     Example:
         .. code-block:: python
 
-        from langchain import Zilliz
+        from langchain.vectorstores import Zilliz
         from langchain.embeddings import OpenAIEmbeddings
 
         embedding = OpenAIEmbeddings()

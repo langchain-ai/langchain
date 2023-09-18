@@ -6,7 +6,7 @@ from typing import Type
 from unittest import mock
 
 import pytest
-from langchain import OpenAI
+from langchain.llms import OpenAI
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
 

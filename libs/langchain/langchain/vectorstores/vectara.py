@@ -388,7 +388,7 @@ class Vectara(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Vectara
+                from langchain.vectorstores import Vectara
                 vectara = Vectara.from_texts(
                     texts,
                     vectara_customer_id=customer_id,
@@ -396,8 +396,12 @@ class Vectara(VectorStore):
                     vectara_api_key=api_key,
                 )
         """
-        # Note: Vectara generates its own embeddings, so we ignore the provided
-        # embeddings (required by interface)
+        # Notes:
+        # * Vectara generates its own embeddings, so we ignore the provided
+        #   embeddings (required by interface)
+        # * when metadatas[] are provided they are associated with each "part"
+        #   in Vectara. doc_metadata can be used to provide additional metadata
+        #   for the document itself (applies to all "texts" in this call)
         doc_metadata = kwargs.pop("doc_metadata", {})
         vectara = cls(**kwargs)
         vectara.add_texts(texts, metadatas, doc_metadata=doc_metadata, **kwargs)
@@ -416,7 +420,7 @@ class Vectara(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Vectara
+                from langchain.vectorstores import Vectara
                 vectara = Vectara.from_files(
                     files_list,
                     vectara_customer_id=customer_id,
