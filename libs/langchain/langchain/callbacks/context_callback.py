@@ -33,7 +33,7 @@ def import_context() -> Any:
 class ContextCallbackHandler(BaseCallbackHandler):
     """Callback Handler that records transcripts to the Context service.
 
-     (https://getcontext.ai).
+     (https://context.ai).
 
     Keyword Args:
         token (optional): The token with which to authenticate requests to Context.
