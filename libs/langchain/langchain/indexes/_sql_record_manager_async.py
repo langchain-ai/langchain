@@ -125,7 +125,8 @@ class SQLRecordManagerAsync(RecordManagerAsync):
 
     async def create_schema(self) -> None:
         """Create the database schema."""
-        Base.metadata.create_all(self.engine)
+        async with self.engine.begin() as connection:
+            await connection.run_sync(Base.metadata.create_all)
 
     @contextlib.asynccontextmanager
     async def _make_session(self) -> AsyncGenerator[AsyncSession, None]:
