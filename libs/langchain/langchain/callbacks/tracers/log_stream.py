@@ -96,7 +96,9 @@ class LogStreamCallbackHandler(BaseTracer):
         self.exclude_types = exclude_types
         self.exclude_tags = exclude_tags
 
-        send_stream, receive_stream = create_memory_object_stream[Log](math.inf)
+        send_stream, receive_stream = create_memory_object_stream(
+            math.inf, item_type=Log
+        )
         self.lock = threading.Lock()
         self.send_stream = send_stream
         self.receive_stream = receive_stream
