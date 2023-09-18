@@ -36,7 +36,7 @@ class LogEntry(TypedDict):
 
 
 class LogState(TypedDict):
-    logs: list[LogEntry]
+    entries: list[LogEntry]
     streamed_output: List[Any]
     final_output: Optional[Any]
 
@@ -109,8 +109,7 @@ class LogStreamCallbackHandler(BaseTracer):
 
     def include_run(self, run: Run) -> bool:
         if run.parent_run_id is None:
-            include = False
-            return include
+            return False
 
         run_tags = run.tags or []
 
@@ -140,6 +139,7 @@ class LogStreamCallbackHandler(BaseTracer):
         return include
 
     def _persist_run(self, run: Run) -> None:
+        # This is a legacy method only called once for an entire run tree
         pass
 
     def _on_run_create(self, run: Run) -> None:
@@ -152,7 +152,7 @@ class LogStreamCallbackHandler(BaseTracer):
                             "op": "replace",
                             "path": "",
                             "value": LogState(
-                                logs=[], streamed_output=[], final_output=None
+                                entries=[], streamed_output=[], final_output=None
                             ),
                         }
                     ]
@@ -172,7 +172,7 @@ class LogStreamCallbackHandler(BaseTracer):
                 [
                     {
                         "op": "add",
-                        "path": f"/logs/{self._index_map[run.id]}",
+                        "path": f"/entries/{self._index_map[run.id]}",
                         "value": LogEntry(
                             id=str(run.id),
                             name=run.name,
@@ -204,12 +204,12 @@ class LogStreamCallbackHandler(BaseTracer):
                     [
                         {
                             "op": "add",
-                            "path": f"/logs/{index}/final_output",
+                            "path": f"/entries/{index}/final_output",
                             "value": run.outputs,
                         },
                         {
                             "op": "add",
-                            "path": f"/logs/{index}/end_time",
+                            "path": f"/entries/{index}/end_time",
                             "value": run.end_time.isoformat(timespec="milliseconds"),
                         },
                     ]
@@ -248,7 +248,7 @@ class LogStreamCallbackHandler(BaseTracer):
                 [
                     {
                         "op": "add",
-                        "path": f"/logs/{index}/streamed_output_str/-",
+                        "path": f"/entries/{index}/streamed_output_str/-",
                         "value": token,
                     }
                 ]

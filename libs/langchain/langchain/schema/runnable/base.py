@@ -196,6 +196,7 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         input: Any,
         config: Optional[RunnableConfig] = None,
+        *,
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
