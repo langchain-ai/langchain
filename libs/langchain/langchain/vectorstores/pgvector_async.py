@@ -1,10 +1,12 @@
 import contextlib
 import datetime
 import uuid
+import warnings
 from enum import Enum
 from typing import (
     Any,
     AsyncGenerator,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -190,6 +192,7 @@ class PGVectorAsync(VectorStore):
         engine: Optional[AsyncEngine] = None,
         db_url: Optional[str] = None,
         engine_kwargs: Optional[Dict[str, Any]] = None,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
     ):
         if engine is not None and db_url is None:
             _engine = engine
@@ -211,8 +214,8 @@ class PGVectorAsync(VectorStore):
         self.collection_metadata = collection_metadata or {}
         self.EmbeddingStore = EmbeddingStore
         self.CollectionStore = CollectionStore
-
         self._distance_strategy = distance_strategy
+        self.override_relevance_score_fn = relevance_score_fn
 
     async def create_schema(self) -> None:
         """Create the schema for the vector store."""
@@ -426,6 +429,7 @@ class PGVectorAsync(VectorStore):
         db_url: Optional[str] = None,
         engine_kwargs: Optional[Dict[str, Any]] = None,
         pre_delete_collection: bool = False,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> "PGVectorAsync":
         if ids is None:
@@ -442,6 +446,7 @@ class PGVectorAsync(VectorStore):
             engine=engine,
             db_url=db_url,
             engine_kwargs=engine_kwargs,
+            relevance_score_fn=relevance_score_fn,
         )
 
         if pre_delete_collection:
@@ -471,6 +476,7 @@ class PGVectorAsync(VectorStore):
         db_url: Optional[str] = None,
         engine_kwargs: Optional[Dict[str, Any]] = None,
         pre_delete_collection: bool = False,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> "PGVectorAsync":
         """Create a vector store from a list of texts.
@@ -513,6 +519,7 @@ class PGVectorAsync(VectorStore):
             db_url=db_url,
             engine_kwargs=engine_kwargs,
             pre_delete_collection=pre_delete_collection,
+            relevance_score_fn=relevance_score_fn,
             **kwargs,
         )
 
@@ -529,6 +536,7 @@ class PGVectorAsync(VectorStore):
         db_url: Optional[str] = None,
         engine_kwargs: Optional[Dict[str, Any]] = None,
         pre_delete_collection: bool = False,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> "PGVectorAsync":
         """Create a vector store from a list of documents.
@@ -571,6 +579,7 @@ class PGVectorAsync(VectorStore):
             db_url=db_url,
             engine_kwargs=engine_kwargs,
             pre_delete_collection=pre_delete_collection,
+            relevance_score_fn=relevance_score_fn,
             **kwargs,
         )
 
@@ -588,6 +597,7 @@ class PGVectorAsync(VectorStore):
         db_url: Optional[str] = None,
         engine_kwargs: Optional[Dict[str, Any]] = None,
         pre_delete_collection: bool = False,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> "PGVectorAsync":
         """Create a vector store from a list of text embeddings.
@@ -637,6 +647,7 @@ class PGVectorAsync(VectorStore):
             db_url=db_url,
             engine_kwargs=engine_kwargs,
             pre_delete_collection=pre_delete_collection,
+            relevance_score_fn=relevance_score_fn,
             **kwargs,
         )
 
@@ -651,6 +662,7 @@ class PGVectorAsync(VectorStore):
         db_url: Optional[str] = None,
         engine_kwargs: Optional[Dict[str, Any]] = None,
         pre_delete_collection: bool = False,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> "PGVectorAsync":
         """Create a vector store from an existing index.
@@ -683,6 +695,7 @@ class PGVectorAsync(VectorStore):
             engine=engine,
             db_url=db_url,
             engine_kwargs=engine_kwargs,
+            relevance_score_fn=relevance_score_fn,
         )
 
         if pre_delete_collection:
@@ -1132,3 +1145,71 @@ class PGVectorAsync(VectorStore):
         candidates = self._results_to_docs_and_scores(results)
 
         return [r for i, r in enumerate(candidates) if i in mmr_selected]
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+        if self.override_relevance_score_fn is not None:
+            return self.override_relevance_score_fn
+
+        # Default strategy is to rely on distance strategy provided
+        # in vectorstore constructor
+        if self._distance_strategy == DistanceStrategy.COSINE:
+            return self._cosine_relevance_score_fn
+        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN:
+            return self._euclidean_relevance_score_fn
+        elif self._distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+            return self._max_inner_product_relevance_score_fn
+        else:
+            raise ValueError(
+                "No supported normalization function"
+                f" for distance_strategy of {self._distance_strategy}."
+                "Consider providing relevance_score_fn to PGVector constructor."
+            )
+
+    async def asimilarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        filter: FilterType = None,
+        score_threshold: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        relevance_score_fn = self._select_relevance_score_fn()
+        docs_and_scores = await self.asimilarity_search_with_score(
+            query=query,
+            k=k,
+            filter=filter,
+        )
+
+        docs_and_similarities = [
+            (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
+        ]
+
+        if any(
+            similarity < 0.0 or similarity > 1.0
+            for _, similarity in docs_and_similarities
+        ):
+            warnings.warn(
+                "Relevance scores must be between"
+                f" 0 and 1, got {docs_and_similarities}"
+            )
+
+        if score_threshold is not None:
+            docs_and_similarities = [
+                (doc, similarity)
+                for doc, similarity in docs_and_similarities
+                if similarity >= score_threshold
+            ]
+            if len(docs_and_similarities) == 0:
+                warnings.warn(
+                    f"Score threshold of {score_threshold} resulted in no results."
+                )
+
+        return docs_and_similarities

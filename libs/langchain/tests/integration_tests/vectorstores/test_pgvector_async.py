@@ -263,7 +263,7 @@ async def test_pgvector_delete_docs() -> None:
             assert sorted(record.custom_id for record in records) == []  # type: ignore
 
 
-@pytest.mark.asyncio  # NotImplementedError
+@pytest.mark.asyncio
 async def test_pgvector_relevance_score() -> None:
     """Test to make sure the relevance score is scaled to 0-1."""
     async with with_db():
@@ -286,7 +286,7 @@ async def test_pgvector_relevance_score() -> None:
         ]
 
 
-@pytest.mark.asyncio  # NotImplementedError
+@pytest.mark.asyncio
 async def test_pgvector_retriever_search_threshold() -> None:
     """Test using retriever for searching with threshold."""
     async with with_db():
@@ -312,7 +312,7 @@ async def test_pgvector_retriever_search_threshold() -> None:
         ]
 
 
-@pytest.mark.asyncio  # NotImplementedError
+@pytest.mark.asyncio
 async def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
     """Test searching with threshold and custom normalization function"""
     async with with_db():
