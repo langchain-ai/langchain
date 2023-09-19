@@ -155,6 +155,8 @@ class PGVectorAsync(VectorStore):
           Defaults to None.
         engine_kwargs (Optional[Dict[str, Any]], optional): Keyword
           arguments for the engine. Defaults to None.
+        relevance_score_fn (Optional[Callable[[float], float]], optional):
+            Relevance score function to use. Defaults to None.
 
     Note:
         Schema is not created automatically. You need to call
@@ -175,7 +177,7 @@ class PGVectorAsync(VectorStore):
             CONNECTION_STRING = "postgresql+asyncpg://hwc@localhost:5432/test3"
             COLLECTION_NAME = "state_of_the_union_test"
             embeddings = OpenAIEmbeddings()
-            vectorestore = PGVector.from_documents(
+            vectorestore = await PGVector.afrom_documents(
                 embedding=embeddings,
                 documents=docs,
                 collection_name=COLLECTION_NAME,
@@ -501,6 +503,8 @@ class PGVectorAsync(VectorStore):
               the engine. Defaults to None.
             pre_delete_collection (bool, optional): Whether to delete the collection
               before creating it. Defaults to False.
+            relevance_score_fn (Optional[Callable[[float], float]], optional):
+                Relevance score function to use. Defaults to None.
 
         Returns:
             PGVectorAsync: PGVectorAsync instance.
@@ -559,6 +563,8 @@ class PGVectorAsync(VectorStore):
               the engine. Defaults to None.
             pre_delete_collection (bool, optional): Whether to delete the collection
               before creating it. Defaults to False.
+            relevance_score_fn (Optional[Callable[[float], float]], optional):
+                Relevance score function to use. Defaults to None.
 
 
         Returns:
@@ -626,6 +632,8 @@ class PGVectorAsync(VectorStore):
               for the engine. Defaults to None.
             pre_delete_collection (bool, optional): Whether to delete the collection
               before creating it. Defaults to False.
+            relevance_score_fn (Optional[Callable[[float], float]], optional):
+                Relevance score function to use. Defaults to None.
 
         Returns:
             PGVectorAsync: PGVectorAsync instance.
@@ -683,6 +691,8 @@ class PGVectorAsync(VectorStore):
               the engine. Defaults to None.
             pre_delete_collection (bool, optional): Whether to delete the collection
               before creating it. Defaults to False.
+            relevance_score_fn (Optional[Callable[[float], float]], optional):
+                Relevance score function to use. Defaults to None.
 
         Returns:
             PGVectorAsync: PGVectorAsync instance.
@@ -1181,6 +1191,24 @@ class PGVectorAsync(VectorStore):
         score_threshold: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
+        """Return documents most similar to the query with relevance scores.
+
+        Args:
+            query (str): Query text.
+            k (int, optional): Number of results to return. Defaults to 4.
+            filter: Filter to apply to the metadata. Defaults to None.
+            score_threshold (Optional[float], optional): Minimum score
+                to return. Defaults to None.
+
+        Warning:
+            Relevance scores must be between 0 and 1.
+            No results will be returned if the score threshold is too high.
+
+        Returns:
+            List[Tuple[Document, float]]: List of documents most similar
+                to the query with relevance scores.
+        """
+
         relevance_score_fn = self._select_relevance_score_fn()
         docs_and_scores = await self.asimilarity_search_with_score(
             query=query,
