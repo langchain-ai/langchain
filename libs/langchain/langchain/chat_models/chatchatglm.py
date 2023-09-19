@@ -353,8 +353,7 @@ class ChatChatGLM(BaseChatModel):
             m_kwargs = copy.deepcopy(kwargs)
             m_kwargs["prompt"] = kwargs["messages"]
             if len(m_kwargs["prompt"])//2 == 0:
-                raise ValueError(
-                    "The total length of the Prompt must be an odd number.")
+                raise ValueError("The total length of the Prompt must be an odd number.")
             if m_kwargs.get("streaming") or m_kwargs.get("stream"):
                 return self.client.sse_invoke(**m_kwargs)
             else:
