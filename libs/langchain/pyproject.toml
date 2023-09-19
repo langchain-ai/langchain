@@ -295,6 +295,7 @@ all = [
     "amadeus",
     "librosa",
     "python-arango",
+    "upstash-redis",
 ]
 
 # An extra used to be able to add extended testing.
@@ -346,7 +347,6 @@ extended_testing = [
  "markdownify",
  "dashvector",
  "sqlite-vss",
- "upstash-redis",
 ]
 
 [tool.ruff]

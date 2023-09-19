@@ -3621,21 +3621,6 @@ mypy-extensions = ">=0.3.0"
 typing-extensions = ">=3.7.4"
 
 [[package]]
-name = "upstash-redis"
-version = "0.15.0"
-description = "Serverless Redis SDK from Upstash"
-optional = true
-python-versions = ">=3.8,<4.0"
-files = [
-    {file = "upstash_redis-0.15.0-py3-none-any.whl", hash = "sha256:4a89913cb2bb2422610bc2a9c8d6b9a9d75d0674c22c5ea8037d35d343ee5846"},
-    {file = "upstash_redis-0.15.0.tar.gz", hash = "sha256:910f6a567142167b742c38efecfabf23f47e24fcbddb00a6b5845cb11064c3af"},
-]
-
-[package.dependencies]
-aiohttp = ">=3.8.4,<4.0.0"
-requests = ">=2.31.0,<3.0.0"
-
-[[package]]
 name = "uri-template"
 version = "1.3.0"
 description = "RFC 6570 URI Template Processor"
@@ -3835,4 +3820,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "4c065f34c3015c5425986b77b40bbec1b7d8c8c0cca4ac47126b0a3d8fa975e7"
+content-hash = "eeeb245db6de8d353cbfc59842821a31f6759344834b116df27f3b517ef55d32"

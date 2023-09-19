@@ -45,6 +45,7 @@ from langchain.memory.chat_message_histories import (
     StreamlitChatMessageHistory,
     XataChatMessageHistory,
     ZepChatMessageHistory,
+    UpstashRedisChatMessageHistory,
 )
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import (
@@ -96,4 +97,5 @@ __all__ = [
     "ZepChatMessageHistory",
     "ZepMemory",
     "UpstashRedisEntityStore",
+    "UpstashRedisChatMessageHistory",
 ]

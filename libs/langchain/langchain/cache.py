@@ -229,7 +229,7 @@ class UpstashRedisCache(BaseCache):
                 "Please install it with `pip install redis`."
             )
         if not isinstance(redis_, Redis):
-            raise ValueError("Please pass in UpstashRedis object.")
+            raise ValueError("Please pass in Upstash Redis object.")
         self.redis = redis_
         self.ttl = ttl
 
