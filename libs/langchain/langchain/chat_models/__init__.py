@@ -27,6 +27,7 @@ from langchain.chat_models.fake import FakeListChatModel
 from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.human import HumanInputChatModel
 from langchain.chat_models.jinachat import JinaChat
+from langchain.chat_models.konko import ChatKonko
 from langchain.chat_models.litellm import ChatLiteLLM
 from langchain.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
 from langchain.chat_models.ollama import ChatOllama
@@ -37,7 +38,6 @@ from langchain.chat_models.vertexai import ChatVertexAI
 __all__ = [
     "ChatOpenAI",
     "AzureChatOpenAI",
-    "BedrockChat",
     "FakeListChatModel",
     "PromptLayerChatOpenAI",
     "ChatAnthropic",
@@ -51,4 +51,5 @@ __all__ = [
     "ChatLiteLLM",
     "ErnieBotChat",
     "ChatChatGLM",
+    "ChatKonko",
 ]
