@@ -8,11 +8,9 @@ import uuid
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
-from pydantic import Field
 from langchain.pydantic_v1 import Field
 from enum import Enum
 
-from langchain.embeddings.base import Embeddings
 from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
