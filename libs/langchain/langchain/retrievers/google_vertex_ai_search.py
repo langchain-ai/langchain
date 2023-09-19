@@ -9,7 +9,6 @@ from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
-    from google.api_core.client_options import ClientOptions
     from google.cloud.discoveryengine_v1beta import (
         SearchRequest,
         SearchResult,
