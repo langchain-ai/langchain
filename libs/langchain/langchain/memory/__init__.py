@@ -52,6 +52,7 @@ from langchain.memory.entity import (
     InMemoryEntityStore,
     RedisEntityStore,
     SQLiteEntityStore,
+    UpstashRedisEntityStore,
 )
 from langchain.memory.kg import ConversationKGMemory
 from langchain.memory.motorhead_memory import MotorheadMemory
@@ -94,4 +95,5 @@ __all__ = [
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
     "ZepMemory",
+    "UpstashRedisEntityStore",
 ]
