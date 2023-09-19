@@ -131,13 +131,15 @@ class BaseConversationalRetrievalChain(Chain):
 
         if (
             question_generator is None
-            and isinstance(combine_docs_chain, BaseCombineDocumentsChain)
-            and "context" not in combine_docs_chain.llm_chain.prompt.input_variables
+            and isinstance(combine_docs_chain, StuffDocumentsChain)
+            and "chat_history" not in combine_docs_chain.llm_chain.prompt.input_variables
         ):
             warnings.warn(
-                "If the `context` variable is not set for the prompt "
-                "of `combine_docs_chain` when `question_generator` is None, "
-                "using the default combined prompt - CHAT_RETRIEVAL_QA_PROMPT"
+                "If the `chat_history` variable is not set for the prompt of "
+                "`combine_docs_chain`(StuffDocumentsChain) when `question_generator` "
+                "is None, using the default combined prompt - CHAT_RETRIEVAL_QA_PROMPT"
+                "Or consider specifying the custom prompt for `combine_docs_chain` with "
+                "the `chat_history` variable set."
             )
             combine_docs_chain.llm_chain.prompt = CHAT_RETRIEVAL_QA_PROMPT
 
@@ -249,8 +251,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     """Chain for having a conversation based on retrieved documents.
 
     This chain takes in chat history (a list of messages) and new questions,
-    and then returns an answer to that question.
-    The algorithm for this chain consists of three parts:
+    and then returns an answer to that question. If the `question_generator` 
+    is specified, the algorithm for this chain consists of three parts :
 
     1. Use the chat history and the new question to create a "standalone question".
     This is done so that this question can be passed into the retrieval step to fetch
@@ -264,6 +266,13 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     3. The retrieved documents are passed to an LLM along with either the new question
     (default behavior) or the original question and chat history to generate a final
     response.
+
+    If the `question_generator` is None, the algorithm is as follows:
+
+    1. Use the original question to fetch relevant documents.
+
+    2. The retrieved documents are passed to an LLM along with the original question 
+    and chat history to generate a final response.       
 
     Example:
         .. code-block:: python

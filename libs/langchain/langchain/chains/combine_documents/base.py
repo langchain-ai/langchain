@@ -30,8 +30,6 @@ class BaseCombineDocumentsChain(Chain, ABC):
     that will longer than the context length).
     """
 
-    """Base interface for chains combining documents."""
-
     input_key: str = "input_documents"  #: :meta private:
     output_key: str = "output_text"  #: :meta private:
 
