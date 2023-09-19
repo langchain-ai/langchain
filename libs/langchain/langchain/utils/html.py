@@ -13,6 +13,9 @@ SUFFIXES_TO_IGNORE = (
     ".gif",
     ".svg",
     ".csv",
+    ".bz2",
+    ".zip",
+    ".epub",
 )
 SUFFIXES_TO_IGNORE_REGEX = (
     "(?!" + "|".join([re.escape(s) + "[\#'\"]" for s in SUFFIXES_TO_IGNORE]) + ")"

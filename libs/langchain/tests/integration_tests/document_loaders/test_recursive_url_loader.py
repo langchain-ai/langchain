@@ -7,10 +7,14 @@ from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 def test_async_recursive_url_loader() -> None:
     url = "https://docs.python.org/3.9/"
     loader = RecursiveUrlLoader(
-        url=url, extractor=lambda _: "placeholder", use_async=True, max_depth=2
+        url=url,
+        extractor=lambda _: "placeholder",
+        use_async=True,
+        max_depth=3,
+        timeout=None,
     )
     docs = loader.load()
-    assert len(docs) == 27
+    assert len(docs) == 1567
     assert docs[0].page_content == "placeholder"
 
 

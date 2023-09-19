@@ -1,13 +1,27 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import re
-from typing import Callable, Iterator, List, Optional, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.utils.html import extract_sub_links
+
+if TYPE_CHECKING:
+    import aiohttp
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +78,8 @@ class RecursiveUrlLoader(BaseLoader):
                 to use BeautifulSoup4 to extract the title, description and language
                 of the page.
             exclude_dirs: A list of subdirectories to exclude.
-            timeout: The timeout for the requests, in the unit of seconds.
+            timeout: The timeout for the requests, in the unit of seconds. If None then
+                connection will not timeout.
             prevent_outside: If True, prevent loading from urls which are not children
                 of the root url.
             link_regex: Regex for extracting sub-links from the raw html of a web page.
@@ -80,7 +95,7 @@ class RecursiveUrlLoader(BaseLoader):
             else _metadata_extractor
         )
         self.exclude_dirs = exclude_dirs if exclude_dirs is not None else ()
-        self.timeout = timeout if timeout is not None else 10
+        self.timeout = timeout
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
         self.link_regex = link_regex
         self._lock = asyncio.Lock() if self.use_async else None
@@ -131,7 +146,12 @@ class RecursiveUrlLoader(BaseLoader):
                 )
 
     async def _async_get_child_links_recursive(
-        self, url: str, visited: Set[str], *, depth: int = 0
+        self,
+        url: str,
+        visited: Set[str],
+        *,
+        session: Optional[aiohttp.ClientSession] = None,
+        depth: int = 0,
     ) -> List[Document]:
         """Recursively get all child links starting with the path of the input URL.
 
@@ -156,15 +176,20 @@ class RecursiveUrlLoader(BaseLoader):
             return []
         # Disable SSL verification because websites may have invalid SSL certificates,
         # but won't cause any security issues for us.
-        async with aiohttp.ClientSession(
+        close_session = session is None
+        session = session or aiohttp.ClientSession(
             connector=aiohttp.TCPConnector(ssl=False),
-            timeout=aiohttp.ClientTimeout(self.timeout),
-        ) as session:
-            try:
-                response = await session.get(url)
+            timeout=aiohttp.ClientTimeout(total=self.timeout),
+        )
+        try:
+            async with session.get(url) as response:
                 text = await response.text()
-            except (aiohttp.client_exceptions.InvalidURL, Exception):
-                return []
+        except (aiohttp.client_exceptions.InvalidURL, Exception) as e:
+            logger.warning(
+                f"Unable to load {url}. Received error {e} of type "
+                f"{e.__class__.__name__}"
+            )
+            return []
         results = []
         content = self.extractor(text)
         if content:
@@ -174,31 +199,34 @@ class RecursiveUrlLoader(BaseLoader):
                     metadata=self.metadata_extractor(text, url),
                 )
             )
-        sub_links = extract_sub_links(
-            text,
-            self.url,
-            pattern=self.link_regex,
-            prevent_outside=self.prevent_outside,
-        )
+        if depth < self.max_depth - 1:
+            sub_links = extract_sub_links(
+                text,
+                self.url,
+                pattern=self.link_regex,
+                prevent_outside=self.prevent_outside,
+            )
 
-        # Recursively call the function to get the children of the children
-        sub_tasks = []
-        async with self._lock:  # type: ignore
-            visited.add(url)
-            for link in sub_links:
-                if link not in visited:
+            # Recursively call the function to get the children of the children
+            sub_tasks = []
+            async with self._lock:  # type: ignore
+                visited.add(url)
+                to_visit = set(sub_links).difference(visited)
+                for link in to_visit:
                     sub_tasks.append(
                         self._async_get_child_links_recursive(
-                            link, visited, depth=depth + 1
+                            link, visited, session=session, depth=depth + 1
                         )
                     )
-        next_results = await asyncio.gather(*sub_tasks)
-        for sub_result in next_results:
-            if isinstance(sub_result, Exception) or sub_result is None:
-                # We don't want to stop the whole process, so just ignore it
-                # Not standard html format or invalid url or 404 may cause this.
-                continue
-            results += sub_result
+            next_results = await asyncio.gather(*sub_tasks)
+            for sub_result in next_results:
+                if isinstance(sub_result, Exception) or sub_result is None:
+                    # We don't want to stop the whole process, so just ignore it
+                    # Not standard html format or invalid url or 404 may cause this.
+                    continue
+                results += sub_result
+        if close_session:
+            await session.close()
         return results
 
     def lazy_load(self) -> Iterator[Document]:
