@@ -9,7 +9,7 @@ from langchain.document_loaders.base import BaseLoader
 
 class MongodbLoader(BaseLoader):
     """Load MongoDB documents."""
-    
+
     db: Any
     collection: Any
 

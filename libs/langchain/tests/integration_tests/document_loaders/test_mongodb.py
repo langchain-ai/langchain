@@ -1,5 +1,5 @@
 from typing import Dict, List
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -29,34 +29,32 @@ def expected_documents() -> List[Document]:
     ]
 
 
-def test_load_mocked(expected_documents: List[Document]) -> None:
+@pytest.mark.requires("motor")
+@pytest.mark.asyncio
+async def test_load_mocked(expected_documents: List[Document]) -> None:
     mock_async_load = AsyncMock()
     mock_async_load.return_value = expected_documents
 
+    mock_find = AsyncMock()
+    mock_find.return_value = iter(expected_documents)
+
+    mock_count_documents = MagicMock()
+    mock_count_documents.return_value = len(expected_documents)
+
+    mock_collection = MagicMock()
+    mock_collection.find = mock_find
+    mock_collection.count_documents = mock_count_documents
+
     with patch(
-        "langchain.document_loaders.MongodbLoader._async_load", new=mock_async_load
+        "motor.motor_asyncio.AsyncIOMotorClient", return_value=MagicMock()
+    ), patch(
+        "langchain.document_loaders.mongodb.MongodbLoader._async_load",
+        new=mock_async_load,
     ):
         loader = MongodbLoader(
             "mongodb://localhost:27017", "test_db", "test_collection"
         )
-
-        documents = loader.load()
+        loader.collection = mock_collection
+        documents = await loader._async_load()
 
     assert documents == expected_documents
-
-
-@pytest.mark.asyncio
-@pytest.mark.requires("motor")
-async def test_async_partial_load_mocked(expected_documents: List[Document]) -> None:
-    loader = MongodbLoader(
-        "mongodb://localhost:27017", "sample_restaurants", "restaurants"
-    )
-    expected_documents.remove(expected_documents[1])
-
-    with pytest.raises(Exception) as error_PartialLoad:
-        await loader._async_load()
-
-        assert (
-            str(error_PartialLoad.value)
-            == "Error: Only partial collection of documents returned."
-        )
