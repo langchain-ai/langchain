@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def _metadata_extractor(raw_html: str, url: str) -> dict:
-    """Build metadata from BeautifulSoup output."""
+    """Extract metadata from raw html using BeautifulSoup."""
     metadata = {"source": url}
 
     try:
@@ -149,12 +149,8 @@ class RecursiveUrlLoader(BaseLoader):
                 "The aiohttp package is required for the RecursiveUrlLoader. "
                 "Please install it with `pip install aiohttp`."
             )
-        if depth > self.max_depth:
+        if depth >= self.max_depth:
             return []
-
-        # Add a trailing slash if not present
-        if not url.endswith("/"):
-            url += "/"
 
         # Exclude the root and parent from a list
         visited = set() if visited is None else visited

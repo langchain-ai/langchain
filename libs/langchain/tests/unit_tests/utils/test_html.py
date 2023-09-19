@@ -107,4 +107,3 @@ def test_extract_sub_links():
         ]
     )
     assert actual == expected
-
