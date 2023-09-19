@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional, Union
 
 from langsmith import RunEvaluator
 
-from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
 from langchain.evaluation.embedding_distance.base import (
     EmbeddingDistance as EmbeddingDistanceEnum,
@@ -14,6 +13,7 @@ from langchain.evaluation.string_distance.base import (
     StringDistance as StringDistanceEnum,
 )
 from langchain.pydantic_v1 import BaseModel, Field
+from langchain.schema.embeddings import Embeddings
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 

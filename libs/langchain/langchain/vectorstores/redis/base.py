@@ -29,7 +29,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.utilities.redis import (
     _array_to_buffer,
     _buffer_to_array,

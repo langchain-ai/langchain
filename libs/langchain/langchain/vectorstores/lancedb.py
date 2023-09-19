@@ -4,7 +4,7 @@ import uuid
 from typing import Any, Iterable, List, Optional
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 

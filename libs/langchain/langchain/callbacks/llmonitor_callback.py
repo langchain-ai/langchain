@@ -406,7 +406,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
     def on_chain_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Union[UUID, None] = None,
@@ -423,7 +423,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
     def on_tool_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Union[UUID, None] = None,
@@ -440,7 +440,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
     def on_llm_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Union[UUID, None] = None,
