@@ -1,23 +1,14 @@
 from __future__ import annotations
 
-from typing import List, Union
+from typing import Any, List, Union
 
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.messages import BaseMessage
 
 
-class AgentAction(Serializable):
+class AgentAction(Serializable, BaseModel):
     """A full description of an action for an ActionAgent to execute."""
-
-    def __init__(self, tool: str, tool_input: Union[str, dict], log: str, **kwargs):
-        super().__init__(tool=tool, tool_input=tool_input, log=log, **kwargs)
-
-    @property
-    def lc_serializable(self) -> bool:
-        """
-        Return whether or not the class is serializable.
-        """
-        return True
 
     tool: str
     """The name of the Tool to execute."""
@@ -32,6 +23,18 @@ class AgentAction(Serializable):
     full information about the LLM prediction (for example, any `thought`
     before the tool/tool_input)."""
 
+    def __init__(
+        self, tool: str, tool_input: Union[str, dict], log: str, **kwargs: Any
+    ):
+        super().__init__(tool=tool, tool_input=tool_input, log=log, **kwargs)
+
+    @property
+    def lc_serializable(self) -> bool:
+        """
+        Return whether or not the class is serializable.
+        """
+        return True
+
 
 class AgentActionMessageLog(AgentAction):
     message_log: List[BaseMessage]
@@ -44,18 +47,8 @@ class AgentActionMessageLog(AgentAction):
     ChatModel (and therefor returns messages rather than a string)."""
 
 
-class AgentFinish(Serializable):
+class AgentFinish(Serializable, BaseModel):
     """The final return value of an ActionAgent."""
-
-    def __init__(self, return_values: dict, log: str, **kwargs):
-        super().__init__(return_values=return_values, log=log, **kwargs)
-
-    @property
-    def lc_serializable(self) -> bool:
-        """
-        Return whether or not the class is serializable.
-        """
-        return True
 
     return_values: dict
     """Dictionary of return values."""
@@ -66,3 +59,13 @@ class AgentFinish(Serializable):
     `Final Answer: 2` you may want to just return `2` as a return value, but pass
     along the full string as a `log` (for debugging or observability purposes).
     """
+
+    def __init__(self, return_values: dict, log: str, **kwargs: Any):
+        super().__init__(return_values=return_values, log=log, **kwargs)
+
+    @property
+    def lc_serializable(self) -> bool:
+        """
+        Return whether or not the class is serializable.
+        """
+        return True
