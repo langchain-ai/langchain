@@ -635,6 +635,7 @@ class ElasticsearchStore(VectorStore):
         fields: Optional[List[str]] = None,
         filter: Optional[List[dict]] = None,
         custom_query: Optional[Callable[[Dict, Union[str, None]], Dict]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return Elasticsearch documents most similar to query, along with scores.
 
@@ -691,8 +692,12 @@ class ElasticsearchStore(VectorStore):
         docs_and_scores = [
             (
                 Document(
-                    page_content=hit["_source"][self.query_field],
-                    metadata=hit["_source"]["metadata"],
+                    page_content=kwargs.get(
+                        "content_builder", lambda hit: hit["_source"][self.query_field]
+                    )(hit),
+                    metadata=kwargs.get(
+                        "metadata_builder", lambda hit: hit["_source"]["metadata"]
+                    )(hit),
                 ),
                 hit["_score"],
             )
