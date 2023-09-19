@@ -1,13 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import NamedTuple, Union
+from typing import Union
 
 from langchain.load.serializable import Serializable
 
 
 class AgentAction(Serializable):
     """A full description of an action for an ActionAgent to execute."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        """
+        Return whether or not the class is serializable.
+        """
+        return True
 
     tool: str
     """The name of the Tool to execute."""
@@ -19,6 +25,13 @@ class AgentAction(Serializable):
 
 class AgentFinish(Serializable):
     """The final return value of an ActionAgent."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        """
+        Return whether or not the class is serializable.
+        """
+        return True
 
     return_values: dict
     """Dictionary of return values."""
