@@ -1274,6 +1274,7 @@ def test_tags_are_appended() -> None:
     with collect_runs() as cb:
         foo.invoke("hi", {"tags": ["invoked_key"]})
         run = cb.traced_runs[0]
+    assert isinstance(run.tags, list)
     assert sorted(run.tags) == sorted(["my_key", "invoked_key"])
 
 
