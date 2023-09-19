@@ -26,7 +26,6 @@ class ChatGLM(LLM):
     """
 
     endpoint_url: str = "http://127.0.0.1:8000/"
-    api_key: str = ""
     """Endpoint URL to use."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
@@ -79,21 +78,8 @@ class ChatGLM(LLM):
         _model_kwargs = self.model_kwargs or {}
 
         # HTTP headers for authorization
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json; charset=UTF-8",
-        }
-        try:
-            from zhipuai.utils import jwt_token
-        except Exception as e:
-            raise Exception("Must install zhipuai, use`pip install zhipuai`", e)
-        if not self.api_key:
-            raise Exception(
-                "api_key not provided, you could provide it with "
-                "`shell: export API_KEY=xxx` or `code: zhipuai.api_key=xxx`"
-            )
-        jwt_api_key_ = jwt_token.generate_token(self.api_key)
-        headers.update({"Authorization": jwt_api_key_})
+        headers = {"Content-Type": "application/json"}
+
         payload = {
             "prompt": prompt,
             "temperature": self.temperature,
@@ -119,11 +105,12 @@ class ChatGLM(LLM):
 
         try:
             parsed_response = response.json()
+
             # Check if response content does exists
             if isinstance(parsed_response, dict):
-                content_keys = "data"
+                content_keys = "response"
                 if content_keys in parsed_response:
-                    text = eval(parsed_response[content_keys]["choices"][0]["content"])
+                    text = parsed_response[content_keys]
                 else:
                     raise ValueError(f"No content in response : {parsed_response}")
             else:
@@ -138,6 +125,5 @@ class ChatGLM(LLM):
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         if self.with_history:
-            self.history = self.history + [[None, parsed_response["data"]["choices"]]]
-
+            self.history = self.history + [[None, parsed_response["response"]]]
         return text
