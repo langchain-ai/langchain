@@ -34,7 +34,7 @@ class AgentAction(Serializable):
 
 
 class AgentActionMessageLog(AgentAction):
-    message_log: List[BaseMessage]
+    messages: Sequence[BaseMessage]
     """Similar to log, this can be used to pass along extra
     information about what exact messages were predicted by the LLM
     before parsing out the (tool, tool_input). This is again useful
