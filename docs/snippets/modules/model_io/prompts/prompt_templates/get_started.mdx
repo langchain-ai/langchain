@@ -8,7 +8,7 @@ By default, `PromptTemplate` uses [Python's str.format](https://docs.python.org/
 syntax for templating; however other templating syntax is available (e.g., `jinja2`).
 
 ```python
-from langchain import PromptTemplate
+from langchain.prompts import PromptTemplate
 
 prompt_template = PromptTemplate.from_template(
     "Tell me a {adjective} joke about {content}."
@@ -27,7 +27,7 @@ prompt_template.format(adjective="funny", content="chickens")
 The template supports any number of variables, including no variables:
 
 ```python
-from langchain import PromptTemplate
+from langchain.prompts import PromptTemplate
 
 prompt_template = PromptTemplate.from_template(
 "Tell me a joke"
@@ -40,7 +40,7 @@ will be compared against the variables present in the template string during ins
 there is a mismatch; for example,
 
 ```python
-from langchain import PromptTemplate
+from langchain.prompts import PromptTemplate
 
 invalid_prompt = PromptTemplate(
     input_variables=["adjective"],
@@ -55,7 +55,7 @@ For more information, see [Custom Prompt Templates](./custom_prompt_template.htm
 
 ## Chat prompt template
 
-The prompt to [Chat Models](../models/chat) is a list of chat messages.
+The prompt to [chat models](../models/chat) is a list of chat messages.
 
 Each chat message is associated with content, and an additional parameter called `role`.
 For example, in the OpenAI [Chat Completions API](https://platform.openai.com/docs/guides/chat/introduction), a chat message can be associated with an AI assistant, a human or a system role.

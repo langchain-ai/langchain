@@ -26,6 +26,7 @@ from langchain.llms.anthropic import Anthropic
 from langchain.llms.anyscale import Anyscale
 from langchain.llms.aviary import Aviary
 from langchain.llms.azureml_endpoint import AzureMLOnlineEndpoint
+from langchain.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
 from langchain.llms.baseten import Baseten
@@ -37,6 +38,7 @@ from langchain.llms.chatglm import ChatGLM
 from langchain.llms.clarifai import Clarifai
 from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
+from langchain.llms.ctranslate2 import CTranslate2
 from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.deepsparse import DeepSparse
@@ -62,6 +64,7 @@ from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.ollama import Ollama
+from langchain.llms.opaqueprompts import OpaquePrompts
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
@@ -69,7 +72,6 @@ from langchain.llms.petals import Petals
 from langchain.llms.pipelineai import PipelineAI
 from langchain.llms.predibase import Predibase
 from langchain.llms.predictionguard import PredictionGuard
-from langchain.llms.promptguard import PromptGuard
 from langchain.llms.promptlayer_openai import PromptLayerOpenAI, PromptLayerOpenAIChat
 from langchain.llms.replicate import Replicate
 from langchain.llms.rwkv import RWKV
@@ -81,7 +83,7 @@ from langchain.llms.symblai_nebula import Nebula
 from langchain.llms.textgen import TextGen
 from langchain.llms.titan_takeoff import TitanTakeoff
 from langchain.llms.tongyi import Tongyi
-from langchain.llms.vertexai import VertexAI
+from langchain.llms.vertexai import VertexAI, VertexAIModelGarden
 from langchain.llms.vllm import VLLM, VLLMOpenAI
 from langchain.llms.writer import Writer
 from langchain.llms.xinference import Xinference
@@ -100,6 +102,7 @@ __all__ = [
     "Beam",
     "Bedrock",
     "CTransformers",
+    "CTranslate2",
     "CerebriumAI",
     "ChatGLM",
     "Clarifai",
@@ -142,7 +145,7 @@ __all__ = [
     "PredictionGuard",
     "PromptLayerOpenAI",
     "PromptLayerOpenAIChat",
-    "PromptGuard",
+    "OpaquePrompts",
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
@@ -152,11 +155,13 @@ __all__ = [
     "TitanTakeoff",
     "Tongyi",
     "VertexAI",
+    "VertexAIModelGarden",
     "VLLM",
     "VLLMOpenAI",
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
+    "QianfanLLMEndpoint",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -177,6 +182,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "clarifai": Clarifai,
     "cohere": Cohere,
     "ctransformers": CTransformers,
+    "ctranslate2": CTranslate2,
     "databricks": Databricks,
     "deepinfra": DeepInfra,
     "deepsparse": DeepSparse,
@@ -207,7 +213,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "petals": Petals,
     "pipelineai": PipelineAI,
     "predibase": Predibase,
-    "promptguard": PromptGuard,
+    "opaqueprompts": OpaquePrompts,
     "replicate": Replicate,
     "rwkv": RWKV,
     "sagemaker_endpoint": SagemakerEndpoint,
@@ -217,10 +223,12 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "tongyi": Tongyi,
     "titan_takeoff": TitanTakeoff,
     "vertexai": VertexAI,
+    "vertexai_model_garden": VertexAIModelGarden,
     "openllm": OpenLLM,
     "openllm_client": OpenLLM,
     "vllm": VLLM,
     "vllm_openai": VLLMOpenAI,
     "writer": Writer,
     "xinference": Xinference,
+    "qianfan_endpoint": QianfanLLMEndpoint,
 }

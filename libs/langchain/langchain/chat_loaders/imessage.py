@@ -1,27 +1,27 @@
-"""IMessage Chat Loader.
-
-This class is used to load chat sessions from the iMessage chat.db SQLite file.
-It only works on macOS when you have iMessage enabled and have the chat.db file.
-
-The chat.db file is likely located at ~/Library/Messages/chat.db. However, your
-terminal may not have permission to access this file. To resolve this, you can
-copy the file to a different location, change the permissions of the file, or
-grant full disk access for your terminal emulator in System Settings > Security
-and Privacy > Full Disk Access.
-"""
 from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
-from langchain import schema
-from langchain.chat_loaders import base as chat_loaders
+from langchain.chat_loaders.base import BaseChatLoader, ChatSession
+from langchain.schema import HumanMessage
 
 if TYPE_CHECKING:
     import sqlite3
 
 
-class IMessageChatLoader(chat_loaders.BaseChatLoader):
+class IMessageChatLoader(BaseChatLoader):
+    """Load chat sessions from the `iMessage` chat.db SQLite file.
+
+    It only works on macOS when you have iMessage enabled and have the chat.db file.
+
+    The chat.db file is likely located at ~/Library/Messages/chat.db. However, your
+    terminal may not have permission to access this file. To resolve this, you can
+    copy the file to a different location, change the permissions of the file, or
+    grant full disk access for your terminal emulator
+    in System Settings > Security and Privacy > Full Disk Access.
+    """
+
     def __init__(self, path: Optional[Union[str, Path]] = None):
         """
         Initialize the IMessageChatLoader.
@@ -37,7 +37,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         if not self.db_path.exists():
             raise FileNotFoundError(f"File {self.db_path} not found")
         try:
-            pass  # type: ignore
+            import sqlite3  # noqa: F401
         except ImportError as e:
             raise ImportError(
                 "The sqlite3 module is required to load iMessage chats.\n"
@@ -46,7 +46,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
 
     def _load_single_chat_session(
         self, cursor: "sqlite3.Cursor", chat_id: int
-    ) -> chat_loaders.ChatSession:
+    ) -> ChatSession:
         """
         Load a single chat session from the iMessage chat.db.
 
@@ -57,7 +57,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         Returns:
             ChatSession: Loaded chat session.
         """
-        results: List[schema.HumanMessage] = []
+        results: List[HumanMessage] = []
 
         query = """
         SELECT message.date, handle.id, message.text
@@ -73,7 +73,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         for date, sender, text in messages:
             if text:  # Skip empty messages
                 results.append(
-                    schema.HumanMessage(
+                    HumanMessage(
                         role=sender,
                         content=text,
                         additional_kwargs={
@@ -83,9 +83,9 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
                     )
                 )
 
-        return chat_loaders.ChatSession(messages=results)
+        return ChatSession(messages=results)
 
-    def lazy_load(self) -> Iterator[chat_loaders.ChatSession]:
+    def lazy_load(self) -> Iterator[ChatSession]:
         """
         Lazy load the chat sessions from the iMessage chat.db
         and yield them in the required format.
@@ -93,6 +93,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         Yields:
             ChatSession: Loaded chat session.
         """
+        import sqlite3
 
         try:
             conn = sqlite3.connect(self.db_path)
@@ -107,8 +108,13 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
             ) from e
         cursor = conn.cursor()
 
-        # Fetch the list of chat IDs
-        cursor.execute("SELECT ROWID FROM chat")
+        # Fetch the list of chat IDs sorted by time (most recent first)
+        query = """SELECT chat_id
+        FROM message
+        JOIN chat_message_join ON message.ROWID = chat_message_join.message_id
+        GROUP BY chat_id
+        ORDER BY MAX(date) DESC;"""
+        cursor.execute(query)
         chat_ids = [row[0] for row in cursor.fetchall()]
 
         for chat_id in chat_ids:

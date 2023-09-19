@@ -1,26 +1,27 @@
 # Vectara
 
-
-What is Vectara?
+>[Vectara](https://docs.vectara.com/docs/) is a GenAI platform for developers. It provides a simple API to build Grounded Generation
+>(aka Retrieval-augmented-generation or RAG) applications.
 
 **Vectara Overview:**
-- Vectara is developer-first API platform for building GenAI applications
+- `Vectara` is developer-first API platform for building GenAI applications
 - To use Vectara - first [sign up](https://console.vectara.com/signup) and create an account. Then create a corpus and an API key for indexing and searching.
 - You can use Vectara's [indexing API](https://docs.vectara.com/docs/indexing-apis/indexing) to add documents into Vectara's index
 - You can use Vectara's [Search API](https://docs.vectara.com/docs/search-apis/search) to query Vectara's index (which also supports Hybrid search implicitly).
 - You can use Vectara's integration with LangChain as a Vector store or using the Retriever abstraction.
 
 ## Installation and Setup
-To use Vectara with LangChain no special installation steps are required. You just have to provide your customer_id, corpus ID, and an API key created within the Vectara console to enable indexing and searching.
 
-Alternatively these can be provided as environment variables
+To use `Vectara` with LangChain no special installation steps are required. 
+To get started, follow our [quickstart](https://docs.vectara.com/docs/quickstart) guide to create an account, a corpus and an API key. 
+Once you have these, you can provide them as arguments to the Vectara vectorstore, or you can set them as environment variables.
+
 - export `VECTARA_CUSTOMER_ID`="your_customer_id"
 - export `VECTARA_CORPUS_ID`="your_corpus_id"
 - export `VECTARA_API_KEY`="your-vectara-api-key"
 
-## Usage
 
-### VectorStore
+## Vector Store
 
 There exists a wrapper around the Vectara platform, allowing you to use it as a vectorstore, whether for semantic search or example selection.
 
