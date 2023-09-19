@@ -369,6 +369,19 @@ async def test_prompt() -> None:
     ] == [expected]
 
 
+def test_extra_prompt_template_params() -> None:
+    prompt = PromptTemplate.from_template(
+        "Respond to the following question: {question}"
+    )
+    result = prompt.invoke(
+        {
+            "question": "test",
+            "topic": "test",
+        }
+    )
+    assert result == "Respond to the following question: test"
+
+
 @pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_chat_model(
