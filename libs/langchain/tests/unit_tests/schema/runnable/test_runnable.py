@@ -369,7 +369,7 @@ async def test_prompt() -> None:
     ] == [expected]
 
 
-def test_extra_prompt_template_params() -> None:
+def test_prompt_template_params() -> None:
     prompt = ChatPromptTemplate.from_template(
         "Respond to the following question: {question}"
     )
@@ -382,6 +382,9 @@ def test_extra_prompt_template_params() -> None:
     assert result == ChatPromptValue(
         messages=[HumanMessage(content="Respond to the following question: test")]
     )
+
+    with pytest.raises(KeyError):
+        prompt.invoke({})
 
 
 @pytest.mark.asyncio
