@@ -71,7 +71,7 @@ from langchain.vectorstores.tencentvectordb import TencentVectorDB
 from langchain.vectorstores.tigris import Tigris
 from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.usearch import USearch
-from langchain.vectorstores.vearch import VearchDb
+from langchain.vectorstores.vearch import Vearch
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zep import ZepVectorStore
@@ -134,7 +134,7 @@ __all__ = [
     "Tigris",
     "Typesense",
     "USearch",
-    "VearchDb"
+    "Vearch"
     "Vectara",
     "VectorStore",
     "Weaviate",
