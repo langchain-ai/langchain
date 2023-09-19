@@ -198,7 +198,7 @@ class BaseOpenAI(BaseLLM):
         model_name = data.get("model_name", "")
         if (
             model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4")
-        ) and not model_name.endswith("-instruct"):
+        ) and "-instruct" not in model_name:
             warnings.warn(
                 "You are trying to use a chat model. This way of initializing it is "
                 "no longer supported. Instead, please use: "
