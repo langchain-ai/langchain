@@ -14,6 +14,7 @@ from langchain.vectorstores.base import VectorStore
 if TYPE_CHECKING:
     import vearch
     import vearch_cluster
+    
 DEFAULT_TOPN = 4
 
 
@@ -27,7 +28,7 @@ class Vearch(VectorStore):
         embedding_function: Embeddings,
         path_or_url: Optional[str] = None,
         table_name: str = _DEFAULT_TABLE_NAME,
-        db_name:str=_DEFAULT_CLUSTER_DB_NAME,
+        db_name:str =_DEFAULT_CLUSTER_DB_NAME,
         flag: int = _DEFAULT_VERSION,
         **kwargs: Any,
         ) -> None:
@@ -90,7 +91,7 @@ class Vearch(VectorStore):
         embedding: Embeddings,
         path_or_url:Optional[str] = None,
         table_name: str = _DEFAULT_TABLE_NAME,
-        db_name:str=_DEFAULT_CLUSTER_DB_NAME,
+        db_name:str =_DEFAULT_CLUSTER_DB_NAME,
         flag:int = _DEFAULT_VERSION,
         **kwargs: Any,
     ) -> Vearch:
@@ -160,8 +161,8 @@ class Vearch(VectorStore):
             "retrieval_param": {"ncentroids": 2048, "nsubvector": 32},
         }
         fields = [
-            vearch.GammaFieldInfo(fi["filed"], type_dict[fi["type"]])
-            for fi in filed_list
+            vearch.GammaFieldInfo(fi["field"], type_dict[fi["type"]])
+            for fi in field_list
         ]
         vector_field = vearch.GammaVectorInfo(
             name = "text_embedding",
@@ -295,7 +296,6 @@ class Vearch(VectorStore):
                         break
                     t_time += 1
                 self.vearch.dump()
-        print("docids",docid)
         return docid
 
     def _load(self) -> None:
@@ -310,7 +310,7 @@ class Vearch(VectorStore):
         embedding: Embeddings,
         path_or_url: Optional[str] = None,
         table_name: str = _DEFAULT_TABLE_NAME,
-        db_name:str=_DEFAULT_CLUSTER_DB_NAME,
+        db_name:str =_DEFAULT_CLUSTER_DB_NAME,
         flag: int = _DEFAULT_VERSION,
         **kwargs: Any,
     ) -> Vearch:
@@ -545,7 +545,7 @@ class Vearch(VectorStore):
             docs_detail = self.vearch.mget_by_ids(
                 self.using_db_name,self.using_table_name,query_data)
             for record in docs_detail:
-                if record["found"]==False:
+                if record["found"] is False:
                     continue
                 content = ""
                 meta_info = {}
