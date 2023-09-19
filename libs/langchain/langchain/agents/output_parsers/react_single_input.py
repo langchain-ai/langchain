@@ -20,8 +20,11 @@ FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE = (
 class ReActSingleInputOutputParser(AgentOutputParser):
     """Parses ReAct-style LLM calls that have a single tool input.
 
-    Expects output to be in one of two formats. If the output signals
-    that an action should be taken, should be in this format:
+    Expects output to be in one of two formats.
+
+    If the output signals that an action should be taken,
+    should be in the below format. This will result in an AgentAction
+    being returned.
 
     ```
     Thought: agent thought here
@@ -29,8 +32,9 @@ class ReActSingleInputOutputParser(AgentOutputParser):
     Action Input: what is the temperature in SF?
     ```
 
-    For cases where the output signals the agent should finish,
-    should be in the following format:
+    If the output signals that a final answer should be given,
+    should be in the below format. This will result in an AgentFinish
+    being returned.
 
     ```
     Thought: agent thought here
