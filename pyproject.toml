@@ -1,3 +1,7 @@
+[project]
+name = "langchain"
+version = "0.0.294"
+
 [tool.poetry]
 name = "langchain-monorepo"
 version = "0.0.1"
