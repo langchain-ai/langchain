@@ -707,7 +707,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
     def on_llm_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when LLM errors.
@@ -773,7 +773,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
     async def on_llm_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when LLM errors.
@@ -985,7 +985,7 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
 
     def on_tool_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when tool errors.
@@ -1027,7 +1027,7 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
 
     async def on_tool_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when tool errors.
@@ -1069,7 +1069,7 @@ class CallbackManagerForRetrieverRun(ParentRunManager, RetrieverManagerMixin):
 
     def on_retriever_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when retriever errors."""
@@ -1108,7 +1108,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
     async def on_retriever_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when retriever errors."""

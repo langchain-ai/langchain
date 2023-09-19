@@ -10,6 +10,7 @@ from langchain.llms.base import LLM
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output import GenerationChunk
+from langchain.schema.prompt import PromptValue
 from langchain.utils import (
     check_package_version,
     get_from_dict_or_env,
@@ -233,6 +234,9 @@ class Anthropic(LLM, _AnthropicCommon):
             **params,
         )
         return response.completion
+
+    def convert_prompt(self, prompt: PromptValue) -> str:
+        return self._wrap_prompt(prompt.to_string())
 
     async def _acall(
         self,

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 
 if TYPE_CHECKING:
