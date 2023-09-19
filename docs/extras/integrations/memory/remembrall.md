@@ -14,9 +14,11 @@ It works as a light-weight proxy on top of your OpenAI calls and simply augments
 
 To get started, [sign in with Github on the Remembrall platform](https://remembrall.dev/login) and copy your [API key from the settings page](https://remembrall.dev/dashboard/settings).
 
-Any request that you send with the modified openai_api_base (see below) and Remembrall API key will automatically be tracked in the Remembrall dashboard. You **never** have to share your OpenAI key with our platform and this information is **never** stored by the Remembrall systems.
+Any request that you send with the modified `openai_api_base` (see below) and Remembrall API key will automatically be tracked in the Remembrall dashboard. You **never** have to share your OpenAI key with our platform and this information is **never** stored by the Remembrall systems.
 
 ### Enable Long Term Memory
+
+In addition to setting the `openai_api_base` and Remembrall API key via `x-gp-api-key`, you should specify a UID to maintain memory for. This will usually be a unique user identifier (like email).
 
 ```python
 from langchain.chat_models import ChatOpenAI
@@ -24,7 +26,7 @@ chat_model = ChatOpenAI(openai_api_base="https://remembrall.dev/api/openai/v1",
                         model_kwargs={
                             "headers":{
                                 "x-gp-api-key": "remembrall-api-key-here",
-                                "x-gp-remember": "raunak",
+                                "x-gp-remember": "user@email.com",
                             }
                         })
 
