@@ -38,8 +38,8 @@ def test_google_vertex_ai_search_enterprise_search_deprecation() -> None:
     """Test the deprecation of GoogleCloudEnterpriseSearchRetriever."""
     with pytest.warns(
         DeprecationWarning,
-        match="GoogleCloudEnterpriseSearchRetriever is deprecated, \
-                use langchain.retrievers.google_vertex_ai_search.GoogleVertexAISearchRetriever",
+        match="GoogleCloudEnterpriseSearchRetriever is deprecated, use \
+            langchain.retrievers.google_vertex_ai_search.GoogleVertexAISearchRetriever",  # noqa: E501
     ):
         retriever = GoogleCloudEnterpriseSearchRetriever()
 
