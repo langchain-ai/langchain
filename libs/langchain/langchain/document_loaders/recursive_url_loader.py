@@ -171,7 +171,16 @@ class RecursiveUrlLoader(BaseLoader):
                 text = await response.text()
             except (aiohttp.client_exceptions.InvalidURL, Exception):
                 return []
-
+            results = []
+            content = self.extractor(text)
+            if content:
+                results.append(
+                    Document(
+                        page_content=content,
+                        metadata=self.metadata_extractor(text, url),
+                    )
+                )
+            visited.add(url)
             sub_links = extract_sub_links(
                 text,
                 self.url,
@@ -179,51 +188,15 @@ class RecursiveUrlLoader(BaseLoader):
                 prevent_outside=self.prevent_outside,
             )
 
-            # Worker will be only called within the current function
-            # Worker function will process the link
-            # then recursively call get_child_links_recursive to process the children
-            async def worker(link: str) -> Union[Document, None]:
-                try:
-                    async with aiohttp.ClientSession(
-                        connector=aiohttp.TCPConnector(ssl=False),
-                        timeout=aiohttp.ClientTimeout(self.timeout),
-                    ) as session:
-                        response = await session.get(link)
-                        text = await response.text()
-                        content = self.extractor(text)
-                        if content:
-                            return Document(
-                                page_content=content,
-                                metadata=self.metadata_extractor(text, link),
-                            )
-                        else:
-                            return None
-                # Despite the fact that we have filtered some links,
-                # there may still be some invalid links, so catch the exception
-                except (aiohttp.client_exceptions.InvalidURL, Exception):
-                    return None
-
-            # The coroutines that will be executed
-            tasks = []
-            # Generate the tasks
-            for link in sub_links:
-                # Check all unvisited links
-                if link not in visited:
-                    visited.add(link)
-                    tasks.append(worker(link))
-            # Get the not None results
-            results = list(
-                filter(lambda x: x is not None, await asyncio.gather(*tasks))
-            )
             # Recursively call the function to get the children of the children
             sub_tasks = []
             for link in sub_links:
-                sub_tasks.append(
-                    self._async_get_child_links_recursive(link, visited, depth + 1)
-                )
+                if link not in visited:
+                    sub_tasks.append(
+                        self._async_get_child_links_recursive(link, visited, depth + 1)
+                    )
             # sub_tasks returns coroutines of list,
             # so we need to flatten the list await asyncio.gather(*sub_tasks)
-            flattened = []
             next_results = await asyncio.gather(*sub_tasks)
             for sub_result in next_results:
                 if isinstance(sub_result, Exception):
@@ -232,20 +205,16 @@ class RecursiveUrlLoader(BaseLoader):
                     # But we can't do anything about it.
                     continue
                 if sub_result is not None:
-                    flattened += sub_result
-            results += flattened
-            return list(filter(lambda x: x is not None, results))
+                    results += sub_result
+            return results
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load web pages.
         When use_async is True, this function will not be lazy,
         but it will still work in the expected way, just not lazy."""
         if self.use_async:
-            results = asyncio.run(self._async_get_child_links_recursive(self.url))
-            if results is None:
-                return iter([])
-            else:
-                return iter(results)
+            results = asyncio.run(self._async_get_child_links_recursive(self.url)) or []
+            return iter(results)
         else:
             return self._get_child_links_recursive(self.url)
 
