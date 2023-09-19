@@ -9,6 +9,7 @@ from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
 from pydantic import Field
+from langchain.pydantic_v1 import Field
 from enum import Enum
 
 from langchain.embeddings.base import Embeddings
@@ -47,7 +48,7 @@ class LLMRails(VectorStore):
            self._api_key is None
         ):
             logging.warning(
-                "Cant find Rails credentials in environment."
+                "Can't find Rails credentials in environment."
             )
         
         self._session = requests.Session()  # to reuse connections
