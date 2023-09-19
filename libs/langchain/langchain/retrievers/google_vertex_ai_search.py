@@ -305,20 +305,3 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
             )
 
         return documents
-
-
-class GoogleCloudEnterpriseSearchRetriever(GoogleVertexAISearchRetriever):
-    """`Google Vertex Search API` retriever alias for backwards compatibility.
-
-    DEPRECATED: Use `GoogleVertexAISearchRetriever` instead.
-    """
-
-    def __init__(self, **data: Any):
-        import warnings
-
-        warnings.warn(
-            "GoogleCloudEnterpriseSearchRetriever is deprecated, \
-                use GoogleVertexAISearchRetriever",
-            DeprecationWarning,
-        )
-        super().__init__(**data)

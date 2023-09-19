@@ -13,10 +13,10 @@ DATA_STORE_ID - the ID of the search engine to use for the test
 
 import pytest
 
-from langchain.retrievers.google_vertex_ai_search import (
+from langchain.retrievers.google_cloud_enterprise_search import (
     GoogleCloudEnterpriseSearchRetriever,
-    GoogleVertexAISearchRetriever,
 )
+from langchain.retrievers.google_vertex_ai_search import GoogleVertexAISearchRetriever
 from langchain.schema import Document
 
 
@@ -38,8 +38,8 @@ def test_google_vertex_ai_search_enterprise_search_deprecation() -> None:
     """Test the deprecation of GoogleCloudEnterpriseSearchRetriever."""
     with pytest.warns(
         DeprecationWarning,
-        match="GoogleCloudEnterpriseSearchRetriever is deprecated, use \
-            GoogleVertexAISearchRetriever",
+        match="GoogleCloudEnterpriseSearchRetriever is deprecated, \
+                use langchain.retrievers.google_vertex_ai_search.GoogleVertexAISearchRetriever",
     ):
         retriever = GoogleCloudEnterpriseSearchRetriever()
 
