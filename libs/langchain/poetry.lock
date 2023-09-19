@@ -1373,13 +1373,13 @@ tritonclient = "2.34.0"
 
 [[package]]
 name = "clarifai-grpc"
-version = "9.8.2"
+version = "9.8.3"
 description = "Clarifai gRPC API Client"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "clarifai-grpc-9.8.2.tar.gz", hash = "sha256:629757011541685d310017f2d70b2ac58def17d13ae8187975cb11352aedd121"},
-    {file = "clarifai_grpc-9.8.2-py3-none-any.whl", hash = "sha256:44b05e80d9215c63da10014f2630cf0d331ac98615ea8a802370b60196bef71c"},
+    {file = "clarifai-grpc-9.8.3.tar.gz", hash = "sha256:723ec56c8841fd2fb83b310b3a0f84bfe8c24a85ca24def8884a18dbffbccc34"},
+    {file = "clarifai_grpc-9.8.3-py3-none-any.whl", hash = "sha256:a01434bb211f1109f6260f8325ba45608afc665b8aeeae65ab9f0a7e8b0db439"},
 ]
 
 [package.dependencies]
@@ -10592,5 +10592,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "ab16397d24f1e7b5c79cb284de7e0641ebd02547bf24285e675847f51b57d085"
-
+content-hash = "6c6a4bd3ffbaf82c8a39d6dc99966e99b9eb3ce6e4c66c4585cf6144be3b00df"
