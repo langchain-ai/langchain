@@ -130,7 +130,9 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         if self.normalize is None or self.compress_to_size is None:
             raise ValueError(
                 "Both normalize and compress_to_size must be set."
-                "Example: AlephAlphaAsymmetricSemanticEmbedding(normalize=True, compress_to_size=128)"
+                "Example: "
+                "AlephAlphaAsymmetricSemanticEmbedding(normalize=True, "
+                "compress_to_size=128)"
             )
 
         for text in texts:
@@ -175,7 +177,9 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         if self.normalize is None or self.compress_to_size is None:
             raise ValueError(
                 "Both normalize and compress_to_size must be set."
-                "Example: AlephAlphaAsymmetricSemanticEmbedding(normalize=True, compress_to_size=128)"
+                "Example: "
+                "AlephAlphaAsymmetricSemanticEmbedding(normalize=True, "
+                "compress_to_size=128)"
             )
 
         symmetric_params = {
@@ -230,7 +234,9 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
         if self.normalize is None or self.compress_to_size is None:
             raise ValueError(
                 "Both normalize and compress_to_size must be set."
-                "Example: AlephAlphaSymmetricSemanticEmbedding(normalize=True, compress_to_size=128)"
+                "Example: "
+                "AlephAlphaSymmetricSemanticEmbedding(normalize=True, "
+                "compress_to_size=128)"
             )
 
         query_params = {
