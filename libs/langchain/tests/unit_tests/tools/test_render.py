@@ -26,6 +26,8 @@ calculator: calculator(expression: str) -> str - Do math."""
 
 def test_render_text_description_and_args() -> None:
     tool_string = render_text_description_and_args([search, calculator])
-    expected_string = """search: search(query: str) -> str - Lookup things online., args: {'query': {'title': 'Query', 'type': 'string'}}
-calculator: calculator(expression: str) -> str - Do math., args: {'expression': {'title': 'Expression', 'type': 'string'}}"""
+    expected_string = """search: search(query: str) -> str - Lookup things online., \
+args: {'query': {'title': 'Query', 'type': 'string'}}
+calculator: calculator(expression: str) -> str - Do math., \
+args: {'expression': {'title': 'Expression', 'type': 'string'}}"""
     assert tool_string == expected_string
