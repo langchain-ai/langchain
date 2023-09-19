@@ -88,16 +88,9 @@ async def acompletion_with_retry(
         # Use ChatGLM's async api
         # https://open.bigmodel.cn/api/paas/v3/model-api/chatglm_pro/invoke
         m_kwargs = copy.deepcopy(kwargs)
-        if (
-            len(kwargs["messages"]) >= 2
-            and len(kwargs["messages"]) // 2
-            and kwargs["messages"][-1]["role"] == kwargs["messages"][-2]["role"]
-        ):
-            m_kwargs["prompt"] = [msg for msg in kwargs["messages"][:-2]] + [
-                kwargs["messages"][-1]
-            ]
-        else:
-            m_kwargs["prompt"] = kwargs["messages"]
+        m_kwargs["prompt"] = kwargs["messages"]
+        if len(m_kwargs["prompt"])//2 == 0:
+            raise ValueError("The total length of the Prompt must be an odd number.")
         if m_kwargs.get("streaming") or m_kwargs.get("stream"):
             try:
                 from aiostream.stream import list as alist
@@ -358,16 +351,10 @@ class ChatChatGLM(BaseChatModel):
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
             m_kwargs = copy.deepcopy(kwargs)
-            if (
-                len(kwargs["messages"]) >= 2
-                and len(kwargs["messages"]) // 2
-                and kwargs["messages"][-1]["role"] == kwargs["messages"][-2]["role"]
-            ):
-                m_kwargs["prompt"] = [msg for msg in kwargs["messages"][:-2]] + [
-                    kwargs["messages"][-1]
-                ]
-            else:
-                m_kwargs["prompt"] = kwargs["messages"]
+            m_kwargs["prompt"] = kwargs["messages"]
+            if len(m_kwargs["prompt"])//2 == 0:
+                raise ValueError(
+                    "The total length of the Prompt must be an odd number.")
             if m_kwargs.get("streaming") or m_kwargs.get("stream"):
                 return self.client.sse_invoke(**m_kwargs)
             else:
