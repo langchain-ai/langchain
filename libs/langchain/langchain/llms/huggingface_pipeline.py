@@ -174,7 +174,7 @@ class HuggingFacePipeline(LLM):
         text_generations: List[str] = []
 
         for i in range(0, len(prompts), self.batch_size):
-            batch_prompts = prompts[i: i + self.batch_size]
+            batch_prompts = prompts[i : i + self.batch_size]
 
             # Process batch of prompts
             responses = self.pipeline(batch_prompts)
@@ -183,7 +183,7 @@ class HuggingFacePipeline(LLM):
             for j, response in enumerate(responses):
                 if self.pipeline.task == "text-generation":
                     # Text generation return includes the starter text
-                    text = response["generated_text"][len(batch_prompts[j]):]
+                    text = response["generated_text"][len(batch_prompts[j]) :]
                 elif self.pipeline.task == "text2text-generation":
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
