@@ -319,6 +319,24 @@ class StrOutputParser(BaseTransformOutputParser[str]):
         return text
 
 
+class StrOutputParserWithClener(BaseTransformOutputParser[str]):
+    """OutputParser that parses LLMResult into the top likely string."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        """Whether the class LangChain serializable."""
+        return True
+
+    @property
+    def _type(self) -> str:
+        """Return the output parser type for serialization."""
+        return "default_with_cleaner"
+
+    def parse(self, text: str) -> str:
+        """Returns the input text with no changes."""
+        return text.replace('"', "").strip()
+
+
 # TODO: Deprecate
 NoOpOutputParser = StrOutputParser
 
