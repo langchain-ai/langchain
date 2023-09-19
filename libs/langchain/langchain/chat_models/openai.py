@@ -174,6 +174,8 @@ class ChatOpenAI(BaseChatModel):
     when using one of the many model providers that expose an OpenAI-like 
     API but with different models. In those cases, in order to avoid erroring 
     when tiktoken is called, you can specify a model name to use here."""
+    openai_log_level: Optional[str] = None
+    """Log all http requests to OpenAI API. Can be 'debug', 'info' or None"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -328,7 +330,8 @@ class ChatOpenAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if stream if stream is not None else self.streaming:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
             generation: Optional[ChatGenerationChunk] = None
             for chunk in self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
@@ -408,7 +411,8 @@ class ChatOpenAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if stream if stream is not None else self.streaming:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
             generation: Optional[ChatGenerationChunk] = None
             async for chunk in self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
@@ -445,6 +449,10 @@ class ChatOpenAI(BaseChatModel):
             import openai
 
             openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
+        if self.openai_log_level:
+            import openai
+
+            openai.log = self.openai_log_level  # type: ignore
         return {**self._default_params, **openai_creds}
 
     def _get_invocation_params(

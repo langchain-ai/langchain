@@ -8,6 +8,7 @@ import os
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import requests
+import urllib3.exceptions
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
@@ -56,6 +57,12 @@ class GigaChat(SimpleChatModel):
     verify_tsl: bool = True
 
     logger = logging.getLogger(__name__)
+
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        super().__init__(*args, **kwargs)
+
+        if not self.verify_tsl:
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     @property
     def _llm_type(self) -> str:

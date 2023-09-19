@@ -74,6 +74,8 @@ class BaseConversationalRetrievalChain(Chain):
     get_chat_history: Optional[Callable[[List[CHAT_TURN_TYPE]], str]] = None
     """An optional function to get a string of the chat history.
     If None is provided, will use a default."""
+    disable_question_generator: bool = False
+    """Запрещает видоизменять запрос пользователя, оставляя его в исходном виде"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -120,7 +122,7 @@ class BaseConversationalRetrievalChain(Chain):
         get_chat_history = self.get_chat_history or _get_chat_history
         chat_history_str = get_chat_history(inputs["chat_history"])
 
-        if chat_history_str:
+        if chat_history_str and not self.disable_question_generator:
             callbacks = _run_manager.get_child()
             new_question = self.question_generator.run(
                 question=question, chat_history=chat_history_str, callbacks=callbacks

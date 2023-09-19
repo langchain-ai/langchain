@@ -3930,13 +3930,13 @@ all = ["datasets (>=2.12.0,<3.0.0)", "evaluate (>=0.4.0,<0.5.0)", "nltk (>=3.8.1
 
 [[package]]
 name = "langsmith"
-version = "0.0.25"
+version = "0.0.38"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.25-py3-none-any.whl", hash = "sha256:d595435ad21fa6077550d7c85472935d1e8241afa042c1e29287d2c95c3ed151"},
-    {file = "langsmith-0.0.25.tar.gz", hash = "sha256:e728c398fc1adaa0ed8abeb21f6a92d7fb19fe3ab49d3911c22b03dfe25935d6"},
+    {file = "langsmith-0.0.38-py3-none-any.whl", hash = "sha256:3bdb107d7b847e0f42a89ce67080aad086db230dec9647b13eb7af37e3d8ff1d"},
+    {file = "langsmith-0.0.38.tar.gz", hash = "sha256:508f2a949135055f27d82848ad4dc37b3c2f00f5e05e5296883c65ef528b148f"},
 ]
 
 [package.dependencies]
@@ -10491,4 +10491,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b63078268a80c07577b432114302f4f86d47be25b83a245affb0dbc999fb2c1f"
+content-hash = "75648828833909395b8d6fc4152b3d0953ba05e8cfd5e86e82e011bd3054e57c"
