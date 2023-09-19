@@ -221,15 +221,21 @@ class Vald(VectorStore):
         query: str,
         k: int = 4,
         fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         radius: float = -1.0,
         epsilon: float = 0.01,
         timeout: int = 3000000000,
-        lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
         emb = self._embedding.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            emb, k, fetch_k, radius, epsilon, timeout, lambda_mult
+            emb,
+            k=k,
+            fetch_k=fetch_k,
+            radius=radius,
+            epsilon=epsilon,
+            timeout=timeout,
+            lambda_mult=lambda_mult,
         )
 
         return docs
@@ -239,10 +245,10 @@ class Vald(VectorStore):
         embedding: List[float],
         k: int = 4,
         fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         radius: float = -1.0,
         epsilon: float = 0.01,
         timeout: int = 3000000000,
-        lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
         try:
@@ -262,7 +268,7 @@ class Vald(VectorStore):
         stub = object_pb2_grpc.ObjectStub(channel)
 
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding, fetch_k, radius, epsilon, timeout
+            embedding, fetch_k=fetch_k, radius=radius, epsilon=epsilon, timeout=timeout
         )
 
         docs = []
