@@ -1,4 +1,8 @@
-from langchain.tools.base import tool
+from typing import List
+
+import pytest
+
+from langchain.tools.base import BaseTool, tool
 from langchain.tools.render import (
     render_text_description,
     render_text_description_and_args,
@@ -8,24 +12,29 @@ from langchain.tools.render import (
 @tool
 def search(query: str) -> str:
     """Lookup things online."""
-    pass
+    return "foo"
 
 
 @tool
 def calculator(expression: str) -> str:
     """Do math."""
-    pass
+    return "bar"
 
 
-def test_render_text_description() -> None:
-    tool_string = render_text_description([search, calculator])
+@pytest.fixture
+def tools() -> List[BaseTool]:
+    return [search, calculator]  # type: ignore
+
+
+def test_render_text_description(tools) -> None:
+    tool_string = render_text_description(tools)
     expected_string = """search: search(query: str) -> str - Lookup things online.
 calculator: calculator(expression: str) -> str - Do math."""
     assert tool_string == expected_string
 
 
-def test_render_text_description_and_args() -> None:
-    tool_string = render_text_description_and_args([search, calculator])
+def test_render_text_description_and_args(tools) -> None:
+    tool_string = render_text_description_and_args(tools)
     expected_string = """search: search(query: str) -> str - Lookup things online., \
 args: {'query': {'title': 'Query', 'type': 'string'}}
 calculator: calculator(expression: str) -> str - Do math., \
