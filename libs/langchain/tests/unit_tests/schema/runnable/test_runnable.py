@@ -7,7 +7,7 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
-from langchain.callbacks.manager import Callbacks
+from langchain.callbacks.manager import Callbacks, collect_runs
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
@@ -15,7 +15,6 @@ from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
-from langchain.callbacks.manager import collect_runs
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -1268,7 +1267,7 @@ def test_metadata_is_merged() -> None:
 
 
 def test_tags_are_appended() -> None:
-    """Test tags defined in with_config are concatenated with those supplied upon invocation."""
+    """Test tags from with_config are concatenated with those in invocation."""
 
     foo = RunnableLambda(lambda x: x).with_config({"tags": ["my_key"]})
     with collect_runs() as cb:
