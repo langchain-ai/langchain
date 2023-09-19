@@ -20,7 +20,7 @@ class StructuredChatOutputParser(AgentOutputParser):
 
     pattern = re.compile(r"```(?:json)?\n(.*?)```", re.DOTALL)
 
-    def get_format_instructions(self) -> sr:
+    def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
