@@ -11,8 +11,29 @@ from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
+PREFIXES_TO_IGNORE = ("javascript:", "mailto:", "#")
+SUFFIXES_TO_IGNORE = (
+    ".css",
+    ".js",
+    ".ico",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".svg",
+)
+SUFFIXES_TO_IGNORE_REGEX = (
+    "(?!" + "|".join([re.escape(s) + "[\#'\"]" for s in SUFFIXES_TO_IGNORE]) + ")"
+)
+PREFIXES_TO_IGNORE_REGEX = (
+    "(?!" + "|".join([re.escape(s) for s in PREFIXES_TO_IGNORE]) + ")"
+)
+DEFAULT_LINK_REGEX = (
+    f"href=[\"']{PREFIXES_TO_IGNORE_REGEX}((?:{SUFFIXES_TO_IGNORE_REGEX}.)*?)[\#\"']"
+)
 
-def _gen_metadata(raw_html: str, url: str) -> dict:
+
+def _metadata_extractor(raw_html: str, url: str) -> dict:
     """Build metadata from BeautifulSoup output."""
     metadata = {"source": url}
 
@@ -34,90 +55,86 @@ def _gen_metadata(raw_html: str, url: str) -> dict:
     return metadata
 
 
+def _get_sub_links(
+    raw_html: str,
+    base_url: str,
+    *,
+    pattern: Union[str, re.Pattern] = DEFAULT_LINK_REGEX,
+    prevent_outside: bool = True,
+) -> List[str]:
+    """Extract all links from a raw html string and convert into absolute paths.
+
+    Args:
+        raw_html: original html
+        base_url: the base url of the html
+        pattern: Regex to use for extracting links from raw html.
+        prevent_outside: If True, ignore external links which are not children
+            of the base url.
+
+    Returns:
+        List[str]: sub links
+    """
+    all_links = set(re.findall(pattern, raw_html))
+    absolute_paths = set()
+    for link in all_links:
+        # Some may be absolute links like https://to/path
+        if link.startswith("http"):
+            if not prevent_outside or link.startswith(base_url):
+                absolute_paths.add(link)
+        # Some may have omitted the protocol like //to/path
+        elif link.startswith("//"):
+            absolute_paths.add(f"{urlparse(base_url).scheme}:{link}")
+        else:
+            absolute_paths.add(urljoin(base_url, link))
+    return list(absolute_paths)
+
+
 class RecursiveUrlLoader(BaseLoader):
     """Load all child links from a URL page."""
 
     def __init__(
         self,
         url: str,
-        max_depth: Optional[int] = None,
+        max_depth: Optional[int] = 2,
         use_async: Optional[bool] = None,
         extractor: Optional[Callable[[str], str]] = None,
         metadata_extractor: Optional[Callable[[str, str], str]] = None,
-        exclude_dirs: Optional[Sequence[str]] = None,
-        timeout: Optional[int] = None,
-        prevent_outside: Optional[bool] = None,
+        exclude_dirs: Optional[Sequence[str]] = (),
+        timeout: Optional[int] = 10,
+        prevent_outside: Optional[bool] = True,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
         Args:
             url: The URL to crawl.
-            exclude_dirs: A list of subdirectories to exclude.
+            max_depth: The max depth of the recursive loading.
             use_async: Whether to use asynchronous loading.
                 If True, this function will not be lazy, but it will still work in the
                 expected way, just not lazy.
-            extractor: A function to extract the text from the html.
-                When extract function returns empty string, the document will be
+            extractor: A function to extract document contents from raw html.
+                When extract function returns an empty string, the document is
                 ignored.
-            max_depth: The max depth of the recursive loading.
+            metadata_extractor: A function to extract metadata from raw html and the
+                source url (args in that order). Default extractor will attempt
+                to use BeautifulSoup4 to extract the title, description and language
+                of the page.
+            exclude_dirs: A list of subdirectories to exclude.
             timeout: The timeout for the requests, in the unit of seconds.
+            prevent_outside: If True, prevent loading from urls which are not children
+                of the root url.
         """
 
         self.url = url
-        self.exclude_dirs = exclude_dirs or ()
+        self.max_depth = max_depth if max_depth is not None else 2
         self.use_async = use_async if use_async is not None else False
         self.extractor = extractor if extractor is not None else lambda x: x
-        self.metadata_extractor = metadata_extractor or _gen_metadata
-        self.max_depth = max_depth if max_depth is not None else 2
+        self.metadata_extractor = (
+            metadata_extractor
+            if metadata_extractor is not None
+            else _metadata_extractor
+        )
+        self.exclude_dirs = exclude_dirs if exclude_dirs is not None else ()
         self.timeout = timeout if timeout is not None else 10
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
-
-    def _get_sub_links(self, raw_html: str, base_url: str) -> List[str]:
-        """Extract all links from a raw html string and convert into absolute paths.
-
-        Args:
-            raw_html (str): original html
-            base_url (str): the base url of the html
-
-        Returns:
-            List[str]: sub links
-        """
-        # Get all links that are relative to the root of the website
-        all_links = re.findall(r"href=[\"\'](.*?)[\"\']", raw_html)
-        absolute_paths = []
-        invalid_prefixes = ("javascript:", "mailto:", "#")
-        invalid_suffixes = (
-            ".css",
-            ".js",
-            ".ico",
-            ".png",
-            ".jpg",
-            ".jpeg",
-            ".gif",
-            ".svg",
-        )
-        # Process the links
-        for link in all_links:
-            link = link.split("#")[0]
-            # Ignore blacklisted patterns
-            # like javascript: or mailto:, files of svg, ico, css, js
-            if link.startswith(invalid_prefixes) or link.endswith(invalid_suffixes):
-                continue
-            # Some may be absolute links like https://to/path
-            elif link.startswith("http"):
-                absolute_paths.append(link)
-            # Some may have omitted the protocol like //to/path
-            elif link.startswith("//"):
-                absolute_paths.append(f"{urlparse(base_url).scheme}:{link}")
-            else:
-                absolute_paths.append(urljoin(base_url, link))
-        # Remove duplicates
-        return list(
-            set(
-                p
-                for p in absolute_paths
-                if p.startswith(base_url) or not self.prevent_outside
-            )
-        )
 
     def _get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None, depth: int = 0
@@ -127,6 +144,7 @@ class RecursiveUrlLoader(BaseLoader):
         Args:
             url: The URL to crawl.
             visited: A set of visited URLs.
+            depth: Current depth of recursion. Stop when depth >= max_depth.
         """
 
         if depth >= self.max_depth:
@@ -144,16 +162,21 @@ class RecursiveUrlLoader(BaseLoader):
         except Exception:
             logger.warning(f"Unable to load from {url}")
             return
-        visited.add(url.rstrip("/"))
-        yield Document(
-            page_content=self.extractor(response.text),
-            metadata=self.metadata_extractor(response.text, url),
-        )
+        content = self.extractor(response.text)
+        if content:
+            yield Document(
+                page_content=content,
+                metadata=self.metadata_extractor(response.text, url),
+            )
+        visited.add(url)
 
         # Store the visited links and recursively visit the children
-        for link in self._get_sub_links(response.text, self.url):
+        sub_links = _get_sub_links(
+            response.text, self.url, prevent_outside=self.prevent_outside
+        )
+        for link in sub_links:
             # Check all unvisited links
-            if link.rstrip("/") not in visited:
+            if link not in visited:
                 yield from self._get_child_links_recursive(
                     link, visited=visited, depth=depth + 1
                 )
@@ -186,9 +209,7 @@ class RecursiveUrlLoader(BaseLoader):
         visited = set() if visited is None else visited
 
         # Exclude the links that start with any of the excluded directories
-        if self.exclude_dirs and any(
-            url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs
-        ):
+        if any(url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs):
             return []
         # Disable SSL verification because websites may have invalid SSL certificates,
         # but won't cause any security issues for us.
@@ -201,14 +222,12 @@ class RecursiveUrlLoader(BaseLoader):
             try:
                 response = await session.get(url)
                 text = await response.text()
-            except aiohttp.client_exceptions.InvalidURL:
-                return []
-            # There may be some other exceptions, so catch them,
-            # we don't want to stop the whole process
-            except Exception:
+            except (aiohttp.client_exceptions.InvalidURL, Exception):
                 return []
 
-            absolute_paths = self._get_sub_links(text, self.url)
+            sub_links = _get_sub_links(
+                text, self.url, prevent_outside=self.prevent_outside
+            )
 
             # Worker will be only called within the current function
             # Worker function will process the link
@@ -221,27 +240,23 @@ class RecursiveUrlLoader(BaseLoader):
                     ) as session:
                         response = await session.get(link)
                         text = await response.text()
-                        extracted = self.extractor(text)
-                        if len(extracted) > 0:
+                        content = self.extractor(text)
+                        if content:
                             return Document(
-                                page_content=extracted,
+                                page_content=content,
                                 metadata=self.metadata_extractor(text, link),
                             )
                         else:
                             return None
                 # Despite the fact that we have filtered some links,
                 # there may still be some invalid links, so catch the exception
-                except aiohttp.client_exceptions.InvalidURL:
-                    return None
-                # There may be some other exceptions, so catch them,
-                # we don't want to stop the whole process
-                except Exception:
+                except (aiohttp.client_exceptions.InvalidURL, Exception):
                     return None
 
             # The coroutines that will be executed
             tasks = []
             # Generate the tasks
-            for link in absolute_paths:
+            for link in sub_links:
                 # Check all unvisited links
                 if link not in visited:
                     visited.add(link)
@@ -252,7 +267,7 @@ class RecursiveUrlLoader(BaseLoader):
             )
             # Recursively call the function to get the children of the children
             sub_tasks = []
-            for link in absolute_paths:
+            for link in sub_links:
                 sub_tasks.append(
                     self._async_get_child_links_recursive(link, visited, depth + 1)
                 )
