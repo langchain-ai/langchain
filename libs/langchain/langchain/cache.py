@@ -198,6 +198,90 @@ class SQLiteCache(SQLAlchemyCache):
         super().__init__(engine)
 
 
+class UpstashRedisCache(BaseCache):
+    """Cache that uses Upstash Redis as a backend."""
+
+    def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
+        # TODO: fix these predefined texts and what not
+        """
+        Initialize an instance of UpstashRedisCache.
+
+        This method initializes an object with Redis caching capabilities.
+        It takes a `redis_` parameter, which should be an instance of a Redis
+        client class, allowing the object to interact with a Redis
+        server for caching purposes.
+
+        Parameters:
+            redis_ (Any): An instance of a Redis client class
+                (e.g., redis.Redis) used for caching.
+                This allows the object to communicate with a
+                Redis server for caching operations.
+            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
+                If provided, it sets the time duration for how long cached
+                items will remain valid. If not provided, cached items will not
+                have an automatic expiration.
+        """
+        try:
+            from upstash_redis import Redis
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+        if not isinstance(redis_, Redis):
+            raise ValueError("Please pass in UpstashRedis object.")
+        self.redis = redis_
+        self.ttl = ttl
+
+    def _key(self, prompt: str, llm_string: str) -> str:
+        """Compute key from prompt and llm_string"""
+        return _hash(prompt + llm_string)
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        generations = []
+        # Read from a Redis HASH
+        results = self.redis.hgetall(self._key(prompt, llm_string))
+        if results:
+            for _, text in results.items():
+                generations.append(Generation(text=text))
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "RedisCache only supports caching of normal LLM generations, "
+                    f"got {type(gen)}"
+                )
+            if isinstance(gen, ChatGeneration):
+                warnings.warn(
+                    "NOTE: Generation has not been cached. RedisCache does not"
+                    " support caching ChatModel outputs."
+                )
+                return
+        # Write to a Redis HASH
+        key = self._key(prompt, llm_string)
+
+        mapping = {
+            str(idx): generation.text
+            for idx, generation in enumerate(return_val)
+        }
+        self.redis.hset(key=key, values=mapping)
+
+        if self.ttl is not None:
+            self.redis.expire(key, self.ttl)
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache. If `asynchronous` is True, flush asynchronously."""
+        asynchronous = kwargs.get("asynchronous", False)
+        if asynchronous:
+            asynchronous = "ASYNC"
+        else:
+            asynchronous = "SYNC"
+        self.redis.flushdb(flush_type=asynchronous, **kwargs)
+
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
 
