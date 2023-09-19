@@ -65,3 +65,7 @@ class BaseChatMessageHistory(ABC):
     @abstractmethod
     def clear(self) -> None:
         """Remove all messages from the store"""
+
+    def __iter__(self) -> Iterator[BaseMessage]:
+        for message in self.messages:
+            yield message

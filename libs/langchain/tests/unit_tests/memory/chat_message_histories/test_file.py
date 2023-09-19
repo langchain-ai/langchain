@@ -69,3 +69,20 @@ def test_multiple_sessions(file_chat_message_history: FileChatMessageHistory) ->
     assert messages[2].content == "Tell me a joke."
     expected_content = "Why did the chicken cross the road? To get to the other side!"
     assert messages[3].content == expected_content
+
+
+def test_history_iterator(file_chat_message_history: FileChatMessageHistory) -> None:
+    file_chat_message_history.add_user_message("Hello!")
+    file_chat_message_history.add_ai_message("Hi there!")
+
+    index = 0
+    for message in file_chat_message_history:
+        if index == 0:
+            assert isinstance(message, HumanMessage)
+            assert message.content == "Hello!"
+        elif index == 1:
+            assert isinstance(message, AIMessage)
+            assert message.content == "Hi there!"
+        else:
+            pytest.fail("Message history should not contain more than 2 messages.")
+        index += 1
