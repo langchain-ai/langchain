@@ -19,7 +19,7 @@ class TransformChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import TransformChain
+            from langchain.chains import TransformChain
             transform_chain = TransformChain(input_variables=["text"],
              output_variables["entities"], transform=func())
     """

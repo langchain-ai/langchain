@@ -20,7 +20,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 from langchain.vectorstores.utils import DistanceStrategy
 
@@ -345,8 +345,9 @@ class SingleStoreDB(VectorStore):
             def build_where_clause(
                 where_clause_values: List[Any],
                 sub_filter: dict,
-                prefix_args: List[str] = [],
+                prefix_args: Optional[List[str]] = None,
             ) -> None:
+                prefix_args = prefix_args or []
                 for key in sub_filter.keys():
                     if isinstance(sub_filter[key], dict):
                         build_where_clause(
@@ -373,7 +374,9 @@ class SingleStoreDB(VectorStore):
                     FROM {} {} ORDER BY __score {} LIMIT %s""".format(
                         self.content_field,
                         self.metadata_field,
-                        self.distance_strategy,
+                        self.distance_strategy.name
+                        if isinstance(self.distance_strategy, DistanceStrategy)
+                        else self.distance_strategy,
                         self.vector_field,
                         self.table_name,
                         where_clause,

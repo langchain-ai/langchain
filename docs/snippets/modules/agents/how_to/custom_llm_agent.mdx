@@ -1,5 +1,5 @@
-The LLMAgent is used in an AgentExecutor. This AgentExecutor can largely be thought of as a loop that:
-1. Passes user input and any previous steps to the Agent (in this case, the LLMAgent)
+The LLM Agent is used in an `AgentExecutor`. This `AgentExecutor` can largely be thought of as a loop that:
+1. Passes user input and any previous steps to the Agent (in this case, the LLM Agent)
 2. If the Agent returns an `AgentFinish`, then return that directly to the user
 3. If the Agent returns an `AgentAction`, then use that to call a tool and get an `Observation`
 4. Repeat, passing the `AgentAction` and `Observation` back to the Agent until an `AgentFinish` is emitted.
@@ -20,7 +20,7 @@ Do necessary imports, etc.
 ```python
 from langchain.agents import Tool, AgentExecutor, LLMSingleActionAgent, AgentOutputParser
 from langchain.prompts import StringPromptTemplate
-from langchain import OpenAI, SerpAPIWrapper, LLMChain
+from langchain.llms import OpenAI\nfrom langchain.utilities import SerpAPIWrapper\nfrom langchain.chains import LLMChain
 from typing import List, Union
 from langchain.schema import AgentAction, AgentFinish, OutputParserException
 import re
@@ -43,7 +43,7 @@ tools = [
 ]
 ```
 
-## Prompt Template
+## Prompt template
 
 This instructs the agent on what to do. Generally, the template should incorporate:
 
@@ -112,11 +112,11 @@ prompt = CustomPromptTemplate(
 )
 ```
 
-## Output Parser
+## Output parser
 
 The output parser is responsible for parsing the LLM output into `AgentAction` and `AgentFinish`. This usually depends heavily on the prompt used.
 
-This is where you can change the parsing to do retries, handle whitespace, etc
+This is where you can change the parsing to do retries, handle whitespace, etc.
 
 
 ```python
@@ -164,7 +164,7 @@ This depends heavily on the prompt and model you are using. Generally, you want 
 
 ## Set up the Agent
 
-We can now combine everything to set up our agent
+We can now combine everything to set up our agent:
 
 
 ```python
@@ -225,7 +225,7 @@ agent_executor.run("How many people live in canada as of 2023?")
 
 If you want to add memory to the agent, you'll need to:
 
-1. Add a place in the custom prompt for the chat_history
+1. Add a place in the custom prompt for the `chat_history`
 2. Add a memory object to the agent executor.
 
 

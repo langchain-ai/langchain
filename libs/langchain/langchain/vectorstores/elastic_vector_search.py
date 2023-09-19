@@ -17,7 +17,7 @@ from typing import (
 
 from langchain._api import deprecated
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
@@ -62,7 +62,7 @@ class ElasticVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain import ElasticVectorSearch
+            from langchain.vectorstores import ElasticVectorSearch
             from langchain.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
@@ -98,7 +98,7 @@ class ElasticVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain import ElasticVectorSearch
+            from langchain.vectorstores import ElasticVectorSearch
             from langchain.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
@@ -282,7 +282,7 @@ class ElasticVectorSearch(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import ElasticVectorSearch
+                from langchain.vectorstores import ElasticVectorSearch
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 elastic_vector_search = ElasticVectorSearch.from_texts(

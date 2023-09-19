@@ -90,6 +90,15 @@ class PALChain(Chain):
     This class implements the Program-Aided Language Models (PAL) for generating code
     solutions. PAL is a technique described in the paper "Program-Aided Language Models"
     (https://arxiv.org/pdf/2211.10435.pdf).
+
+    *Security note*: This class implements an AI technique that generates and evaluates
+        Python code, which can be dangerous and requires a specially sandboxed
+        environment to be safely used. While this class implements some basic guardrails
+        by limiting available locals/globals and by parsing and inspecting
+        the generated Python AST using `PALValidation`, those guardrails will not
+        deter sophisticated attackers and are not a replacement for a proper sandbox.
+        Do not use this class on untrusted inputs, with elevated permissions,
+        or without consulting your security team about proper sandboxing!
     """
 
     llm_chain: LLMChain

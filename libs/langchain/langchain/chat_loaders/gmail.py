@@ -62,7 +62,7 @@ def _get_message_data(service: Any, message: Any) -> ChatSession:
 
 
 class GMailLoader(BaseChatLoader):
-    """This loader goes over how to load data from GMail.
+    """Load data from `GMail`.
 
     There are many ways you could want to load data from GMail.
     This loader is currently fairly opinionated in how to do so.

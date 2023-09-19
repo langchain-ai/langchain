@@ -1,5 +1,5 @@
 ```python
-from langchain import PromptTemplate, OpenAI, LLMChain
+from langchain.prompts import PromptTemplate\nfrom langchain.llms import OpenAI\nfrom langchain.chains import LLMChain
 
 prompt_template = "What is a good name for a company that makes {product}?"
 
@@ -19,7 +19,7 @@ llm_chain("colorful socks")
 
 </CodeOutputBlock>
 
-## Additional ways of running LLM Chain
+## Additional ways of running `LLMChain`
 
 Aside from `__call__` and `run` methods shared by all `Chain` object, `LLMChain` offers a few more ways of calling the chain logic:
 
@@ -139,7 +139,7 @@ llm_chain.predict_and_parse()
 
 ## Initialize from string
 
-You can also construct an LLMChain from a string template directly.
+You can also construct an `LLMChain` from a string template directly.
 
 
 ```python

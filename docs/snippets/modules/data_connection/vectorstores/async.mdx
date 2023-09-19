@@ -1,4 +1,4 @@
-Langchain supports async operation on vector stores. All the methods might be called using their async counterparts, with the prefix `a`, meaning `async`.
+LangChain supports async operation on vector stores. All the methods might be called using their async counterparts, with the prefix `a`, meaning `async`.
 
 `Qdrant` is a vector store, which supports all the async operations, thus it will be used in this walkthrough.
 
@@ -47,7 +47,7 @@ docs = await db.asimilarity_search_by_vector(embedding_vector)
 
 ## Maximum marginal relevance search (MMR)
 
-Maximal marginal relevance optimizes for similarity to query AND diversity among selected documents. It is also supported in async API.
+Maximal marginal relevance optimizes for similarity to query **and** diversity among selected documents. It is also supported in async API.
 
 ```python
 query = "What did the president say about Ketanji Brown Jackson"
