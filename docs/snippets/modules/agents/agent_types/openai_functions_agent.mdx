@@ -1,12 +1,16 @@
-Install openai,google-search-results packages which are required as the langchain packages call them internally
+Install `openai`, `google-search-results` packages which are required as the LangChain packages call them internally.
 
->pip install openai google-search-results
+```bash
+pip install openai google-search-results
+```
 
 ```python
-from langchain import LLMMathChain, OpenAI, SerpAPIWrapper, SQLDatabase, SQLDatabaseChain
-from langchain.agents import initialize_agent, Tool
-from langchain.agents import AgentType
+from langchain.agents import initialize_agent, AgentType, Tool
+from langchain.chains import LLMMathChain
 from langchain.chat_models import ChatOpenAI
+from langchain.llms import OpenAI
+from langchain.utilities import SerpAPIWrapper, SQLDatabase
+from langchain_experimental.sql import SQLDatabaseChain
 ```
 
 

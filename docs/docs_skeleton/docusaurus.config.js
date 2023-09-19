@@ -7,7 +7,10 @@ const { ProvidePlugin } = require("webpack");
 const path = require("path");
 
 const examplesPath = path.resolve(__dirname, "..", "examples", "src");
-const snippetsPath = path.resolve(__dirname, "..", "snippets")
+const snippetsPath = path.resolve(__dirname, "..", "snippets");
+
+const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
+const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -84,7 +87,6 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
-          editUrl: "https://github.com/hwchase17/langchain/edit/master/docs/",
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           ],
@@ -126,14 +128,57 @@ const config = {
           hideable: true,
         },
       },
+      colorMode: {
+        disableSwitch: false,
+        respectPrefersColorScheme: true,
+      },
       prism: {
-        theme: require("prism-react-renderer/themes/vsLight"),
-        darkTheme: require("prism-react-renderer/themes/vsDark"),
+        theme: {
+          ...baseLightCodeBlockTheme,
+          plain: {
+            ...baseLightCodeBlockTheme.plain,
+            backgroundColor: "#F5F5F5",
+          },
+        },
+        darkTheme: {
+          ...baseDarkCodeBlockTheme,
+          plain: {
+            ...baseDarkCodeBlockTheme.plain,
+            backgroundColor: "#222222",
+          },
+        },
       },
       image: "img/parrot-chainlink-icon.png",
       navbar: {
         title: "🦜️🔗 LangChain",
         items: [
+          {
+            to: "/docs/get_started/introduction",
+            label: "Docs",
+            position: "left",
+          },
+          {
+            type: 'docSidebar',
+            position: 'left',
+            sidebarId: 'use_cases',
+            label: 'Use cases',
+          },
+          {
+            type: 'docSidebar',
+            position: 'left',
+            sidebarId: 'integrations',
+            label: 'Integrations',
+          },
+          {
+            href: "https://api.python.langchain.com",
+            label: "API",
+            position: "left",
+          },
+          {
+            to: "https://smith.langchain.com",
+            label: "LangSmith",
+            position: "right",
+          },
           {
             to: "https://js.langchain.com/docs",
             label: "JS/TS Docs",
@@ -142,8 +187,9 @@ const config = {
           // Please keep GitHub link to the right for consistency.
           {
             href: "https://github.com/hwchase17/langchain",
-            label: "GitHub",
-            position: "right",
+            position: 'right',
+            className: 'header-github-link',
+            'aria-label': 'GitHub repository',
           },
         ],
       },

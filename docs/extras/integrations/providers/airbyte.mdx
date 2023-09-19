@@ -1,0 +1,29 @@
+# Airbyte
+
+>[Airbyte](https://github.com/airbytehq/airbyte) is a data integration platform for ELT pipelines from APIs, 
+> databases & files to warehouses & lakes. It has the largest catalog of ELT connectors to data warehouses and databases.
+
+## Installation and Setup
+
+This instruction shows how to load any source from `Airbyte` into a local `JSON` file that can be read in as a document.
+
+**Prerequisites:**
+Have `docker desktop` installed.
+
+**Steps:**
+1. Clone Airbyte from GitHub - `git clone https://github.com/airbytehq/airbyte.git`.
+2. Switch into Airbyte directory - `cd airbyte`.
+3. Start Airbyte - `docker compose up`.
+4. In your browser, just visit http://localhost:8000. You will be asked for a username and password. By default, that's username `airbyte` and password `password`.
+5. Setup any source you wish.
+6. Set destination as Local JSON, with specified destination path - lets say `/json_data`. Set up a manual sync.
+7. Run the connection.
+8. To see what files are created, navigate to: `file:///tmp/airbyte_local/`.
+
+## Document Loader
+
+See a [usage example](/docs/integrations/document_loaders/airbyte_json).
+
+```python
+from langchain.document_loaders import AirbyteJSONLoader
+```

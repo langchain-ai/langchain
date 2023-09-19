@@ -1,5 +1,4 @@
-Currently, we support streaming for the `OpenAI`, `ChatOpenAI`, and `ChatAnthropic` implementations. To utilize streaming, use a [`CallbackHandler`](https://github.com/hwchase17/langchain/blob/master/langchain/callbacks/base.py) that implements `on_llm_new_token`. In this example, we are using `StreamingStdOutCallbackHandler`.
-
+Currently, we support streaming for a broad range of LLM implementations, including but not limited to `OpenAI`, `ChatOpenAI`, `ChatAnthropic`, `Hugging Face Text Generation Inference`, and `Replicate`. This feature has been expanded to accommodate most of the models. To utilize streaming, use a [`CallbackHandler`](https://github.com/hwchase17/langchain/blob/master/langchain/callbacks/base.py) that implements `on_llm_new_token`. In this example, we are using `StreamingStdOutCallbackHandler`.
 ```python
 from langchain.llms import OpenAI
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
