@@ -202,7 +202,10 @@ class PGVectorAsync(VectorStore):
             )
 
         self.engine = _engine
-        self.session_factory = async_sessionmaker(bind=_engine)
+        self.session_factory = async_sessionmaker(
+            bind=_engine,
+            expire_on_commit=False,
+        )
         self.embedding_function = embeddings
         self.collection_name = collection_name
         self.collection_metadata = collection_metadata or {}
