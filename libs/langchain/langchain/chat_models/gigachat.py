@@ -58,7 +58,7 @@ class GigaChat(SimpleChatModel):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         super().__init__(*args, **kwargs)
 
         if not self.verify_tsl:

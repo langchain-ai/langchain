@@ -186,7 +186,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                     else:
                         generation += chunk
                 assert generation is not None
-            except (KeyboardInterrupt, Exception) as e:
+            except BaseException as e:
                 run_manager.on_llm_error(e)
                 raise e
             else:
@@ -233,7 +233,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                     else:
                         generation += chunk
                 assert generation is not None
-            except (KeyboardInterrupt, Exception) as e:
+            except BaseException as e:
                 await run_manager.on_llm_error(e)
                 raise e
             else:
@@ -303,7 +303,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                         **kwargs,
                     )
                 )
-            except (KeyboardInterrupt, Exception) as e:
+            except BaseException as e:
                 if run_managers:
                     run_managers[i].on_llm_error(e)
                 raise e
@@ -364,7 +364,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         )
         exceptions = []
         for i, res in enumerate(results):
-            if isinstance(res, Exception):
+            if isinstance(res, BaseException):
                 if run_managers:
                     await run_managers[i].on_llm_error(res)
                 exceptions.append(res)

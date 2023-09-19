@@ -388,7 +388,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     else:
                         generation += chunk
                 assert generation is not None
-            except (KeyboardInterrupt, Exception) as e:
+            except BaseException as e:
                 run_manager.on_llm_error(e)
                 raise e
             else:
@@ -435,7 +435,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     else:
                         generation += chunk
                 assert generation is not None
-            except (KeyboardInterrupt, Exception) as e:
+            except BaseException as e:
                 await run_manager.on_llm_error(e)
                 raise e
             else:
@@ -523,7 +523,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 if new_arg_supported
                 else self._generate(prompts, stop=stop)
             )
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             for run_manager in run_managers:
                 run_manager.on_llm_error(e)
             raise e
@@ -674,7 +674,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 if new_arg_supported
                 else await self._agenerate(prompts, stop=stop)
             )
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             await asyncio.gather(
                 *[run_manager.on_llm_error(e) for run_manager in run_managers]
             )

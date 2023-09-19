@@ -15,6 +15,7 @@ from langchain.schema.messages import (
     SystemMessage,
 )
 from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain.schema.prompt import PromptValue
 
 
 def _convert_one_message_to_text(
@@ -111,6 +112,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         if self.AI_PROMPT:
             prompt_params["ai_prompt"] = self.AI_PROMPT
         return convert_messages_to_prompt_anthropic(messages=messages, **prompt_params)
+
+    def convert_prompt(self, prompt: PromptValue) -> str:
+        return self._convert_messages_to_prompt(prompt.to_messages())
 
     def _stream(
         self,
