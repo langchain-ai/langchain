@@ -31,6 +31,17 @@ class ChainConfig(NamedTuple):
     action_description: str
 
 
+def format_tools(tools):
+    return "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+
+
+def format_intermediate_steps(intermediate_steps, observation_prefix, llm_prefix):
+    thoughts = ""
+    for action, observation in intermediate_steps:
+        thoughts += action.log
+        thoughts += f"\n{observation_prefix}{observation}\n{llm_prefix}"
+    return thoughts
+
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain."""
 
@@ -39,6 +50,12 @@ class ZeroShotAgent(Agent):
     @classmethod
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return MRKLOutputParser()
+
+    def _construct_scratchpad(
+        self, intermediate_steps: List[Tuple[AgentAction, str]]
+    ) -> Union[str, List[BaseMessage]]:
+        """Construct the scratchpad that lets the agent continue its thought process."""
+        format_intermediate_steps(intermediate_steps, observation_prefix=self.observation_prefix, llm_prefix=self.llm_prefix)
 
     @property
     def _agent_type(self) -> str:
@@ -76,7 +93,7 @@ class ZeroShotAgent(Agent):
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
         """
-        tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+        tool_strings = format_tools(tools)
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
