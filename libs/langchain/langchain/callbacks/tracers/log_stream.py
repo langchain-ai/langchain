@@ -36,6 +36,7 @@ class LogEntry(TypedDict):
 
 
 class LogState(TypedDict):
+    id: str
     entries: list[LogEntry]
     streamed_output: List[Any]
     final_output: Optional[Any]
@@ -152,7 +153,10 @@ class LogStreamCallbackHandler(BaseTracer):
                             "op": "replace",
                             "path": "",
                             "value": LogState(
-                                entries=[], streamed_output=[], final_output=None
+                                id=run.id,
+                                entries=[],
+                                streamed_output=[],
+                                final_output=None,
                             ),
                         }
                     ]
