@@ -139,16 +139,16 @@ class Vearch(VectorStore):
     def _create_table(
         self,
         dim: int = 1024,
-        filed_list: List[dict] = [
-            {"filed": "text", "type": "str"},
-            {"filed": "metadata", "type": "str"},
+        field_list: List[dict] = [
+            {"field": "text", "type": "str"},
+            {"field": "metadata", "type": "str"},
         ],
     ) -> int:
         """
         Create VectorStore Table
         Args:
             dim:dimension of vector
-            fileds_list: the filed you want to store
+            fields_list: the field you want to store
         Return:
             code,0 for success,1 for failed
         """
@@ -379,7 +379,7 @@ class Vearch(VectorStore):
                     }],
                 },
                 "size": k,
-                "fileds":["text","metadata"]
+                "fields":["text","metadata"]
             }
             query_result = self.vearch.search(
                 self.using_db_name,self.using_table_name,query_data)
@@ -443,7 +443,7 @@ class Vearch(VectorStore):
                     }],
                 },
                 "size": k,
-                "fileds":["text_embedding","text","metadata"]
+                "fields":["text_embedding","text","metadata"]
             }
             query_result = self.vearch.search(
                 self.using_db_name,self.using_table_name,query_data)
