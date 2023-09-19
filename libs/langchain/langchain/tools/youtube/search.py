@@ -32,8 +32,9 @@ class YouTubeSearchTool(BaseTool):
 
         results = YoutubeSearch(person, num_results).to_json()
         data = json.loads(results)
-        url_suffix_list = ["https://www.youtube.com" + video["url_suffix"] for video in data["videos"]]
-        return url_suffix_list
+        url_suffix_list = ["https://www.youtube.com" + video["url_suffix"]
+                           for video in data["videos"]]
+        return str(url_suffix_list)
 
     def _run(
         self,
