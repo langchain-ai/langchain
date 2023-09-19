@@ -3,11 +3,10 @@ from __future__ import annotations
 from typing import Any, Sequence, Union
 
 from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import BaseModel
 from langchain.schema.messages import BaseMessage
 
 
-class AgentAction(Serializable, BaseModel):
+class AgentAction(Serializable):
     """A full description of an action for an ActionAgent to execute."""
 
     tool: str
@@ -47,7 +46,7 @@ class AgentActionMessageLog(AgentAction):
     ChatModel (and therefore returns messages rather than a string)."""
 
 
-class AgentFinish(Serializable, BaseModel):
+class AgentFinish(Serializable):
     """The final return value of an ActionAgent."""
 
     return_values: dict
