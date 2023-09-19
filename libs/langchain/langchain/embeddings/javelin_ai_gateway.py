@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Iterator, List, Optional
 
-from langchain.schema.embeddings import Embeddings
 from langchain.pydantic_v1 import BaseModel
+from langchain.schema.embeddings import Embeddings
 
 
 def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
@@ -67,12 +67,12 @@ class JavelinAIGatewayEmbeddings(Embeddings, BaseModel):
         for txt in _chunk(texts, 20):
             try:
                 resp = self.client.query_route(self.route, query_body={"input": txt})
-                embeddings_chunk = resp.llm_response["data"]
+                resp_dict = resp.dict()
+
+                embeddings_chunk = resp_dict.get("llm_response", {}).get("data", [])
                 for item in embeddings_chunk:
                     if "embedding" in item:
                         embeddings.append(item["embedding"])
-                    else:
-                        print("No embedding key found in this item")
             except ValueError as e:
                 print("Failed to query route: " + str(e))
 
@@ -83,9 +83,14 @@ class JavelinAIGatewayEmbeddings(Embeddings, BaseModel):
         for txt in _chunk(texts, 20):
             try:
                 resp = await self.client.aquery_route(
-                    self.route, query_body={"text": txt}
+                    self.route, query_body={"input": txt}
                 )
-                embeddings.append(resp["embeddings"])
+                resp_dict = resp.dict()
+
+                embeddings_chunk = resp_dict.get("llm_response", {}).get("data", [])
+                for item in embeddings_chunk:
+                    if "embedding" in item:
+                        embeddings.append(item["embedding"])
             except ValueError as e:
                 print("Failed to query route: " + str(e))
 

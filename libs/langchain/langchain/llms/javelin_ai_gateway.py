@@ -112,9 +112,12 @@ class JavelinAIGateway(LLM):
         else:
             raise ValueError("Javelin client is not initialized.")
 
-        print(resp.dict())
+        resp_dict = resp.dict()
 
-        return resp.dict()["llm_response"]["choices"][0]["text"]
+        try:
+            return resp_dict["llm_response"]["choices"][0]["text"]
+        except KeyError:
+            return ""
 
     async def _acall(
         self,
@@ -136,7 +139,12 @@ class JavelinAIGateway(LLM):
         else:
             raise ValueError("Javelin client is not initialized.")
 
-        return resp.dict()["llm_response"]["choices"][0]["text"]
+        resp_dict = resp.dict()
+
+        try:
+            return resp_dict["llm_response"]["choices"][0]["text"]
+        except KeyError:
+            return ""
 
     @property
     def _llm_type(self) -> str:

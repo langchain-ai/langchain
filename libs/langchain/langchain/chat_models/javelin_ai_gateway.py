@@ -137,7 +137,7 @@ class ChatJavelinAIGateway(BaseChatModel):
 
         resp = await self.client.aquery_route(self.route, query_body=data)
 
-        return ChatJavelinAIGateway._create_chat_result(resp)
+        return ChatJavelinAIGateway._create_chat_result(resp.dict())
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
