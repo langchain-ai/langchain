@@ -17,8 +17,8 @@ from typing import (
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import xor_args
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
@@ -49,11 +49,12 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
         )
     ]
 
+
 def _results_to_docs_and_scores_for_batches(
     results: Any,
 ) -> List[List[Tuple[Document, float]]]:
     return [
-        #Actually it solves TODO in
+        # Actually it solves TODO in
         # _results_to_docs_and_scores
         [
             (Document(page_content=result[0], metadata=result[1] or {}), result[2])
@@ -63,7 +64,6 @@ def _results_to_docs_and_scores_for_batches(
             results["documents"], results["metadatas"], results["distances"]
         )
     ]
-
 
 
 class Chroma(VectorStore):
@@ -390,7 +390,7 @@ class Chroma(VectorStore):
             query_embeddings=query_embeddings, n_results=k, where=filter
         )
         return _results_to_docs_and_scores_for_batches(results)
-    
+
     def similarity_search_by_vector_with_relevance_scores(
         self,
         embedding: List[float],
