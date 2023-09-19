@@ -2,35 +2,14 @@ import asyncio
 import logging
 import re
 from typing import Callable, Iterator, List, Optional, Sequence, Set, Union
-from urllib.parse import urljoin, urlparse
 
 import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.utils.html import extract_sub_links
 
 logger = logging.getLogger(__name__)
-
-PREFIXES_TO_IGNORE = ("javascript:", "mailto:", "#")
-SUFFIXES_TO_IGNORE = (
-    ".css",
-    ".js",
-    ".ico",
-    ".png",
-    ".jpg",
-    ".jpeg",
-    ".gif",
-    ".svg",
-)
-SUFFIXES_TO_IGNORE_REGEX = (
-    "(?!" + "|".join([re.escape(s) + "[\#'\"]" for s in SUFFIXES_TO_IGNORE]) + ")"
-)
-PREFIXES_TO_IGNORE_REGEX = (
-    "(?!" + "|".join([re.escape(s) for s in PREFIXES_TO_IGNORE]) + ")"
-)
-DEFAULT_LINK_REGEX = (
-    f"href=[\"']{PREFIXES_TO_IGNORE_REGEX}((?:{SUFFIXES_TO_IGNORE_REGEX}.)*?)[\#\"']"
-)
 
 
 def _metadata_extractor(raw_html: str, url: str) -> dict:
@@ -55,40 +34,6 @@ def _metadata_extractor(raw_html: str, url: str) -> dict:
     return metadata
 
 
-def _get_sub_links(
-    raw_html: str,
-    base_url: str,
-    *,
-    pattern: Union[str, re.Pattern] = DEFAULT_LINK_REGEX,
-    prevent_outside: bool = True,
-) -> List[str]:
-    """Extract all links from a raw html string and convert into absolute paths.
-
-    Args:
-        raw_html: original html
-        base_url: the base url of the html
-        pattern: Regex to use for extracting links from raw html.
-        prevent_outside: If True, ignore external links which are not children
-            of the base url.
-
-    Returns:
-        List[str]: sub links
-    """
-    all_links = set(re.findall(pattern, raw_html))
-    absolute_paths = set()
-    for link in all_links:
-        # Some may be absolute links like https://to/path
-        if link.startswith("http"):
-            if not prevent_outside or link.startswith(base_url):
-                absolute_paths.add(link)
-        # Some may have omitted the protocol like //to/path
-        elif link.startswith("//"):
-            absolute_paths.add(f"{urlparse(base_url).scheme}:{link}")
-        else:
-            absolute_paths.add(urljoin(base_url, link))
-    return list(absolute_paths)
-
-
 class RecursiveUrlLoader(BaseLoader):
     """Load all child links from a URL page."""
 
@@ -102,6 +47,7 @@ class RecursiveUrlLoader(BaseLoader):
         exclude_dirs: Optional[Sequence[str]] = (),
         timeout: Optional[int] = 10,
         prevent_outside: Optional[bool] = True,
+        link_regex: Union[str, re.Pattern, None] = None,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
         Args:
@@ -121,6 +67,7 @@ class RecursiveUrlLoader(BaseLoader):
             timeout: The timeout for the requests, in the unit of seconds.
             prevent_outside: If True, prevent loading from urls which are not children
                 of the root url.
+            link_regex: Regex for extracting sub-links from the raw html of a web page.
         """
 
         self.url = url
@@ -135,6 +82,7 @@ class RecursiveUrlLoader(BaseLoader):
         self.exclude_dirs = exclude_dirs if exclude_dirs is not None else ()
         self.timeout = timeout if timeout is not None else 10
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
+        self.link_regex = link_regex
 
     def _get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None, depth: int = 0
@@ -171,8 +119,11 @@ class RecursiveUrlLoader(BaseLoader):
         visited.add(url)
 
         # Store the visited links and recursively visit the children
-        sub_links = _get_sub_links(
-            response.text, self.url, prevent_outside=self.prevent_outside
+        sub_links = extract_sub_links(
+            response.text,
+            self.url,
+            pattern=self.link_regex,
+            prevent_outside=self.prevent_outside,
         )
         for link in sub_links:
             # Check all unvisited links
@@ -225,8 +176,11 @@ class RecursiveUrlLoader(BaseLoader):
             except (aiohttp.client_exceptions.InvalidURL, Exception):
                 return []
 
-            sub_links = _get_sub_links(
-                text, self.url, prevent_outside=self.prevent_outside
+            sub_links = extract_sub_links(
+                text,
+                self.url,
+                pattern=self.link_regex,
+                prevent_outside=self.prevent_outside,
             )
 
             # Worker will be only called within the current function
