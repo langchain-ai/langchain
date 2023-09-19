@@ -26,8 +26,10 @@ def test_parse_expected_format(parser: StructuredChatOutputParser) -> None:
 
 
 def test_parse_variant_format(parser: StructuredChatOutputParser) -> None:
-    # This format is sometimes produced by AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION when running chat-bison
-    # This format is the same as the expected format, but lacks a newline and the triple backtick delimiters
+    # This format is sometimes produced by
+    # AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION when running chat-bison. It
+    # is the same as the expected format, but lacks a newline and the triple backtick
+    # delimiters.
     text = """
     Action: {
       "action": "calculator",
@@ -56,8 +58,10 @@ def test_parse_final_answer_expected_format(parser: StructuredChatOutputParser) 
 
 
 def test_parse_final_answer_variant_format(parser: StructuredChatOutputParser) -> None:
-    # This format is sometimes produced by AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION when running chat-bison
-    # This format is the same as the expected format, but lacks a newline and the triple backtick delimiters
+    # This format is sometimes produced by
+    # AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION when running chat-bison. It
+    # is the same as the expected format, but lacks a newline and the triple backtick
+    # delimiters.
     text = """
     Action: {
       "action": "Final Answer",
