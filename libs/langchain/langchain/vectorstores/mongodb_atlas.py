@@ -15,6 +15,7 @@ from typing import (
 )
 
 import numpy as np
+from pymongo.errors import OperationFailure
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -89,7 +90,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
         embedding: Embeddings,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
-        """Construct a `MongoDB Atlas Vector Search` vector store from a MongoDB connection URI.
+        """Construct a `MongoDB Atlas Vector Search` vector store
+        from a MongoDB connection URI.
 
         Args:
             connection_string: A valid MongoDB connection URI.
@@ -156,26 +158,13 @@ class MongoDBAtlasVectorSearch(VectorStore):
         insert_result = self._collection.insert_many(to_insert)  # type: ignore
         return insert_result.inserted_ids
 
-    def _similarity_search_with_score(
+    def _similarity_search_query(
         self,
-        embedding: List[float],
-        k: int = 4,
-        pre_filter: Optional[dict] = None,
+        query: dict[str, Any],
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
-        params = {
-            "queryVector": embedding,
-            "path": self._embedding_key,
-            "numCandidates": k,
-            "limit": k,
-            "index": self._index_name
-        }
-        if pre_filter:
-            params["filter"] = pre_filter
         pipeline = [
-            {
-                "$vectorSearch": params
-            },
+            query,
             {"$set": {"score": {"$meta": "searchScore"}}},
         ]
         if post_filter_pipeline is not None:
@@ -187,6 +176,47 @@ class MongoDBAtlasVectorSearch(VectorStore):
             score = res.pop("score")
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
+
+    def _similarity_search_with_score(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        pre_filter: Optional[dict] = None,
+        post_filter_pipeline: Optional[List[Dict]] = None,
+    ) -> List[Tuple[Document, float]]:
+        try:
+            params = {
+                "queryVector": embedding,
+                "path": self._embedding_key,
+                "numCandidates": k,
+                "limit": k,
+                "index": self._index_name,
+            }
+            if pre_filter:
+                params["filter"] = pre_filter
+            query = {"$vectorSearch": params}
+
+            result = self._similarity_search_query(query, post_filter_pipeline)
+        except OperationFailure as e:
+            logger.debug(
+                f"$vectorSearch not supported for this Atlas version. "
+                f"Attempting to use $search. Original error:\n\t{e}"
+            )
+            knn_beta = {
+                "vector": embedding,
+                "path": self._embedding_key,
+                "k": k,
+            }
+            if pre_filter:
+                knn_beta["filter"] = pre_filter
+            query = {
+                "$search": {
+                    "index": self._index_name,
+                    "knnBeta": knn_beta,
+                }
+            }
+            result = self._similarity_search_query(query, post_filter_pipeline)
+        return result
 
     def similarity_search_with_score(
         self,
