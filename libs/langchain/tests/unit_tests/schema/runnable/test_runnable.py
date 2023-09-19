@@ -369,6 +369,24 @@ async def test_prompt() -> None:
     ] == [expected]
 
 
+def test_prompt_template_params() -> None:
+    prompt = ChatPromptTemplate.from_template(
+        "Respond to the following question: {question}"
+    )
+    result = prompt.invoke(
+        {
+            "question": "test",
+            "topic": "test",
+        }
+    )
+    assert result == ChatPromptValue(
+        messages=[HumanMessage(content="Respond to the following question: test")]
+    )
+
+    with pytest.raises(KeyError):
+        prompt.invoke({})
+
+
 @pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_chat_model(
