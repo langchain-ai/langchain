@@ -211,7 +211,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_llm_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         **kwargs: Any,
@@ -294,7 +294,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_chain_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         inputs: Optional[Dict[str, Any]] = None,
         run_id: UUID,
@@ -365,7 +365,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_tool_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         **kwargs: Any,
@@ -420,7 +420,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_retriever_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         **kwargs: Any,

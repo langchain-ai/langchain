@@ -23,7 +23,8 @@ class LLMBashChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import LLMBashChain, OpenAI
+            from langchain.chains import LLMBashChain
+            from langchain.llms import OpenAI
             llm_bash = LLMBashChain.from_llm(OpenAI())
     """
 

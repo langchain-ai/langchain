@@ -210,7 +210,7 @@ class ChildTool(BaseTool):
     ) -> Any:
         if type(self)._arun == BaseTool._arun:
             # If the tool does not implement async, fall back to default implementation
-            return super().ainvoke(input, config, **kwargs)
+            return await super().ainvoke(input, config, **kwargs)
 
         config = config or {}
         return await self.arun(
@@ -461,7 +461,7 @@ class Tool(BaseTool):
                 None, partial(self.invoke, input, config, **kwargs)
             )
 
-        return super().ainvoke(input, config, **kwargs)
+        return await super().ainvoke(input, config, **kwargs)
 
     # --- Tool ---
 
