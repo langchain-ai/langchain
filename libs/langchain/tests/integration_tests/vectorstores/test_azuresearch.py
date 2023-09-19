@@ -9,10 +9,11 @@ from azure.search.documents.indexes.models import (
     SimpleField,
 )
 from dotenv import load_dotenv
+
 from langchain.chains import RetrievalQA
+from langchain.chat_models.azure_openai import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores.azuresearch import AzureSearch
-from langchain.chat_models.azure_openai import AzureChatOpenAI
 
 load_dotenv()
 
@@ -101,9 +102,9 @@ def test_azuresearch_custom_fields() -> None:
         openai_api_key=os.environ["OPENAI_API_KEY"],
         deployment_name="gpt-35-turbo",
         openai_api_type="azure",
-        model_name="gpt-35-turbo"
+        model_name="gpt-35-turbo",
     )
-    
+
     fields = [
         SimpleField(
             name="id",
@@ -140,10 +141,9 @@ def test_azuresearch_custom_fields() -> None:
     retriever = vector_store.as_retriever(search_type="similarity", kwargs={"k": 3})
 
     # Creating instance of RetrievalQA
-    chain = RetrievalQA.from_chain_type(llm=llm,
-                                        chain_type="stuff",
-                                        retriever=retriever,
-                                        return_source_documents=True)
+    chain = RetrievalQA.from_chain_type(
+        llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True
+    )
 
     # Generating response to user's query
     assert chain({"query": "some_query"})
