@@ -2035,9 +2035,14 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         copy = cast(RunnableConfig, dict(self.config))
         if config:
             for key in config:
-                # Even though the keys aren't literals this is correct
-                # because both dicts are same type
-                copy[key] = config[key] or copy.get(key)  # type: ignore
+                if key == "metadata":
+                    copy[key] = {**copy.get(key, {}), **config[key]}  # type: ignore
+                elif key == "tags":
+                    copy[key] = (copy.get(key) or []) + config[key]  # type: ignore
+                else:
+                    # Even though the keys aren't literals this is correct
+                    # because both dicts are same type
+                    copy[key] = config[key] or copy.get(key)  # type: ignore
         return copy
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
