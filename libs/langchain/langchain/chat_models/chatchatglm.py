@@ -89,7 +89,7 @@ async def acompletion_with_retry(
         # https://open.bigmodel.cn/api/paas/v3/model-api/chatglm_pro/invoke
         m_kwargs = copy.deepcopy(kwargs)
         m_kwargs["prompt"] = kwargs["messages"]
-        if len(m_kwargs["prompt"])//2 == 0:
+        if len(m_kwargs["prompt"]) // 2 == 0:
             raise ValueError("The length of the Prompt must be an odd number.")
         if m_kwargs.get("streaming") or m_kwargs.get("stream"):
             try:
@@ -352,7 +352,7 @@ class ChatChatGLM(BaseChatModel):
         def _completion_with_retry(**kwargs: Any) -> Any:
             m_kwargs = copy.deepcopy(kwargs)
             m_kwargs["prompt"] = kwargs["messages"]
-            if len(m_kwargs["prompt"])//2 == 0:
+            if len(m_kwargs["prompt"]) // 2 == 0:
                 raise ValueError("The length of the Prompt must be an odd number.")
             if m_kwargs.get("streaming") or m_kwargs.get("stream"):
                 return self.client.sse_invoke(**m_kwargs)
