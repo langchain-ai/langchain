@@ -757,7 +757,7 @@ class PGVectorAsync(VectorStore):
             List[Document]: List of documents most similar to the query.
         """
         embedding = await self.embeddings.aembed_query(query)
-        return self.similarity_search_by_vector(
+        return await self.asimilarity_search_by_vector(
             embedding=embedding,
             k=k,
             filter=filter,
