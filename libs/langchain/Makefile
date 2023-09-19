@@ -77,6 +77,7 @@ lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/langchain -
 
 lint lint_diff:
 	./scripts/check_pydantic.sh .
+	./scripts/check_imports.sh
 	poetry run ruff .
 	poetry run black $(PYTHON_FILES) --check
 	poetry run mypy $(PYTHON_FILES)
