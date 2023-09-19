@@ -2036,15 +2036,20 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         if config:
             for key in config:
                 if key == "metadata":
-                    copy[key] = {**copy.get(key, {}), **config[key]}  # type: ignore
+                    copy[key] = {  # type: ignore[literal-required]
+                        **copy.get(key, {}),
+                        **config[key],
+                    }
                 elif key == "tags":
-                    copy[key] = (copy.get(key) or []) + (  # type: ignore
-                        config[key] or []
-                    )
+                    copy[key] = (  # type: ignore[literal-required]
+                        copy.get(key) or []
+                    ) + (config[key] or [])
                 else:
                     # Even though the keys aren't literals this is correct
                     # because both dicts are same type
-                    copy[key] = config[key] or copy.get(key)  # type: ignore
+                    copy[key] = config[  # type: ignore[literal-required]
+                        key
+                    ] or copy.get(key)
         return copy
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
