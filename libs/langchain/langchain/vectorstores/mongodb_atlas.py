@@ -163,19 +163,18 @@ class MongoDBAtlasVectorSearch(VectorStore):
         pre_filter: Optional[dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
-        knn_beta = {
-            "vector": embedding,
+        params = {
+            "queryVector": embedding,
             "path": self._embedding_key,
-            "k": k,
+            "numCandidates": k,
+            "limit": k,
+            "index": self._index_name
         }
         if pre_filter:
-            knn_beta["filter"] = pre_filter
+            params["filter"] = pre_filter
         pipeline = [
             {
-                "$search": {
-                    "index": self._index_name,
-                    "knnBeta": knn_beta,
-                }
+                "$vectorSearch": params
             },
             {"$set": {"score": {"$meta": "searchScore"}}},
         ]
