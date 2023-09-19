@@ -6,8 +6,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
-from langchain.embeddings.base import Embeddings
 from langchain.schema import Document
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
