@@ -29,7 +29,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.utilities.redis import (
     _array_to_buffer,
     _buffer_to_array,
@@ -374,6 +374,11 @@ class Redis(VectorStore):
         if "generate" in kwargs:
             kwargs.pop("generate")
 
+        # see if the user specified keys
+        keys = None
+        if "keys" in kwargs:
+            keys = kwargs.pop("keys")
+
         # Name of the search index if not given
         if not index_name:
             index_name = uuid.uuid4().hex
@@ -422,7 +427,7 @@ class Redis(VectorStore):
         instance._create_index(dim=len(embeddings[0]))
 
         # Add data to Redis
-        keys = instance.add_texts(texts, metadatas, embeddings)
+        keys = instance.add_texts(texts, metadatas, embeddings, keys=keys)
         return instance, keys
 
     @classmethod
@@ -1215,7 +1220,7 @@ class Redis(VectorStore):
             )
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
@@ -1420,6 +1425,7 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
         "similarity",
         "similarity_distance_threshold",
         "similarity_score_threshold",
+        "mmr",
     ]
     """Allowed search types."""
 
@@ -1433,7 +1439,6 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
-
         elif self.search_type == "similarity_distance_threshold":
             if self.search_kwargs["distance_threshold"] is None:
                 raise ValueError(
@@ -1449,6 +1454,10 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
+        elif self.search_type == "mmr":
+            docs = self.vectorstore.max_marginal_relevance_search(
+                query, **self.search_kwargs
+            )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs

@@ -82,6 +82,8 @@ class TestResult(dict):
         _quantiles = df[feedback_cols].quantile(
             quantiles or [0.25, 0.5, 0.75], numeric_only=True
         )
+        _quantiles.loc["mean"] = df[feedback_cols].mean()
+        _quantiles.loc["mode"] = df[feedback_cols].mode().iloc[0]
         return _quantiles.transpose()
 
     def to_dataframe(self) -> pd.DataFrame:
@@ -855,8 +857,12 @@ def _prepare_eval_run(
     project_name: str,
 ) -> Tuple[MCF, str, Dataset, List[Example]]:
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
+    dataset = client.read_dataset(dataset_name=dataset_name)
     try:
-        project = client.create_project(project_name)
+        project = client.create_project(
+            project_name,
+            reference_dataset_id=dataset.id,
+        )
     except ValueError as e:
         if "already exists " not in str(e):
             raise e
@@ -864,9 +870,9 @@ def _prepare_eval_run(
             f"Project {project_name} already exists. Please use a different name."
         )
     print(
-        f"View the evaluation results for project '{project_name}' at:\n{project.url}"
+        f"View the evaluation results for project '{project_name}' at:\n{project.url}",
+        flush=True,
     )
-    dataset = client.read_dataset(dataset_name=dataset_name)
     examples = list(client.list_examples(dataset_id=dataset.id))
     if not examples:
         raise ValueError(f"Dataset {dataset_name} has no example rows.")
@@ -925,14 +931,14 @@ def _collect_test_results(
     project_name: str,
 ) -> TestResult:
     wait_for_all_tracers()
-    all_feedback = {}
+    all_eval_results = {}
     for c in configs:
         for callback in cast(list, c["callbacks"]):
             if isinstance(callback, EvaluatorCallbackHandler):
-                all_feedback.update(callback.logged_feedback)
+                all_eval_results.update(callback.logged_eval_results)
     results = {}
     for example, output in zip(examples, batch_results):
-        feedback = all_feedback.get(str(example.id), [])
+        feedback = all_eval_results.get(str(example.id), [])
         results[str(example.id)] = {
             "output": output,
             "input": example.inputs,

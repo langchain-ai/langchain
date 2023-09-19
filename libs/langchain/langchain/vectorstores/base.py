@@ -25,9 +25,9 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import BaseRetriever
+from langchain.schema.embeddings import Embeddings
 
 logger = logging.getLogger(__name__)
 
