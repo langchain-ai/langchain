@@ -370,7 +370,7 @@ async def test_prompt() -> None:
 
 
 def test_extra_prompt_template_params() -> None:
-    prompt = PromptTemplate.from_template(
+    prompt = ChatPromptTemplate.from_template(
         "Respond to the following question: {question}"
     )
     result = prompt.invoke(
@@ -379,7 +379,9 @@ def test_extra_prompt_template_params() -> None:
             "topic": "test",
         }
     )
-    assert result == "Respond to the following question: test"
+    assert result == ChatPromptValue(
+        messages=[HumanMessage(content="Respond to the following question: test")]
+    )
 
 
 @pytest.mark.asyncio
