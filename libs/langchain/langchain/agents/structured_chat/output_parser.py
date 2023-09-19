@@ -36,7 +36,8 @@ class StructuredChatOutputParser(AgentOutputParser):
                 if action_match is not None:
                     response = json.loads(action_match.group(1).strip(), strict=False)
                     if isinstance(response, list):
-                        # gpt turbo frequently ignores the directive to emit a single action
+                        # gpt turbo frequently ignores the directive to emit a single
+                        # action
                         logger.warning("Got multiple action responses: %s", response)
                         response = response[0]
                     if response["action"] == "Final Answer":
