@@ -1,9 +1,10 @@
 """Script for auto-generating api_reference.rst."""
 import importlib
 import inspect
+import os
 import typing
 from pathlib import Path
-from typing import TypedDict, Sequence, List, Dict, Literal, Union
+from typing import TypedDict, Sequence, List, Dict, Literal, Union, Optional
 from enum import Enum
 
 from pydantic import BaseModel
@@ -122,7 +123,8 @@ def _merge_module_members(
 
 
 def _load_package_modules(
-    package_directory: Union[str, Path]
+    package_directory: Union[str, Path],
+    package_name: Optional[str] = None
 ) -> Dict[str, ModuleMembers]:
     """Recursively load modules of a package based on the file system.
 
@@ -131,6 +133,7 @@ def _load_package_modules(
 
     Parameters:
         package_directory: Path to the package directory.
+        package_name: Optional package name - useful when loading submodules
 
     Returns:
         list: A list of loaded module objects.
@@ -142,7 +145,8 @@ def _load_package_modules(
     )
     modules_by_namespace = {}
 
-    package_name = package_path.name
+    if package_name is None:
+        package_name = package_path.name
 
     for file_path in package_path.rglob("*.py"):
         if file_path.name.startswith("_"):
@@ -269,6 +273,9 @@ Functions
 def main() -> None:
     """Generate the reference.rst file for each package."""
     lc_members = _load_package_modules(PKG_DIR)
+    # Put tools.render at the top level
+    tools = _load_package_modules(os.path.join(PKG_DIR, 'tools'), "langchain.tools")
+    lc_members['tools.render'] = tools['render']
     lc_doc = ".. _api_reference:\n\n" + _construct_doc("langchain", lc_members)
     with open(WRITE_FILE, "w") as f:
         f.write(lc_doc)
