@@ -49,7 +49,7 @@ def _convert_agent_action_to_messages(
         AIMessage that corresponds to the original tool invocation.
     """
     if isinstance(agent_action, _FunctionsAgentAction):
-        return agent_action.message_log + [
+        return list(agent_action.message_log) + [
             _create_function_message(agent_action, observation)
         ]
     else:
