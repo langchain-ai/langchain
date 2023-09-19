@@ -771,7 +771,7 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                 expression_value = condition.invoke(
                     input,
                     config=patch_config(
-                        config, callbacks=run_manager.get_child(tag=f"condition:{idx}")
+                        config, callbacks=run_manager.get_child(tag=f"condition:{idx + 1}")
                     ),
                 )
 
@@ -779,7 +779,7 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                     return runnable.invoke(
                         input,
                         config=patch_config(
-                            config, callbacks=run_manager.get_child(tag=f"branch:{idx}")
+                            config, callbacks=run_manager.get_child(tag=f"branch:{idx + 1}")
                         ),
                     )
 
@@ -813,7 +813,7 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                 expression_value = await condition.ainvoke(
                     input,
                     config=patch_config(
-                        config, callbacks=run_manager.get_child(tag=f"condition:{idx}")
+                        config, callbacks=run_manager.get_child(tag=f"condition:{idx + 1}")
                     ),
                 )
 
@@ -821,7 +821,7 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                     return await runnable.ainvoke(
                         input,
                         config=patch_config(
-                            config, callbacks=run_manager.get_child(tag=f"branch:{idx}")
+                            config, callbacks=run_manager.get_child(tag=f"branch:{idx + 1}")
                         ),
                         **kwargs,
                     )
