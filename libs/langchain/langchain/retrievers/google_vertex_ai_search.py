@@ -9,6 +9,7 @@ from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
+    from google.api_core.client_options import ClientOptions
     from google.cloud.discoveryengine_v1beta import (
         SearchRequest,
         SearchResult,
@@ -139,9 +140,28 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
                 "google.cloud.discoveryengine is not installed."
                 "Please install it with pip install google-cloud-discoveryengine"
             ) from exc
+        try:
+            from google.api_core.client_options import ClientOptions
+        except ImportError as exc:
+            raise ImportError(
+                "google.api_core.client_options is not installed."
+                "Please install it with pip install google-api-core"
+            ) from exc
 
         super().__init__(**data)
-        self._client = SearchServiceClient(credentials=self.credentials)
+
+        #  For more information, refer to:
+        # https://cloud.google.com/generative-ai-app-builder/docs/locations#specify_a_multi-region_for_your_data_store
+        api_endpoint = (
+            "discoveryengine.googleapis.com"
+            if self.location_id == "global"
+            else f"{self.location_id}-discoveryengine.googleapis.com"
+        )
+
+        self._client = SearchServiceClient(
+            credentials=self.credentials,
+            client_options=ClientOptions(api_endpoint=api_endpoint),
+        )
 
         if self.search_engine_id and not self.data_store_id:
             import warnings
