@@ -27,6 +27,9 @@ class VectorStoreRetrieverMemory(BaseMemory):
     exclude_input_keys: Sequence[str] = Field(default_factory=tuple)
     """Input keys to exclude in addition to memory key when constructing the document"""
 
+    metadata: Optional[Dict[str, Any]] = {}
+    """Optional metadata associated with memory embeddings."""
+
     @property
     def memory_variables(self) -> List[str]:
         """The list of keys emitted from the load_memory_variables method."""
@@ -65,7 +68,7 @@ class VectorStoreRetrieverMemory(BaseMemory):
             for k, v in list(filtered_inputs.items()) + list(outputs.items())
         ]
         page_content = "\n".join(texts)
-        return [Document(page_content=page_content)]
+        return [Document(page_content=page_content, metadata=self.metadata)]
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
