@@ -41,6 +41,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "aiohttp",
         "async-timeout",
         "dataclasses-json",
+        "egg-timer",
         "langsmith",
         "numexpr",
         "numpy",
