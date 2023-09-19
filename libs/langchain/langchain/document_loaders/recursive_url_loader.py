@@ -62,6 +62,7 @@ class RecursiveUrlLoader(BaseLoader):
         timeout: Optional[int] = 10,
         prevent_outside: Optional[bool] = True,
         link_regex: Union[str, re.Pattern, None] = None,
+        headers: Optional[dict] = None,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
         Args:
@@ -99,6 +100,7 @@ class RecursiveUrlLoader(BaseLoader):
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
         self.link_regex = link_regex
         self._lock = asyncio.Lock() if self.use_async else None
+        self.headers = headers
 
     def _get_child_links_recursive(
         self, url: str, visited: Set[str], *, depth: int = 0
@@ -119,7 +121,7 @@ class RecursiveUrlLoader(BaseLoader):
 
         # Get all links that can be accessed from the current URL
         try:
-            response = requests.get(url, timeout=self.timeout)
+            response = requests.get(url, timeout=self.timeout, headers=self.headers)
         except Exception:
             logger.warning(f"Unable to load from {url}")
             return
@@ -180,10 +182,13 @@ class RecursiveUrlLoader(BaseLoader):
         session = session or aiohttp.ClientSession(
             connector=aiohttp.TCPConnector(ssl=False),
             timeout=aiohttp.ClientTimeout(total=self.timeout),
+            headers=self.headers,
         )
         try:
             async with session.get(url) as response:
                 text = await response.text()
+            async with self._lock:  # type: ignore
+                visited.add(url)
         except (aiohttp.client_exceptions.InvalidURL, Exception) as e:
             logger.warning(
                 f"Unable to load {url}. Received error {e} of type "
@@ -210,7 +215,6 @@ class RecursiveUrlLoader(BaseLoader):
             # Recursively call the function to get the children of the children
             sub_tasks = []
             async with self._lock:  # type: ignore
-                visited.add(url)
                 to_visit = set(sub_links).difference(visited)
                 for link in to_visit:
                     sub_tasks.append(
@@ -224,7 +228,8 @@ class RecursiveUrlLoader(BaseLoader):
                     # We don't want to stop the whole process, so just ignore it
                     # Not standard html format or invalid url or 404 may cause this.
                     continue
-                results += sub_result
+                # locking not fully working, temporary hack to ensure deduplication
+                results += [r for r in sub_result if r not in results]
         if close_session:
             await session.close()
         return results
