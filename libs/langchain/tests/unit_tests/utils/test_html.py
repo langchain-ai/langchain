@@ -6,13 +6,13 @@ from langchain.utils.html import (
 )
 
 
-def test_find_all_links_none():
+def test_find_all_links_none() -> None:
     html = "<span>Hello world</span>"
     actual = find_all_links(html)
     assert actual == []
 
 
-def test_find_all_links_single():
+def test_find_all_links_single() -> None:
     htmls = [
         "href='foobar.com'",
         'href="foobar.com"',
@@ -22,7 +22,7 @@ def test_find_all_links_single():
     assert actual == [["foobar.com"]] * 3
 
 
-def test_find_all_links_multiple():
+def test_find_all_links_multiple() -> None:
     html = (
         '<div><a class="blah" href="https://foobar.com">hullo</a></div>'
         '<div><a class="bleh" href="/baz/cool">buhbye</a></div>'
@@ -34,7 +34,7 @@ def test_find_all_links_multiple():
     ]
 
 
-def test_find_all_links_ignore_suffix():
+def test_find_all_links_ignore_suffix() -> None:
     html = 'href="foobar{suffix}"'
     for suffix in SUFFIXES_TO_IGNORE:
         actual = find_all_links(html.format(suffix=suffix))
@@ -47,7 +47,7 @@ def test_find_all_links_ignore_suffix():
         assert actual == [f"foobar{suffix}more"]
 
 
-def test_find_all_links_ignore_prefix():
+def test_find_all_links_ignore_prefix() -> None:
     html = 'href="{prefix}foobar"'
     for prefix in PREFIXES_TO_IGNORE:
         actual = find_all_links(html.format(prefix=prefix))
@@ -63,13 +63,13 @@ def test_find_all_links_ignore_prefix():
         assert actual == [f"foobar{prefix}more"]
 
 
-def test_find_all_links_drop_fragment():
+def test_find_all_links_drop_fragment() -> None:
     html = 'href="foobar.com/woah#section_one"'
     actual = find_all_links(html)
     assert actual == ["foobar.com/woah"]
 
 
-def test_extract_sub_links():
+def test_extract_sub_links() -> None:
     html = (
         '<a href="https://foobar.com">one</a>'
         '<a href="http://baz.net">two</a>'
