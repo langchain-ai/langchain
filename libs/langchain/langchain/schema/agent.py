@@ -3,9 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import NamedTuple, Union
 
+from langchain.load.serializable import Serializable
 
-@dataclass
-class AgentAction:
+
+class AgentAction(Serializable):
     """A full description of an action for an ActionAgent to execute."""
 
     tool: str
@@ -16,7 +17,7 @@ class AgentAction:
     """Additional information to log about the action."""
 
 
-class AgentFinish(NamedTuple):
+class AgentFinish(Serializable):
     """The final return value of an ActionAgent."""
 
     return_values: dict
