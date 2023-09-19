@@ -41,7 +41,7 @@ class AgentActionMessageLog(AgentAction):
     if (tool, tool_input) cannot be used to fully recreate the LLM
     prediction, and you need that LLM prediction (for future agent iteration).
     Compared to `log`, this is useful when the underlying LLM is a
-    ChatModel (and therefor returns messages rather than a string)."""
+    ChatModel (and therefore returns messages rather than a string)."""
 
 
 class AgentFinish(Serializable):
