@@ -18,6 +18,7 @@ import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.utils import xor_args
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
+DEFAULT_BATCH_SIZE = 1  # Batch size for texts
 
 
 def _results_to_docs(results: Any) -> List[Document]:
@@ -46,6 +48,22 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
             results["distances"][0],
         )
     ]
+
+def _results_to_docs_and_scores_for_batches(
+    results: Any,
+) -> List[List[Tuple[Document, float]]]:
+    return [
+        #Actually it solves TODO in
+        # _results_to_docs_and_scores
+        [
+            (Document(page_content=result[0], metadata=result[1] or {}), result[2])
+            for result in zip(documents, metadatas, distances)
+        ]
+        for documents, metadatas, distances in zip(
+            results["documents"], results["metadatas"], results["distances"]
+        )
+    ]
+
 
 
 class Chroma(VectorStore):
@@ -285,6 +303,94 @@ class Chroma(VectorStore):
         )
         return _results_to_docs(results)
 
+    def similarity_search_by_batch(
+        self,
+        query: List[str],
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        **kwargs: Any,
+    ) -> List[List[Document]]:
+        """Run similarity search with Chroma.
+
+        Args:
+            query (str): List of queriy texts to search for.
+            k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            batch_size (int): Batch size for Openai embeddings
+
+        Returns:
+            List[List[Document]]:
+            Most similar list of list of documents for each query text.
+        """
+        if type(self._embedding_function) != OpenAIEmbeddings:
+            raise ValueError(
+                "Just OpenAI Embeddings supports batching for now. "
+                "For other embedding functions :"
+                "you can use similarity_search_with_score or similarity_search"
+            )
+
+        if not isinstance(query, list):
+            raise TypeError("Input must be a list of strings.")
+
+        for item in query:
+            if not isinstance(item, str):
+                raise TypeError("All elements in the list must be strings.")
+
+        docs_and_scores = self.similarity_search_with_score_by_batch(
+            query, k, filter=filter, batch_size=batch_size
+        )
+
+        return [[doc_tuple[0] for doc_tuple in sublist] for sublist in docs_and_scores]
+
+    def similarity_search_with_score_by_batch(
+        self,
+        query: List[str],
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        **kwargs: Any,
+    ) -> List[List[Tuple[Document, float]]]:
+        """Run similarity search with Chroma with distance.
+
+        Args:
+            query (str): List of queriy texts to search for.
+            k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            batch_size (int): Batch size for Openai embeddings
+
+        Returns:
+            List[[Tuple[Document, float]]]:
+            Most similar list of documents with distance in float for each query.
+        """
+
+        if type(self._embedding_function) != OpenAIEmbeddings:
+            raise ValueError(
+                "Just OpenAI Embeddings supports batching for now. "
+                "For other embedding functions :"
+                "you can use similarity_search_with_score or similarity_search"
+            )
+
+        if not isinstance(query, list):
+            raise TypeError("Input must be a list of strings.")
+
+        for item in query:
+            if not isinstance(item, str):
+                raise TypeError("All elements in the list must be strings.")
+
+        # Openai supports batching:
+        query_embeddings = self._embedding_function.embed_documents(
+            query,
+            chunk_size=len(query)
+            if isinstance(query, list) and batch_size > len(query)
+            else batch_size,
+        )
+
+        results = self.__query_collection(
+            query_embeddings=query_embeddings, n_results=k, where=filter
+        )
+        return _results_to_docs_and_scores_for_batches(results)
+    
     def similarity_search_by_vector_with_relevance_scores(
         self,
         embedding: List[float],
