@@ -110,9 +110,9 @@ class ToTChain(Chain):
     def _call(
         self,
         inputs: Dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         if run_manager:
             run_manager.on_text(text="Starting the ToT solve procedure.\n")
 
