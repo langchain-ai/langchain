@@ -564,6 +564,7 @@ class BaseOpenAI(BaseLLM):
             "gpt-3.5-turbo-0613": 4096,
             "gpt-3.5-turbo-16k": 16385,
             "gpt-3.5-turbo-16k-0613": 16385,
+            "gpt-3.5-turbo-instruct": 4096,
             "text-ada-001": 2049,
             "ada": 2049,
             "text-babbage-001": 2040,
