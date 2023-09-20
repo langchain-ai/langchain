@@ -50,6 +50,7 @@ DECIDER_PROMPT = PromptTemplate(
 # Add new SQL dialects here
 SqlQueryDialect = namedtuple('SqlQueryDialect', ['key', 'name', 'limit_clause', 'quote_char_name', 'quote_char', 'curr_date_func'])
 query_dialects = [
+    SqlQueryDialect('create', "CrateDB", "LIMIT", "double quotes", '"', "CURRENT_DATE"),
     SqlQueryDialect('duckdb', "DuckDB", "LIMIT", "double quotes", '"', "today()"),
     SqlQueryDialect('googlesql', "GoogleSQL", "LIMIT", "backticks", "`", "CURRENT_DATE()"),
     SqlQueryDialect('mssql', "MS SQL", "TOP", "square brackets", "[]", "CAST(GETDATE() as date)"),
