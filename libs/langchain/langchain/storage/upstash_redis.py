@@ -72,7 +72,7 @@ class UpstashRedisStore(BaseStore[str, str]):
         if client:
             if not isinstance(client, Redis):
                 raise TypeError(
-                    f"Expected Upstash Redis client, got {type(client).__name__} instead."
+                    f"Expected Upstash Redis client, got {type(client).__name__}."
                 )
             _client = client
         else:

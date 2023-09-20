@@ -1,5 +1,4 @@
 """Implement integration tests for Redis storage."""
-import typing
 
 import pytest
 from upstash_redis import Redis
@@ -22,10 +21,8 @@ def redis_client() -> Redis:
     client = Redis(url=URL, token=TOKEN)
     try:
         client.ping()
-    except:
-        pytest.skip(
-            "Upstash Redis ping request failed. Verify that credentials are correct."
-        )
+    except Exception:
+        pytest.skip("Ping request failed. Verify that credentials are correct.")
 
     client.flushdb()
     return client

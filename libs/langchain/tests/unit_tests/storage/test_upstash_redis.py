@@ -3,4 +3,4 @@
 
 
 def test_import_storage() -> None:
-    from langchain.storage.upstash_redis import UpstashRedisStore
+    from langchain.storage.upstash_redis import UpstashRedisStore  # noqa

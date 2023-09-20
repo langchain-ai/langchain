@@ -31,7 +31,7 @@ class UpstashRedisChatMessageHistory(BaseChatMessageHistory):
 
         try:
             self.redis_client = Redis(url=url, token=token)
-        except:
+        except Exception:
             logger.error("Upstash Redis instance could not be initiated.")
 
         self.session_id = session_id

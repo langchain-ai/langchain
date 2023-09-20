@@ -99,7 +99,7 @@ class UpstashRedisEntityStore(BaseEntityStore):
 
         try:
             self.redis_client = Redis(url=url, token=token)
-        except:
+        except Exception:
             logger.error("Upstash Redis instance could not be initiated.")
 
         self.session_id = session_id
@@ -125,7 +125,7 @@ class UpstashRedisEntityStore(BaseEntityStore):
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
         logger.debug(
-            f"Upstash Redis MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
+            f"Redis MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
         )
 
     def delete(self, key: str) -> None:
