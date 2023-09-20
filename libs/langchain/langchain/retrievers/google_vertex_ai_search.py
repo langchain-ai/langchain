@@ -26,14 +26,10 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
 
     project_id: str
     """Google Cloud Project ID."""
-    location_id: str = "global"
+    location: str = "global"
     """Vertex AI Search data store location."""
     data_store_id: str
     """Vertex AI Search data store ID."""
-    search_engine_id: str
-    """Vertex AI Search data store ID.
-    TODO: To be remapped to search engine ID in the future.
-    """
     serving_config_id: str = "default_config"
     """Vertex AI Search serving config ID."""
     filter: Optional[str] = None
@@ -110,26 +106,10 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
             ) from exc
 
         values["project_id"] = get_from_dict_or_env(values, "project_id", "PROJECT_ID")
-
-        try:
-            values["data_store_id"] = get_from_dict_or_env(
-                values, "data_store_id", "DATA_STORE_ID"
-            )
-        except ValueError:
-            import warnings
-
-            warnings.warn(
-                "SEARCH_ENGINE_ID environment variable should not be used for the \
-                    data store ID. Use DATA_STORE_ID instead. \
-                    For now, SEARCH_ENGINE_ID is mapped to DATA_STORE_ID to prevent \
-                    breaking changes.",
-                DeprecationWarning,
-            )
-
-            values["search_engine_id"] = get_from_dict_or_env(
-                values, "search_engine_id", "SEARCH_ENGINE_ID"
-            )
-            values["data_store_id"] = values["search_engine_id"]
+        values["location"] = get_from_dict_or_env(values, "location", "LOCATION")
+        values["data_store_id"] = get_from_dict_or_env(
+            values, "data_store_id", "DATA_STORE_ID"
+        )
 
         return values
 
@@ -156,8 +136,8 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
         # https://cloud.google.com/generative-ai-app-builder/docs/locations#specify_a_multi-region_for_your_data_store
         api_endpoint = (
             "discoveryengine.googleapis.com"
-            if self.location_id == "global"
-            else f"{self.location_id}-discoveryengine.googleapis.com"
+            if self.location == "global"
+            else f"{self.location}-discoveryengine.googleapis.com"
         )
 
         self._client = SearchServiceClient(
@@ -165,21 +145,9 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
             client_options=ClientOptions(api_endpoint=api_endpoint),
         )
 
-        if self.search_engine_id and not self.data_store_id:
-            import warnings
-
-            warnings.warn(
-                "search_engine_id should not be used for the \
-                    data store ID. Use data_store_id instead. \
-                    For now, search_engine_id is mapped to data_store_id to prevent \
-                    breaking changes.",
-                DeprecationWarning,
-            )
-            self.data_store_id = self.search_engine_id
-
         self._serving_config = self._client.serving_config_path(
             project=self.project_id,
-            location=self.location_id,
+            location=self.location,
             data_store=self.data_store_id,
             serving_config=self.serving_config_id,
         )

@@ -13,9 +13,6 @@ DATA_STORE_ID - the ID of the search engine to use for the test
 
 import pytest
 
-from langchain.retrievers.google_cloud_enterprise_search import (
-    GoogleCloudEnterpriseSearchRetriever,
-)
 from langchain.retrievers.google_vertex_ai_search import GoogleVertexAISearchRetriever
 from langchain.schema import Document
 
@@ -24,26 +21,6 @@ from langchain.schema import Document
 def test_google_vertex_ai_search_get_relevant_documents() -> None:
     """Test the get_relevant_documents() method."""
     retriever = GoogleVertexAISearchRetriever()
-    documents = retriever.get_relevant_documents("What are Alphabet's Other Bets?")
-    assert len(documents) > 0
-    for doc in documents:
-        assert isinstance(doc, Document)
-        assert doc.page_content
-        assert doc.metadata["id"]
-        assert doc.metadata["source"]
-
-
-@pytest.mark.requires("google_api_core")
-def test_google_vertex_ai_search_enterprise_search_deprecation() -> None:
-    """Test the deprecation of GoogleCloudEnterpriseSearchRetriever."""
-    with pytest.warns(
-        DeprecationWarning,
-        match="GoogleCloudEnterpriseSearchRetriever is deprecated, \
-            use GoogleVertexAISearchRetriever",
-    ):
-        retriever = GoogleCloudEnterpriseSearchRetriever()
-
-    # Check that mapped methods still work.
     documents = retriever.get_relevant_documents("What are Alphabet's Other Bets?")
     assert len(documents) > 0
     for doc in documents:
