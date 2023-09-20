@@ -69,7 +69,6 @@ class Neo4jGraph:
                 "'apoc.meta.data()' is allowed in Neo4j configuration "
             )
 
-
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""
         from neo4j.exceptions import CypherSyntaxError
