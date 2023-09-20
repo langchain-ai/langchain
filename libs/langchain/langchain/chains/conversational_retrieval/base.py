@@ -17,6 +17,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
+from langchain.memory import ConversationBufferMemory
 from langchain.chains.question_answering import load_qa_chain
 from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema import BasePromptTemplate, BaseRetriever, Document
@@ -309,6 +310,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         chain_type: str = "stuff",
         verbose: bool = False,
+        memory: Optional[ConversationBufferMemory] = None,
         condense_question_llm: Optional[BaseLanguageModel] = None,
         combine_docs_chain_kwargs: Optional[Dict] = None,
         callbacks: Callbacks = None,
@@ -349,6 +351,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         _llm = condense_question_llm or llm
         condense_question_chain = LLMChain(
             llm=_llm,
+            memory=memory,
             prompt=condense_question_prompt,
             verbose=verbose,
             callbacks=callbacks,
