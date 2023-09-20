@@ -37,7 +37,7 @@ class QianfanLLMEndpoint(LLM):
 
             from langchain.llms import QianfanLLMEndpoint
             qianfan_model = QianfanLLMEndpoint(model="ERNIE-Bot",
-                endpoint="your_endpoint", ak="your_ak", sk="your_sk")
+                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
     """
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -132,6 +132,8 @@ class QianfanLLMEndpoint(LLM):
         prompt: str,
         **kwargs: Any,
     ) -> dict:
+        if "streaming" in kwargs:
+            kwargs["stream"] = kwargs.pop("streaming")
         return {
             **{"prompt": prompt, "model": self.model},
             **self._default_params,
@@ -191,8 +193,7 @@ class QianfanLLMEndpoint(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
-        params = self._convert_prompt_msg_params(prompt, **kwargs)
-
+        params = self._convert_prompt_msg_params(prompt, **{**kwargs, "stream": True})
         for res in self.client.do(**params):
             if res:
                 chunk = GenerationChunk(text=res["result"])
@@ -207,7 +208,7 @@ class QianfanLLMEndpoint(LLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        params = self._convert_prompt_msg_params(prompt, **kwargs)
+        params = self._convert_prompt_msg_params(prompt, **{**kwargs, "stream": True})
         async for res in await self.client.ado(**params):
             if res:
                 chunk = GenerationChunk(text=res["result"])
