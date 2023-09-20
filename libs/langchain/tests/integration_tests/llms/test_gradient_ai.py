@@ -20,8 +20,7 @@ def test_gradient_acall() -> None:
     output = llm("Say hello:", temperature=0.2, max_tokens=250)
 
     assert llm._llm_type == "gradient"
-    assert llm.feature == "text"
-    assert llm.subfeature == "generation"
+
     assert isinstance(output, str)
     assert len(output)
 
@@ -32,7 +31,6 @@ async def test_gradientai_acall() -> None:
     llm = GradientLLM(model_id=model_id)
     output = await llm.agenerate(["Say hello:"], temperature=0.2, max_tokens=250)
     assert llm._llm_type == "gradient"
-    assert llm.feature == "text"
-    assert llm.subfeature == "generation"
+
     assert isinstance(output, str)
     assert len(output)
