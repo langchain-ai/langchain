@@ -443,32 +443,3 @@ class SingleStoreDB(VectorStore):
         )
         instance.add_texts(texts, metadatas, embedding.embed_documents(texts), **kwargs)
         return instance
-
-    def as_retriever(self, **kwargs: Any) -> SingleStoreDBRetriever:
-        tags = kwargs.pop("tags", None) or []
-        tags.extend(self._get_retriever_tags())
-        return SingleStoreDBRetriever(vectorstore=self, **kwargs, tags=tags)
-
-
-class SingleStoreDBRetriever(VectorStoreRetriever):
-    """Retriever for SingleStoreDB vector stores."""
-
-    vectorstore: SingleStoreDB
-    k: int = 4
-    allowed_search_types: ClassVar[Collection[str]] = ("similarity",)
-
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(query, k=self.k)
-        else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
-        return docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError(
-            "SingleStoreDBVectorStoreRetriever does not support async"
-        )
