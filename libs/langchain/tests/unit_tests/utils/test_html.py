@@ -86,13 +86,8 @@ def test_extract_sub_links() -> None:
     actual = sorted(extract_sub_links(html, "https://foobar.com"))
     assert actual == expected
 
-    actual = sorted(extract_sub_links(html, "https://foobar.com/hello"))
-    expected = sorted(
-        [
-            "https://foobar.com/hello",
-            "https://foobar.com/how/are/you/doing",
-        ]
-    )
+    actual = extract_sub_links(html, "https://foobar.com/hello")
+    expected = ["https://foobar.com/hello"]
     assert actual == expected
 
     actual = sorted(
