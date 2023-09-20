@@ -42,7 +42,7 @@ class GradientLLM(LLM):
     """
 
     model_id: str
-    "Underlying gradient.ai model_id."
+    "Underlying gradient.ai model id (base or fine-tuned)."
 
     gradient_workspace_id: Optional[str] = None
     "Underlying gradient.ai workspace_id."
