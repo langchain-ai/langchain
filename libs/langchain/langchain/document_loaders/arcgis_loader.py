@@ -28,6 +28,7 @@ class ArcGISLoader(BaseLoader):
         out_fields: Optional[Union[List[str], str]] = None,
         return_geometry: bool = False,
         return_all_records: bool = True,
+        lyr_desc: Optional[str] = None,
         **kwargs: Any,
     ):
         try:
@@ -55,7 +56,7 @@ class ArcGISLoader(BaseLoader):
             self.url = layer.url
             self.layer = layer
 
-        self.layer_properties = self._get_layer_properties()
+        self.layer_properties = self._get_layer_properties(lyr_desc)
 
         self.where = where
 
@@ -70,21 +71,23 @@ class ArcGISLoader(BaseLoader):
         self.return_all_records = return_all_records
         self.kwargs = kwargs
 
-    def _get_layer_properties(self) -> dict:
+    def _get_layer_properties(self, lyr_desc: Optional[str] = None) -> dict:
         """Get the layer properties from the FeatureLayer."""
         import arcgis
 
         layer_number_pattern = re.compile(r"/\d+$")
         props = self.layer.properties
 
-        try:
-            if self.BEAUTIFULSOUP:
-                lyr_desc = self.BEAUTIFULSOUP(props["description"]).text
-            else:
-                lyr_desc = props["description"]
-            lyr_desc = lyr_desc or _NOT_PROVIDED
-        except KeyError:
-            lyr_desc = _NOT_PROVIDED
+        if lyr_desc is None:
+            # retrieve description from the FeatureLayer if not provided
+            try:
+                if self.BEAUTIFULSOUP:
+                    lyr_desc = self.BEAUTIFULSOUP(props["description"]).text
+                else:
+                    lyr_desc = props["description"]
+                lyr_desc = lyr_desc or _NOT_PROVIDED
+            except KeyError:
+                lyr_desc = _NOT_PROVIDED
         try:
             item_id = props["serviceItemId"]
             item = self.gis.content.get(item_id) or arcgis.features.FeatureLayer(
@@ -109,7 +112,6 @@ class ArcGISLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load records from FeatureLayer."""
-
         query_response = self.layer.query(
             where=self.where,
             out_fields=self.out_fields,
@@ -117,19 +119,30 @@ class ArcGISLoader(BaseLoader):
             return_all_records=self.return_all_records,
             **self.kwargs,
         )
-        features = (feature.as_dict["attributes"] for feature in query_response)
+        features = (feature.as_dict for feature in query_response)
         for feature in features:
-            yield Document(
-                page_content=json.dumps(feature),
-                metadata={
-                    "accessed": f"{datetime.now(timezone.utc).isoformat()}Z",
-                    "name": self.layer_properties["layer_properties"]["name"],
-                    "url": self.url,
-                    "layer_description": self.layer_properties["layer_description"],
-                    "item_description": self.layer_properties["item_description"],
-                    "layer_properties": self.layer_properties["layer_properties"],
-                },
-            )
+            attributes = feature["attributes"]
+            page_content = json.dumps(attributes)
+
+            metadata = {
+                "accessed": f"{datetime.now(timezone.utc).isoformat()}Z",
+                "name": self.layer_properties["layer_properties"]["name"],
+                "url": self.url,
+                "layer_description": self.layer_properties["layer_description"],
+                "item_description": self.layer_properties["item_description"],
+                "layer_properties": self.layer_properties["layer_properties"],
+            }
+
+            if self.return_geometry:
+                try:
+                    geometry = feature["geometry"]
+                    metadata.update({"geometry": geometry})
+                except KeyError:
+                    warnings.warn(
+                        "Geometry could not be retrieved from the feature layer."
+                    )
+
+            yield Document(page_content=page_content, metadata=metadata)
 
     def load(self) -> List[Document]:
         """Load all records from FeatureLayer."""

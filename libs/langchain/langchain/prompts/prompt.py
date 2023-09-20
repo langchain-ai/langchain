@@ -26,7 +26,7 @@ class PromptTemplate(StringPromptTemplate):
 
         .. code-block:: python
 
-            from langchain import PromptTemplate
+            from langchain.prompts import PromptTemplate
 
             # Instantiation using from_template (recommended)
             prompt = PromptTemplate.from_template("Say {foo}")
