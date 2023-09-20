@@ -590,4 +590,8 @@ found in task keys {task.keys()}. Please call again with one of the key names.""
             output = self.update_task_assignees(query)
         else:
             output = {"ModeError": f"Got unexpected mode {mode}."}
-        return str(output)
+
+        try:
+            return json.dumps(output)
+        except Exception:
+            return str(output)
