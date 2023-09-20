@@ -5,22 +5,21 @@ import json
 import logging
 import os
 import uuid
+from enum import Enum
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
-from langchain.pydantic_v1 import Field
-from enum import Enum
 
+from langchain.pydantic_v1 import Field
 from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 
 class ModelChoices(str, Enum):
-    embedding_english_v1 = 'embedding-english-v1'
-    embedding_multi_v1 = 'embedding-multi-v1'
-    
-    
-    
+    embedding_english_v1 = "embedding-english-v1"
+    embedding_multi_v1 = "embedding-multi-v1"
+
+
 class LLMRails(VectorStore):
     """Implementation of Vector Store using LLMRails (https://llmrails.com/).
     Example:
@@ -42,16 +41,12 @@ class LLMRails(VectorStore):
         """Initialize with LLMRails API."""
         self._datastore_id = datastore_id or os.environ.get("LLM_RAILS_DATASTORE_ID")
         self._api_key = api_key or os.environ.get("LLM_RAILS_API_KEY")
-        if (
-           self._api_key is None
-        ):
-            logging.warning(
-                "Can't find Rails credentials in environment."
-            )
-        
+        if self._api_key is None:
+            logging.warning("Can't find Rails credentials in environment.")
+
         self._session = requests.Session()  # to reuse connections
         self.datastore_id = datastore_id
-        self.base_url = 'https://api.llmrails.com/v1'
+        self.base_url = "https://api.llmrails.com/v1"
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
@@ -60,11 +55,7 @@ class LLMRails(VectorStore):
             "Content-Type": "application/json",
         }
 
-
-    def add_texts(
-        self,
-        texts: Iterable[str]
-    ) -> List[str]:
+    def add_texts(self, texts: Iterable[str]) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -83,24 +74,22 @@ class LLMRails(VectorStore):
                 verify=True,
                 headers=self._get_post_headers(),
             )
-            
+
             if response.status_code != 200:
                 logging.error(
                     f"Create request failed for doc_name = {doc_name} with status code "
                     f"{response.status_code}, reason {response.reason}, text "
                     f"{response.text}"
                 )
-                
+
                 return names
-            
+
             names.append(doc_name)
 
         return names
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 5
+        self, query: str, k: int = 5
     ) -> List[Tuple[Document, float]]:
         """Return LLMRails documents most similar to query, along with scores.
 
@@ -115,12 +104,7 @@ class LLMRails(VectorStore):
         response = self._session.post(
             headers=self._get_post_headers(),
             url=f"{self.base_url}/datastores/{self._datastore_id}/search",
-            data=json.dumps(
-                {
-                    "k":k,
-                    "text":query
-                }
-            ),
+            data=json.dumps({"k": k, "text": query}),
             timeout=10,
         )
 
@@ -132,21 +116,22 @@ class LLMRails(VectorStore):
             )
             return []
 
-        results = response.json()['results']
+        results = response.json()["results"]
         docs = [
             (
                 Document(
                     page_content=x["text"],
                     metadata={
                         key: value
-                        for key, value in x["metadata"].items() if key != 'score'
+                        for key, value in x["metadata"].items()
+                        if key != "score"
                     },
                 ),
-                x['metadata']["score"],
+                x["metadata"]["score"],
             )
             for x in results
         ]
-        
+
         return docs
 
     def similarity_search(
@@ -163,10 +148,8 @@ class LLMRails(VectorStore):
         Returns:
             List of Documents most similar to the query
         """
-        docs_and_scores = self.similarity_search_with_score(
-            query, k=k
-        )
-        
+        docs_and_scores = self.similarity_search_with_score(query, k=k)
+
         return [doc for doc, _ in docs_and_scores]
 
     @classmethod
@@ -205,14 +188,10 @@ class LLMRailsRetriever(VectorStoreRetriever):
         alpha: parameter for hybrid search .
     """
 
-    def add_texts(
-        self, texts: List[str]
-    ) -> None:
+    def add_texts(self, texts: List[str]) -> None:
         """Add text to the datastore.
 
         Args:
             texts (List[str]): The text
         """
         self.vectorstore.add_texts(texts)
-        
-        
