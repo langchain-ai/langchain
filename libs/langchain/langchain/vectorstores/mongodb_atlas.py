@@ -30,7 +30,6 @@ MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 logger = logging.getLogger(__name__)
 
 DEFAULT_INSERT_BATCH_SIZE = 100
-_use_vectorsearch = True
 
 
 class MongoDBAtlasVectorSearch(VectorStore):
@@ -78,6 +77,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self._index_name = index_name
         self._text_key = text_key
         self._embedding_key = embedding_key
+        self._use_vectorsearch = True
 
     @property
     def embeddings(self) -> Embeddings:
@@ -164,7 +164,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         query: dict[str, Any],
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
-        if _use_vectorsearch is None or _use_vectorsearch:
+        if self._use_vectorsearch:
             pipeline = [
                 query,
                 {"$set": {"score": {"$meta": "vectorSearchScore"}}},
@@ -234,29 +234,23 @@ class MongoDBAtlasVectorSearch(VectorStore):
         pre_filter: Optional[dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
-        global _use_vectorsearch
-        if _use_vectorsearch is None:
+        if self._use_vectorsearch:
             try:
                 result = self._similarity_search_query_vectorsearch(
                     embedding, k, pre_filter, post_filter_pipeline
                 )
-                _use_vectorsearch = True
             except OperationFailure as e:
-                if "$vectorSearch is not allowed with the current configuration" in str(e):
+                if e.code == 224:
                     logger.error(
                         f"$vectorSearch not supported for this Atlas version. "
                         f"Attempting to use $search. Original error:\n\t{e}"
                     )
-                    _use_vectorsearch = False
+                    self._use_vectorsearch = False
                     result = self._similarity_search_query_search(
                         embedding, k, pre_filter, post_filter_pipeline
                     )
                 else:
                     raise
-        elif _use_vectorsearch:
-            result = self._similarity_search_query_vectorsearch(
-                embedding, k, pre_filter, post_filter_pipeline
-            )
         else:
             result = self._similarity_search_query_search(
                 embedding, k, pre_filter, post_filter_pipeline
@@ -339,7 +333,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
     def max_marginal_relevance_search(
         self,
         query: str,
-        limit: int = 4,
+        k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         pre_filter: Optional[dict] = None,
@@ -353,7 +347,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            limit: (Optional) number of documents to return. Defaults to 4.
+            k: (Optional) number of documents to return. Defaults to 4.
             fetch_k: (Optional) number of documents to fetch before passing to MMR
                 algorithm. Defaults to 20.
             lambda_mult: Number between 0 and 1 that determines the degree
@@ -377,7 +371,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         mmr_doc_indexes = maximal_marginal_relevance(
             np.array(query_embedding),
             [doc.metadata[self._embedding_key] for doc, _ in docs],
-            k=limit,
+            k=k,
             lambda_mult=lambda_mult,
         )
         mmr_docs = [docs[i][0] for i in mmr_doc_indexes]
