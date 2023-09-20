@@ -110,7 +110,7 @@ class ToTChain(Chain):
     def _call(
         self,
         inputs: Dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         if run_manager:
@@ -166,10 +166,10 @@ class ToTChain(Chain):
                     problem_description, thoughts_path, callbacks=_run_manager.get_child()
                 )
                 checker_inputs["thoughts"] = thoughts_path + (thought_text,)
-                result = await self.checker.acall(
-                    checker_inputs, callbacks=_run_manager.get_child()
-                )
-                
+
+                # type: ignore
+                result = self.checker.acall(checker_inputs, callbacks=_run_manager.get_child())
+
                 thought_validity = result["validity"]
                 thought = Thought(text=thought_text, validity=thought_validity)
                 if thought.validity == ThoughtValidity.VALID_FINAL:
