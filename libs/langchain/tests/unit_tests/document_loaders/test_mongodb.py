@@ -48,13 +48,13 @@ async def test_load_mocked(expected_documents: List[Document]) -> None:
     with patch(
         "motor.motor_asyncio.AsyncIOMotorClient", return_value=MagicMock()
     ), patch(
-        "langchain.document_loaders.mongodb.MongodbLoader._async_load",
+        "langchain.document_loaders.mongodb.MongodbLoader.aload",
         new=mock_async_load,
     ):
         loader = MongodbLoader(
             "mongodb://localhost:27017", "test_db", "test_collection"
         )
         loader.collection = mock_collection
-        documents = await loader._async_load()
+        documents = await loader.aload()
 
     assert documents == expected_documents

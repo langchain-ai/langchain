@@ -1,17 +1,15 @@
 import asyncio
-from typing import Any, Dict, List, Optional
-
-from motor.motor_asyncio import AsyncIOMotorClient
+import logging
+from typing import Dict, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
+logger = logging.getLogger(__name__)
+
 
 class MongodbLoader(BaseLoader):
     """Load MongoDB documents."""
-
-    db: Any
-    collection: Any
 
     def __init__(
         self,
@@ -20,6 +18,12 @@ class MongodbLoader(BaseLoader):
         collection_name: str,
         filter_criteria: Optional[Dict] = None,
     ):
+        try:
+            from motor.motor_asyncio import AsyncIOMotorClient
+        except ImportError as e:
+            raise ImportError(
+                "Cannot import from motor, please install with `pip install motor`."
+            ) from e
         if not connection_string:
             raise ValueError("connection_string must be provided.")
 
@@ -38,29 +42,23 @@ class MongodbLoader(BaseLoader):
         self.collection = self.db.get_collection(collection_name)
 
     def load(self) -> List[Document]:
-        result = asyncio.run(self._async_load())
+        result = asyncio.run(self.aload())
         return result
 
-    async def _async_load(self) -> List[Document]:
+    async def aload(self) -> List[Document]:
         result = []
+        total_docs = await self.collection.count_documents(self.filter_criteria)
+        async for doc in self.collection.find(self.filter_criteria):
+            metadata = {
+                "database": self.db_name,
+                "collection": self.collection_name,
+            }
+            result.append(Document(page_content=str(doc), metadata=metadata))
 
-        try:
-            cursor = self.collection.find(self.filter_criteria)
-
-            total_docs = self.collection.count_documents(self.filter_criteria)
-
-            async for doc in cursor:
-                content = str(doc)
-                metadata = {
-                    "database": self.db_name,
-                    "collection": self.collection_name,
-                }
-                result.append(Document(page_content=content, metadata=metadata))
-
-            if len(result) != total_docs:
-                raise Exception("Only partial collection of documents returned.")
-
-        except Exception as e:
-            print(f"Error: {e}")
+        if len(result) != total_docs:
+            logger.warning(
+                f"Only partial collection of documents returned. Loaded {len(result)} "
+                f"docs, expected {total_docs}."
+            )
 
         return result
