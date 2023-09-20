@@ -1,72 +1,76 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/platforms(/?)",
+      "destination": "/docs/integrations/providers/"
+    },
+    {
       "source": "/docs/expression_language/cookbook/routing",
       "destination": "/docs/expression_language/how_to/routing"
     },
     {
       "source":  "/docs/integrations/providers/amazon_api_gateway",
-      "destination": "/docs/integrations/platform/aws"
+      "destination": "/docs/integrations/platforms/aws"
     },
     {
       "source":  "/docs/integrations/providers/azure_blob_storage",
-      "destination": "/docs/integrations/platform/microsoft"
+      "destination": "/docs/integrations/platforms/microsoft"
     },
     {
       "source":  "/docs/integrations/providers/google_vertexai_matchingengine",
-      "destination": "/docs/integrations/platform/google"
+      "destination": "/docs/integrations/platforms/google"
     },
     {
       "source":  "/docs/integrations/providers/aws_s3",
-      "destination": "/docs/integrations/platform/aws"
+      "destination": "/docs/integrations/platforms/aws"
     },
     {
       "source":  "/docs/integrations/providers/azure_openai",
-      "destination": "/docs/integrations/platform/microsoft"
+      "destination": "/docs/integrations/platforms/microsoft"
     },
     {
       "source":  "/docs/integrations/providers/azure_blob_storage",
-      "destination": "/docs/integrations/platform/microsoft"
+      "destination": "/docs/integrations/platforms/microsoft"
     },
     {
       "source":  "/docs/integrations/providers/azure_cognitive_search_",
-      "destination": "/docs/integrations/platform/microsoft"
+      "destination": "/docs/integrations/platforms/microsoft"
     },
     {
       "source":  "/docs/integrations/providers/bedrock",
-      "destination": "/docs/integrations/platform/aws"
+      "destination": "/docs/integrations/platforms/aws"
     },
     {
       "source":  "/docs/integrations/providers/google_bigquery",
-      "destination": "/docs/integrations/platform/google"
+      "destination": "/docs/integrations/platforms/google"
     },
     {
       "source":  "/docs/integrations/providers/google_cloud_storage",
-      "destination": "/docs/integrations/platform/google"
+      "destination": "/docs/integrations/platforms/google"
     },
     {
       "source":  "/docs/integrations/providers/google_drive",
-      "destination": "/docs/integrations/platform/google"
+      "destination": "/docs/integrations/platforms/google"
     },
     {
       "source":  "/docs/integrations/providers/google_search",
-      "destination": "/docs/integrations/platform/google"
+      "destination": "/docs/integrations/platforms/google"
     },
     {
       "source":  "/docs/integrations/providers/microsoft_onedrive",
-      "destination": "/docs/integrations/platform/microsoft"
+      "destination": "/docs/integrations/platforms/microsoft"
     },
     {
       "source":  "/docs/integrations/providers/microsoft_powerpoint",
-      "destination": "/docs/integrations/platform/microsoft"
+      "destination": "/docs/integrations/platforms/microsoft"
     },
     {
       "source":  "/docs/integrations/providers/microsoft_word",
-      "destination": "/docs/integrations/platform/microsoft"
+      "destination": "/docs/integrations/platforms/microsoft"
     },
     {
       "source":  "/docs/integrations/providers/sagemaker_endpoint",
-      "destination": "/docs/integrations/platform/aws"
+      "destination": "/docs/integrations/platforms/aws"
     },
     {
       "source":  "/docs/integrations/providers/sagemaker_tracking",
@@ -74,7 +78,7 @@
     },
     {
       "source":  "/docs/integrations/providers/openai",
-      "destination": "/docs/integrations/callbacks/openai"
+      "destination": "/docs/integrations/platforms/openai"
     },
     {
       "source": "/docs/modules/data_connection/caching_embeddings(/?)",
@@ -438,7 +442,7 @@
     },
     {
       "source": "/docs/integrations/openai",
-      "destination": "/docs/integrations/providers/openai"
+      "destination": "/docs/integrations/platforms/openai"
     },
     {
       "source": "/docs/integrations/opensearch",
