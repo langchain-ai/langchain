@@ -30,7 +30,8 @@ class _MinimaxEndpointClient(BaseModel):
     api_key: str
     api_url: str
 
-    def set_api_url(self, values: Dict[str, Any]) -> Dict[str, Any]:
+    @root_validator(pre=True, allow_reuse=True)
+    def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "api_url" not in values:
             host = values["host"]
             group_id = values["group_id"]
