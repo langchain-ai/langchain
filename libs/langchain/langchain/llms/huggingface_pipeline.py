@@ -202,5 +202,5 @@ class HuggingFacePipeline(BaseLLM):
                 text_generations.append(text)
 
         return LLMResult(
-            generations=[[Generation(text=text) for text in text_generations]]
+            generations=[[Generation(text=text)] for text in text_generations]
         )
