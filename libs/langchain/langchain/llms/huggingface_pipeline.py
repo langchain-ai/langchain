@@ -3,7 +3,7 @@ import logging
 from typing import Any, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra
 from langchain.schema import Generation, LLMResult
@@ -16,7 +16,7 @@ DEFAULT_BATCH_SIZE = 1
 logger = logging.getLogger(__name__)
 
 
-class HuggingFacePipeline(LLM):
+class HuggingFacePipeline(BaseLLM):
     """HuggingFace Pipeline API.
 
     To use, you should have the ``transformers`` python package installed.
