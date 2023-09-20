@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
@@ -73,15 +74,36 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
         Returns:
             Dict: The parsed output.
         """
-        parsed = text.strip().rsplit("\n", maxsplit=1)
-        if len(parsed) == 1:
-            reasoning = ""
-            verdict = parsed[0]
+        verdict = None
+        score = None
+        match_last = re.search(r"\s*(Y|N)\s*$", text, re.IGNORECASE)
+        match_first = re.search(r"^\s*(Y|N)\s*", text, re.IGNORECASE)
+        match_end = re.search(r"\b(Y|N)\b\s*$", text, re.IGNORECASE)
+
+        if match_last:
+            verdict = match_last.group(1).strip()
+            text = text[: match_last.start()].strip()
+        elif match_first:
+            verdict = match_first.group(1).strip()
+            text = text[match_first.end() :].strip()
+        elif match_end:
+            verdict = match_end.group(1).strip()
+            text = text[: match_end.start()].strip()
         else:
-            reasoning, verdict = parsed
-        score = 1 if verdict.upper() == "Y" else (0 if verdict.upper() == "N" else None)
+            splits = text.strip().rsplit("\n", maxsplit=1)
+            if len(splits) == 1:
+                reasoning = ""
+                verdict = splits[0]
+            else:
+                reasoning, verdict = splits
+
+        if verdict:
+            score = (
+                1 if verdict.upper() == "Y" else (0 if verdict.upper() == "N" else None)
+            )
+
         return {
-            "reasoning": reasoning.strip(),
+            "reasoning": text.strip(),
             "value": verdict,
             "score": score,
         }

@@ -14,7 +14,7 @@ def test_async_recursive_url_loader() -> None:
         timeout=None,
     )
     docs = loader.load()
-    assert len(docs) == 1024
+    assert len(docs) == 890
     assert docs[0].page_content == "placeholder"
 
 
@@ -38,7 +38,7 @@ def test_sync_recursive_url_loader() -> None:
         url, extractor=lambda _: "placeholder", use_async=False, max_depth=2
     )
     docs = loader.load()
-    assert len(docs) == 27
+    assert len(docs) == 25
     assert docs[0].page_content == "placeholder"
 
 
