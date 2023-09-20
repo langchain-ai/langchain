@@ -59,11 +59,12 @@ def extract_sub_links(
     for link in all_links:
         # Some may be absolute links like https://to/path
         if link.startswith("http"):
-            if not prevent_outside or link.startswith(base_url):
-                absolute_paths.add(link)
+            absolute_paths.add(link)
         # Some may have omitted the protocol like //to/path
         elif link.startswith("//"):
             absolute_paths.add(f"{urlparse(base_url).scheme}:{link}")
         else:
             absolute_paths.add(urljoin(base_url, link))
+    if prevent_outside:
+        return [p for p in absolute_paths if p.startswith(base_url)]
     return list(absolute_paths)
