@@ -5,7 +5,8 @@ GigaChatModel for GigaChat.
 import json
 import logging
 import os
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, AsyncIterator
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, AsyncIterator, \
+    Mapping
 
 import requests
 import urllib3.exceptions
@@ -22,9 +23,11 @@ from langchain.schema.messages import (
     ChatMessage,
     FunctionMessage,
     HumanMessage,
-    SystemMessage,
+    SystemMessage, BaseMessageChunk, HumanMessageChunk, SystemMessageChunk,
+    FunctionMessageChunk, ChatMessageChunk,
 )
-from langchain.schema.output import ChatGenerationChunk
+from langchain.schema.output import ChatGenerationChunk, LLMResult, Generation, \
+    GenerationChunk, ChatGeneration
 
 LATEST_MODEL = "GigaChat:latest"
 
@@ -68,6 +71,14 @@ class GigaChat(BaseChatModel):
             from langchain.chat_models import GigaChat
             giga = GigaChat(user="username", password="password")
     """
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"token": "GIGA_TOKEN", "user": "GIGA_USER", "password": "GIGA_PASSWORD"}
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
 
     api_url: str = "https://beta.saluteai.sberdevices.ru"
     model: str = LATEST_MODEL
@@ -204,6 +215,64 @@ class GigaChat(BaseChatModel):
 
         return [model["id"] for model in response.json()["data"]]
 
+    @staticmethod
+    def _convert_delta_to_message_chunk(
+            _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+    ) -> BaseMessageChunk:
+        role = _dict.get("role")
+        content = _dict.get("content") or ""
+        if _dict.get("function_call"):
+            additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        else:
+            additional_kwargs = {}
+
+        if role == "user" or default_class == HumanMessageChunk:
+            return HumanMessageChunk(content=content)
+        elif role == "assistant" or default_class == AIMessageChunk:
+            return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        elif role == "system" or default_class == SystemMessageChunk:
+            return SystemMessageChunk(content=content)
+        elif role == "function" or default_class == FunctionMessageChunk:
+            return FunctionMessageChunk(content=content, name=_dict["name"])
+        elif role or default_class == ChatMessageChunk:
+            return ChatMessageChunk(content=content, role=role)
+        else:
+            return default_class(content=content)
+
+    @staticmethod
+    def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+        role = _dict["role"]
+        if role == "user":
+            return HumanMessage(content=_dict["content"])
+        elif role == "assistant":
+            # Fix for azure
+            # Also OpenAI returns None for tool invocations
+            content = _dict.get("content", "") or ""
+            if _dict.get("function_call"):
+                additional_kwargs = {"function_call": dict(_dict["function_call"])}
+            else:
+                additional_kwargs = {}
+            return AIMessage(content=content, additional_kwargs=additional_kwargs)
+        elif role == "system":
+            return SystemMessage(content=_dict["content"])
+        elif role == "function":
+            return FunctionMessage(content=_dict["content"], name=_dict["name"])
+        else:
+            return ChatMessage(content=_dict["content"], role=role)
+
+    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+        generations = []
+        for res in response["choices"]:
+            message = self.convert_dict_to_message(res["message"])
+            gen = ChatGeneration(
+                message=message,
+                generation_info=dict(finish_reason=res.get("finish_reason")),
+            )
+            generations.append(gen)
+        token_usage = response.get("usage", {})
+        llm_output = {"token_usage": token_usage, "model_name": self.model}
+        return ChatResult(generations=generations, llm_output=llm_output)
+
     def _request(self, messages: List[BaseMessage]):
         headers = {
             "Content-Type": "application/json",
@@ -244,21 +313,21 @@ class GigaChat(BaseChatModel):
             raise ValueError(
                 f"Can't get response from GigaChat. Error code: {response.status_code}"
             )
-        if self.streaming and "text/event-stream" in response.headers.get("Content-Type", ""):
-            return (self.transform_output(json.loads(line), stream=True)
-                    for line in parse_stream(response.iter_lines()))
-        return self.transform_output(response.json())
+        if self.streaming and "text/event-stream" in response.headers.get(
+                "Content-Type", ""):
+            return (json.loads(line) for line in parse_stream(response.iter_lines()))
+        return response.json()
 
     @retry(
-        retry=retry_if_not_exception_type(PermissionError), stop=stop_after_attempt(3)
+        retry=retry_if_not_exception_type(PermissionError), stop=stop_after_attempt(3), reraise=True
     )
     def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+    ) -> ChatResult:
         """
         Calls the GigaChat API to get the response.
         """
@@ -268,28 +337,38 @@ class GigaChat(BaseChatModel):
         if self.model is None:
             self.model = self.get_models()[0]
 
-        text, finish_reason = self._request(messages)
-        if finish_reason != "stop":
-            self.logger.warning(
-                "Giga generation stopped \
-with reason: %s",
-                finish_reason,
-            )
+        if self.streaming:
+            generation: Optional[GenerationChunk] = None
+            for chunk in self._stream(messages, stop, run_manager, **kwargs):
+                if generation is None:
+                    generation = chunk
+                else:
+                    generation += chunk
+            assert generation is not None
+            return ChatResult(generations=[generation])
+        else:
+            response = self._request(messages)
+    #         if finish_reason != "stop":
+    #             self.logger.warning(
+    #                 "Giga generation stopped \
+    # with reason: %s",
+    #                 finish_reason,
+    #             )
+    #
+    #         if self.stop_on_censor and finish_reason in self.censor_finish_reason:
+    #             raise PermissionError("Censor detected")
+    #
+    #         if self.verbose:
+    #             self.logger.warning("Giga response: %s", text)
 
-        if self.stop_on_censor and finish_reason in self.censor_finish_reason:
-            raise PermissionError("Censor detected")
-
-        if self.verbose:
-            self.logger.warning("Giga response: %s", text)
-
-        return text
+        return self._create_chat_result(response)
 
     def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Union[List[str], None] = None,
-        run_manager: Union[CallbackManagerForLLMRun, None] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Union[List[str], None] = None,
+            run_manager: Union[CallbackManagerForLLMRun, None] = None,
+            **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         if not self.token:
             self._authorize()
@@ -297,13 +376,26 @@ with reason: %s",
         if self.model is None:
             self.model = self.get_models()[0]
 
-        for chunk, finish_reason in self._request(
-            messages=messages,
+        default_chunk_class = AIMessageChunk
+
+        for chunk in self._request(
+                messages=messages,
         ):
-            chunk = AIMessageChunk(content=chunk)
-            yield ChatGenerationChunk(message=chunk)
+            if len(chunk["choices"]) == 0:
+                continue
+            choice = chunk["choices"][0]
+            chunk = self._convert_delta_to_message_chunk(
+                choice["delta"], default_chunk_class
+            )
+            finish_reason = choice.get("finish_reason")
+            generation_info = (
+                dict(finish_reason=finish_reason) if finish_reason is not None else None
+            )
+            default_chunk_class = chunk.__class__
+            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content, chunk=chunk)
+                run_manager.on_llm_new_token(chunk.content,
+                                             chunk=ChatGenerationChunk(message=chunk))
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
