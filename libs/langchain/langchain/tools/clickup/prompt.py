@@ -129,7 +129,3 @@ CLICKUP_UPDATE_TASK_ASSIGNEE_PROMPT = """
     Remove 67823487 as assignee from task jin34ji4 -> {{"task_id": "jin34ji4", "operation": "rem", "users": [67823487]}}
     *IMPORTANT*: Users id should always be ints. 
     """
-
-
-
-
