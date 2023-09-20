@@ -9,7 +9,7 @@ from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
-TEST_SINGLESTOREDB_URL = "root:pass@localhost:3309/db"
+TEST_SINGLESTOREDB_URL = "root:pass@localhost:3306/db"
 TEST_SINGLE_RESULT = [Document(page_content="foo")]
 TEST_SINGLE_WITH_METADATA_RESULT = [Document(page_content="foo", metadata={"a": "b"})]
 TEST_RESULT = [Document(page_content="foo"), Document(page_content="foo")]
