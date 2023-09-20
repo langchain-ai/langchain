@@ -16,8 +16,8 @@ class GoogleCloudEnterpriseSearchRetriever(GoogleVertexAISearchRetriever):
         import warnings
 
         warnings.warn(
-            "GoogleCloudEnterpriseSearchRetriever is deprecated, use \
-                langchain.retrievers.google_vertex_ai_search.GoogleVertexAISearchRetriever",  # noqa: E501
+            "GoogleCloudEnterpriseSearchRetriever is deprecated, \
+                use GoogleVertexAISearchRetriever",
             DeprecationWarning,
         )
         super().__init__(**data)
