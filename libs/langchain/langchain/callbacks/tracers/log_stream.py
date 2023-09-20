@@ -74,6 +74,13 @@ class Log:
         else:
             return f"Log(state={pformat(self.state)})"
 
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, Log)
+            and self.ops == other.ops
+            and self.state == other.state
+        )
+
 
 class LogStreamCallbackHandler(BaseTracer):
     def __init__(

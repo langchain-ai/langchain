@@ -9,6 +9,7 @@ from syrupy import SnapshotAssertion
 
 from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.base import BaseTracer
+from langchain.callbacks.tracers.log_stream import Log
 from langchain.callbacks.tracers.schemas import Run
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.chat_models.fake import FakeListChatModel
@@ -368,6 +369,66 @@ async def test_prompt() -> None:
         part async for part in prompt.astream({"question": "What is your name?"})
     ] == [expected]
 
+    stream_log = [
+        part async for part in prompt.astream_log({"question": "What is your name?"})
+    ]
+
+    assert len(stream_log[0].ops) == 1
+    assert stream_log[0].ops[0]["op"] == "replace"
+    assert stream_log[0].ops[0]["path"] == ""
+    assert stream_log[0].ops[0]["value"]["entries"] == []
+    assert stream_log[0].ops[0]["value"]["final_output"] is None
+    assert stream_log[0].ops[0]["value"]["streamed_output"] == []
+    assert type(stream_log[0].ops[0]["value"]["id"]) == UUID
+
+    assert stream_log[1:] == [
+        Log(
+            ops=[
+                {
+                    "op": "replace",
+                    "path": "/final_output",
+                    "value": {
+                        "id": ["langchain", "prompts", "chat", "ChatPromptValue"],
+                        "kwargs": {
+                            "messages": [
+                                {
+                                    "id": [
+                                        "langchain",
+                                        "schema",
+                                        "messages",
+                                        "SystemMessage",
+                                    ],
+                                    "kwargs": {
+                                        "content": "You are a nice " "assistant."
+                                    },
+                                    "lc": 1,
+                                    "type": "constructor",
+                                },
+                                {
+                                    "id": [
+                                        "langchain",
+                                        "schema",
+                                        "messages",
+                                        "HumanMessage",
+                                    ],
+                                    "kwargs": {
+                                        "additional_kwargs": {},
+                                        "content": "What is your " "name?",
+                                    },
+                                    "lc": 1,
+                                    "type": "constructor",
+                                },
+                            ]
+                        },
+                        "lc": 1,
+                        "type": "constructor",
+                    },
+                }
+            ]
+        ),
+        Log(ops=[{"op": "add", "path": "/streamed_output/-", "value": expected}]),
+    ]
+
 
 def test_prompt_template_params() -> None:
     prompt = ChatPromptTemplate.from_template(
@@ -560,7 +621,7 @@ async def test_prompt_with_llm(
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
 
-    # Test stream#
+    # Test stream
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
     llm_spy = mocker.spy(llm.__class__, "astream")
     tracer = FakeTracer()
@@ -577,6 +638,146 @@ async def test_prompt_with_llm(
             HumanMessage(content="What is your name?"),
         ]
     )
+
+    prompt_spy.reset_mock()
+    llm_spy.reset_mock()
+    stream_log = [
+        part async for part in chain.astream_log({"question": "What is your name?"})
+    ]
+
+    # remove ids from logs
+    for part in stream_log:
+        for op in part.ops:
+            if (
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
+            ):
+                del op["value"]["id"]
+
+    assert stream_log == [
+        Log(
+            ops=[
+                {
+                    "op": "replace",
+                    "path": "",
+                    "value": {
+                        "entries": [],
+                        "final_output": None,
+                        "streamed_output": [],
+                    },
+                }
+            ]
+        ),
+        Log(
+            ops=[
+                {
+                    "op": "add",
+                    "path": "/entries/0",
+                    "value": {
+                        "end_time": None,
+                        "final_output": None,
+                        "metadata": {},
+                        "name": "ChatPromptTemplate",
+                        "start_time": "2023-01-01T00:00:00.000",
+                        "streamed_output_str": [],
+                        "tags": ["seq:step:1"],
+                        "type": "prompt",
+                    },
+                }
+            ]
+        ),
+        Log(
+            ops=[
+                {
+                    "op": "add",
+                    "path": "/entries/0/final_output",
+                    "value": {
+                        "id": ["langchain", "prompts", "chat", "ChatPromptValue"],
+                        "kwargs": {
+                            "messages": [
+                                {
+                                    "id": [
+                                        "langchain",
+                                        "schema",
+                                        "messages",
+                                        "SystemMessage",
+                                    ],
+                                    "kwargs": {
+                                        "additional_kwargs": {},
+                                        "content": "You are a nice " "assistant.",
+                                    },
+                                    "lc": 1,
+                                    "type": "constructor",
+                                },
+                                {
+                                    "id": [
+                                        "langchain",
+                                        "schema",
+                                        "messages",
+                                        "HumanMessage",
+                                    ],
+                                    "kwargs": {
+                                        "additional_kwargs": {},
+                                        "content": "What is your " "name?",
+                                    },
+                                    "lc": 1,
+                                    "type": "constructor",
+                                },
+                            ]
+                        },
+                        "lc": 1,
+                        "type": "constructor",
+                    },
+                },
+                {
+                    "op": "add",
+                    "path": "/entries/0/end_time",
+                    "value": "2023-01-01T00:00:00.000",
+                },
+            ]
+        ),
+        Log(
+            ops=[
+                {
+                    "op": "add",
+                    "path": "/entries/1",
+                    "value": {
+                        "end_time": None,
+                        "final_output": None,
+                        "metadata": {},
+                        "name": "FakeListLLM",
+                        "start_time": "2023-01-01T00:00:00.000",
+                        "streamed_output_str": [],
+                        "tags": ["seq:step:2"],
+                        "type": "llm",
+                    },
+                }
+            ]
+        ),
+        Log(
+            ops=[
+                {
+                    "op": "add",
+                    "path": "/entries/1/final_output",
+                    "value": {
+                        "generations": [[{"generation_info": None, "text": "foo"}]],
+                        "llm_output": None,
+                        "run": None,
+                    },
+                },
+                {
+                    "op": "add",
+                    "path": "/entries/1/end_time",
+                    "value": "2023-01-01T00:00:00.000",
+                },
+            ]
+        ),
+        Log(ops=[{"op": "add", "path": "/streamed_output/-", "value": "foo"}]),
+        Log(
+            ops=[{"op": "replace", "path": "/final_output", "value": {"output": "foo"}}]
+        ),
+    ]
 
 
 @pytest.mark.asyncio
