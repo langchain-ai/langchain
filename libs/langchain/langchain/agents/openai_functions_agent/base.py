@@ -1,9 +1,11 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 import json
-from json import JSONDecodeError
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from langchain.agents import BaseSingleActionAgent
+from langchain.agents.output_parsers.openai_functions import (
+    OpenAIFunctionsAgentOutputParser,
+)
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
@@ -18,7 +20,6 @@ from langchain.schema import (
     AgentAction,
     AgentFinish,
     BasePromptTemplate,
-    OutputParserException,
 )
 from langchain.schema.agent import AgentActionMessageLog
 from langchain.schema.language_model import BaseLanguageModel
@@ -95,46 +96,6 @@ def _format_intermediate_steps(
         messages.extend(_convert_agent_action_to_messages(agent_action, observation))
 
     return messages
-
-
-def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
-    """Parse an AI message."""
-    if not isinstance(message, AIMessage):
-        raise TypeError(f"Expected an AI message got {type(message)}")
-
-    function_call = message.additional_kwargs.get("function_call", {})
-
-    if function_call:
-        function_name = function_call["name"]
-        try:
-            _tool_input = json.loads(function_call["arguments"])
-        except JSONDecodeError:
-            raise OutputParserException(
-                f"Could not parse tool input: {function_call} because "
-                f"the `arguments` is not valid JSON."
-            )
-
-        # HACK HACK HACK:
-        # The code that encodes tool input into Open AI uses a special variable
-        # name called `__arg1` to handle old style tools that do not expose a
-        # schema and expect a single string argument as an input.
-        # We unpack the argument here if it exists.
-        # Open AI does not support passing in a JSON array as an argument.
-        if "__arg1" in _tool_input:
-            tool_input = _tool_input["__arg1"]
-        else:
-            tool_input = _tool_input
-
-        content_msg = f"responded: {message.content}\n" if message.content else "\n"
-
-        return _FunctionsAgentAction(
-            tool=function_name,
-            tool_input=tool_input,
-            log=f"\nInvoking: `{function_name}` with `{tool_input}`\n{content_msg}\n",
-            message_log=[message],
-        )
-
-    return AgentFinish(return_values={"output": message.content}, log=message.content)
 
 
 class OpenAIFunctionsAgent(BaseSingleActionAgent):
@@ -216,7 +177,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
                 messages,
                 callbacks=callbacks,
             )
-        agent_decision = _parse_ai_message(predicted_message)
+        agent_decision = OpenAIFunctionsAgentOutputParser._parse_ai_message(
+            predicted_message
+        )
         return agent_decision
 
     async def aplan(
@@ -245,7 +208,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         predicted_message = await self.llm.apredict_messages(
             messages, functions=self.functions, callbacks=callbacks
         )
-        agent_decision = _parse_ai_message(predicted_message)
+        agent_decision = OpenAIFunctionsAgentOutputParser._parse_ai_message(
+            predicted_message
+        )
         return agent_decision
 
     def return_stopped_response(
