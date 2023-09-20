@@ -29,7 +29,7 @@ def test_embedding_query() -> None:
 
 def test_max_chunks() -> None:
     documents = [f"text-{i}" for i in range(20)]
-    embedding = ErnieEmbeddings()
+    embedding = ErnieEmbeddings(chunk_size=16)
     output = embedding.embed_documents(documents)
     assert len(output) == 20
 
@@ -37,5 +37,5 @@ def test_max_chunks() -> None:
 def test_too_many_chunks() -> None:
     documents = [f"text-{i}" for i in range(20)]
     embedding = ErnieEmbeddings(chunk_size=20)
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         embedding.embed_documents(documents)

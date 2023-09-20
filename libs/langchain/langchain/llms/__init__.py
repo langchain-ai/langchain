@@ -43,6 +43,7 @@ from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.deepsparse import DeepSparse
 from langchain.llms.edenai import EdenAI
+from langchain.llms.ernie_bot import ErnieBot
 from langchain.llms.fake import FakeListLLM
 from langchain.llms.fireworks import Fireworks, FireworksChat
 from langchain.llms.forefrontai import ForefrontAI
@@ -231,4 +232,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "writer": Writer,
     "xinference": Xinference,
     "qianfan_endpoint": QianfanLLMEndpoint,
+    "erniebot": ErnieBot,
 }

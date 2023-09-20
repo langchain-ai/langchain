@@ -22,7 +22,7 @@ from langchain.chat_models.anyscale import ChatAnyscale
 from langchain.chat_models.azure_openai import AzureChatOpenAI
 from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from langchain.chat_models.bedrock import BedrockChat
-from langchain.chat_models.ernie import ErnieBotChat
+from langchain.chat_models.ernie_bot import ErnieBotChat
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.human import HumanInputChatModel
