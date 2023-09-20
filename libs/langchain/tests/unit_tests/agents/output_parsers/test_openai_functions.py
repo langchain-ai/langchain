@@ -2,9 +2,9 @@ import pytest
 
 from langchain.agents.output_parsers.openai_functions import (
     OpenAIFunctionsAgentOutputParser,
-    _FunctionsAgentAction,
 )
 from langchain.schema import AgentFinish, OutputParserException
+from langchain.schema.agent import AgentActionMessageLog
 from langchain.schema.messages import AIMessage, SystemMessage
 
 
@@ -37,7 +37,7 @@ def test_func_call() -> None:
     )
     result = parser.invoke(msg)
 
-    assert isinstance(result, _FunctionsAgentAction)
+    assert isinstance(result, AgentActionMessageLog)
     assert result.tool == "foo"
     assert result.tool_input == {"param": 42}
     assert result.log == (
@@ -57,10 +57,10 @@ def test_func_call_oldstyle() -> None:
     )
     result = parser.invoke(msg)
 
-    assert isinstance(result, _FunctionsAgentAction)
+    assert isinstance(result, AgentActionMessageLog)
     assert result.tool == "foo"
     assert result.tool_input == "42"
-    assert result.log == ("\nInvoking: `foo` with `42`\nresponded: LLM thoughts.\n\n")
+    assert result.log == "\nInvoking: `foo` with `42`\nresponded: LLM thoughts.\n\n"
     assert result.message_log == [msg]
 
 
