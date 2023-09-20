@@ -2,15 +2,15 @@
 import typing
 
 import pytest
+from upstash_redis import Redis
 
 from langchain.storage.upstash_redis import UpstashRedisStore
-
-from upstash_redis import Redis
 
 pytest.importorskip("upstash_redis")
 
 URL = "<UPSTASH_REDIS_REST_URL>"
 TOKEN = "<UPSTASH_REDIS_REST_TOKEN>"
+
 
 @pytest.fixture
 def redis_client() -> Redis:
@@ -24,8 +24,7 @@ def redis_client() -> Redis:
         client.ping()
     except:
         pytest.skip(
-            "Upstash Redis ping request failed "
-            "Verify that credentials are correct. "
+            "Upstash Redis ping request failed. Verify that credentials are correct."
         )
 
     client.flushdb()

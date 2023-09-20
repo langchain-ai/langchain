@@ -18,8 +18,10 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 URL = "<UPSTASH_REDIS_REST_URL>"
 TOKEN = "<UPSTASH_REDIS_REST_TOKEN>"
 
+
 def random_string() -> str:
     return str(uuid.uuid4())
+
 
 @pytest.mark.requires("upstash_redis")
 def test_redis_cache_ttl() -> None:
@@ -29,6 +31,7 @@ def test_redis_cache_ttl() -> None:
     langchain.llm_cache.update("foo", "bar", [Generation(text="fizz")])
     key = langchain.llm_cache._key("foo", "bar")
     assert langchain.llm_cache.redis.pttl(key) > 0
+
 
 @pytest.mark.requires("upstash_redis")
 def test_redis_cache() -> None:
@@ -47,6 +50,7 @@ def test_redis_cache() -> None:
     )
     assert output == expected_output
     langchain.llm_cache.redis.flushall()
+
 
 @pytest.mark.requires("upstash_redis")
 def test_redis_cache_chat() -> None:

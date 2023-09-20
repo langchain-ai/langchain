@@ -43,9 +43,9 @@ from langchain.memory.chat_message_histories import (
     RedisChatMessageHistory,
     SQLChatMessageHistory,
     StreamlitChatMessageHistory,
+    UpstashRedisChatMessageHistory,
     XataChatMessageHistory,
     ZepChatMessageHistory,
-    UpstashRedisChatMessageHistory,
 )
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import (

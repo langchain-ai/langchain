@@ -66,8 +66,7 @@ class UpstashRedisStore(BaseStore[str, str]):
 
         if client and url:
             raise ValueError(
-                "Either a Redis client or a url "
-                "must be provided, but not both."
+                "Either a Redis client or a url " "must be provided, but not both."
             )
 
         if client:

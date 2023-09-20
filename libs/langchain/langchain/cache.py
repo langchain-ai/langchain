@@ -265,8 +265,7 @@ class UpstashRedisCache(BaseCache):
         key = self._key(prompt, llm_string)
 
         mapping = {
-            str(idx): generation.text
-            for idx, generation in enumerate(return_val)
+            str(idx): generation.text for idx, generation in enumerate(return_val)
         }
         self.redis.hset(key=key, values=mapping)
 
@@ -281,6 +280,7 @@ class UpstashRedisCache(BaseCache):
         else:
             asynchronous = "SYNC"
         self.redis.flushdb(flush_type=asynchronous, **kwargs)
+
 
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""

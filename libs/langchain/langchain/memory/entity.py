@@ -136,7 +136,9 @@ class UpstashRedisEntityStore(BaseEntityStore):
 
     def clear(self) -> None:
         def scan_and_delete(cursor: int) -> int:
-            cursor, keys_to_delete = self.redis_client.scan(cursor, f"{self.full_key_prefix}:*")
+            cursor, keys_to_delete = self.redis_client.scan(
+                cursor, f"{self.full_key_prefix}:*"
+            )
             self.redis_client.delete(*keys_to_delete)
             return cursor
 

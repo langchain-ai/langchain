@@ -7,6 +7,7 @@ from langchain.schema.messages import _message_to_dict
 URL = "<UPSTASH_REDIS_REST_URL>"
 TOKEN = "<UPSTASH_REDIS_REST_TOKEN>"
 
+
 def test_memory_with_message_store() -> None:
     """Test the memory with a message store."""
     # setup Redis as a message store
