@@ -287,7 +287,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
                 if new_arg_supported
                 else self._call(inputs)
             )
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             run_manager.on_chain_error(e)
             raise e
         run_manager.on_chain_end(outputs)
@@ -356,7 +356,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
                 if new_arg_supported
                 else await self._acall(inputs)
             )
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             await run_manager.on_chain_error(e)
             raise e
         await run_manager.on_chain_end(outputs)
