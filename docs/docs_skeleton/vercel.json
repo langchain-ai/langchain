@@ -1,7 +1,7 @@
 {
   "redirects": [
     {
-      "source": "/docs/integrations/platform(/?)",
+      "source": "/docs/integrations/platforms(/?)",
       "destination": "/docs/integrations/providers/"
     },
     {
