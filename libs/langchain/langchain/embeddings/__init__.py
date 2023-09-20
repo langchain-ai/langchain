@@ -40,6 +40,7 @@ from langchain.embeddings.huggingface import (
     HuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
+from langchain.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings
 from langchain.embeddings.jina import JinaEmbeddings
 from langchain.embeddings.llamacpp import LlamaCppEmbeddings
 from langchain.embeddings.localai import LocalAIEmbeddings
@@ -107,6 +108,7 @@ __all__ = [
     "AwaEmbeddings",
     "HuggingFaceBgeEmbeddings",
     "ErnieEmbeddings",
+    "JavelinAIGatewayEmbeddings",
     "OllamaEmbeddings",
     "QianfanEmbeddingsEndpoint",
 ]
