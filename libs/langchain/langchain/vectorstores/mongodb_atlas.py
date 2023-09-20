@@ -217,7 +217,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         params = {
             "queryVector": embedding,
             "path": self._embedding_key,
-            "numCandidates": 100,
+            "numCandidates": k,
             "limit": k,
             "index": self._index_name,
         }
@@ -240,7 +240,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     embedding, k, pre_filter, post_filter_pipeline
                 )
             except OperationFailure as e:
-                if e.code == 224:
+                if e.code == 224 or e.code == 40324:  # QueryFeatureNotAllowed, unknown pipeline stage
                     logger.error(
                         f"$vectorSearch not supported for this Atlas version. "
                         f"Attempting to use $search. Original error:\n\t{e}"
