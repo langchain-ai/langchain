@@ -4,7 +4,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _agenerate_from_stream,
+    _generate_from_stream,
+)
 from langchain.llms.anthropic import _AnthropicCommon
 from langchain.schema.messages import (
     AIMessage,
@@ -162,22 +166,22 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            completion = ""
-            for chunk in self._stream(messages, stop, run_manager, **kwargs):
-                completion += chunk.text
-        else:
-            prompt = self._convert_messages_to_prompt(
-                messages,
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            params: Dict[str, Any] = {
-                "prompt": prompt,
-                **self._default_params,
-                **kwargs,
-            }
-            if stop:
-                params["stop_sequences"] = stop
-            response = self.client.completions.create(**params)
-            completion = response.completion
+            return _generate_from_stream(stream_iter)
+        prompt = self._convert_messages_to_prompt(
+            messages,
+        )
+        params: Dict[str, Any] = {
+            "prompt": prompt,
+            **self._default_params,
+            **kwargs,
+        }
+        if stop:
+            params["stop_sequences"] = stop
+        response = self.client.completions.create(**params)
+        completion = response.completion
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
@@ -189,22 +193,22 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            completion = ""
-            async for chunk in self._astream(messages, stop, run_manager, **kwargs):
-                completion += chunk.text
-        else:
-            prompt = self._convert_messages_to_prompt(
-                messages,
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            params: Dict[str, Any] = {
-                "prompt": prompt,
-                **self._default_params,
-                **kwargs,
-            }
-            if stop:
-                params["stop_sequences"] = stop
-            response = await self.async_client.completions.create(**params)
-            completion = response.completion
+            return await _agenerate_from_stream(stream_iter)
+        prompt = self._convert_messages_to_prompt(
+            messages,
+        )
+        params: Dict[str, Any] = {
+            "prompt": prompt,
+            **self._default_params,
+            **kwargs,
+        }
+        if stop:
+            params["stop_sequences"] = stop
+        response = await self.async_client.completions.create(**params)
+        completion = response.completion
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
