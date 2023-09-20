@@ -179,10 +179,14 @@ class RecursiveUrlLoader(BaseLoader):
         # Disable SSL verification because websites may have invalid SSL certificates,
         # but won't cause any security issues for us.
         close_session = session is None
-        session = session or aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(ssl=False),
-            timeout=aiohttp.ClientTimeout(total=self.timeout),
-            headers=self.headers,
+        session = (
+            session
+            if session is not None
+            else aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(ssl=False),
+                timeout=aiohttp.ClientTimeout(total=self.timeout),
+                headers=self.headers,
+            )
         )
         async with self._lock:  # type: ignore
             visited.add(url)
@@ -194,6 +198,8 @@ class RecursiveUrlLoader(BaseLoader):
                 f"Unable to load {url}. Received error {e} of type "
                 f"{e.__class__.__name__}"
             )
+            if close_session:
+                await session.close()
             return []
         results = []
         content = self.extractor(text)
