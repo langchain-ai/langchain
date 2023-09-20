@@ -175,7 +175,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_organization: Optional[str] = None
     allowed_special: Union[Literal["all"], Set[str]] = set()
     disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
-    chunk_size: Optional[int] = None
+    chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
@@ -231,7 +231,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
@@ -276,7 +276,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_ORGANIZATION",
             default="",
         )
-        if not values["chunk_size"]:
+        if "chunk_size" not in values:
             values["chunk_size"] = default_chunk_size
         try:
             import openai
