@@ -1628,7 +1628,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                         # mark each step as a child run
                         patch_config(
                             config,
-                            deep_copy_locals=True,
+                            copy_locals=True,
                             callbacks=run_manager.get_child(f"map:key:{key}"),
                         ),
                     )
@@ -2111,7 +2111,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             )
         else:
             configs = [
-                patch_config(self._merge_config(config), deep_copy_locals=True)
+                patch_config(self._merge_config(config), copy_locals=True)
                 for _ in range(len(inputs))
             ]
         return self.bound.batch(
@@ -2135,7 +2135,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             )
         else:
             configs = [
-                patch_config(self._merge_config(config), deep_copy_locals=True)
+                patch_config(self._merge_config(config), copy_locals=True)
                 for _ in range(len(inputs))
             ]
         return await self.bound.abatch(
