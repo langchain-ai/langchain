@@ -179,8 +179,7 @@ class KoboldApiLLM(LLM):
         """
 
         # Raise error if stop sequences are in both input and default params
-        if self.stop_sequence and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
+        params["stop_sequence"] = stop if stop is not None else (self.stop_sequence or [])
 
         params = self._default_params
 
@@ -234,7 +233,7 @@ class KoboldApiLLM(LLM):
                     if text.endswith(sequence):
                         text = text.rsplit(sequence, 1)[0]
         else:
-            # If the response was not successful, print an error and set the text to an empty string
-            print(f"ERROR: response: {response}")
-            text = ""
+            error_message = f"Unexpected response format from Kobold API: {response}"
+            logger.error(error_message)
+            text = error_message
         return text.lstrip()
