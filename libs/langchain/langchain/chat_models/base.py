@@ -49,6 +49,30 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
+def _generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
+    generation: Optional[ChatGenerationChunk] = None
+    for chunk in stream:
+        if generation is None:
+            generation = chunk
+        else:
+            generation += chunk
+    assert generation is not None
+    return ChatResult(generations=[generation])
+
+
+async def _agenerate_from_stream(
+    stream: AsyncIterator[ChatGenerationChunk],
+) -> ChatResult:
+    generation: Optional[ChatGenerationChunk] = None
+    async for chunk in stream:
+        if generation is None:
+            generation = chunk
+        else:
+            generation += chunk
+    assert generation is not None
+    return ChatResult(generations=[generation])
+
+
 class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
     """Base class for Chat models."""
 
