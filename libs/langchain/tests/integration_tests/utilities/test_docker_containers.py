@@ -54,6 +54,12 @@ def test_build_image_from_dockerfile_dirpath() -> None:
 
 
 @pytest.mark.requires("docker")
+def test_build_image_from_dockerfile_string_content() -> None:
+    dockerfile_str = "FROM alpine\nRUN touch /animal.txt"
+    DockerImage.from_dockerfile_content(dockerfile_str)
+
+
+@pytest.mark.requires("docker")
 def test_docker_spawn_run_works() -> None:
     container = DockerContainer(DockerImage.from_tag("alpine"))
     status_code, logs = container.spawn_run(["echo", "hello", "world"])
