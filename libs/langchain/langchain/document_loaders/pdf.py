@@ -298,8 +298,8 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 class PyMuPDFLoader(BasePDFLoader):
     """Load `PDF` files using `PyMuPDF`."""
 
-    def __init__(self, file_path: str, *, headers: Optional[Dict] = None) -> None:
-        """Initialize with a file path."""
+    def __init__(self, file_path: str, **kwargs: Optional[Any]) -> None:
+        """Initialize with a file path and additional keywords arguments to be passed to the loader"""
         try:
             import fitz  # noqa:F401
         except ImportError:
@@ -307,13 +307,13 @@ class PyMuPDFLoader(BasePDFLoader):
                 "`PyMuPDF` package not found, please install it with "
                 "`pip install pymupdf`"
             )
+        super().__init__(file_path)
+        self.kwargs = kwargs
 
-        super().__init__(file_path, headers=headers)
-
-    def load(self, **kwargs: Optional[Any]) -> List[Document]:
+    def load(self) -> List[Document]:
         """Load file."""
 
-        parser = PyMuPDFParser(text_kwargs=kwargs)
+        parser = PyMuPDFParser(text_kwargs=self.kwargs)
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
