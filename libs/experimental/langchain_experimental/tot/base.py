@@ -103,6 +103,7 @@ class ToTChain(Chain):
                 ThoughtValidity.INVALID: "red",
             }
             text = indent(f"Thought: {thought.text}\n", prefix="    " * level)
+            # type: ignore
             run_manager.on_text(
                 text=text, color=colors[thought.validity], verbose=self.verbose
             )
@@ -110,7 +111,7 @@ class ToTChain(Chain):
     def _call(
         self,
         inputs: Dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         if run_manager:
@@ -168,8 +169,9 @@ class ToTChain(Chain):
                 checker_inputs["thoughts"] = thoughts_path + (thought_text,)
 
                 # type: ignore
-                result = self.checker.acall(checker_inputs, callbacks=_run_manager.get_child())
-
+                result = await self.checker.acall(
+                    checker_inputs, callbacks=_run_manager.get_child()
+                )
                 thought_validity = result["validity"]
                 thought = Thought(text=thought_text, validity=thought_validity)
                 if thought.validity == ThoughtValidity.VALID_FINAL:
