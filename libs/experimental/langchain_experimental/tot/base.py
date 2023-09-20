@@ -91,11 +91,10 @@ class ToTChain(Chain):
         return [self.output_key]
 
     def log_thought(
-        self,
-        thought: Thought,
-        level: int,
-        run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> None:
+        self, 
+        thought: Thought, 
+        level: int, 
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None):
         if run_manager:
             colors = {
                 ThoughtValidity.VALID_FINAL: "green",
@@ -166,9 +165,11 @@ class ToTChain(Chain):
                     problem_description, thoughts_path, callbacks=_run_manager.get_child()
                 )
                 checker_inputs["thoughts"] = thoughts_path + (thought_text,)
-                thought_validity = await self.checker.acall(
+                result = await self.checker.acall(
                     checker_inputs, callbacks=_run_manager.get_child()
-                )["validity"]
+                )
+                
+                thought_validity = result["validity"]
                 thought = Thought(text=thought_text, validity=thought_validity)
                 if thought.validity == ThoughtValidity.VALID_FINAL:
                     self.log_thought(thought, level, run_manager)
