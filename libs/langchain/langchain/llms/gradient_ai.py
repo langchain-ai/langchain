@@ -20,7 +20,7 @@ class GradientLLM(LLM):
 
     To use, set the environment variable ``GRADIENT_ACCESS_TOKEN`` with your
     API token and ``GRADIENT_WORKSPACE_ID`` for your gradient workspace,
-    or alternativley provide them as keywords to the contructor of this class.
+    or alternatively provide them as keywords to the constructor of this class.
 
     Example:
         .. code-block:: python
