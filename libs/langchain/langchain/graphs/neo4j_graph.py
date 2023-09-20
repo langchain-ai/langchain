@@ -69,10 +69,6 @@ class Neo4jGraph:
                 "'apoc.meta.data()' is allowed in Neo4j configuration "
             )
 
-    @property
-    def get_schema(self) -> str:
-        """Returns the schema of the Neo4j database"""
-        return self.schema
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""
