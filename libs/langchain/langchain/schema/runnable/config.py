@@ -12,6 +12,7 @@ from typing import (
     List,
     Optional,
     Union,
+    cast,
 )
 
 from typing_extensions import TypedDict
@@ -87,7 +88,9 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         recursion_limit=10,
     )
     if config is not None:
-        empty.update({k: v for k, v in config.items() if v is not None})
+        empty.update(
+            cast(RunnableConfig, {k: v for k, v in config.items() if v is not None})
+        )
     return empty
 
 
