@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/platform(/?)",
+      "destination": "/docs/integrations/providers/"
+    },
+    {
       "source": "/docs/expression_language/cookbook/routing",
       "destination": "/docs/expression_language/how_to/routing"
     },
