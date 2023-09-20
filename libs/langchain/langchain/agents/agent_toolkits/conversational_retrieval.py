@@ -11,20 +11,11 @@ from langchain.prompts.chat import MessagesPlaceholder
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.memory import BaseMemory
 from langchain.schema.messages import SystemMessage
-from langchain.tools.base import BaseTool
+from langchain.schema.retriever import BaseRetriever
+from langchain.tools.base import BaseTool, Tool
 
 
-def _get_default_system_message() -> SystemMessage:
-    return SystemMessage(
-        content=(
-            "Do your best to answer the questions. "
-            "Feel free to use any tools available to look up "
-            "relevant information, only if necessary"
-        )
-    )
-
-
-def create_conversational_retrieval_agent(
+def create_agent(
     llm: BaseLanguageModel,
     tools: List[BaseTool],
     remember_intermediate_steps: bool = True,
@@ -37,18 +28,18 @@ def create_conversational_retrieval_agent(
     """A convenience method for creating a conversational retrieval agent.
 
     Args:
-        llm: The language model to use, should be ChatOpenAI
-        tools: A list of tools the agent has access to
+        llm: The language model to use, should be ChatOpenAI.
+        tools: A list of tools the agent has access to.
         remember_intermediate_steps: Whether the agent should remember intermediate
             steps or not. Intermediate steps refer to prior action/observation
-            pairs from previous questions. The benefit of remembering these is if
+            pairs from previous questions. The benefit of remembering is if
             there is relevant information in there, the agent can use it to answer
-            follow up questions. The downside is it will take up more tokens.
+            follow-up questions. The downside is it will take up more tokens.
         memory_key: The name of the memory key in the prompt.
         system_message: The system message to use. By default, a basic one will
             be used.
-        verbose: Whether or not the final AgentExecutor should be verbose or not,
-            defaults to False.
+        verbose: Whether the final AgentExecutor should be verbose or not.
+            Defaults to False.
         max_token_limit: The max number of tokens to keep around in memory.
             Defaults to 2000.
 
@@ -85,3 +76,41 @@ def create_conversational_retrieval_agent(
         return_intermediate_steps=remember_intermediate_steps,
         **kwargs
     )
+
+
+# DEPRECATED: Kept for backwards compatibility.
+create_conversational_retrieval_agent = create_agent
+
+
+def _get_default_system_message() -> SystemMessage:
+    return SystemMessage(
+        content=(
+            "Do your best to answer the questions. "
+            "Feel free to use any tools available to look up "
+            "relevant information, only if necessary"
+        )
+    )
+
+
+def create_retriever_tool(
+    retriever: BaseRetriever, name: str, description: str
+) -> Tool:
+    """Create a tool to do retrieval of documents.
+
+    Args:
+        retriever: The retriever to use.
+        name: The name for the tool. This will be passed to the language model,
+            so it should be unique and somewhat descriptive.
+        description: The description for the tool. This will be passed to the language
+            model, so should be descriptive.
+
+    Returns:
+        A Tool class.
+    """
+    return Tool(
+        name=name, description=description, func=retriever.get_relevant_documents
+    )
+
+
+"""DEPRECATED: Kept for backwards compatibility."""
+create_conversational_retrieval_agent = create_agent

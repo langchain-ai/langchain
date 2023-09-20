@@ -93,3 +93,43 @@ class BaseBlobParser(ABC):
             List of documents
         """
         return list(self.lazy_parse(blob))
+
+
+class QueryMixin(ABC):
+    """Abstract interface for query mixin."""
+
+    query: Optional[str] = None
+    """"Optional query string."""
+
+
+class BaseLoaderAsRetriever(BaseLoader, QueryMixin):
+    """Interface for using a Document Loader as a Retriever.
+
+    It used for Loaders that can use a query.
+    It can be used as a Loader with a query or
+    directly as a Retriever with get_relevant_documents().
+    """
+
+    def get_relevant_documents(self, query: str) -> List[Document]:
+        """Get documents relevant for a query.
+        Args:
+            query: string to find relevant documents.
+        Returns:
+            List of relevant documents.
+        """
+        # function query doesn't replace the class query.
+        cls_query, self.query = self.query, query
+        ret = self.load()
+        self.query = cls_query
+        return ret
+
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        """Asynchronously get documents relevant for a query.
+        Args:
+            query: string to find relevant documents.
+        Returns:
+            List of relevant documents
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement aget_relevant_documents()"
+        )
