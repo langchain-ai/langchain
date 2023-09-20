@@ -52,7 +52,7 @@ CLICKUP_FOLDER_CREATE_PROMPT = """
 
 CLICKUP_GET_TASK_PROMPT = """
     This tool is a wrapper around clickup's API,
-    Do NOT use to get a task specific attribute. Use get task attribute isntead. 
+    Do NOT use to get a task specific attribute. Use get task attribute instead. 
     useful when you need to get a specific task for the user. Given the task id you want to create a request similar to the following dictionary:
     payload = {{"task_id": "86a0t44tq"}}
     """
@@ -129,7 +129,3 @@ CLICKUP_UPDATE_TASK_ASSIGNEE_PROMPT = """
     Remove 67823487 as assignee from task jin34ji4 -> {{"task_id": "jin34ji4", "operation": "rem", "users": [67823487]}}
     *IMPORTANT*: Users id should always be ints. 
     """
-
-
-
-

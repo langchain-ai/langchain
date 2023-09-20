@@ -3,17 +3,17 @@ from typing import Dict, List
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
 from langchain.tools.clickup.prompt import (
-    CLICKUP_GET_ALL_TEAMS_PROMPT,
-    CLICKUP_GET_TASK_PROMPT,
-    CLICKUP_GET_TASK_ATTRIBUTE_PROMPT,
-    CLICKUP_TASK_CREATE_PROMPT,
     CLICKUP_FOLDER_CREATE_PROMPT,
-    CLICKUP_LIST_CREATE_PROMPT,
-    CLICKUP_GET_LIST_PROMPT,
+    CLICKUP_GET_ALL_TEAMS_PROMPT,
     CLICKUP_GET_FOLDERS_PROMPT,
+    CLICKUP_GET_LIST_PROMPT,
     CLICKUP_GET_SPACES_PROMPT,
+    CLICKUP_GET_TASK_ATTRIBUTE_PROMPT,
+    CLICKUP_GET_TASK_PROMPT,
+    CLICKUP_LIST_CREATE_PROMPT,
+    CLICKUP_TASK_CREATE_PROMPT,
+    CLICKUP_UPDATE_TASK_ASSIGNEE_PROMPT,
     CLICKUP_UPDATE_TASK_PROMPT,
-    CLICKUP_UPDATE_TASK_ASSIGNEE_PROMPT
 )
 from langchain.tools.clickup.tool import ClickupAction
 from langchain.utilities.clickup import ClickupAPIWrapper
@@ -25,7 +25,9 @@ class ClickupToolkit(BaseToolkit):
     tools: List[BaseTool] = []
 
     @classmethod
-    def from_clickup_api_wrapper(cls, clickup_api_wrapper: ClickupAPIWrapper) -> "ClickupToolkit":
+    def from_clickup_api_wrapper(
+        cls, clickup_api_wrapper: ClickupAPIWrapper
+    ) -> "ClickupToolkit":
         operations: List[Dict] = [
             {
                 "mode": "get_task",
@@ -97,5 +99,3 @@ class ClickupToolkit(BaseToolkit):
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
         return self.tools
-
-
