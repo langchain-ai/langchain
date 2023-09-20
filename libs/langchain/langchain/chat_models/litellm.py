@@ -64,7 +64,7 @@ def _truncate_at_stop_tokens(
 
 
 class FunctionMessage(BaseMessage):
-    """Message for passing the result of executing a function back to a model."""
+    """Message for passing the result of executing a fun back to a model."""
 
     name: str
     """The name of the function that was executed."""

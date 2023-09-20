@@ -134,7 +134,7 @@ __all__ = [
     "Tigris",
     "Typesense",
     "USearch",
-    "Vearch"
+    "Vearch",
     "Vectara",
     "VectorStore",
     "Weaviate",
