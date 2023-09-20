@@ -56,7 +56,5 @@ def test_calls_convert_agent_action_to_messages() -> None:
 
 
 def test_handles_empty_input_list() -> None:
-    intermediate_steps = []
-    expected_messages = []
-
-    assert format_to_openai_functions(intermediate_steps) == expected_messages
+    output = format_to_openai_functions([])
+    assert output == []

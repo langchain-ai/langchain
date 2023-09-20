@@ -35,7 +35,6 @@ def test_custom_prefixes() -> None:
     )
 
 
-def test_empty_intermediate_steps():
-    intermediate_steps = []
-    expected_result = ""
-    assert format_log_to_str(intermediate_steps) == expected_result
+def test_empty_intermediate_steps() -> None:
+    output = format_log_to_str([])
+    assert output == ""

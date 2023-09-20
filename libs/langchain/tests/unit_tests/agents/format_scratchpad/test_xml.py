@@ -36,11 +36,5 @@ Observation2</observation>"""
 
 
 def test_empty_list_agent_actions() -> None:
-    # Arrange
-    intermediate_steps = []
-
-    # Act
-    result = format_xml(intermediate_steps)
-
-    # Assert
+    result = format_xml([])
     assert result == ""
