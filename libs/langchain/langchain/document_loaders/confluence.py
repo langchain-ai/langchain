@@ -344,9 +344,7 @@ class ConfluenceLoader(BaseLoader):
                     ),
                     before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
-                page = get_page(
-                    page_id=page_id, expand=",".join([*expands, "version"])
-                )
+                page = get_page(page_id=page_id, expand=",".join([*expands, "version"]))
                 if not include_restricted_content and not self.is_public_page(page):
                     continue
                 doc = self.process_page(
