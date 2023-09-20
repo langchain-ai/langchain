@@ -60,8 +60,7 @@ def format_to_openai_functions(
     """
     messages = []
 
-    for intermediate_step in intermediate_steps:
-        agent_action, observation = intermediate_step
+    for agent_action, observation in intermediate_steps:
         messages.extend(_convert_agent_action_to_messages(agent_action, observation))
 
     return messages
