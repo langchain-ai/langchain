@@ -41,7 +41,7 @@ class YouTubeSearchTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> List[Any]:
         """Use the tool."""
         values = query.split(",")
         person = values[0]
