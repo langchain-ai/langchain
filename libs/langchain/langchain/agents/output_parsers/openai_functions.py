@@ -1,5 +1,4 @@
 import json
-from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import List, Union
 
@@ -9,16 +8,12 @@ from langchain.schema import (
     AgentFinish,
     OutputParserException,
 )
+from langchain.schema.agent import AgentActionMessageLog
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
 )
 from langchain.schema.output import ChatGeneration, Generation
-
-
-@dataclass
-class _FunctionsAgentAction(AgentAction):
-    message_log: List[BaseMessage]
 
 
 class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
@@ -68,7 +63,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
 
             content_msg = f"responded: {message.content}\n" if message.content else "\n"
             log = f"\nInvoking: `{function_name}` with `{tool_input}`\n{content_msg}\n"
-            return _FunctionsAgentAction(
+            return AgentActionMessageLog(
                 tool=function_name,
                 tool_input=tool_input,
                 log=log,
