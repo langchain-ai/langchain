@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import UpstashRedisChatMessageHistory
 from langchain.schema.messages import _message_to_dict
@@ -8,6 +10,7 @@ URL = "<UPSTASH_REDIS_REST_URL>"
 TOKEN = "<UPSTASH_REDIS_REST_TOKEN>"
 
 
+@pytest.mark.requires("upstash_redis")
 def test_memory_with_message_store() -> None:
     """Test the memory with a message store."""
     # setup Redis as a message store
