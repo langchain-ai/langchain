@@ -35,7 +35,7 @@ class YouTubeSearchTool(BaseTool):
         url_suffix_list = [
             "https://www.youtube.com" + video["url_suffix"] for video in data["videos"]
         ]
-        return str(url_suffix_list)
+        return url_suffix_list
 
     def _run(
         self,
