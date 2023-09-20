@@ -31,7 +31,7 @@ class Task(Component):
     creator_email: str
     assignees: List[Dict[str, Any]]
     watchers: List[Dict[str, Any]]
-    priority: str
+    priority: Optional[str]
     due_date: Optional[str]
     start_date: Optional[str]
     points: int
@@ -40,6 +40,7 @@ class Task(Component):
 
     @classmethod
     def from_data(cls, data: Dict[str, Any]) -> "Task":
+        priority = None if data["priority"] is None else data["priority"]["priority"]
         return cls(
             id=data["id"],
             name=data["name"],
@@ -51,7 +52,7 @@ class Task(Component):
             creator_email=data["creator"]["email"],
             assignees=data["assignees"],
             watchers=data["watchers"],
-            priority=data["priority"]["priority"],
+            priority=priority,
             due_date=data["due_date"],
             start_date=data["start_date"],
             points=data["points"],
@@ -152,7 +153,7 @@ def parse_dict_through_component(
     except Exception as e:
         if fault_tolerant:
             warning_str = f"""Error encountered while trying to parse
-{str(component)}: {str(e)}\n Falling back to returning input data."""
+{str(data)}: {str(e)}\n Falling back to returning input data."""
             warnings.warn(warning_str)
             return data
         else:
@@ -423,20 +424,17 @@ class ClickupAPIWrapper(BaseModel):
         """
         Update an attribute of a specified task
         """
-        try:
-            task = self.get_task(query, fault_tolerant=False)
-        except KeyError:
-            return {"Error": f"Task fetched is not parsable {str(task)}"}
 
+        task = self.get_task(query, fault_tolerant=True)
         params, error = load_query(query, fault_tolerant=True)
         if not isinstance(params, dict):
             return {"Error": error}
 
         if params["attribute_name"] not in task.keys():
-            return {"Error": f"attribute_name = {params['attribute_name']}"}
-
-        f"was not found in task keys {task.keys()}.",
-        "Please call again with one of the key names."
+            return {
+                "Error": f"""attribute_name = {params['attribute_name']} was not 
+found in task keys {task.keys()}. Please call again with one of the key names."""
+            }
 
         return {params["attribute_name"]: task[params["attribute_name"]]}
 
