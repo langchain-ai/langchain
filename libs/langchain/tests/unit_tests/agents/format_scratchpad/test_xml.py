@@ -2,7 +2,7 @@ from langchain.agents.format_scratchpad.xml import format_xml
 from langchain.schema.agent import AgentAction
 
 
-def test_single_agent_action_observation():
+def test_single_agent_action_observation() -> None:
     # Arrange
     agent_action = AgentAction(tool="Tool1", tool_input="Input1", log="Log1")
     observation = "Observation1"
@@ -10,15 +10,13 @@ def test_single_agent_action_observation():
 
     # Act
     result = format_xml(intermediate_steps)
-
+    expected_result = """<tool>Tool1</tool><tool_input>Input1\
+</tool_input><observation>Observation1</observation>"""
     # Assert
-    assert (
-        result
-        == "<tool>Tool1</tool><tool_input>Input1</tool_input><observation>Observation1</observation>"
-    )
+    assert result == expected_result
 
 
-def test_multiple_agent_actions_observations():
+def test_multiple_agent_actions_observations() -> None:
     # Arrange
     agent_action1 = AgentAction(tool="Tool1", tool_input="Input1", log="Log1")
     agent_action2 = AgentAction(tool="Tool2", tool_input="Input2", log="Log2")
@@ -30,11 +28,14 @@ def test_multiple_agent_actions_observations():
     result = format_xml(intermediate_steps)
 
     # Assert
-    expected_result = "<tool>Tool1</tool><tool_input>Input1</tool_input><observation>Observation1</observation><tool>Tool2</tool><tool_input>Input2</tool_input><observation>Observation2</observation>"
+    expected_result = """<tool>Tool1</tool><tool_input>Input1\
+</tool_input><observation>Observation1</observation><tool>\
+Tool2</tool><tool_input>Input2</tool_input><observation>\
+Observation2</observation>"""
     assert result == expected_result
 
 
-def test_empty_list_agent_actions():
+def test_empty_list_agent_actions() -> None:
     # Arrange
     intermediate_steps = []
 

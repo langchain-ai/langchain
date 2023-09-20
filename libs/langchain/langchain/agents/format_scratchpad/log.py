@@ -3,10 +3,10 @@ from typing import List, Tuple
 from langchain.schema.agent import AgentAction
 
 
-def format_log(
+def format_log_to_str(
     intermediate_steps: List[Tuple[AgentAction, str]],
-    observation_prefix="Observation: ",
-    llm_prefix="Thought: ",
+    observation_prefix: str = "Observation: ",
+    llm_prefix: str = "Thought: ",
 ) -> str:
     """Construct the scratchpad that lets the agent continue its thought process."""
     thoughts = ""

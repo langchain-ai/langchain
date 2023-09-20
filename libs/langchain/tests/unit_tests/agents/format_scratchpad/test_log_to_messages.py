@@ -3,7 +3,7 @@ from langchain.schema.agent import AgentAction
 from langchain.schema.messages import AIMessage, HumanMessage
 
 
-def test_single_intermediate_step_default_response():
+def test_single_intermediate_step_default_response() -> None:
     intermediate_steps = [
         (AgentAction(tool="Tool1", tool_input="input1", log="Log1"), "Observation1")
     ]
@@ -11,7 +11,7 @@ def test_single_intermediate_step_default_response():
     assert format_log_to_messages(intermediate_steps) == expected_result
 
 
-def test_multiple_intermediate_steps_default_response():
+def test_multiple_intermediate_steps_default_response() -> None:
     intermediate_steps = [
         (AgentAction(tool="Tool1", tool_input="input1", log="Log1"), "Observation1"),
         (AgentAction(tool="Tool2", tool_input="input2", log="Log2"), "Observation2"),
@@ -28,7 +28,7 @@ def test_multiple_intermediate_steps_default_response():
     assert format_log_to_messages(intermediate_steps) == expected_result
 
 
-def test_custom_template_tool_response():
+def test_custom_template_tool_response() -> None:
     intermediate_steps = [
         (AgentAction(tool="Tool1", tool_input="input1", log="Log1"), "Observation1")
     ]
@@ -45,5 +45,5 @@ def test_custom_template_tool_response():
     )
 
 
-def test_empty_steps():
+def test_empty_steps() -> None:
     assert format_log_to_messages([]) == []

@@ -1,15 +1,8 @@
 import json
-from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Sequence, Tuple
 
-from langchain.schema.agent import AgentAction
+from langchain.schema.agent import AgentAction, AgentActionMessageLog
 from langchain.schema.messages import AIMessage, BaseMessage, FunctionMessage
-
-
-# TODO: consolidate with other PR
-@dataclass
-class _FunctionsAgentAction(AgentAction):
-    message_log: List[BaseMessage]
 
 
 def _convert_agent_action_to_messages(
@@ -25,8 +18,8 @@ def _convert_agent_action_to_messages(
     Returns:
         AIMessage that corresponds to the original tool invocation.
     """
-    if isinstance(agent_action, _FunctionsAgentAction):
-        return agent_action.message_log + [
+    if isinstance(agent_action, AgentActionMessageLog):
+        return list(agent_action.message_log) + [
             _create_function_message(agent_action, observation)
         ]
     else:
@@ -57,7 +50,7 @@ def _create_function_message(
 
 
 def format_to_openai_functions(
-    intermediate_steps: List[Tuple[AgentAction, str]],
+    intermediate_steps: Sequence[Tuple[AgentAction, str]],
 ) -> List[BaseMessage]:
     """Format intermediate steps.
     Args:
