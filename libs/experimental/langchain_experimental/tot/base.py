@@ -94,7 +94,8 @@ class ToTChain(Chain):
         self, 
         thought: Thought, 
         level: int, 
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None):
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None
+    ) -> None:
         if run_manager:
             colors = {
                 ThoughtValidity.VALID_FINAL: "green",
