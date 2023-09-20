@@ -31,8 +31,10 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
     create_schema_if_missing: bool = True
     """Whether to create the schema if it doesn't exist."""
     hybrid_search_kwargs: Optional[Dict[str, object]] = None
-    """Used to pass additional arguments to the .with_hybrid() method of Weviate's hybrid search.
-        See WeaviateHybridSearchRetriever._get_relevant_documents() for more details."""
+    """Used to pass additional arguments to the .with_hybrid() 
+        method of Weviate's hybrid search.
+    See WeaviateHybridSearchRetriever._get_relevant_documents()
+        for more details."""
 
     @root_validator(pre=True)
     def validate_client(
