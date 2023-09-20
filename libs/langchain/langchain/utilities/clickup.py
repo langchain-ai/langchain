@@ -325,7 +325,7 @@ class ClickupAPIWrapper(BaseModel):
     def get_headers(
         self,
     ) -> Mapping[str, Union[str, bytes]]:
-        if isinstance(self.access_token, str):
+        if not isinstance(self.access_token, str):
             raise TypeError(f"Access Token: {self.access_token}, must be str.")
 
         headers = {
