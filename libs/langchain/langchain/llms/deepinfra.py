@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Mapping, Optional
 
-import requests
+from aiohttp import ClientSession
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, root_validator
+from langchain.requests import Requests
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_MODEL_ID = "google/flan-t5-xl"
@@ -14,9 +14,9 @@ DEFAULT_MODEL_ID = "google/flan-t5-xl"
 class DeepInfra(LLM):
     """DeepInfra models.
 
-    To use, you should have the ``requests`` python package installed, and the
-    environment variable ``DEEPINFRA_API_TOKEN`` set with your API token, or pass
-    it as a named parameter to the constructor.
+    To use, you should have the environment variable ``DEEPINFRA_API_TOKEN``
+    set with your API token, or pass it as a named parameter to the
+    constructor.
 
     Only supports `text-generation` and `text2text-generation` for now.
 
@@ -60,6 +60,35 @@ class DeepInfra(LLM):
         """Return type of llm."""
         return "deepinfra"
 
+    def _url(self) -> str:
+        return f"https://api.deepinfra.com/v1/inference/{self.model_id}"
+
+    def _headers(self) -> dict:
+        return {
+            "Authorization": f"bearer {self.deepinfra_api_token}",
+            "Content-Type": "application/json",
+        }
+
+    def _body(self, prompt: str, kwargs: Any):
+        model_kwargs = self.model_kwargs or {}
+        model_kwargs = {**model_kwargs, **kwargs}
+
+        return {
+            'input': prompt,
+            **model_kwargs,
+        }
+
+    def _handle_status(self, code, text):
+        if code >= 500:
+            raise Exception(f"DeepInfra Server: Error {code}")
+        elif code >= 400:
+            raise ValueError(f"DeepInfra received an invalid payload: {text}")
+        elif code != 200:
+            raise Exception(
+                f"DeepInfra returned an unexpected response with status "
+                f"{code}: {text}"
+            )
+
     def _call(
         self,
         prompt: str,
@@ -81,38 +110,28 @@ class DeepInfra(LLM):
 
                 response = di("Tell me a joke.")
         """
-        _model_kwargs = self.model_kwargs or {}
-        _model_kwargs = {**_model_kwargs, **kwargs}
-        # HTTP headers for authorization
-        headers = {
-            "Authorization": f"bearer {self.deepinfra_api_token}",
-            "Content-Type": "application/json",
-        }
 
-        try:
-            res = requests.post(
-                f"https://api.deepinfra.com/v1/inference/{self.model_id}",
-                headers=headers,
-                json={"input": prompt, **_model_kwargs},
-            )
-        except requests.exceptions.RequestException as e:
-            raise ValueError(f"Error raised by inference endpoint: {e}")
+        request = Requests(headers=self._headers())
+        response = request.post(url=self._url(), data=self._body(prompt, kwargs))
 
-        if res.status_code != 200:
-            raise ValueError(
-                "Error raised by inference API HTTP code: %s, %s"
-                % (res.status_code, res.text)
-            )
-        try:
-            t = res.json()
-            text = t["results"][0]["generated_text"]
-        except requests.exceptions.JSONDecodeError as e:
-            raise ValueError(
-                f"Error raised by inference API: {e}.\nResponse: {res.text}"
-            )
+        self._handle_status(response.status_code, response.text)
+        data = response.json()
 
-        if stop is not None:
-            # I believe this is required since the stop tokens
-            # are not enforced by the model parameters
-            text = enforce_stop_tokens(text, stop)
-        return text
+        return data['results'][0]['generated_text']
+
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        async with ClientSession() as session:
+            async with session.post(
+                self._url(),
+                json=self._body(prompt, kwargs),
+                headers=self._headers()
+            ) as response:
+                self._handle_status(response.status, response.text)
+                data = await response.json()
+                return data['results'][0]['generated_text']
