@@ -72,7 +72,7 @@ class HuggingFacePipeline(BaseLLM):
         pipeline_kwargs: Optional[dict] = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
-    ) -> LLM:
+    ) -> BaseLLM:
         """Construct the pipeline object from model_id and task."""
         try:
             from transformers import (
@@ -147,6 +147,7 @@ class HuggingFacePipeline(BaseLLM):
             model_id=model_id,
             model_kwargs=_model_kwargs,
             pipeline_kwargs=_pipeline_kwargs,
+            batch_size=batch_size,
             **kwargs,
         )
 
@@ -183,11 +184,11 @@ class HuggingFacePipeline(BaseLLM):
             for j, response in enumerate(responses):
                 if self.pipeline.task == "text-generation":
                     # Text generation return includes the starter text
-                    text = response["generated_text"][len(batch_prompts[j]) :]
+                    text = response[0]["generated_text"][len(batch_prompts[j]) :]
                 elif self.pipeline.task == "text2text-generation":
-                    text = response["generated_text"]
+                    text = response[0]["generated_text"]
                 elif self.pipeline.task == "summarization":
-                    text = response["summary_text"]
+                    text = response[0]["summary_text"]
                 else:
                     raise ValueError(
                         f"Got invalid task {self.pipeline.task}, "
