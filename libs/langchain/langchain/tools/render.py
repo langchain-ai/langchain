@@ -8,10 +8,10 @@ def render_text_description(tools: List[BaseTool]) -> str:
 
     Output will be in the format of:
 
-    ```
-    search: This tool is used for search
-    calculator: This tool is used for math
-    ```
+    .. code-block:: markdown
+
+        search: This tool is used for search
+        calculator: This tool is used for math
     """
     return "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
 
@@ -21,10 +21,11 @@ def render_text_description_and_args(tools: List[BaseTool]) -> str:
 
     Output will be in the format of:
 
-    ```
-    search: This tool is used for search, args: {"query": {"type": "string"}}
-    calculator: This tool is used for math, args: {"expression": {"type": "string"}}
-    ```
+    .. code-block:: markdown
+
+        search: This tool is used for search, args: {"query": {"type": "string"}}
+        calculator: This tool is used for math, \
+args: {"expression": {"type": "string"}}
     """
     tool_strings = []
     for tool in tools:

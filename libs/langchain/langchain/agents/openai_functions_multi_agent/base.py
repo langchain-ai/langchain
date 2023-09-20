@@ -1,6 +1,5 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 import json
-from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
@@ -21,6 +20,7 @@ from langchain.schema import (
     BasePromptTemplate,
     OutputParserException,
 )
+from langchain.schema.agent import AgentActionMessageLog
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     AIMessage,
@@ -30,10 +30,8 @@ from langchain.schema.messages import (
 )
 from langchain.tools import BaseTool
 
-
-@dataclass
-class _FunctionsAgentAction(AgentAction):
-    message_log: List[BaseMessage]
+# For backwards compatibility
+_FunctionsAgentAction = AgentActionMessageLog
 
 
 def _convert_agent_action_to_messages(
@@ -50,7 +48,7 @@ def _convert_agent_action_to_messages(
         AIMessage that corresponds to the original tool invocation.
     """
     if isinstance(agent_action, _FunctionsAgentAction):
-        return agent_action.message_log + [
+        return list(agent_action.message_log) + [
             _create_function_message(agent_action, observation)
         ]
     else:
