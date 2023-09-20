@@ -1,80 +1,85 @@
-Install `openai`, `google-search-results` packages which are required as the LangChain packages call them internally.
-
-```bash
-pip install openai google-search-results
-```
-
 ```python
-from langchain.agents import initialize_agent, AgentType, Tool
+# pip install wikipedia
+from langchain.tools import WikipediaQueryRun
+from langchain.utilities import WikipediaAPIWrapper
 from langchain.chains import LLMMathChain
 from langchain.chat_models import ChatOpenAI
-from langchain.llms import OpenAI
-from langchain.utilities import SerpAPIWrapper, SQLDatabase
-from langchain_experimental.sql import SQLDatabaseChain
+from langchain.agents import Tool
+
+wikipedia = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
+llm = ChatOpenAI(temperature=0)
+llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
 ```
 
-
 ```python
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613")
-search = SerpAPIWrapper()
-llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
-db = SQLDatabase.from_uri("sqlite:///../../../../../notebooks/Chinook.db")
-db_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True)
 tools = [
     Tool(
-        name = "Search",
-        func=search.run,
-        description="useful for when you need to answer questions about current events. You should ask targeted questions"
+        name = "wikipedia_search",
+        func=wikipedia.run,
+        description="useful for when you need to search wikipedia"
     ),
     Tool(
         name="Calculator",
         func=llm_math_chain.run,
         description="useful for when you need to answer questions about math"
     ),
-    Tool(
-        name="FooBar-DB",
-        func=db_chain.run,
-        description="useful for when you need to answer questions about FooBar. Input should be in the form of a question containing full context"
-    )
 ]
 ```
 
+````python
+from langchain.schema import SystemMessage
+from langchain.agents import OpenAIFunctionsAgent
+
+system_message = SystemMessage(
+    content="You are very powerful assistant, use wikipedia as data source to answer the question and do math by using calculator."
+)
+agent = OpenAIFunctionsAgent.from_llm_and_tools(
+    llm=llm, tools=tools, system_message=system_message, verbose=True
+)```
 
 ```python
-agent = initialize_agent(tools, llm, agent=AgentType.OPENAI_FUNCTIONS, verbose=True)
-```
-
+from langchain.agents import AgentExecutor
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+````
 
 ```python
-agent.run("Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?")
+agent_executor.run("square root of Tokyo population")
 ```
 
 <CodeOutputBlock lang="python">
 
-```
-    > Entering new  chain...
-    
-    Invoking: `Search` with `{'query': 'Leo DiCaprio girlfriend'}`
-    
-    
-    Amidst his casual romance with Gigi, Leo allegedly entered a relationship with 19-year old model, Eden Polani, in February 2023.
-    Invoking: `Calculator` with `{'expression': '19^0.43'}`
-    
+````
+    > Entering new AgentExecutor chain...
 
-    > Entering new  chain...
-    19^0.43```text
-    19**0.43
+    Invoking: `wikipedia_search` with `Tokyo`
+
+
+    Page: Tokyo
+    Summary: Tokyo (; Japanese: 東京, Tōkyō, [toːkʲoː] ), officially the Tokyo Metropolis (東京都, Tōkyō-to), is the capital and the most populous prefecture of Japan. Tokyo's metropolitan area (including neighboring prefectures as well as Tochigi, Gunma and Ibaraki; 13,452 square kilometers or 5,194 square miles) is the most populous in the world, with an estimated 37.468 million residents as of 2018; although this number has been gradually decreasing since then, the prefecture itself has a population of 14.09 million people while the prefecture's central 23 special wards have a population of 9.73 million. Located at the head of Tokyo Bay, the prefecture forms part of the Kantō region on the central coast of Honshu, Japan's largest island. Tokyo serves as Japan's economic center and is the seat of both the Japanese government and the Emperor of Japan.
+    Originally a fishing village named Edo, the city emerged into political prominence in 1603, when it became the seat of the Tokugawa shogunate. By the mid-18th century, Edo was one of the most populous cities in the world with a population of over one million people. Following the Meiji Restoration of 1868, the imperial capital in Kyoto was moved to Edo, which was renamed "Tokyo" (lit. 'Eastern Capital'). Tokyo was devastated by the 1923 Great Kantō earthquake, and again by Allied bombing raids during World War II. Beginning in the 1950s, the prefecture underwent rapid reconstruction and expansion efforts, going on to lead the Japanese economic miracle. In 1968, Japan became the second largest economy, only behind the United States. Since 1943, the Tokyo Metropolitan Government has administered the prefecture's special wards (formerly Tokyo City), various commuter towns and suburbs in its western area, and two outlying island chains known as the Tokyo Islands.
+    Tokyo is the largest urban economy in the world by gross domestic product, and is categorized as an Alpha+ city by the Globalization and World Cities Research Network. It is also Japan's leading business hub as part of an industrial region that includes the cities of Yokohama, Kawasaki, and Chiba. As of 2023, Tokyo is home to 29 companies of the Fortune Global 500. In 2020, the city ranked fourth on the Global Financial Centres Index, behind only New York City, London, and Shanghai. Tokyo is home to the world's tallest tower, Tokyo Skytree, and the world's largest underground floodwater diversion facility, the Metropolitan Area Outer Underground Discharge Channel (located in Kasukabe, Saitama, a suburb of Tokyo). The Tokyo Metro Ginza Line, opened in 1927, is the oldest underground metro line in East Asia. Recognized as one of the most livable cities in the world, Tokyo was tied fourth with Wellington in the 2021 Global Livability Ranking.The city has hosted multiple international events, including the 1964 Summer Olympics and 1964 Summer Paralympics, the 2020 Summer Olympics and 2020 Summer Paralympics (postponed; held in 2021), and three summits of the G7 (in 1979, 1986, and 1993). Tokyo is an international research and development hub and is likewise represented by several major universities, most notably the University of Tokyo. Tokyo Station is the central hub for Japan's high-speed railway network, the Shinkansen; Shinjuku Station in Tokyo is also the world's busiest train station. Notable special wards of Tokyo include: Chiyoda, the site of the National Diet Building and the Tokyo Imperial Palace; Shinjuku, the city's administrative center; and Shibuya, a commercial, cultural, and business hub.
+
+    Page: Tokyo Tokyo
+    Summary: Tokyo Tokyo (東京 東京) (Romanization: Tōkyō Tōkyō) is a Filipino restaurant chain specializing in Japanese cuisine.
+
+    Page: Tokyo!
+    Summary: Tokyo! is a 2008 anthology film containing three segments written by three non-Japanese directors, all of which were filmed in Tokyo, Japan. Michel Gondry directed "Interior Design", Leos Carax directed "Merde", and Bong Joon-ho directed "Shaking Tokyo".
+    Invoking: `Calculator` with `sqrt(37.468)`
+    responded: The population of Tokyo is estimated to be 37.468 million residents as of 2018. To calculate the square root of the population, we can use a calculator.
+
+
+
+    > Entering new LLMMathChain chain...
+    sqrt(37.468)```text
+    sqrt(37.468)
     ```
-    ...numexpr.evaluate("19**0.43")...
-    
-    Answer: 3.547023357958959
-    > Finished chain.
-    Answer: 3.547023357958959Leo DiCaprio's girlfriend is reportedly Eden Polani. Her current age raised to the power of 0.43 is approximately 3.55.
-    
-    > Finished chain.
+    ...numexpr.evaluate("sqrt(37.468)")...
 
+    Answer: 6.121111010266029
+    > Finished chain.
+    Answer: 6.121111010266029The square root of the population of Tokyo is approximately 6.12 million.
 
-    "Leo DiCaprio's girlfriend is reportedly Eden Polani. Her current age raised to the power of 0.43 is approximately 3.55."
-```
+    > Finished chain.
+````
 
 </CodeOutputBlock>
