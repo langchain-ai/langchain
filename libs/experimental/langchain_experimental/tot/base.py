@@ -94,7 +94,7 @@ class ToTChain(Chain):
         self, 
         thought: Thought, 
         level: int, 
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None
+        run_manager: Optional[CallbackManagerForChainRun] = None
     ) -> None:
         if run_manager:
             colors = {
@@ -111,9 +111,9 @@ class ToTChain(Chain):
     def _call(
         self,
         inputs: Dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         if run_manager:
             run_manager.on_text(text="Starting the ToT solve procedure.\n")
 
@@ -144,44 +144,51 @@ class ToTChain(Chain):
 
         return {self.output_key: "No solution found"}
 
-    async def _acall(
-            self,
-            inputs: Dict[str, Any],
-            run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-        ) -> Dict[str, str]:
-            _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
-            if run_manager:
-                await run_manager.on_text(text="Starting the ToT solve procedure.\n")
-    
-            problem_description = inputs["problem_description"]
-            checker_inputs = {"problem_description": problem_description}
-            thoughts_path: tuple[str, ...] = ()
-            thought_generator = self.tot_strategy_class(
-                llm=self.llm, c=self.c, verbose=self.verbose_llm
-            )
-    
-            level = 0
-            for _ in range(self.k):
-                level = self.tot_memory.level
-                thought_text = thought_generator.next_thought(
-                    problem_description, thoughts_path, callbacks=_run_manager.get_child()
-                )
-                checker_inputs["thoughts"] = thoughts_path + (thought_text,)
+            async def _async_acall_helper(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: AsyncCallbackManagerForChainRun,
+    ) -> Dict[str, str]:
+        problem_description = inputs["problem_description"]
+        checker_inputs = {"problem_description": problem_description}
+        thoughts_path: tuple[str, ...] = ()
+        thought_generator = self.tot_strategy_class(
+            llm=self.llm, c=self.c, verbose=self.verbose_llm
+        )
 
-                # type: ignore
-                result = await self.checker.acall(
-                    checker_inputs, callbacks=_run_manager.get_child()
-                )
-                thought_validity = result["validity"]
-                thought = Thought(text=thought_text, validity=thought_validity)
-                if thought.validity == ThoughtValidity.VALID_FINAL:
-                    self.log_thought(thought, level, run_manager)
-                    return {self.output_key: thought.text}
-                self.tot_memory.store(thought)
+        level = 0
+        for _ in range(self.k):
+            level = self.tot_memory.level
+            thought_text = thought_generator.next_thought(
+                problem_description, thoughts_path, callbacks=run_manager.get_child()
+            )
+            checker_inputs["thoughts"] = thoughts_path + (thought_text,)
+            thought_validity = self.checker(
+                checker_inputs, callbacks=run_manager.get_child()
+            )["validity"]
+            thought = Thought(text=thought_text, validity=thought_validity)
+            if thought.validity == ThoughtValidity.VALID_FINAL:
                 self.log_thought(thought, level, run_manager)
-                thoughts_path = self.tot_controller(self.tot_memory)
-    
-            return {self.output_key: "No solution found"}
+                return {self.output_key: thought.text}
+            self.tot_memory.store(thought)
+            self.log_thought(thought, level, run_manager)
+            thoughts_path = self.tot_controller(self.tot_memory)
+
+        return {self.output_key: "No solution found"}
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        if run_manager:
+            await run_manager.on_text(text="Starting the ToT solve procedure.\n")
+
+        # Call the asynchronous helper method
+        result = await self._async_acall_helper(inputs, _run_manager)
+
+        return result
 
     @property
     def _chain_type(self) -> str:
