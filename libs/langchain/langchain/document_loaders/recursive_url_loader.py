@@ -120,6 +120,7 @@ class RecursiveUrlLoader(BaseLoader):
             return
 
         # Get all links that can be accessed from the current URL
+        visited.add(url)
         try:
             response = requests.get(url, timeout=self.timeout, headers=self.headers)
         except Exception:
@@ -131,7 +132,6 @@ class RecursiveUrlLoader(BaseLoader):
                 page_content=content,
                 metadata=self.metadata_extractor(response.text, url),
             )
-        visited.add(url)
 
         # Store the visited links and recursively visit the children
         sub_links = extract_sub_links(
@@ -184,11 +184,11 @@ class RecursiveUrlLoader(BaseLoader):
             timeout=aiohttp.ClientTimeout(total=self.timeout),
             headers=self.headers,
         )
+        async with self._lock:  # type: ignore
+            visited.add(url)
         try:
             async with session.get(url) as response:
                 text = await response.text()
-            async with self._lock:  # type: ignore
-                visited.add(url)
         except (aiohttp.client_exceptions.InvalidURL, Exception) as e:
             logger.warning(
                 f"Unable to load {url}. Received error {e} of type "
