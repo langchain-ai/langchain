@@ -46,6 +46,7 @@ from langchain.vectorstores.epsilla import Epsilla
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
+from langchain.vectorstores.llm_rails import LLMRails
 from langchain.vectorstores.marqo import Marqo
 from langchain.vectorstores.matching_engine import MatchingEngine
 from langchain.vectorstores.meilisearch import Meilisearch
@@ -107,6 +108,7 @@ __all__ = [
     "FAISS",
     "Hologres",
     "LanceDB",
+    "LLMRails",
     "Marqo",
     "MatchingEngine",
     "Meilisearch",
