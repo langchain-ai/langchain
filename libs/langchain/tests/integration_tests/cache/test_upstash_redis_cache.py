@@ -21,7 +21,7 @@ TOKEN = "<UPSTASH_REDIS_REST_TOKEN>"
 def random_string() -> str:
     return str(uuid.uuid4())
 
-@pytest.mark.requires("upstash-redis")
+@pytest.mark.requires("upstash_redis")
 def test_redis_cache_ttl() -> None:
     from upstash_redis import Redis
 
@@ -30,7 +30,7 @@ def test_redis_cache_ttl() -> None:
     key = langchain.llm_cache._key("foo", "bar")
     assert langchain.llm_cache.redis.pttl(key) > 0
 
-@pytest.mark.requires("upstash-redis")
+@pytest.mark.requires("upstash_redis")
 def test_redis_cache() -> None:
     from upstash_redis import Redis
 
@@ -48,7 +48,7 @@ def test_redis_cache() -> None:
     assert output == expected_output
     langchain.llm_cache.redis.flushall()
 
-@pytest.mark.requires("upstash-redis")
+@pytest.mark.requires("upstash_redis")
 def test_redis_cache_chat() -> None:
     from upstash_redis import Redis
 
