@@ -141,6 +141,33 @@ class DockerImage:
 
         return cls(name=img_name)
 
+    @classmethod
+    def from_dockerfile_content(
+        cls,
+        dockerfile_str: str,
+        name: Union[str, Callable[[], str]] = generate_langchain_container_tag,
+        **kwargs: Any,
+    ) -> "DockerImage":
+        """Build a new image from Dockerfile given a string with Dockerfile content."""
+
+        img_name = (
+            name
+            if isinstance(name, str) and name
+            else generate_langchain_container_tag()
+        )
+        import io
+
+        buff = io.BytesIO(dockerfile_str.encode("utf-8"))
+
+        docker_client = get_docker_client()
+        from pathlib import Path
+
+        docker_client.images.build(
+            fileobj=buff, tag=img_name, rm=True, path=str(Path.cwd()), **kwargs
+        )
+
+        return cls(name=img_name)
+
 
 class DockerContainer:
     """An isolated environment for running commands, based on docker container.
