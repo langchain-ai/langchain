@@ -409,7 +409,7 @@ class ChatOpenAI(BaseChatModel):
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
             stream_iter = self._astream(
-                messages=messages, stop=stop, run_manager=run_manager, **kwargs
+                messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await _agenerate_from_stream(stream_iter)
 

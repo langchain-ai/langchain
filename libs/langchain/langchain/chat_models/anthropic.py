@@ -166,7 +166,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            stream_iter = self._stream(messages, stop, run_manager, **kwargs)
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
             return _generate_from_stream(stream_iter)
         prompt = self._convert_messages_to_prompt(
             messages,
@@ -191,7 +193,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            stream_iter = self._astream(messages, stop, run_manager, **kwargs)
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
             return await _agenerate_from_stream(stream_iter)
         prompt = self._convert_messages_to_prompt(
             messages,
