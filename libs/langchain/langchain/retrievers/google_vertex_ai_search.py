@@ -110,13 +110,12 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
             ) from exc
 
         values["project_id"] = get_from_dict_or_env(values, "project_id", "PROJECT_ID")
-        values["search_engine_id"] = get_from_dict_or_env(
-            values, "search_engine_id", "SEARCH_ENGINE_ID"
-        )
-        values["data_store_id"] = get_from_dict_or_env(
-            values, "data_store_id", "DATA_STORE_ID"
-        )
-        if values["search_engine_id"] and not values["data_store_id"]:
+
+        try:
+            values["data_store_id"] = get_from_dict_or_env(
+                values, "data_store_id", "DATA_STORE_ID"
+            )
+        except ValueError:
             import warnings
 
             warnings.warn(
@@ -125,6 +124,10 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
                     For now, SEARCH_ENGINE_ID is mapped to DATA_STORE_ID to prevent \
                     breaking changes.",
                 DeprecationWarning,
+            )
+
+            values["search_engine_id"] = get_from_dict_or_env(
+                values, "search_engine_id", "SEARCH_ENGINE_ID"
             )
             values["data_store_id"] = values["search_engine_id"]
 
