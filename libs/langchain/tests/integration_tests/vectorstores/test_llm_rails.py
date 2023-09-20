@@ -1,4 +1,3 @@
-from langchain.docstore.document import Document
 from langchain.vectorstores.llm_rails import LLMRails
 
 #
@@ -19,7 +18,7 @@ def test_llm_rails_add_documents() -> None:
 
     # start with some initial texts, added with add_texts
     texts1 = ["large language model", "information retrieval", "question answering"]
-    doc_ids = docsearch.add_texts(texts1)
+    docsearch.add_texts(texts1)
 
     # test without filter
     output1 = docsearch.similarity_search("large language model", k=1)

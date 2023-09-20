@@ -6,12 +6,13 @@ import logging
 import os
 import uuid
 from enum import Enum
-from typing import Any, Iterable, List, Optional, Tuple, Type
+from typing import Any, Iterable, List, Optional, Tuple
 
 import requests
 
 from langchain.pydantic_v1 import Field
 from langchain.schema import Document
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 
@@ -55,7 +56,12 @@ class LLMRails(VectorStore):
             "Content-Type": "application/json",
         }
 
-    def add_texts(self, texts: Iterable[str]) -> List[str]:
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -65,7 +71,7 @@ class LLMRails(VectorStore):
             List of ids from adding the texts into the vectorstore.
 
         """
-        names = []
+        names: List[str] = []
         for text in texts:
             doc_name = str(uuid.uuid4())
             response = self._session.post(
@@ -135,9 +141,7 @@ class LLMRails(VectorStore):
         return docs
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 5,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return LLMRails documents most similar to query, along with scores.
 
@@ -154,8 +158,10 @@ class LLMRails(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[LLMRails],
+        cls,
         texts: List[str],
+        embedding: Optional[Embeddings] = None,
+        metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> LLMRails:
         """Construct LLMRails wrapper from raw documents.
@@ -163,7 +169,7 @@ class LLMRails(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import LLMRails
+                from langchain.vectorstores import LLMRails
                 llm_rails = LLMRails.from_texts(
                     texts,
                     datastore_id=datastore_id,
