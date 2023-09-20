@@ -82,7 +82,7 @@ class FAISS(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Callable,
+        embedding_function: Embeddings,
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
@@ -107,6 +107,10 @@ class FAISS(VectorStore):
                     strategy=self.distance_strategy
                 )
             )
+
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding_function
 
     def __add(
         self,
@@ -163,7 +167,8 @@ class FAISS(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        embeddings = [self.embedding_function(text) for text in texts]
+        texts = list(texts)
+        embeddings = [self.embedding_function.embed_documents(text) for text in texts]
         return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
 
     def add_embeddings(
@@ -272,7 +277,7 @@ class FAISS(VectorStore):
             List of documents most similar to the query text with
             L2 distance in float. Lower score represents more similarity.
         """
-        embedding = self.embedding_function(query)
+        embedding = self.embedding_function.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding,
             k,
@@ -465,7 +470,7 @@ class FAISS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        embedding = self.embedding_function(query)
+        embedding = self.embedding_function.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
             embedding,
             k=k,
@@ -561,7 +566,7 @@ class FAISS(VectorStore):
             # Default to L2, currently other metric types not initialized.
             index = faiss.IndexFlatL2(len(embeddings[0]))
         vecstore = cls(
-            embedding.embed_query,
+            embedding,
             index,
             InMemoryDocstore(),
             {},
@@ -697,7 +702,7 @@ class FAISS(VectorStore):
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
         return cls(
-            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
+            embeddings, index, docstore, index_to_docstore_id, **kwargs
         )
 
     def serialize_to_bytes(self) -> bytes:
@@ -714,7 +719,7 @@ class FAISS(VectorStore):
         """Deserialize FAISS index, docstore, and index_to_docstore_id from bytes."""
         index, docstore, index_to_docstore_id = pickle.loads(serialized)
         return cls(
-            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
+            embeddings, index, docstore, index_to_docstore_id, **kwargs
         )
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
