@@ -125,7 +125,7 @@ def _get_prompt_and_tools(
             "pandas package not found, please install with `pip install pandas`"
         )
 
-    if include_df_in_prompt is not None and suffix is not None:
+    if include_df_in_prompt and suffix is not None:
         raise ValueError("If suffix is specified, include_df_in_prompt should not be.")
 
     if isinstance(df, list):
