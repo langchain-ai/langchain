@@ -165,7 +165,7 @@ def extract_dict_elements_from_component_fields(
 ) -> dict:
     output = {}
     for attribute in fields(component):
-        if attribute.name in data.keys():
+        if attribute.name in data:
             output[attribute.name] = data[attribute.name]
     return output
 
@@ -235,7 +235,7 @@ def fetch_list_id(space_id: int, folder_id: int, access_token: str) -> Optional[
     data = fetch_data(url, access_token, query={"archived": "false"})
 
     # The structure to fetch list id differs based if its folderless
-    if folder_id and "id" in data.keys():
+    if folder_id and "id" in data:
         return data["id"]
     else:
         return fetch_first_id(data, "lists")
@@ -277,9 +277,9 @@ class ClickupAPIWrapper(BaseModel):
         response = requests.post(url, params=params)
         data = response.json()
 
-        if "access_token" not in data.keys():
+        if "access_token" not in data:
             print(f"Error: {data}")
-            if "ECODE" in data.keys() and data["ECODE"] == "OAUTH_014":
+            if "ECODE" in data and data["ECODE"] == "OAUTH_014":
                 url = ClickupAPIWrapper.get_access_code_url(oauth_client_id)
                 print(
                     "You already used this code once. Generate a new one.",
@@ -430,7 +430,7 @@ class ClickupAPIWrapper(BaseModel):
         if not isinstance(params, dict):
             return {"Error": error}
 
-        if params["attribute_name"] not in task.keys():
+        if params["attribute_name"] not in task:
             return {
                 "Error": f"""attribute_name = {params['attribute_name']} was not 
 found in task keys {task.keys()}. Please call again with one of the key names."""
@@ -537,7 +537,7 @@ found in task keys {task.keys()}. Please call again with one of the key names.""
         data = response.json()
         parsed_list = parse_dict_through_component(data, CUList, fault_tolerant=True)
         # set list id to new list
-        if "id" in parsed_list.keys():
+        if "id" in parsed_list:
             self.list_id = parsed_list["id"]
         return parsed_list
 
@@ -561,7 +561,7 @@ found in task keys {task.keys()}. Please call again with one of the key names.""
         response = requests.post(url, json=payload, headers=headers)
         data = response.json()
 
-        if "id" in data.keys():
+        if "id" in data:
             self.list_id = data["id"]
         return data
 
