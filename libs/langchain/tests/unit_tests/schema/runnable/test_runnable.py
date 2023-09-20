@@ -1,5 +1,5 @@
 from operator import itemgetter
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
 import pytest
@@ -7,8 +7,7 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
-from langchain import PromptTemplate
-from langchain.callbacks.manager import Callbacks
+from langchain.callbacks.manager import Callbacks, collect_runs
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
@@ -16,6 +15,7 @@ from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
+from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     ChatPromptValue,
@@ -34,6 +34,7 @@ from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
     RouterRunnable,
     Runnable,
+    RunnableBranch,
     RunnableConfig,
     RunnableLambda,
     RunnableMap,
@@ -214,7 +215,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -224,7 +225,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -295,7 +296,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=10,
             ),
         ),
@@ -305,7 +306,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=10,
             ),
         ),
@@ -366,6 +367,24 @@ async def test_prompt() -> None:
     assert [
         part async for part in prompt.astream({"question": "What is your name?"})
     ] == [expected]
+
+
+def test_prompt_template_params() -> None:
+    prompt = ChatPromptTemplate.from_template(
+        "Respond to the following question: {question}"
+    )
+    result = prompt.invoke(
+        {
+            "question": "test",
+            "topic": "test",
+        }
+    )
+    assert result == ChatPromptValue(
+        messages=[HumanMessage(content="Respond to the following question: test")]
+    )
+
+    with pytest.raises(KeyError):
+        prompt.invoke({})
 
 
 @pytest.mark.asyncio
@@ -541,7 +560,7 @@ async def test_prompt_with_llm(
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
 
-    # Test stream
+    # Test stream#
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
     llm_spy = mocker.spy(llm.__class__, "astream")
     tracer = FakeTracer()
@@ -1252,6 +1271,31 @@ def test_with_config_with_config() -> None:
     ) == dumpd(llm.with_config({"metadata": {"a": "b"}, "tags": ["a-tag"]}))
 
 
+def test_metadata_is_merged() -> None:
+    """Test metadata and tags defined in with_config and at are merged/concatend."""
+
+    foo = RunnableLambda(lambda x: x).with_config({"metadata": {"my_key": "my_value"}})
+    expected_metadata = {
+        "my_key": "my_value",
+        "my_other_key": "my_other_value",
+    }
+    with collect_runs() as cb:
+        foo.invoke("hi", {"metadata": {"my_other_key": "my_other_value"}})
+        run = cb.traced_runs[0]
+    assert run.extra["metadata"] == expected_metadata
+
+
+def test_tags_are_appended() -> None:
+    """Test tags from with_config are concatenated with those in invocation."""
+
+    foo = RunnableLambda(lambda x: x).with_config({"tags": ["my_key"]})
+    with collect_runs() as cb:
+        foo.invoke("hi", {"tags": ["invoked_key"]})
+        run = cb.traced_runs[0]
+    assert isinstance(run.tags, list)
+    assert sorted(run.tags) == sorted(["my_key", "invoked_key"])
+
+
 def test_bind_bind() -> None:
     llm = FakeListLLM(responses=["i'm a textbot"])
 
@@ -1309,6 +1353,37 @@ async def test_deep_astream() -> None:
 
     chunks = []
     async for chunk in (chain | RunnablePassthrough()).astream({"question": "What up"}):
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
+def test_runnable_sequence_transform() -> None:
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = llm | StrOutputParser()
+
+    stream = chain.transform(llm.stream("Hi there!"))
+
+    chunks = []
+    for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
+@pytest.mark.asyncio
+async def test_runnable_sequence_atransform() -> None:
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = llm | StrOutputParser()
+
+    stream = chain.atransform(llm.astream("Hi there!"))
+
+    chunks = []
+    async for chunk in stream:
         chunks.append(chunk)
 
     assert len(chunks) == len("foo-lish")
@@ -1785,3 +1860,205 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
+
+
+def test_runnable_branch_init() -> None:
+    """Verify that runnable branch gets initialized properly."""
+    add = RunnableLambda(lambda x: x + 1)
+    condition = RunnableLambda(lambda x: x > 0)
+
+    # Test failure with less than 2 branches
+    with pytest.raises(ValueError):
+        RunnableBranch((condition, add))
+
+    # Test failure with less than 2 branches
+    with pytest.raises(ValueError):
+        RunnableBranch(condition)
+
+
+@pytest.mark.parametrize(
+    "branches",
+    [
+        [
+            (RunnableLambda(lambda x: x > 0), RunnableLambda(lambda x: x + 1)),
+            RunnableLambda(lambda x: x - 1),
+        ],
+        [
+            (RunnableLambda(lambda x: x > 0), RunnableLambda(lambda x: x + 1)),
+            (RunnableLambda(lambda x: x > 5), RunnableLambda(lambda x: x + 1)),
+            RunnableLambda(lambda x: x - 1),
+        ],
+        [
+            (lambda x: x > 0, lambda x: x + 1),
+            (lambda x: x > 5, lambda x: x + 1),
+            lambda x: x - 1,
+        ],
+    ],
+)
+def test_runnable_branch_init_coercion(branches: Sequence[Any]) -> None:
+    """Verify that runnable branch gets initialized properly."""
+    runnable = RunnableBranch[int, int](*branches)
+    for branch in runnable.branches:
+        condition, body = branch
+        assert isinstance(condition, Runnable)
+        assert isinstance(body, Runnable)
+
+    assert isinstance(runnable.default, Runnable)
+
+
+def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:
+    """Verify that runnables are invoked only when necessary."""
+    # Test with single branch
+    add = RunnableLambda(lambda x: x + 1)
+    sub = RunnableLambda(lambda x: x - 1)
+    condition = RunnableLambda(lambda x: x > 0)
+    spy = mocker.spy(condition, "invoke")
+    add_spy = mocker.spy(add, "invoke")
+
+    branch = RunnableBranch[int, int]((condition, add), (condition, add), sub)
+    assert spy.call_count == 0
+    assert add_spy.call_count == 0
+
+    assert branch.invoke(1) == 2
+    assert add_spy.call_count == 1
+    assert spy.call_count == 1
+
+    assert branch.invoke(2) == 3
+    assert spy.call_count == 2
+    assert add_spy.call_count == 2
+
+    assert branch.invoke(-3) == -4
+    # Should fall through to default branch with condition being evaluated twice!
+    assert spy.call_count == 4
+    # Add should not be invoked
+    assert add_spy.call_count == 2
+
+
+def test_runnable_branch_invoke() -> None:
+    # Test with single branch
+    def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 100, raise_value_error),
+        # mypy cannot infer types from the lambda
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),  # type: ignore[misc]
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert branch.invoke(1) == 2
+    assert branch.invoke(10) == 100
+    assert branch.invoke(0) == -1
+    # Should raise an exception
+    with pytest.raises(ValueError):
+        branch.invoke(1000)
+
+
+def test_runnable_branch_batch() -> None:
+    """Test batch variant."""
+    # Test with single branch
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert branch.batch([1, 10, 0]) == [2, 100, -1]
+
+
+@pytest.mark.asyncio
+async def test_runnable_branch_ainvoke() -> None:
+    """Test async variant of invoke."""
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert await branch.ainvoke(1) == 2
+    assert await branch.ainvoke(10) == 100
+    assert await branch.ainvoke(0) == -1
+
+    # Verify that the async variant is used if available
+    async def condition(x: int) -> bool:
+        return x > 0
+
+    async def add(x: int) -> int:
+        return x + 1
+
+    async def sub(x: int) -> int:
+        return x - 1
+
+    branch = RunnableBranch[int, int]((condition, add), sub)
+
+    assert await branch.ainvoke(1) == 2
+    assert await branch.ainvoke(-10) == -11
+
+
+def test_runnable_branch_invoke_callbacks() -> None:
+    """Verify that callbacks are correctly used in invoke."""
+    tracer = FakeTracer()
+
+    def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 100, raise_value_error),
+        lambda x: x - 1,
+    )
+
+    assert branch.invoke(1, config={"callbacks": [tracer]}) == 0
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error is None
+    assert tracer.runs[0].outputs == {"output": 0}
+
+    # Check that the chain on end is invoked
+    with pytest.raises(ValueError):
+        branch.invoke(1000, config={"callbacks": [tracer]})
+
+    assert len(tracer.runs) == 2
+    assert tracer.runs[1].error == "ValueError('x is too large')"
+    assert tracer.runs[1].outputs is None
+
+
+@pytest.mark.asyncio
+async def test_runnable_branch_ainvoke_callbacks() -> None:
+    """Verify that callbacks are invoked correctly in ainvoke."""
+    tracer = FakeTracer()
+
+    async def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 100, raise_value_error),
+        lambda x: x - 1,
+    )
+
+    assert await branch.ainvoke(1, config={"callbacks": [tracer]}) == 0
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error is None
+    assert tracer.runs[0].outputs == {"output": 0}
+
+    # Check that the chain on end is invoked
+    with pytest.raises(ValueError):
+        await branch.ainvoke(1000, config={"callbacks": [tracer]})
+
+    assert len(tracer.runs) == 2
+    assert tracer.runs[1].error == "ValueError('x is too large')"
+    assert tracer.runs[1].outputs is None
+
+
+@pytest.mark.asyncio
+async def test_runnable_branch_abatch() -> None:
+    """Test async variant of invoke."""
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert await branch.abatch([1, 10, 0]) == [2, 100, -1]
