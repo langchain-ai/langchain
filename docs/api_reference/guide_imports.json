@@ -465,6 +465,7 @@
         "PromptLayer": "https://python.langchain.com/docs/integrations/callbacks/promptlayer",
         "Log10": "https://python.langchain.com/docs/integrations/providers/log10",
         "MLflow AI Gateway": "https://python.langchain.com/docs/integrations/providers/mlflow_ai_gateway",
+        "Javelin AI Gateway": "https://python.langchain.com/docs/integrations/providers/javelin_ai_gateway",
         "Flyte": "https://python.langchain.com/docs/integrations/providers/flyte",
         "Arthur": "https://python.langchain.com/docs/integrations/providers/arthur_tracking",
         "Chatbots": "https://python.langchain.com/docs/use_cases/chatbots",
@@ -1245,6 +1246,7 @@
         "Context": "https://python.langchain.com/docs/integrations/callbacks/context",
         "Label Studio": "https://python.langchain.com/docs/integrations/callbacks/labelstudio",
         "MLflow AI Gateway": "https://python.langchain.com/docs/integrations/providers/mlflow_ai_gateway",
+        "Javelin AI Gateway": "https://python.langchain.com/docs/integrations/providers/javelin_ai_gateway",
         "Chatbots": "https://python.langchain.com/docs/use_cases/chatbots",
         "Conversational Retrieval Agent": "https://python.langchain.com/docs/use_cases/question_answering/how_to/conversational_retrieval_agents",
         "Structure answers with OpenAI functions": "https://python.langchain.com/docs/use_cases/question_answering/integrations/openai_functions_retrieval_qa",
@@ -1878,6 +1880,15 @@
     },
     "ChatMLflowAIGateway": {
         "MLflow AI Gateway": "https://python.langchain.com/docs/integrations/providers/mlflow_ai_gateway"
+    },
+    "JavelinAIGateway": {
+        "Javelin AI Gateway": "https://python.langchain.com/docs/integrations/providers/javelin_ai_gateway"
+    },
+    "JavelinAIGatewayEmbeddings": {
+        "Javelin AI Gateway": "https://python.langchain.com/docs/integrations/providers/javelin_ai_gateway"
+    },
+    "ChatJavelinAIGateway": {
+        "Javelin AI Gateway": "https://python.langchain.com/docs/integrations/providers/javelin_ai_gateway"
     },
     "SingleStoreDB": {
         "SingleStoreDB": "https://python.langchain.com/docs/integrations/vectorstores/singlestoredb"
