@@ -4,8 +4,6 @@ import json
 from typing import (
     Any,
     Callable,
-    ClassVar,
-    Collection,
     Iterable,
     List,
     Optional,
@@ -15,10 +13,6 @@ from typing import (
 
 from sqlalchemy.pool import QueuePool
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore
