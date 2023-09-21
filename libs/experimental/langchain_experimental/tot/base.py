@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from textwrap import indent
 from typing import Any, Dict, List, Optional, Type, Awaitable
+import asyncio
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -106,7 +107,7 @@ class ToTChain(Chain):
             run_manager.on_text(
                 text=text, color=colors[thought.validity], verbose=self.verbose
             )
-
+        return None
     def _call(
         self,
         inputs: Dict[str, Any],
@@ -143,6 +144,7 @@ class ToTChain(Chain):
 
         return {self.output_key: "No solution found"}
 
+
     async def _acall(
         self,
         inputs: Dict[str, Any],
@@ -167,6 +169,7 @@ class ToTChain(Chain):
             # Ensure that thought_text is awaitable (if it's not already)
             if not isinstance(thought_text, Awaitable):
                 thought_text = asyncio.ensure_future(thought_text)
+    
             checker_inputs["thoughts"] = thoughts_path + (thought_text,)
             thought_validity = (await self.checker(checker_inputs, callbacks=_run_manager.get_child()))[
                 "validity"
@@ -175,6 +178,7 @@ class ToTChain(Chain):
             if thought.validity == ThoughtValidity.VALID_FINAL:
                 await self.log_thought(thought, level, run_manager)
                 return {self.output_key: thought.text}
+    
             await self.tot_memory.store(thought)
             await self.log_thought(thought, level, run_manager)
             thoughts_path = await self.tot_controller(self.tot_memory)
