@@ -2,7 +2,16 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Union,
+)
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -350,6 +359,77 @@ class LlamaCpp(LLM):
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
+                    token=chunk.text, verbose=self.verbose, log_probs=logprobs
+                )
+
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Async call the Llama model and return the output.
+
+        Args:
+            prompt: The prompt to use for generation.
+            stop: A list of strings to stop generation when encountered.
+
+        Returns:
+            The generated text.
+
+        """
+        if self.streaming:
+            # If streaming is enabled, we use the stream
+            # method that yields as they are generated
+            # and return the combined strings from the first choices's text:
+            combined_text_output = ""
+            async for chunk in self._astream(
+                prompt=prompt,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
+            ):
+                combined_text_output += chunk.text
+            return combined_text_output
+        else:
+            params = self._get_parameters(stop)
+            params = {**params, **kwargs}
+            result = self.client(prompt=prompt, **params)
+            return result["choices"][0]["text"]
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        """Similar to _stream, but it works asynchronous
+
+        Args:
+            prompt: The prompts to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            An async generator representing the stream of tokens being generated.
+
+        Yields:
+            A dictionary like objects containing a string token and metadata.
+            See llama-cpp-python docs and below for more.
+
+        """
+        params = {**self._get_parameters(stop), **kwargs}
+        result = self.client(prompt=prompt, stream=True, **params)
+        for part in result:
+            logprobs = part["choices"][0].get("logprobs", None)
+            chunk = GenerationChunk(
+                text=part["choices"][0]["text"],
+                generation_info={"logprobs": logprobs},
+            )
+            yield chunk
+            if run_manager:
+                await run_manager.on_llm_new_token(
                     token=chunk.text, verbose=self.verbose, log_probs=logprobs
                 )
 
