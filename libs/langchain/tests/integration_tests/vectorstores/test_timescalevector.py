@@ -389,7 +389,7 @@ def test_timescalevector_with_index() -> None:
 def test_timescalevector_time_partitioning() -> None:
     """Test deleting functionality."""
     from timescale_vector import client
-    
+
     texts = ["bar", "baz"]
     docs = [Document(page_content=t, metadata={"a": "b"}) for t in texts]
     docsearch = TimescaleVector.from_documents(
