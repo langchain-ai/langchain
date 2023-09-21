@@ -19,7 +19,7 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,md,mdx}\""
   },
   "dependencies": {
-    "@docsly/react": "^1.8.6",
+    "@docsly/react": "^1.9.1",
     "@docusaurus/core": "2.4.0",
     "@docusaurus/preset-classic": "2.4.0",
     "@docusaurus/remark-plugin-npm2yarn": "^2.4.0",
