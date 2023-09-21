@@ -99,3 +99,21 @@ def test_add_recognizer_operator() -> None:
     anonymizer.add_operators(custom_operator)
     anonymized_text = anonymizer.anonymize(text)
     assert anonymized_text == "Dear Jane Doe was here."
+
+
+@pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
+def test_non_faker_values() -> None:
+    """Test anonymizing multiple items in a sentence without faker values"""
+    from langchain_experimental.data_anonymizer import PresidioAnonymizer
+
+    text = (
+        "My name is John Smith. Your name is Adam Smith. Her name is Jane Smith."
+        "Our names are: John Smith, Adam Smith, Jane Smith."
+    )
+    expected_result = (
+        "My name is <PERSON_1>. Your name is <PERSON_2>. Her name is <PERSON_3>."
+        "Our names are: <PERSON_1>, <PERSON_2>, <PERSON_3>."
+    )
+    anonymizer = PresidioAnonymizer(use_faker_operators=False)
+    anonymized_text = anonymizer.anonymize(text)
+    assert anonymized_text == expected_result
