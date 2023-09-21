@@ -70,7 +70,7 @@ class RunLogPatch:
     see https://jsonpatch.com for more information."""
 
     def __init__(self, *ops: Dict[str, Any]) -> None:
-        self.ops = ops
+        self.ops = list(ops)
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLogPatch:
         if type(other) == RunLogPatch:
