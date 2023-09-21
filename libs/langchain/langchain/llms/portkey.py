@@ -57,7 +57,7 @@ class Portkey(LLM):
 
     """
 
-    mode: Optional[Union["Modes", "ModesLiteral"]] = Field(
+    mode: Optional[Union["Modes", "ModesLiteral", str]] = Field(
         description="The mode for using the Portkey integration", default=None
     )
 
@@ -72,7 +72,7 @@ class Portkey(LLM):
     def __init__(
         self,
         *,
-        mode: Union["Modes", "ModesLiteral"],
+        mode: Union["Modes", "ModesLiteral", str],
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
     ) -> None:
