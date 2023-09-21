@@ -25,7 +25,9 @@ def create_csv_agent(
         df = pd.read_csv(path, **_kwargs)
     elif isinstance(path, list):
         if not all(isinstance(item, str) for item in path):
-            raise ValueError(f"Expected all elements in the list to be strings, got {type(path)}.")
+            raise ValueError(
+                f"Expected all elements in the list to be strings, got {type(path)}."
+            )
         dfs = [pd.read_csv(item, **_kwargs) for item in path]
         df = pd.concat(dfs, ignore_index=True)
     else:
