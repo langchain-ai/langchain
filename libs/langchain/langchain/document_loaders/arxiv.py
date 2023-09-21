@@ -6,9 +6,8 @@ from langchain.utilities.arxiv import ArxivAPIWrapper
 
 
 class ArxivLoader(BaseLoader):
-    """Loads a query result from arxiv.org into a list of Documents.
+    """Load a query result from `Arxiv`.
 
-    Each document represents one Document.
     The loader converts the original PDF format into the text.
     """
 

@@ -11,7 +11,6 @@ from datetime import timedelta
 from typing import Iterator
 
 import pytest
-from momento import CacheClient, Configurations, CredentialProvider
 
 import langchain
 from langchain.cache import MomentoCache
@@ -25,6 +24,8 @@ def random_string() -> str:
 
 @pytest.fixture(scope="module")
 def momento_cache() -> Iterator[MomentoCache]:
+    from momento import CacheClient, Configurations, CredentialProvider
+
     cache_name = f"langchain-test-cache-{random_string()}"
     client = CacheClient(
         Configurations.Laptop.v1(),
@@ -40,6 +41,8 @@ def momento_cache() -> Iterator[MomentoCache]:
 
 
 def test_invalid_ttl() -> None:
+    from momento import CacheClient, Configurations, CredentialProvider
+
     client = CacheClient(
         Configurations.Laptop.v1(),
         CredentialProvider.from_environment_variable("MOMENTO_AUTH_TOKEN"),

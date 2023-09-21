@@ -1,13 +1,12 @@
 import logging
-from typing import List
-
-from pydantic import BaseModel, Field
+from typing import List, Sequence
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseRetriever, Document
 
 logger = logging.getLogger(__name__)
@@ -44,10 +43,15 @@ DEFAULT_QUERY_PROMPT = PromptTemplate(
 )
 
 
-class MultiQueryRetriever(BaseRetriever):
+def _unique_documents(documents: Sequence[Document]) -> List[Document]:
+    return [doc for i, doc in enumerate(documents) if doc not in documents[:i]]
 
-    """Given a user query, use an LLM to write a set of queries.
-    Retrieve docs for each query. Rake the unique union of all retrieved docs."""
+
+class MultiQueryRetriever(BaseRetriever):
+    """Given a query, use an LLM to write a set of queries.
+
+    Retrieve docs for each query. Return the unique union of all retrieved docs.
+    """
 
     retriever: BaseRetriever
     llm_chain: LLMChain
@@ -85,7 +89,7 @@ class MultiQueryRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> List[Document]:
-        """Get relevated documents given a user query.
+        """Get relevant documents given a user query.
 
         Args:
             question: user query
@@ -95,8 +99,7 @@ class MultiQueryRetriever(BaseRetriever):
         """
         queries = self.generate_queries(query, run_manager)
         documents = self.retrieve_documents(queries, run_manager)
-        unique_documents = self.unique_union(documents)
-        return unique_documents
+        return self.unique_union(documents)
 
     def generate_queries(
         self, question: str, run_manager: CallbackManagerForRetrieverRun
@@ -145,12 +148,4 @@ class MultiQueryRetriever(BaseRetriever):
         Returns:
             List of unique retrieved Documents
         """
-        # Create a dictionary with page_content as keys to remove duplicates
-        # TODO: Add Document ID property (e.g., UUID)
-        unique_documents_dict = {
-            (doc.page_content, tuple(sorted(doc.metadata.items()))): doc
-            for doc in documents
-        }
-
-        unique_documents = list(unique_documents_dict.values())
-        return unique_documents
+        return _unique_documents(documents)

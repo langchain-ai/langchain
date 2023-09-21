@@ -11,6 +11,7 @@ from langchain.callbacks.manager import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
+from langchain.utilities.dalle_image_generator import DallEAPIWrapper
 from langchain.utilities.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.golden_query.tool import GoldenQueryRun
@@ -31,6 +32,7 @@ from langchain.tools.requests.tool import (
     RequestsPostTool,
     RequestsPutTool,
 )
+from langchain.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
@@ -196,7 +198,7 @@ def _get_golden_query(**kwargs: Any) -> BaseTool:
     return GoldenQueryRun(api_wrapper=GoldenQueryAPIWrapper(**kwargs))
 
 
-def _get_pupmed(**kwargs: Any) -> BaseTool:
+def _get_pubmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
 
 
@@ -218,6 +220,14 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
         description="A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
         func=SerpAPIWrapper(**kwargs).run,
         coroutine=SerpAPIWrapper(**kwargs).arun,
+    )
+
+
+def _get_dalle_image_generator(**kwargs: Any) -> Tool:
+    return Tool(
+        "Dall-E Image Generator",
+        DallEAPIWrapper(**kwargs).run,
+        "A wrapper around OpenAI DALL-E API. Useful for when you need to generate images from a text description. Input should be an image description.",
     )
 
 
@@ -276,6 +286,10 @@ def _get_dataforseo_api_search_json(**kwargs: Any) -> BaseTool:
     return DataForSeoAPISearchResults(api_wrapper=DataForSeoAPIWrapper(**kwargs))
 
 
+def _get_eleven_labs_text2speech(**kwargs: Any) -> BaseTool:
+    return ElevenLabsText2SpeechTool(**kwargs)
+
+
 _EXTRA_LLM_TOOLS: Dict[
     str,
     Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],
@@ -305,6 +319,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["serper_api_key", "aiosession"],
     ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
+    "dalle-image-generator": (_get_dalle_image_generator, ["openai_api_key"]),
     "twilio": (_get_twilio, ["account_sid", "auth_token", "from_number"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
@@ -313,10 +328,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["top_k_results", "load_max_docs", "load_all_available_meta"],
     ),
     "golden-query": (_get_golden_query, ["golden_api_key"]),
-    "pupmed": (
-        _get_pupmed,
-        ["top_k_results", "load_max_docs", "load_all_available_meta"],
-    ),
+    "pubmed": (_get_pubmed, ["top_k_results"]),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
     "awslambda": (
         _get_lambda_api,
@@ -333,6 +345,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_dataforseo_api_search_json,
         ["api_login", "api_password", "aiosession"],
     ),
+    "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
 }
 
 

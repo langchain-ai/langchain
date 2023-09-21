@@ -4,11 +4,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
+from tenacity import RetryCallState
+
 if TYPE_CHECKING:
     from langchain.schema.agent import AgentAction, AgentFinish
     from langchain.schema.document import Document
     from langchain.schema.messages import BaseMessage
-    from langchain.schema.output import LLMResult
+    from langchain.schema.output import ChatGenerationChunk, GenerationChunk, LLMResult
 
 
 class RetrieverManagerMixin:
@@ -16,7 +18,7 @@ class RetrieverManagerMixin:
 
     def on_retriever_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -42,11 +44,18 @@ class LLMManagerMixin:
         self,
         token: str,
         *,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run on new LLM token. Only available when streaming is enabled."""
+        """Run on new LLM token. Only available when streaming is enabled.
+
+        Args:
+            token (str): The new token.
+            chunk (GenerationChunk | ChatGenerationChunk): The new generated chunk,
+            containing content and other information.
+        """
 
     def on_llm_end(
         self,
@@ -60,7 +69,7 @@ class LLMManagerMixin:
 
     def on_llm_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -84,7 +93,7 @@ class ChainManagerMixin:
 
     def on_chain_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -128,7 +137,7 @@ class ToolManagerMixin:
 
     def on_tool_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -222,6 +231,16 @@ class RunManagerMixin:
     ) -> Any:
         """Run on arbitrary text."""
 
+    def on_retry(
+        self,
+        retry_state: RetryCallState,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on a retry event."""
+
 
 class BaseCallbackHandler(
     LLMManagerMixin,
@@ -304,6 +323,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         token: str,
         *,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
@@ -324,7 +344,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_llm_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -359,7 +379,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_chain_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -394,7 +414,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_tool_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -413,6 +433,16 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run on arbitrary text."""
+
+    async def on_retry(
+        self,
+        retry_state: RetryCallState,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on a retry event."""
 
     async def on_agent_action(
         self,
@@ -462,7 +492,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_retriever_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,

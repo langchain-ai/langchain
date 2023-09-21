@@ -1,8 +1,6 @@
 """Test OpenSearch functionality."""
 
-import boto3
 import pytest
-from opensearchpy import AWSV4SignerAuth
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.opensearch_vector_search import (
@@ -219,6 +217,9 @@ def test_opensearch_with_custom_field_name_appx_false() -> None:
 
 def test_opensearch_serverless_with_scripting_search_indexing_throws_error() -> None:
     """Test to validate indexing using Serverless without Approximate Search."""
+    import boto3
+    from opensearchpy import AWSV4SignerAuth
+
     region = "test-region"
     service = "aoss"
     credentials = boto3.Session().get_credentials()
@@ -235,6 +236,9 @@ def test_opensearch_serverless_with_scripting_search_indexing_throws_error() -> 
 
 def test_opensearch_serverless_with_lucene_engine_throws_error() -> None:
     """Test to validate indexing using lucene engine with Serverless."""
+    import boto3
+    from opensearchpy import AWSV4SignerAuth
+
     region = "test-region"
     service = "aoss"
     credentials = boto3.Session().get_credentials()

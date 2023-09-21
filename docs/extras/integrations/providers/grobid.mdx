@@ -1,22 +1,23 @@
 # Grobid
 
+GROBID is a machine learning library for extracting, parsing, and re-structuring raw documents.
+
+It is designed and expected to be used to parse academic papers, where it works particularly well.
+
+*Note*: if the articles supplied to Grobid are large documents (e.g. dissertations) exceeding a certain number
+of elements, they might not be processed.
+
 This page covers how to use the Grobid to parse articles for LangChain.
-It is separated into two parts: installation and running the server
 
-## Installation and Setup
-#Ensure You have Java installed
-!apt-get install -y openjdk-11-jdk -q
-!update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+## Installation
+The grobid installation is described in details in https://grobid.readthedocs.io/en/latest/Install-Grobid/.
+However, it is probably easier and less troublesome to run grobid through a docker container,
+as documented [here](https://grobid.readthedocs.io/en/latest/Grobid-docker/).
 
-#Clone and install the Grobid Repo
-import os
-!git clone https://github.com/kermitt2/grobid.git
-os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
-os.chdir('grobid')
-!./gradlew clean install
+## Use Grobid with LangChain
 
-#Run the server, 
-get_ipython().system_raw('nohup ./gradlew run > grobid.log 2>&1 &')
+Once grobid is installed and up and running (you can check by accessing it http://localhost:8070),
+you're ready to go.
 
 You can now use the GrobidParser to produce documents
 ```python
@@ -41,4 +42,5 @@ loader = GenericLoader.from_filesystem(
 )
 docs = loader.load()
 ```
-Chunk metadata will include bboxes although these are a bit funky to parse, see https://grobid.readthedocs.io/en/latest/Coordinates-in-PDF/
+Chunk metadata will include Bounding Boxes. Although these are a bit funky to parse,
+they are explained in https://grobid.readthedocs.io/en/latest/Coordinates-in-PDF/

@@ -19,21 +19,28 @@ from langchain.embeddings.aleph_alpha import (
     AlephAlphaSymmetricSemanticEmbedding,
 )
 from langchain.embeddings.awa import AwaEmbeddings
+from langchain.embeddings.baidu_qianfan_endpoint import QianfanEmbeddingsEndpoint
 from langchain.embeddings.bedrock import BedrockEmbeddings
+from langchain.embeddings.cache import CacheBackedEmbeddings
 from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.dashscope import DashScopeEmbeddings
 from langchain.embeddings.deepinfra import DeepInfraEmbeddings
+from langchain.embeddings.edenai import EdenAiEmbeddings
 from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
 from langchain.embeddings.embaas import EmbaasEmbeddings
-from langchain.embeddings.fake import FakeEmbeddings
+from langchain.embeddings.ernie import ErnieEmbeddings
+from langchain.embeddings.fake import DeterministicFakeEmbedding, FakeEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.gpt4all import GPT4AllEmbeddings
 from langchain.embeddings.huggingface import (
+    HuggingFaceBgeEmbeddings,
     HuggingFaceEmbeddings,
+    HuggingFaceInferenceAPIEmbeddings,
     HuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
+from langchain.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings
 from langchain.embeddings.jina import JinaEmbeddings
 from langchain.embeddings.llamacpp import LlamaCppEmbeddings
 from langchain.embeddings.localai import LocalAIEmbeddings
@@ -43,6 +50,7 @@ from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
 from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 from langchain.embeddings.nlpcloud import NLPCloudEmbeddings
 from langchain.embeddings.octoai_embeddings import OctoAIEmbeddings
+from langchain.embeddings.ollama import OllamaEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
@@ -60,10 +68,12 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "OpenAIEmbeddings",
-    "HuggingFaceEmbeddings",
-    "CohereEmbeddings",
+    "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
+    "CohereEmbeddings",
     "ElasticsearchEmbeddings",
+    "HuggingFaceEmbeddings",
+    "HuggingFaceInferenceAPIEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
     "HuggingFaceHubEmbeddings",
@@ -77,6 +87,7 @@ __all__ = [
     "SelfHostedHuggingFaceEmbeddings",
     "SelfHostedHuggingFaceInstructEmbeddings",
     "FakeEmbeddings",
+    "DeterministicFakeEmbedding",
     "AlephAlphaAsymmetricSemanticEmbedding",
     "AlephAlphaSymmetricSemanticEmbedding",
     "SentenceTransformerEmbeddings",
@@ -85,6 +96,7 @@ __all__ = [
     "VertexAIEmbeddings",
     "BedrockEmbeddings",
     "DeepInfraEmbeddings",
+    "EdenAiEmbeddings",
     "DashScopeEmbeddings",
     "EmbaasEmbeddings",
     "OctoAIEmbeddings",
@@ -94,6 +106,11 @@ __all__ = [
     "XinferenceEmbeddings",
     "LocalAIEmbeddings",
     "AwaEmbeddings",
+    "HuggingFaceBgeEmbeddings",
+    "ErnieEmbeddings",
+    "JavelinAIGatewayEmbeddings",
+    "OllamaEmbeddings",
+    "QianfanEmbeddingsEndpoint",
 ]
 
 

@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 
@@ -18,7 +18,7 @@ class Writer(LLM):
     Example:
         .. code-block:: python
 
-            from langchain import Writer
+            from langchain.llms import Writer
             writer = Writer(model_id="palmyra-base")
     """
 

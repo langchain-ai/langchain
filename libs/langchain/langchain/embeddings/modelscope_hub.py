@@ -1,8 +1,7 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
-from pydantic import BaseModel, Extra
-
-from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, Extra
+from langchain.schema.embeddings import Embeddings
 
 
 class ModelScopeEmbeddings(BaseModel, Embeddings):
@@ -15,12 +14,13 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import ModelScopeEmbeddings
             model_id = "damo/nlp_corom_sentence-embedding_english-base"
-            embed = ModelScopeEmbeddings(model_id=model_id)
+            embed = ModelScopeEmbeddings(model_id=model_id, model_revision="v1.0.0")
     """
 
     embed: Any
     model_id: str = "damo/nlp_corom_sentence-embedding_english-base"
     """Model name to use."""
+    model_revision: Optional[str] = None
 
     def __init__(self, **kwargs: Any):
         """Initialize the modelscope"""
@@ -28,14 +28,16 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
         try:
             from modelscope.pipelines import pipeline
             from modelscope.utils.constant import Tasks
-
-            self.embed = pipeline(Tasks.sentence_embedding, model=self.model_id)
-
         except ImportError as e:
             raise ImportError(
                 "Could not import some python packages."
                 "Please install it with `pip install modelscope`."
             ) from e
+        self.embed = pipeline(
+            Tasks.sentence_embedding,
+            model=self.model_id,
+            model_revision=self.model_revision,
+        )
 
     class Config:
         """Configuration for this pydantic object."""

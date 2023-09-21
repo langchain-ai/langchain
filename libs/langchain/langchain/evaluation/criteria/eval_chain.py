@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+import re
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
-
-from pydantic import Extra, Field
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
+from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import RUN_KEY, BaseOutputParser, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
@@ -65,24 +65,45 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
     def _type(self) -> str:
         return "criteria_result"
 
-    def parse(self, text: str) -> Any:
+    def parse(self, text: str) -> Dict[str, Any]:
         """Parse the output text.
 
         Args:
             text (str): The output text to parse.
 
         Returns:
-            Any: The parsed output.
+            Dict: The parsed output.
         """
-        parsed = text.strip().rsplit("\n", maxsplit=1)
-        if len(parsed) == 1:
-            reasoning = ""
-            verdict = parsed[0]
+        verdict = None
+        score = None
+        match_last = re.search(r"\s*(Y|N)\s*$", text, re.IGNORECASE)
+        match_first = re.search(r"^\s*(Y|N)\s*", text, re.IGNORECASE)
+        match_end = re.search(r"\b(Y|N)\b\s*$", text, re.IGNORECASE)
+
+        if match_last:
+            verdict = match_last.group(1).strip()
+            text = text[: match_last.start()].strip()
+        elif match_first:
+            verdict = match_first.group(1).strip()
+            text = text[match_first.end() :].strip()
+        elif match_end:
+            verdict = match_end.group(1).strip()
+            text = text[: match_end.start()].strip()
         else:
-            reasoning, verdict = parsed
-        score = 1 if verdict.upper() == "Y" else (0 if verdict.upper() == "N" else None)
+            splits = text.strip().rsplit("\n", maxsplit=1)
+            if len(splits) == 1:
+                reasoning = ""
+                verdict = splits[0]
+            else:
+                reasoning, verdict = splits
+
+        if verdict:
+            score = (
+                1 if verdict.upper() == "Y" else (0 if verdict.upper() == "N" else None)
+            )
+
         return {
-            "reasoning": reasoning.strip(),
+            "reasoning": text.strip(),
             "value": verdict,
             "score": score,
         }
@@ -148,8 +169,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     llm : BaseLanguageModel
         The language model to use for evaluation.
     criteria : Union[Mapping[str, str]]
-        The criteriaor rubric to evaluate the runs against. It can be a mapping of
-        criterion name to its sdescription, or a single criterion name.
+        The criteria or rubric to evaluate the runs against. It can be a mapping of
+        criterion name to its description, or a single criterion name.
     prompt : Optional[BasePromptTemplate], default=None
         The prompt template to use for generating prompts. If not provided, a
         default prompt template will be used based on the value of

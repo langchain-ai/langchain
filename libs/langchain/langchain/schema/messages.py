@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Sequence
-
-from pydantic import Field
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence
 
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Field
+
+if TYPE_CHECKING:
+    from langchain.prompts.chat import ChatPromptTemplate
 
 
 def get_buffer_string(
@@ -77,8 +79,16 @@ class BaseMessage(Serializable):
         """Whether this class is LangChain serializable."""
         return True
 
+    def __add__(self, other: Any) -> ChatPromptTemplate:
+        from langchain.prompts.chat import ChatPromptTemplate
+
+        prompt = ChatPromptTemplate(messages=[self])
+        return prompt + other
+
 
 class BaseMessageChunk(BaseMessage):
+    """A Message chunk, which can be concatenated with other Message chunks."""
+
     def _merge_kwargs_dict(
         self, left: Dict[str, Any], right: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -102,7 +112,7 @@ class BaseMessageChunk(BaseMessage):
                 )
         return merged
 
-    def __add__(self, other: Any) -> BaseMessageChunk:
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, BaseMessageChunk):
             # If both are (subclasses of) BaseMessageChunk,
             # concat into a single BaseMessageChunk
@@ -136,6 +146,8 @@ class HumanMessage(BaseMessage):
 
 
 class HumanMessageChunk(HumanMessage, BaseMessageChunk):
+    """A Human Message chunk."""
+
     pass
 
 
@@ -154,6 +166,8 @@ class AIMessage(BaseMessage):
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
+    """A Message chunk from an AI."""
+
     pass
 
 
@@ -169,6 +183,8 @@ class SystemMessage(BaseMessage):
 
 
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):
+    """A System Message chunk."""
+
     pass
 
 
@@ -185,6 +201,8 @@ class FunctionMessage(BaseMessage):
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
+    """A Function Message chunk."""
+
     pass
 
 
@@ -201,6 +219,8 @@ class ChatMessage(BaseMessage):
 
 
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
+    """A Chat Message chunk."""
+
     pass
 
 

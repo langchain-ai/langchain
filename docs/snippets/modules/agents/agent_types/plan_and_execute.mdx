@@ -5,9 +5,9 @@
 from langchain.chat_models import ChatOpenAI
 from langchain_experimental.plan_and_execute import PlanAndExecute, load_agent_executor, load_chat_planner
 from langchain.llms import OpenAI
-from langchain import SerpAPIWrapper
+from langchain.utilities import SerpAPIWrapper
 from langchain.agents.tools import Tool
-from langchain import LLMMathChain
+from langchain.chains import LLMMathChain
 ```
 
 ## Tools
@@ -53,7 +53,7 @@ executor = load_agent_executor(model, tools, verbose=True)
 agent = PlanAndExecute(planner=planner, executor=executor, verbose=True)
 ```
 
-## Run Example
+## Run example
 
 
 ```python

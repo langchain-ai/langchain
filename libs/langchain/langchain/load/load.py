@@ -55,7 +55,7 @@ class Reviver:
                 raise ValueError(f"Invalid namespace: {value}")
 
             # The root namespace "langchain" is not a valid identifier.
-            if len(namespace) == 1:
+            if len(namespace) == 1 and namespace[0] == "langchain":
                 raise ValueError(f"Invalid namespace: {value}")
 
             mod = importlib.import_module(".".join(namespace))
@@ -79,7 +79,8 @@ def loads(
     secrets_map: Optional[Dict[str, str]] = None,
     valid_namespaces: Optional[List[str]] = None,
 ) -> Any:
-    """Load a JSON object from a string.
+    """Revive a LangChain class from a JSON string.
+    Equivalent to `load(json.loads(text))`.
 
     Args:
         text: The string to load.
@@ -88,6 +89,38 @@ def loads(
             to allow to be deserialized.
 
     Returns:
-
+        Revived LangChain objects.
     """
     return json.loads(text, object_hook=Reviver(secrets_map, valid_namespaces))
+
+
+def load(
+    obj: Any,
+    *,
+    secrets_map: Optional[Dict[str, str]] = None,
+    valid_namespaces: Optional[List[str]] = None,
+) -> Any:
+    """Revive a LangChain class from a JSON object. Use this if you already
+    have a parsed JSON object, eg. from `json.load` or `orjson.loads`.
+
+    Args:
+        obj: The object to load.
+        secrets_map: A map of secrets to load.
+        valid_namespaces: A list of additional namespaces (modules)
+            to allow to be deserialized.
+
+    Returns:
+        Revived LangChain objects.
+    """
+    reviver = Reviver(secrets_map, valid_namespaces)
+
+    def _load(obj: Any) -> Any:
+        if isinstance(obj, dict):
+            # Need to revive leaf nodes before reviving this node
+            loaded_obj = {k: _load(v) for k, v in obj.items()}
+            return reviver(loaded_obj)
+        if isinstance(obj, list):
+            return [_load(o) for o in obj]
+        return obj
+
+    return _load(obj)

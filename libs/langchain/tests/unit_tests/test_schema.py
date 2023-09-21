@@ -13,9 +13,10 @@ from langchain.schema.messages import (
 
 
 class TestGetBufferString(unittest.TestCase):
-    human_msg: HumanMessage = HumanMessage(content="human")
-    ai_msg: AIMessage = AIMessage(content="ai")
-    sys_msg: SystemMessage = SystemMessage(content="sys")
+    def setUp(self) -> None:
+        self.human_msg = HumanMessage(content="human")
+        self.ai_msg = AIMessage(content="ai")
+        self.sys_msg = SystemMessage(content="sys")
 
     def test_empty_input(self) -> None:
         self.assertEqual(get_buffer_string([]), "")
@@ -58,20 +59,14 @@ class TestGetBufferString(unittest.TestCase):
         )
 
 
-class TestMessageDictConversion(unittest.TestCase):
-    human_msg: HumanMessage = HumanMessage(
-        content="human", additional_kwargs={"key": "value"}
-    )
-    ai_msg: AIMessage = AIMessage(content="ai")
-    sys_msg: SystemMessage = SystemMessage(content="sys")
+def test_multiple_msg() -> None:
+    human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
+    ai_msg = AIMessage(content="ai")
+    sys_msg = SystemMessage(content="sys")
 
-    def test_multiple_msg(self) -> None:
-        msgs = [
-            self.human_msg,
-            self.ai_msg,
-            self.sys_msg,
-        ]
-        self.assertEqual(
-            messages_from_dict(messages_to_dict(msgs)),
-            msgs,
-        )
+    msgs = [
+        human_msg,
+        ai_msg,
+        sys_msg,
+    ]
+    assert messages_from_dict(messages_to_dict(msgs)) == msgs

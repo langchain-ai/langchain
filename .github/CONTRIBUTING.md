@@ -9,7 +9,7 @@ to contributions, whether they be in the form of new features, improved infra, b
 ### 👩‍💻 Contributing Code
 
 To contribute to this project, please follow a ["fork and pull request"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow.
-Please do not try to push directly to this repo unless you are maintainer.
+Please do not try to push directly to this repo unless you are a maintainer.
 
 Please follow the checked-in pull request template when opening pull requests. Note related issues and tag relevant
 maintainers.
@@ -21,7 +21,7 @@ It's essential that we maintain great documentation and testing. If you:
 - Fix a bug
   - Add a relevant unit or integration test when possible. These live in `tests/unit_tests` and `tests/integration_tests`.
 - Make an improvement
-  - Update any affected example notebooks and documentation. These lives in `docs`.
+  - Update any affected example notebooks and documentation. These live in `docs`.
   - Update unit and integration tests when relevant.
 - Add a feature
   - Add a demo notebook in `docs/modules`.
@@ -33,7 +33,7 @@ best way to get our attention.
 ### 🚩GitHub Issues
 
 Our [issues](https://github.com/hwchase17/langchain/issues) page is kept up to date
-with bugs, improvements, and feature requests. 
+with bugs, improvements, and feature requests.
 
 There is a taxonomy of labels to help with sorting and discovery of issues of interest. Please use these to help
 organize issues.
@@ -43,8 +43,8 @@ If you start working on an issue, please assign it to yourself.
 If you are adding an issue, please try to keep it focused on a single, modular bug/improvement/feature.
 If two issues are related, or blocking, please link them rather than combining them.
 
-We will try to keep these issues as up to date as possible, though
-with the rapid rate of develop in this field some may get out of date.
+We will try to keep these issues as up-to-date as possible, though
+with the rapid rate of development in this field some may get out of date.
 If you notice this happening, please let us know.
 
 ### 🙋Getting Help
@@ -61,11 +61,11 @@ we do not want these to get in the way of getting good code into the codebase.
 
 > **Note:** You can run this repository locally (which is described below) or in a [development container](https://containers.dev/) (which is described in the [.devcontainer folder](https://github.com/hwchase17/langchain/tree/master/.devcontainer)).
 
-This project uses [Poetry](https://python-poetry.org/) as a dependency manager. Check out Poetry's [documentation on how to install it](https://python-poetry.org/docs/#installation) on your system before proceeding.
+This project uses [Poetry](https://python-poetry.org/) v1.5.1 as a dependency manager. Check out Poetry's [documentation on how to install it](https://python-poetry.org/docs/#installation) on your system before proceeding.
 
-❗Note: If you use `Conda` or `Pyenv` as your environment / package manager, avoid dependency conflicts by doing the following first:
+❗Note: If you use `Conda` or `Pyenv` as your environment/package manager, avoid dependency conflicts by doing the following first:
 1. *Before installing Poetry*, create and activate a new Conda env (e.g. `conda create -n langchain python=3.9`)
-2. Install Poetry (see above)
+2. Install Poetry v1.5.1 (see above)
 3. Tell Poetry to use the virtualenv python environment (`poetry config virtualenvs.prefer-active-python true`)
 4. Continue with the following steps.
 
@@ -73,21 +73,21 @@ There are two separate projects in this repository:
 - `langchain`: core langchain code, abstractions, and use cases
 - `langchain.experimental`: more experimental code
 
-Each of these has their OWN development environment. 
+Each of these has their OWN development environment.
 In order to run any of the commands below, please move into their respective directories.
 For example, to contribute to `langchain` run `cd libs/langchain` before getting started with the below.
 
 To install requirements:
 
 ```bash
-poetry install -E all
+poetry install --with test
 ```
 
-This will install all requirements for running the package, examples, linting, formatting, tests, and coverage. Note the `-E all` flag will install all optional dependencies necessary for integration testing.
+This will install all requirements for running the package, examples, linting, formatting, tests, and coverage.
 
-❗Note: If you're running Poetry 1.4.1 and receive a `WheelFileValidationError` for `debugpy` during installation, you can try either downgrading to Poetry 1.4.0 or disabling "modern installation" (`poetry config installer.modern-installation false`) and re-install requirements. See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for more details.
+❗Note: If during installation you receive a `WheelFileValidationError` for `debugpy`, please make sure you are running Poetry v1.5.1. This bug was present in older versions of Poetry (e.g. 1.4.1) and has been resolved in newer releases. If you are still seeing this bug on v1.5.1, you may also try disabling "modern installation" (`poetry config installer.modern-installation false`) and re-installing requirements. See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for more details.
 
-Now, you should be able to run the common tasks in the following section. To double check, run `make test`, all tests should pass. If they don't you may need to pip install additional dependencies, such as `numexpr` and `openapi_schema_pydantic`.
+Now assuming `make` and `pytest` are installed, you should be able to run the common tasks in the following section. To double check, run `make test` under `libs/langchain`, all tests should pass. If they don't, you may need to pip install additional dependencies, such as `numexpr` and `openapi_schema_pydantic`.
 
 ## ✅ Common Tasks
 
@@ -134,7 +134,7 @@ We recognize linting can be annoying - if you do not want to do it, please conta
 ### Spellcheck
 
 Spellchecking for this project is done via [codespell](https://github.com/codespell-project/codespell).
-Note that `codespell` finds common typos, so could have false-positive (correctly spelled but rarely used) and false-negatives (not finding misspelled) words.
+Note that `codespell` finds common typos, so it could have false-positive (correctly spelled but rarely used) and false-negatives (not finding misspelled) words.
 
 To check spelling for this project:
 
@@ -174,10 +174,10 @@ Langchain relies heavily on optional dependencies to keep the Langchain package 
 If you're adding a new dependency to Langchain, assume that it will be an optional dependency, and
 that most users won't have it installed.
 
-Users that do not have the dependency installed should be able to **import** your code without
-any side effects (no warnings, no errors, no exceptions). 
+Users who do not have the dependency installed should be able to **import** your code without
+any side effects (no warnings, no errors, no exceptions).
 
-To introduce the dependency to the pyproject.toml file correctly, please do the following: 
+To introduce the dependency to the pyproject.toml file correctly, please do the following:
 
 1. Add the dependency to the main group as an optional dependency
   ```bash
@@ -188,7 +188,7 @@ To introduce the dependency to the pyproject.toml file correctly, please do the 
   ```bash
   poetry lock --no-update
   ```
-4. Add a unit test that the very least attempts to import the new code. Ideally the unit
+4. Add a unit test that the very least attempts to import the new code. Ideally, the unit
 test makes use of lightweight fixtures to test the logic of the code.
 5. Please use the `@pytest.mark.requires(package_name)` decorator for any tests that require the dependency.
 
@@ -220,7 +220,7 @@ If you add new logic, please add a unit test.
 
 Integration tests cover logic that requires making calls to outside APIs (often integration with other services).
 
-**warning** Almost no tests should be integration tests. 
+**warning** Almost no tests should be integration tests.
 
   Tests that require making network connections make it difficult for other
   developers to test the code.
@@ -238,7 +238,7 @@ If you add support for a new external API, please add a new integration test.
 
 ### Adding a Jupyter Notebook
 
-If you are adding a Jupyter notebook example, you'll want to install the optional `dev` dependencies.
+If you are adding a Jupyter Notebook example, you'll want to install the optional `dev` dependencies.
 
 To install dev dependencies:
 
@@ -307,4 +307,3 @@ even patch releases may contain [non-backwards-compatible changes](https://semve
 
 If your contribution has made its way into a release, we will want to give you credit on Twitter (only if you want though)!
 If you have a Twitter account you would like us to mention, please let us know in the PR or in another manner.
-

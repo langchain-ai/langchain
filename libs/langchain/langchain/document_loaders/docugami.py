@@ -1,5 +1,3 @@
-"""Loads processed documents from Docugami."""
-
 import io
 import logging
 import os
@@ -8,16 +6,17 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import requests
-from pydantic import BaseModel, root_validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.pydantic_v1 import BaseModel, root_validator
 
 TD_NAME = "{http://www.w3.org/1999/xhtml}td"
 TABLE_NAME = "{http://www.w3.org/1999/xhtml}table"
 
 XPATH_KEY = "xpath"
 DOCUMENT_ID_KEY = "id"
+DOCUMENT_SOURCE_KEY = "source"
 DOCUMENT_NAME_KEY = "name"
 STRUCTURE_KEY = "structure"
 TAG_KEY = "tag"
@@ -29,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class DocugamiLoader(BaseLoader, BaseModel):
-    """Loads processed docs from Docugami.
+    """Load from `Docugami`.
 
     To use, you should have the ``lxml`` python package installed.
     """
@@ -145,8 +144,9 @@ class DocugamiLoader(BaseLoader, BaseModel):
             """Create a Document from a node and text."""
             metadata = {
                 XPATH_KEY: _xpath_for_chunk(node),
-                DOCUMENT_ID_KEY: document["id"],
-                DOCUMENT_NAME_KEY: document["name"],
+                DOCUMENT_ID_KEY: document[DOCUMENT_ID_KEY],
+                DOCUMENT_NAME_KEY: document[DOCUMENT_NAME_KEY],
+                DOCUMENT_SOURCE_KEY: document[DOCUMENT_NAME_KEY],
                 STRUCTURE_KEY: node.attrib.get("structure", ""),
                 TAG_KEY: re.sub(r"\{.*\}", "", node.tag),
             }

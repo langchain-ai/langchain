@@ -128,6 +128,10 @@ const config = {
           hideable: true,
         },
       },
+      colorMode: {
+        disableSwitch: false,
+        respectPrefersColorScheme: true,
+      },
       prism: {
         theme: {
           ...baseLightCodeBlockTheme,

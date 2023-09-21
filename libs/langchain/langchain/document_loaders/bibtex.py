@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class BibtexLoader(BaseLoader):
-    """Loads a bibtex file into a list of Documents.
+    """Load a `bibtex` file.
 
     Each document represents one entry from the bibtex file.
 

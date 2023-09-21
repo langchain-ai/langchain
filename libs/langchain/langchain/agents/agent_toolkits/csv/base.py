@@ -1,3 +1,4 @@
+from io import IOBase
 from typing import Any, List, Optional, Union
 
 from langchain.agents.agent import AgentExecutor
@@ -7,7 +8,7 @@ from langchain.schema.language_model import BaseLanguageModel
 
 def create_csv_agent(
     llm: BaseLanguageModel,
-    path: Union[str, List[str]],
+    path: Union[str, IOBase, List[Union[str, IOBase]]],
     pandas_kwargs: Optional[dict] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
@@ -20,14 +21,14 @@ def create_csv_agent(
         )
 
     _kwargs = pandas_kwargs or {}
-    if isinstance(path, str):
+    if isinstance(path, (str, IOBase)):
         df = pd.read_csv(path, **_kwargs)
     elif isinstance(path, list):
         if not all(isinstance(item, str) for item in path):
-            raise ValueError("Expected all elements in the list to be strings.")
+            raise ValueError(f"Expected all elements in the list to be strings, got {type(path)}.")
         dfs = [pd.read_csv(item, **_kwargs) for item in path]
         df = pd.concat(dfs, ignore_index=True)
     else:
-        raise ValueError("Expected str or list, got {type(path)}")
+        raise ValueError(f"Expected str or list, got {type(path)}")
 
     return create_pandas_dataframe_agent(llm, df, **kwargs)
