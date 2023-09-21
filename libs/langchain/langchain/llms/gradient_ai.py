@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 import aiohttp
 import requests
@@ -194,8 +194,8 @@ class GradientLLM(LLM):
     async def _acall(
         self,
         prompt: str,
-        stop: List[str] | None = None,
-        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        stop: Union[List[str], None] = None,
+        run_manager: Union[AsyncCallbackManagerForLLMRun, None] = None,
         **kwargs: Any,
     ) -> str:
         """Async Call to Gradients API `model/{id}/complete`.
