@@ -12,7 +12,7 @@ possible solutions to a problem.
 from __future__ import annotations
 
 from textwrap import indent
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Awaitable
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -106,7 +106,6 @@ class ToTChain(Chain):
             run_manager.on_text(
                 text=text, color=colors[thought.validity], verbose=self.verbose
             )
-        return
 
     def _call(
         self,
@@ -165,6 +164,9 @@ class ToTChain(Chain):
             thought_text = await thought_generator.next_thought(
                 problem_description, thoughts_path, callbacks=_run_manager.get_child()
             )
+            # Ensure that thought_text is awaitable (if it's not already)
+            if not isinstance(thought_text, Awaitable):
+                thought_text = asyncio.ensure_future(thought_text)
             checker_inputs["thoughts"] = thoughts_path + (thought_text,)
             thought_validity = (await self.checker(checker_inputs, callbacks=_run_manager.get_child()))[
                 "validity"
