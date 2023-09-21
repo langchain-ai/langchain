@@ -107,5 +107,5 @@ class BedrockChat(BaseChatModel, BedrockBase):
         **kwargs: Any,
     ) -> ChatResult:
         raise NotImplementedError(
-            """Bedrock doesn't support async stream requests at the moment."""
+            """Bedrock doesn't support async generation requests at the moment."""
         )
