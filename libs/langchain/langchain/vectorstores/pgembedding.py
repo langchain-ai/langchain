@@ -360,6 +360,13 @@ class PGEmbedding(VectorStore):
                             value_case_insensitive[IN]
                         )
                         filter_clauses.append(filter_by_metadata)
+                    elif isinstance(value, dict) and "substring" in map(
+                        str.lower, value
+                    ):
+                        filter_by_metadata = EmbeddingStore.cmetadata[key].astext.ilike(
+                            f"%{value['substring']}%"
+                        )
+                        filter_clauses.append(filter_by_metadata)
                     else:
                         filter_by_metadata = EmbeddingStore.cmetadata[
                             key
