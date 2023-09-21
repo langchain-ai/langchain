@@ -24,43 +24,59 @@ from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
 class LogEntry(TypedDict):
     id: str
+    """ID of the sub-run."""
     name: str
+    """Name of the object being run."""
     type: str
+    """Type of the object being run, eg. prompt, chain, llm, etc."""
     tags: List[str]
+    """List of tags for the run."""
     metadata: Dict[str, Any]
+    """Key-value pairs of metadata for the run."""
     start_time: str
+    """ISO-8601 timestamp of when the run started."""
 
     streamed_output_str: List[str]
+    """List of LLM tokens streamed by this run, if applicable."""
     final_output: Optional[Any]
+    """Final output of this run.
+    Only available after the run has finished successfully."""
     end_time: Optional[str]
+    """ISO-8601 timestamp of when the run ended.
+    Only available after the run has finished."""
 
 
-class LogState(TypedDict):
+class RunState(TypedDict):
     id: str
-    entries: list[LogEntry]
+    """ID of the run."""
     streamed_output: List[Any]
+    """List of output chunks streamed by Runnable.stream()"""
     final_output: Optional[Any]
+    """Final output of the run, usually the result of aggregating streamed_output.
+    Only available after the run has finished successfully."""
+
+    logs: list[LogEntry]
+    """List of sub-runs contained in this run, if any, in the order they were started.
+    If filters were supplied, this list will contain only the runs that matched the 
+    filters."""
 
 
-class Log:
-    state: Optional[LogState]
-    """Current state of the log, obtained from applying all ops to an empty dict."""
+class RunLogPatch:
     ops: List[Dict[str, Any]]
-    """List of jsonpatch operations that created state."""
+    """List of jsonpatch operations, which describe how to create the run state
+    from an empty dict. This is the minimal representation of the log, designed to
+    be serialized as JSON and sent over the wire to reconstruct the log on the other
+    side. Reconstruction of the state can be done with any jsonpatch-compliant library,
+    see https://jsonpatch.com for more information."""
 
-    def __init__(
-        self, ops: List[Dict[str, Any]], *, state: Optional[LogState] = None
-    ) -> None:
+    def __init__(self, *ops: Dict[str, Any]) -> None:
         self.ops = ops
-        self.state = state
 
-    def __add__(self, other: Union[Log, Any]) -> Log:
-        if isinstance(other, Log):
+    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLogPatch:
+        if type(other) == RunLogPatch:
             ops = self.ops + other.ops
-            state = jsonpatch.apply_patch(
-                self.state, ops if self.state is None else other.ops
-            )
-            return Log(ops, state=state)
+            state = jsonpatch.apply_patch(None, ops)
+            return RunLog(*ops, state=state)
 
         raise TypeError(
             f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
@@ -69,17 +85,34 @@ class Log:
     def __repr__(self) -> str:
         from pprint import pformat
 
-        if self.state is None:
-            return f"Log(ops={pformat(self.ops)})"
-        else:
-            return f"Log(state={pformat(self.state)})"
+        return f"RunLogPatch(ops={pformat(self.ops)})"
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, Log)
-            and self.ops == other.ops
-            and self.state == other.state
+        return isinstance(other, RunLogPatch) and self.ops == other.ops
+
+
+class RunLog(RunLogPatch):
+    state: RunState
+    """Current state of the log, obtained from applying all ops in sequence."""
+
+    def __init__(self, *ops: Dict[str, Any], state: RunState) -> None:
+        super().__init__(*ops)
+        self.state = state
+
+    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLogPatch:
+        if type(other) == RunLogPatch:
+            ops = self.ops + other.ops
+            state = jsonpatch.apply_patch(self.state, other.ops)
+            return RunLog(*ops, state=state)
+
+        raise TypeError(
+            f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
         )
+
+    def __repr__(self) -> str:
+        from pprint import pformat
+
+        return f"RunLog(state={pformat(self.state)})"
 
 
 class LogStreamCallbackHandler(BaseTracer):
@@ -105,14 +138,14 @@ class LogStreamCallbackHandler(BaseTracer):
         self.exclude_tags = exclude_tags
 
         send_stream, receive_stream = create_memory_object_stream(
-            math.inf, item_type=Log
+            math.inf, item_type=RunLogPatch
         )
         self.lock = threading.Lock()
         self.send_stream = send_stream
         self.receive_stream = receive_stream
         self._index_map: Dict[UUID, int] = {}
 
-    def __aiter__(self) -> AsyncIterator[Log]:
+    def __aiter__(self) -> AsyncIterator[RunLogPatch]:
         return self.receive_stream.__aiter__()
 
     def include_run(self, run: Run) -> bool:
@@ -148,25 +181,24 @@ class LogStreamCallbackHandler(BaseTracer):
 
     def _persist_run(self, run: Run) -> None:
         # This is a legacy method only called once for an entire run tree
+        # therefore not useful here
         pass
 
     def _on_run_create(self, run: Run) -> None:
         """Start a run."""
         if run.parent_run_id is None:
             self.send_stream.send_nowait(
-                Log(
-                    [
-                        {
-                            "op": "replace",
-                            "path": "",
-                            "value": LogState(
-                                id=run.id,
-                                entries=[],
-                                streamed_output=[],
-                                final_output=None,
-                            ),
-                        }
-                    ]
+                RunLogPatch(
+                    {
+                        "op": "replace",
+                        "path": "",
+                        "value": RunState(
+                            id=run.id,
+                            streamed_output=[],
+                            final_output=None,
+                            logs=[],
+                        ),
+                    }
                 )
             )
 
@@ -179,26 +211,22 @@ class LogStreamCallbackHandler(BaseTracer):
 
         # Add the run to the stream
         self.send_stream.send_nowait(
-            Log(
-                [
-                    {
-                        "op": "add",
-                        "path": f"/entries/{self._index_map[run.id]}",
-                        "value": LogEntry(
-                            id=str(run.id),
-                            name=run.name,
-                            type=run.run_type,
-                            tags=run.tags or [],
-                            metadata=run.extra.get("metadata", {}),
-                            start_time=run.start_time.isoformat(
-                                timespec="milliseconds"
-                            ),
-                            streamed_output_str=[],
-                            final_output=None,
-                            end_time=None,
-                        ),
-                    }
-                ]
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": f"/logs/{self._index_map[run.id]}",
+                    "value": LogEntry(
+                        id=str(run.id),
+                        name=run.name,
+                        type=run.run_type,
+                        tags=run.tags or [],
+                        metadata=run.extra.get("metadata", {}),
+                        start_time=run.start_time.isoformat(timespec="milliseconds"),
+                        streamed_output_str=[],
+                        final_output=None,
+                        end_time=None,
+                    ),
+                }
             )
         )
 
@@ -211,32 +239,28 @@ class LogStreamCallbackHandler(BaseTracer):
                 return
 
             self.send_stream.send_nowait(
-                Log(
-                    [
-                        {
-                            "op": "add",
-                            "path": f"/entries/{index}/final_output",
-                            "value": run.outputs,
-                        },
-                        {
-                            "op": "add",
-                            "path": f"/entries/{index}/end_time",
-                            "value": run.end_time.isoformat(timespec="milliseconds"),
-                        },
-                    ]
+                RunLogPatch(
+                    {
+                        "op": "add",
+                        "path": f"/logs/{index}/final_output",
+                        "value": run.outputs,
+                    },
+                    {
+                        "op": "add",
+                        "path": f"/logs/{index}/end_time",
+                        "value": run.end_time.isoformat(timespec="milliseconds"),
+                    },
                 )
             )
         finally:
             if run.parent_run_id is None:
                 self.send_stream.send_nowait(
-                    Log(
-                        [
-                            {
-                                "op": "replace",
-                                "path": "/final_output",
-                                "value": run.outputs,
-                            }
-                        ]
+                    RunLogPatch(
+                        {
+                            "op": "replace",
+                            "path": "/final_output",
+                            "value": run.outputs,
+                        }
                     )
                 )
                 if self.auto_close:
@@ -255,13 +279,11 @@ class LogStreamCallbackHandler(BaseTracer):
             return
 
         self.send_stream.send_nowait(
-            Log(
-                [
-                    {
-                        "op": "add",
-                        "path": f"/entries/{index}/streamed_output_str/-",
-                        "value": token,
-                    }
-                ]
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": f"/logs/{index}/streamed_output_str/-",
+                    "value": token,
+                }
             )
         )

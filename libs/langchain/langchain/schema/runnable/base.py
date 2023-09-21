@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
 
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.tracers.log_stream import Log, LogStreamCallbackHandler
+from langchain.callbacks.tracers.log_stream import LogStreamCallbackHandler, RunLogPatch
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
@@ -204,7 +204,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Log]:
+    ) -> AsyncIterator[RunLogPatch]:
         """
         Stream all output from a runnable, as reported to the callback system.
         This includes all inner runs of LLMs, Retrievers, Tools, etc.
@@ -250,14 +250,12 @@ class Runnable(Generic[Input, Output], ABC):
             try:
                 async for chunk in self.astream(input, config, **kwargs):
                     await stream.send_stream.send(
-                        Log(
-                            [
-                                {
-                                    "op": "add",
-                                    "path": "/streamed_output/-",
-                                    "value": chunk,
-                                }
-                            ]
+                        RunLogPatch(
+                            {
+                                "op": "add",
+                                "path": "/streamed_output/-",
+                                "value": chunk,
+                            }
                         )
                     )
             finally:
