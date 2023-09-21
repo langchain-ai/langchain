@@ -36,7 +36,7 @@ _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain_store"
 
 
 class TimescaleVector(VectorStore):
-    """VectorStore implementation using the timescale vector client to store vectores
+    """VectorStore implementation using the timescale vector client to store vectors
     in Postgres.
 
     To use, you should have the ``timescale_vector`` python package installed.
