@@ -34,6 +34,8 @@ if TYPE_CHECKING:
     )
 
 
+from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.tracers.log_stream import LogStreamCallbackHandler, RunLogPatch
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
@@ -189,6 +191,89 @@ class Runnable(Generic[Input, Output], ABC):
         Subclasses should override this method if they support streaming output.
         """
         yield await self.ainvoke(input, config, **kwargs)
+
+    async def astream_log(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        *,
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[RunLogPatch]:
+        """
+        Stream all output from a runnable, as reported to the callback system.
+        This includes all inner runs of LLMs, Retrievers, Tools, etc.
+
+        Output is streamed as Log objects, which include a list of
+        jsonpatch ops that describe how the state of the run has changed in each
+        step, and the final state of the run.
+
+        The jsonpatch ops can be applied in order to construct state.
+        """
+
+        # Create a stream handler that will emit Log objects
+        stream = LogStreamCallbackHandler(
+            auto_close=False,
+            include_names=include_names,
+            include_types=include_types,
+            include_tags=include_tags,
+            exclude_names=exclude_names,
+            exclude_types=exclude_types,
+            exclude_tags=exclude_tags,
+        )
+
+        # Assign the stream handler to the config
+        config = config or {}
+        callbacks = config.get("callbacks")
+        if callbacks is None:
+            config["callbacks"] = [stream]
+        elif isinstance(callbacks, list):
+            config["callbacks"] = callbacks + [stream]
+        elif isinstance(callbacks, BaseCallbackManager):
+            callbacks = callbacks.copy()
+            callbacks.inheritable_handlers.append(stream)
+            config["callbacks"] = callbacks
+        else:
+            raise ValueError(
+                f"Unexpected type for callbacks: {callbacks}."
+                "Expected None, list or AsyncCallbackManager."
+            )
+
+        # Call the runnable in streaming mode,
+        # add each chunk to the output stream
+        async def consume_astream() -> None:
+            try:
+                async for chunk in self.astream(input, config, **kwargs):
+                    await stream.send_stream.send(
+                        RunLogPatch(
+                            {
+                                "op": "add",
+                                "path": "/streamed_output/-",
+                                "value": chunk,
+                            }
+                        )
+                    )
+            finally:
+                await stream.send_stream.aclose()
+
+        # Start the runnable in a task, so we can start consuming output
+        task = asyncio.create_task(consume_astream())
+
+        try:
+            # Yield each chunk from the output stream
+            async for log in stream:
+                yield log
+        finally:
+            # Wait for the runnable to finish, if not cancelled (eg. by break)
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
     def transform(
         self,
