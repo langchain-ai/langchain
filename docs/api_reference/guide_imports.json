@@ -2136,6 +2136,10 @@
     "DiscordChatLoader": {
         "Discord": "https://python.langchain.com/docs/integrations/document_loaders/discord"
     },
+    "UpstashRedisCache": {
+        "Redis": "https://python.langchain.com/docs/integrations/providers/upstash",
+        "Caching integrations": "https://python.langchain.com/docs/integrations/llms/llm_caching"
+    },
     "RedisCache": {
         "Redis": "https://python.langchain.com/docs/integrations/providers/redis",
         "Caching integrations": "https://python.langchain.com/docs/integrations/llms/llm_caching"
