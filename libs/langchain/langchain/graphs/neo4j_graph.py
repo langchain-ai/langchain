@@ -89,7 +89,7 @@ class Neo4jGraph:
         rel_properties = [el["output"] for el in self.query(rel_properties_query)]
         relationships = [el["output"] for el in self.query(rel_query)]
 
-        self._structured_schema = {
+        self.structured_schema = {
             "node_props": {el["labels"]: el["properties"] for el in node_properties},
             "rel_props": {el["type"]: el["properties"] for el in rel_properties},
             "relationships": relationships,
