@@ -183,17 +183,22 @@ def test_sql_database_run_sqlalchemy_selectable(db: SQLDatabase) -> None:
     expected_full_output = "[{'user_id': 17, 'user_name': 'hwchase', 'user_bio': None}]"
     assert full_output == expected_full_output
 
-def test_sql_database_compile() -> None:
+
+def test_sql_database_compile_command(db: SQLDatabase) -> None:
     """Test that commands can be run successfully and returned in correct format."""
     stmt = insert(user).values(
         user_id=31, user_name="bpafoshizle", user_bio="Married, father of 2 " * 24
     )
     db._execute(stmt)
 
-    raw_command = "select distinct user.user_name from user order by user_name LIMIT :limit"
+    raw_command = (
+        "select distinct user.user_name from user order by user_name LIMIT :limit"
+    )
     params = {"limit": 24}
     command = db.compile(raw_command, params)
-    expected_command = "select distinct user.user_name from user order by user_name LIMIT 24"
+    expected_command = (
+        "select distinct user.user_name from user order by user_name LIMIT 24"
+    )
     assert command == expected_command
     output = db.run(command)
     expected_output = f"[('bpafoshizle',)]"
