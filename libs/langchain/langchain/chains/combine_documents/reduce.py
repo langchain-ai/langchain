@@ -244,6 +244,8 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             )
 
         _token_max = token_max or self.token_max
+        if num_tokens is not None:
+            pre_num_tokens = num_tokens
         while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = _split_list_of_docs(
                 result_docs, length_func, _token_max, **kwargs
@@ -253,6 +255,22 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 new_doc = _collapse_docs(docs, _collapse_docs_func, **kwargs)
                 result_docs.append(new_doc)
             num_tokens = length_func(result_docs, **kwargs)
+
+            # avoid infinite loop
+            if num_tokens > pre_num_tokens * 0.9:
+                truncate_result_docs = []
+                for doc in result_docs:
+                    truncate_len = int(len(doc.page_content) * 0.9)
+                    truncate_page_content = doc.page_content[:truncate_len]
+                    truncate_doc = Document(
+                        page_content=truncate_page_content, metadata=doc.metadata
+                    )
+                    truncate_result_docs.append(truncate_doc)
+                result_docs = truncate_result_docs
+                num_tokens = length_func(result_docs, **kwargs)
+
+            pre_num_tokens = num_tokens
+
         return result_docs, {}
 
     async def _acollapse(
