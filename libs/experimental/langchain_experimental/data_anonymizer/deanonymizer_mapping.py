@@ -23,17 +23,24 @@ class DeanonymizerMapping:
         """Update the deanonymizer mapping with new values
         Duplicated values will not be added
         """
-        new_values_seen = set()
+        seen_values = set()
 
         for entity_type, values in new_mapping.items():
-            for k, v in values.items():
-                # Make sure it is not a duplicate value
+            count = len(self.mapping[entity_type]) + 1
+
+            for key, value in values.items():
                 if (
-                    v not in self.mapping[entity_type].values()
-                    and v not in new_values_seen
+                    value not in seen_values
+                    and value not in self.mapping[entity_type].values()
                 ):
-                    self.mapping[entity_type][k] = v
-                    new_values_seen.update({v})
+                    new_key = (
+                        f"<{entity_type}_{count}>"
+                        if key.startswith("<") and key.endswith(">")
+                        else key
+                    )
+                    self.mapping[entity_type][new_key] = value
+                    seen_values.add(value)
+                    count += 1
 
 
 def create_anonymizer_mapping(
@@ -75,20 +82,23 @@ def create_anonymizer_mapping(
     analyzer_results = sorted(analyzer_results, key=lambda d: d.start)
     anonymizer_results.items = sorted(anonymizer_results.items, key=lambda d: d.start)
 
-    new_anonymizer_mapping: MappingDataType = defaultdict(dict)
+    mapping: MappingDataType = defaultdict(dict)
+    count: dict = defaultdict(int)
 
-    for analyzed_entity, anonymized_entity in zip(
-        analyzer_results, anonymizer_results.items
-    ):
-        original_value = original_text[analyzed_entity.start : analyzed_entity.end]
+    for analyzed, anonymized in zip(analyzer_results, anonymizer_results.items):
+        original_value = original_text[analyzed.start : analyzed.end]
+        anonymized_value = (
+            anonymized.text
+            if not anonymized.text.startswith("<")
+            else f"<{anonymized.entity_type}_{count[anonymized.entity_type] + 1}>"
+        )
 
-        if is_reversed:
-            new_anonymizer_mapping[anonymized_entity.entity_type][
-                anonymized_entity.text
-            ] = original_value
-        else:
-            new_anonymizer_mapping[anonymized_entity.entity_type][
-                original_value
-            ] = anonymized_entity.text
+        entity_type = anonymized.entity_type
+        mapping_key = anonymized_value if is_reversed else original_value
+        mapping_value = original_value if is_reversed else anonymized_value
 
-    return new_anonymizer_mapping
+        if mapping_key not in mapping[entity_type]:
+            mapping[entity_type][mapping_key] = mapping_value
+            count[entity_type] += 1
+
+    return mapping
