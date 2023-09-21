@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from aiohttp import ClientSession
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.callbacks.manager import CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.pydantic_v1 import Extra, root_validator
 from langchain.requests import Requests
@@ -29,7 +29,7 @@ class DeepInfra(LLM):
     """
 
     model_id: str = DEFAULT_MODEL_ID
-    model_kwargs: Optional[dict] = None
+    model_kwargs: Optional[Dict] = None
 
     deepinfra_api_token: Optional[str] = None
 
@@ -63,13 +63,13 @@ class DeepInfra(LLM):
     def _url(self) -> str:
         return f"https://api.deepinfra.com/v1/inference/{self.model_id}"
 
-    def _headers(self) -> dict:
+    def _headers(self) -> Dict:
         return {
             "Authorization": f"bearer {self.deepinfra_api_token}",
             "Content-Type": "application/json",
         }
 
-    def _body(self, prompt: str, kwargs: Any):
+    def _body(self, prompt: str, kwargs: Any) -> Dict:
         model_kwargs = self.model_kwargs or {}
         model_kwargs = {**model_kwargs, **kwargs}
 
@@ -78,7 +78,7 @@ class DeepInfra(LLM):
             **model_kwargs,
         }
 
-    def _handle_status(self, code, text):
+    def _handle_status(self, code: int, text: Any) -> None:
         if code >= 500:
             raise Exception(f"DeepInfra Server: Error {code}")
         elif code >= 400:
@@ -123,7 +123,7 @@ class DeepInfra(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         async with ClientSession() as session:
