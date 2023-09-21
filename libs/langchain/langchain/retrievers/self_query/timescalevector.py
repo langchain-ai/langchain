@@ -1,6 +1,6 @@
-from typing import Tuple, Union
+from __future__ import annotations
 
-from timescale_vector import client
+from typing import TYPE_CHECKING, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -10,6 +10,9 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+
+if TYPE_CHECKING:
+    from timescale_vector import client
 
 
 class TimescaleVectorTranslator(Visitor):
