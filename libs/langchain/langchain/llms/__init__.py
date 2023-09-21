@@ -49,6 +49,7 @@ from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.google_palm import GooglePalm
 from langchain.llms.gooseai import GooseAI
 from langchain.llms.gpt4all import GPT4All
+from langchain.llms.gradient_ai import GradientLLM
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
@@ -119,6 +120,7 @@ __all__ = [
     "GPT4All",
     "GooglePalm",
     "GooseAI",
+    "GradientLLM",
     "HuggingFaceEndpoint",
     "HuggingFaceHub",
     "HuggingFacePipeline",
@@ -193,6 +195,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "forefrontai": ForefrontAI,
     "google_palm": GooglePalm,
     "gooseai": GooseAI,
+    "gradient": GradientLLM,
     "gpt4all": GPT4All,
     "huggingface_endpoint": HuggingFaceEndpoint,
     "huggingface_hub": HuggingFaceHub,
