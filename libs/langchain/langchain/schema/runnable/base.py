@@ -201,17 +201,20 @@ class Runnable(Generic[Input, Output], ABC):
         Subclasses should override this method if they can start producing output while
         input is still being generated.
         """
-        final: Union[Input, None] = None
+        final: Input
+        got_first_val = False
 
         for chunk in input:
-            if final is None:
+            if not got_first_val:
                 final = chunk
+                got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
 
-        yield from self.stream(final, config, **kwargs)
+        if got_first_val:
+            yield from self.stream(final, config, **kwargs)
 
     async def atransform(
         self,
@@ -224,18 +227,21 @@ class Runnable(Generic[Input, Output], ABC):
         Subclasses should override this method if they can start producing output while
         input is still being generated.
         """
-        final: Union[Input, None] = None
+        final: Input
+        got_first_val = False
 
         async for chunk in input:
-            if final is None:
+            if not got_first_val:
                 final = chunk
+                got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
 
-        async for output in self.astream(final, config, **kwargs):
-            yield output
+        if got_first_val:
+            async for output in self.astream(final, config, **kwargs):
+                yield output
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """

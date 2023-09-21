@@ -47,7 +47,7 @@ def extract_sub_links(
     Args:
         raw_html: original html
         base_url: the base url of the html
-        pattern: Regex to use for extracting links from raw html.
+        pattern: Regex to use for extracting liuks from raw html.
         prevent_outside: If True, ignore external links which are not children
             of the base url.
 
