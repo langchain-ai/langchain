@@ -62,12 +62,11 @@ class ArxivAPIWrapper(BaseModel):
         """Check if a query is an arxiv identifier."""
         arxiv_identifier_pattern = r"\d{2}(0[1-9]|1[0-2])\.\d{4,5}(v\d+|)|\d{7}.*"
         for query_item in query[: self.ARXIV_MAX_QUERY_LENGTH].split():
-            if not re.match(arxiv_identifier_pattern, query_item):
+            match_result = re.match(arxiv_identifier_pattern, query_item)
+            if not match_result:
                 return False
-            if (
-                not re.match(arxiv_identifier_pattern, query_item).group(0)
-                == query_item
-            ):
+            assert match_result is not None
+            if not match_result.group(0) == query_item:
                 return False
         return True
 
