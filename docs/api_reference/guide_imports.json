@@ -3255,6 +3255,9 @@
     "LocalFileStore": {
         "Caching Embeddings": "https://python.langchain.com/docs/modules/data_connection/caching_embeddings"
     },
+    "UpstashRedisStore": {
+        "Caching Embeddings": "https://python.langchain.com/docs/modules/data_connection/caching_embeddings"
+    },
     "RedisStore": {
         "Caching Embeddings": "https://python.langchain.com/docs/modules/data_connection/caching_embeddings"
     },
