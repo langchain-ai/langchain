@@ -284,9 +284,12 @@ Functions
 def main() -> None:
     """Generate the reference.rst file for each package."""
     lc_members = _load_package_modules(PKG_DIR)
-    # Put tools.render at the top level
+    # Put some packages at top level
     tools = _load_package_modules(PKG_DIR, "tools")
     lc_members['tools.render'] = tools['render']
+    agents = _load_package_modules(PKG_DIR, "agents")
+    lc_members['agents.output_parsers'] = agents['output_parsers']
+    lc_members['agents.format_scratchpad'] = agents['format_scratchpad']
     lc_doc = ".. _api_reference:\n\n" + _construct_doc("langchain", lc_members)
     with open(WRITE_FILE, "w") as f:
         f.write(lc_doc)
