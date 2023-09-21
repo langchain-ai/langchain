@@ -103,10 +103,11 @@ class ToTChain(Chain):
                 ThoughtValidity.VALID_INTERMEDIATE: "yellow",
                 ThoughtValidity.INVALID: "red",
             }
-            text = indent(f"Thought: {thought.text}\n", prefix="    " * level)
+            text = indent(f"Thought: {thought.text}\n", prefix="  " * level)
             run_manager.on_text(
                 text=text, color=colors[thought.validity], verbose=self.verbose
             )
+        return None
 
     def _call(
         self,
@@ -144,8 +145,14 @@ class ToTChain(Chain):
 
         return {self.output_key: "No solution found"}
 
+    def store(
+        self,
+        thought: Thought,
+    ) -> None:
+        self.thought_memory.append(thought)
+        return None
 
-
+    
     async def _acall(
         self,
         inputs: Dict[str, Any],
@@ -176,18 +183,15 @@ class ToTChain(Chain):
                 "validity"
             ]
             thought = Thought(text=thought_text, validity=thought_validity)
-    
             if thought.validity == ThoughtValidity.VALID_FINAL:
                 break
     
-            await asyncio.ensure_future(self.tot_memory.store(thought))
+            await self.tot_memory.store(thought)
             await self.log_thought(thought, level, run_manager)
             thoughts_path = await asyncio.ensure_future(self.tot_controller(self.tot_memory))
             level += 1
     
         return {self.output_key: "No solution found"}
-
-
 
     @property
     def _chain_type(self) -> str:
