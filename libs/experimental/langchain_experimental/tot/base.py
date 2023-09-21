@@ -107,7 +107,7 @@ class ToTChain(Chain):
             run_manager.on_text(
                 text=text, color=colors[thought.validity], verbose=self.verbose
             )
-        return None
+
     def _call(
         self,
         inputs: Dict[str, Any],
@@ -145,6 +145,7 @@ class ToTChain(Chain):
         return {self.output_key: "No solution found"}
 
 
+
     async def _acall(
         self,
         inputs: Dict[str, Any],
@@ -152,7 +153,7 @@ class ToTChain(Chain):
     ) -> Dict[str, str]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         if run_manager:
-            await run_manager.on_text(text="Starting the ToT solve procedure.\n")
+            await asyncio.ensure_future(run_manager.on_text(text="Starting the ToT solve procedure.\n"))
     
         problem_description = inputs["problem_description"]
         checker_inputs = {"problem_description": problem_description}
@@ -171,20 +172,21 @@ class ToTChain(Chain):
                 thought_text = asyncio.ensure_future(thought_text)
     
             checker_inputs["thoughts"] = thoughts_path + (thought_text,)
-            thought_validity = (await self.checker(checker_inputs, callbacks=_run_manager.get_child()))[
+            thought_validity = (await asyncio.ensure_future(self.checker(checker_inputs, callbacks=_run_manager.get_child())))[
                 "validity"
             ]
             thought = Thought(text=thought_text, validity=thought_validity)
-            if thought.validity == ThoughtValidity.VALID_FINAL:
-                await self.log_thought(thought, level, run_manager)
-                return {self.output_key: thought.text}
     
-            await self.tot_memory.store(thought)
+            if thought.validity == ThoughtValidity.VALID_FINAL:
+                break
+    
+            await asyncio.ensure_future(self.tot_memory.store(thought))
             await self.log_thought(thought, level, run_manager)
-            thoughts_path = await self.tot_controller(self.tot_memory)
+            thoughts_path = await asyncio.ensure_future(self.tot_controller(self.tot_memory))
             level += 1
     
         return {self.output_key: "No solution found"}
+
 
 
     @property
