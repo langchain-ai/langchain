@@ -856,7 +856,8 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                 expression_value = condition.invoke(
                     input,
                     config=patch_config(
-                        config, callbacks=run_manager.get_child(tag=f"condition:{idx}")
+                        config,
+                        callbacks=run_manager.get_child(tag=f"condition:{idx + 1}"),
                     ),
                 )
 
@@ -864,7 +865,8 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                     return runnable.invoke(
                         input,
                         config=patch_config(
-                            config, callbacks=run_manager.get_child(tag=f"branch:{idx}")
+                            config,
+                            callbacks=run_manager.get_child(tag=f"branch:{idx + 1}"),
                         ),
                     )
 
@@ -898,7 +900,8 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                 expression_value = await condition.ainvoke(
                     input,
                     config=patch_config(
-                        config, callbacks=run_manager.get_child(tag=f"condition:{idx}")
+                        config,
+                        callbacks=run_manager.get_child(tag=f"condition:{idx + 1}"),
                     ),
                 )
 
@@ -906,7 +909,8 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                     return await runnable.ainvoke(
                         input,
                         config=patch_config(
-                            config, callbacks=run_manager.get_child(tag=f"branch:{idx}")
+                            config,
+                            callbacks=run_manager.get_child(tag=f"branch:{idx + 1}"),
                         ),
                         **kwargs,
                     )
@@ -1709,7 +1713,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                         # mark each step as a child run
                         patch_config(
                             config,
-                            deep_copy_locals=True,
+                            copy_locals=True,
                             callbacks=run_manager.get_child(f"map:key:{key}"),
                         ),
                     )
@@ -2120,9 +2124,14 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         copy = cast(RunnableConfig, dict(self.config))
         if config:
             for key in config:
-                # Even though the keys aren't literals this is correct
-                # because both dicts are same type
-                copy[key] = config[key] or copy.get(key)  # type: ignore
+                if key == "metadata":
+                    copy[key] = {**copy.get(key, {}), **config[key]}  # type: ignore
+                elif key == "tags":
+                    copy[key] = (copy.get(key) or []) + config[key]  # type: ignore
+                else:
+                    # Even though the keys aren't literals this is correct
+                    # because both dicts are same type
+                    copy[key] = config[key] or copy.get(key)  # type: ignore
         return copy
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
@@ -2187,7 +2196,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             )
         else:
             configs = [
-                patch_config(self._merge_config(config), deep_copy_locals=True)
+                patch_config(self._merge_config(config), copy_locals=True)
                 for _ in range(len(inputs))
             ]
         return self.bound.batch(
@@ -2211,7 +2220,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             )
         else:
             configs = [
-                patch_config(self._merge_config(config), deep_copy_locals=True)
+                patch_config(self._merge_config(config), copy_locals=True)
                 for _ in range(len(inputs))
             ]
         return await self.bound.abatch(

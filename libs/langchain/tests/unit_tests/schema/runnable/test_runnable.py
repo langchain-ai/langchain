@@ -7,7 +7,7 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
-from langchain.callbacks.manager import Callbacks
+from langchain.callbacks.manager import Callbacks, collect_runs
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.callbacks.tracers.schemas import Run
@@ -216,7 +216,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -226,7 +226,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -297,7 +297,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=10,
             ),
         ),
@@ -307,7 +307,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=10,
             ),
         ),
@@ -1524,6 +1524,31 @@ def test_with_config_with_config() -> None:
     assert dumpd(
         llm.with_config({"metadata": {"a": "b"}}).with_config(tags=["a-tag"])
     ) == dumpd(llm.with_config({"metadata": {"a": "b"}, "tags": ["a-tag"]}))
+
+
+def test_metadata_is_merged() -> None:
+    """Test metadata and tags defined in with_config and at are merged/concatend."""
+
+    foo = RunnableLambda(lambda x: x).with_config({"metadata": {"my_key": "my_value"}})
+    expected_metadata = {
+        "my_key": "my_value",
+        "my_other_key": "my_other_value",
+    }
+    with collect_runs() as cb:
+        foo.invoke("hi", {"metadata": {"my_other_key": "my_other_value"}})
+        run = cb.traced_runs[0]
+    assert run.extra["metadata"] == expected_metadata
+
+
+def test_tags_are_appended() -> None:
+    """Test tags from with_config are concatenated with those in invocation."""
+
+    foo = RunnableLambda(lambda x: x).with_config({"tags": ["my_key"]})
+    with collect_runs() as cb:
+        foo.invoke("hi", {"tags": ["invoked_key"]})
+        run = cb.traced_runs[0]
+    assert isinstance(run.tags, list)
+    assert sorted(run.tags) == sorted(["my_key", "invoked_key"])
 
 
 def test_bind_bind() -> None:
