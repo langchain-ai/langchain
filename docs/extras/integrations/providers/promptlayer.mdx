@@ -19,13 +19,13 @@ There exists an PromptLayer OpenAI LLM wrapper, which you can access with
 from langchain.llms import PromptLayerOpenAI
 ```
 
-To tag your requests, use the argument `pl_tags` when instanializing the LLM
+To tag your requests, use the argument `pl_tags` when initializing the LLM
 ```python
 from langchain.llms import PromptLayerOpenAI
 llm = PromptLayerOpenAI(pl_tags=["langchain-requests", "chatbot"])
 ```
 
-To get the PromptLayer request id, use the argument `return_pl_id` when instanializing the LLM
+To get the PromptLayer request id, use the argument `return_pl_id` when initializing the LLM
 ```python
 from langchain.llms import PromptLayerOpenAI
 llm = PromptLayerOpenAI(return_pl_id=True)
@@ -42,7 +42,7 @@ You can use the PromptLayer request ID to add a prompt, score, or other metadata
 
 This LLM is identical to the [OpenAI](/docs/ecosystem/integrations/openai.html) LLM, except that
 - all your requests will be logged to your PromptLayer account
-- you can add `pl_tags` when instantializing to tag your requests on PromptLayer
+- you can add `pl_tags` when instantiating to tag your requests on PromptLayer
 - you can add `return_pl_id` when instantializing to return a PromptLayer request id to use [while tracking requests](https://magniv.notion.site/Track-4deee1b1f7a34c1680d085f82567dab9).
 
 
