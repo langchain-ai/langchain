@@ -223,9 +223,11 @@ class Tongyi(LLM):
                 if run_manager:
                     stream_resp_text = stream_resp["output"]["text"]
                     stream_resp_text = stream_resp_text.replace(temp, '')
-                    # Ali Cloud's streaming transmission interface, each return content will contain the output of the previous round(as of September 20, 2023, future updates to the Alibaba Cloud API may vary)
+                    # Ali Cloud's streaming transmission interface, each return content will contain the output 
+                    # of the previous round(as of September 20, 2023, future updates to the Alibaba Cloud API may vary)
                     run_manager.on_llm_new_token(stream_resp_text)
-                    # The implementation of streaming transmission primarily relies on the "on_llm_new_token" method of the streaming callback.
+                    # The implementation of streaming transmission primarily relies on the "on_llm_new_token" method 
+                    # of the streaming callback.
                 temp = stream_resp["output"]["text"]
 
                 generations.append(
@@ -239,9 +241,15 @@ class Tongyi(LLM):
                     ]
                 )
             generations.reverse()
-            # In the official implementation of the OpenAI API, the "generations" parameter passed to LLMResult seems to be a 1*1*1 two-dimensional list (including in non-streaming mode). 
-            # Considering that Alibaba Cloud's streaming transmission (as of September 20, 2023, future updates to the Alibaba Cloud API may vary)includes the output of the previous round in each return, 
-            # reversing this "generations" list should suffice (This is the solution with the least amount of changes to the source code, while still allowing for convenient modifications in the future, 
+            # In the official implementation of the OpenAI API, 
+            # the "generations" parameter passed to LLMResult seems to be a 1*1*1 two-dimensional list 
+            # (including in non-streaming mode). 
+            # Considering that Alibaba Cloud's streaming transmission 
+            # (as of September 20, 2023, future updates to the Alibaba Cloud API may vary)
+            # includes the output of the previous round in each return, 
+            # reversing this "generations" list should suffice 
+            # (This is the solution with the least amount of changes to the source code, 
+            # while still allowing for convenient modifications in the future, 
             # although it may result in slightly more memory consumption).
         else:
             for prompt in prompts:
