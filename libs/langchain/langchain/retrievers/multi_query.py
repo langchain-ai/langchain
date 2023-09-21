@@ -1,7 +1,10 @@
 import logging
 from typing import List, Sequence
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
@@ -87,7 +90,7 @@ class MultiQueryRetriever(BaseRetriever):
         self,
         query: str,
         *,
-        run_manager: CallbackManagerForRetrieverRun,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> List[Document]:
         """Get relevant documents given a user query.
 
@@ -102,7 +105,7 @@ class MultiQueryRetriever(BaseRetriever):
         return self.unique_union(documents)
 
     async def agenerate_queries(
-        self, question: str, run_manager: CallbackManagerForRetrieverRun
+        self, question: str, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[str]:
         """Generate queries based upon user input.
 
