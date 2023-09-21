@@ -136,7 +136,8 @@ class RecursiveUrlLoader(BaseLoader):
         # Store the visited links and recursively visit the children
         sub_links = extract_sub_links(
             response.text,
-            self.url,
+            url,
+            base_url=self.url,
             pattern=self.link_regex,
             prevent_outside=self.prevent_outside,
         )
@@ -213,7 +214,8 @@ class RecursiveUrlLoader(BaseLoader):
         if depth < self.max_depth - 1:
             sub_links = extract_sub_links(
                 text,
-                self.url,
+                url,
+                base_url=self.url,
                 pattern=self.link_regex,
                 prevent_outside=self.prevent_outside,
             )
