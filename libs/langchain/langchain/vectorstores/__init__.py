@@ -46,6 +46,7 @@ from langchain.vectorstores.epsilla import Epsilla
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
+from langchain.vectorstores.llm_rails import LLMRails
 from langchain.vectorstores.marqo import Marqo
 from langchain.vectorstores.matching_engine import MatchingEngine
 from langchain.vectorstores.meilisearch import Meilisearch
@@ -72,6 +73,8 @@ from langchain.vectorstores.tigris import Tigris
 from langchain.vectorstores.timescalevector import TimescaleVector
 from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.usearch import USearch
+from langchain.vectorstores.vald import Vald
+from langchain.vectorstores.vearch import Vearch
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zep import ZepVectorStore
@@ -107,6 +110,7 @@ __all__ = [
     "FAISS",
     "Hologres",
     "LanceDB",
+    "LLMRails",
     "Marqo",
     "MatchingEngine",
     "Meilisearch",
@@ -135,6 +139,8 @@ __all__ = [
     "TimescaleVector",
     "Typesense",
     "USearch",
+    "Vald",
+    "Vearch",
     "Vectara",
     "VectorStore",
     "Weaviate",
