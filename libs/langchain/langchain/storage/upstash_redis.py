@@ -4,8 +4,7 @@ from langchain.schema import BaseStore
 
 
 class UpstashRedisStore(BaseStore[str, str]):
-    """BaseStore implementation using Upstash Redis as the underlying store.
-    """
+    """BaseStore implementation using Upstash Redis as the underlying store."""
 
     def __init__(
         self,
@@ -32,13 +31,13 @@ class UpstashRedisStore(BaseStore[str, str]):
             from upstash_redis import Redis
         except ImportError as e:
             raise ImportError(
-                "The UpstashRedisStore requires the upstash_redis library to be installed. "
+                "UpstashRedisStore requires the upstash_redis library to be installed. "
                 "pip install upstash_redis"
             ) from e
 
         if client and url:
             raise ValueError(
-                "Either an Upstash Redis client or a url must be provided, but not both."
+                "Either an Upstash Redis client or a url must be provided, not both."
             )
 
         if client:
