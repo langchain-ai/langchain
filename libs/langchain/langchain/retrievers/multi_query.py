@@ -83,6 +83,62 @@ class MultiQueryRetriever(BaseRetriever):
             parser_key=parser_key,
         )
 
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+    ) -> List[Document]:
+        """Get relevant documents given a user query.
+
+        Args:
+            question: user query
+
+        Returns:
+            Unique union of relevant documents from all generated queries
+        """
+        queries = await self.agenerate_queries(query, run_manager)
+        documents = await self.aretrieve_documents(queries, run_manager)
+        return self.unique_union(documents)
+
+    async def agenerate_queries(
+        self, question: str, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[str]:
+        """Generate queries based upon user input.
+
+        Args:
+            question: user query
+
+        Returns:
+            List of LLM generated queries that are similar to the user input
+        """
+        response = await self.llm_chain.acall(
+            inputs={"question": question}, callbacks=run_manager.get_child()
+        )
+        lines = getattr(response["text"], self.parser_key, [])
+        if self.verbose:
+            logger.info(f"Generated queries: {lines}")
+        return lines
+
+    async def aretrieve_documents(
+        self, queries: List[str], run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        """Run all LLM generated queries.
+
+        Args:
+            queries: query list
+
+        Returns:
+            List of retrieved Documents
+        """
+        documents = []
+        for query in queries:
+            docs = await self.retriever.aget_relevant_documents(
+                query, callbacks=run_manager.get_child()
+            )
+            documents.extend(docs)
+        return documents
+
     def _get_relevant_documents(
         self,
         query: str,
