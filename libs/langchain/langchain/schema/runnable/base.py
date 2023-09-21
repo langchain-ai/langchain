@@ -210,8 +210,8 @@ class Runnable(Generic[Input, Output], ABC):
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
-        if final:
-            yield from self.stream(final, config, **kwargs)
+
+        yield from self.stream(final, config, **kwargs)
 
     async def atransform(
         self,
@@ -234,9 +234,8 @@ class Runnable(Generic[Input, Output], ABC):
                 # This method should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
 
-        if final:
-            async for output in self.astream(final, config, **kwargs):
-                yield output
+        async for output in self.astream(final, config, **kwargs):
+            yield output
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """
