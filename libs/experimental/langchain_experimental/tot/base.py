@@ -106,6 +106,7 @@ class ToTChain(Chain):
             run_manager.on_text(
                 text=text, color=colors[thought.validity], verbose=self.verbose
             )
+        return
 
     def _call(
         self,
