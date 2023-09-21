@@ -136,12 +136,12 @@ def test_vertexai_args_passed() -> None:
 
         model = ChatVertexAI(**prompt_params)
         message = HumanMessage(content=user_prompt)
-        response = model([message])
+        response = model([message], stop=["stop"])
 
         assert response.content == response_text
         mock_send_message.assert_called_once_with(user_prompt)
         start_chat.assert_called_once_with(
-            context=None, message_history=[], **prompt_params
+            context=None, message_history=[], **prompt_params, stop_sequences=["stop"]
         )
 
 

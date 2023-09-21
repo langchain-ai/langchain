@@ -9,7 +9,6 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM, create_base_retry_decorator
-from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import (
     Generation,
@@ -36,7 +35,7 @@ def is_codey_model(model_name: str) -> bool:
     return "code" in model_name
 
 
-def _create_retry_decorator(llm: VertexAI) -> Callable[[Any], Any]:
+def _create_retry_decorator(llm: _VertexAICommon) -> Callable[[Any], Any]:
     import google.api_core
 
     errors = [
@@ -51,7 +50,7 @@ def _create_retry_decorator(llm: VertexAI) -> Callable[[Any], Any]:
     return decorator
 
 
-def completion_with_retry(llm: VertexAI, *args: Any, **kwargs: Any) -> Any:
+def completion_with_retry(llm: _VertexAICommon, *args: Any, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(llm)
 
@@ -77,13 +76,6 @@ class _VertexAIBase(BaseModel):
     "Optional list of stop words to use when generating."
     model_name: Optional[str] = None
     "Underlying model name."
-
-    def _enforce_stop_words(self, text: str, stop: Optional[List[str]] = None) -> str:
-        if stop is None and self.stop is not None:
-            stop = self.stop
-        if stop:
-            return enforce_stop_tokens(text, stop)
-        return text
 
     @classmethod
     def _get_task_executor(cls, request_parallelism: int = 5) -> Executor:
@@ -139,8 +131,9 @@ class _VertexAICommon(_VertexAIBase):
         self, prompt: str, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> str:
         params = {**self._default_params, **kwargs}
-        res = completion_with_retry(self, prompt, **params)  # type: ignore
-        return self._enforce_stop_words(res.text, stop)
+        if stop:
+            params["stop_sequences"] = stop
+        return completion_with_retry(self, prompt, **params).text
 
     @property
     def _llm_type(self) -> str:

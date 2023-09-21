@@ -168,14 +168,14 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
         params = {**self._default_params, **kwargs}
-        examples = kwargs.get("examples", None)
+        examples = kwargs.get("examples")
         if examples:
             params["examples"] = _parse_examples(examples)
-
-        chat = self._start_chat(history, params)
+        chat = self._start_chat(history, params, stop=stop)
         response = chat.send_message(question.content)
-        text = self._enforce_stop_words(response.text, stop)
-        return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content=response.text))]
+        )
 
     def _stream(
         self,
@@ -187,7 +187,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
         params = {**self._default_params, **kwargs}
-        examples = kwargs.get("examples", None)
+        examples = kwargs.get("examples")
         if examples:
             params["examples"] = _parse_examples(examples)
 
@@ -200,11 +200,14 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             yield ChatGenerationChunk(message=AIMessageChunk(content=text))
 
     def _start_chat(
-        self, history: _ChatHistory, params: dict
+        self, history: _ChatHistory, params: dict, stop: Optional[List[str]] = None
     ) -> Union[ChatSession, CodeChatSession]:
         if not self.is_codey_model:
             return self.client.start_chat(
-                context=history.context, message_history=history.history, **params
+                context=history.context,
+                message_history=history.history,
+                stop_sequences=stop,
+                **params,
             )
         else:
             return self.client.start_chat(message_history=history.history, **params)
