@@ -438,5 +438,6 @@ class SingleStoreDB(VectorStore):
         instance.add_texts(texts, metadatas, embedding.embed_documents(texts), **kwargs)
         return instance
 
+
 # SingleStoreDBRetriever is not needed, but we keep it for backwards compatibility
 SingleStoreDBRetriever = VectorStoreRetriever
