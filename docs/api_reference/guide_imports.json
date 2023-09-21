@@ -1398,6 +1398,9 @@
     "BraveSearch": {
         "Brave Search": "https://python.langchain.com/docs/integrations/providers/brave_search"
     },
+    "UpstashRedisChatMessageHistory": {
+        "Upstash Redis Chat Message History": "https://python.langchain.com/docs/integrations/memory/upstash_redis_chat_message_history"
+    },
     "RedisChatMessageHistory": {
         "Redis Chat Message History": "https://python.langchain.com/docs/integrations/memory/redis_chat_message_history",
         "Adding Message Memory backed by a database to an Agent": "https://python.langchain.com/docs/modules/memory/agent_with_memory_in_db"
