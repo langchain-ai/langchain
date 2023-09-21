@@ -462,8 +462,10 @@ class ChatOpenAI(BaseChatModel):
             model = self.tiktoken_model_name
         else:
             model = self.model_name
-            if model == "gpt-3.5-turbo":
+            if "gpt-3.5-turbo" in model:
                 # gpt-3.5-turbo may change over time.
+                # including possible finetuned models using openai's API:
+                #     e.g. 'ft:gpt-3.5-turbo-0613:{org_name}::{snapshot_id}'
                 # Returning num tokens assuming gpt-3.5-turbo-0301.
                 model = "gpt-3.5-turbo-0301"
             elif model == "gpt-4":
