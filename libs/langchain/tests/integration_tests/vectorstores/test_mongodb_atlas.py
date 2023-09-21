@@ -3,45 +3,35 @@ from __future__ import annotations
 
 import os
 from time import sleep
-from typing import TYPE_CHECKING, Any
 
 import pytest
+from pymongo import MongoClient
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 
-if TYPE_CHECKING:
-    from pymongo import MongoClient
-
 INDEX_NAME = "langchain-test-index"
 NAMESPACE = "langchain_test_db.langchain_test_collection"
 CONNECTION_STRING = os.environ.get("MONGODB_ATLAS_URI")
 DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
-
-# Instantiate as constant instead of pytest fixture to prevent needing to make multiple
-# connections.
-
-
-@pytest.fixture
-def collection() -> Any:
-    test_client = MongoClient(CONNECTION_STRING)
-    return test_client[DB_NAME][COLLECTION_NAME]
+test_client = MongoClient(CONNECTION_STRING)
+collection = test_client[DB_NAME][COLLECTION_NAME]
 
 
 class TestMongoDBAtlasVectorSearch:
     @classmethod
-    def setup_class(cls, collection: Any) -> None:
+    def setup_class(cls) -> None:
         # insure the test collection is empty
         assert collection.count_documents({}) == 0  # type: ignore[index]  # noqa: E501
 
     @classmethod
-    def teardown_class(cls, collection: Any) -> None:
+    def teardown_class(cls) -> None:
         # delete all the documents in the collection
         collection.delete_many({})  # type: ignore[index]
 
     @pytest.fixture(autouse=True)
-    def setup(self, collection: Any) -> None:
+    def setup(self) -> None:
         # delete all the documents in the collection
         collection.delete_many({})  # type: ignore[index]
 
