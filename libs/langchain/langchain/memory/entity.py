@@ -70,7 +70,7 @@ class InMemoryEntityStore(BaseEntityStore):
 
 
 class UpstashRedisEntityStore(BaseEntityStore):
-    """Redis-backed Entity store.
+    """Upstash Redis backed Entity store.
 
     Entities get a TTL of 1 day by default, and
     that TTL is extended by 3 days every time the entity is read back.
@@ -91,8 +91,8 @@ class UpstashRedisEntityStore(BaseEntityStore):
             from upstash_redis import Redis
         except ImportError:
             raise ImportError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
+                "Could not import upstash_redis python package. "
+                "Please install it with `pip install upstash_redis`."
             )
 
         super().__init__(*args, **kwargs)

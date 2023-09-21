@@ -29,6 +29,11 @@ class UpstashRedisChatMessageHistory(BaseChatMessageHistory):
                 "Please install it with `pip install upstash_redis`."
             )
 
+        if url == "" or token == "":
+            raise ValueError(
+                "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are needed."
+            )
+
         try:
             self.redis_client = Redis(url=url, token=token)
         except Exception:

@@ -13,7 +13,7 @@ TOKEN = "<UPSTASH_REDIS_REST_TOKEN>"
 @pytest.mark.requires("upstash_redis")
 def test_memory_with_message_store() -> None:
     """Test the memory with a message store."""
-    # setup Redis as a message store
+    # setup Upstash Redis as a message store
     message_history = UpstashRedisChatMessageHistory(
         url=URL, token=TOKEN, ttl=10, session_id="my-test-session"
     )
