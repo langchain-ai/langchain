@@ -96,7 +96,6 @@ from langchain.tools.powerbi.tool import (
 )
 from langchain.tools.pubmed.tool import PubmedQueryRun
 from langchain.tools.python.tool import PythonAstREPLTool, PythonREPLTool
-from langchain.tools.render import format_tool_to_openai_function
 from langchain.tools.requests.tool import (
     BaseRequestsTool,
     RequestsDeleteTool,

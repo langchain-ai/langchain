@@ -1,6 +1,5 @@
 from typing import List
 
-from langchain.tools import BaseTool
 from langchain.tools.base import BaseTool
 from langchain.utils.openai_functions import (
     FunctionDescription,
