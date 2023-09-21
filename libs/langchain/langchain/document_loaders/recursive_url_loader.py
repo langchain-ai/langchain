@@ -63,6 +63,7 @@ class RecursiveUrlLoader(BaseLoader):
         prevent_outside: Optional[bool] = True,
         link_regex: Union[str, re.Pattern, None] = None,
         headers: Optional[dict] = None,
+        check_response_status: bool = False,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
         Args:
@@ -84,6 +85,8 @@ class RecursiveUrlLoader(BaseLoader):
             prevent_outside: If True, prevent loading from urls which are not children
                 of the root url.
             link_regex: Regex for extracting sub-links from the raw html of a web page.
+            check_response_status: If True, check HTTP response status and skip
+                URLs with error responses (400-599).
         """
 
         self.url = url
@@ -101,6 +104,7 @@ class RecursiveUrlLoader(BaseLoader):
         self.link_regex = link_regex
         self._lock = asyncio.Lock() if self.use_async else None
         self.headers = headers
+        self.check_response_status = check_response_status
 
     def _get_child_links_recursive(
         self, url: str, visited: Set[str], *, depth: int = 0
@@ -123,8 +127,13 @@ class RecursiveUrlLoader(BaseLoader):
         visited.add(url)
         try:
             response = requests.get(url, timeout=self.timeout, headers=self.headers)
-        except Exception:
-            logger.warning(f"Unable to load from {url}")
+            if self.check_response_status and 400 <= response.status_code <= 599:
+                raise ValueError(f"Received HTTP status {response.status_code}")
+        except Exception as e:
+            logger.warning(
+                f"Unable to load from {url}. Received error {e} of type "
+                f"{e.__class__.__name__}"
+            )
             return
         content = self.extractor(response.text)
         if content:
@@ -193,6 +202,8 @@ class RecursiveUrlLoader(BaseLoader):
         try:
             async with session.get(url) as response:
                 text = await response.text()
+                if self.check_response_status and 400 <= response.status <= 599:
+                    raise ValueError(f"Received HTTP status {response.status}")
         except (aiohttp.client_exceptions.InvalidURL, Exception) as e:
             logger.warning(
                 f"Unable to load {url}. Received error {e} of type "
