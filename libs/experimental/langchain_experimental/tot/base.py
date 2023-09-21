@@ -148,7 +148,38 @@ class ToTChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        raise NotImplementedError("Async not implemented yet")
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        if run_manager:
+            await run_manager.on_text(text="Starting the ToT solve procedure.\n")
+    
+        problem_description = inputs["problem_description"]
+        checker_inputs = {"problem_description": problem_description}
+        thoughts_path: tuple[str, ...] = ()
+        thought_generator = self.tot_strategy_class(
+            llm=self.llm, c=self.c, verbose=self.verbose_llm
+        )
+    
+        level = 0
+        while level < self.k:
+            _run_manager.update_level(level)
+            thought_text = await thought_generator.next_thought(
+                problem_description, thoughts_path, callbacks=_run_manager.get_child()
+            )
+            checker_inputs["thoughts"] = thoughts_path + (thought_text,)
+            thought_validity = (await self.checker(checker_inputs, callbacks=_run_manager.get_child()))[
+                "validity"
+            ]
+            thought = Thought(text=thought_text, validity=thought_validity)
+            if thought.validity == ThoughtValidity.VALID_FINAL:
+                await self.log_thought(thought, level, run_manager)
+                return {self.output_key: thought.text}
+            await self.tot_memory.store(thought)
+            await self.log_thought(thought, level, run_manager)
+            thoughts_path = await self.tot_controller(self.tot_memory)
+            level += 1
+    
+        return {self.output_key: "No solution found"}
+
 
     @property
     def _chain_type(self) -> str:
