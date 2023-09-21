@@ -124,7 +124,7 @@ class MultiQueryRetriever(BaseRetriever):
         return lines
 
     async def aretrieve_documents(
-        self, queries: List[str], run_manager: CallbackManagerForRetrieverRun
+        self, queries: List[str], run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Run all LLM generated queries.
 
