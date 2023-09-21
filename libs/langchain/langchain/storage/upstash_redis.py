@@ -5,32 +5,6 @@ from langchain.schema import BaseStore
 
 class UpstashRedisStore(BaseStore[str, str]):
     """BaseStore implementation using Upstash Redis as the underlying store.
-
-    Examples:
-        Create an UpstashRedisStore instance and perform operations on it:
-
-        .. code-block:: python
-
-            # Instantiate the RedisStore with a Redis connection
-            from langchain.storage import RedisStore
-            from langchain.utilities.redis import get_client
-
-            client = get_client('redis://localhost:6379')
-            redis_store = RedisStore(client)
-
-            # Set values for keys
-            redis_store.mset([("key1", b"value1"), ("key2", b"value2")])
-
-            # Get values for keys
-            values = redis_store.mget(["key1", "key2"])
-            # [b"value1", b"value2"]
-
-            # Delete keys
-            redis_store.mdelete(["key1"])
-
-            # Iterate over keys
-            for key in redis_store.yield_keys():
-                print(key)
     """
 
     def __init__(
@@ -44,14 +18,12 @@ class UpstashRedisStore(BaseStore[str, str]):
     ) -> None:
         """Initialize the UpstashRedisStore with HTTP API.
 
-        Must provide either a Redis client or a url with optional client_kwargs.
-
-        TODO: Check these descriptions out...
+        Must provide either an Upstash Redis client or a url.
 
         Args:
-            client: A Redis connection instance
-            url: redis url
-            client_kwargs: Keyword arguments to pass to the Redis client
+            client: An Upstash Redis instance
+            url: UPSTASH_REDIS_REST_URL
+            token: UPSTASH_REDIS_REST_TOKEN
             ttl: time to expire keys in seconds if provided,
                  if None keys will never expire
             namespace: if provided, all keys will be prefixed with this namespace
@@ -60,13 +32,13 @@ class UpstashRedisStore(BaseStore[str, str]):
             from upstash_redis import Redis
         except ImportError as e:
             raise ImportError(
-                "The RedisStore requires the upstash_redis library to be installed. "
+                "The UpstashRedisStore requires the upstash_redis library to be installed. "
                 "pip install upstash_redis"
             ) from e
 
         if client and url:
             raise ValueError(
-                "Either a Redis client or a url " "must be provided, but not both."
+                "Either an Upstash Redis client or a url must be provided, but not both."
             )
 
         if client:
