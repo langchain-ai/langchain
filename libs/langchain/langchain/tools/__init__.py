@@ -32,7 +32,7 @@ from langchain.tools.azure_cognitive_services import (
 from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
 from langchain.tools.bing_search.tool import BingSearchResults, BingSearchRun
 from langchain.tools.brave_search.tool import BraveSearch
-from langchain.tools.convert_to_openai import format_tool_to_openai_function
+from langchain.tools.render import format_tool_to_openai_function
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchResults, DuckDuckGoSearchRun
 from langchain.tools.edenai import (
     EdenAiExplicitImageTool,
@@ -238,6 +238,5 @@ __all__ = [
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "format_tool_to_openai_function",
     "tool",
 ]

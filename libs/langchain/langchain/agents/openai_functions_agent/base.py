@@ -28,8 +28,7 @@ from langchain.schema.messages import (
     BaseMessage,
     SystemMessage,
 )
-from langchain.tools import BaseTool
-from langchain.tools.convert_to_openai import format_tool_to_openai_function
+from langchain.tools import BaseTool, format_tool_to_openai_function
 
 
 class OpenAIFunctionsAgent(BaseSingleActionAgent):
