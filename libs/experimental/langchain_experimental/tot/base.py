@@ -162,7 +162,6 @@ class ToTChain(Chain):
     
         level = 0
         while level < self.k:
-            _run_manager.update_level(level)
             thought_text = await thought_generator.next_thought(
                 problem_description, thoughts_path, callbacks=_run_manager.get_child()
             )
