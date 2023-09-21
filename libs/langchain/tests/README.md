@@ -1,6 +1,40 @@
-# Readme tests(draft)
+# Langchain Tests
 
-## Integrations Tests
+## Unit Tests
+
+Unit tests cover modular logic that does not require calls to outside APIs.
+If you add new logic, please add a unit test.
+
+To run unit tests:
+
+```bash
+make test
+```
+
+To run unit tests in Docker:
+
+```bash
+make docker_tests
+```
+
+## Integration Tests
+
+Integration tests cover logic that requires making calls to outside APIs (often integration with other services).
+If you add support for a new external API, please add a new integration test.
+
+**warning** Almost no tests should be integration tests.
+
+  Tests that require making network connections make it difficult for other
+  developers to test the code.
+
+  Instead favor relying on `responses` library and/or mock.patch to mock
+  requests using small fixtures.
+
+To run integration tests:
+
+```bash
+make integration_tests
+```
 
 ### Prepare
 
@@ -70,4 +104,14 @@ pytest tests/integration_tests/vectorstores/test_elasticsearch.py --vcr-record=n
 pytest tests/integration_tests/vectorstores/test_elasticsearch.py --cov=langchain --cov-report=html
 start "" htmlcov/index.html || open htmlcov/index.html
 
+```
+
+## Coverage
+
+Code coverage (i.e. the amount of code that is covered by unit tests) helps identify areas of the code that are potentially more or less brittle.
+
+To get a report of current coverage, run the following:
+
+```bash
+make coverage
 ```
