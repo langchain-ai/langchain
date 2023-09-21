@@ -15,7 +15,7 @@ from sqlalchemy.pool import QueuePool
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 from langchain.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.DOT_PRODUCT
@@ -437,3 +437,6 @@ class SingleStoreDB(VectorStore):
         )
         instance.add_texts(texts, metadatas, embedding.embed_documents(texts), **kwargs)
         return instance
+
+# SingleStoreDBRetriever is not needed, but we keep it for backwards compatibility
+SingleStoreDBRetriever = VectorStoreRetriever
