@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
-from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,6 +12,7 @@ from typing import (
     List,
     Optional,
     Union,
+    cast,
 )
 
 from typing_extensions import TypedDict
@@ -60,9 +60,11 @@ class RunnableConfig(TypedDict, total=False):
     Name for the tracer run for this call. Defaults to the name of the class.
     """
 
-    _locals: Dict[str, Any]
+    locals: Dict[str, Any]
     """
-    Local variables
+    Variables scoped to this call and any sub-calls. Usually used with
+    GetLocalVar() and PutLocalVar(). Care should be taken when placing mutable
+    objects in locals, as they will be shared between parallel sub-calls.
     """
 
     max_concurrency: Optional[int]
@@ -82,11 +84,13 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         tags=[],
         metadata={},
         callbacks=None,
-        _locals={},
+        locals={},
         recursion_limit=10,
     )
     if config is not None:
-        empty.update(config)
+        empty.update(
+            cast(RunnableConfig, {k: v for k, v in config.items() if v is not None})
+        )
     return empty
 
 
@@ -108,22 +112,22 @@ def get_config_list(
     return (
         list(map(ensure_config, config))
         if isinstance(config, list)
-        else [patch_config(config, deep_copy_locals=True) for _ in range(length)]
+        else [patch_config(config, copy_locals=True) for _ in range(length)]
     )
 
 
 def patch_config(
     config: Optional[RunnableConfig],
     *,
-    deep_copy_locals: bool = False,
+    copy_locals: bool = False,
     callbacks: Optional[BaseCallbackManager] = None,
     recursion_limit: Optional[int] = None,
     max_concurrency: Optional[int] = None,
     run_name: Optional[str] = None,
 ) -> RunnableConfig:
     config = ensure_config(config)
-    if deep_copy_locals:
-        config["_locals"] = deepcopy(config["_locals"])
+    if copy_locals:
+        config["locals"] = config["locals"].copy()
     if callbacks is not None:
         # If we're replacing callbacks we need to unset run_name
         # As that should apply only to the same run as the original callbacks

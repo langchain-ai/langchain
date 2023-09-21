@@ -1,35 +1,13 @@
 from typing import Any, List, Tuple, Union
 
-from langchain.agents.agent import AgentOutputParser, BaseSingleActionAgent
+from langchain.agents.agent import BaseSingleActionAgent
+from langchain.agents.output_parsers.xml import XMLAgentOutputParser
 from langchain.agents.xml.prompt import agent_instructions
 from langchain.callbacks.base import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.prompts.chat import AIMessagePromptTemplate, ChatPromptTemplate
 from langchain.schema import AgentAction, AgentFinish
 from langchain.tools.base import BaseTool
-
-
-class XMLAgentOutputParser(AgentOutputParser):
-    """Output parser for XMLAgent."""
-
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        if "</tool>" in text:
-            tool, tool_input = text.split("</tool>")
-            _tool = tool.split("<tool>")[1]
-            _tool_input = tool_input.split("<tool_input>")[1]
-            return AgentAction(tool=_tool, tool_input=_tool_input, log=text)
-        elif "<final_answer>" in text:
-            _, answer = text.split("<final_answer>")
-            return AgentFinish(return_values={"output": answer}, log=text)
-        else:
-            raise ValueError
-
-    def get_format_instructions(self) -> str:
-        raise NotImplementedError
-
-    @property
-    def _type(self) -> str:
-        return "xml-agent"
 
 
 class XMLAgent(BaseSingleActionAgent):
