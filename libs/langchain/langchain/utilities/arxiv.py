@@ -52,7 +52,7 @@ class ArxivAPIWrapper(BaseModel):
     ARXIV_MAX_QUERY_LENGTH: int = 300
     load_max_docs: int = 100
     load_all_available_meta: bool = False
-    doc_content_chars_max: Optional[int] = 4000
+    doc_content_chars_max: Optional[int] = None
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
