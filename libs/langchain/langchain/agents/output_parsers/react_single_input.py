@@ -60,6 +60,7 @@ class ReActSingleInputOutputParser(AgentOutputParser):
             action = action_match.group(1).strip()
             action_input = action_match.group(2)
             tool_input = action_input.strip(" ")
+            tool_input = tool_input.strip('"')
 
             return AgentAction(action, tool_input, text)
 
