@@ -1,6 +1,6 @@
 from typing import Dict, Tuple
 
-from timescale_vector import client
+import pytest as pytest
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -14,14 +14,20 @@ from langchain.retrievers.self_query.timescalevector import TimescaleVectorTrans
 DEFAULT_TRANSLATOR = TimescaleVectorTranslator()
 
 
+@pytest.mark.requires("timescale_vector")
 def test_visit_comparison() -> None:
+    from timescale_vector import client
+
     comp = Comparison(comparator=Comparator.LT, attribute="foo", value=1)
     expected = client.Predicates(("foo", "<", 1))
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
 
+@pytest.mark.requires("timescale_vector")
 def test_visit_operation() -> None:
+    from timescale_vector import client
+
     op = Operation(
         operator=Operator.AND,
         arguments=[
@@ -40,7 +46,10 @@ def test_visit_operation() -> None:
     assert expected == actual
 
 
+@pytest.mark.requires("timescale_vector")
 def test_visit_structured_query() -> None:
+    from timescale_vector import client
+
     query = "What is the capital of France?"
     structured_query = StructuredQuery(
         query=query,

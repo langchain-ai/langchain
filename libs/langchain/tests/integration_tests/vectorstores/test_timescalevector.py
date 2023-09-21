@@ -388,6 +388,8 @@ def test_timescalevector_with_index() -> None:
 
 def test_timescalevector_time_partitioning() -> None:
     """Test deleting functionality."""
+    from timescale_vector import client
+    
     texts = ["bar", "baz"]
     docs = [Document(page_content=t, metadata={"a": "b"}) for t in texts]
     docsearch = TimescaleVector.from_documents(
@@ -400,7 +402,6 @@ def test_timescalevector_time_partitioning() -> None:
     )
     texts = ["foo"]
     meta = [{"b": "c"}]
-    from timescale_vector import client
 
     ids = [client.uuid_from_time(datetime.now() - timedelta(hours=3))]
     docsearch.add_texts(texts, meta, ids)

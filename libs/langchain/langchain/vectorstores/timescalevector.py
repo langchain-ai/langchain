@@ -314,7 +314,7 @@ class TimescaleVector(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[dict] = None,
+        filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -341,7 +341,7 @@ class TimescaleVector(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[dict] = None,
+        filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -368,7 +368,7 @@ class TimescaleVector(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[dict] = None,
+        filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -396,7 +396,7 @@ class TimescaleVector(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[dict] = None,
+        filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -419,21 +419,7 @@ class TimescaleVector(VectorStore):
             **kwargs,
         )
 
-    @property
-    def distance_strategy(self) -> Any:
-        if self._distance_strategy == "l2":
-            return self.EmbeddingStore.embedding.l2_distance
-        elif self._distance_strategy == "cosine":
-            return self.EmbeddingStore.embedding.cosine_distance
-        elif self._distance_strategy == "inner":
-            return self.EmbeddingStore.embedding.max_inner_product
-        else:
-            raise ValueError(
-                f"Got unexpected value for distance: {self._distance_strategy}. "
-                f"Should be one of `l2`, `cosine`, `inner`."
-            )
-
-    def date_to_range_filter(self, **kwargs) -> Any:
+    def date_to_range_filter(self, **kwargs: Any) -> Any:
         constructor_args = {
             key: kwargs[key]
             for key in [
@@ -461,7 +447,7 @@ class TimescaleVector(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filter: Optional[dict] = None,
+        filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -497,7 +483,7 @@ class TimescaleVector(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filter: Optional[dict] = None,
+        filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -533,7 +519,7 @@ class TimescaleVector(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filter: Optional[dict] = None,
+        filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -556,7 +542,7 @@ class TimescaleVector(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filter: Optional[dict] = None,
+        filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -662,7 +648,7 @@ class TimescaleVector(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import TimescaleVector
+                from langchain.vectorstores import TimescaleVector
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
@@ -707,7 +693,7 @@ class TimescaleVector(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import TimescaleVector
+                from langchain.vectorstores import TimescaleVector
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
@@ -801,7 +787,7 @@ class TimescaleVector(VectorStore):
         # in vectorstore constructor
         if self._distance_strategy == DistanceStrategy.COSINE:
             return self._cosine_relevance_score_fn
-        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN:
+        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             return self._euclidean_relevance_score_fn
         elif self._distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             return self._max_inner_product_relevance_score_fn
@@ -856,7 +842,9 @@ class TimescaleVector(VectorStore):
 
     DEFAULT_INDEX_TYPE = IndexType.TIMESCALE_VECTOR
 
-    def create_index(self, index_type: IndexType = DEFAULT_INDEX_TYPE, **kwargs: Any):
+    def create_index(
+        self, index_type: Union[IndexType, str] = DEFAULT_INDEX_TYPE, **kwargs: Any
+    ) -> None:
         try:
             from timescale_vector import client
         except ImportError:
@@ -865,16 +853,19 @@ class TimescaleVector(VectorStore):
                 "Please install it with `pip install timescale-vector`."
             )
 
-        if index_type == self.IndexType.PGVECTOR_IVFFLAT:
+        index_type = (
+            index_type.value if isinstance(index_type, self.IndexType) else index_type
+        )
+        if index_type == self.IndexType.PGVECTOR_IVFFLAT.value:
             self.sync_client.create_embedding_index(client.IvfflatIndex(**kwargs))
 
-        if index_type == self.IndexType.PGVECTOR_HNSW:
+        if index_type == self.IndexType.PGVECTOR_HNSW.value:
             self.sync_client.create_embedding_index(client.HNSWIndex(**kwargs))
 
-        if index_type == self.IndexType.TIMESCALE_VECTOR:
+        if index_type == self.IndexType.TIMESCALE_VECTOR.value:
             self.sync_client.create_embedding_index(
                 client.TimescaleVectorIndex(**kwargs)
             )
 
-    def drop_index(self):
+    def drop_index(self) -> None:
         self.sync_client.drop_embedding_index()
