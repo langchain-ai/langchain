@@ -74,7 +74,7 @@ class DeepInfra(LLM):
         model_kwargs = {**model_kwargs, **kwargs}
 
         return {
-            'input': prompt,
+            "input": prompt,
             **model_kwargs,
         }
 
@@ -117,7 +117,7 @@ class DeepInfra(LLM):
         self._handle_status(response.status_code, response.text)
         data = response.json()
 
-        return data['results'][0]['generated_text']
+        return data["results"][0]["generated_text"]
 
     async def _acall(
         self,
@@ -128,10 +128,8 @@ class DeepInfra(LLM):
     ) -> str:
         async with ClientSession() as session:
             async with session.post(
-                self._url(),
-                json=self._body(prompt, kwargs),
-                headers=self._headers()
+                self._url(), json=self._body(prompt, kwargs), headers=self._headers()
             ) as response:
                 self._handle_status(response.status, response.text)
                 data = await response.json()
-                return data['results'][0]['generated_text']
+                return data["results"][0]["generated_text"]

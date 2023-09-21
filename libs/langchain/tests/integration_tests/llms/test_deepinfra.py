@@ -10,6 +10,7 @@ def test_deepinfra_call() -> None:
     output = llm("What is 2 + 2?")
     assert isinstance(output, str)
 
+
 @pytest.mark.asyncio
 async def test_deepinfra_acall() -> None:
     llm = DeepInfra(model_id="google/flan-t5-small")
