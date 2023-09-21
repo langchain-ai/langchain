@@ -73,13 +73,13 @@ def test_anonymize_with_custom_operator() -> None:
 
     from langchain_experimental.data_anonymizer import PresidioReversibleAnonymizer
 
-    custom_operator = {"PERSON": OperatorConfig("replace", {"new_value": "<name>"})}
+    custom_operator = {"PERSON": OperatorConfig("replace", {"new_value": "NAME"})}
     anonymizer = PresidioReversibleAnonymizer(operators=custom_operator)
 
     text = "Jane Doe was here."
 
     anonymized_text = anonymizer.anonymize(text)
-    assert anonymized_text == "<name> was here."
+    assert anonymized_text == "NAME was here."
 
 
 @pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
@@ -102,7 +102,7 @@ def test_add_recognizer_operator() -> None:
     # anonymizing with custom recognizer
     text = "Madam Jane Doe was here."
     anonymized_text = anonymizer.anonymize(text)
-    assert anonymized_text == "<TITLE> Jane Doe was here."
+    assert anonymized_text == "<TITLE_1> Jane Doe was here."
 
     # anonymizing with custom recognizer and operator
     anonymizer = PresidioReversibleAnonymizer(analyzed_fields=[])
