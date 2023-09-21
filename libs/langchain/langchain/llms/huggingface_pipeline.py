@@ -182,13 +182,17 @@ class HuggingFacePipeline(BaseLLM):
 
             # Process each response in the batch
             for j, response in enumerate(responses):
+                if isinstance(response, list):
+                    # if model returns multiple generations, pick the top one
+                    response = response[0]
+
                 if self.pipeline.task == "text-generation":
                     # Text generation return includes the starter text
-                    text = response[0]["generated_text"][len(batch_prompts[j]) :]
+                    text = response["generated_text"][len(batch_prompts[j]) :]
                 elif self.pipeline.task == "text2text-generation":
-                    text = response[0]["generated_text"]
+                    text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
-                    text = response[0]["summary_text"]
+                    text = response["summary_text"]
                 else:
                     raise ValueError(
                         f"Got invalid task {self.pipeline.task}, "
