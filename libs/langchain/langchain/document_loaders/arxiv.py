@@ -1,4 +1,4 @@
-from typing import List, Optional, Any
+from typing import Any, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -11,14 +11,9 @@ class ArxivLoader(BaseLoader):
     The loader converts the original PDF format into the text.
     """
 
-    def __init__(
-        self,
-        query: str,
-        **kwargs: Any
-    ):
-        self.query=query
+    def __init__(self, query: str, **kwargs: Any):
+        self.query = query
         self.client = ArxivAPIWrapper(**kwargs)
-
 
     def load(self) -> List[Document]:
         return self.client.load(self.query)
