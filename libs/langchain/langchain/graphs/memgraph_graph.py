@@ -33,4 +33,4 @@ class MemgraphGraph(Neo4jGraph):
 
         db_structured_schema = self.query(RAW_SCHEMA_QUERY)[0].get("schema")
         assert db_structured_schema is not None
-        self._structured_schema = db_structured_schema
+        self.structured_schema = db_structured_schema

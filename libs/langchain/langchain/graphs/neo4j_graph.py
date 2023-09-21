@@ -46,7 +46,7 @@ class Neo4jGraph:
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
         self.schema: str = ""
-        self._structured_schema: Dict[str, Any] = {}
+        self.structured_schema: Dict[str, Any] = {}
         # Verify connection
         try:
             self._driver.verify_connectivity()
@@ -69,16 +69,6 @@ class Neo4jGraph:
                 "Please ensure the APOC plugin is installed in Neo4j and that "
                 "'apoc.meta.data()' is allowed in Neo4j configuration "
             )
-
-    @property
-    def get_schema(self) -> str:
-        """Returns the schema of the Neo4j database"""
-        return self.schema
-
-    @property
-    def structured_schema(self) -> Dict[str, Any]:
-        """Returns the structured schema of the Neo4j database"""
-        return self._structured_schema
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""
