@@ -101,10 +101,9 @@ while(True):
     print("Bot: ", res.content)
 ```
 
-> [!NOTE]
-> Развернутую версию примера смотрите в notebook [Работа с GigaChat](docs/extras/integrations/chat/gigachat.ipynb).
-> 
-> Больше примеров в [коллекции](#коллекция-примеров). 
+Развернутую версию примера смотрите в notebook [Работа с GigaChat](docs/extras/integrations/chat/gigachat.ipynb).
+
+Больше примеров в [коллекции](#коллекция-примеров). 
 
 ## Описание модуля gigachat
 
