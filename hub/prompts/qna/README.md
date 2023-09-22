@@ -15,5 +15,5 @@ from langchain.chains import LLMChain
 
 llm = ...hub/
 generate_question_prompt = load_prompt('lc://prompts/qna/generate_question_prompt.yaml')
-text = generate_question_prompt.format(text="... text of your docuemtns ...")
+text = generate_question_prompt.format(text="... text of your documents ...")
 ```
