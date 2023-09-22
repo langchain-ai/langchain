@@ -1,11 +1,19 @@
-# Описания промптов для map-reduce суммаризации
+# Промпты для поиска по документам (вопрос-ответ)
 
-Промпты для QnA по документам
+### qna_with_refs_system.yaml
+Поиск ответа на вопрос по документам со сслыками на источники (system-часть)
+### qna_with_refs_user.yaml
+Поиск ответа на вопрос по документам со сслыками на источники (user-часть)
+### generate_question_prompt.yaml
+Генерация вопросов к документу. Используется для улучшения качества индексации.
 
-## Inputs
+## Пример использования
 
-`TODO`
+```python
+from langchain.prompts import load_prompt
+from langchain.chains import LLMChain
 
-## Usage
-
-`TODO`
+llm = ...hub/
+generate_question_prompt = load_prompt('lc://prompts/qna/generate_question_prompt.yaml')
+text = generate_question_prompt.format(text="... text of your docuemtns ...")
+```
