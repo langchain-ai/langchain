@@ -1,0 +1,91 @@
+---
+sidebar_position: 0
+sidebar_class_name: hidden
+---
+
+# LLMs
+
+import DocCardList from "@theme/DocCardList";
+
+## Features (natively supported)
+All `LLM`s implement the LCEL `Runnable` interface, meaning they all expose functioning `invoke`, `ainvoke`, `batch`, `abatch`, `stream`, and `astream` methods.
+*That is, they all have functioning sync, async, streaming, and batch generation methods.*
+
+This table highlights specifically those integrations that **natively support** batching, streaming, and asynchronous generation (meaning these features are built into the 3rd-party integration).
+
+Model|Generate|Async generate|Stream|Async stream|Batch|Async batch
+:-|:-:|:-:|:-:|:-:|:-:|:-:
+AI21|✅|❌|❌|❌|❌|❌
+AlephAlpha|✅|❌|❌|❌|❌|❌
+AmazonAPIGateway|✅|❌|❌|❌|❌|❌
+Anthropic|✅|✅|✅|✅|❌|❌
+Anyscale|✅|❌|❌|❌|❌|❌
+Aviary|✅|❌|❌|❌|❌|❌
+AzureMLOnlineEndpoint|✅|❌|❌|❌|❌|❌
+AzureOpenAI|✅|✅|✅|✅|✅|✅
+Banana|✅|❌|❌|❌|❌|❌
+Baseten|✅|❌|❌|❌|❌|❌
+Beam|✅|❌|❌|❌|❌|❌
+Bedrock|✅|❌|✅|❌|❌|❌
+CTransformers|✅|✅|❌|❌|❌|❌
+CTranslate2|✅|❌|❌|❌|✅|❌
+CerebriumAI|✅|❌|❌|❌|❌|❌
+ChatGLM|✅|❌|❌|❌|❌|❌
+Clarifai|✅|❌|❌|❌|❌|❌
+Cohere|✅|✅|❌|❌|❌|❌
+Databricks|✅|❌|❌|❌|❌|❌
+DeepInfra|✅|❌|❌|❌|❌|❌
+DeepSparse|✅|❌|❌|❌|❌|❌
+EdenAI|✅|✅|❌|❌|❌|❌
+Fireworks|✅|✅|❌|❌|✅|✅
+FireworksChat|✅|✅|❌|❌|✅|✅
+ForefrontAI|✅|❌|❌|❌|❌|❌
+GPT4All|✅|❌|❌|❌|❌|❌
+GooglePalm|✅|❌|❌|❌|✅|❌
+GooseAI|✅|❌|❌|❌|❌|❌
+GradientLLM|✅|✅|❌|❌|❌|❌
+HuggingFaceEndpoint|✅|❌|❌|❌|❌|❌
+HuggingFaceHub|✅|❌|❌|❌|❌|❌
+HuggingFacePipeline|✅|❌|❌|❌|❌|❌
+HuggingFaceTextGenInference|✅|✅|✅|✅|❌|❌
+HumanInputLLM|✅|❌|❌|❌|❌|❌
+JavelinAIGateway|✅|✅|❌|❌|❌|❌
+KoboldApiLLM|✅|❌|❌|❌|❌|❌
+LlamaCpp|✅|❌|✅|❌|❌|❌
+ManifestWrapper|✅|❌|❌|❌|❌|❌
+Minimax|✅|❌|❌|❌|❌|❌
+MlflowAIGateway|✅|❌|❌|❌|❌|❌
+Modal|✅|❌|❌|❌|❌|❌
+MosaicML|✅|❌|❌|❌|❌|❌
+NIBittensorLLM|✅|❌|❌|❌|❌|❌
+NLPCloud|✅|❌|❌|❌|❌|❌
+Nebula|✅|❌|❌|❌|❌|❌
+OctoAIEndpoint|✅|❌|❌|❌|❌|❌
+Ollama|✅|❌|❌|❌|❌|❌
+OpaquePrompts|✅|❌|❌|❌|❌|❌
+OpenAI|✅|✅|✅|✅|✅|✅
+OpenLLM|✅|✅|❌|❌|❌|❌
+OpenLM|✅|✅|✅|✅|✅|✅
+Petals|✅|❌|❌|❌|❌|❌
+PipelineAI|✅|❌|❌|❌|❌|❌
+Predibase|✅|❌|❌|❌|❌|❌
+PredictionGuard|✅|❌|❌|❌|❌|❌
+PromptLayerOpenAI|✅|❌|❌|❌|❌|❌
+QianfanLLMEndpoint|✅|✅|✅|✅|❌|❌
+RWKV|✅|❌|❌|❌|❌|❌
+Replicate|✅|❌|✅|❌|❌|❌
+SagemakerEndpoint|✅|❌|❌|❌|❌|❌
+SelfHostedHuggingFaceLLM|✅|❌|❌|❌|❌|❌
+SelfHostedPipeline|✅|❌|❌|❌|❌|❌
+StochasticAI|✅|❌|❌|❌|❌|❌
+TextGen|✅|❌|❌|❌|❌|❌
+TitanTakeoff|✅|❌|✅|❌|❌|❌
+Tongyi|✅|❌|❌|❌|❌|❌
+VLLM|✅|❌|❌|❌|✅|❌
+VLLMOpenAI|✅|✅|✅|✅|✅|✅
+VertexAI|✅|✅|❌|❌|❌|❌
+VertexAIModelGarden|✅|✅|❌|❌|❌|❌
+Writer|✅|❌|❌|❌|❌|❌
+Xinference|✅|❌|❌|❌|❌|❌
+
+<DocCardList />

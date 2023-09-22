@@ -1,0 +1,36 @@
+---
+sidebar_position: 1
+sidebar_class_name: hidden
+---
+
+# Chat models
+
+import DocCardList from "@theme/DocCardList";
+
+## Features (natively supported)
+All `ChatModel`s implement the LCEL `Runnable` interface, meaning they all expose functioning `invoke`, `ainvoke`, `stream`, and `astream` (and `batch`, `abatch`) methods.
+*That is, they all have functioning sync, async and streaming generation methods.*
+
+This table highlights specifically those integrations that **natively support** streaming and asynchronous generation (meaning these features are built into the 3rd-party integration).
+
+Model|Generate|Async generate|Stream|Async stream
+:-|:-:|:-:|:-:|:-:
+AzureChatOpenAI|✅|✅|✅|✅
+BedrockChat|✅|❌|✅|❌
+ChatAnthropic|✅|✅|✅|✅
+ChatAnyscale|✅|✅|✅|✅
+ChatGooglePalm|✅|✅|❌|❌
+ChatJavelinAIGateway|✅|✅|❌|❌
+ChatKonko|✅|❌|❌|❌
+ChatLiteLLM|✅|✅|✅|✅
+ChatMLflowAIGateway|✅|❌|❌|❌
+ChatOllama|✅|❌|✅|❌
+ChatOpenAI|✅|✅|✅|✅
+ChatVertexAI|✅|❌|✅|❌
+ErnieBotChat|✅|❌|❌|❌
+JinaChat|✅|✅|✅|✅
+MiniMaxChat|✅|✅|❌|❌
+PromptLayerChatOpenAI|✅|❌|❌|❌
+QianfanChatEndpoint|✅|✅|✅|✅
+
+<DocCardList />
