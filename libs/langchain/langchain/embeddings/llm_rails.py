@@ -49,7 +49,6 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
         api_key = self.api_key or os.environ.get("LLM_RAILS_API_KEY")
         if api_key is None:
             logging.warning("Can't find LLMRails credentials in environment.")
-            return False
 
         response = requests.post(
             "https://api.llmrails.com/v1/embeddings",
