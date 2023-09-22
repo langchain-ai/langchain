@@ -590,8 +590,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             metadata_list = cast(
                 List[Optional[Dict[str, Any]]], metadata or ([{}] * len(prompts))
             )
-            run_name_list = cast(
-                List[Optional[str]], run_name or ([None] * len(prompts))
+            run_name_list = run_name or cast(
+                List[Optional[str]], ([None] * len(prompts))
             )
             callback_managers = [
                 CallbackManager.configure(
@@ -754,8 +754,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             metadata_list = cast(
                 List[Optional[Dict[str, Any]]], metadata or ([{}] * len(prompts))
             )
-            run_name_list = cast(
-                List[Optional[str]], run_name or ([None] * len(prompts))
+            run_name_list = run_name or cast(
+                List[Optional[str]], ([None] * len(prompts))
             )
             callback_managers = [
                 AsyncCallbackManager.configure(
