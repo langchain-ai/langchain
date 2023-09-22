@@ -1,11 +1,11 @@
 import logging
+import random
+import time
 from typing import Any, Dict, List, Optional
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
-import time
-import random
 
 logger = logging.getLogger(__name__)
 
@@ -49,12 +49,12 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
 
     @staticmethod
     def clarifai_retry_with_exponential_backoff(
-            func,
-            initial_delay: float = 1,
-            exponential_base: float = 2,
-            jitter: bool = True,
-            max_retries: int = 5,
-            errors: tuple = (Exception),
+        func,
+        initial_delay: float = 1,
+        exponential_base: float = 2,
+        jitter: bool = True,
+        max_retries: int = 5,
+        errors: tuple = (Exception),
     ):
         """Retry a function with exponential backoff.
         @param func: the function to put the retry backoff on
@@ -70,14 +70,18 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
             num_retries = 0
             delay = initial_delay
 
-            # Loop until a successful response or max_retries is hit or an exception is raised
+            # Loop until a successful response or
+            # max_retries is hit or an exception is raised
             while True:
                 try:
                     return func(*args, **kwargs)
 
                 # Retry on specified errors
                 except errors as e:
-                    if "Sorry, your request has timed out. Please try your request again" in str(e):
+                    if (
+                        "Sorry, your request has timed out."
+                        in str(e)
+                    ):
                         # Increment retries
                         num_retries += 1
 
