@@ -46,6 +46,7 @@ jobs:
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
           poetry install --with=test_integration
+          poetry run pip install google-cloud-aiplatform
 
       - name: Run tests
         shell: bash
