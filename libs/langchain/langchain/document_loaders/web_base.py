@@ -63,6 +63,8 @@ class WebBaseLoader(BaseLoader):
         verify_ssl: Optional[bool] = True,
         proxies: Optional[dict] = None,
         continue_on_failure: Optional[bool] = False,
+        autoset_encoding: Optional[bool] = True,
+        encoding: Optional[str] = None,
     ):
         """Initialize with webpage path."""
 
@@ -98,7 +100,8 @@ class WebBaseLoader(BaseLoader):
         self.session.headers = dict(headers)
         self.session.verify = verify_ssl
         self.continue_on_failure = continue_on_failure
-
+        self.autoset_encoding = autoset_encoding
+        self.encoding = encoding
         if proxies:
             self.session.proxies.update(proxies)
 
@@ -208,7 +211,11 @@ class WebBaseLoader(BaseLoader):
         html_doc = self.session.get(url, **self.requests_kwargs)
         if self.raise_for_status:
             html_doc.raise_for_status()
-        html_doc.encoding = html_doc.apparent_encoding
+
+        if self.encoding is not None:
+            html_doc.encoding = self.encoding
+        elif self.autoset_encoding:
+            html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 
     def scrape(self, parser: Union[str, None] = None) -> Any:
