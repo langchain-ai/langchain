@@ -1,12 +1,11 @@
-from abc import ABC
 import asyncio
+from abc import ABC
+from types import TracebackType
+from typing import Any, Coroutine, Dict, Iterable, List, Optional, Type
 
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
-
-from typing import Any, Dict, List, Optional, Type, Iterable, Coroutine
-from types import TracebackType
 
 
 class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
