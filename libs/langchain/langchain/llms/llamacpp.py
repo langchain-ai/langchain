@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import logging
+from functools import partial
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -322,9 +324,11 @@ class LlamaCpp(LLM):
         **kwargs: Any,
     ) -> str:
         """Async call the Llama model and return the output.
+
         Args:
             prompt: The prompt to use for generation.
             stop: A list of strings to stop generation when encountered.
+
         Returns:
             The generated text.
         """
@@ -336,7 +340,10 @@ class LlamaCpp(LLM):
         else:
             params = self._get_parameters(stop)
             params = {**params, **kwargs}
-            result = self.client(prompt=prompt, **params)
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(
+                None, partial(self.client, prompt=prompt, **params)
+            )
             return result["choices"][0]["text"]
 
     def _stream(
@@ -398,17 +405,28 @@ class LlamaCpp(LLM):
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         """Yields results objects as they are generated in real time.
+
         It also calls the callback manager's on_llm_new_token event with
         similar parameters to the OpenAI LLM class method of the same name.
+
         Args:
             prompt: The prompts to pass into the model.
             stop: Optional list of stop words to use when generating.
+
         Returns:
             An async generator representing the stream of tokens being generated.
         """
         params = {**self._get_parameters(stop), **kwargs}
-        result = self.client(prompt=prompt, stream=True, **params)
-        for part in result:
+
+        loop = asyncio.get_running_loop()
+        iterator = await loop.run_in_executor(
+            None, partial(self.client, prompt=prompt, stream=True, **params)
+        )
+        while True:
+            part = await loop.run_in_executor(None, next, iterator, None)
+            if part is None:
+                break
+
             logprobs = part["choices"][0].get("logprobs", None)
             chunk = GenerationChunk(
                 text=part["choices"][0]["text"],
