@@ -13,6 +13,7 @@ import pytest
 
 from langchain.chat_models import ChatVertexAI
 from langchain.chat_models.vertexai import _parse_chat_history, _parse_examples
+from langchain.schema import LLMResult
 from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
@@ -26,8 +27,20 @@ def test_vertexai_single_call(model_name: str) -> None:
     response = model([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert model._llm_type == "vertexai"
+    assert model._llm_type == "chat-vertexai"
     assert model.model_name == model.client._model_id
+
+
+@pytest.mark.asyncio
+async def test_vertexai_agenerate() -> None:
+    model = ChatVertexAI(temperature=0)
+    message = HumanMessage(content="Hello")
+    response = await model.agenerate([[message]])
+    assert isinstance(response, LLMResult)
+    assert isinstance(response.generations[0][0].message, AIMessage)  # type: ignore
+
+    sync_response = model.generate([[message]])
+    assert response.generations[0][0] == sync_response.generations[0][0]
 
 
 def test_vertexai_single_call_with_context() -> None:
