@@ -306,8 +306,7 @@ class _DemoGradientEmbeddingClient:
     async def _async_request(
         self, session: aiohttp.ClientSession, kwargs: Any
     ) -> List[List[float]]:
-        async with session.post(**kwargs) as resp:
-            response = await resp.read()
+        async with session.post(**kwargs) as response:
             if response.status != 200:
                 raise Exception(
                     f"Gradient returned an unexpected response with status "
@@ -330,7 +329,7 @@ class _DemoGradientEmbeddingClient:
         perm_texts_batched = self._batch(perm_texts)
 
         # Request
-        if self.aiosession in None:
+        if self.aiosession is None:
             # TODO: async improvment
             self.aiosession = aiohttp.ClientSession()
         async with self.aiosession as session:
