@@ -653,12 +653,9 @@ async def _arun_chain(
 ) -> Union[dict, str]:
     """Run a chain asynchronously on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
-    if isinstance(chain, Chain):
-        if isinstance(inputs_, dict) and len(inputs_) == 1:
-            val = next(iter(inputs_.values()))
-            output = await chain.acall(val, callbacks=callbacks, tags=tags)
-        else:
-            output = await chain.acall(inputs_, callbacks=callbacks, tags=tags)
+    if isinstance(chain, Chain) and isinstance(inputs_, dict) and len(inputs_) == 1:
+        val = next(iter(inputs_.values()))
+        output = await chain.acall(val, callbacks=callbacks, tags=tags)
     else:
         runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
         output = await chain.ainvoke(inputs_, config=runnable_config)
@@ -781,12 +778,9 @@ def _run_chain(
 ) -> Union[Dict, str]:
     """Run a chain on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
-    if isinstance(chain, Chain):
-        if isinstance(inputs_, dict) and len(inputs_) == 1:
-            val = next(iter(inputs_.values()))
-            output = chain(val, callbacks=callbacks, tags=tags)
-        else:
-            output = chain(inputs_, callbacks=callbacks, tags=tags)
+    if isinstance(chain, Chain) and isinstance(inputs_, dict) and len(inputs_) == 1:
+        val = next(iter(inputs_.values()))
+        output = chain(val, callbacks=callbacks, tags=tags)
     else:
         runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
         output = chain.invoke(inputs_, config=runnable_config)
