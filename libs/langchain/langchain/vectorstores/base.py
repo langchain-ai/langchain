@@ -448,7 +448,10 @@ class VectorStore(ABC):
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
-        raise NotImplementedError
+
+        func = partial(cls.from_texts,texts, embedding, metadatas, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+        # raise NotImplementedError
 
     def _get_retriever_tags(self) -> List[str]:
         """Get tags for retriever."""
