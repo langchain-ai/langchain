@@ -137,19 +137,6 @@ def _wrap_in_chain_factory(
                 "(memory=new_memory, ...)\n\n"
                 f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
             )
-        logger.warning(
-            "Directly passing in a chain is not recommended as chains may have state."
-            " This can lead to unexpected behavior as the "
-            "same chain instance could be used across multiple datasets. Instead,"
-            " please pass a chain constructor that creates a new "
-            "chain with fresh memory each time it is called. This will safeguard"
-            " against information leakage between dataset examples. "
-            "\nFor example:\n\n"
-            "def chain_constructor():\n"
-            f"    return {chain_class}(memory=new_memory, ...)\n\n"
-            f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
-        )
-
         return lambda: chain
     elif isinstance(llm_or_chain_factory, BaseLanguageModel):
         return llm_or_chain_factory
