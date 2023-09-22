@@ -430,19 +430,26 @@ def _handle_event(
 
 
 def _run_coros(coros: List[Coroutine[Any, Any, Any]]) -> None:
-    # Run the coroutine in a new event loop, taking care to
-    # - install signal handlers
-    # - run pending tasks
-    # - close asyncgens and executors
-    # - close the loop
-    with asyncio.Runner() as runner:
-        # Run the coroutine, get the result
-        for coro in coros:
-            runner.run(coro)
+    if hasattr(asyncio, "Runner"):
+        # Python 3.11+
+        # Run the coroutine in a new event loop, taking care to
+        # - install signal handlers
+        # - run pending tasks
+        # - close asyncgens and executors
+        # - close the loop
+        with asyncio.Runner() as runner:
+            # Run the coroutine, get the result
+            for coro in coros:
+                runner.run(coro)
 
-        # Run pending tasks scheduled by coros until they are all done
-        while pending := asyncio.all_tasks(runner.get_loop()):
-            runner.run(asyncio.wait(pending))
+            # Run pending tasks scheduled by coros until they are all done
+            while pending := asyncio.all_tasks(runner.get_loop()):
+                runner.run(asyncio.wait(pending))
+    else:
+        # Before Python 3.11 we need to run each coroutine in a new event loop
+        # as the Runner api is not available.
+        for coro in coros:
+            asyncio.run(coro)
 
 
 async def _ahandle_event_for_handler(
