@@ -124,10 +124,6 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     model_name: str = "chat-bison"
     "Underlying model name."
 
-    @property
-    def _llm_type(self) -> str:
-        return "chat-vertexai"
-
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""

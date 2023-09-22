@@ -186,6 +186,10 @@ class _VertexAICommon(_VertexAIBase):
     streaming: bool = False
 
     @property
+    def _llm_type(self) -> str:
+        return "vertexai"
+
+    @property
     def is_codey_model(self) -> bool:
         return is_codey_model(self.model_name)
 
@@ -225,10 +229,6 @@ class VertexAI(_VertexAICommon, BaseLLM):
     tuned_model_name: Optional[str] = None
     "The name of a tuned model. If provided, model_name is ignored."
     streaming: bool = False
-
-    @property
-    def _llm_type(self) -> str:
-        return "vertexai"
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
