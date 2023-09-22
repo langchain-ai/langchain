@@ -39,6 +39,7 @@ from langchain.embeddings.huggingface import (
     HuggingFaceInferenceAPIEmbeddings,
     HuggingFaceInstructEmbeddings,
 )
+from langchain.embeddings.gradient_ai import GradientEmbeddings
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings
 from langchain.embeddings.jina import JinaEmbeddings
@@ -74,6 +75,7 @@ __all__ = [
     "ElasticsearchEmbeddings",
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
+    "GradientEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
     "HuggingFaceHubEmbeddings",
