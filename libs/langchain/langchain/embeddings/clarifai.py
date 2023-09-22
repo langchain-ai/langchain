@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
+import time
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +47,58 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
+    @staticmethod
+    def clarifai_retry_with_exponential_backoff(
+            func,
+            initial_delay: float = 1,
+            exponential_base: float = 2,
+            jitter: bool = True,
+            max_retries: int = 5,
+            errors: tuple = (Exception),
+    ):
+        """Retry a function with exponential backoff.
+        @param func: the function to put the retry backoff on
+        @param initial_delay:  initial delay value
+        @param exponential_base: how to exponentially increase the delay
+        @param jitter: Add randomness to backoff
+        @param max_retries: Max number of retries
+        @param errors: Error on which to retry
+        """
+
+        def wrapper(*args, **kwargs):
+            # Initialize variables
+            num_retries = 0
+            delay = initial_delay
+
+            # Loop until a successful response or max_retries is hit or an exception is raised
+            while True:
+                try:
+                    return func(*args, **kwargs)
+
+                # Retry on specified errors
+                except errors as e:
+                    if "Sorry, your request has timed out. Please try your request again" in str(e):
+                        # Increment retries
+                        num_retries += 1
+
+                        # Check if max retries has been reached
+                        if num_retries > max_retries:
+                            raise Exception(
+                                f"Maximum number of retries ({max_retries}) exceeded."
+                            )
+
+                        # Increment the delay
+                        delay *= exponential_base * (1 + jitter * random.random())
+
+                        # Sleep for the delay
+                        time.sleep(delay)
+                        print("Delay working")
+
+                    else:
+                        raise Exception(str(e))
+
+        return wrapper
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -81,6 +135,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
 
         return values
 
+    @clarifai_retry_with_exponential_backoff
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to Clarifai's embedding models.
 
@@ -143,6 +198,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
             )
         return embeddings
 
+    @clarifai_retry_with_exponential_backoff
     def embed_query(self, text: str) -> List[float]:
         """Call out to Clarifai's embedding models.
 
