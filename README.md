@@ -119,10 +119,6 @@ while(True):
 > [!NOTE]
 > Модуль не поддерживает работу с функциями, так как в настоящий момент они отсутствуют в GigaChat.
 
-### Включение и отключение цензора
-
-GigaChat избегает давать ответы по острым и противоречивым темам. Модуль позволяет повлиять на такое поведение с помощью флага [`profanity=True/False`](https://github.com/ai-forever/gigachain/blob/4f63280bebbdc4c925732c0749f660d3e97eb3e3/libs/langchain/langchain/chat_models/gigachat.py#L44C7-L44C7).
-
 ## Коллекция примеров
 
 Ниже представлен список примеров использования GigaChain.
