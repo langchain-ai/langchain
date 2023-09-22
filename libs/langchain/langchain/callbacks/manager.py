@@ -432,9 +432,9 @@ def _handle_event(
 def _run_coros(coros: List[Coroutine[Any, Any, Any]]) -> None:
     if hasattr(asyncio, "Runner"):
         # Python 3.11+
-        # Run the coroutine in a new event loop, taking care to
+        # Run the coroutines in a new event loop, taking care to
         # - install signal handlers
-        # - run pending tasks
+        # - run pending tasks scheduled by `coros`
         # - close asyncgens and executors
         # - close the loop
         with asyncio.Runner() as runner:
