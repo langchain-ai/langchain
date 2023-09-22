@@ -63,6 +63,7 @@ All ChatModels implement the Runnable interface, which comes with default implem
 - *Batch* support defaults to calling the underlying LLM in parallel for each input by making use of a thread pool executor (in the sync batch case) or `asyncio.gather` (in the async batch case). The concurrency can be controlled with the `max_concurrency` key in `RunnableConfig`.
 
 Each ChatModel integration optionally can implement native support for async, streaming or batch, which, for providers that support it, can be more efficient.
+
 {table}
 
 <DocCardList />
@@ -108,7 +109,7 @@ def get_llm_table():
         "batch_generate",
         "batch_agenerate",
     ]
-    title = ["Model", "Generate", "Async generate", "Stream", "Async stream", "Batch", "Async batch"]
+    title = ["Model", "Invoke", "Async invoke", "Stream", "Async stream", "Batch", "Async batch"]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
         rows += [[llm, "✅"] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
@@ -132,7 +133,7 @@ def get_chat_model_table():
         if k not in CHAT_MODEL_IGNORE
     }
     header = ["model", "_agenerate", "_stream", "_astream"]
-    title = ["Model", "Generate", "Async generate", "Stream", "Async stream"]
+    title = ["Model", "Invoke", "Async invoke", "Stream", "Async stream"]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
         rows += [[llm, "✅"] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
