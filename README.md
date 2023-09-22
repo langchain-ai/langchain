@@ -5,7 +5,7 @@
 <br />
 <div align="center">
 
-  <h1 align="center">🗿🔗 GigaChain (GigaChat + LangChain)</h1>
+  <h1 align="center">🦜️🔗 GigaChain (GigaChat + LangChain)</h1>
 
   <p align="center">
     Библиотека для разработки LangChain-style приложений на русском языке с поддержкой GigaChat
