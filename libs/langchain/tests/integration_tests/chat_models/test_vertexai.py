@@ -7,6 +7,7 @@ pip install google-cloud-aiplatform>=1.25.0
 Your end-user credentials would be used to make the calls (make sure you've run 
 `gcloud auth login` first).
 """
+from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -27,7 +28,7 @@ def test_vertexai_single_call(model_name: str) -> None:
     response = model([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert model._llm_type == "chat-vertexai"
+    assert model._llm_type == "vertexai"
     assert model.model_name == model.client._model_id
 
 
@@ -127,7 +128,8 @@ def test_vertexai_single_call_failes_no_message() -> None:
     )
 
 
-def test_vertexai_args_passed() -> None:
+@pytest.mark.parametrize("stop", [None, "stop1"])
+def test_vertexai_args_passed(stop: Optional[str]) -> None:
     response_text = "Goodbye"
     user_prompt = "Hello"
     prompt_params = {
@@ -149,12 +151,19 @@ def test_vertexai_args_passed() -> None:
 
         model = ChatVertexAI(**prompt_params)
         message = HumanMessage(content=user_prompt)
-        response = model([message])
+        if stop:
+            response = model([message], stop=[stop])
+        else:
+            response = model([message])
 
         assert response.content == response_text
         mock_send_message.assert_called_once_with(user_prompt)
+        expected_stop_sequence = [stop] if stop else None
         start_chat.assert_called_once_with(
-            context=None, message_history=[], **prompt_params
+            context=None,
+            message_history=[],
+            **prompt_params,
+            stop_sequences=expected_stop_sequence
         )
 
 
