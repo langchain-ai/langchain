@@ -8,10 +8,10 @@ from langchain.schema import BaseRetriever, Document
 
 class KayAiRetriever(BaseRetriever):
     """
-        Retriever for Kay.ai datasets.
+    Retriever for Kay.ai datasets.
 
-        To work properly, expects you to have KAY_API_KEY env variable set.
-        You can get one for free at https://kay.ai/.
+    To work properly, expects you to have KAY_API_KEY env variable set.
+    You can get one for free at https://kay.ai/.
     """
 
     client: Any
@@ -19,7 +19,10 @@ class KayAiRetriever(BaseRetriever):
 
     @classmethod
     def create(
-        cls, dataset_id: str, data_sources: List[str], num_contexts: int = 6,
+        cls,
+        dataset_id: str,
+        data_sources: List[str],
+        num_contexts: int = 6,
     ) -> KayAiRetriever:
         """
         Create a KayRetriever given a Kay dataset id and a list of datasources.

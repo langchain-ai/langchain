@@ -1,6 +1,4 @@
 """Integration test for Kay.ai API Wrapper."""
-from typing import List
-
 import pytest
 
 from langchain.retrievers import KayAiRetriever
@@ -10,9 +8,9 @@ from langchain.schema import Document
 @pytest.mark.requires("kay")
 def test_kay_retriever() -> None:
     retriever = KayAiRetriever.create(
-        dataset_id="company", 
+        dataset_id="company",
         data_sources=["10-K", "10-Q", "8-K", "PressRelease"],
-        num_contexts=3
+        num_contexts=3,
     )
     docs = retriever.get_relevant_documents(
         "What were the biggest strategy changes and partnerships made by Roku "
@@ -24,4 +22,3 @@ def test_kay_retriever() -> None:
         assert doc.page_content
         assert doc.metadata
         assert len(list(doc.metadata.items())) > 0
-
