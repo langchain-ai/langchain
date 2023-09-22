@@ -115,6 +115,8 @@ class Serializable(BaseModel, ABC):
             # Get a reference to self bound to each class in the MRO
             this = cast(Serializable, self if cls is None else super(cls, self))
 
+            # For backwards compatibility, check if the class has lc_secrets
+            # property defined if so use it, otherwise use the get_lc_secrets
             if this.lc_secrets != Serializable.lc_secrets:
                 lc_secrets = this.lc_secrets
             else:
@@ -122,6 +124,8 @@ class Serializable(BaseModel, ABC):
 
             secrets.update(lc_secrets)
 
+            # For backwards compatibility, check if the class has lc_attributes
+            # property defined if so use it, otherwise use the get_lc_attributes
             if this.lc_attributes != Serializable.lc_attributes:
                 lc_kwargs.update(this.lc_attributes)
             else:
@@ -134,6 +138,8 @@ class Serializable(BaseModel, ABC):
             if secret_value is not None:
                 lc_kwargs.update({key: secret_value})
 
+        # For backwards compatibility, check if the class has lc_namespace
+        # property defined if so use it, otherwise use the get_lc_namespace
         if type(self).lc_namespace != Serializable.lc_namespace:
             namespace = self.lc_namespace
         else:
