@@ -11,7 +11,7 @@ from langchain.schema import Generation, LLMResult
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
-DEFAULT_BATCH_SIZE = 1
+DEFAULT_BATCH_SIZE = 4
 
 logger = logging.getLogger(__name__)
 
