@@ -18,6 +18,7 @@ from langchain.schema import LLMResult
 from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
+@pytest.mark.scheduled
 @pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
 def test_vertexai_single_call(model_name: str) -> None:
     if model_name:

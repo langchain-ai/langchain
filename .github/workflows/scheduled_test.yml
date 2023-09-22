@@ -34,6 +34,12 @@ jobs:
           working-directory: libs/langchain
           cache-key: scheduled
 
+      - name: 'Authenticate to Google Cloud'
+        id: 'auth'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
       - name: Install dependencies
         working-directory: libs/langchain
         shell: bash
