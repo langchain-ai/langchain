@@ -1,7 +1,6 @@
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.anthropic import convert_messages_to_prompt_anthropic
@@ -59,17 +58,6 @@ class BedrockChat(BaseChatModel, BedrockBase):
             delta = chunk.text
             yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
 
-    def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        raise NotImplementedError(
-            """Bedrock doesn't support async requests at the moment."""
-        )
-
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -98,14 +86,3 @@ class BedrockChat(BaseChatModel, BedrockBase):
 
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
-
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        raise NotImplementedError(
-            """Bedrock doesn't support async stream requests at the moment."""
-        )
