@@ -162,7 +162,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
     ) -> List[Any]:
         semaphore = asyncio.Semaphore(n)
 
-        async def sem_task(task):
+        async def sem_task(task: Coroutine[Any, Any, Any]) -> Any:
             async with semaphore:
                 return await task
 
