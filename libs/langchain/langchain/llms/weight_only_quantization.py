@@ -1,17 +1,17 @@
-import logging
 from typing import Any, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra
 
 
-DEFAULT_MODEL_ID = "gpt2"
-DEFAULT_TASK = "text-generation"
+DEFAULT_MODEL_ID = "google/flan-t5-large"
+DEFAULT_TASK = "text2text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 
-class ITREXWrightOnlyQuantPipeline(LLM):
+class WrightOnlyQuantPipeline(LLM):
     """Weight only quantized model.
 
     To use, you should have the `intel-extension-for-transformers` packabge and `transformers` package installed.
@@ -20,10 +20,10 @@ class ITREXWrightOnlyQuantPipeline(LLM):
     Example using from_model_id:
         .. code-block:: python
 
-            from langchain.llms import ITREXWrightOnlyQuant
+            from langchain.llms import WrightOnlyQuantPipeline
             from intel_extension_for_transformers.transformers import WeightOnlyQuantConfig
             config = WeightOnlyQuantConfig
-            hf = ITREXWrightOnlyQuant.from_model_id(
+            hf = WrightOnlyQuantPipeline.from_model_id(
                 model_id="google/flan-t5-large",
                 task="text2text-generation"
                 pipeline_kwargs={"max_new_tokens": 10},
@@ -32,7 +32,7 @@ class ITREXWrightOnlyQuantPipeline(LLM):
     Example passing pipeline in directly:
         .. code-block:: python
 
-            from langchain.llms import ITREXWrightOnlyQuant
+            from langchain.llms import WrightOnlyQuantPipeline
             from intel_extension_for_transformers.transformers import AutoModelForSeq2SeqLM
             from intel_extension_for_transformers.transformers import WeightOnlyQuantConfig
             from transformers import AutoTokenizer, pipeline
@@ -44,11 +44,11 @@ class ITREXWrightOnlyQuantPipeline(LLM):
             pipe = pipeline(
                 "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
             )
-            hf = ITREXWrightOnlyQuant(pipeline=pipe)
+            hf = WrightOnlyQuantPipeline(pipeline=pipe)
     """
 
-    client: Any  #: :meta private:
-    model_id: str
+    pipeline: Any  #: :meta private:
+    model_id: str = DEFAULT_MODEL_ID
     """Model name or local path to use."""
 
     model_kwargs: Optional[dict] = None
@@ -56,6 +56,11 @@ class ITREXWrightOnlyQuantPipeline(LLM):
 
     pipeline_kwargs: Optional[dict] = None
     """Key word arguments passed to the pipeline."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.allow
 
     @classmethod
     def from_model_id(
@@ -148,7 +153,7 @@ class ITREXWrightOnlyQuantPipeline(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "itrex_weight_only_quantization"
+        return "weight_only_quantization"
 
     def _call(
         self,
@@ -169,8 +174,8 @@ class ITREXWrightOnlyQuantPipeline(LLM):
         Example:
             .. code-block:: python
 
-                from langchain.llms import ITREXWrightOnlyQuant
-                llm = ITREXWrightOnlyQuant.from_model_id(model_id="google/flan-t5-large",
+                from langchain.llms import WrightOnlyQuantPipeline
+                llm = WrightOnlyQuantPipeline.from_model_id(model_id="google/flan-t5-large",
                                                          task="text2text-generation")
                 llm("This is a prompt.")
         """
