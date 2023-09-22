@@ -1,19 +1,19 @@
-import asyncio
 from abc import ABC
-
-from typing import Any, Dict, List, Optional, Type, Iterable, Coroutine
-from types import TracebackType
+import asyncio
 
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
+
+from typing import Any, Dict, List, Optional, Type, Iterable, Coroutine
+from types import TracebackType
 
 
 class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
     """Aleph Alpha's asymmetric semantic embedding.
 
     AA provides you with an endpoint to embed a document and a query.
-    We offer two types of embeddings-asymetric embedding and symetric embedding
+    We offer two types of embeddings-asymetric embedding and symmetric embedding
     To learn more, check out:
     https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
     """
@@ -236,7 +236,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously make a call to Aleph Alpha's semantic embeddings
         endpoint. We get the document representation for every text.
-        The number of concurent calls is limited by `concurrency_limit`
+        The number of concurrent calls is limited by `concurrency_limit`
 
         Args:
             texts: The list of texts to embed.
@@ -316,7 +316,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
         """Asynchronously make a call to Aleph Alpha's
         semantic embeddings endpoint. We get the query
         representation for every text.
-        The number of concurent calls is limited by `concurrency_limit`
+        The number of concurrent calls is limited by `concurrency_limit`
 
         Args:
             text: The query text to embed.
