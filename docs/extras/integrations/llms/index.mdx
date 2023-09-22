@@ -1,5 +1,6 @@
 ---
 sidebar_position: 0
+sidebar_class_name: hidden
 ---
 
 # LLMs
@@ -9,10 +10,11 @@ import DocCardList from "@theme/DocCardList";
 ## Features (natively supported)
 All `LLM`s implement the LCEL `Runnable` interface, meaning they all expose functioning `invoke`, `ainvoke`, `batch`, `abatch`, `stream`, and `astream` methods.
 *That is, they all have functioning sync, async, streaming, and batch generation methods.*
+
 This table highlights specifically those integrations that **natively support** batching, streaming, and asynchronous generation (meaning these features are built into the 3rd-party integration).
 
 Model|Async|Stream|Async stream|Batch|Async batch
-:-|:-:|:-:|:-:|:-:|:-:|:-:
+:-|:-:|:-:|:-:|:-:|:-:
 AI21|❌|❌|❌|❌|❌
 AlephAlpha|❌|❌|❌|❌|❌
 AmazonAPIGateway|❌|❌|❌|❌|❌

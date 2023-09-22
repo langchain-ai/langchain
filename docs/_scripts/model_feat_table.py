@@ -24,6 +24,7 @@ CHAT_MODEL_FEAT_TABLE_CORRECTION = {
 LLM_TEMPLATE = """\
 ---
 sidebar_position: 0
+sidebar_class_name: hidden
 ---
 
 # LLMs
@@ -33,6 +34,7 @@ import DocCardList from "@theme/DocCardList";
 ## Features (natively supported)
 All `LLM`s implement the LCEL `Runnable` interface, meaning they all expose functioning `invoke`, `ainvoke`, `batch`, `abatch`, `stream`, and `astream` methods.
 *That is, they all have functioning sync, async, streaming, and batch generation methods.*
+
 This table highlights specifically those integrations that **natively support** batching, streaming, and asynchronous generation (meaning these features are built into the 3rd-party integration).
 
 {table}
@@ -43,6 +45,7 @@ This table highlights specifically those integrations that **natively support** 
 CHAT_MODEL_TEMPLATE = """\
 ---
 sidebar_position: 1
+sidebar_class_name: hidden
 ---
 
 # Chat models
@@ -50,8 +53,9 @@ sidebar_position: 1
 import DocCardList from "@theme/DocCardList";
 
 ## Feature (natively supported)
-All `LLM`s implement the LCEL `Runnable` interface, meaning they all expose functioning `invoke`, `ainvoke`, `stream`, and `astream` (and `batch`, `abatch`) methods.
+All `ChatModel`s implement the LCEL `Runnable` interface, meaning they all expose functioning `invoke`, `ainvoke`, `stream`, and `astream` (and `batch`, `abatch`) methods.
 *That is, they all have functioning async and streaming generation methods.*
+
 This table highlights specifically those integrations that **natively support** streaming and asynchronous generation (meaning these features are built into the 3rd-party integration).
 
 {table}
@@ -100,7 +104,7 @@ def get_llm_table():
         "batch_agenerate",
     ]
     title = ["Model", "Async", "Stream", "Async stream", "Batch", "Async batch"]
-    rows = [title, [":-"] + [":-:"] * len(header)]
+    rows = [title, [":-"] + [":-:"] * (len(header) - 1)]
     for llm, feats in sorted(final_feats.items()):
         rows += [[llm] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
     return "\n".join(["|".join(row) for row in rows])
@@ -124,7 +128,7 @@ def get_chat_model_table():
     }
     header = ["model", "_agenerate", "_stream", "_astream"]
     title = ["Model", "Async", "Stream", "Async stream"]
-    rows = [title, [":-"] + [":-:"] * len(header)]
+    rows = [title, [":-"] + [":-:"] * (len(header) - 1)]
     for llm, feats in sorted(final_feats.items()):
         rows += [[llm] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
     return "\n".join(["|".join(row) for row in rows])
