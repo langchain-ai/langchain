@@ -1,7 +1,7 @@
 import asyncio
 from abc import ABC
 
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Iterable, Coroutine
 from types import TracebackType
 
 from langchain.pydantic_v1 import BaseModel, root_validator
@@ -24,10 +24,11 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
             "Could not import aleph_alpha_client python package. "
             "Please install it with `pip install aleph_alpha_client`."
         )
-    # Either Document or Symmetric, specified in the child class
+
     document_representation: SemanticRepresentation
-    # Either Query or Symmetric, specified in the child class
+    """Either Document or Symmetric, specified in the child class"""
     query_representation: SemanticRepresentation
+    """Either Query or Symmetric, specified in the child class"""
 
     client: Any  #: :meta private:
     async_client: Any  #: :meta private:
@@ -52,7 +53,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
     """API key for Aleph Alpha API."""
     host: str = "https://api.aleph-alpha.com"
     """The hostname of the API host.
-    The default one is "https://api.aleph-alpha.com")"""
+    The default one is https://api.aleph-alpha.com"""
     hosting: Optional[str] = None
     """Determines in which datacenters the request may be processed.
     You can either set the parameter to "aleph-alpha" or omit it (defaulting to None).
@@ -86,7 +87,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
     show_progress: bool = False
     """Show progress bar while obtaining the embeddings for documents"""
 
-    async def __aenter__(self) -> "AlephAlphaAsymmetricSemanticEmbedding":
+    async def __aenter__(self) -> "AlephAlphaSemanticEmbeddingAbstractClass":
         """The intended way to use the Async Call is via a context manager. Due to that,
         we only initialize the AsycClient in _aenter,
         and we only close its session in aexit"""
@@ -117,13 +118,13 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
         exc_type: Optional[Type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
-    ):
+    ) -> None:
         await self.async_client.__aexit__(
             exc_type=exc_type, exc_val=exc_val, exc_tb=exc_tb
         )
 
     @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict[str, Any]:
         """Validate that api key and python package exists in environment."""
         aleph_alpha_api_key = get_from_dict_or_env(
             values, "aleph_alpha_api_key", "ALEPH_ALPHA_API_KEY"
@@ -151,7 +152,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
         return values
 
     @staticmethod
-    async def gather_with_concurrency(n, *tasks, show_progress=False):
+    async def gather_with_concurrency(n: int, *, tasks: Iterable[Coroutine[Any, Any, Any]], show_progress: bool = False) -> List[Any]:
         semaphore = asyncio.Semaphore(n)
 
         async def sem_task(task):
@@ -202,24 +203,21 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
                     "Please install it with `pip install tqdm`."
                 )
 
-        document_embeddings = []
+        iterated_texts = tqdm(texts) if self.show_progress else texts
 
-        for text in tqdm(texts) if self.show_progress else texts:
-            document_params = {
-                "prompt": Prompt.from_text(text),
-                "representation": self.document_representation,
-                "compress_to_size": self.compress_to_size,
-                "normalize": self.normalize,
-                "contextual_control_threshold": self.contextual_control_threshold,
-                "control_log_additive": self.control_log_additive,
-            }
-
-            document_request = SemanticEmbeddingRequest(**document_params)
-            document_response = self.client.semantic_embed(
-                request=document_request, model=self.model
-            )
-
-            document_embeddings.append(document_response.embedding)
+        document_embeddings = [
+            self.client.semantic_embed(
+                request=SemanticEmbeddingRequest(
+                    prompt=Prompt.from_text(text),
+                    representation=self.document_representation,
+                    compress_to_size=self.compress_to_size,
+                    normalize=self.normalize,
+                    contextual_control_threshold=self.contextual_control_threshold,
+                    control_log_additive=self.control_log_additive
+                ),
+                model=self.model
+            ).embedding for text in iterated_texts
+        ]
 
         return document_embeddings
 
@@ -245,21 +243,18 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
                 "Please install it with `pip install aleph_alpha_client`."
             )
 
-        requests = []
-        for text in texts:
-            document_params = {
-                "prompt": Prompt.from_text(text),
-                "representation": self.document_representation,
-                "compress_to_size": self.compress_to_size,
-                "normalize": self.normalize,
-                "contextual_control_threshold": self.contextual_control_threshold,
-                "control_log_additive": self.control_log_additive,
-            }
-            requests.append(SemanticEmbeddingRequest(**document_params))
+        requests = [SemanticEmbeddingRequest(
+                prompt=Prompt.from_text(text),
+                representation=self.document_representation,
+                compress_to_size=self.compress_to_size,
+                normalize=self.normalize,
+                contextual_control_threshold=self.contextual_control_threshold,
+                control_log_additive=self.control_log_additive
+           ) for text in texts]
 
         responses = await self.gather_with_concurrency(
             self.concurrency_limit,
-            *(
+            tasks=(
                 self.async_client.semantic_embed(request=req, model=self.model)
                 for req in requests
             ),
@@ -287,16 +282,15 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
-        symmetric_params = {
-            "prompt": Prompt.from_text(text),
-            "representation": self.query_representation,
-            "compress_to_size": self.compress_to_size,
-            "normalize": self.normalize,
-            "contextual_control_threshold": self.contextual_control_threshold,
-            "control_log_additive": self.control_log_additive,
-        }
+        symmetric_request = SemanticEmbeddingRequest(
+            prompt=Prompt.from_text(text),
+            representation=self.query_representation,
+            compress_to_size=self.compress_to_size,
+            normalize=self.normalize,
+            contextual_control_threshold=self.contextual_control_threshold,
+            control_log_additive=self.control_log_additive
+        )
 
-        symmetric_request = SemanticEmbeddingRequest(**symmetric_params)
         symmetric_response = self.client.semantic_embed(
             request=symmetric_request, model=self.model
         )
@@ -325,16 +319,14 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
                 "Please install it with `pip install aleph_alpha_client`."
             )
 
-        query_params = {
-            "prompt": Prompt.from_text(text),
-            "representation": self.query_representation,
-            "compress_to_size": self.compress_to_size,
-            "normalize": self.normalize,
-            "contextual_control_threshold": self.contextual_control_threshold,
-            "control_log_additive": self.control_log_additive,
-        }
-
-        query_request = SemanticEmbeddingRequest(**query_params)
+        query_request = SemanticEmbeddingRequest(
+            prompt=Prompt.from_text(text),
+            representation=self.query_representation,
+            compress_to_size=self.compress_to_size,
+            normalize=self.normalize,
+            contextual_control_threshold=self.contextual_control_threshold,
+            control_log_additive=self.control_log_additive
+        )
 
         query_response = await self.async_client.semantic_embed(
             request=query_request, model=self.model
