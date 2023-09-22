@@ -138,7 +138,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
                 values["client"] = ChatModel.from_pretrained(values["model_name"])
         except ImportError:
-            raise_vertex_import_error(minimum_expected_version="1.29.0")
+            raise_vertex_import_error()
         return values
 
     def _generate(
@@ -173,15 +173,16 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
-        params = {**self._default_params, **kwargs}
+        params = self._prepare_params(stop=stop, **kwargs)
         examples = kwargs.get("examples", None)
         if examples:
             params["examples"] = _parse_examples(examples)
 
         chat = self._start_chat(history, params)
         response = chat.send_message(question.content)
-        text = self._enforce_stop_words(response.text, stop)
-        return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content=response.text))]
+        )
 
     async def _agenerate(
         self,
@@ -209,15 +210,16 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             logger.warning("ChatVertexAI does not currently support async streaming.")
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
-        params = {**self._default_params, **kwargs}
+        params = self._prepare_params(stop=stop, **kwargs)
         examples = kwargs.get("examples", None)
         if examples:
             params["examples"] = _parse_examples(examples)
 
         chat = self._start_chat(history, params)
         response = await chat.send_message_async(question.content)
-        text = self._enforce_stop_words(response.text, stop)
-        return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content=response.text))]
+        )
 
     def _stream(
         self,
@@ -228,7 +230,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
-        params = {**self._default_params, **kwargs}
+        params = self._prepare_params(stop=stop, **kwargs)
         examples = kwargs.get("examples", None)
         if examples:
             params["examples"] = _parse_examples(examples)
@@ -236,10 +238,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         chat = self._start_chat(history, params)
         responses = chat.send_message_streaming(question.content, **params)
         for response in responses:
-            text = self._enforce_stop_words(response.text, stop)
             if run_manager:
-                run_manager.on_llm_new_token(text)
-            yield ChatGenerationChunk(message=AIMessageChunk(content=text))
+                run_manager.on_llm_new_token(response.text)
+            yield ChatGenerationChunk(message=AIMessageChunk(content=response.text))
 
     def _start_chat(
         self, history: _ChatHistory, params: dict
