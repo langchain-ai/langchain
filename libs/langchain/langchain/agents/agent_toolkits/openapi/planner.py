@@ -19,10 +19,12 @@ from langchain.agents.agent_toolkits.openapi.planner_prompt import (
     PARSING_GET_PROMPT,
     PARSING_PATCH_PROMPT,
     PARSING_POST_PROMPT,
+    PARSING_PUT_PROMPT,
     REQUESTS_DELETE_TOOL_DESCRIPTION,
     REQUESTS_GET_TOOL_DESCRIPTION,
     REQUESTS_PATCH_TOOL_DESCRIPTION,
     REQUESTS_POST_TOOL_DESCRIPTION,
+    REQUESTS_PUT_TOOL_DESCRIPTION,
 )
 from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
 from langchain.agents.mrkl.base import ZeroShotAgent
@@ -142,6 +144,35 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.patch(data["url"], data["data"])
+        response = response[: self.response_length]
+        return self.llm_chain.predict(
+            response=response, instructions=data["output_instructions"]
+        ).strip()
+
+    async def _arun(self, text: str) -> str:
+        raise NotImplementedError()
+
+
+class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
+    """Requests PUT tool with LLM-instructed extraction of truncated responses."""
+
+    name: str = "requests_put"
+    """Tool name."""
+    description = REQUESTS_PUT_TOOL_DESCRIPTION
+    """Tool description."""
+    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    """Maximum length of the response to be returned."""
+    llm_chain: LLMChain = Field(
+        default_factory=_get_default_llm_chain_factory(PARSING_PUT_PROMPT)
+    )
+    """LLMChain used to extract the response."""
+
+    def _run(self, text: str) -> str:
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise e
+        response = self.requests_wrapper.put(data["url"], data["data"])
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]

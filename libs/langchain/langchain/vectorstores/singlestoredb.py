@@ -20,7 +20,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 from langchain.vectorstores.utils import DistanceStrategy
 
@@ -374,7 +374,9 @@ class SingleStoreDB(VectorStore):
                     FROM {} {} ORDER BY __score {} LIMIT %s""".format(
                         self.content_field,
                         self.metadata_field,
-                        self.distance_strategy,
+                        self.distance_strategy.name
+                        if isinstance(self.distance_strategy, DistanceStrategy)
+                        else self.distance_strategy,
                         self.vector_field,
                         self.table_name,
                         where_clause,

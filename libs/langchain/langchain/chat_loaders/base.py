@@ -1,10 +1,3 @@
-"""Base definitions for chat loaders.
-
-A chat loader is a class that loads chat messages from an external
-source such as a file or a database. The chat messages can then be
-used for finetuning.
-"""
-
 from abc import ABC, abstractmethod
 from typing import Iterator, List, Sequence, TypedDict
 
@@ -12,7 +5,7 @@ from langchain.schema.messages import BaseMessage
 
 
 class ChatSession(TypedDict):
-    """A chat session represents a single
+    """Chat Session represents a single
     conversation, channel, or other group of messages."""
 
     messages: Sequence[BaseMessage]
