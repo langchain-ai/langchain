@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import List, Sequence
 
@@ -134,13 +135,15 @@ class MultiQueryRetriever(BaseRetriever):
         Returns:
             List of retrieved Documents
         """
-        documents = []
-        for query in queries:
-            docs = await self.retriever.aget_relevant_documents(
-                query, callbacks=run_manager.get_child()
+        document_lists = await asyncio.gather(
+            *(
+                self.retriever.aget_relevant_documents(
+                    query, callbacks=run_manager.get_child()
+                )
+                for query in queries
             )
-            documents.extend(docs)
-        return documents
+        )
+        return [doc for docs in document_lists for doc in docs]
 
     def _get_relevant_documents(
         self,
