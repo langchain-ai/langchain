@@ -1,6 +1,7 @@
 from abc import ABC
 from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
+from langchain._api import deprecated
 from langchain.pydantic_v1 import BaseModel, PrivateAttr
 
 
@@ -34,23 +35,32 @@ class SerializedNotImplemented(BaseSerialized):
 class Serializable(BaseModel, ABC):
     """Serializable base class."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """
-        Return whether or not the class is serializable.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Is this class serializable?"""
         return False
 
     @property
-    def lc_namespace(self) -> List[str]:
+    def lc_serializable(self) -> bool:
+        """Deprecated -- instead use is_lc_serializable."""
+        return self.is_lc_serializable()
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object.
+
+        For example, if the class is `langchain.llms.openai.OpenAI`, then the
+        namespace is ["langchain", "llms", "openai"]
         """
-        Return the namespace of the langchain object.
-        eg. ["langchain", "llms", "openai"]
-        """
-        return self.__class__.__module__.split(".")
+        return cls.__module__.split(".")
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_namespace(self) -> List[str]:
+        """Deprecated -- instead use get_lc_namespace."""
+        return self.get_lc_namespace()
+
+    @classmethod
+    def get_lc_secrets(cls) -> Dict[str, str]:
         """
         Return a map of constructor argument names to secret ids.
         eg. {"openai_api_key": "OPENAI_API_KEY"}
@@ -58,13 +68,22 @@ class Serializable(BaseModel, ABC):
         return dict()
 
     @property
-    def lc_attributes(self) -> Dict:
+    def lc_secrets(self) -> Dict[str, str]:
+        """Deprecated -- instead use get_lc_secrets."""
+        return self.get_lc_secrets()
+
+    def get_lc_attributes(self) -> Dict[str, Any]:
         """
         Return a list of attribute names that should be included in the
         serialized kwargs. These attributes must be accepted by the
         constructor.
         """
         return {}
+
+    @property
+    def lc_attributes(self) -> Dict:
+        """Deprecated -- instead use get_lc_attributes."""
+        return self.get_lc_attributes()
 
     class Config:
         extra = "ignore"
@@ -96,8 +115,17 @@ class Serializable(BaseModel, ABC):
             # Get a reference to self bound to each class in the MRO
             this = cast(Serializable, self if cls is None else super(cls, self))
 
-            secrets.update(this.lc_secrets)
-            lc_kwargs.update(this.lc_attributes)
+            if this.lc_secrets != Serializable.lc_secrets:
+                lc_secrets = this.lc_secrets
+            else:
+                lc_secrets = this.get_lc_secrets()
+
+            secrets.update(lc_secrets)
+
+            if this.lc_attributes != Serializable.lc_attributes:
+                lc_kwargs.update(this.lc_attributes)
+            else:
+                lc_kwargs.update(this.get_lc_attributes())
 
         # include all secrets, even if not specified in kwargs
         # as these secrets may be passed as an environment variable instead
@@ -106,10 +134,15 @@ class Serializable(BaseModel, ABC):
             if secret_value is not None:
                 lc_kwargs.update({key: secret_value})
 
+        if type(self).lc_namespace != Serializable.lc_namespace:
+            namespace = self.lc_namespace
+        else:
+            namespace = self.get_lc_namespace()
+
         return {
             "lc": 1,
             "type": "constructor",
-            "id": [*self.lc_namespace, self.__class__.__name__],
+            "id": [*namespace, self.__class__.__name__],
             "kwargs": lc_kwargs
             if not secrets
             else _replace_secrets(lc_kwargs, secrets),
