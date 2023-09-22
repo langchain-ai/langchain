@@ -16,7 +16,7 @@ from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts import BasePromptTemplate, PromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseRetriever, Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.utilities import GoogleSearchAPIWrapper
 from langchain.vectorstores.base import VectorStore
 
@@ -75,7 +75,7 @@ class WebResearchRetriever(BaseRetriever):
     llm_chain: LLMChain
     search: GoogleSearchAPIWrapper = Field(..., description="Google Search API Wrapper")
     num_search_results: int = Field(1, description="Number of pages per Google search")
-    text_splitter: RecursiveCharacterTextSplitter = Field(
+    text_splitter: TextSplitter = Field(
         RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=50),
         description="Text splitter for splitting web pages into chunks",
     )
@@ -150,7 +150,7 @@ class WebResearchRetriever(BaseRetriever):
         return query.strip()
 
     def search_tool(self, query: str, num_search_results: int = 1) -> List[dict]:
-        """Returns num_serch_results pages per Google search."""
+        """Returns num_search_results pages per Google search."""
         query_clean = self.clean_search_query(query)
         result = self.search.results(query_clean, num_search_results)
         return result

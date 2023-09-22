@@ -199,6 +199,7 @@ class ChildTool(BaseTool):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
             **kwargs,
         )
 
@@ -210,7 +211,7 @@ class ChildTool(BaseTool):
     ) -> Any:
         if type(self)._arun == BaseTool._arun:
             # If the tool does not implement async, fall back to default implementation
-            return super().ainvoke(input, config, **kwargs)
+            return await super().ainvoke(input, config, **kwargs)
 
         config = config or {}
         return await self.arun(
@@ -218,6 +219,7 @@ class ChildTool(BaseTool):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
             **kwargs,
         )
 
@@ -273,7 +275,11 @@ class ChildTool(BaseTool):
         Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
         to child implementations to enable tracing,
         """
-        raise NotImplementedError()
+        return await asyncio.get_running_loop().run_in_executor(
+            None,
+            partial(self._run, **kwargs),
+            *args,
+        )
 
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
         # For backwards compatibility, if run_input is a string,
@@ -293,6 +299,7 @@ class ChildTool(BaseTool):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -316,6 +323,7 @@ class ChildTool(BaseTool):
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
+            name=run_name,
             **kwargs,
         )
         try:
@@ -366,6 +374,7 @@ class ChildTool(BaseTool):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -388,6 +397,7 @@ class ChildTool(BaseTool):
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
+            name=run_name,
             **kwargs,
         )
         try:
@@ -457,7 +467,7 @@ class Tool(BaseTool):
                 None, partial(self.invoke, input, config, **kwargs)
             )
 
-        return super().ainvoke(input, config, **kwargs)
+        return await super().ainvoke(input, config, **kwargs)
 
     # --- Tool ---
 
@@ -522,7 +532,10 @@ class Tool(BaseTool):
                 if new_argument_supported
                 else await self.coroutine(*args, **kwargs)
             )
-        raise NotImplementedError("Tool does not support async")
+        else:
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self._run, run_manager=run_manager, **kwargs), *args
+            )
 
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
@@ -585,7 +598,7 @@ class StructuredTool(BaseTool):
                 None, partial(self.invoke, input, config, **kwargs)
             )
 
-        return super().ainvoke(input, config, **kwargs)
+        return await super().ainvoke(input, config, **kwargs)
 
     # --- Tool ---
 
@@ -634,7 +647,12 @@ class StructuredTool(BaseTool):
                 if new_argument_supported
                 else await self.coroutine(*args, **kwargs)
             )
-        raise NotImplementedError("Tool does not support async")
+        return await asyncio.get_running_loop().run_in_executor(
+            None,
+            self._run,
+            partial(self._run, run_manager=run_manager, **kwargs),
+            *args,
+        )
 
     @classmethod
     def from_function(
