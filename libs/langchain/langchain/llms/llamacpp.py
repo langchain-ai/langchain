@@ -423,7 +423,7 @@ class LlamaCpp(LLM):
             None, partial(self.client, prompt=prompt, stream=True, **params)
         )
         while True:
-            part = await loop.run_in_executor(None, next, iterator, None)
+            part: Any = await loop.run_in_executor(None, next, iterator, None)
             if part is None:
                 break
 
