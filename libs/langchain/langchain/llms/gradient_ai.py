@@ -194,8 +194,8 @@ class GradientLLM(LLM):
     async def _acall(
         self,
         prompt: str,
-        stop: List[str] | None = None,
-        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         """Async Call to Gradients API `model/{id}/complete`.
