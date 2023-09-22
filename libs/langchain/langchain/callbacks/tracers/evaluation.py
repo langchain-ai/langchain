@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Union
 from uuid import UUID
 
 import langsmith
-from langsmith import schemas as langsmith_schemas
+from langsmith.evaluation.evaluator import EvaluationResult
 
 from langchain.callbacks import manager
 from langchain.callbacks.tracers import langchain as langchain_tracer
@@ -76,7 +76,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.futures: Set[Future] = set()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
-        self.logged_feedback: Dict[str, List[langsmith_schemas.Feedback]] = {}
+        self.logged_eval_results: Dict[str, List[EvaluationResult]] = {}
 
     def _evaluate_in_project(self, run: Run, evaluator: langsmith.RunEvaluator) -> None:
         """Evaluate the run in the project.
@@ -91,11 +91,11 @@ class EvaluatorCallbackHandler(BaseTracer):
         """
         try:
             if self.project_name is None:
-                feedback = self.client.evaluate_run(run, evaluator)
+                eval_result = self.client.evaluate_run(run, evaluator)
             with manager.tracing_v2_enabled(
                 project_name=self.project_name, tags=["eval"], client=self.client
             ):
-                feedback = self.client.evaluate_run(run, evaluator)
+                eval_result = self.client.evaluate_run(run, evaluator)
         except Exception as e:
             logger.error(
                 f"Error evaluating run {run.id} with "
@@ -104,7 +104,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             )
             raise e
         example_id = str(run.reference_example_id)
-        self.logged_feedback.setdefault(example_id, []).append(feedback)
+        self.logged_eval_results.setdefault(example_id, []).append(eval_result)
 
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.

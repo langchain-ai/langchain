@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.streamlit.mutable_expander import MutableExpander
@@ -163,9 +163,7 @@ class LLMThought:
         # data is redundant
         self._reset_llm_token_stream()
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         self._container.markdown("**LLM encountered an error...**")
         self._container.exception(error)
 
@@ -191,9 +189,7 @@ class LLMThought:
     ) -> None:
         self._container.markdown(f"**{output}**")
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         self._container.markdown("**Tool encountered an error...**")
         self._container.exception(error)
 
@@ -353,9 +349,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self._require_current_thought().on_llm_end(response, **kwargs)
         self._prune_old_thought_containers()
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         self._require_current_thought().on_llm_error(error, **kwargs)
         self._prune_old_thought_containers()
 
@@ -378,9 +372,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         )
         self._complete_current_thought()
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         self._require_current_thought().on_tool_error(error, **kwargs)
         self._prune_old_thought_containers()
 
@@ -401,9 +393,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         pass
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         pass
 
     def on_agent_action(
