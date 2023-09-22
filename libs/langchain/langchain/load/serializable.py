@@ -1,7 +1,6 @@
 from abc import ABC
 from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
-from langchain._api import deprecated
 from langchain.pydantic_v1 import BaseModel, PrivateAttr
 
 
