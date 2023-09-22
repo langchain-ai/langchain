@@ -44,7 +44,6 @@ from langchain.schema.messages import (
 from langchain.schema.output import (
     ChatGeneration,
     ChatGenerationChunk,
-    GenerationChunk,
 )
 
 LATEST_MODEL = "GigaChat:latest"
@@ -309,7 +308,7 @@ class GigaChat(BaseChatModel):
         llm_output = {"token_usage": token_usage, "model_name": self.model}
         return ChatResult(generations=generations, llm_output=llm_output)
 
-    def _request(self, messages: List[BaseMessage]):
+    def _request(self, messages: List[BaseMessage]) -> Any:
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.token}",
@@ -377,7 +376,7 @@ class GigaChat(BaseChatModel):
             self.model = self.get_models()[0]
 
         if self.streaming:
-            generation: Optional[GenerationChunk] = None
+            generation: Optional[ChatGenerationChunk] = None
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 if generation is None:
                     generation = chunk

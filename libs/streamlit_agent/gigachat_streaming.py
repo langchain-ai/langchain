@@ -1,5 +1,4 @@
 """Пример работы с чатом через gigachain """
-import langchain
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.chat_models import GigaChat
 from langchain.schema import ChatMessage
@@ -23,7 +22,13 @@ with st.sidebar:
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
-        ChatMessage(role="assistant", content="How can I help you?")]
+        ChatMessage(
+            role="system",
+            content="Ты - умный ИИ ассистент, \
+который всегда готов помочь пользователю.",
+        ),
+        ChatMessage(role="assistant", content="Как я могу помочь вам?"),
+    ]
 
 for msg in st.session_state.messages:
     st.chat_message(msg.role).write(msg.content)
@@ -41,8 +46,9 @@ if prompt := st.chat_input():
             user=giga_user,
             password=giga_password,
             streaming=True,
-            callbacks=[stream_handler]
+            callbacks=[stream_handler],
         )
         response = llm(st.session_state.messages)
         st.session_state.messages.append(
-            ChatMessage(role="assistant", content=response.content))
+            ChatMessage(role="assistant", content=response.content)
+        )
