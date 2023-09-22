@@ -280,7 +280,7 @@ class SQLRecordManager(RecordManager):
                 query = query.filter(  # type: ignore[attr-defined]
                     UpsertionRecord.group_id.in_(group_ids)
                 )
-                
+
             if limit:
                 query = query.limit(limit)
             records = query.all()  # type: ignore[attr-defined]
