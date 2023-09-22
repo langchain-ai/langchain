@@ -25,7 +25,7 @@ class GradientLLM(LLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms.gradientai import GradientLLM
+            from langchain.llms import GradientLLM
             GradientLLM(
                 model="99148c6d-c2a0-4fbe-a4a7-e7c05bdb8a09_base_ml_model",
                 model_kwargs={
