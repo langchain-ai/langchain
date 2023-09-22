@@ -137,7 +137,7 @@ Run these locally before submitting a PR; the CI system will check also.
 
 #### Code Formatting
 
-Formatting for this project is done via a combination of [Black](https://black.readthedocs.io/en/stable/) and [isort](https://pycqa.github.io/isort/).
+Formatting for this project is done via a combination of [Black](https://black.readthedocs.io/en/stable/) and [ruff](https://docs.astral.sh/ruff/rules/).
 
 To run formatting for this project:
 
@@ -155,7 +155,7 @@ This is especially useful when you have made changes to a subset of the project 
 
 #### Linting
 
-Linting for this project is done via a combination of [Black](https://black.readthedocs.io/en/stable/), [isort](https://pycqa.github.io/isort/), [flake8](https://flake8.pycqa.org/en/latest/), and [mypy](http://mypy-lang.org/).
+Linting for this project is done via a combination of [Black](https://black.readthedocs.io/en/stable/), [ruff](https://docs.astral.sh/ruff/rules/), and [mypy](http://mypy-lang.org/).
 
 To run linting for this project:
 
