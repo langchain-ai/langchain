@@ -86,13 +86,8 @@ def test_extract_sub_links() -> None:
     actual = sorted(extract_sub_links(html, "https://foobar.com"))
     assert actual == expected
 
-    actual = sorted(extract_sub_links(html, "https://foobar.com/hello"))
-    expected = sorted(
-        [
-            "https://foobar.com/hello",
-            "https://foobar.com/how/are/you/doing",
-        ]
-    )
+    actual = extract_sub_links(html, "https://foobar.com/hello")
+    expected = ["https://foobar.com/hello"]
     assert actual == expected
 
     actual = sorted(
@@ -105,5 +100,30 @@ def test_extract_sub_links() -> None:
             "https://foobar.com/hello",
             "https://foobar.com/how/are/you/doing",
         ]
+    )
+    assert actual == expected
+
+
+def test_extract_sub_links_base() -> None:
+    html = (
+        '<a href="https://foobar.com">one</a>'
+        '<a href="http://baz.net">two</a>'
+        '<a href="//foobar.com/hello">three</a>'
+        '<a href="/how/are/you/doing">four</a>'
+        '<a href="alexis.html"</a>'
+    )
+
+    expected = sorted(
+        [
+            "https://foobar.com",
+            "https://foobar.com/hello",
+            "https://foobar.com/how/are/you/doing",
+            "https://foobar.com/hello/alexis.html",
+        ]
+    )
+    actual = sorted(
+        extract_sub_links(
+            html, "https://foobar.com/hello/bill.html", base_url="https://foobar.com"
+        )
     )
     assert actual == expected
