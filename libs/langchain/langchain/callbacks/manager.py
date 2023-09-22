@@ -429,7 +429,7 @@ def _handle_event(
                 _run_coros(coros)
 
 
-def _run_coros(coros: List[Coroutine[Any, Any, Any]]):
+def _run_coros(coros: List[Coroutine[Any, Any, Any]]) -> None:
     # Run the coroutine in a new event loop, taking care to
     # - install signal handlers
     # - run pending tasks
@@ -440,7 +440,7 @@ def _run_coros(coros: List[Coroutine[Any, Any, Any]]):
         for coro in coros:
             runner.run(coro)
 
-        # Run pending tasks scheduled by coro until they are all done
+        # Run pending tasks scheduled by coros until they are all done
         while pending := asyncio.all_tasks(runner.get_loop()):
             runner.run(asyncio.wait(pending))
 
