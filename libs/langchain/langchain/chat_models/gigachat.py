@@ -70,6 +70,30 @@ def parse_stream(rbody: Iterator[bytes]) -> Iterator[str]:
             yield _line
 
 
+def _convert_delta_to_message_chunk(
+    _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    role = str(_dict.get("role"))
+    content = _dict.get("content") or ""
+    if _dict.get("function_call"):
+        additional_kwargs = {"function_call": dict(_dict["function_call"])}
+    else:
+        additional_kwargs = {}
+
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content)
+    elif role == "assistant" or default_class == AIMessageChunk:
+        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content)
+    elif role == "function" or default_class == FunctionMessageChunk:
+        return FunctionMessageChunk(content=content, name=_dict["name"])
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role)
+    else:
+        return default_class(content=content)
+
+
 class GigaMessage:
     message = ""
 
@@ -242,30 +266,6 @@ class GigaChat(BaseChatModel):
         return [model["id"] for model in response.json()["data"]]
 
     @staticmethod
-    def _convert_delta_to_message_chunk(
-        _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
-    ) -> BaseMessageChunk:
-        role = str(_dict.get("role"))
-        content = _dict.get("content") or ""
-        if _dict.get("function_call"):
-            additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        else:
-            additional_kwargs = {}
-
-        if role == "user" or default_class == HumanMessageChunk:
-            return HumanMessageChunk(content=content)
-        elif role == "assistant" or default_class == AIMessageChunk:
-            return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
-        elif role == "system" or default_class == SystemMessageChunk:
-            return SystemMessageChunk(content=content)
-        elif role == "function" or default_class == FunctionMessageChunk:
-            return FunctionMessageChunk(content=content, name=_dict["name"])
-        elif role or default_class == ChatMessageChunk:
-            return ChatMessageChunk(content=content, role=role)
-        else:
-            return default_class(content=content)
-
-    @staticmethod
     def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         role = _dict["role"]
         if role == "user":
@@ -410,7 +410,7 @@ class GigaChat(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
-            chunk = self._convert_delta_to_message_chunk(
+            chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
             finish_reason = choice.get("finish_reason")
