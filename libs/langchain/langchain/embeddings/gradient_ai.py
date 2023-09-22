@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Any, Callable, Collection, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import aiohttp
 import numpy as np
@@ -9,7 +9,6 @@ import requests
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
-
 
 
 class GradientEmbeddings(BaseModel, Embeddings):
@@ -187,8 +186,13 @@ class _DemoGradientEmbeddingClient:
                 " param `gradient_workspace_id` must be set"
             )
 
+        if self.gradient_api_url is None or len(self.gradient_api_url) < 3:
+            raise ValueError(" param `gradient_api_url` must be set to a valid url")
+
     @staticmethod
-    def _permute(texts: List[str], sorter: Callable = len) -> tuple:
+    def _permute(
+        texts: List[str], sorter: Callable = len
+    ) -> Tuple[List[str], Callable]:
         """
         Sort texts in ascending order
         https://github.com/UKPLab/sentence-transformers/blob/c5f93f70eca933c78695c5bc686ceda59651ae3b/sentence_transformers/SentenceTransformer.py#L156
@@ -199,8 +203,9 @@ class _DemoGradientEmbeddingClient:
         length_sorted_idx = np.argsort([-sorter(sen) for sen in texts])
         texts_sorted = [texts[idx] for idx in length_sorted_idx]
 
-        def revert_sorting(final_embeddings):
-            return [final_embeddings[idx] for idx in np.argsort(length_sorted_idx)]
+        revert_sorting = lambda final_embeddings: [  # noqa E731
+            final_embeddings[idx] for idx in np.argsort(length_sorted_idx)
+        ]
 
         return texts_sorted, revert_sorting
 
@@ -235,17 +240,15 @@ class _DemoGradientEmbeddingClient:
             texts.extend(sublist)
         return texts
 
-    def _kwargs_post_request(
-        self, model: str, texts: List[str]
-    ) -> Dict[str, Collection[str]]:
+    def _kwargs_post_request(self, model: str, texts: List[str]) -> Dict[str, Any]:
         """Build the kwargs for the Post request, used by sync
 
         Args:
-            prompt (str): prompt used in query
-            kwargs (dict): model kwargs in payload
+            model (str): _description_
+            texts (List[str]): _description_
 
         Returns:
-            Dict[str, Union[str,dict]]: _description_
+            Dict[str, Collection[str]]: _description_
         """
         return dict(
             url=f"{self.gradient_api_url}/embeddings/{model}",
@@ -274,11 +277,21 @@ class _DemoGradientEmbeddingClient:
         return [e["embedding"] for e in response.json()["embeddings"]]
 
     def embed(self, model: str, texts: List[str]) -> List[List[float]]:
+        """call the embedding of model
+
+        Args:
+            model (str): to embedding model
+            texts (List[str]): List of sentences to embed.
+
+        Returns:
+            List[List[float]]: List of vectors for each sentence
+        """
         perm_texts, unpermute_func = self._permute(texts)
         perm_texts_batched = self._batch(perm_texts)
 
         # Request
         embeddings_batch_perm = list(
+            # TODO: be brave and send them all via threadpool?
             map(
                 self._sync_request_embed,
                 [model] * len(perm_texts_batched),
@@ -291,7 +304,7 @@ class _DemoGradientEmbeddingClient:
         return embeddings
 
     async def _async_request(
-        self, session: aiohttp.ClientSession, kwargs
+        self, session: aiohttp.ClientSession, kwargs: Any
     ) -> List[List[float]]:
         async with session.post(**kwargs) as resp:
             response = await resp.read()
@@ -304,11 +317,21 @@ class _DemoGradientEmbeddingClient:
             return [e["embedding"] for e in embedding]
 
     async def aembed(self, model: str, texts: List[str]) -> List[List[float]]:
+        """call the embedding of model, async method
+
+        Args:
+            model (str): to embedding model
+            texts (List[str]): List of sentences to embed.
+
+        Returns:
+            List[List[float]]: List of vectors for each sentence
+        """
         perm_texts, unpermute_func = self._permute(texts)
         perm_texts_batched = self._batch(perm_texts)
 
         # Request
         if self.aiosession in None:
+            # TODO: async improvment
             self.aiosession = aiohttp.ClientSession()
         async with self.aiosession as session:
             embeddings_batch_perm = await asyncio.gather(

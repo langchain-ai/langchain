@@ -33,13 +33,13 @@ from langchain.embeddings.ernie import ErnieEmbeddings
 from langchain.embeddings.fake import DeterministicFakeEmbedding, FakeEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.gpt4all import GPT4AllEmbeddings
+from langchain.embeddings.gradient_ai import GradientEmbeddings
 from langchain.embeddings.huggingface import (
     HuggingFaceBgeEmbeddings,
     HuggingFaceEmbeddings,
     HuggingFaceInferenceAPIEmbeddings,
     HuggingFaceInstructEmbeddings,
 )
-from langchain.embeddings.gradient_ai import GradientEmbeddings
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings
 from langchain.embeddings.jina import JinaEmbeddings
