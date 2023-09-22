@@ -21,7 +21,7 @@ class KayAiRetriever(BaseRetriever):
     def create(
         cls,
         dataset_id: str,
-        data_sources: List[str],
+        data_types: List[str],
         num_contexts: int = 6,
     ) -> KayAiRetriever:
         """
@@ -29,7 +29,7 @@ class KayAiRetriever(BaseRetriever):
 
         Args:
             dataset_id: A dataset id category in Kay, like "company"
-            data_sources: A list of datasources present within a dataset. For
+            data_types: A list of datasources present within a dataset. For
                 "company" the corresponding datasources could be
                 ["10-K", "10-Q", "8-K", "PressRelease"].
             num_contexts: The number of documents to retrieve on each query.
@@ -43,7 +43,7 @@ class KayAiRetriever(BaseRetriever):
                 "`pip install kay`.",
             )
 
-        client = KayRetriever(dataset_id, data_types=data_sources)
+        client = KayRetriever(dataset_id, data_types)
         return cls(client=client, num_contexts=num_contexts)
 
     def _get_relevant_documents(

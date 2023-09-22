@@ -9,7 +9,7 @@ from langchain.schema import Document
 def test_kay_retriever() -> None:
     retriever = KayAiRetriever.create(
         dataset_id="company",
-        data_sources=["10-K", "10-Q", "8-K", "PressRelease"],
+        data_types=["10-K", "10-Q", "8-K", "PressRelease"],
         num_contexts=3,
     )
     docs = retriever.get_relevant_documents(
