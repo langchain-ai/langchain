@@ -1251,18 +1251,29 @@ def run_on_dataset(
         input_mapper,
         concurrency_level,
     )
-    with runnable_config.get_executor_for_config(configs[0]) as executor:
-        batch_results = list(
-            executor.map(
-                functools.partial(
-                    _run_llm_or_chain,
-                    llm_or_chain_factory=wrapped_model,
-                    input_mapper=input_mapper,
-                ),
-                examples,
-                configs,
+    if concurrency_level == 0:
+        batch_results = [
+            _run_llm_or_chain(
+                example,
+                config,
+                llm_or_chain_factory=wrapped_model,
+                input_mapper=input_mapper,
             )
-        )
+            for example, config in zip(examples, configs)
+        ]
+    else:
+        with runnable_config.get_executor_for_config(configs[0]) as executor:
+            batch_results = list(
+                executor.map(
+                    functools.partial(
+                        _run_llm_or_chain,
+                        llm_or_chain_factory=wrapped_model,
+                        input_mapper=input_mapper,
+                    ),
+                    examples,
+                    configs,
+                )
+            )
 
     results = _collect_test_results(examples, batch_results, configs, project_name)
     if verbose:
