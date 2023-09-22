@@ -57,12 +57,13 @@ sidebar_class_name: hidden
 import DocCardList from "@theme/DocCardList";
 
 ## Features (natively supported)
-All ChatModels implement the Runnable interface, which comes with default implementations of all methods, ie. `ainvoke`, `batch`, `abtach`, `stream`, `astream`. This gives all LLMs basic support for async, streaming and batch, which by default is implemented as below:
-- *Async* support defaults to calling the respective sync method in asyncio's default thread pool executor. This lets other async functions in your application make progress while the LLM is being executed, by moving this call to a background thread.
-- *Streaming* support defaults to returning an `Iterator` (or `AsyncIterator` in the case of async streaming) of a single value, the final result returned by the underlying LLM provider. This obviously doesn't give you token-by-token streaming, which requires native support from the LLM provider, but ensures your code that expects an iterator of tokens can work for any of our LLM integrations.
-- *Batch* support defaults to calling the underlying LLM in parallel for each input by making use of a thread pool executor (in the sync batch case) or `asyncio.gather` (in the async batch case). The concurrency can be controlled with the `max_concurrency` key in `RunnableConfig`.
+All ChatModels implement the Runnable interface, which comes with default implementations of all methods, ie. `ainvoke`, `batch`, `abtach`, `stream`, `astream`. This gives all ChatModels basic support for async, streaming and batch, which by default is implemented as below:
+- *Async* support defaults to calling the respective sync method in asyncio's default thread pool executor. This lets other async functions in your application make progress while the ChatModel is being executed, by moving this call to a background thread.
+- *Streaming* support defaults to returning an `Iterator` (or `AsyncIterator` in the case of async streaming) of a single value, the final result returned by the underlying ChatModel provider. This obviously doesn't give you token-by-token streaming, which requires native support from the ChatModel provider, but ensures your code that expects an iterator of tokens can work for any of our ChatModel integrations.
+- *Batch* support defaults to calling the underlying ChatModel in parallel for each input by making use of a thread pool executor (in the sync batch case) or `asyncio.gather` (in the async batch case). The concurrency can be controlled with the `max_concurrency` key in `RunnableConfig`.
 
 Each ChatModel integration optionally can implement native support for async, streaming or batch, which, for providers that support it, can be more efficient.
+
 {table}
 
 <DocCardList />
@@ -108,7 +109,7 @@ def get_llm_table():
         "batch_generate",
         "batch_agenerate",
     ]
-    title = ["Model", "Generate", "Async generate", "Stream", "Async stream", "Batch", "Async batch"]
+    title = ["Model", "Invoke", "Async invoke", "Stream", "Async stream", "Batch", "Async batch"]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
         rows += [[llm, "✅"] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
@@ -132,7 +133,7 @@ def get_chat_model_table():
         if k not in CHAT_MODEL_IGNORE
     }
     header = ["model", "_agenerate", "_stream", "_astream"]
-    title = ["Model", "Generate", "Async generate", "Stream", "Async stream"]
+    title = ["Model", "Invoke", "Async invoke", "Stream", "Async stream"]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
         rows += [[llm, "✅"] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
