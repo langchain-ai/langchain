@@ -5,29 +5,47 @@ GigaChatModel for GigaChat.
 import json
 import logging
 import os
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, AsyncIterator, \
-    Mapping
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import requests
 import urllib3.exceptions
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun, \
-    AsyncCallbackManagerForLLMRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import ChatResult
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     ChatMessage,
+    ChatMessageChunk,
     FunctionMessage,
+    FunctionMessageChunk,
     HumanMessage,
-    SystemMessage, BaseMessageChunk, HumanMessageChunk, SystemMessageChunk,
-    FunctionMessageChunk, ChatMessageChunk,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
 )
-from langchain.schema.output import ChatGenerationChunk, LLMResult, Generation, \
-    GenerationChunk, ChatGeneration
+from langchain.schema.output import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    GenerationChunk,
+)
 
 LATEST_MODEL = "GigaChat:latest"
 
@@ -39,7 +57,7 @@ def parse_stream_helper(line: bytes) -> Optional[str]:
             # and it will close http connection with TCP Reset
             return None
         if line.startswith(b"data: "):
-            line = line[len(b"data: "):]
+            line = line[len(b"data: ") :]
             return line.decode("utf-8")
         else:
             return None
@@ -98,16 +116,25 @@ class GigaChat(BaseChatModel):
     censor_finish_reason: List[str] = ["request_censor", "request_blacklist"]
     """ Check certificates for all rrequests """
 
-    async def _agenerate(self, messages: List[BaseMessage],
-                         stop: Optional[List[str]] = None,
-                         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-                         **kwargs: Any) -> ChatResult:
-        pass
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        # TODO: Добавить асинхронность, когда будет готов класс для запросов
+        return self._generate(messages, stop, None, **kwargs)
 
-    def _astream(self, messages: List[BaseMessage], stop: Optional[List[str]] = None,
-                 run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-                 **kwargs: Any) -> AsyncIterator[ChatGenerationChunk]:
-        pass
+    def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        # TODO: Добавить асинхронность, когда будет готов класс для запросов
+        raise Exception('Async stream is not supported yet"')
 
     verify_tsl: bool = True
 
@@ -217,7 +244,7 @@ class GigaChat(BaseChatModel):
 
     @staticmethod
     def _convert_delta_to_message_chunk(
-            _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+        _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
     ) -> BaseMessageChunk:
         role = _dict.get("role")
         content = _dict.get("content") or ""
@@ -264,11 +291,20 @@ class GigaChat(BaseChatModel):
         generations = []
         for res in response["choices"]:
             message = self.convert_dict_to_message(res["message"])
+            finish_reason = res.get("finish_reason")
             gen = ChatGeneration(
                 message=message,
-                generation_info=dict(finish_reason=res.get("finish_reason")),
+                generation_info=dict(finish_reason=finish_reason),
             )
             generations.append(gen)
+            if finish_reason != "stop":
+                self.logger.warning(
+                    "Giga generation stopped with reason: %s",
+                    finish_reason,
+                )
+
+            if self.verbose:
+                self.logger.warning("Giga response: %s", message.content)
         token_usage = response.get("usage", {})
         llm_output = {"token_usage": token_usage, "model_name": self.model}
         return ChatResult(generations=generations, llm_output=llm_output)
@@ -301,7 +337,7 @@ class GigaChat(BaseChatModel):
             json=payload,
             timeout=600,
             verify=self.verify_tsl,
-            stream=self.streaming
+            stream=self.streaming,
         )
         if not response.ok:
             if self.verbose:
@@ -314,19 +350,22 @@ class GigaChat(BaseChatModel):
                 f"Can't get response from GigaChat. Error code: {response.status_code}"
             )
         if self.streaming and "text/event-stream" in response.headers.get(
-                "Content-Type", ""):
+            "Content-Type", ""
+        ):
             return (json.loads(line) for line in parse_stream(response.iter_lines()))
         return response.json()
 
     @retry(
-        retry=retry_if_not_exception_type(PermissionError), stop=stop_after_attempt(3), reraise=True
+        retry=retry_if_not_exception_type(PermissionError),
+        stop=stop_after_attempt(3),
+        reraise=True,
     )
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         """
         Calls the GigaChat API to get the response.
@@ -348,27 +387,15 @@ class GigaChat(BaseChatModel):
             return ChatResult(generations=[generation])
         else:
             response = self._request(messages)
-    #         if finish_reason != "stop":
-    #             self.logger.warning(
-    #                 "Giga generation stopped \
-    # with reason: %s",
-    #                 finish_reason,
-    #             )
-    #
-    #         if self.stop_on_censor and finish_reason in self.censor_finish_reason:
-    #             raise PermissionError("Censor detected")
-    #
-    #         if self.verbose:
-    #             self.logger.warning("Giga response: %s", text)
 
-        return self._create_chat_result(response)
+            return self._create_chat_result(response)
 
     def _stream(
-            self,
-            messages: List[BaseMessage],
-            stop: Union[List[str], None] = None,
-            run_manager: Union[CallbackManagerForLLMRun, None] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Union[List[str], None] = None,
+        run_manager: Union[CallbackManagerForLLMRun, None] = None,
+        **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         if not self.token:
             self._authorize()
@@ -379,7 +406,7 @@ class GigaChat(BaseChatModel):
         default_chunk_class = AIMessageChunk
 
         for chunk in self._request(
-                messages=messages,
+            messages=messages,
         ):
             if len(chunk["choices"]) == 0:
                 continue
@@ -394,8 +421,9 @@ class GigaChat(BaseChatModel):
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content,
-                                             chunk=ChatGenerationChunk(message=chunk))
+                run_manager.on_llm_new_token(
+                    chunk.content, chunk=ChatGenerationChunk(message=chunk)
+                )
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
