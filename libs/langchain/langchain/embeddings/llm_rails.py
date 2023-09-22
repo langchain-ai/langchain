@@ -1,7 +1,7 @@
 """ This file is for LLMRails Embedding """
-import os
 import logging
-from typing import Optional, List
+import os
+from typing import List, Optional
 
 import requests
 
