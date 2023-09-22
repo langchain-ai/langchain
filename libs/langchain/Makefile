@@ -14,33 +14,6 @@ coverage:
 		--cov-report xml \
 		--cov-report term-missing:skip-covered
 
-######################
-# DOCUMENTATION
-######################
-
-clean: docs_clean api_docs_clean
-
-
-docs_build:
-	docs/.local_build.sh
-
-docs_clean:
-	rm -r docs/_dist
-
-docs_linkcheck:
-	poetry run linkchecker docs/_dist/docs_skeleton/ --ignore-url node_modules
-
-api_docs_build:
-	poetry run python docs/api_reference/create_api_rst.py
-	cd docs/api_reference && poetry run make html
-
-api_docs_clean:
-	rm -f docs/api_reference/api_reference.rst
-	cd docs/api_reference && poetry run make clean
-
-api_docs_linkcheck:
-	poetry run linkchecker docs/api_reference/_build/html/index.html
-
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
@@ -98,7 +71,6 @@ spell_fix:
 
 help:
 	@echo '===================='
-	@echo '-- DOCUMENTATION --'
 	@echo 'clean                        - run docs_clean and api_docs_clean'
 	@echo 'docs_build                   - build the documentation'
 	@echo 'docs_clean                   - clean the documentation build artifacts'
@@ -120,3 +92,4 @@ help:
 	@echo 'test_watch                   - run unit tests in watch mode'
 	@echo 'integration_tests            - run integration tests'
 	@echo 'docker_tests                 - run unit tests in docker'
+	@echo '-- DOCUMENTATION tasks are from the top-level Makefile --'
