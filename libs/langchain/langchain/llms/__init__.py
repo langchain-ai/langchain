@@ -55,6 +55,7 @@ from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.llms.human import HumanInputLLM
+from langchain.llms.javelin_ai_gateway import JavelinAIGateway
 from langchain.llms.koboldai import KoboldApiLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
@@ -163,6 +164,7 @@ __all__ = [
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
+    "JavelinAIGateway",
     "QianfanLLMEndpoint",
 ]
 
@@ -233,5 +235,6 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "vllm_openai": VLLMOpenAI,
     "writer": Writer,
     "xinference": Xinference,
+    "javelin-ai-gateway": JavelinAIGateway,
     "qianfan_endpoint": QianfanLLMEndpoint,
 }
