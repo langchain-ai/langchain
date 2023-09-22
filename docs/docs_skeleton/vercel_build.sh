@@ -51,4 +51,3 @@ cp -r extras/* docs_skeleton/docs
 cd docs_skeleton
 nbdoc_build
 python3.11 generate_api_reference_links.py
-python3.11 ../
