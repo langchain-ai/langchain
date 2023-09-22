@@ -96,7 +96,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
 
                         # Sleep for the delay
                         time.sleep(delay)
-                        print("Delay working")
+
 
                     else:
                         raise Exception(str(e))
