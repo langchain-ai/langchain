@@ -245,7 +245,7 @@ class GigaChat(BaseChatModel):
     def _convert_delta_to_message_chunk(
         _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
     ) -> BaseMessageChunk:
-        role = _dict.get("role")
+        role = str(_dict.get("role"))
         content = _dict.get("content") or ""
         if _dict.get("function_call"):
             additional_kwargs = {"function_call": dict(_dict["function_call"])}
