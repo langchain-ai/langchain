@@ -5,7 +5,9 @@ from langchain import chat_models, llms
 from langchain.chat_models.base import BaseChatModel, SimpleChatModel
 from langchain.llms.base import BaseLLM, LLM
 
-INTEGRATIONS_DIR = Path(os.path.abspath(__file__)).parents[1] / "extras" / "integrations"
+INTEGRATIONS_DIR = (
+    Path(os.path.abspath(__file__)).parents[1] / "extras" / "integrations"
+)
 LLM_IGNORE = ("FakeListLLM", "OpenAIChat", "PromptLayerOpenAIChat")
 LLM_FEAT_TABLE_CORRECTION = {
     "TextGen": {"_astream": False, "_agenerate": False},
@@ -54,7 +56,7 @@ import DocCardList from "@theme/DocCardList";
 
 ## Features (natively supported)
 All `ChatModel`s implement the LCEL `Runnable` interface, meaning they all expose functioning `invoke`, `ainvoke`, `stream`, and `astream` (and `batch`, `abatch`) methods.
-*That is, they all have functioning async and streaming generation methods.*
+*That is, they all have functioning sync, async and streaming generation methods.*
 
 This table highlights specifically those integrations that **natively support** streaming and asynchronous generation (meaning these features are built into the 3rd-party integration).
 
@@ -103,10 +105,10 @@ def get_llm_table():
         "batch_generate",
         "batch_agenerate",
     ]
-    title = ["Model", "Async", "Stream", "Async stream", "Batch", "Async batch"]
-    rows = [title, [":-"] + [":-:"] * (len(header) - 1)]
+    title = ["Model", "Generate", "Async generate", "Stream", "Async stream", "Batch", "Async batch"]
+    rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
-        rows += [[llm] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
+        rows += [[llm, "✅"] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
     return "\n".join(["|".join(row) for row in rows])
 
 
@@ -127,10 +129,10 @@ def get_chat_model_table():
         if k not in CHAT_MODEL_IGNORE
     }
     header = ["model", "_agenerate", "_stream", "_astream"]
-    title = ["Model", "Async", "Stream", "Async stream"]
-    rows = [title, [":-"] + [":-:"] * (len(header) - 1)]
+    title = ["Model", "Generate", "Async generate", "Stream", "Async stream"]
+    rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
-        rows += [[llm] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
+        rows += [[llm, "✅"] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
     return "\n".join(["|".join(row) for row in rows])
 
 
