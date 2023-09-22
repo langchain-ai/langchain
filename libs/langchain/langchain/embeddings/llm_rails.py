@@ -1,3 +1,4 @@
+""" This file is for LLMRails Embedding """
 import os
 import logging
 from typing import Optional, List
@@ -11,7 +12,8 @@ from langchain.schema.embeddings import Embeddings
 class LLMRailsEmbeddings(BaseModel, Embeddings):
     """LLMRails embedding models.
 
-    To use, you should have the  environment variable ``LLM_RAILS_API_KEY`` set with your API key or pass it
+    To use, you should have the  environment 
+    variable ``LLM_RAILS_API_KEY`` set with your API key or pass it
     as a named parameter to the constructor.
 
     Model can be one of ["embedding-english-v1","embedding-multi-v1"]
@@ -48,13 +50,14 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
         api_key = self.api_key or os.environ.get("LLM_RAILS_API_KEY")
         if api_key is None:
             logging.warning("Can't find LLMRails credentials in environment.")
-            raise Exception('LLM_RAILS_API_KEY')
-        
-        response = requests.post('https://api.llmrails.com/v1/embeddings',headers={'X-API-KEY': api_key},
+            return
+
+        response = requests.post('https://api.llmrails.com/v1/embeddings',
+            headers={'X-API-KEY': api_key},
             json={
                 'input':texts,
                 'model':self.model
-            }
+            },timeout=60
         )
         print(response.content)
 
