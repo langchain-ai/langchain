@@ -13,8 +13,9 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
     """Aleph Alpha's asymmetric semantic embedding.
 
     AA provides you with an endpoint to embed a document and a query.
-    We offer two types of embeddings - asymetric embedding and symetric embedding.
-    To learn more, check out: https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
+    We offer two types of embeddings-asymetric embedding and symetric embedding
+    To learn more, check out:
+    https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
     """
 
     try:
@@ -56,7 +57,8 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
     The default one is https://api.aleph-alpha.com"""
     hosting: Optional[str] = None
     """Determines in which datacenters the request may be processed.
-    You can either set the parameter to "aleph-alpha" or omit it (defaulting to None).
+    You can either set the parameter to "aleph-alpha" or
+    omit it (defaulting to None).
     Not setting this value, or setting it to None, gives us maximal flexibility
     in processing your request in our
     own datacenters and on servers hosted with other providers.
@@ -67,7 +69,8 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
     request_timeout_seconds: int = 305
     """Client timeout that will be set for HTTP requests in the
     `requests` library's API calls.
-    Server will close all requests after 300 seconds with an internal server error."""
+    Server will close all requests after 300 seconds with
+    an internal server error."""
     total_retries: int = 8
     """The number of retries made in case requests fail with certain retryable
     status codes. If the last
@@ -88,8 +91,8 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
     """Show progress bar while obtaining the embeddings for documents"""
 
     async def __aenter__(self) -> "AlephAlphaSemanticEmbeddingAbstractClass":
-        """The intended way to use the Async Call is via a context manager. Due to that,
-        we only initialize the AsycClient in _aenter,
+        """The intended way to use the Async Call is via a context manager.
+        Due to that, we only initialize the AsycClient in _aenter,
         and we only close its session in aexit"""
         try:
             from aleph_alpha_client import AsyncClient
@@ -152,7 +155,12 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
         return values
 
     @staticmethod
-    async def gather_with_concurrency(n: int, *, tasks: Iterable[Coroutine[Any, Any, Any]], show_progress: bool = False) -> List[Any]:
+    async def gather_with_concurrency(
+        n: int,
+        *,
+        tasks: Iterable[Coroutine[Any, Any, Any]],
+        show_progress: bool = False
+    ) -> List[Any]:
         semaphore = asyncio.Semaphore(n)
 
         async def sem_task(task):
@@ -163,7 +171,9 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
             try:
                 from tqdm.asyncio import tqdm_asyncio
 
-                return await tqdm_asyncio.gather(*(sem_task(task) for task in tasks))
+                return await tqdm_asyncio.gather(
+                    *(sem_task(task) for task in tasks)
+                )
 
             except ImportError:
                 raise ValueError(
@@ -212,18 +222,20 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
                     representation=self.document_representation,
                     compress_to_size=self.compress_to_size,
                     normalize=self.normalize,
-                    contextual_control_threshold=self.contextual_control_threshold,
-                    control_log_additive=self.control_log_additive
+                    contextual_control_threshold=\
+                        self.contextual_control_threshold,
+                    control_log_additive=self.control_log_additive,
                 ),
-                model=self.model
-            ).embedding for text in iterated_texts
+                model=self.model,
+            ).embedding
+            for text in iterated_texts
         ]
 
         return document_embeddings
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Asynchronously make a call to Aleph Alpha's semantic embeddings endpoint.
-        We get the document representation for every text.
+        """Asynchronously make a call to Aleph Alpha's semantic embeddings
+        endpoint. We get the document representation for every text.
         The number of concurent calls is limited by `concurrency_limit`
 
         Args:
@@ -243,14 +255,17 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
                 "Please install it with `pip install aleph_alpha_client`."
             )
 
-        requests = [SemanticEmbeddingRequest(
+        requests = [
+            SemanticEmbeddingRequest(
                 prompt=Prompt.from_text(text),
                 representation=self.document_representation,
                 compress_to_size=self.compress_to_size,
                 normalize=self.normalize,
                 contextual_control_threshold=self.contextual_control_threshold,
-                control_log_additive=self.control_log_additive
-           ) for text in texts]
+                control_log_additive=self.control_log_additive,
+            )
+            for text in texts
+        ]
 
         responses = await self.gather_with_concurrency(
             self.concurrency_limit,
@@ -288,7 +303,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
             compress_to_size=self.compress_to_size,
             normalize=self.normalize,
             contextual_control_threshold=self.contextual_control_threshold,
-            control_log_additive=self.control_log_additive
+            control_log_additive=self.control_log_additive,
         )
 
         symmetric_response = self.client.semantic_embed(
@@ -298,8 +313,9 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
         return symmetric_response.embedding
 
     async def aembed_query(self, text: str) -> List[float]:
-        """Asynchronously make a call to Aleph Alpha's semantic embeddings endpoint.
-        We get the query representation for every text.
+        """Asynchronously make a call to Aleph Alpha's
+        semantic embeddings endpoint. We get the query
+        representation for every text.
         The number of concurent calls is limited by `concurrency_limit`
 
         Args:
@@ -325,7 +341,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
             compress_to_size=self.compress_to_size,
             normalize=self.normalize,
             contextual_control_threshold=self.contextual_control_threshold,
-            control_log_additive=self.control_log_additive
+            control_log_additive=self.control_log_additive,
         )
 
         query_response = await self.async_client.semantic_embed(
@@ -335,7 +351,9 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
         return query_response.embedding
 
 
-class AlephAlphaAsymmetricSemanticEmbedding(AlephAlphaSemanticEmbeddingAbstractClass):
+class AlephAlphaAsymmetricSemanticEmbedding(
+    AlephAlphaSemanticEmbeddingAbstractClass
+):
     """
     Example:
         .. code-block:: python
@@ -364,7 +382,9 @@ class AlephAlphaAsymmetricSemanticEmbedding(AlephAlphaSemanticEmbeddingAbstractC
     query_representation = SemanticRepresentation.Query
 
 
-class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding):
+class AlephAlphaSymmetricSemanticEmbedding(
+    AlephAlphaAsymmetricSemanticEmbedding
+):
     """
     Example:
         .. code-block:: python
