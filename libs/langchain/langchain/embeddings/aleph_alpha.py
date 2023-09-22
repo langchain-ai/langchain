@@ -170,9 +170,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
             try:
                 from tqdm.asyncio import tqdm_asyncio
 
-                return await tqdm_asyncio.gather(
-                    *(sem_task(task) for task in tasks)
-                )
+                return await tqdm_asyncio.gather(*(sem_task(task) for task in tasks))
 
             except ImportError:
                 raise ValueError(
@@ -221,8 +219,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
                     representation=self.document_representation,
                     compress_to_size=self.compress_to_size,
                     normalize=self.normalize,
-                    contextual_control_threshold=\
-                        self.contextual_control_threshold,
+                    contextual_control_threshold=self.contextual_control_threshold,
                     control_log_additive=self.control_log_additive,
                 ),
                 model=self.model,
@@ -350,9 +347,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
         return query_response.embedding
 
 
-class AlephAlphaAsymmetricSemanticEmbedding(
-    AlephAlphaSemanticEmbeddingAbstractClass
-):
+class AlephAlphaAsymmetricSemanticEmbedding(AlephAlphaSemanticEmbeddingAbstractClass):
     """
     Example:
         .. code-block:: python
@@ -381,9 +376,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(
     query_representation = SemanticRepresentation.Query
 
 
-class AlephAlphaSymmetricSemanticEmbedding(
-    AlephAlphaAsymmetricSemanticEmbedding
-):
+class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding):
     """
     Example:
         .. code-block:: python
