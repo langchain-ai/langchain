@@ -12,7 +12,7 @@ from langchain.schema.embeddings import Embeddings
 class LLMRailsEmbeddings(BaseModel, Embeddings):
     """LLMRails embedding models.
 
-    To use, you should have the  environment 
+    To use, you should have the  environment
     variable ``LLM_RAILS_API_KEY`` set with your API key or pass it
     as a named parameter to the constructor.
 
@@ -27,7 +27,7 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    model: str = 'embedding-english-v1'
+    model: str = "embedding-english-v1"
     """Model name to use."""
 
     api_key: Optional[str] = None
@@ -36,7 +36,6 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
-
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to Cohere's embedding endpoint.
@@ -52,17 +51,15 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
             logging.warning("Can't find LLMRails credentials in environment.")
             return
 
-        response = requests.post('https://api.llmrails.com/v1/embeddings',
-            headers={'X-API-KEY': api_key},
-            json={
-                'input':texts,
-                'model':self.model
-            },timeout=60
+        response = requests.post(
+            "https://api.llmrails.com/v1/embeddings",
+            headers={"X-API-KEY": api_key},
+            json={"input": texts, "model": self.model},
+            timeout=60,
         )
         print(response.content)
 
-        return [item['embedding'] for item in response.json()['data']]
-
+        return [item["embedding"] for item in response.json()["data"]]
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to Cohere's embedding endpoint.
@@ -73,4 +70,4 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return self.embed_documents([text])[0]['embedding']
+        return self.embed_documents([text])[0]["embedding"]
