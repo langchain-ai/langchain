@@ -25,11 +25,11 @@ class GradientLLM(LLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms.gradientai_endpoint import GradientAIEndpoint
+            from langchain.llms.gradientai import GradientLLM
             GradientLLM(
-                model_id="cad6644_base_ml_model",
+                model="99148c6d-c2a0-4fbe-a4a7-e7c05bdb8a09_base_ml_model",
                 model_kwargs={
-                    "max_generated_token_count": 200,
+                    "max_generated_token_count": 128,
                     "temperature": 0.75,
                     "top_p": 0.95,
                     "top_k": 20,
@@ -41,7 +41,7 @@ class GradientLLM(LLM):
 
     """
 
-    model_id: str
+    model: str
     "Underlying gradient.ai model id (base or fine-tuned)."
 
     gradient_workspace_id: Optional[str] = None
@@ -59,8 +59,8 @@ class GradientLLM(LLM):
     gradient_api_url: str = "https://api.gradient.ai/api"
     """Endpoint URL to use."""
 
-    aiosession: Optional[aiohttp.ClientSession] = None
-    """ClientSession, in case we want to reuse connection for better performance."""
+    aiosession: Optional[aiohttp.ClientSession] = None  #: :meta private:
+    """ClientSession, private."""
 
     # LLM call kwargs
     class Config:
@@ -141,7 +141,7 @@ class GradientLLM(LLM):
         _params = {**_model_kwargs, **kwargs}
 
         return dict(
-            url=f"{self.gradient_api_url}/models/{self.model_id}/complete",
+            url=f"{self.gradient_api_url}/models/{self.model}/complete",
             headers={
                 "authorization": f"Bearer {self.gradient_access_token}",
                 "x-gradient-workspace-id": f"{self.gradient_workspace_id}",

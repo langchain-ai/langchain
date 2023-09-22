@@ -25,8 +25,12 @@ def mocked_requests_post(
     json: dict,
 ) -> MockResponse:
     assert url.startswith(_GRADIENT_BASE_URL)
-    assert headers
+    assert _MODEL_ID in url
     assert json
+    assert headers
+
+    assert headers.get("authorization") == f"Bearer {_GRADIENT_SECRET}"
+    assert headers.get("x-gradient-workspace-id") == f"{_GRADIENT_WORKSPACE_ID}"
 
     return MockResponse(
         json_data={"generatedOutput": "bar"},
@@ -43,12 +47,12 @@ def test_gradient_llm_sync(
         gradient_api_url=_GRADIENT_BASE_URL,
         gradient_access_token=_GRADIENT_SECRET,
         gradient_workspace_id=_GRADIENT_WORKSPACE_ID,
-        model_id=_MODEL_ID,
+        model=_MODEL_ID,
     )
     assert llm.gradient_access_token == _GRADIENT_SECRET
     assert llm.gradient_api_url == _GRADIENT_BASE_URL
     assert llm.gradient_workspace_id == _GRADIENT_WORKSPACE_ID
-    assert llm.model_id == _MODEL_ID
+    assert llm.model == _MODEL_ID
 
     response = llm("Say foo:")
     want = "bar"
