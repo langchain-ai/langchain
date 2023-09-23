@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import aiohttp
 import numpy as np
 import requests
+from concurrent.futures import ThreadPoolExecutor
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.embeddings import Embeddings
@@ -70,7 +71,7 @@ class GradientEmbeddings(BaseModel, Embeddings):
             values, "gradient_api_url", "GRADIENT_API_URL"
         )
 
-        values["client"] = _DemoGradientEmbeddingClient(
+        values["client"] = MiniGradientEmbeddingClient(
             gradient_access_token=values["gradient_access_token"],
             gradient_workspace_id=values["gradient_workspace_id"],
             gradient_api_url=values["gradient_api_url"],
@@ -132,8 +133,8 @@ class GradientEmbeddings(BaseModel, Embeddings):
         return embeddings[0]
 
 
-class _DemoGradientEmbeddingClient:
-    """Gradient.ai Embedding client.
+class MiniGradientEmbeddingClient:
+    """A helper tool to embed Gradient. Not part of Langchain's or Gradients stable API.
 
     To use, set the environment variable ``GRADIENT_ACCESS_TOKEN`` with your
     API token and ``GRADIENT_WORKSPACE_ID`` for your gradient workspace,
@@ -143,7 +144,7 @@ class _DemoGradientEmbeddingClient:
         .. code-block:: python
 
 
-            mini_client = _DemoGradientEmbeddingClient(
+            mini_client = MiniGradientEmbeddingClient(
                 gradient_workspace_id="12345614fc0_workspace",
                 gradient_access_token="gradientai-access_token",
             )
@@ -151,6 +152,7 @@ class _DemoGradientEmbeddingClient:
                 model="bge-large",
                 text=["doc1", "doc2"]
             )
+            # or
             embeds = await mini_client.aembed(
                 model="bge-large",
                 text=["doc1", "doc2"]
@@ -188,6 +190,7 @@ class _DemoGradientEmbeddingClient:
 
         if self.gradient_api_url is None or len(self.gradient_api_url) < 3:
             raise ValueError(" param `gradient_api_url` must be set to a valid url")
+        self._batch_size = 32
 
     @staticmethod
     def _permute(
@@ -209,25 +212,24 @@ class _DemoGradientEmbeddingClient:
 
         return texts_sorted, revert_sorting
 
-    @staticmethod
-    def _batch(texts: List[str], batch_size: int = 32) -> List[List[str]]:
+    def _batch(self, texts: List[str]) -> List[List[str]]:
         """
-        splits Lists of text parts into batches of size max `batch_size`
+        splits Lists of text parts into batches of size max `self._batch_size`
         When encoding vector database,
 
         Args:
-            texts (List[str]): List of sentences to encode
-            batch_size (int, optional): max batch size of one request. Defaults to 32.
+            texts (List[str]): List of sentences
+            self._batch_size (int, optional): max batch size of one request. 
 
         Returns:
-            List[List[str]]: _description_
+            List[List[str]]: Batches of List of sentences
         """
         if len(texts) == 1:
             # special case query
             return [texts]
         batches = []
-        for start_index in range(0, len(texts), batch_size):
-            batches.append(texts[start_index : start_index + batch_size])
+        for start_index in range(0, len(texts), self._batch_size):
+            batches.append(texts[start_index : start_index + self._batch_size])
         return batches
 
     @staticmethod
@@ -290,14 +292,19 @@ class _DemoGradientEmbeddingClient:
         perm_texts_batched = self._batch(perm_texts)
 
         # Request
-        embeddings_batch_perm = list(
-            # TODO: be brave and send them all via threadpool?
-            map(
-                self._sync_request_embed,
-                [model] * len(perm_texts_batched),
-                perm_texts_batched,
+        with ThreadPoolExecutor() as p:
+            if len(perm_texts_batched) == 1:
+                _map = map
+            else:
+                # send requests in parallel queued threads
+                _map = p.map
+            embeddings_batch_perm = list(
+                _map(
+                    self._sync_request_embed,
+                    [model] * len(perm_texts_batched),
+                    perm_texts_batched,
+                )
             )
-        )
 
         embeddings_perm = self._unbatch(embeddings_batch_perm)
         embeddings = unpermute_func(embeddings_perm)
@@ -330,8 +337,7 @@ class _DemoGradientEmbeddingClient:
 
         # Request
         if self.aiosession is None:
-            # TODO: async improvment
-            self.aiosession = aiohttp.ClientSession()
+            self.aiosession = aiohttp.ClientSession(trust_env=True)
         async with self.aiosession as session:
             embeddings_batch_perm = await asyncio.gather(
                 *[
