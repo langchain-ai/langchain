@@ -289,8 +289,7 @@ def index(
                 num_skipped += 1
                 continue
             uids.append(hashed_doc.uid)
-            doc = Document(page_content=hashed_doc.page_content, metadata=hashed_doc.metadata)
-            docs_to_index.append(doc)
+            docs_to_index.append(hashed_doc.to_document())
 
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
