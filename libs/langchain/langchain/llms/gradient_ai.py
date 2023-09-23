@@ -111,7 +111,7 @@ class GradientLLM(LLM):
         )
 
         try:
-            import gradientai
+            import gradientai  # noqa
         except ImportError:
             logging.warning(
                 "DeprecationWarning: `GradientLLM` will use "
