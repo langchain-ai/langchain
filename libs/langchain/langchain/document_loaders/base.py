@@ -1,6 +1,6 @@
 """Abstract interface for document loader implementations."""
 from abc import ABC, abstractmethod
-from typing import Iterator, List, Optional
+from typing import AsyncIterator, Iterator, List, Optional
 
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.schema import Document
@@ -23,6 +23,12 @@ class BaseLoader(ABC):
     @abstractmethod
     def load(self) -> List[Document]:
         """Load data into Document objects."""
+
+    async def aload(self) -> List[Document]:
+        """Load data into Document objects asynchronously."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement aload()"
+        )
 
     def load_and_split(
         self, text_splitter: Optional[TextSplitter] = None
@@ -51,6 +57,14 @@ class BaseLoader(ABC):
         """A lazy loader for Documents."""
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement lazy_load()"
+        )
+
+    async def alazy_load(
+        self,
+    ) -> AsyncIterator[Document]:
+        """A lazy loader for Documents asynchronously."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement alazy_load()"
         )
 
 

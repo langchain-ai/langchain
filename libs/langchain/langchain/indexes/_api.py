@@ -7,6 +7,8 @@ import uuid
 from itertools import islice
 from typing import (
     Any,
+    AsyncIterable,
+    AsyncIterator,
     Callable,
     Dict,
     Iterable,
@@ -114,6 +116,22 @@ def _batch(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
     it = iter(iterable)
     while True:
         chunk = list(islice(it, size))
+        if not chunk:
+            return
+        yield chunk
+
+
+async def _abatch(size: int, iterable: AsyncIterable[T]) -> AsyncIterator[List[T]]:
+    """Utility batching function."""
+    it = iterable.__aiter__()
+    while True:
+        chunk: List[T] = []
+        for _ in range(size):
+            try:
+                item = await anext(it)
+                chunk.append(item)
+            except StopAsyncIteration:
+                break
         if not chunk:
             return
         yield chunk
@@ -348,7 +366,7 @@ def index(
 
 
 async def aindex(
-    docs_source: Iterable[Document],
+    docs_source: Union[BaseLoader, Iterable[Document]],
     record_manager: RecordManager,
     vector_store: VectorStore,
     *,
@@ -381,7 +399,23 @@ async def aindex(
         # implementation which just raises a NotImplementedError
         raise ValueError("Vectorstore has not implemented the delete method")
 
-    doc_iterator = iter(docs_source)
+    if isinstance(docs_source, BaseLoader):
+        try:
+            doc_iterator = await docs_source.alazy_load()
+        except NotImplementedError:
+
+            async def _docs_source() -> AsyncIterator[Document]:
+                for doc in docs_source.load():
+                    yield doc
+
+            doc_iterator = _docs_source()
+    else:
+
+        async def _docs_source() -> AsyncIterator[Document]:
+            for doc in docs_source:
+                yield doc
+
+        doc_iterator = _docs_source()
 
     source_id_assigner = _get_source_id_assigner(source_id_key)
 
@@ -392,7 +426,7 @@ async def aindex(
     num_updated = 0
     num_deleted = 0
 
-    for doc_batch in _batch(batch_size, doc_iterator):
+    async for doc_batch in _abatch(batch_size, doc_iterator):
         hashed_docs = list(
             _deduplicate_in_order(
                 [_HashedDocument.from_document(doc) for doc in doc_batch]
