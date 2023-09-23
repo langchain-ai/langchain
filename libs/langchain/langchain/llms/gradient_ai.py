@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import aiohttp
 import requests
+import logging
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -108,6 +109,13 @@ class GradientLLM(LLM):
         values["gradient_api_url"] = get_from_dict_or_env(
             values, "gradient_api_url", "GRADIENT_API_URL"
         )
+        
+        try:
+            import gradientai
+        except ImportError:
+            logging.warning(
+                "DeprecationWarning: `GradientLLM` will use "
+                "`pip install gradientai` in future releases of langchain.")
 
         return values
 
