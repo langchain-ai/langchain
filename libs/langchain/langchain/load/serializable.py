@@ -39,11 +39,6 @@ class Serializable(BaseModel, ABC):
         """Is this class serializable?"""
         return False
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Deprecated -- instead use is_lc_serializable."""
-        return self.is_lc_serializable()
-
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object.
@@ -53,11 +48,6 @@ class Serializable(BaseModel, ABC):
         """
         return cls.__module__.split(".")
 
-    @property
-    def lc_namespace(self) -> List[str]:
-        """Deprecated -- instead use get_lc_namespace."""
-        return self.get_lc_namespace()
-
     @classmethod
     def get_lc_secrets(cls) -> Dict[str, str]:
         """
@@ -66,23 +56,14 @@ class Serializable(BaseModel, ABC):
         """
         return dict()
 
-    @property
-    def lc_secrets(self) -> Dict[str, str]:
-        """Deprecated -- instead use get_lc_secrets."""
-        return self.get_lc_secrets()
-
-    def get_lc_attributes(self) -> Dict[str, Any]:
+    @classmethod
+    def get_lc_attributes(cls) -> Dict[str, Any]:
         """
         Return a list of attribute names that should be included in the
         serialized kwargs. These attributes must be accepted by the
         constructor.
         """
         return {}
-
-    @property
-    def lc_attributes(self) -> Dict:
-        """Deprecated -- instead use get_lc_attributes."""
-        return self.get_lc_attributes()
 
     class Config:
         extra = "ignore"
@@ -94,7 +75,7 @@ class Serializable(BaseModel, ABC):
         self._lc_kwargs = kwargs
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
-        if not self.lc_serializable:
+        if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
         secrets = dict()
@@ -106,29 +87,31 @@ class Serializable(BaseModel, ABC):
         }
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
-        for cls in [None, *self.__class__.mro()]:
+        for cls in self.__class__.mro():
             # Once we get to Serializable, we're done
             if cls is Serializable:
                 break
 
-            # Get a reference to self bound to each class in the MRO
-            this = cast(Serializable, self if cls is None else super(cls, self))
+            if not issubclass(cls, Serializable):
+                continue
 
-            # For backwards compatibility, check if the class has lc_secrets
-            # property defined if so use it, otherwise use the get_lc_secrets
-            if this.lc_secrets != Serializable.lc_secrets:
-                lc_secrets = this.lc_secrets
-            else:
-                lc_secrets = this.get_lc_secrets()
+            deprecated_attributes = [
+                "lc_secrets",
+                "lc_namespaces",
+                "lc_attributes",
+                "lc_serializable",
+            ]
 
+            for attr in deprecated_attributes:
+                if hasattr(cls, attr):
+                    raise ValueError(
+                        f"Class {self.__class__} has a deprecated attribute {attr}. "
+                        "Please use the corresponding classmethod instead."
+                    )
+
+            lc_secrets = cls.get_lc_secrets()
             secrets.update(lc_secrets)
-
-            # For backwards compatibility, check if the class has lc_attributes
-            # property defined if so use it, otherwise use the get_lc_attributes
-            if this.lc_attributes != Serializable.lc_attributes:
-                lc_kwargs.update(this.lc_attributes)
-            else:
-                lc_kwargs.update(this.get_lc_attributes())
+            lc_kwargs.update(cls.get_lc_attributes())
 
         # include all secrets, even if not specified in kwargs
         # as these secrets may be passed as an environment variable instead
@@ -137,17 +120,10 @@ class Serializable(BaseModel, ABC):
             if secret_value is not None:
                 lc_kwargs.update({key: secret_value})
 
-        # For backwards compatibility, check if the class has lc_namespace
-        # property defined if so use it, otherwise use the get_lc_namespace
-        if type(self).lc_namespace != Serializable.lc_namespace:
-            namespace = self.lc_namespace
-        else:
-            namespace = self.get_lc_namespace()
-
         return {
             "lc": 1,
             "type": "constructor",
-            "id": [*namespace, self.__class__.__name__],
+            "id": [*self.get_lc_namespace(), self.__class__.__name__],
             "kwargs": lc_kwargs
             if not secrets
             else _replace_secrets(lc_kwargs, secrets),
