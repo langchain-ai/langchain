@@ -88,6 +88,7 @@ def test_gradient_llm_sync(
 
     assert response == want
 
+
 def test_gradient_llm_large_batch_size(
     mocker: MockerFixture,
 ) -> None:
@@ -114,6 +115,7 @@ def test_gradient_llm_large_batch_size(
     ] * 1024
 
     assert response == want
+
 
 def test_gradient_wrong_setup(
     mocker: MockerFixture,
