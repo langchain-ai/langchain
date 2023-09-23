@@ -405,9 +405,7 @@ async def aindex(
         except NotImplementedError:
 
             async def _docs_source() -> AsyncIterator[Document]:
-                docs = await docs_source.aload()
-
-                for doc in docs:
+                for doc in await docs_source.aload():
                     yield doc
 
             doc_iterator = _docs_source()
