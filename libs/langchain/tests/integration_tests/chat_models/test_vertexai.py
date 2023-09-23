@@ -19,6 +19,14 @@ from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
 @pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
+def test_vertexai_instantiation(model_name: str) -> None:
+    model = ChatVertexAI(model_name=model_name)
+    assert model._llm_type == "vertexai"
+    assert model.model_name == model.client._model_id
+
+
+@pytest.mark.scheduled
+@pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
 def test_vertexai_single_call(model_name: str) -> None:
     if model_name:
         model = ChatVertexAI(model_name=model_name)
@@ -28,10 +36,9 @@ def test_vertexai_single_call(model_name: str) -> None:
     response = model([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert model._llm_type == "vertexai"
-    assert model.model_name == model.client._model_id
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_vertexai_agenerate() -> None:
     model = ChatVertexAI(temperature=0)
@@ -44,6 +51,7 @@ async def test_vertexai_agenerate() -> None:
     assert response.generations[0][0] == sync_response.generations[0][0]
 
 
+@pytest.mark.scheduled
 def test_vertexai_single_call_with_context() -> None:
     model = ChatVertexAI()
     raw_context = (
@@ -60,6 +68,7 @@ def test_vertexai_single_call_with_context() -> None:
     assert isinstance(response.content, str)
 
 
+@pytest.mark.scheduled
 def test_vertexai_single_call_with_examples() -> None:
     model = ChatVertexAI()
     raw_context = "My name is Ned. You are my personal assistant."
@@ -74,6 +83,7 @@ def test_vertexai_single_call_with_examples() -> None:
     assert isinstance(response.content, str)
 
 
+@pytest.mark.scheduled
 @pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
 def test_vertexai_single_call_with_history(model_name: str) -> None:
     if model_name:
@@ -118,7 +128,7 @@ def test_parse_chat_history_correct() -> None:
     ]
 
 
-def test_vertexai_single_call_failes_no_message() -> None:
+def test_vertexai_single_call_fails_no_message() -> None:
     chat = ChatVertexAI()
     with pytest.raises(ValueError) as exc_info:
         _ = chat([])
