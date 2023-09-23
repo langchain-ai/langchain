@@ -323,8 +323,9 @@ class TinyAsyncGradientEmbeddingClient:
         )
         if len(perm_texts_batched) == 1:
             embeddings_batch_perm = list(map(*map_args))
-        with ThreadPoolExecutor(32) as p:
-            embeddings_batch_perm = list(p.map(*map_args))
+        else:
+            with ThreadPoolExecutor(32) as p:
+                embeddings_batch_perm = list(p.map(*map_args))
 
         embeddings_perm = self._unbatch(embeddings_batch_perm)
         embeddings = unpermute_func(embeddings_perm)
