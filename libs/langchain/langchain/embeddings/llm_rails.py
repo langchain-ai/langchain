@@ -31,6 +31,7 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
     """Model name to use."""
 
     api_key: Optional[str] = None
+    """LLMRails API key."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -57,8 +58,6 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
             json={"input": texts, "model": self.model},
             timeout=60,
         )
-        print(response.content)
-
         return [item["embedding"] for item in response.json()["data"]]
 
     def embed_query(self, text: str) -> List[float]:
