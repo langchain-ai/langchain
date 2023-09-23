@@ -88,6 +88,32 @@ def test_gradient_llm_sync(
 
     assert response == want
 
+def test_gradient_llm_large_batch_size(
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch("requests.post", side_effect=mocked_requests_post)
+
+    embedder = GradientEmbeddings(
+        gradient_api_url=_GRADIENT_BASE_URL,
+        gradient_access_token=_GRADIENT_SECRET,
+        gradient_workspace_id=_GRADIENT_WORKSPACE_ID,
+        model=_MODEL_ID,
+    )
+    assert embedder.gradient_access_token == _GRADIENT_SECRET
+    assert embedder.gradient_api_url == _GRADIENT_BASE_URL
+    assert embedder.gradient_workspace_id == _GRADIENT_WORKSPACE_ID
+    assert embedder.model == _MODEL_ID
+
+    response = embedder.embed_documents(_DOCUMENTS * 1024)
+    want = [
+        [1.0, 0.0, 0.0],  # pizza
+        [1.0, 0.0, 0.1],  # pizza  + long
+        [0.0, 0.9, 0.0],  # doc
+        [1.0, 0.0, 0.1],  # pizza + long
+        [0.0, 0.9, 0.1],  # doc + long
+    ] * 1024
+
+    assert response == want
 
 def test_gradient_wrong_setup(
     mocker: MockerFixture,
