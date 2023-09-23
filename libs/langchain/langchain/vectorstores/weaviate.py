@@ -1,6 +1,6 @@
 """Wrapper around weaviate vector database."""
 from __future__ import annotations
-
+from warnings import warn
 import datetime
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 from uuid import uuid4
@@ -151,7 +151,9 @@ class Weaviate(VectorStore):
                 if metadatas is not None:
                     for key, val in metadatas[i].items():
                         # Check if an id property is provided and rename it to 'textid'
-                        key = "textid" if key == "id" else key
+                        if key == "id":
+                            warn('An import with the restricted "id" key was attempted. Renaming it to "textid"...', UserWarning)
+                            key = "textid"
                         data_properties[key] = _json_serializable(val)
 
                 # Allow for ids (consistent w/ other methods)
