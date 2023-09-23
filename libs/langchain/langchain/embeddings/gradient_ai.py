@@ -72,10 +72,10 @@ class GradientEmbeddings(BaseModel, Embeddings):
             values, "gradient_api_url", "GRADIENT_API_URL"
         )
 
-        values["client"] = MiniGradientEmbeddingClient(
-            gradient_access_token=values["gradient_access_token"],
-            gradient_workspace_id=values["gradient_workspace_id"],
-            gradient_api_url=values["gradient_api_url"],
+        values["client"] = TinyAsyncGradientEmbeddingClient(
+            access_token=values["gradient_access_token"],
+            workspace_id=values["gradient_workspace_id"],
+            host=values["gradient_api_url"],
         )
         try:
             import gradientai  # noqa
@@ -143,7 +143,7 @@ class GradientEmbeddings(BaseModel, Embeddings):
         return embeddings[0]
 
 
-class MiniGradientEmbeddingClient:
+class TinyAsyncGradientEmbeddingClient:
     """A helper tool to embed Gradient. Not part of Langchain's or Gradients stable API.
 
     To use, set the environment variable ``GRADIENT_ACCESS_TOKEN`` with your
@@ -154,9 +154,9 @@ class MiniGradientEmbeddingClient:
         .. code-block:: python
 
 
-            mini_client = MiniGradientEmbeddingClient(
-                gradient_workspace_id="12345614fc0_workspace",
-                gradient_access_token="gradientai-access_token",
+            mini_client = TinyAsyncGradientEmbeddingClient(
+                workspace_id="12345614fc0_workspace",
+                access_token="gradientai-access_token",
             )
             embeds = mini_client.embed(
                 model="bge-large",
@@ -172,34 +172,34 @@ class MiniGradientEmbeddingClient:
 
     def __init__(
         self,
-        gradient_access_token: Optional[str] = None,
-        gradient_workspace_id: Optional[str] = None,
-        gradient_api_url: str = "https://api.gradient.ai/api",
+        access_token: Optional[str] = None,
+        workspace_id: Optional[str] = None,
+        host: str = "https://api.gradient.ai/api",
         aiosession: Optional[aiohttp.ClientSession] = None,
     ) -> None:
-        self.gradient_access_token = gradient_access_token or os.environ.get(
+        self.access_token = access_token or os.environ.get(
             "GRADIENT_ACCESS_TOKEN", None
         )
-        self.gradient_workspace_id = gradient_workspace_id or os.environ.get(
+        self.workspace_id = workspace_id or os.environ.get(
             "GRADIENT_WORKSPACE_ID", None
         )
-        self.gradient_api_url = gradient_api_url
+        self.host = host
         self.aiosession = aiosession
 
-        if self.gradient_access_token is None or len(self.gradient_access_token) < 10:
+        if self.access_token is None or len(self.access_token) < 10:
             raise ValueError(
                 "env variable `GRADIENT_ACCESS_TOKEN` or "
-                " param `gradient_access_token` must be set "
+                " param `access_token` must be set "
             )
 
-        if self.gradient_workspace_id is None or len(self.gradient_workspace_id) < 3:
+        if self.workspace_id is None or len(self.workspace_id) < 3:
             raise ValueError(
                 "env variable `GRADIENT_WORKSPACE_ID` or "
-                " param `gradient_workspace_id` must be set"
+                " param `workspace_id` must be set"
             )
 
-        if self.gradient_api_url is None or len(self.gradient_api_url) < 3:
-            raise ValueError(" param `gradient_api_url` must be set to a valid url")
+        if self.host is None or len(self.host) < 3:
+            raise ValueError(" param `host` must be set to a valid url")
         self._batch_size = 128
 
     @staticmethod
@@ -277,10 +277,10 @@ class MiniGradientEmbeddingClient:
             Dict[str, Collection[str]]: _description_
         """
         return dict(
-            url=f"{self.gradient_api_url}/embeddings/{model}",
+            url=f"{self.host}/embeddings/{model}",
             headers={
-                "authorization": f"Bearer {self.gradient_access_token}",
-                "x-gradient-workspace-id": f"{self.gradient_workspace_id}",
+                "authorization": f"Bearer {self.access_token}",
+                "x-gradient-workspace-id": f"{self.workspace_id}",
                 "accept": "application/json",
                 "content-type": "application/json",
             },
