@@ -56,7 +56,7 @@ class SharePointLoader(O365BaseLoader):
             for blob in self._load_from_object_ids(drive, self.object_ids):
                 yield from blob_parser.lazy_parse(blob)
         if self.folder_id:
-            target_folder = drive.get_item_by_path(self.folder_id)
+            target_folder = drive.get_item(self.folder_id)
             if not isinstance(target_folder, Folder):
                 raise ValueError(f"There isn't a folder with ID {self.folder_id}.")
             for blob in self._load_from_folder(target_folder):
