@@ -6,7 +6,7 @@ import aiohttp
 import numpy as np
 import requests
 from concurrent.futures import ThreadPoolExecutor
-
+import logging
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -76,6 +76,12 @@ class GradientEmbeddings(BaseModel, Embeddings):
             gradient_workspace_id=values["gradient_workspace_id"],
             gradient_api_url=values["gradient_api_url"],
         )
+        try:
+            import gradientai
+        except ImportError:
+            logging.warning(
+                "DeprecationWarning: `GradientEmbeddings` will use "
+                "`pip install gradientai` in future releases of langchain.")
 
         return values
 
