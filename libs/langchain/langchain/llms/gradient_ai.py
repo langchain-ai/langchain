@@ -116,6 +116,8 @@ class GradientLLM(LLM):
             logging.warning(
                 "DeprecationWarning: `GradientLLM` will use "
                 "`pip install gradientai` in future releases of langchain.")
+        except Exception:
+            pass
 
         return values
 
