@@ -7,20 +7,18 @@ all: help
 # TESTING AND COVERAGE
 ######################
 
+# Define a variable for the test file path.
+TEST_FILE ?= tests/unit_tests/
+
 # Run unit tests and generate a coverage report.
 coverage:
 	poetry run pytest --cov \
 		--cov-config=.coveragerc \
 		--cov-report xml \
-		--cov-report term-missing:skip-covered
+		--cov-report term-missing:skip-covered \
+		$(TEST_FILE)
 
-# Define a variable for the test file path.
-TEST_FILE ?= tests/unit_tests/
-
-test:
-	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
-
-tests: 
+test tests:
 	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 extended_tests:
