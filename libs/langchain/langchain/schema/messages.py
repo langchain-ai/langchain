@@ -74,9 +74,9 @@ class BaseMessage(Serializable):
     def type(self) -> str:
         """Type of the Message, used for serialization."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether this class is LangChain serializable."""
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
         return True
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
