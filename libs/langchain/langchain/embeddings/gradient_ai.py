@@ -78,7 +78,7 @@ class GradientEmbeddings(BaseModel, Embeddings):
             gradient_api_url=values["gradient_api_url"],
         )
         try:
-            import gradientai
+            import gradientai  # noqa
         except ImportError:
             logging.warning(
                 "DeprecationWarning: `GradientEmbeddings` will use "
@@ -206,8 +206,10 @@ class MiniGradientEmbeddingClient:
     def _permute(
         texts: List[str], sorter: Callable = len
     ) -> Tuple[List[str], Callable]:
-        """Sort texts in ascending order, and delivers a lambda expr, which can sort a same length list
-        https://github.com/UKPLab/sentence-transformers/blob/c5f93f70eca933c78695c5bc686ceda59651ae3b/sentence_transformers/SentenceTransformer.py#L156 # noqa
+        """Sort texts in ascending order, and
+        delivers a lambda expr, which can sort a same length list
+        https://github.com/UKPLab/sentence-transformers/blob/
+        c5f93f70eca933c78695c5bc686ceda59651ae3b/sentence_transformers/SentenceTransformer.py#L156
 
         Args:
             texts (List[str]): _description_
@@ -314,26 +316,22 @@ class MiniGradientEmbeddingClient:
         perm_texts_batched = self._batch(perm_texts)
 
         # Request
+        map_args = (
+            self._sync_request_embed,
+            [model] * len(perm_texts_batched),
+            perm_texts_batched,
+        )
+        if len(perm_texts_batched) == 1:
+            embeddings_batch_perm = list(map(*map_args))
         with ThreadPoolExecutor(32) as p:
-            if len(perm_texts_batched) == 1:
-                _map = map
-            else:
-                # send requests in parallel queued threads
-                _map = p.map
-            embeddings_batch_perm = list(
-                _map(
-                    self._sync_request_embed,
-                    [model] * len(perm_texts_batched),
-                    perm_texts_batched,
-                )
-            )
+            embeddings_batch_perm = list(p.map(*map_args))
 
         embeddings_perm = self._unbatch(embeddings_batch_perm)
         embeddings = unpermute_func(embeddings_perm)
         return embeddings
 
     async def _async_request(
-        self, session: aiohttp.ClientSession, kwargs: Any
+        self, session: aiohttp.ClientSession, kwargs: Dict[str, Any]
     ) -> List[List[float]]:
         async with session.post(**kwargs) as response:
             if response.status != 200:
