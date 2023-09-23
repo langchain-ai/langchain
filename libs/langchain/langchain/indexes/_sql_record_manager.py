@@ -105,7 +105,8 @@ class SQLRecordManager(RecordManager):
             engine_kwargs: Additional keyword arguments
                 to be passed when creating the engine. Default is an empty dictionary.
             async_mode: Whether to create an async engine.
-                Driver should support async operations. It only applies if db_url is provided.
+                Driver should support async operations.
+                It only applies if db_url is provided.
                 Default is False.
 
         Raises:
@@ -119,6 +120,7 @@ class SQLRecordManager(RecordManager):
         if db_url is not None and engine is not None:
             raise ValueError("Must specify either db_url or engine, not both")
 
+        _engine: Union[Engine, AsyncEngine]
         if db_url:
             if async_mode:
                 _engine = create_async_engine(db_url, **(engine_kwargs or {}))
@@ -130,13 +132,15 @@ class SQLRecordManager(RecordManager):
         else:
             raise AssertionError("Something went wrong with configuration of engine.")
 
+        _session_factory: Union[sessionmaker[Session], async_sessionmaker[AsyncSession]]
+        if isinstance(_engine, AsyncEngine):
+            _session_factory = async_sessionmaker(bind=_engine)
+        else:
+            _session_factory = sessionmaker(bind=_engine)
+
         self.engine = _engine
         self.dialect = _engine.dialect.name
-
-        if isinstance(_engine, AsyncEngine):
-            self.session_factory = async_sessionmaker(bind=_engine)
-        else:
-            self.session_factory = sessionmaker(bind=_engine)
+        self.session_factory = _session_factory
 
     def create_schema(self) -> None:
         """Create the database schema."""
