@@ -48,16 +48,16 @@ class Serializable(BaseModel, ABC):
         """
         return cls.__module__.split(".")
 
-    @classmethod
-    def get_lc_secrets(cls) -> Dict[str, str]:
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
         """
         Return a map of constructor argument names to secret ids.
         eg. {"openai_api_key": "OPENAI_API_KEY"}
         """
         return dict()
 
-    @classmethod
-    def get_lc_attributes(cls) -> Dict[str, Any]:
+    @property
+    def lc_attributes(self) -> Dict:
         """
         Return a list of attribute names that should be included in the
         serialized kwargs. These attributes must be accepted by the
@@ -87,31 +87,29 @@ class Serializable(BaseModel, ABC):
         }
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
-        for cls in self.__class__.mro():
+        for cls in [None, *self.__class__.mro()]:
             # Once we get to Serializable, we're done
             if cls is Serializable:
                 break
 
-            if not issubclass(cls, Serializable):
-                continue
+            if cls:
+                deprecated_attributes = [
+                    "lc_namespaces",
+                    "lc_serializable",
+                ]
 
-            deprecated_attributes = [
-                "lc_secrets",
-                "lc_namespaces",
-                "lc_attributes",
-                "lc_serializable",
-            ]
+                for attr in deprecated_attributes:
+                    if hasattr(cls, attr):
+                        raise ValueError(
+                            f"Class {self.__class__} has a deprecated attribute {attr}. "
+                            "Please use the corresponding classmethod instead."
+                        )
 
-            for attr in deprecated_attributes:
-                if hasattr(cls, attr):
-                    raise ValueError(
-                        f"Class {self.__class__} has a deprecated attribute {attr}. "
-                        "Please use the corresponding classmethod instead."
-                    )
+            # Get a reference to self bound to each class in the MRO
+            this = cast(Serializable, self if cls is None else super(cls, self))
 
-            lc_secrets = cls.get_lc_secrets()
-            secrets.update(lc_secrets)
-            lc_kwargs.update(cls.get_lc_attributes())
+            secrets.update(this.lc_secrets)
+            lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
         # as these secrets may be passed as an environment variable instead

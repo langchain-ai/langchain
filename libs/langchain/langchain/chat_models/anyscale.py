@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Optional, Set, Dict
+from typing import TYPE_CHECKING, Dict, Optional, Set
 
 import requests
 

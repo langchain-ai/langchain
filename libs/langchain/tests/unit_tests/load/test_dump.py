@@ -20,15 +20,15 @@ class Person(Serializable):
     you_can_see_me: str = "hello"
 
     @classmethod
-    def is_lc_serializable(self) -> bool:
+    def is_lc_serializable(cls) -> bool:
         return True
 
-    @classmethod
-    def get_lc_secrets(self) -> Dict[str, str]:
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
         return {"secret": "SECRET"}
 
-    @classmethod
-    def get_lc_attributes(self) -> Dict[str, str]:
+    @property
+    def lc_attributes(self) -> Dict[str, str]:
         return {"you_can_see_me": self.you_can_see_me}
 
 
@@ -38,13 +38,13 @@ class SpecialPerson(Person):
     another_visible: str = "bye"
 
     # Gets merged with parent class's secrets
-    @classmethod
-    def get_lc_secrets(self) -> Dict[str, str]:
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
         return {"another_secret": "ANOTHER_SECRET"}
 
     # Gets merged with parent class's attributes
-    @classmethod
-    def get_lc_attributes(self) -> Dict[str, str]:
+    @property
+    def lc_attributes(self) -> Dict[str, str]:
         return {"another_visible": self.another_visible}
 
 
