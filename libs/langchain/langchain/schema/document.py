@@ -12,7 +12,7 @@ class Document(Serializable):
 
     page_content: str
     """String text."""
-    metadata: dict = Field(default_factory=dict)
+    metadata: dict[Any, Any] = Field(default_factory=dict)
     """Arbitrary metadata about the page content (e.g., source, relationships to other
         documents, etc.).
     """

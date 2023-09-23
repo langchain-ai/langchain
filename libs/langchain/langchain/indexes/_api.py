@@ -15,6 +15,7 @@ from typing import (
     Literal,
     Optional,
     Sequence,
+    Set,
     TypedDict,
     TypeVar,
     Union,
@@ -36,7 +37,7 @@ def _hash_string_to_uuid(input_string: str) -> uuid.UUID:
     return uuid.uuid5(NAMESPACE_UUID, hash_value)
 
 
-def _hash_nested_dict_to_uuid(data: dict) -> uuid.UUID:
+def _hash_nested_dict_to_uuid(data: dict[Any, Any]) -> uuid.UUID:
     """Hashes a nested dictionary and returns the corresponding UUID."""
     serialized_data = json.dumps(data, sort_keys=True)
     hash_value = hashlib.sha1(serialized_data.encode("utf-8")).hexdigest()
@@ -139,7 +140,7 @@ def _deduplicate_in_order(
     hashed_documents: Iterable[_HashedDocument],
 ) -> Iterator[_HashedDocument]:
     """Deduplicate a list of hashed documents while preserving order."""
-    seen = set()
+    seen: Set[str] = set()
 
     for hashed_doc in hashed_documents:
         if hashed_doc.hash_ not in seen:
@@ -280,8 +281,8 @@ def index(
         exists_batch = record_manager.exists([doc.uid for doc in hashed_docs])
 
         # Filter out documents that already exist in the record store.
-        uids = []
-        docs_to_index = []
+        uids: List[str] = []
+        docs_to_index: List[Document] = []
         for doc, hashed_doc, doc_exists in zip(doc_batch, hashed_docs, exists_batch):
             if doc_exists:
                 # Must be updated to refresh timestamp.
@@ -336,6 +337,148 @@ def index(
             vector_store.delete(uids_to_delete)
             # Then delete from record manager.
             record_manager.delete_keys(uids_to_delete)
+            num_deleted = len(uids_to_delete)
+
+    return {
+        "num_added": num_added,
+        "num_updated": num_updated,
+        "num_skipped": num_skipped,
+        "num_deleted": num_deleted,
+    }
+
+
+async def aindex(
+    docs_source: Iterable[Document],
+    record_manager: RecordManager,
+    vector_store: VectorStore,
+    *,
+    batch_size: int = 100,
+    cleanup: Literal["incremental", "full", None] = None,
+    source_id_key: Union[str, Callable[[Document], str], None] = None,
+) -> IndexingResult:
+    """Index data from the loader into the vector store."""
+
+    if cleanup not in {"incremental", "full", None}:
+        raise ValueError(
+            f"cleanup should be one of 'incremental', 'full' or None. "
+            f"Got {cleanup}."
+        )
+
+    if cleanup == "incremental" and source_id_key is None:
+        raise ValueError("Source id key is required when cleanup mode is incremental.")
+
+    # Check that the Vectorstore has required methods implemented
+    methods = ["adelete", "aadd_documents"]
+
+    for method in methods:
+        if not hasattr(vector_store, method):
+            raise ValueError(
+                f"Vectorstore {vector_store} does not have required method {method}"
+            )
+
+    if type(vector_store).adelete == VectorStore.adelete:
+        # Checking if the vectorstore has overridden the default delete method
+        # implementation which just raises a NotImplementedError
+        raise ValueError("Vectorstore has not implemented the delete method")
+
+    doc_iterator = iter(docs_source)
+
+    source_id_assigner = _get_source_id_assigner(source_id_key)
+
+    # Mark when the update started.
+    index_start_dt = await record_manager.aget_time()
+    num_added = 0
+    num_skipped = 0
+    num_updated = 0
+    num_deleted = 0
+
+    for doc_batch in _batch(batch_size, doc_iterator):
+        hashed_docs = list(
+            _deduplicate_in_order(
+                [_HashedDocument.from_document(doc) for doc in doc_batch]
+            )
+        )
+
+        source_ids: Sequence[Optional[str]] = [
+            source_id_assigner(doc) for doc in hashed_docs
+        ]
+
+        if cleanup == "incremental":
+            # If the cleanup mode is incremental, source ids are required.
+            for source_id, hashed_doc in zip(source_ids, hashed_docs):
+                if source_id is None:
+                    raise ValueError(
+                        "Source ids are required when cleanup mode is incremental. "
+                        f"Document that starts with "
+                        f"content: {hashed_doc.page_content[:100]} was not assigned "
+                        f"as source id."
+                    )
+            # source ids cannot be None after for loop above.
+            source_ids = cast(Sequence[str], source_ids)
+
+        exists_batch = await record_manager.aexists([doc.uid for doc in hashed_docs])
+
+        # Filter out documents that already exist in the record store.
+        uids: list[str] = []
+        docs_to_index: list[Document] = []
+
+        for doc, hashed_doc, doc_exists in zip(doc_batch, hashed_docs, exists_batch):
+            if doc_exists:
+                # Must be updated to refresh timestamp.
+                await record_manager.aupdate(
+                    [hashed_doc.uid], time_at_least=index_start_dt
+                )
+                num_skipped += 1
+                continue
+            uids.append(hashed_doc.uid)
+            docs_to_index.append(doc)
+
+        # Be pessimistic and assume that all vector store write will fail.
+        # First write to vector store
+        if docs_to_index:
+            await vector_store.aadd_documents(docs_to_index, ids=uids)
+            num_added += len(docs_to_index)
+
+        # And only then update the record store.
+        # Update ALL records, even if they already exist since we want to refresh
+        # their timestamp.
+        await record_manager.aupdate(
+            [doc.uid for doc in hashed_docs],
+            group_ids=source_ids,
+            time_at_least=index_start_dt,
+        )
+
+        # If source IDs are provided, we can do the deletion incrementally!
+
+        if cleanup == "incremental":
+            # Get the uids of the documents that were not returned by the loader.
+
+            # mypy isn't good enough to determine that source ids cannot be None
+            # here due to a check that's happening above, so we check again.
+            for source_id in source_ids:
+                if source_id is None:
+                    raise AssertionError("Source ids cannot be None here.")
+
+            _source_ids = cast(Sequence[str], source_ids)
+
+            uids_to_delete = await record_manager.alist_keys(
+                group_ids=_source_ids, before=index_start_dt
+            )
+            if uids_to_delete:
+                # Then delete from vector store.
+                await vector_store.adelete(uids_to_delete)
+                # First delete from record store.
+                await record_manager.adelete_keys(uids_to_delete)
+                num_deleted += len(uids_to_delete)
+
+    if cleanup == "full":
+        uids_to_delete = await record_manager.alist_keys(before=index_start_dt)
+
+        if uids_to_delete:
+            # First delete from record store.
+            await vector_store.adelete(uids_to_delete)
+            # Then delete from record manager.
+            await record_manager.adelete_keys(uids_to_delete)
             num_deleted = len(uids_to_delete)
 
     return {
