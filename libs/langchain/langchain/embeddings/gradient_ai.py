@@ -1,12 +1,13 @@
 import asyncio
+import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import aiohttp
 import numpy as np
 import requests
-from concurrent.futures import ThreadPoolExecutor
-import logging
+
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -81,7 +82,10 @@ class GradientEmbeddings(BaseModel, Embeddings):
         except ImportError:
             logging.warning(
                 "DeprecationWarning: `GradientEmbeddings` will use "
-                "`pip install gradientai` in future releases of langchain.")
+                "`pip install gradientai` in future releases of langchain."
+            )
+        except Exception:
+            pass
 
         return values
 
@@ -196,27 +200,39 @@ class MiniGradientEmbeddingClient:
 
         if self.gradient_api_url is None or len(self.gradient_api_url) < 3:
             raise ValueError(" param `gradient_api_url` must be set to a valid url")
-        self._batch_size = 32
+        self._batch_size = 128
 
     @staticmethod
     def _permute(
         texts: List[str], sorter: Callable = len
     ) -> Tuple[List[str], Callable]:
+        """Sort texts in ascending order, and delivers a lambda expr, which can sort a same length list
+        https://github.com/UKPLab/sentence-transformers/blob/c5f93f70eca933c78695c5bc686ceda59651ae3b/sentence_transformers/SentenceTransformer.py#L156 # noqa
+
+        Args:
+            texts (List[str]): _description_
+            sorter (Callable, optional): _description_. Defaults to len.
+
+        Returns:
+            Tuple[List[str], Callable]: _description_
+
+        Example:
+            ```
+            texts = ["one","three","four"]
+            perm_texts, undo = self._permute(texts)
+            texts == undo(perm_texts)
+            ```
         """
-        Sort texts in ascending order
-        https://github.com/UKPLab/sentence-transformers/blob/c5f93f70eca933c78695c5bc686ceda59651ae3b/sentence_transformers/SentenceTransformer.py#L156
-        """
+
         if len(texts) == 1:
             # special case query
             return texts, lambda t: t
         length_sorted_idx = np.argsort([-sorter(sen) for sen in texts])
         texts_sorted = [texts[idx] for idx in length_sorted_idx]
 
-        revert_sorting = lambda final_embeddings: [  # noqa E731
-            final_embeddings[idx] for idx in np.argsort(length_sorted_idx)
+        return texts_sorted, lambda unsorted_embeddings: [  # noqa E731
+            unsorted_embeddings[idx] for idx in np.argsort(length_sorted_idx)
         ]
-
-        return texts_sorted, revert_sorting
 
     def _batch(self, texts: List[str]) -> List[List[str]]:
         """
@@ -225,7 +241,7 @@ class MiniGradientEmbeddingClient:
 
         Args:
             texts (List[str]): List of sentences
-            self._batch_size (int, optional): max batch size of one request. 
+            self._batch_size (int, optional): max batch size of one request.
 
         Returns:
             List[List[str]]: Batches of List of sentences
@@ -298,7 +314,7 @@ class MiniGradientEmbeddingClient:
         perm_texts_batched = self._batch(perm_texts)
 
         # Request
-        with ThreadPoolExecutor() as p:
+        with ThreadPoolExecutor(32) as p:
             if len(perm_texts_batched) == 1:
                 _map = map
             else:
@@ -343,7 +359,9 @@ class MiniGradientEmbeddingClient:
 
         # Request
         if self.aiosession is None:
-            self.aiosession = aiohttp.ClientSession(trust_env=True)
+            self.aiosession = aiohttp.ClientSession(
+                trust_env=True, connector=aiohttp.TCPConnector(limit=32)
+            )
         async with self.aiosession as session:
             embeddings_batch_perm = await asyncio.gather(
                 *[
