@@ -8,7 +8,7 @@ from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
-VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
+VALID_TASKS = ("text2text-generation", "text-generation", "summarization", "text-classification")
 
 
 class HuggingFaceEndpoint(LLM):
@@ -144,6 +144,11 @@ class HuggingFaceEndpoint(LLM):
             text = generated_text[0]["generated_text"]
         elif self.task == "summarization":
             text = generated_text[0]["summary_text"]
+        elif self.task == "text-classification":
+            classification_response = generated_text[0]
+            label = classification_response.get("label", "UNKNOWN")
+            score = classification_response.get("score", 0)
+            text = f"Label: {label}, Score: {score}"
         else:
             raise ValueError(
                 f"Got invalid task {self.task}, "

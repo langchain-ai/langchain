@@ -58,3 +58,19 @@ def test_saving_loading_endpoint_llm(tmp_path: Path) -> None:
     llm.save(file_path=tmp_path / "hf.yaml")
     loaded_llm = load_llm(tmp_path / "hf.yaml")
     assert_llm_equality(llm, loaded_llm)
+
+
+@unittest.skip(
+    "This test requires an inference endpoint. Tested with Hugging Face endpoints"
+)
+def test_huggingface_endpoint_text_classification() -> None:
+    """Test valid call to HuggingFace text classification model."""
+    llm = HuggingFaceEndpoint(endpoint_url="", task="text-classification")
+    output = llm("The movie was great!")
+   
+    assert "Label:" in output and "Score:" in output
+    
+    label_str, score_str = output.replace("Label:", "").replace("Score:", "").split(",")
+    assert isinstance(label_str, str)
+    assert 0 <= float(score_str.strip()) <= 1  
+
