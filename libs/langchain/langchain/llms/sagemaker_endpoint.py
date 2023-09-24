@@ -44,15 +44,15 @@ class LineIterator:
     https://aws.amazon.com/blogs/machine-learning/elevating-the-generative-ai-experience-introducing-streaming-support-in-amazon-sagemaker-hosting/
     """
 
-    def _init_(self, stream):
+    def __init__(self, stream: Any) -> None:
         self.byte_iterator = iter(stream)
         self.buffer = io.BytesIO()
         self.read_pos = 0
 
-    def _iter_(self):
+    def __iter__(self) -> "LineIterator":
         return self
 
-    def _next_(self):
+    def __next__(self) -> Any:
         while True:
             self.buffer.seek(self.read_pos)
             line = self.buffer.readline()
