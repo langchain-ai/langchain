@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -11,6 +12,7 @@ from langchain.callbacks.manager import (
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, root_validator
+from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 
@@ -245,3 +247,34 @@ class GradientLLM(LLM):
             text = enforce_stop_tokens(text, stop)
 
         return text
+
+    def _generate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+        generations = []
+
+        for prompt in prompts:
+            text = self._call(prompt, stop=stop, run_manager=run_manager, **kwargs)
+            generations.append([Generation(text=text)])
+        return LLMResult(generations=generations)
+
+    async def _agenerate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+        generations = []
+        for generation in asyncio.gather(
+            [self._acall(prompt, stop=stop, run_manager=run_manager, **kwargs)]
+            for prompt in prompts
+        ):
+            generations.append([Generation(text=generation)])
+        return LLMResult(generations=generations)
