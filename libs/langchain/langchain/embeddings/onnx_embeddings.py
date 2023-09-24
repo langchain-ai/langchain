@@ -9,7 +9,9 @@ class OnnxEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
             from langchain.embeddings import OnnxEmbeddings
-            from langchain.embeddings.huggingface import DEFAULT_QUERY_BGE_INSTRUCTION_EN
+            from langchain.embeddings.huggingface import (
+                DEFAULT_QUERY_BGE_INSTRUCTION_EN
+            )
             model_name = "BAAI/bge-large-en"
             model_kwargs = {'device': 'cpu'}
             query_instruction = DEFAULT_QUERY_BGE_INSTRUCTION_EN
