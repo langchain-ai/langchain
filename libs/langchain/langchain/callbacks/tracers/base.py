@@ -102,6 +102,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run."""
@@ -122,6 +123,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             run_type="llm",
             tags=tags or [],
+            name=name,
         )
         self._start_trace(llm_run)
         self._on_llm_start(llm_run)
@@ -335,6 +337,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a tool run."""
@@ -356,6 +359,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_runs=[],
             run_type="tool",
             tags=tags or [],
+            name=name,
         )
         self._start_trace(tool_run)
         self._on_tool_start(tool_run)
@@ -406,6 +410,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
         """Run when Retriever starts running."""
@@ -416,7 +421,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             kwargs.update({"metadata": metadata})
         retrieval_run = Run(
             id=run_id,
-            name="Retriever",
+            name=name or "Retriever",
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"query": query},
