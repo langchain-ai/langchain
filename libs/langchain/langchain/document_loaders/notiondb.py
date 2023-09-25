@@ -127,11 +127,7 @@ class NotionDBLoader(BaseLoader):
                     else None
                 )
             elif prop_type == "created_time":
-                value = (
-                    prop_data["created_time"]
-                    if prop_data["created_time"]
-                    else None
-                )
+                value = prop_data["created_time"] if prop_data["created_time"] else None
             else:
                 value = None
 
