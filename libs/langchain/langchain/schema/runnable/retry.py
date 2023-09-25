@@ -87,7 +87,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _invoke(
         self,
         input: Input,
-        run_manager: CallbackManagerForChainRun,
+        run_manager: "CallbackManagerForChainRun",
         config: RunnableConfig,
     ) -> Output:
         for attempt in self._sync_retrying(reraise=True):
@@ -108,7 +108,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     async def _ainvoke(
         self,
         input: Input,
-        run_manager: AsyncCallbackManagerForChainRun,
+        run_manager: "AsyncCallbackManagerForChainRun",
         config: RunnableConfig,
     ) -> Output:
         async for attempt in self._async_retrying(reraise=True):
@@ -129,7 +129,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _batch(
         self,
         inputs: List[Input],
-        run_manager: List[CallbackManagerForChainRun],
+        run_manager: List["CallbackManagerForChainRun"],
         config: List[RunnableConfig],
     ) -> List[Union[Output, Exception]]:
         results_map: Dict[int, Output] = {}
@@ -193,7 +193,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     async def _abatch(
         self,
         inputs: List[Input],
-        run_manager: List[AsyncCallbackManagerForChainRun],
+        run_manager: List["AsyncCallbackManagerForChainRun"],
         config: List[RunnableConfig],
     ) -> List[Union[Output, Exception]]:
         results_map: Dict[int, Output] = {}
