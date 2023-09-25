@@ -68,7 +68,7 @@ def use_simple_prompt(llm: BaseLanguageModel) -> bool:
         return True
 
     # Bedrock anthropic
-    if llm.model_id and "anthropic" in llm.model_id:  # type: ignore
+    if hasattr(llm, "model_id") and "anthropic" in llm.model_id:  # type: ignore
         return True
 
     return False

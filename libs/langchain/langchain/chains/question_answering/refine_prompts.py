@@ -33,7 +33,7 @@ refine_template = (
     "Если контекст не полезен, верни оригинальный ответ."
 )
 CHAT_REFINE_PROMPT = ChatPromptTemplate.from_messages(
-    [("human", "{question}"), ("ai", "{existing_answer}"), ("human", "refine_template")]
+    [("human", "{question}"), ("ai", "{existing_answer}"), ("human", refine_template)]
 )
 REFINE_PROMPT_SELECTOR = ConditionalPromptSelector(
     default_prompt=DEFAULT_REFINE_PROMPT,

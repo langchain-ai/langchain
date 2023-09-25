@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/modules/agents/agents/examples/mrkl_chat(.html?)",
+      "destination": "/docs/modules/agents/"
+    },
+    {
       "source": "/docs/use_cases(/?)",
       "destination": "/docs/use_cases/question_answering/"
     },

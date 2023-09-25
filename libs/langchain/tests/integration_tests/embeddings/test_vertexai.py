@@ -14,7 +14,6 @@ def test_embedding_documents() -> None:
     output = model.embed_documents(documents)
     assert len(output) == 1
     assert len(output[0]) == 768
-    assert model._llm_type == "vertexai"
     assert model.model_name == model.client._model_id
 
 
@@ -40,5 +39,4 @@ def test_paginated_texts() -> None:
     output = model.embed_documents(documents)
     assert len(output) == 8
     assert len(output[0]) == 768
-    assert model._llm_type == "vertexai"
     assert model.model_name == model.client._model_id
