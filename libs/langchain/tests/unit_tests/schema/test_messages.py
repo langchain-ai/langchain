@@ -1,6 +1,9 @@
+import pytest
+
 from langchain.schema.messages import (
     AIMessageChunk,
     ChatMessageChunk,
+    FunctionMessageChunk,
     HumanMessageChunk,
 )
 
@@ -49,11 +52,10 @@ def test_chat_message_chunks() -> None:
         role="User", content="I am indeed."
     ), "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
 
-    assert ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
-        role="Assistant", content=" indeed."
-    ) == ChatMessageChunk(
-        role="User", content="I am indeed."
-    ), "ChatMessageChunk + ChatMessageChunk with different role should be a ChatMessageChunk of same role as the left side"  # noqa: E501
+    with pytest.raises(ValueError):
+        ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
+            role="Assistant", content=" indeed."
+        )
 
     assert ChatMessageChunk(role="User", content="I am") + AIMessageChunk(
         content=" indeed."
@@ -66,3 +68,29 @@ def test_chat_message_chunks() -> None:
     ) == AIMessageChunk(
         content="I am indeed."
     ), "Other MessageChunk + ChatMessageChunk should be a MessageChunk as the left side"  # noqa: E501
+
+
+def test_function_message_chunks() -> None:
+    assert FunctionMessageChunk(name="hello", content="I am") + FunctionMessageChunk(
+        name="hello", content=" indeed."
+    ) == FunctionMessageChunk(
+        name="hello", content="I am indeed."
+    ), "FunctionMessageChunk + FunctionMessageChunk should be a FunctionMessageChunk"
+
+    with pytest.raises(ValueError):
+        FunctionMessageChunk(name="hello", content="I am") + FunctionMessageChunk(
+            name="bye", content=" indeed."
+        )
+
+
+def test_ani_message_chunks() -> None:
+    assert AIMessageChunk(example=True, content="I am") + AIMessageChunk(
+        example=True, content=" indeed."
+    ) == AIMessageChunk(
+        example=True, content="I am indeed."
+    ), "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
+
+    with pytest.raises(ValueError):
+        AIMessageChunk(example=True, content="I am") + AIMessageChunk(
+            example=False, content=" indeed."
+        )
