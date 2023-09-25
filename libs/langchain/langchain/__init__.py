@@ -1,7 +1,11 @@
 # ruff: noqa: E402
 """Main entrypoint into package."""
+from pkgutil import extend_path
+__path__ = extend_path(__path__, __name__)
+
 from importlib import metadata
 from typing import Optional
+
 
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.chains import (

@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "langchain-pydantic_v1"
+version = "0.1"
+description = "..."
+authors = ["foo <foo@bar.com>"]
+packages = [
+    { include = "langchain" },
+]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
