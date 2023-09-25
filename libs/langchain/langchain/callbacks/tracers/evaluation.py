@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
 import langsmith
+from langsmith import schemas as langsmith_schemas
 from langsmith.evaluation.evaluator import EvaluationResult
 
 from langchain.callbacks import manager
