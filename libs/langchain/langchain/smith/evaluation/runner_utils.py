@@ -892,7 +892,6 @@ def _prepare_run_on_dataset(
                 EvaluatorCallbackHandler(
                     evaluators=run_evaluators or [],
                     client=client,
-                    max_workers=0,
                     example_id=example.id,
                 ),
                 progress_bar,

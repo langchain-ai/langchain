@@ -37,9 +37,6 @@ class EvaluatorCallbackHandler(BaseTracer):
     ----------
     evaluators : Sequence[RunEvaluator]
         The run evaluators to apply to all top level runs.
-    max_workers : int, optional
-        The maximum number of worker threads to use for running the evaluators.
-        If not specified, it will default to the number of evaluators.
     client : LangSmith Client, optional
         The LangSmith client instance to use for evaluating the runs.
         If not specified, a new instance will be created.
