@@ -22,14 +22,13 @@ class SummaryParser(SimpleJsonOutputParser):
     def _type(self) -> str:
         return "summary_parser"
 
-langchain.llm_cache = SQLiteCache(database_path=".langchain.db")
-
 dataset = load_dataset("griffin/chain_of_density", "unannotated")
 
 load_dotenv()
 
 llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=1000)
 
+ft_llm = ChatOpenAI(temperature=0, model="ft:gpt-3.5-turbo-0613:personal:cod-summarization:82oPBKod", max_retries=1000)
 
 class Sample(BaseModel):
     article: str
@@ -91,7 +90,7 @@ cod_summarization_prompt = ChatPromptTemplate.from_messages(
 
 cod_summarize_chain = LLMChain(llm=llm, prompt=cod_summarization_prompt, output_parser=SummaryParser())
 
-base_summarize_chaim = BASE_PROMPT | llm
+ft_summarize_chain = FT_PROMPT | ft_llm
 
 evaluator = LLMAsAJudgePairwiseEvalChain.from_llm(llm=llm)
 
@@ -100,12 +99,14 @@ def _reverse_verdict(verdict: str) -> str:
 
 async def evaluate(sample: Sample) -> bool:
     base_summary = (await base_summarize_chaim.ainvoke({"article": sample.article})).content
-    cod_summary = cod_summarize_chain.run(article=sample.article)
-    reverse = (len(base_summary) + len(cod_summary)) % 2 == 0
+    ft_summary = (await ft_summarize_chain.ainvoke({"article": sample.article})).content
+    print("Base summary:", base_summary)
+    print("FT summary:", ft_summary)
+    reverse = (len(base_summary) + len(ft_summary)) % 2 == 0
     result = await evaluator.aevaluate_string_pairs(
         input=f"Give a summary of the following article:\n\n{sample.article}",
-        prediction=cod_summary if not reverse else base_summary,
-        prediction_b=base_summary if not reverse else cod_summary,
+        prediction=sample.final_summary if not reverse else sample.starting_summary,
+        prediction_b=sample.starting_summary if not reverse else sample.final_summary,
     )
     print(result)
     if reverse:
@@ -137,5 +138,6 @@ async def main() -> None:
 if __name__ == "__main__":
     asyncio.run(main())
 
+
 # N=100 With first and last summary
-# Win rate: 79%
+# Win rate: 80%

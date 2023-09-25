@@ -1,7 +1,5 @@
 from langsmith import Client
 
-client = Client()
-
 from langchain.cache import SQLiteCache
 from dotenv import load_dotenv
 from datasets import load_dataset
@@ -18,6 +16,8 @@ langchain.llm_cache = SQLiteCache(database_path=".langchain.db")
 dataset = load_dataset("griffin/chain_of_density", "unannotated")
 
 load_dotenv()
+
+client = Client()
 
 llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=1000)
 
@@ -77,21 +77,21 @@ batches = [
     articles[i : i + 10] for i in range(0, len(articles), 10)
 ]
 
-dataset_name = "Summarization Dataset"
+dataset_name = "Summarization Dataset using Chain of Density"
 
 # Storing inputs in a dataset lets us
 # run chains and LLMs over a shared set of examples.
 dataset = client.create_dataset(
-    dataset_name=dataset_name, description="Questions and answers about animal phylogenetics.",
+    dataset_name=dataset_name, description="Summaries of news articles"
 )
 
 with get_openai_callback() as cb:
-    for batch in batches[:3]:
+    for batch in batches[:10]:
         outputs = cod_summarize_chain.batch(inputs=batch)
         print("Total cost:", cb.total_cost)
         for input, output in zip(batch, outputs):
             client.create_example(
                 inputs={"article": input},
-                outputs={"summary": output},
+                outputs={"summary": output["text"]},
                 dataset_id=dataset.id,
             )

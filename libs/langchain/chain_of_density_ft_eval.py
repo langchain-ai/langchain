@@ -30,6 +30,7 @@ load_dotenv()
 
 llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=1000)
 
+ft_llm = ChatOpenAI(temperature=0, model="ft:gpt-3.5-turbo-0613:personal:cod-summarization:82oPBKod", max_retries=1000)
 
 class Sample(BaseModel):
     article: str
@@ -48,33 +49,6 @@ for sample in dataset["train"]:
         )
     )
 
-PROMPT = """Article: {article}
-You will generate increasingly concise, entity-dense summaries of the above article. 
-
-Repeat the following 2 steps 5 times. 
-
-Step 1. Identify 1-3 informative entities (";" delimited) from the article which are missing from the previously generated summary. 
-Step 2. Write a new, denser summary of identical length which covers every entity and detail from the previous summary plus the missing entities. 
-
-A missing entity is:
-- relevant to the main story, 
-- specific yet concise (5 words or fewer), 
-- novel (not in the previous summary), 
-- faithful (present in the article), 
-- anywhere (can be located anywhere in the article).
-
-Guidelines:
-
-- The first summary should be long (4-5 sentences, ~80 words) yet highly non-specific, containing little information beyond the entities marked as missing. Use overly verbose language and fillers (e.g., "this article discusses") to reach ~80 words.
-- Make every word count: rewrite the previous summary to improve flow and make space for additional entities.
-- Make space with fusion, compression, and removal of uninformative phrases like "the article discusses".
-- The summaries should become highly dense and concise yet self-contained, i.e., easily understood without the article. 
-- Missing entities can appear anywhere in the new summary.
-- Never drop entities from the previous summary. If space cannot be made, add fewer new entities. 
-
-Remember, use the exact same number of words for each summary.
-Answer in JSON. The JSON should be a list (length 5) of dictionaries whose keys are "Missing_Entities" and "Denser_Summary"."""  # noqa: E501
-
 BASE_PROMPT = ChatPromptTemplate.from_template("""Article: {article}
 
 Write a summary of the above article. Guidelines:
@@ -85,13 +59,11 @@ Write a summary of the above article. Guidelines:
 
 Just give your summary and NOTHING else.""")
 
-cod_summarization_prompt = ChatPromptTemplate.from_messages(
-    ("human", PROMPT)
-)
-
-cod_summarize_chain = LLMChain(llm=llm, prompt=cod_summarization_prompt, output_parser=SummaryParser())
+FT_PROMPT = ChatPromptTemplate.from_template("""Give a summary of the following article:\n\n{article}""")
 
 base_summarize_chaim = BASE_PROMPT | llm
+
+ft_summarize_chain = FT_PROMPT | ft_llm
 
 evaluator = LLMAsAJudgePairwiseEvalChain.from_llm(llm=llm)
 
@@ -100,12 +72,14 @@ def _reverse_verdict(verdict: str) -> str:
 
 async def evaluate(sample: Sample) -> bool:
     base_summary = (await base_summarize_chaim.ainvoke({"article": sample.article})).content
-    cod_summary = cod_summarize_chain.run(article=sample.article)
-    reverse = (len(base_summary) + len(cod_summary)) % 2 == 0
+    ft_summary = (await ft_summarize_chain.ainvoke({"article": sample.article})).content
+    print("Base summary:", base_summary)
+    print("FT summary:", ft_summary)
+    reverse = (len(base_summary) + len(ft_summary)) % 2 == 0
     result = await evaluator.aevaluate_string_pairs(
         input=f"Give a summary of the following article:\n\n{sample.article}",
-        prediction=cod_summary if not reverse else base_summary,
-        prediction_b=base_summary if not reverse else cod_summary,
+        prediction=sample.final_summary if not reverse else sample.starting_summary,
+        prediction_b=sample.starting_summary if not reverse else sample.final_summary,
     )
     print(result)
     if reverse:
@@ -137,5 +111,6 @@ async def main() -> None:
 if __name__ == "__main__":
     asyncio.run(main())
 
+
 # N=100 With first and last summary
-# Win rate: 79%
+# Win rate: 80%
