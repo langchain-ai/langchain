@@ -51,8 +51,8 @@ class BaseFireworks(BaseLLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"fireworks_api_key": "FIREWORKS_API_KEY"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     def __new__(cls, **data: Any) -> Any:

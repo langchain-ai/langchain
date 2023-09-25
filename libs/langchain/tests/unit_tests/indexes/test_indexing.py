@@ -472,3 +472,78 @@ def test_deduplication(
         "num_skipped": 0,
         "num_updated": 0,
     }
+
+
+def test_cleanup_with_different_batchsize(
+    record_manager: SQLRecordManager, vector_store: VectorStore
+) -> None:
+    """Check that we can clean up with different batch size."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": str(d)},
+        )
+        for d in range(1000)
+    ]
+
+    assert index(docs, record_manager, vector_store, cleanup="full") == {
+        "num_added": 1000,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    docs = [
+        Document(
+            page_content="Different doc",
+            metadata={"source": str(d)},
+        )
+        for d in range(1001)
+    ]
+
+    assert index(
+        docs, record_manager, vector_store, cleanup="full", cleanup_batch_size=17
+    ) == {
+        "num_added": 1001,
+        "num_deleted": 1000,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+
+def test_deduplication_v2(
+    record_manager: SQLRecordManager, vector_store: VectorStore
+) -> None:
+    """Check edge case when loader returns no new docs."""
+    docs = [
+        Document(
+            page_content="1",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="1",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="2",
+            metadata={"source": "2"},
+        ),
+        Document(
+            page_content="3",
+            metadata={"source": "3"},
+        ),
+    ]
+
+    assert index(docs, record_manager, vector_store, cleanup="full") == {
+        "num_added": 3,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    # using in memory implementation here
+    assert isinstance(vector_store, InMemoryVectorStore)
+    contents = sorted(
+        [document.page_content for document in vector_store.store.values()]
+    )
+    assert contents == ["1", "2", "3"]

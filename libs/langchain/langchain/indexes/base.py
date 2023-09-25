@@ -74,6 +74,7 @@ class RecordManager(ABC):
         before: Optional[float] = None,
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
+        limit: Optional[int] = None,
     ) -> List[str]:
         """List records in the database based on the provided filters.
 
@@ -81,6 +82,7 @@ class RecordManager(ABC):
             before: Filter to list records updated before this time.
             after: Filter to list records updated after this time.
             group_ids: Filter to list records with specific group IDs.
+            limit: optional limit on the number of records to return.
 
         Returns:
             A list of keys for the matching records.
