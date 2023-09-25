@@ -102,6 +102,7 @@ class WebResearchRetriever(BaseRetriever):
         text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
             chunk_size=1500, chunk_overlap=150
         ),
+        verify_ssl: bool = True,
     ) -> "WebResearchRetriever":
         """Initialize from llm using default template.
 
@@ -112,6 +113,7 @@ class WebResearchRetriever(BaseRetriever):
             prompt: prompt to generating search questions
             num_search_results: Number of pages per Google search
             text_splitter: Text splitter for splitting web pages into chunks
+            verify_ssl: Indicates whether to verify SSL certificates
 
         Returns:
             WebResearchRetriever
@@ -139,6 +141,7 @@ class WebResearchRetriever(BaseRetriever):
             search=search,
             num_search_results=num_search_results,
             text_splitter=text_splitter,
+            verify_ssl=verify_ssl,
         )
 
     def clean_search_query(self, query: str) -> str:
