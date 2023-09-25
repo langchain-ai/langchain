@@ -94,7 +94,7 @@ class Serializable(BaseModel, ABC):
 
             if cls:
                 deprecated_attributes = [
-                    "lc_namespaces",
+                    "lc_namespace",
                     "lc_serializable",
                 ]
 
