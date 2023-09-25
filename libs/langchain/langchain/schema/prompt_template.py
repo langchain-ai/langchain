@@ -26,8 +26,9 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
         default_factory=dict
     )
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
         return True
 
     class Config:

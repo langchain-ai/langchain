@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import xor_args
-from langchain.vectorstores.base import VectorStore
 
 DEFAULT_K = 5
 
