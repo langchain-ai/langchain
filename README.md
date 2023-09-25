@@ -139,6 +139,10 @@ while(True):
 - [Агент-менеджер по продажам с автоматическим поиском по каталогу и формированием заказа](docs/extras/modules/agents/how_to/add_memory_openai_functions.ipynb)
 - [Поиск ответов в интернете с автоматическими промежуточными вопросами (self-ask)](docs/extras/modules/agents/agent_types/self_ask_with_search.ipynb)
 
+### Примеры приложений для Streamlit
+
+- [Чат-бот на базе GigaChat с потоковой генерацией](libs/streamlit_agent/gigachat_streaming.py) [Try demo](https://gigachat-streaming.streamlit.app/)
+
 ## Участие в проекте
 
 GigaChain — это проект с открытым исходным кодом в быстроразвивающейся области. Мы приветствуем любое участие в разработке, развитии инфраструктуры или улучшении документации.

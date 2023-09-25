@@ -1,6 +1,2 @@
 gigachain==0.0.299
 streamlit==1.26.0
-jsonpatch==1.33
-anyio==4.0.0
-pydantic==1.10.12
-pydantic_core==2.6.3

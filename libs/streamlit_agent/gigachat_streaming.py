@@ -4,6 +4,7 @@ from langchain.chat_models import GigaChat
 from langchain.schema import ChatMessage
 import streamlit as st
 
+# Try demo - https://gigachat-streaming.streamlit.app/
 
 class StreamHandler(BaseCallbackHandler):
     def __init__(self, container, initial_text=""):
