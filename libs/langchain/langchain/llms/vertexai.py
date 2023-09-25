@@ -18,7 +18,6 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
-from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import (
     Generation,
@@ -151,13 +150,6 @@ class _VertexAIBase(BaseModel):
     model_name: Optional[str] = None
     "Underlying model name."
 
-    def _enforce_stop_words(self, text: str, stop: Optional[List[str]] = None) -> str:
-        if stop is None and self.stop is not None:
-            stop = self.stop
-        if stop:
-            return enforce_stop_tokens(text, stop)
-        return text
-
     @classmethod
     def _get_task_executor(cls, request_parallelism: int = 5) -> Executor:
         if cls.task_executor is None:
@@ -220,6 +212,14 @@ class _VertexAICommon(_VertexAIBase):
         init_vertexai(**params)
         return None
 
+    def _prepare_params(
+        self,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        stop_sequences = stop or self.stop
+        return {**self._default_params, "stop_sequences": stop_sequences, **kwargs}
+
 
 class VertexAI(_VertexAICommon, BaseLLM):
     """Google Vertex AI large language models."""
@@ -228,7 +228,6 @@ class VertexAI(_VertexAICommon, BaseLLM):
     "The name of the Vertex AI large language model."
     tuned_model_name: Optional[str] = None
     "The name of a tuned model. If provided, model_name is ignored."
-    streaming: bool = False
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -267,10 +266,8 @@ class VertexAI(_VertexAICommon, BaseLLM):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        stop_sequences = stop or self.stop
         should_stream = stream if stream is not None else self.streaming
-
-        params = {**self._default_params, "stop_sequences": stop_sequences, **kwargs}
+        params = self._prepare_params(stop=stop, **kwargs)
         generations = []
         for prompt in prompts:
             if should_stream:
@@ -294,8 +291,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        stop_sequences = stop or self.stop
-        params = {**self._default_params, "stop_sequences": stop_sequences, **kwargs}
+        params = self._prepare_params(stop=stop, **kwargs)
         generations = []
         for prompt in prompts:
             res = await acompletion_with_retry(
@@ -311,8 +307,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
-        stop_sequences = stop or self.stop
-        params = {**self._default_params, "stop_sequences": stop_sequences, **kwargs}
+        params = self._prepare_params(stop=stop, **kwargs)
         for stream_resp in stream_completion_with_retry(
             self, prompt, run_manager=run_manager, **params
         ):
