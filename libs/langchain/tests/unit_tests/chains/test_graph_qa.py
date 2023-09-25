@@ -91,3 +91,28 @@ def test_include_types2() -> None:
         "[]"
     )
     assert output == expected_schema
+
+def test_include_types3() -> None:
+    structured_schema = {
+        "node_props": {
+            "Movie": [{"property": "title", "type": "STRING"}],
+            "Actor": [{"property": "name", "type": "STRING"}],
+            "Person": [{"property": "name", "type": "STRING"}],
+        },
+        "rel_props": {},
+        "relationships": [
+            {"start": "Actor", "end": "Movie", "type": "ACTED_IN"},
+            {"start": "Person", "end": "Movie", "type": "DIRECTED"},
+        ],
+    }
+    include_types = ["Movie", "Actor", "ACTED_IN"]
+    output = construct_schema(structured_schema, include_types, [])
+    expected_schema = (
+        "Node properties are the following: \n"
+        " {'Movie': [{'property': 'title', 'type': 'STRING'}], "
+        "'Actor': [{'property': 'name', 'type': 'STRING'}]}\n"
+        "Relationships properties are the following: \n"
+        " {}\nRelationships are: \n"
+        "['(:Actor)-[:ACTED_IN]->(:Movie)']"
+    )
+    assert output == expected_schema
