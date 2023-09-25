@@ -6,7 +6,7 @@ import os
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
@@ -49,6 +49,14 @@ def _get_client() -> Client:
     return _CLIENT
 
 
+def _get_executor() -> ThreadPoolExecutor:
+    """Get the executor."""
+    global _EXECUTOR
+    if _EXECUTOR is None:
+        _EXECUTOR = ThreadPoolExecutor()
+    return _EXECUTOR
+
+
 class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
@@ -71,15 +79,9 @@ class LangChainTracer(BaseTracer):
             "LANGCHAIN_PROJECT", os.getenv("LANGCHAIN_SESSION", "default")
         )
         self.client = client or _get_client()
-        self._futures: Set[Future] = set()
+        self._futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.tags = tags or []
-        global _EXECUTOR
-        if use_threading and _EXECUTOR is None:
-            _EXECUTOR = ThreadPoolExecutor()
-        if use_threading:
-            self.executor = _EXECUTOR
-        else:
-            self.executor = None
+        self.executor = _get_executor() if use_threading else None
         global _TRACERS
         _TRACERS.add(self)
 
@@ -221,7 +223,4 @@ class LangChainTracer(BaseTracer):
 
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
-        futures = list(self._futures)
-        wait(futures)
-        for future in futures:
-            self._futures.remove(future)
+        wait(self._futures)

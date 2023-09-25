@@ -832,12 +832,7 @@ async def _callbacks_initializer(
             )
         )
     if run_evaluators:
-        callback = EvaluatorCallbackHandler(
-            client=client,
-            evaluators=run_evaluators,
-            # We already have concurrency, don't want to overload the machine
-            max_workers=1,
-        )
+        callback = EvaluatorCallbackHandler(client=client, evaluators=run_evaluators)
         callbacks.append(callback)
         evaluation_handler_collector.append(callback)
     return callbacks
