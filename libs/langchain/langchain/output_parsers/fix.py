@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
-from langchain.chains.llm import LLMChain
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
 from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
 from langchain.schema.language_model import BaseLanguageModel
+
+if TYPE_CHECKING:
+    from langchain.chains.llm import LLMChain
 
 T = TypeVar("T")
 
@@ -37,6 +39,8 @@ class OutputFixingParser(BaseOutputParser[T]):
         Returns:
             OutputFixingParser
         """
+        from langchain.chains.llm import LLMChain
+
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 

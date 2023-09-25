@@ -1,8 +1,8 @@
 # ruff: noqa: E402
 """Main entrypoint into package."""
+import warnings
 from importlib import metadata
 from typing import TYPE_CHECKING, Optional
-import warnings
 
 if TYPE_CHECKING:
     from langchain.schema import BaseCache
@@ -25,6 +25,9 @@ def __getattr__(name):
     if name in ["MRKLChain", "ReActChain", "SelfAskWithSearchChain"]:
         from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 
+        # Add the imported attribute to the module's namespace
+        # This avoids re-entering this in the future
+        globals()[name] = locals()[name]
         return locals()[name]
     elif name in [
         "ConversationChain",
@@ -47,10 +50,16 @@ def __getattr__(name):
             VectorDBQAWithSourcesChain,
         )
 
+        # Add the imported attribute to the module's namespace
+        # This avoids re-entering this in the future
+        globals()[name] = locals()[name]
         return locals()[name]
     elif name in ["InMemoryDocstore", "Wikipedia"]:
         from langchain.docstore import InMemoryDocstore, Wikipedia
 
+        # Add the imported attribute to the module's namespace
+        # This avoids re-entering this in the future
+        globals()[name] = locals()[name]
         return locals()[name]
     elif name in [
         "Anthropic",
@@ -89,10 +98,16 @@ def __getattr__(name):
             Writer,
         )
 
+        # Add the imported attribute to the module's namespace
+        # This avoids re-entering this in the future
+        globals()[name] = locals()[name]
         return locals()[name]
     elif name in ["HuggingFacePipeline"]:
         from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 
+        # Add the imported attribute to the module's namespace
+        # This avoids re-entering this in the future
+        globals()[name] = locals()[name]
         return locals()[name]
     elif name in [
         "FewShotPromptTemplate",
@@ -105,11 +120,17 @@ def __getattr__(name):
             PromptTemplate,
         )
 
+        # Add the imported attribute to the module's namespace
+        # This avoids re-entering this in the future
+        globals()[name] = locals()[name]
         return locals()[name]
-    elif name == "BasePromptTemplate":
+    elif name in ["BasePromptTemplate"]:
         from langchain.schema.prompt_template import BasePromptTemplate
 
-        return BasePromptTemplate
+        # Add the imported attribute to the module's namespace
+        # This avoids re-entering this in the future
+        globals()[name] = locals()[name]
+        return locals()[name]
     elif name in [
         "ArxivAPIWrapper",
         "GoldenQueryAPIWrapper",
@@ -135,9 +156,17 @@ def __getattr__(name):
             WolframAlphaAPIWrapper,
         )
 
+        # Add the imported attribute to the module's namespace
+        # This avoids re-entering this in the future
+        globals()[name] = locals()[name]
         return locals()[name]
     elif name in ["FAISS", "ElasticVectorSearch"]:
         from langchain.vectorstores import FAISS, ElasticVectorSearch
+
+        # Add the imported attribute to the module's namespace
+        # This avoids re-entering this in the future
+        globals()[name] = locals()[name]
+        return locals()[name]
     # For backwards compatibility
     elif name == "SerpAPIChain":
         from langchain.utilities import SerpAPIWrapper
