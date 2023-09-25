@@ -176,7 +176,7 @@ class AIMessage(BaseMessage):
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     """A Message chunk from an AI."""
 
-    def __add__(self, other: Any) -> BaseMessageChunk:
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
             if self.example != other.example:
                 raise ValueError(
@@ -226,7 +226,7 @@ class FunctionMessage(BaseMessage):
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     """A Function Message chunk."""
 
-    def __add__(self, other: Any) -> BaseMessageChunk:
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):
             if self.name != other.name:
                 raise ValueError(
