@@ -21,7 +21,9 @@ llm_cache: Optional["BaseCache"] = None
 
 
 def __getattr__(name: str) -> Any:
-    warnings.warn(f"Importing {name} is no longer supported.")
+    warnings.warn(
+        f"Importing {name} from langchain root module is no longer supported."
+    )
     if name == "MRKLChain":
         from langchain.agents import MRKLChain
 
