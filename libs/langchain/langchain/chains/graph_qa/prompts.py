@@ -331,3 +331,15 @@ NEPTUNE_OPENCYPHER_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"],
     template=NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE,
 )
+
+NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE = """
+Write an openCypher query to answer the following question. Do not explain the answer. Only return the query. 
+Question:  "{question}". 
+Here is the property graph schema: 
+{schema}
+\n"""
+
+NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"],
+    template=NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE,
+)
