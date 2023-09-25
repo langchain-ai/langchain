@@ -183,9 +183,9 @@ class SupabaseVectorStore(VectorStore):
             sql_fn_args = {}
             for filter_key, filter_value in filter.items():
                 sql_fn_args[filter_key] = filter_value
-        postgrest_filter: Optional[str] = kwargs.get("postgrest_filter")
+        postgres_filter: Optional[str] = kwargs.get("postgres_filter")
         result = self.similarity_search_by_vector_with_relevance_scores(
-            embedding, k, postgrest_filter, sql_fn_args
+            embedding, k, postgres_filter, sql_fn_args
         )
 
         documents = [doc for doc, _ in result]
@@ -206,7 +206,7 @@ class SupabaseVectorStore(VectorStore):
                 sql_fn_args = {}
             sql_fn_args = sql_fn_args.update(filter)
         return self.similarity_search_by_vector_with_relevance_scores(
-            query_vector, k, kwargs.get("postgrest_filter"), sql_fn_args
+            query_vector, k, kwargs.get("postgres_filter"), sql_fn_args
         )
 
     def match_args(
@@ -222,15 +222,15 @@ class SupabaseVectorStore(VectorStore):
         self,
         query: List[float],
         k: int,
-        postgrest_filter: Optional[str] = None,
+        postgres_filter: Optional[str] = None,
         sql_fn_args: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
         match_documents_params = self.match_args(query, sql_fn_args)
         query_builder = self._client.rpc(self.query_name, match_documents_params)
 
-        if postgrest_filter:
+        if postgres_filter:
             query_builder.params = query_builder.params.set(
-                "and", f"({postgrest_filter})"
+                "and", f"({postgres_filter})"
             )
 
         query_builder.params = query_builder.params.set("limit", k)
@@ -255,15 +255,15 @@ class SupabaseVectorStore(VectorStore):
         self,
         query: List[float],
         k: int,
-        postgrest_filter: Optional[str] = None,
+        postgres_filter: Optional[str] = None,
         sql_fn_args: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
         match_documents_params = self.match_args(query, sql_fn_args)
         query_builder = self._client.rpc(self.query_name, match_documents_params)
 
-        if postgrest_filter:
+        if postgres_filter:
             query_builder.params = query_builder.params.set(
-                "and", f"({postgrest_filter})"
+                "and", f"({postgres_filter})"
             )
 
         query_builder.params = query_builder.params.set("limit", k)
@@ -365,17 +365,17 @@ class SupabaseVectorStore(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            postgrest_filter: Postgrest filter to apply to the query results.
+            postgres_filter: Postgrest filter to apply to the query results.
                             fetch_k is already in the filter as f"limit={fetch_k}"
             sql_fn_args: Other arguments to pass to the sql function than
                         "query_embedding" (which should be a function's parameter).
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        postgrest_filter: Optional[str] = kwargs.get("postgrest_filter")
+        postgres_filter: Optional[str] = kwargs.get("postgres_filter")
         sql_fn_args: Optional[Dict[str, Any]] = kwargs.get("sql_fn_args")
         result = self.similarity_search_by_vector_returning_embeddings(
-            embedding, fetch_k, postgrest_filter, sql_fn_args
+            embedding, fetch_k, postgres_filter, sql_fn_args
         )
 
         matched_documents = [doc_tuple[0] for doc_tuple in result]
@@ -453,7 +453,7 @@ class SupabaseVectorStore(VectorStore):
             k,
             fetch_k,
             lambda_mult,
-            postgrest_filter=kwargs.get("postgrest_filter"),
+            postgres_filter=kwargs.get("postgres_filter"),
             sql_fn_args=kwargs.get("sql_fn_args"),
         )
         return docs
