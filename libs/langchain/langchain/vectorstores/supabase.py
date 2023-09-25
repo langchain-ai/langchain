@@ -365,7 +365,7 @@ class SupabaseVectorStore(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            postgres_filter: Postgrest filter to apply to the query results.
+            postgres_filter: Filter to apply to the query results.
                             fetch_k is already in the filter as f"limit={fetch_k}"
             sql_fn_args: Other arguments to pass to the sql function than
                         "query_embedding" (which should be a function's parameter).
