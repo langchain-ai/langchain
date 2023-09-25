@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.utils.iter import batch_iterate
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance

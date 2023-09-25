@@ -50,11 +50,13 @@ from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.google_palm import GooglePalm
 from langchain.llms.gooseai import GooseAI
 from langchain.llms.gpt4all import GPT4All
+from langchain.llms.gradient_ai import GradientLLM
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.llms.human import HumanInputLLM
+from langchain.llms.javelin_ai_gateway import JavelinAIGateway
 from langchain.llms.koboldai import KoboldApiLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
@@ -119,6 +121,7 @@ __all__ = [
     "GPT4All",
     "GooglePalm",
     "GooseAI",
+    "GradientLLM",
     "HuggingFaceEndpoint",
     "HuggingFaceHub",
     "HuggingFacePipeline",
@@ -162,6 +165,7 @@ __all__ = [
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
+    "JavelinAIGateway",
     "QianfanLLMEndpoint",
 ]
 
@@ -193,6 +197,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "forefrontai": ForefrontAI,
     "google_palm": GooglePalm,
     "gooseai": GooseAI,
+    "gradient": GradientLLM,
     "gpt4all": GPT4All,
     "huggingface_endpoint": HuggingFaceEndpoint,
     "huggingface_hub": HuggingFaceHub,
@@ -232,5 +237,6 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "vllm_openai": VLLMOpenAI,
     "writer": Writer,
     "xinference": Xinference,
+    "javelin-ai-gateway": JavelinAIGateway,
     "qianfan_endpoint": QianfanLLMEndpoint,
 }

@@ -7,9 +7,10 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output import GenerationChunk
+from langchain.schema.prompt import PromptValue
 from langchain.utils import (
     check_package_version,
     get_from_dict_or_env,
@@ -44,7 +45,7 @@ class _AnthropicCommon(BaseLanguageModel):
 
     anthropic_api_url: Optional[str] = None
 
-    anthropic_api_key: Optional[str] = None
+    anthropic_api_key: Optional[SecretStr] = None
 
     HUMAN_PROMPT: Optional[str] = None
     AI_PROMPT: Optional[str] = None
@@ -63,8 +64,8 @@ class _AnthropicCommon(BaseLanguageModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["anthropic_api_key"] = get_from_dict_or_env(
-            values, "anthropic_api_key", "ANTHROPIC_API_KEY"
+        values["anthropic_api_key"] = SecretStr(
+            get_from_dict_or_env(values, "anthropic_api_key", "ANTHROPIC_API_KEY")
         )
         # Get custom api url from environment.
         values["anthropic_api_url"] = get_from_dict_or_env(
@@ -80,12 +81,12 @@ class _AnthropicCommon(BaseLanguageModel):
             check_package_version("anthropic", gte_version="0.3")
             values["client"] = anthropic.Anthropic(
                 base_url=values["anthropic_api_url"],
-                api_key=values["anthropic_api_key"],
+                api_key=values["anthropic_api_key"].get_secret_value(),
                 timeout=values["default_request_timeout"],
             )
             values["async_client"] = anthropic.AsyncAnthropic(
                 base_url=values["anthropic_api_url"],
-                api_key=values["anthropic_api_key"],
+                api_key=values["anthropic_api_key"].get_secret_value(),
                 timeout=values["default_request_timeout"],
             )
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
@@ -233,6 +234,9 @@ class Anthropic(LLM, _AnthropicCommon):
             **params,
         )
         return response.completion
+
+    def convert_prompt(self, prompt: PromptValue) -> str:
+        return self._wrap_prompt(prompt.to_string())
 
     async def _acall(
         self,
