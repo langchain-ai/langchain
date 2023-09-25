@@ -120,6 +120,18 @@ class NotionDBLoader(BaseLoader):
                     if prop_data["people"]
                     else []
                 )
+            elif prop_type == "last_edited_time":
+                value = (
+                    prop_data["last_edited_time"]
+                    if prop_data["last_edited_time"]
+                    else None
+                )
+            elif prop_type == "created_time":
+                value = (
+                    prop_data["created_time"]
+                    if prop_data["created_time"]
+                    else None
+                )
             else:
                 value = None
 
