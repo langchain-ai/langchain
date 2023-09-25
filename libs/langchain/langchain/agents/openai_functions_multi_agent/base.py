@@ -54,7 +54,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
 
         try:
             tools = arguments["actions"]
-        except TypeError:
+        except (TypeError, KeyError):
             raise OutputParserException(
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` JSON does not contain `actions` key."
