@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     user: Optional[str] = None
     password: Optional[str] = None
     model: Optional[str] = None
-    timeout: float = 10.0
+    timeout: float = 30.0
     verify_ssl: bool = True
 
     client_id: Optional[str] = None

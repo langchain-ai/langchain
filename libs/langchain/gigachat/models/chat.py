@@ -17,3 +17,4 @@ class Chat(BaseModel):
     max_tokens: Optional[int] = None
     repetition_penalty: Optional[float] = None
     update_interval: Optional[float] = None
+    profanity_check: Optional[float] = None
