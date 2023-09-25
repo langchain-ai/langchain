@@ -486,7 +486,6 @@ def test_cleanup_with_different_batchsize(
         for d in range(1000)
     ]
 
-    # Should result in only a single document being added
     assert index(docs, record_manager, vector_store, cleanup="full") == {
         "num_added": 1000,
         "num_deleted": 0,
@@ -502,7 +501,6 @@ def test_cleanup_with_different_batchsize(
         for d in range(1001)
     ]
 
-    # Should result in only a single document being added
     assert index(
         docs, record_manager, vector_store, cleanup="full", cleanup_batch_size=17
     ) == {
@@ -536,7 +534,6 @@ def test_deduplication_v2(
         ),
     ]
 
-    # Should result in only a single document being added
     assert index(docs, record_manager, vector_store, cleanup="full") == {
         "num_added": 3,
         "num_deleted": 0,
