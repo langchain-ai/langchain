@@ -28,6 +28,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from io import StringIO
 from typing import (
     AbstractSet,
     Any,
@@ -50,6 +51,7 @@ from typing import (
 from langchain.docstore.document import Document
 from langchain.schema import BaseDocumentTransformer
 from lxml import etree
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -520,15 +522,28 @@ class HTMLHeaderTextSplitter:
             for chunk in aggregated_chunks
         ]
 
+    def split_text_from_url(self, url: str) -> List[Document]:
+        """Split HTML from web URL
+        Args:
+            url: web URL
+        """
+        return self.split_text(requests.get(url).text)
+
     def split_text(self, text: str) -> List[Document]:
+        """Split HTML text string
+        Args:
+            text: HTML text
+        """
+        return self.split_text_from_file(StringIO(text))
+
+    def split_text_from_file(self, file: Any) -> List[Document]:
         """Split HTML file
         Args:
-            text: HTML file
+            file: HTML file
         """
-
         # use lxml library to parse html document and return xml ElementTree
         parser = etree.HTMLParser()
-        tree = etree.parse(text, parser)
+        tree = etree.parse(file, parser)
 
         # document transformation for "structure-aware" chunking is handled with xsl.
         # see comments in html_chunk.xsl for more detailed information.
@@ -550,7 +565,7 @@ class HTMLHeaderTextSplitter:
         for element in result_dom.findall("*//*", ns_map):
             if element.findall("*[@class='headers']") or element.findall("*[@class='chunk']"):
                 elements.append(ElementType(
-                    url=text,
+                    url=file,
                     xpath="".join([node.text for node in element.findall("*[@class='xpath']", ns_map)]),
                     content="".join([node.text for node in element.findall("*[@class='chunk']", ns_map)]),
                     metadata={
@@ -558,7 +573,7 @@ class HTMLHeaderTextSplitter:
                                  header_mapping[node.tag]: node.text for node in filter(
                                     lambda x: x.tag in header_filter, element.findall("*[@class='headers']/*", ns_map))
                                  # add source url to metadata
-                             } | {"source": text}
+                             }
                 ))
 
         if not self.return_each_element:
