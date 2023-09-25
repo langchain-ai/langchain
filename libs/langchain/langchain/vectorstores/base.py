@@ -526,6 +526,8 @@ class VectorStoreRetriever(BaseRetriever):
     """Type of search to perform. Defaults to "similarity"."""
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass to the search function."""
+    add_index: bool = False
+    """Prepend each page_content of document in the result with its index number, like [1], [2]."""
     allowed_search_types: ClassVar[Collection[str]] = (
         "similarity",
         "similarity_score_threshold",
@@ -573,6 +575,9 @@ class VectorStoreRetriever(BaseRetriever):
             )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
+        if self.add_index == True:
+            for i, doc in enumerate(docs):
+                doc.page_content = f'[{i+1}] {doc.page_content}'
         return docs
 
     async def _aget_relevant_documents(
@@ -595,6 +600,9 @@ class VectorStoreRetriever(BaseRetriever):
             )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
+        if self.add_index == True:
+            for i, doc in enumerate(docs):
+                doc.page_content = f'[{i+1}] {doc.page_content}'
         return docs
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
