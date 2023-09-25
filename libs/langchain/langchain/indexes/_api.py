@@ -331,20 +331,14 @@ def index(
                 num_deleted += len(uids_to_delete)
 
     if cleanup == "full":
-        while True:
-            uids_to_delete = record_manager.list_keys(
-                before=index_start_dt, limit=cleanup_batch_size
-            )
-
-            if not uids_to_delete:
-                break
-
-            if uids_to_delete:
-                # First delete from record store.
-                vector_store.delete(uids_to_delete)
-                # Then delete from record manager.
-                record_manager.delete_keys(uids_to_delete)
-                num_deleted += len(uids_to_delete)
+        while uids_to_delete := record_manager.list_keys(
+            before=index_start_dt, limit=cleanup_batch_size
+        ):
+            # First delete from record store.
+            vector_store.delete(uids_to_delete)
+            # Then delete from record manager.
+            record_manager.delete_keys(uids_to_delete)
+            num_deleted += len(uids_to_delete)
 
     return {
         "num_added": num_added,
