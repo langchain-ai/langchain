@@ -18,17 +18,11 @@ def test_comparsion_template() -> None:
 
 
 @pytest.mark.parametrize(
-    "text",
+    "text, verdict",
     [
-        "[Some reasoning] \n\nFinal Verdict: [[A]]",
-        "[Some reasoning] Therfore [[B]] is better than [[A]].",
-        "[Some reasoning] \n\nFinal Verdict: [[C]]",
-    ],
-    "verdict",
-    [
-        "Win",
-        "Loss",
-        "Tie",
+        ("[Some reasoning] \n\nFinal Verdict: [[A]]", "Win"),
+        ("[Some reasoning] Therfore [[B]] is better than [[A]].", "Loss"),
+        ("[Some reasoning] \n\nFinal Verdict: [[C]]", "Tie"),
     ],
 )
 def test_llm_as_a_judge_pairwise_output_parser(text: str, verdict: str) -> None:
