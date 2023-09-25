@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
@@ -72,7 +74,7 @@ class HuggingFacePipeline(BaseLLM):
         pipeline_kwargs: Optional[dict] = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
-    ) -> BaseLLM:
+    ) -> HuggingFacePipeline:
         """Construct the pipeline object from model_id and task."""
         try:
             from transformers import (
