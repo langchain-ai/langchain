@@ -1,5 +1,5 @@
 from langchain.docstore.document import Document
-from langchain.vectorstores.vearch import VearchDb
+from langchain.vectorstores.vearch import Vearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
@@ -27,8 +27,10 @@ def test_vearch() -> None:
         texts=texts,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
+        path_or_url="./"
         table_name="test_vearch",
-        metadata_path="./",
+        db_name="test_db"
+        flag=0
     )
     result = vearch_db.similarity_search(
         "Vearch 支持OpenAI, Llama, ChatGLM等模型，以及LangChain库", 1
@@ -66,8 +68,10 @@ def test_vearch_add_texts() -> None:
         texts=texts,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
+        path_or_url="./"
         table_name="test_vearch",
-        metadata_path="./",
+        db_name="test_db",
+        flag=0
     )
 
     vearch_db.add_texts(
