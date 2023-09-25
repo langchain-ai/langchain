@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 
 from langchain.callbacks.manager import (
@@ -100,12 +101,14 @@ class MergerRetriever(BaseRetriever):
         """
 
         # Get the results of all retrievers.
-        retriever_docs = [
-            await retriever.aget_relevant_documents(
-                query, callbacks=run_manager.get_child("retriever_{}".format(i + 1))
+        retriever_docs = await asyncio.gather(
+            *(
+                retriever.aget_relevant_documents(
+                    query, callbacks=run_manager.get_child("retriever_{}".format(i + 1))
+                )
+                for i, retriever in enumerate(self.retrievers)
             )
-            for i, retriever in enumerate(self.retrievers)
-        ]
+        )
 
         # Merge the results of the retrievers.
         merged_documents = []
