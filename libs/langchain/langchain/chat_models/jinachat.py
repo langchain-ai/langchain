@@ -27,7 +27,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _agenerate_from_stream,
+    _generate_from_stream,
+)
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     AIMessage,
@@ -160,8 +164,9 @@ class JinaChat(BaseChatModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"jinachat_api_key": "JINACHAT_API_KEY"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     client: Any  #: :meta private:
@@ -319,16 +324,10 @@ class JinaChat(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            generation: Optional[ChatGenerationChunk] = None
-            for chunk in self._stream(
+            stream_iter = self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            ):
-                if generation is None:
-                    generation = chunk
-                else:
-                    generation += chunk
-            assert generation is not None
-            return ChatResult(generations=[generation])
+            )
+            return _generate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
@@ -384,16 +383,10 @@ class JinaChat(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            generation: Optional[ChatGenerationChunk] = None
-            async for chunk in self._astream(
+            stream_iter = self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            ):
-                if generation is None:
-                    generation = chunk
-                else:
-                    generation += chunk
-            assert generation is not None
-            return ChatResult(generations=[generation])
+            )
+            return await _agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}

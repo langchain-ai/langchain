@@ -8,11 +8,12 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
 import langsmith
-from langsmith import schemas as langsmith_schemas
+from langsmith.evaluation.evaluator import EvaluationResult
 
-from langchain.callbacks.manager import tracing_v2_enabled
+from langchain.callbacks import manager
+from langchain.callbacks.tracers import langchain as langchain_tracer
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.langchain import _get_client, _get_executor
+from langchain.callbacks.tracers.langchain import _get_executor
 from langchain.callbacks.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
@@ -80,13 +81,14 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.client = client or _get_client()
+        self.client = client or langchain_tracer.get_client()
         self.evaluators = evaluators
         self.executor = _get_executor()
         self.futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
         self.logged_feedback: Dict[str, List[langsmith_schemas.Feedback]] = {}
+        self.logged_eval_results: Dict[str, List[EvaluationResult]] = {}
         global _TRACERS
         _TRACERS.add(self)
 
@@ -103,11 +105,11 @@ class EvaluatorCallbackHandler(BaseTracer):
         """
         try:
             if self.project_name is None:
-                feedback = self.client.evaluate_run(run, evaluator)
-            with tracing_v2_enabled(
+                eval_result = self.client.evaluate_run(run, evaluator)
+            with manager.tracing_v2_enabled(
                 project_name=self.project_name, tags=["eval"], client=self.client
             ):
-                feedback = self.client.evaluate_run(run, evaluator)
+                eval_result = self.client.evaluate_run(run, evaluator)
         except Exception as e:
             logger.error(
                 f"Error evaluating run {run.id} with "
@@ -116,7 +118,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             )
             raise e
         example_id = str(run.reference_example_id)
-        self.logged_feedback.setdefault(example_id, []).append(feedback)
+        self.logged_eval_results.setdefault(example_id, []).append(eval_result)
 
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.

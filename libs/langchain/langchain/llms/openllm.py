@@ -265,10 +265,19 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            return self._client.query(prompt, **config.model_dump(flatten=True))
+            res = self._client.query(prompt, **config.model_dump(flatten=True))
         else:
             assert self._runner is not None
-            return self._runner(prompt, **config.model_dump(flatten=True))
+            res = self._runner(prompt, **config.model_dump(flatten=True))
+        if isinstance(res, dict) and "text" in res:
+            return res["text"]
+        elif isinstance(res, str):
+            return res
+        else:
+            raise ValueError(
+                "Expected result to be a dict with key 'text' or a string. "
+                f"Received {res}"
+            )
 
     async def _acall(
         self,
@@ -291,7 +300,7 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            return await self._client.acall(
+            res = await self._client.acall(
                 "generate", prompt, **config.model_dump(flatten=True)
             )
         else:
@@ -304,6 +313,16 @@ class OpenLLM(LLM):
             generated_result = await self._runner.generate.async_run(
                 prompt, **generate_kwargs
             )
-            return self._runner.llm.postprocess_generate(
+            res = self._runner.llm.postprocess_generate(
                 prompt, generated_result, **postprocess_kwargs
+            )
+
+        if isinstance(res, dict) and "text" in res:
+            return res["text"]
+        elif isinstance(res, str):
+            return res
+        else:
+            raise ValueError(
+                "Expected result to be a dict with key 'text' or a string. "
+                f"Received {res}"
             )
