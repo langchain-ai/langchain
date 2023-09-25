@@ -66,13 +66,14 @@ class RouterRunnable(
     class Config:
         arbitrary_types_allowed = True
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
         return True
 
-    @property
-    def lc_namespace(self) -> List[str]:
-        return self.__class__.__module__.split(".")[:-1]
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        return cls.__module__.split(".")[:-1]
 
     def __or__(
         self,
