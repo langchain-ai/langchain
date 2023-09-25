@@ -1,6 +1,8 @@
 import logging
 import re
+import ssl
 from typing import List, Optional
+from urllib.request import Request, urlopen
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -9,6 +11,7 @@ from langchain.callbacks.manager import (
 from langchain.chains import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.document_loaders import AsyncHtmlLoader
+from langchain.document_loaders.async_pdf import AsyncPdfLoader
 from langchain.document_transformers import Html2TextTransformer
 from langchain.llms import LlamaCpp
 from langchain.llms.base import BaseLLM
@@ -18,6 +21,7 @@ from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseRetriever, Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.utilities import GoogleSearchAPIWrapper
+from langchain.utils.http import get_request_headers
 from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger(__name__)
@@ -81,6 +85,10 @@ class WebResearchRetriever(BaseRetriever):
     )
     url_database: List[str] = Field(
         default_factory=list, description="List of processed URLs"
+    )
+    verify_ssl: bool = Field(
+        True,
+        description="Whether to verify SSL certificates.",
     )
 
     @classmethod
@@ -196,15 +204,31 @@ class WebResearchRetriever(BaseRetriever):
         new_urls = list(urls.difference(self.url_database))
 
         logger.info(f"New URLs to load: {new_urls}")
+
         # Load, split, and add new urls to vectorstore
         if new_urls:
-            loader = AsyncHtmlLoader(new_urls)
-            html2text = Html2TextTransformer()
-            logger.info("Indexing new urls...")
-            docs = loader.load()
-            docs = list(html2text.transform_documents(docs))
-            docs = self.text_splitter.split_documents(docs)
-            self.vectorstore.add_documents(docs)
+
+            # Split urls by type
+            html_urls, pdf_urls = self._split_url_by_type(new_urls)
+
+            docs = []
+            if len(html_urls) > 0:
+                html_loader = AsyncHtmlLoader(html_urls, verify_ssl=self.verify_ssl)
+                html2text = Html2TextTransformer()
+                logger.info("Indexing new urls...")
+                docs = html_loader.load()
+                docs = list(html2text.transform_documents(docs))
+
+            if len(pdf_urls) > 0:
+                pdf_loader = AsyncPdfLoader(pdf_urls, retries=1, verify_ssl=self.verify_ssl)
+                docs = docs + pdf_loader.load()
+
+            # add_documents will throw an error if the doc list is empty, which can happen if we were unable
+            # to decode any of the URL targets.
+            if docs is not None and len(docs) > 0:
+                docs = self.text_splitter.split_documents(docs)
+                self.vectorstore.add_documents(docs)
+
             self.url_database.extend(new_urls)
 
         # Search for relevant splits
@@ -212,7 +236,8 @@ class WebResearchRetriever(BaseRetriever):
         logger.info("Grabbing most relevant splits from urls...")
         docs = []
         for query in questions:
-            docs.extend(self.vectorstore.similarity_search(query))
+            clean_query = self.clean_search_query(query)
+            docs.extend(self.vectorstore.similarity_search(clean_query))
 
         # Get unique docs
         unique_documents_dict = {
@@ -220,6 +245,46 @@ class WebResearchRetriever(BaseRetriever):
         }
         unique_documents = list(unique_documents_dict.values())
         return unique_documents
+
+    def _split_url_by_type(self, urls: List[str]) -> (List[str], List[str]):
+        """
+        Split urls by type (html, pdf).
+        :param urls: the list of urls to split.
+        :return: tuple of (html_urls, pdf_urls).
+        """
+
+        # Prepare context to disable SSL verification if needed
+        if self.verify_ssl:
+            ctx = None
+        else:
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+
+        # Get info on each URL and assign to the appropriate list
+        headers = get_request_headers()
+        html_urls = []
+        pdf_urls = []
+        for url in urls:
+            try:
+                req = Request(url, headers=headers)
+                con = urlopen(req, timeout=60, context=ctx)
+                doc_type = con.info()['content-type']
+
+                if 'text/html' in doc_type:
+                    html_urls.append(url)
+                elif 'application/pdf' in doc_type:
+                    pdf_urls.append(url)
+            except Exception as e:
+                logger.warning(f"Error while checking url type for '{url}':\n{e}")
+
+                # We couldn't determine the type, so attempt to choose based on the file extension
+                if ".pdf" in url:
+                    pdf_urls.append(url)
+                else:
+                    html_urls.append(url)
+
+        return html_urls, pdf_urls
 
     async def _aget_relevant_documents(
         self,

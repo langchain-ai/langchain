@@ -106,7 +106,12 @@ class AsyncHtmlLoader(BaseLoader):
             return await self._fetch(url)
 
     async def fetch_all(self, urls: List[str]) -> Any:
-        """Fetch all urls concurrently with rate limiting."""
+        """
+        Fetch all urls concurrently with rate limiting.  Exceptions are handled and logged, since
+        we don't want a single url failure to stop the entire process.
+        :param urls: the urls to fetch.
+        :return: list of fetched page contents.
+        """
         semaphore = asyncio.Semaphore(self.requests_per_second)
         tasks = []
         for url in urls:
@@ -115,12 +120,21 @@ class AsyncHtmlLoader(BaseLoader):
         try:
             from tqdm.asyncio import tqdm_asyncio
 
-            return await tqdm_asyncio.gather(
-                *tasks, desc="Fetching pages", ascii=True, mininterval=1
-            )
+            results = []
+            for done in tqdm_asyncio.as_completed(tasks, desc="Fetching pages", ascii=True, mininterval=1):
+                try:
+                    results.append(await done)
+                except Exception as e:
+                    logger.warning(f"Exception while fetching page: {e}")
+            return results
+
         except ImportError:
             warnings.warn("For better logging of progress, `pip install tqdm`")
-            return await asyncio.gather(*tasks)
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for exception in [r for r in results if isinstance(r, Exception)]:
+                logger.warning(f"Exception while fetching page: {exception}")
+
+            return [r for r in results if not isinstance(r, Exception)]
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load text from the url(s) in web_path."""
@@ -136,7 +150,7 @@ class AsyncHtmlLoader(BaseLoader):
             # If there is a current event loop, we need to run the async code
             # in a separate loop, in a separate thread.
             with ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(asyncio.run, self.fetch_all(self.web_paths))
+                future = executor.submit(asyncio.run, self.fetch_all(self.web_paths))  # TODO: different from my impelemnation??
                 results = future.result()
         except RuntimeError:
             results = asyncio.run(self.fetch_all(self.web_paths))
