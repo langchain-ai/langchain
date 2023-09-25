@@ -4,6 +4,8 @@ import logging
 import requests
 import tempfile
 import warnings
+
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, List, Union, Optional
 from langchain.docstore.document import Document
 from langchain.document_loaders import PyPDFLoader
@@ -28,18 +30,18 @@ class AsyncPdfLoader(BaseLoader):
         verify_ssl: Optional[Union[bool, str]] = True,
         header_template: Optional[dict] = None,
     ):
-        self._web_paths = web_paths
-        self._requests_per_second = requests_per_second
-        self._retries = retries
-        self._http_connect_timeout = http_connect_timeout
-        self._http_request_timeout = http_request_timeout
-        self._verify_ssl = verify_ssl
-        self._headers = get_request_headers(header_template)
-        self._temp_dirs = []
+        self.web_paths = web_paths
+        self.requests_per_second = requests_per_second
+        self.retries = retries
+        self.http_connect_timeout = http_connect_timeout
+        self.http_request_timeout = http_request_timeout
+        self.verify_ssl = verify_ssl
+        self.headers = get_request_headers(header_template)
+        self.temp_dirs = []
 
     def __del__(self) -> None:
-        if self._temp_dirs is not None and len(self._temp_dirs) > 0:
-            for temp_dir in self._temp_dirs:
+        if self.temp_dirs is not None and len(self.temp_dirs) > 0:
+            for temp_dir in self.temp_dirs:
                 temp_dir.cleanup()
 
     async def _fetch(
@@ -70,7 +72,7 @@ class AsyncPdfLoader(BaseLoader):
 
         # Resolve temp filename for the downloaded PDF.
         temp_dir = tempfile.TemporaryDirectory()
-        self._temp_dirs.append(temp_dir)
+        self.temp_dirs.append(temp_dir)
         _, suffix = os.path.splitext(url)
         temp_pdf = os.path.join(temp_dir.name, f"tmp{suffix}")
 
@@ -79,9 +81,9 @@ class AsyncPdfLoader(BaseLoader):
                 url,
                 stream=True,
                 allow_redirects=True,
-                headers=self._headers,
-                verify=self._verify_ssl,
-                timeout=(self._http_connect_timeout, self._http_request_timeout)) as r:
+                headers=self.headers,
+                verify=self.verify_ssl,
+                timeout=(self.http_connect_timeout, self.http_request_timeout)) as r:
             r.raise_for_status()
             logger.info(f"Status ok downloading '{url}';  Saving to file '{temp_pdf}'")
             with open(temp_pdf, 'wb') as f:
@@ -94,7 +96,7 @@ class AsyncPdfLoader(BaseLoader):
         self, url: str, semaphore: asyncio.Semaphore
     ) -> list[Document]:
         async with semaphore:
-            return await self._fetch(url, retries=self._retries)
+            return await self._fetch(url, retries=self.retries)
 
     async def fetch_all(self, urls: List[str]) -> Any:
         """
@@ -103,7 +105,7 @@ class AsyncPdfLoader(BaseLoader):
         :param urls: the urls to fetch.
         :return: list of fetched page contents.
         """
-        semaphore = asyncio.Semaphore(self._requests_per_second)
+        semaphore = asyncio.Semaphore(self.requests_per_second)
         tasks = []
         for url in urls:
             task = asyncio.ensure_future(self._fetch_with_rate_limit(url, semaphore))
@@ -131,8 +133,16 @@ class AsyncPdfLoader(BaseLoader):
         """
         Load PDF from the url(s) in web_path.
         """
-
-        results = asyncio.run(self.fetch_all(self._web_paths))
+        try:
+            # Raises RuntimeError if there is no current event loop.
+            asyncio.get_running_loop()
+            # If there is a current event loop, we need to run the async code
+            # in a separate loop, in a separate thread.
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(asyncio.run, self.fetch_all(self.web_paths))
+                results = future.result()
+        except RuntimeError:
+            results = asyncio.run(self.fetch_all(self.web_paths))
         docs = []
         for pdf_pages in results:
             docs.extend(pdf_pages)
