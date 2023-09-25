@@ -13,7 +13,11 @@ from typing import (
 )
 
 import gigachat
-from gigachat.models import ChatCompletion, MessagesRes
+from gigachat.models import (
+    ChatCompletion,
+    MessagesRes,
+    MessagesRole,
+)
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -28,6 +32,7 @@ from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    ChatMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -40,12 +45,14 @@ logger = logging.getLogger(__name__)
 
 
 def _convert_dict_to_message(message: MessagesRes) -> BaseMessage:
-    if message.role == "system":
+    if message.role == MessagesRole.SYSTEM:
         return SystemMessage(content=message.content)
-    elif message.role == "user":
+    elif message.role == MessagesRole.USER:
         return HumanMessage(content=message.content)
-    else:
+    elif message.role == MessagesRole.ASSISTANT:
         return AIMessage(content=message.content)
+    else:
+        raise TypeError(f"Got unknown role {message.role} {message}")
 
 
 def _convert_message_to_dict(message: BaseMessage) -> Dict[str, str]:
@@ -53,8 +60,14 @@ def _convert_message_to_dict(message: BaseMessage) -> Dict[str, str]:
         return {"role": "system", "content": message.content}
     elif isinstance(message, HumanMessage):
         return {"role": "user", "content": message.content}
-    else:
+    elif isinstance(message, AIMessage):
         return {"role": "assistant", "content": message.content}
+    elif isinstance(message, ChatMessage):
+        if message.role not in [role for role in MessagesRole]:
+            raise TypeError(f"Got unknown role {message.role} {message}")
+        return {"role": message.role, "content": message.content}
+    else:
+        raise TypeError(f"Got unknown type {message}")
 
 
 class GigaChat(BaseChatModel):
@@ -86,6 +99,7 @@ class GigaChat(BaseChatModel):
     oauth_timeout: Optional[float] = None
     oauth_verify_ssl: Optional[bool] = None
 
+    profanity: bool = True
     streaming: bool = False
     """ Whether to stream the results or not. """
     temperature: float = 0
@@ -116,6 +130,7 @@ class GigaChat(BaseChatModel):
     def _build_payload(self, messages: List[BaseMessage]) -> Dict[str, Any]:
         payload: Dict[str, Any] = {
             "messages": [_convert_message_to_dict(m) for m in messages],
+            "profanity_check": self.profanity,
         }
         if self.temperature > 0:
             payload["temperature"] = self.temperature
@@ -219,3 +234,6 @@ class GigaChat(BaseChatModel):
                 yield ChatGenerationChunk(message=AIMessageChunk(content=content))
                 if run_manager:
                     await run_manager.on_llm_new_token(content)
+
+    def get_num_tokens(self, text: str) -> int:
+        return round(len(text) / 4.6)
