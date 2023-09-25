@@ -21,7 +21,7 @@ def test_comparsion_template() -> None:
     "text, verdict",
     [
         ("[Some reasoning] \n\nFinal Verdict: [[A]]", "Win"),
-        ("[Some reasoning] Therfore [[B]] is better than [[A]].", "Loss"),
+        ("[Some reasoning] Therefore [[B]] is better than [[A]].", "Loss"),
         ("[Some reasoning] \n\nFinal Verdict: [[C]]", "Tie"),
     ],
 )
