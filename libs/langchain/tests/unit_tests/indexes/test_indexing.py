@@ -473,6 +473,7 @@ def test_deduplication(
         "num_updated": 0,
     }
 
+
 def test_cleanup_with_different_batchsize(
     record_manager: SQLRecordManager, vector_store: VectorStore
 ) -> None:
