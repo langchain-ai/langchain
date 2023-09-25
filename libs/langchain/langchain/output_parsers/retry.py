@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
-from langchain.chains.llm import LLMChain
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseOutputParser,
@@ -11,6 +10,9 @@ from langchain.schema import (
     PromptValue,
 )
 from langchain.schema.language_model import BaseLanguageModel
+
+if TYPE_CHECKING:
+    from langchain.chains.llm import LLMChain
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}
@@ -56,6 +58,8 @@ class RetryOutputParser(BaseOutputParser[T]):
         parser: BaseOutputParser[T],
         prompt: BasePromptTemplate = NAIVE_RETRY_PROMPT,
     ) -> RetryOutputParser[T]:
+        from langchain.chains.llm import LLMChain
+
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 
@@ -142,6 +146,8 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
         Returns:
             A RetryWithErrorOutputParser.
         """
+        from langchain.chains.llm import LLMChain
+
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 
