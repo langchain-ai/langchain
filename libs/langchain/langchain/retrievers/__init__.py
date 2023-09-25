@@ -30,6 +30,7 @@ from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.retrievers.google_cloud_enterprise_search import (
     GoogleCloudEnterpriseSearchRetriever,
 )
+from langchain.retrievers.kay import KayAiRetriever
 from langchain.retrievers.kendra import AmazonKendraRetriever
 from langchain.retrievers.knn import KNNRetriever
 from langchain.retrievers.llama_index import (
@@ -68,6 +69,7 @@ __all__ = [
     "ChaindeskRetriever",
     "ElasticSearchBM25Retriever",
     "GoogleCloudEnterpriseSearchRetriever",
+    "KayAiRetriever",
     "KNNRetriever",
     "LlamaIndexGraphRetriever",
     "LlamaIndexRetriever",

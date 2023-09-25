@@ -4,7 +4,6 @@ import json
 from typing import Any, Dict, Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.chains import RetrievalQA, RetrievalQAWithSourcesChain
 from langchain.llms.openai import OpenAI
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema.language_model import BaseLanguageModel
@@ -48,6 +47,8 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        from langchain.chains.retrieval_qa.base import RetrievalQA
+
         chain = RetrievalQA.from_chain_type(
             self.llm, retriever=self.vectorstore.as_retriever()
         )
@@ -78,6 +79,11 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+
+        from langchain.chains.qa_with_sources.retrieval import (
+            RetrievalQAWithSourcesChain,
+        )
+
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             self.llm, retriever=self.vectorstore.as_retriever()
         )
