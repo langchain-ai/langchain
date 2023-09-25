@@ -9,8 +9,8 @@ import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils.iter import batch_iterate
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 if TYPE_CHECKING:
