@@ -178,8 +178,14 @@ class SupabaseVectorStore(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        sql_fn_args: Optional[Dict[str, Any]] = None
+        if filter:
+            sql_fn_args = {}
+            for filter_key, filter_value in filter.items():
+                sql_fn_args[filter_key] = filter_value
+        postgrest_filter: Optional[str] = kwargs.get("postgrest_filter")
         result = self.similarity_search_by_vector_with_relevance_scores(
-            embedding, k=k, filter=filter, **kwargs
+            embedding, k, postgrest_filter, sql_fn_args
         )
 
         documents = [doc for doc, _ in result]
@@ -205,9 +211,10 @@ class SupabaseVectorStore(VectorStore):
         )
 
     def match_args(
-        self, query_vector: List[float], sql_fn_args: Dict[str, Any]
+        self, query_vector: List[float], sql_fn_args: Optional[Dict[str, Any]]
     ) -> Dict[str, Any]:
         ret: Dict[str, Any] = dict(query_embedding=query_vector)
+        sql_fn_args = sql_fn_args or {}
         for key, value in sql_fn_args.items():
             ret[key] = value
         return ret
@@ -344,8 +351,7 @@ class SupabaseVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        postgrest_filter: Optional[str] = None,
-        sql_fn_args: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -367,6 +373,8 @@ class SupabaseVectorStore(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        postgrest_filter: Optional[str] = kwargs.get("postgrest_filter")
+        sql_fn_args: Optional[Dict[str, Any]] = kwargs.get("sql_fn_args")
         result = self.similarity_search_by_vector_returning_embeddings(
             embedding, fetch_k, postgrest_filter, sql_fn_args
         )
@@ -391,8 +399,7 @@ class SupabaseVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        postgrest_filter: Optional[str] = None,
-        sql_fn_args: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -443,7 +450,12 @@ class SupabaseVectorStore(VectorStore):
         """
         embedding = self._embedding.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mult, postgrest_filter, sql_fn_args
+            embedding,
+            k,
+            fetch_k,
+            lambda_mult,
+            postgrest_filter=kwargs.get("postgrest_filter"),
+            sql_fn_args=kwargs.get("sql_fn_args"),
         )
         return docs
 
