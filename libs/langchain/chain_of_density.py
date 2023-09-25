@@ -99,7 +99,7 @@ def _reverse_verdict(verdict: str) -> str:
     return "Win" if verdict == "Loss" else "Loss" if verdict == "Win" else "Tie"
 
 async def evaluate(sample: Sample) -> bool:
-    base_summary = (await base_summarize_chaim.ainvoke({"article": sample.article})).content
+    base_summary = sample.starting_summary
     cod_summary = cod_summarize_chain.run(article=sample.article)
     reverse = (len(base_summary) + len(cod_summary)) % 2 == 0
     result = await evaluator.aevaluate_string_pairs(
@@ -113,7 +113,7 @@ async def evaluate(sample: Sample) -> bool:
     return result["verdict"]
 
 async def main() -> None:
-    pbar = tqdm(total=len(samples[:100]))
+    pbar = tqdm(total=len(samples[:40]))
     sempahore = asyncio.Semaphore(10)
 
     async def boxed_evaluate(sample: Sample) -> str:
@@ -125,7 +125,7 @@ async def main() -> None:
                 return results
 
     results = await asyncio.gather(
-        *[boxed_evaluate(sample) for sample in samples[:100]]
+        *[boxed_evaluate(sample) for sample in samples[:40]]
     )
 
     results_excluding_ties = [result for result in results if result != "Tie"]
@@ -137,5 +137,5 @@ async def main() -> None:
 if __name__ == "__main__":
     asyncio.run(main())
 
-# N=100 With first and last summary
-# Win rate: 79%
+# N=40 With first and last summary
+# Win rate: 82.5%

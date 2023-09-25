@@ -71,15 +71,13 @@ def _reverse_verdict(verdict: str) -> str:
     return "Win" if verdict == "Loss" else "Loss" if verdict == "Win" else "Tie"
 
 async def evaluate(sample: Sample) -> bool:
-    base_summary = (await base_summarize_chaim.ainvoke({"article": sample.article})).content
+    base_summary = sample.starting_summary
     ft_summary = (await ft_summarize_chain.ainvoke({"article": sample.article})).content
-    print("Base summary:", base_summary)
-    print("FT summary:", ft_summary)
     reverse = (len(base_summary) + len(ft_summary)) % 2 == 0
     result = await evaluator.aevaluate_string_pairs(
         input=f"Give a summary of the following article:\n\n{sample.article}",
-        prediction=sample.final_summary if not reverse else sample.starting_summary,
-        prediction_b=sample.starting_summary if not reverse else sample.final_summary,
+        prediction=ft_summary if not reverse else base_summary,
+        prediction_b=base_summary if not reverse else ft_summary,
     )
     print(result)
     if reverse:
@@ -87,7 +85,7 @@ async def evaluate(sample: Sample) -> bool:
     return result["verdict"]
 
 async def main() -> None:
-    pbar = tqdm(total=len(samples[:100]))
+    pbar = tqdm(total=len(samples[:40]))
     sempahore = asyncio.Semaphore(10)
 
     async def boxed_evaluate(sample: Sample) -> str:
@@ -99,7 +97,7 @@ async def main() -> None:
                 return results
 
     results = await asyncio.gather(
-        *[boxed_evaluate(sample) for sample in samples[:100]]
+        *[boxed_evaluate(sample) for sample in samples[:40]]
     )
 
     results_excluding_ties = [result for result in results if result != "Tie"]
@@ -111,6 +109,5 @@ async def main() -> None:
 if __name__ == "__main__":
     asyncio.run(main())
 
-
-# N=100 With first and last summary
-# Win rate: 80%
+# N=40 With first summary and ft summary
+# Win rate: 80.0%
