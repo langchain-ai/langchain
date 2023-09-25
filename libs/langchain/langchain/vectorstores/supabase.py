@@ -197,17 +197,16 @@ class SupabaseVectorStore(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
-        postgrest_filter: Optional[str] = None,
-        sql_fn_args: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         query_vector = self._embedding.embed_query(query)
+        sql_fn_args: Optional[Dict[str, Any]] = kwargs.get("sql_fn_args")
         if filter:
             if not sql_fn_args:
                 sql_fn_args = {}
-            sql_fn_args["filter"] = filter
+            sql_fn_args = sql_fn_args.update(filter)
         return self.similarity_search_by_vector_with_relevance_scores(
-            query_vector, k, postgrest_filter, sql_fn_args
+            query_vector, k, kwargs.get("postgrest_filter"), sql_fn_args
         )
 
     def match_args(
