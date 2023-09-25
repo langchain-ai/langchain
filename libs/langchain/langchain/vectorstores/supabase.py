@@ -205,8 +205,9 @@ class SupabaseVectorStore(VectorStore):
             if not sql_fn_args:
                 sql_fn_args = {}
             sql_fn_args = sql_fn_args.update(filter)
+        postgres_filter: Optional[str] = kwargs.get("postgres_filter")
         return self.similarity_search_by_vector_with_relevance_scores(
-            query_vector, k, kwargs.get("postgres_filter"), sql_fn_args
+            query_vector, k, postgres_filter, sql_fn_args
         )
 
     def match_args(
