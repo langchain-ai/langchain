@@ -109,9 +109,13 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve all messages from db"""
         with self.Session() as session:
-            result = session.query(self.sql_model_class).where(
-                getattr(self.sql_model_class, self.session_id_field_name)
-                == self.session_id
+            result = (
+                session.query(self.sql_model_class)
+                .where(
+                    getattr(self.sql_model_class, self.session_id_field_name)
+                    == self.session_id
+                )
+                .order_by(self.sql_model_class.id.asc())
             )
             messages = []
             for record in result:
