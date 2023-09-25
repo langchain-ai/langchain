@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
-from langchain.graphs.graph import Graph
+from libs.langchain.langchain.graphs.graph_store import GraphStore
+
 from langchain.graphs.graph_document import GraphDocument
 
 node_properties_query = """
@@ -23,7 +24,7 @@ RETURN DISTINCT "(:" + src + ")-[:" + type + "]->(:" + dst + ")" AS output
 """
 
 
-class FalkorDBGraph(Graph):
+class FalkorDBGraph(GraphStore):
     """FalkorDB wrapper for graph operations."""
 
     def __init__(

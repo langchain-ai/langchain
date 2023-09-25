@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 from langchain.graphs.graph_document import GraphDocument
 
 
-class Graph:
+class GraphStore:
     """An abstract class wrapper for graph operations."""
 
     @property

@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
-from langchain.graphs.graph import Graph
+from libs.langchain.langchain.graphs.graph_store import GraphStore
+
 from langchain.graphs.graph_document import GraphDocument
 
 node_properties_query = """
@@ -29,7 +30,7 @@ RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other_node) + ")" A
 """
 
 
-class Neo4jGraph(Graph):
+class Neo4jGraph(GraphStore):
     """Neo4j wrapper for graph operations."""
 
     def __init__(
