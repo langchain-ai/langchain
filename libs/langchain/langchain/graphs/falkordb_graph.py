@@ -1,4 +1,8 @@
 from typing import Any, Dict, List
+import json 
+
+from langchain.graphs.graph_document import GraphDocument
+from langchain.graphs.graph import Graph
 
 node_properties_query = """
 MATCH (n)
@@ -20,7 +24,7 @@ RETURN DISTINCT "(:" + src + ")-[:" + type + "]->(:" + dst + ")" AS output
 """
 
 
-class FalkorDBGraph:
+class FalkorDBGraph(Graph):
     """FalkorDB wrapper for graph operations."""
 
     def __init__(
@@ -65,3 +69,44 @@ class FalkorDBGraph:
             return data.result_set
         except Exception as e:
             raise ValueError("Generated Cypher Statement is not valid\n" f"{e}")
+
+    def add_graph_documents(
+        self, graph_documents: List[GraphDocument], include_source: bool = False
+    ) -> None:
+        """
+        Take GraphDocument as input as uses it to construct a graph.
+        """
+        for document in graph_documents:
+
+            # Import nodes
+            for node in document.nodes:
+                props = ' '.join("SET n.{0}='{1}'".format(k, v.replace("'", "\\'")) 
+                                 if isinstance(v, str) 
+                                 else "SET n.{0}={1}".format(k, v) 
+                                 for k, v in node.properties.items())
+                
+                self.query((
+                    # f"{include_docs_query if include_source else ''}"
+                    f"MERGE (n:{node.type} {{id:'{node.id}'}}) "
+                    f"{props} "
+                    # f"{'MERGE (d)-[:MENTIONS]->(n) ' if include_source else ''}"
+                    "RETURN distinct 'done' AS result"
+                ))
+
+
+            # Import relationships
+            for rel in document.relationships:
+                props = ' '.join("SET r.{0}='{1}'".format(k, v.replace("'", "\\'")) 
+                                 if isinstance(v, str) 
+                                 else "SET r.{0}={1}".format(k, v) 
+                                 for k, v in rel.properties.items())
+
+                self.query((
+                        f"MATCH (a:{rel.source.type} {{id:'{rel.source.id}'}}), "
+                        f"(b:{rel.target.type} {{id:'{rel.target.id}'}}) "
+                        f"MERGE (a)-[r:{(rel.type.replace(' ', '_').upper())}]->(b) "
+                        f"{props} "
+                        "RETURN distinct 'done' AS result"
+                    ))
+                
+

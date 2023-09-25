@@ -1,6 +1,8 @@
 from typing import Any, Dict, List
 
 from langchain.graphs.graph_document import GraphDocument
+from langchain.graphs.graph import Graph
+
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -28,7 +30,7 @@ RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other_node) + ")" A
 """
 
 
-class Neo4jGraph:
+class Neo4jGraph(Graph):
     """Neo4j wrapper for graph operations."""
 
     def __init__(
