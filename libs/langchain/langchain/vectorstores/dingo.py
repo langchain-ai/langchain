@@ -7,7 +7,7 @@ from typing import Any, Iterable, List, Optional, Tuple
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -286,7 +286,7 @@ class Dingo(VectorStore):
                 Example:
                     .. code-block:: python
 
-                        from langchain import Dingo
+                        from langchain.vectorstores import Dingo
                         from langchain.embeddings import OpenAIEmbeddings
                         import dingodb
         sss

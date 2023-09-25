@@ -19,8 +19,8 @@ class Person(Serializable):
 
     you_can_see_me: str = "hello"
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     @property
