@@ -9,19 +9,9 @@ import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.utils.http import get_request_headers
 
 logger = logging.getLogger(__name__)
-
-default_header_template = {
-    "User-Agent": "",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*"
-    ";q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
-    "Referer": "https://www.google.com/",
-    "DNT": "1",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-}
 
 
 class AsyncHtmlLoader(BaseLoader):
@@ -47,18 +37,7 @@ class AsyncHtmlLoader(BaseLoader):
         elif isinstance(web_path, List):
             self.web_paths = web_path
 
-        headers = header_template or default_header_template
-        if not headers.get("User-Agent"):
-            try:
-                from fake_useragent import UserAgent
-
-                headers["User-Agent"] = UserAgent().random
-            except ImportError:
-                logger.info(
-                    "fake_useragent not found, using default user agent."
-                    "To get a realistic header for requests, "
-                    "`pip install fake_useragent`."
-                )
+        headers = get_request_headers(header_template)
 
         self.session = requests.Session()
         self.session.headers = dict(headers)
@@ -150,7 +129,7 @@ class AsyncHtmlLoader(BaseLoader):
             # If there is a current event loop, we need to run the async code
             # in a separate loop, in a separate thread.
             with ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(asyncio.run, self.fetch_all(self.web_paths))  # TODO: different from my impelemnation??
+                future = executor.submit(asyncio.run, self.fetch_all(self.web_paths))
                 results = future.result()
         except RuntimeError:
             results = asyncio.run(self.fetch_all(self.web_paths))
