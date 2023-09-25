@@ -1,10 +1,10 @@
-from typing import List
+from typing import List, Dict, Any
 
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import (
     BaseChatMessageHistory,
 )
-from langchain.schema.messages import BaseMessage
+from langchain.schema.messages import BaseMessage, messages_to_dict
 
 
 class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
@@ -21,3 +21,10 @@ class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
 
     def clear(self) -> None:
         self.messages = []
+        
+    def to_dict(self) -> Dict[str, Any]:
+        """Implement to_dict()"""
+        return {
+            "messages": messages_to_dict(self.messages or [])
+        }
+        

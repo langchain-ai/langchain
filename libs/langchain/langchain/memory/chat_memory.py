@@ -39,3 +39,12 @@ class BaseChatMemory(BaseMemory, ABC):
     def clear(self) -> None:
         """Clear memory contents."""
         self.chat_memory.clear()
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Implement to_dict()"""
+        return {
+            "chat_memory": self.chat_memory.to_dict(),
+            "output_key": self.output_key,
+            "input_key": self.input_key,
+            "return_messages": self.return_messages
+        }
