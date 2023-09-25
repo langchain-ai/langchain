@@ -191,29 +191,35 @@ class SupabaseVectorStore(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
+        postgrest_filter: Optional[str] = None,
+        sql_fn_args: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        vector = self._embedding.embed_query(query)
+        query_vector = self._embedding.embed_query(query)
+        if filter:
+            if not sql_fn_args:
+                sql_fn_args = {}
+            sql_fn_args["filter"] = filter
         return self.similarity_search_by_vector_with_relevance_scores(
-            vector, k=k, filter=filter
+            query_vector, k, postgrest_filter, sql_fn_args
         )
 
     def match_args(
-        self, query: List[float], filter: Optional[Dict[str, Any]]
+        self, query_vector: List[float], sql_fn_args: Dict[str, Any]
     ) -> Dict[str, Any]:
-        ret: Dict[str, Any] = dict(query_embedding=query)
-        if filter:
-            ret["filter"] = filter
+        ret: Dict[str, Any] = dict(query_embedding=query_vector)
+        for key, value in sql_fn_args.items():
+            ret[key] = value
         return ret
 
     def similarity_search_by_vector_with_relevance_scores(
         self,
         query: List[float],
         k: int,
-        filter: Optional[Dict[str, Any]] = None,
         postgrest_filter: Optional[str] = None,
+        sql_fn_args: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
-        match_documents_params = self.match_args(query, filter)
+        match_documents_params = self.match_args(query, sql_fn_args)
         query_builder = self._client.rpc(self.query_name, match_documents_params)
 
         if postgrest_filter:
@@ -243,10 +249,10 @@ class SupabaseVectorStore(VectorStore):
         self,
         query: List[float],
         k: int,
-        filter: Optional[Dict[str, Any]] = None,
         postgrest_filter: Optional[str] = None,
+        sql_fn_args: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
-        match_documents_params = self.match_args(query, filter)
+        match_documents_params = self.match_args(query, sql_fn_args)
         query_builder = self._client.rpc(self.query_name, match_documents_params)
 
         if postgrest_filter:
@@ -338,7 +344,8 @@ class SupabaseVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        **kwargs: Any,
+        postgrest_filter: Optional[str] = None,
+        sql_fn_args: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -353,11 +360,15 @@ class SupabaseVectorStore(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            postgrest_filter: Postgrest filter to apply to the query results.
+                            fetch_k is already in the filter as f"limit={fetch_k}"
+            sql_fn_args: Other arguments to pass to the sql function than
+                        "query_embedding" (which should be a function's parameter).
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
         result = self.similarity_search_by_vector_returning_embeddings(
-            embedding, fetch_k
+            embedding, fetch_k, postgrest_filter, sql_fn_args
         )
 
         matched_documents = [doc_tuple[0] for doc_tuple in result]
@@ -380,7 +391,8 @@ class SupabaseVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        **kwargs: Any,
+        postgrest_filter: Optional[str] = None,
+        sql_fn_args: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -403,8 +415,7 @@ class SupabaseVectorStore(VectorStore):
         demonstrates how to do this:
 
         ```sql
-        CREATE FUNCTION match_documents_embeddings(query_embedding vector(1536),
-                                                   match_count int)
+        CREATE FUNCTION match_documents_embeddings(query_embedding vector(1536))
             RETURNS TABLE(
                 id uuid,
                 content text,
@@ -425,15 +436,14 @@ class SupabaseVectorStore(VectorStore):
             FROM
                 docstore
             ORDER BY
-                docstore.embedding <=> query_embedding
-            LIMIT match_count;
+                docstore.embedding <=> query_embedding;
         END;
         $$;
         ```
         """
         embedding = self._embedding.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mult=lambda_mult
+            embedding, k, fetch_k, lambda_mult, postgrest_filter, sql_fn_args
         )
         return docs
 
