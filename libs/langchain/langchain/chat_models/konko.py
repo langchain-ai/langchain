@@ -55,8 +55,9 @@ class ChatKonko(ChatOpenAI):
     def lc_secrets(self) -> Dict[str, str]:
         return {"konko_api_key": "KONKO_API_KEY", "openai_api_key": "OPENAI_API_KEY"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     client: Any = None  #: :meta private:

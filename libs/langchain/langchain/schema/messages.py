@@ -74,9 +74,9 @@ class BaseMessage(Serializable):
     def type(self) -> str:
         """Type of the Message, used for serialization."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether this class is LangChain serializable."""
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
         return True
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
@@ -117,6 +117,14 @@ class BaseMessageChunk(BaseMessage):
             # If both are (subclasses of) BaseMessageChunk,
             # concat into a single BaseMessageChunk
 
+            if isinstance(self, ChatMessageChunk):
+                return self.__class__(
+                    role=self.role,
+                    content=self.content + other.content,
+                    additional_kwargs=self._merge_kwargs_dict(
+                        self.additional_kwargs, other.additional_kwargs
+                    ),
+                )
             return self.__class__(
                 content=self.content + other.content,
                 additional_kwargs=self._merge_kwargs_dict(
@@ -168,7 +176,22 @@ class AIMessage(BaseMessage):
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     """A Message chunk from an AI."""
 
-    pass
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+        if isinstance(other, AIMessageChunk):
+            if self.example != other.example:
+                raise ValueError(
+                    "Cannot concatenate AIMessageChunks with different example values."
+                )
+
+            return self.__class__(
+                example=self.example,
+                content=self.content + other.content,
+                additional_kwargs=self._merge_kwargs_dict(
+                    self.additional_kwargs, other.additional_kwargs
+                ),
+            )
+
+        return super().__add__(other)
 
 
 class SystemMessage(BaseMessage):
@@ -203,7 +226,22 @@ class FunctionMessage(BaseMessage):
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     """A Function Message chunk."""
 
-    pass
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+        if isinstance(other, FunctionMessageChunk):
+            if self.name != other.name:
+                raise ValueError(
+                    "Cannot concatenate FunctionMessageChunks with different names."
+                )
+
+            return self.__class__(
+                name=self.name,
+                content=self.content + other.content,
+                additional_kwargs=self._merge_kwargs_dict(
+                    self.additional_kwargs, other.additional_kwargs
+                ),
+            )
+
+        return super().__add__(other)
 
 
 class ChatMessage(BaseMessage):
@@ -221,7 +259,22 @@ class ChatMessage(BaseMessage):
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     """A Chat Message chunk."""
 
-    pass
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+        if isinstance(other, ChatMessageChunk):
+            if self.role != other.role:
+                raise ValueError(
+                    "Cannot concatenate ChatMessageChunks with different roles."
+                )
+
+            return self.__class__(
+                role=self.role,
+                content=self.content + other.content,
+                additional_kwargs=self._merge_kwargs_dict(
+                    self.additional_kwargs, other.additional_kwargs
+                ),
+            )
+
+        return super().__add__(other)
 
 
 def _message_to_dict(message: BaseMessage) -> dict:
