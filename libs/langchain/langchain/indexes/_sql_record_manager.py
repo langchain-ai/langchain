@@ -282,7 +282,7 @@ class SQLRecordManager(RecordManager):
                 )
 
             if limit:
-                query = query.limit(limit)
+                query = query.limit(limit)  # type: ignore[attr-defined]
             records = query.all()  # type: ignore[attr-defined]
         return [r.key for r in records]
 
