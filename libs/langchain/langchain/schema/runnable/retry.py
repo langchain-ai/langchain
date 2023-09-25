@@ -1,4 +1,15 @@
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from tenacity import (
     AsyncRetrying,
@@ -10,14 +21,16 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
 from langchain.schema.runnable.base import Input, Output, RunnableBinding
 from langchain.schema.runnable.config import RunnableConfig, patch_config
 
-T = TypeVar("T", CallbackManagerForChainRun, AsyncCallbackManagerForChainRun)
+if TYPE_CHECKING:
+    from langchain.callbacks.manager import (
+        AsyncCallbackManagerForChainRun,
+        CallbackManagerForChainRun,
+    )
+
+    T = TypeVar("T", CallbackManagerForChainRun, AsyncCallbackManagerForChainRun)
 U = TypeVar("U")
 
 

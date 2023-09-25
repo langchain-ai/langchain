@@ -32,10 +32,9 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
+    from langchain.callbacks.tracers.log_stream import RunLogPatch
 
 
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.tracers.log_stream import LogStreamCallbackHandler, RunLogPatch
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
@@ -215,6 +214,12 @@ class Runnable(Generic[Input, Output], ABC):
 
         The jsonpatch ops can be applied in order to construct state.
         """
+
+        from langchain.callbacks.base import BaseCallbackManager
+        from langchain.callbacks.tracers.log_stream import (
+            LogStreamCallbackHandler,
+            RunLogPatch,
+        )
 
         # Create a stream handler that will emit Log objects
         stream = LogStreamCallbackHandler(
