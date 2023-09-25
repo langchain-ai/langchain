@@ -1,0 +1,3 @@
+gigachain==0.0.299
+jsonpatch==1.33
+anyio==4.0.0
