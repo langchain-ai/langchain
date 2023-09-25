@@ -1,8 +1,7 @@
 from typing import Any, Dict, List
-import json 
 
-from langchain.graphs.graph_document import GraphDocument
 from langchain.graphs.graph import Graph
+from langchain.graphs.graph_document import GraphDocument
 
 node_properties_query = """
 MATCH (n)
