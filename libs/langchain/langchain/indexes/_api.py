@@ -171,6 +171,7 @@ def index(
     batch_size: int = 100,
     cleanup: Literal["incremental", "full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
+    cleanup_batch_size: int = 1_000,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -208,6 +209,7 @@ def index(
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
             of the document.
+        cleanup_batch_size: Batch size to use when cleaning up documents.
 
     Returns:
         Indexing result which contains information about how many documents
@@ -329,14 +331,14 @@ def index(
                 num_deleted += len(uids_to_delete)
 
     if cleanup == "full":
-        uids_to_delete = record_manager.list_keys(before=index_start_dt)
-
-        if uids_to_delete:
+        while uids_to_delete := record_manager.list_keys(
+            before=index_start_dt, limit=cleanup_batch_size
+        ):
             # First delete from record store.
             vector_store.delete(uids_to_delete)
             # Then delete from record manager.
             record_manager.delete_keys(uids_to_delete)
-            num_deleted = len(uids_to_delete)
+            num_deleted += len(uids_to_delete)
 
     return {
         "num_added": num_added,
