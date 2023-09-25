@@ -1,56 +1,12 @@
 # ruff: noqa: E402
 """Main entrypoint into package."""
 from importlib import metadata
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+import warnings
 
-from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
-from langchain.chains import (
-    ConversationChain,
-    LLMBashChain,
-    LLMChain,
-    LLMCheckerChain,
-    LLMMathChain,
-    QAWithSourcesChain,
-    VectorDBQA,
-    VectorDBQAWithSourcesChain,
-)
-from langchain.docstore import InMemoryDocstore, Wikipedia
-from langchain.llms import (
-    Anthropic,
-    Banana,
-    CerebriumAI,
-    Cohere,
-    ForefrontAI,
-    GooseAI,
-    HuggingFaceHub,
-    HuggingFaceTextGenInference,
-    LlamaCpp,
-    Modal,
-    OpenAI,
-    Petals,
-    PipelineAI,
-    SagemakerEndpoint,
-    StochasticAI,
-    Writer,
-)
-from langchain.llms.huggingface_pipeline import HuggingFacePipeline
-from langchain.prompts import (
-    FewShotPromptTemplate,
-    Prompt,
-    PromptTemplate,
-)
-from langchain.schema.cache import BaseCache
-from langchain.schema.prompt_template import BasePromptTemplate
-from langchain.utilities.arxiv import ArxivAPIWrapper
-from langchain.utilities.golden_query import GoldenQueryAPIWrapper
-from langchain.utilities.google_search import GoogleSearchAPIWrapper
-from langchain.utilities.google_serper import GoogleSerperAPIWrapper
-from langchain.utilities.powerbi import PowerBIDataset
-from langchain.utilities.searx_search import SearxSearchWrapper
-from langchain.utilities.serpapi import SerpAPIWrapper
-from langchain.utilities.wikipedia import WikipediaAPIWrapper
-from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
-from langchain.vectorstores import FAISS, ElasticVectorSearch
+if TYPE_CHECKING:
+    from langchain.schema import BaseCache
+
 
 try:
     __version__ = metadata.version(__package__)
@@ -61,17 +17,134 @@ del metadata  # optional, avoids polluting the results of dir(__package__)
 
 verbose: bool = False
 debug: bool = False
-llm_cache: Optional[BaseCache] = None
+llm_cache: Optional["BaseCache"] = None
 
-# For backwards compatibility
-SerpAPIChain = SerpAPIWrapper
 
 def __getattr__(name):
-    if name == "SQLDatabase":
-        from langchain.utilities.sql_database import SQLDatabase
-        return SQLDatabase
+    warnings.warn(f"Importing {name} is no longer supported.")
+    if name in ["MRKLChain", "ReActChain", "SelfAskWithSearchChain"]:
+        from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
+
+        return locals()[name]
+    elif name in [
+        "ConversationChain",
+        "LLMBashChain",
+        "LLMChain",
+        "LLMCheckerChain",
+        "LLMMathChain",
+        "QAWithSourcesChain",
+        "VectorDBQA",
+        "VectorDBQAWithSourcesChain",
+    ]:
+        from langchain.chains import (
+            ConversationChain,
+            LLMBashChain,
+            LLMChain,
+            LLMCheckerChain,
+            LLMMathChain,
+            QAWithSourcesChain,
+            VectorDBQA,
+            VectorDBQAWithSourcesChain,
+        )
+
+        return locals()[name]
+    elif name in ["InMemoryDocstore", "Wikipedia"]:
+        from langchain.docstore import InMemoryDocstore, Wikipedia
+
+        return locals()[name]
+    elif name in [
+        "Anthropic",
+        "Banana",
+        "CerebriumAI",
+        "Cohere",
+        "ForefrontAI",
+        "GooseAI",
+        "HuggingFaceHub",
+        "HuggingFaceTextGenInference",
+        "LlamaCpp",
+        "Modal",
+        "OpenAI",
+        "Petals",
+        "PipelineAI",
+        "SagemakerEndpoint",
+        "StochasticAI",
+        "Writer",
+    ]:
+        from langchain.llms import (
+            Anthropic,
+            Banana,
+            CerebriumAI,
+            Cohere,
+            ForefrontAI,
+            GooseAI,
+            HuggingFaceHub,
+            HuggingFaceTextGenInference,
+            LlamaCpp,
+            Modal,
+            OpenAI,
+            Petals,
+            PipelineAI,
+            SagemakerEndpoint,
+            StochasticAI,
+            Writer,
+        )
+
+        return locals()[name]
+    elif name in ["HuggingFacePipeline"]:
+        from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+
+        return locals()[name]
+    elif name in [
+        "FewShotPromptTemplate",
+        "Prompt",
+        "PromptTemplate",
+    ]:
+        from langchain.prompts import (
+            FewShotPromptTemplate,
+            Prompt,
+            PromptTemplate,
+        )
+
+        return locals()[name]
+    elif name == "BasePromptTemplate":
+        from langchain.schema.prompt_template import BasePromptTemplate
+
+        return BasePromptTemplate
+    elif name in [
+        "ArxivAPIWrapper",
+        "GoldenQueryAPIWrapper",
+        "GoogleSearchAPIWrapper",
+        "GoogleSerperAPIWrapper",
+        "PowerBIDataset",
+        "SearxSearchWrapper",
+        "SerpAPIWrapper",
+        "WikipediaAPIWrapper",
+        "WolframAlphaAPIWrapper",
+        "SQLDatabase",
+    ]:
+        from langchain.utilities import (
+            ArxivAPIWrapper,
+            GoldenQueryAPIWrapper,
+            GoogleSearchAPIWrapper,
+            GoogleSerperAPIWrapper,
+            PowerBIDataset,
+            SearxSearchWrapper,
+            SerpAPIWrapper,
+            SQLDatabase,
+            WikipediaAPIWrapper,
+            WolframAlphaAPIWrapper,
+        )
+
+        return locals()[name]
+    elif name in ["FAISS", "ElasticVectorSearch"]:
+        from langchain.vectorstores import FAISS, ElasticVectorSearch
+    # For backwards compatibility
+    elif name == "SerpAPIChain":
+        from langchain.utilities import SerpAPIWrapper
+
+        return SerpAPIWrapper
     else:
-        raise ValueError
+        raise AttributeError(f"Could not find: {name}")
 
 
 __all__ = [
