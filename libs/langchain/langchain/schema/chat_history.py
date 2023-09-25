@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Any, Dict, List
 
-from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain.schema.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    messages_to_dict,
+)
 
 
 class BaseChatMessageHistory(ABC):
@@ -65,3 +70,7 @@ class BaseChatMessageHistory(ABC):
     @abstractmethod
     def clear(self) -> None:
         """Remove all messages from the store"""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Implement to_dict()"""
+        return {"messages": messages_to_dict(self.messages or [])}
