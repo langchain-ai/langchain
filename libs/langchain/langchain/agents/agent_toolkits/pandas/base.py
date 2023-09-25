@@ -1,5 +1,5 @@
 """Agent for working with pandas objects."""
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.agent_toolkits.pandas.prompt import (
@@ -22,6 +22,7 @@ from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import SystemMessage
 from langchain.tools.python.tool import PythonAstREPLTool
+from langchain.tools import BaseTool
 
 
 def _get_multi_prompt(
@@ -280,6 +281,7 @@ def create_pandas_dataframe_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
+    extra_tools: Sequence[BaseTool] = (),
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe."""
@@ -293,6 +295,7 @@ def create_pandas_dataframe_agent(
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
         )
+        tools = tools + list(extra_tools)
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
@@ -314,6 +317,7 @@ def create_pandas_dataframe_agent(
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
         )
+        tools = tools + list(extra_tools)
         agent = OpenAIFunctionsAgent(
             llm=llm,
             prompt=_prompt,
