@@ -13,8 +13,8 @@ T = TypeVar("T")
 class OutputFixingParser(BaseOutputParser[T]):
     """Wraps a parser and tries to fix parsing errors."""
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     parser: BaseOutputParser[T]
