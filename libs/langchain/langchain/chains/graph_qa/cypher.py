@@ -4,11 +4,12 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
+from libs.langchain.langchain.graphs.graph_store import GraphStore
+
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.graphs.graph import Graph
 from langchain.pydantic_v1 import Field
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
@@ -37,7 +38,7 @@ def extract_cypher(text: str) -> str:
 class GraphCypherQAChain(Chain):
     """Chain for question-answering against a graph by generating Cypher statements."""
 
-    graph: Graph = Field(exclude=True)
+    graph: GraphStore = Field(exclude=True)
     cypher_generation_chain: LLMChain
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:
