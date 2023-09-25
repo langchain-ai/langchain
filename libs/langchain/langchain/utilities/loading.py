@@ -9,11 +9,16 @@ from urllib.parse import urljoin
 
 import requests
 
-DEFAULT_REF = os.environ.get("LANGCHAIN_HUB_DEFAULT_REF", "master")
+# DEFAULT_REF = os.environ.get("LANGCHAIN_HUB_DEFAULT_REF", "master") # Github version
+DEFAULT_REF = os.environ.get("LANGCHAIN_HUB_DEFAULT_REF", "") # BitBhucket private version
 URL_BASE = os.environ.get(
     "LANGCHAIN_HUB_URL_BASE",
-    "https://raw.githubusercontent.com/ai-forever/gigachain/{ref}/hub/",
+    # "https://raw.githubusercontent.com/ai-forever/gigachain/{ref}/hub/", # Public hub on github
+    "https://stash.sigma.sbrf.ru/projects/SDVOICE/repos/gigachain/raw/{ref}/hub/", # Private hub in sigma
 )
+BITBUCKET_AUTH_TOKEN = os.environ.get("BITBUCKET_AUTH_TOKEN",
+    "NjkxMjY1OTU1MTQ3OsRWX7ak+m060YaC122k6pDC5f4p")
+BITBUCKET_VERIFY_TSL = os.environ.get("BITBUCKET_VERIFY_TSL", False)
 HUB_PATH_RE = re.compile(r"lc(?P<ref>@[^:]+)?://(?P<path>.*)")
 
 T = TypeVar("T")
@@ -43,8 +48,8 @@ def try_load_from_hub(
     # Instead, use PurePosixPath to ensure that forward slashes are used as the
     # path separator, regardless of the operating system.
     full_url = urljoin(URL_BASE.format(ref=ref), PurePosixPath(remote_path).__str__())
-
-    r = requests.get(full_url, timeout=5)
+    r = requests.get(full_url, headers={'Authorization': 'Bearer ' + BITBUCKET_AUTH_TOKEN}, 
+        timeout=5, verify=BITBUCKET_VERIFY_TSL)
     if r.status_code != 200:
         raise ValueError(f"Could not find file at {full_url}")
     with tempfile.TemporaryDirectory() as tmpdirname:
