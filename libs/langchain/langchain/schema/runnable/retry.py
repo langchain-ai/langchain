@@ -67,7 +67,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _patch_config(
         self,
         config: RunnableConfig,
-        run_manager: T,
+        run_manager: "T",
         retry_state: RetryCallState,
     ) -> RunnableConfig:
         attempt = retry_state.attempt_number
@@ -77,7 +77,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _patch_config_list(
         self,
         config: List[RunnableConfig],
-        run_manager: List[T],
+        run_manager: List["T"],
         retry_state: RetryCallState,
     ) -> List[RunnableConfig]:
         return [
