@@ -1,13 +1,14 @@
 [tool.poetry]
 name = "gigachain"
-version = "0.0.300"
+version = "0.0.300.1"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/ai-forever/gigachain"
 packages = [
-    {include = "langchain"}
+    {include = "langchain"},
+    {include = "gigachat"}
 ]
 
 [tool.poetry.scripts]

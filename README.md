@@ -141,7 +141,7 @@ while(True):
 
 ### Примеры приложений для Streamlit
 
-- [Чат-бот на базе GigaChat с потоковой генерацией](libs/streamlit_agent/gigachat_streaming.py) [Try demo](https://gigachat-streaming.streamlit.app/)
+- [Чат-бот на базе GigaChat с потоковой генерацией и разными видами авторизации](libs/streamlit_agent/gigachat_streaming.py) [Try demo](https://gigachat-streaming.streamlit.app/)
 
 ## Участие в проекте
 
