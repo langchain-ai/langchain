@@ -20,12 +20,12 @@ class Graph:
 
     @abstractmethod
     def refresh_schema(self) -> None:
-        """ Refreshes the graph schema information. """
+        """Refreshes the graph schema information."""
         pass
 
     @abstractmethod
     def add_graph_documents(
         self, graph_documents: List[GraphDocument], include_source: bool = False
     ) -> None:
-        """ Take GraphDocument as input as uses it to construct a graph. """
+        """Take GraphDocument as input as uses it to construct a graph."""
         pass

@@ -76,36 +76,40 @@ class FalkorDBGraph(Graph):
         Take GraphDocument as input as uses it to construct a graph.
         """
         for document in graph_documents:
-
             # Import nodes
             for node in document.nodes:
-                props = ' '.join("SET n.{0}='{1}'".format(k, v.replace("'", "\\'")) 
-                                 if isinstance(v, str) 
-                                 else "SET n.{0}={1}".format(k, v) 
-                                 for k, v in node.properties.items())
-                
-                self.query((
-                    # f"{include_docs_query if include_source else ''}"
-                    f"MERGE (n:{node.type} {{id:'{node.id}'}}) "
-                    f"{props} "
-                    # f"{'MERGE (d)-[:MENTIONS]->(n) ' if include_source else ''}"
-                    "RETURN distinct 'done' AS result"
-                ))
+                props = " ".join(
+                    "SET n.{0}='{1}'".format(k, v.replace("'", "\\'"))
+                    if isinstance(v, str)
+                    else "SET n.{0}={1}".format(k, v)
+                    for k, v in node.properties.items()
+                )
 
+                self.query(
+                    (
+                        # f"{include_docs_query if include_source else ''}"
+                        f"MERGE (n:{node.type} {{id:'{node.id}'}}) "
+                        f"{props} "
+                        # f"{'MERGE (d)-[:MENTIONS]->(n) ' if include_source else ''}"
+                        "RETURN distinct 'done' AS result"
+                    )
+                )
 
             # Import relationships
             for rel in document.relationships:
-                props = ' '.join("SET r.{0}='{1}'".format(k, v.replace("'", "\\'")) 
-                                 if isinstance(v, str) 
-                                 else "SET r.{0}={1}".format(k, v) 
-                                 for k, v in rel.properties.items())
+                props = " ".join(
+                    "SET r.{0}='{1}'".format(k, v.replace("'", "\\'"))
+                    if isinstance(v, str)
+                    else "SET r.{0}={1}".format(k, v)
+                    for k, v in rel.properties.items()
+                )
 
-                self.query((
+                self.query(
+                    (
                         f"MATCH (a:{rel.source.type} {{id:'{rel.source.id}'}}), "
                         f"(b:{rel.target.type} {{id:'{rel.target.id}'}}) "
                         f"MERGE (a)-[r:{(rel.type.replace(' ', '_').upper())}]->(b) "
                         f"{props} "
                         "RETURN distinct 'done' AS result"
-                    ))
-                
-
+                    )
+                )
