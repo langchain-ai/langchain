@@ -1,22 +1,8 @@
 """Test Fireworks AI API Wrapper."""
-<<<<<<< HEAD
-from pathlib import Path
-
-import pytest
-
-from langchain.chains import RetrievalQA
-from langchain.chains.llm import LLMChain
-from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms import OpenAIChat
-from langchain.llms.fireworks import Fireworks, FireworksChat
-from langchain.llms.loading import load_llm
-from langchain.prompts import PromptTemplate
-=======
 from typing import Generator
-from langchain import LLMChain, PromptTemplate
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
 from langchain.llms.fireworks import Fireworks
->>>>>>> 1af2fefa9 (Refactor Fireworks and add ChatFireworks (#3))
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
