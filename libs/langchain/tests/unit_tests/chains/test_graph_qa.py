@@ -92,6 +92,7 @@ def test_include_types2() -> None:
     )
     assert output == expected_schema
 
+
 def test_include_types3() -> None:
     structured_schema = {
         "node_props": {
