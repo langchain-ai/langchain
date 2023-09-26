@@ -52,7 +52,7 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
         )
     else:
         return {
-            "name": tool.name.replace(" ", "_"),
+            "name": tool.name,
             "description": tool.description,
             "parameters": {
                 # This is a hack to get around the fact that some tools
