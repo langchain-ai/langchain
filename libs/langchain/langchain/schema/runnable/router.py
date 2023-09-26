@@ -8,10 +8,11 @@ from typing import (
     List,
     Mapping,
     Optional,
-    TypedDict,
     Union,
     cast,
 )
+
+from typing_extensions import TypedDict
 
 from langchain.load.serializable import Serializable
 from langchain.schema.runnable.base import (
