@@ -42,6 +42,12 @@ class WebBaseLoader(BaseLoader):
     def __init__(
         self,
         web_path: Union[str, Sequence[str]] = "",
+        header_template: Optional[dict] = None,
+        verify_ssl: bool = True,
+        proxies: Optional[dict] = None,
+        continue_on_failure: bool = False,
+        autoset_encoding: bool = True,
+        encoding: Optional[str] = None,
         web_paths: Sequence[str] = (),
         requests_per_second: int = 2,
         default_parser: str = "html.parser",
@@ -50,12 +56,6 @@ class WebBaseLoader(BaseLoader):
         bs_get_text_kwargs: Optional[Dict[str, Any]] = None,
         bs_kwargs: Optional[Dict[str, Any]] = None,
         session: Any = None,
-        header_template: Optional[dict] = None,
-        verify_ssl: bool = True,
-        proxies: Optional[dict] = None,
-        continue_on_failure: bool = False,
-        autoset_encoding: bool = True,
-        encoding: Optional[str] = None,
     ) -> None:
         """Initialize loader.
 
