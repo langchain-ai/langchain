@@ -9,7 +9,7 @@ from langchain.chains import LLMChain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.pydantic_v1 import BaseModel
 from langchain.output_parsers.json import SimpleJsonOutputParser
-from langchain.evaluation.comparison.llm_as_a_judge.eval_chain import LLMAsAJudgePairwiseEvalChain
+from langchain.evaluation.comparison import PairwiseStringEvalChain
 from langchain.callbacks.manager import get_openai_callback
     
 class SummaryParser(SimpleJsonOutputParser):
@@ -92,7 +92,7 @@ cod_summarize_chain = LLMChain(llm=llm, prompt=cod_summarization_prompt, output_
 
 ft_summarize_chain = FT_PROMPT | ft_llm
 
-evaluator = LLMAsAJudgePairwiseEvalChain.from_llm(llm=llm)
+evaluator = PairwiseStringEvalChain.from_llm(llm=llm)
 
 def _reverse_verdict(verdict: str) -> str:
     return "Win" if verdict == "Loss" else "Loss" if verdict == "Win" else "Tie"
