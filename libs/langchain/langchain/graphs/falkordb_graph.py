@@ -2,15 +2,18 @@ from typing import Any, Dict, List
 
 node_properties_query = """
 MATCH (n)
-UNWIND labels(n) as l
-UNWIND keys(n) as p
-RETURN {label:l, properties: collect(distinct p)} AS output
+UNWIND labels(n) as l 
+UNWIND keys(n) as p WITH l,
+collect(distinct p) AS props 
+RETURN {labels:l, properties:props} AS output
 """
 
 rel_properties_query = """
 MATCH ()-[r]->()
-UNWIND keys(r) as p
-RETURN {type:type(r), properties: collect(distinct p)} AS output
+UNWIND type(r) as t
+UNWIND keys(r) as p WITH t,
+collect(distinct p) AS props 
+RETURN {types:t, properties:props} AS output
 """
 
 rel_query = """
