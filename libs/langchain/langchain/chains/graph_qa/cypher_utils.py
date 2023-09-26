@@ -38,14 +38,14 @@ class CypherQueryCorrector:
         node = node.replace(")", "")
         return node
 
-    def detect_node_variables(self, query: str) -> Dict[str, List[str]]:
+    def detect_node_variables(self, query: str) -> Dict[str, Any]:
         """
         Args:
             query: cypher query
         """
         nodes = re.findall(self.node_pattern, query)
         nodes = [self.clean_node(node) for node in nodes]
-        res: Dict[str, str] = {}
+        res: Dict[str, Any] = {}
         for node in nodes:
             parts = node.split(":")
             parts = [p.replace("`", "") for p in parts]

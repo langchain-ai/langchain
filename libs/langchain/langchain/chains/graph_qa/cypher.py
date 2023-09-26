@@ -201,7 +201,11 @@ class GraphCypherQAChain(Chain):
         intermediate_steps.append({"query": generated_cypher})
 
         # Retrieve and limit the number of results
-        context = self.graph.query(generated_cypher)[: self.top_k]
+        # Generated Cypher be null if query corrector identifies invalid schema
+        if generated_cypher:
+            context = self.graph.query(generated_cypher)[: self.top_k]
+        else:
+            context = []
 
         if self.return_direct:
             final_result = context
