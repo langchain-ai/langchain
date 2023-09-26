@@ -127,3 +127,32 @@ def test_extract_sub_links_base() -> None:
         )
     )
     assert actual == expected
+
+
+def test_extract_sub_links_exclude() -> None:
+    html = (
+        '<a href="https://foobar.com">one</a>'
+        '<a href="http://baz.net">two</a>'
+        '<a href="//foobar.com/hello">three</a>'
+        '<a href="/how/are/you/doing">four</a>'
+        '<a href="alexis.html"</a>'
+    )
+
+    expected = sorted(
+        [
+            "http://baz.net",
+            "https://foobar.com",
+            "https://foobar.com/hello",
+            "https://foobar.com/hello/alexis.html",
+        ]
+    )
+    actual = sorted(
+        extract_sub_links(
+            html,
+            "https://foobar.com/hello/bill.html",
+            base_url="https://foobar.com",
+            prevent_outside=False,
+            exclude_prefixes=("https://foobar.com/how", "http://baz.org"),
+        )
+    )
+    assert actual == expected
