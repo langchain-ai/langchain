@@ -27,6 +27,8 @@ from typing import (
     cast,
 )
 
+from typing_extensions import get_args
+
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
@@ -38,7 +40,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.tracers.log_stream import LogStreamCallbackHandler, RunLogPatch
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field
+from langchain.pydantic_v1 import BaseModel, Field, create_model
 from langchain.schema.runnable.config import (
     RunnableConfig,
     acall_func_with_variable_args,
@@ -66,6 +68,42 @@ Other = TypeVar("Other")
 class Runnable(Generic[Input, Output], ABC):
     """A Runnable is a unit of work that can be invoked, batched, streamed, or
     transformed."""
+
+    @property
+    def InputType(self) -> Type[Input]:
+        for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
+            type_args = get_args(cls)
+            if type_args and len(type_args) == 2:
+                return type_args[0]
+
+        raise TypeError(
+            f"Runnable {self.__class__.__name__} does not have an inferrable InputType. "
+            "Override the InputType property to specify the input type."
+        )
+
+    @property
+    def OutputType(self) -> Type[Output]:
+        for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
+            type_args = get_args(cls)
+            if type_args and len(type_args) == 2:
+                return type_args[1]
+
+        raise TypeError(
+            f"Runnable {self.__class__.__name__} does not have an inferrable OutputType. "
+            "Override the OutputType property to specify the output type."
+        )
+
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        return create_model(
+            self.__class__.__name__ + "Input", input=(self.InputType, None)
+        )
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        return create_model(
+            self.__class__.__name__ + "Output", output=(self.OutputType, None)
+        )
 
     def __or__(
         self,
@@ -1194,6 +1232,14 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
 
     class Config:
         arbitrary_types_allowed = True
+
+    @property
+    def InputType(self) -> Type[Input]:
+        return self.first.InputType
+
+    @property
+    def OutputType(self) -> Type[Output]:
+        return self.last.OutputType
 
     def __or__(
         self,

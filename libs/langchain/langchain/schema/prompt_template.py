@@ -4,6 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from typing_extensions import TypedDict
 
 import yaml
 
@@ -35,6 +36,13 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+
+    @property
+    def InputType(self) -> type[TypedDict]:
+        return TypedDict(
+            "PromptInput",
+            {k: Any for k in self.input_variables},  # type: ignore
+        )
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:
         return self._call_with_config(

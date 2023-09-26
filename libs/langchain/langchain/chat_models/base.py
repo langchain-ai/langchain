@@ -11,6 +11,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Type,
     cast,
 )
 
@@ -106,6 +107,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         arbitrary_types_allowed = True
 
     # --- Runnable methods ---
+
+    @property
+    def OutputType(self) -> Type[BaseMessageChunk]:
+        """Get the input type for this runnable."""
+        return BaseMessageChunk
 
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
         if isinstance(input, PromptValue):

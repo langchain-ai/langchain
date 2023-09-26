@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    TypeAlias,
     TypeVar,
     Union,
 )
@@ -69,6 +70,11 @@ class BaseLanguageModel(
 
     Each of these has an equivalent asynchronous method.
     """
+
+    @property
+    def InputType(self) -> TypeAlias:
+        """Get the input type for this runnable."""
+        return LanguageModelInput
 
     @abstractmethod
     def generate_prompt(
