@@ -244,7 +244,8 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
             PairwiseStringEvalChain: The initialized PairwiseStringEvalChain.
 
         Raises:
-            ValueError: If the input variables are not as expected.
+            ValueError: If the input variables are not as expected or if the LLM is not
+                a chat model.
 
         """
         if not (
