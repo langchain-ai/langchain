@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Match, Optional
 
 Schema = namedtuple("Schema", ["left_node", "relation", "right_node"])
 
@@ -45,7 +45,7 @@ class CypherQueryCorrector:
         """
         nodes = re.findall(self.node_pattern, query)
         nodes = [self.clean_node(node) for node in nodes]
-        res = {}
+        res: Dict[str, str] = {}
         for node in nodes:
             parts = node.split(":")
             parts = [p.replace("`", "") for p in parts]
@@ -76,7 +76,7 @@ class CypherQueryCorrector:
             direction = "OUTGOING"
         return direction
 
-    def extract_node_variable(self, part: str) -> str:
+    def extract_node_variable(self, part: str) -> Optional[str]:
         """
         Args:
             part: node in string format
@@ -105,7 +105,10 @@ class CypherQueryCorrector:
         return labels
 
     def verify_schema(
-        self, from_node_labels: List[str], relation_type: str, to_node_labels: List[str]
+        self,
+        from_node_labels: List[str],
+        relation_type: Optional[Match[str]],
+        to_node_labels: List[str],
     ) -> bool:
         """
         Args:
