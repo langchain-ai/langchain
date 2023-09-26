@@ -32,7 +32,7 @@ COMPARISON_TEMPLATE = ChatPromptTemplate.from_messages(
         ("system", SYSTEM_MESSAGE),
         (
             "human",
-            "{criteria}{reference}[User Question]\n{input}\n\n\
+            "{criteria}[User Question]\n{input}\n\n\
 [The Start of Assistant A's Answer]\n{prediction}\n\
 [The End of Assistant A's Answer]\
 \n\n[The Start of Assistant B's Answer]\n{prediction_b}\n\
@@ -48,7 +48,8 @@ COMPARISON_TEMPLATE_WITH_REFERENCE = ChatPromptTemplate.from_messages(
             "human",
             "{criteria}\n\nTo help you evaluate the responses, \
 here is a reference answer to the user's question:\n\
-{reference}[User Question]\n{input}\n\n\
+{reference}\
+[User Question]\n{input}\n\n\
 [The Start of Assistant A's Answer]\n{prediction}\n\
 [The End of Assistant A's Answer]\
 \n\n[The Start of Assistant B's Answer]\n{prediction_b}\n\

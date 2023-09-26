@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Union
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
+from langchain.chat_models.azure_openai import AzureChatOpenAI
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.comparison.prompt import (
     COMPARISON_TEMPLATE,
@@ -246,7 +247,9 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
             ValueError: If the input variables are not as expected.
 
         """
-        if not (isinstance(llm, ChatOpenAI) and llm.model_name.startswith("gpt-4")):
+        if not (
+            isinstance(llm, ChatOpenAI) and llm.model_name.startswith("gpt-4")
+        ) and not isinstance(llm, AzureChatOpenAI):
             logger.warning(
                 "This chain was only tested with GPT-4. \
 Performance may be significantly worse with other models."
