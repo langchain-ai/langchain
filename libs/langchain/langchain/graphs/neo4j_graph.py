@@ -74,7 +74,7 @@ class Neo4jGraph(GraphStore):
     @property
     def get_schema(self) -> str:
         """Returns the schema of the Graph"""
-        return self._schema
+        return self.schema
 
     @property
     def get_structured_schema(self) -> Dict[str, Any]:
