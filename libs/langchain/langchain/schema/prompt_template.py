@@ -4,9 +4,9 @@ import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
-from typing_extensions import TypedDict
 
 import yaml
+from typing_extensions import TypedDict
 
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field, root_validator

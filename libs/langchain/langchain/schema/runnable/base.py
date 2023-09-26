@@ -77,7 +77,7 @@ class Runnable(Generic[Input, Output], ABC):
                 return type_args[0]
 
         raise TypeError(
-            f"Runnable {self.__class__.__name__} does not have an inferrable InputType. "
+            f"Runnable {self.__class__.__name__} doesn't have an inferable InputType. "
             "Override the InputType property to specify the input type."
         )
 
@@ -89,7 +89,7 @@ class Runnable(Generic[Input, Output], ABC):
                 return type_args[1]
 
         raise TypeError(
-            f"Runnable {self.__class__.__name__} does not have an inferrable OutputType. "
+            f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
             "Override the OutputType property to specify the output type."
         )
 

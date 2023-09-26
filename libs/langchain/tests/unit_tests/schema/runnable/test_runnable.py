@@ -269,7 +269,7 @@ def test_schemas() -> None:
         "definitions": {
             "BaseMessageChunk": {
                 "title": "BaseMessageChunk",
-                "description": "A Message chunk, which can be concatenated with other Message chunks.",
+                "description": "A Message chunk, which can be concatenated with other Message chunks.",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {"title": "Content", "type": "string"},
@@ -1982,7 +1982,6 @@ def test_recursive_lambda() -> None:
         runnable.invoke(0, {"recursion_limit": 9})
 
 
-@pytest.mark.skip
 def test_retrying(mocker: MockerFixture) -> None:
     def _lambda(x: int) -> Union[int, Runnable]:
         if x == 1:
@@ -2043,7 +2042,6 @@ def test_retrying(mocker: MockerFixture) -> None:
     _lambda_mock.reset_mock()
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_async_retrying(mocker: MockerFixture) -> None:
     def _lambda(x: int) -> Union[int, Runnable]:
