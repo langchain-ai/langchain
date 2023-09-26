@@ -60,7 +60,7 @@ class FalkorDBGraph(GraphStore):
     @property
     def get_structured_schema(self) -> Dict[str, Any]:
         """Returns the structured schema of the Graph"""
-        return self._structured_schema
+        return self.structured_schema
 
     def refresh_schema(self) -> None:
         """Refreshes the schema of the FalkorDB database"""
@@ -68,7 +68,7 @@ class FalkorDBGraph(GraphStore):
         rel_properties = self.query(rel_properties_query)
         relationships = self.query(rel_query)
 
-        self._structured_schema = {
+        self.structured_schema = {
             "node_props": {
                 el[0]["labels"]: el[0]["properties"] for el in node_properties
             },
@@ -76,7 +76,7 @@ class FalkorDBGraph(GraphStore):
             "relationships": relationships,
         }
 
-        self._schema = (
+        self.schema = (
             f"Node properties: {node_properties}\n"
             f"Relationships properties: {rel_properties}\n"
             f"Relationships: {relationships}\n"
