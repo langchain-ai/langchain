@@ -592,6 +592,23 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
+name = "codespell"
+version = "2.2.5"
+description = "Codespell"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "codespell-2.2.5-py3-none-any.whl", hash = "sha256:efa037f54b73c84f7bd14ce8e853d5f822cdd6386ef0ff32e957a3919435b9ec"},
+    {file = "codespell-2.2.5.tar.gz", hash = "sha256:6d9faddf6eedb692bf80c9a94ec13ab4f5fb585aabae5f3750727148d7b5be56"},
+]
+
+[package.extras]
+dev = ["Pygments", "build", "chardet", "pytest", "pytest-cov", "pytest-dependency", "ruff", "tomli"]
+hard-encoding-detection = ["chardet"]
+toml = ["tomli"]
+types = ["chardet (>=5.1.0)", "mypy", "pytest", "pytest-cov", "pytest-dependency"]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -2529,6 +2546,20 @@ pytest = ">=5.0"
 dev = ["pre-commit", "pytest-asyncio", "tox"]
 
 [[package]]
+name = "pytest-socket"
+version = "0.6.0"
+description = "Pytest Plugin to disable socket calls during tests"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "pytest_socket-0.6.0-py3-none-any.whl", hash = "sha256:cca72f134ff01e0023c402e78d31b32e68da3efdf3493bf7788f8eba86a6824c"},
+    {file = "pytest_socket-0.6.0.tar.gz", hash = "sha256:363c1d67228315d4fc7912f1aabfd570de29d0e3db6217d61db5728adacd7138"},
+]
+
+[package.dependencies]
+pytest = ">=3.6.3"
+
+[[package]]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
@@ -3776,4 +3807,4 @@ server = ["fastapi", "sse-starlette"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.8.1,<4"
-content-hash = "e834098cb9f8a4c4375275c02d0f4270e89c00533a252fd0ff9fbda35e215545"
+content-hash = "f927e08da7a46f09b46c74ac47fc53f0034f54c4eda7f0884c606133e5a74641"
