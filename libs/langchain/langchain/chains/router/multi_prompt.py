@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Mapping, Optional
 
 from langchain.chains import ConversationChain
+from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.router.base import MultiRouteChain, RouterChain
 from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParser
@@ -17,9 +18,9 @@ class MultiPromptChain(MultiRouteChain):
 
     router_chain: RouterChain
     """Chain for deciding a destination chain and the input to it."""
-    destination_chains: Mapping[str, LLMChain]
+    destination_chains: Mapping[str, Chain]
     """Map of name to candidate chains that inputs can be routed to."""
-    default_chain: LLMChain
+    default_chain: Chain
     """Default chain to use when router doesn't map input to one of the destinations."""
 
     @property
@@ -31,7 +32,7 @@ class MultiPromptChain(MultiRouteChain):
         cls,
         llm: BaseLanguageModel,
         prompt_infos: List[Dict[str, str]],
-        default_chain: Optional[LLMChain] = None,
+        default_chain: Optional[Chain] = None,
         **kwargs: Any,
     ) -> MultiPromptChain:
         """Convenience constructor for instantiating from destination prompts."""
