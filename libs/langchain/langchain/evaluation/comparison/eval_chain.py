@@ -249,7 +249,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         if not (isinstance(llm, ChatOpenAI) and llm.model_name.startswith("gpt-4")):
             logger.warning(
                 "This chain was only tested with GPT-4. \
-                Performance may be significantly worse with other models."
+Performance may be significantly worse with other models."
             )
 
         expected_input_vars = {"prediction", "prediction_b", "input", "criteria"}
