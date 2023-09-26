@@ -287,7 +287,7 @@ def create_pandas_dataframe_agent(
     """Construct a pandas agent from an LLM and dataframe."""
     agent: BaseSingleActionAgent
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
-        prompt, tools = _get_prompt_and_tools(
+        prompt, base_tools = _get_prompt_and_tools(
             df,
             prefix=prefix,
             suffix=suffix,
@@ -295,7 +295,7 @@ def create_pandas_dataframe_agent(
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
         )
-        tools = tools + list(extra_tools)
+        tools = base_tools + list(extra_tools)
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
@@ -309,7 +309,7 @@ def create_pandas_dataframe_agent(
             **kwargs,
         )
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
-        _prompt, tools = _get_functions_prompt_and_tools(
+        _prompt, base_tools = _get_functions_prompt_and_tools(
             df,
             prefix=prefix,
             suffix=suffix,
@@ -317,7 +317,7 @@ def create_pandas_dataframe_agent(
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
         )
-        tools = tools + list(extra_tools)
+        tools = base_tools + list(extra_tools)
         agent = OpenAIFunctionsAgent(
             llm=llm,
             prompt=_prompt,
