@@ -1,7 +1,6 @@
 """Script for auto-generating api_reference.rst."""
 import importlib
 import inspect
-import os
 import typing
 from pathlib import Path
 from typing import TypedDict, Sequence, List, Dict, Literal, Union, Optional

@@ -331,6 +331,11 @@ class RunnableAgent(BaseSingleActionAgent):
         arbitrary_types_allowed = True
 
     @property
+    def return_values(self) -> List[str]:
+        """Return values of the agent."""
+        return []
+
+    @property
     def input_keys(self) -> List[str]:
         """Return the input keys.
 
