@@ -233,6 +233,7 @@ class RecursiveUrlLoader(BaseLoader):
                 base_url=self.url,
                 pattern=self.link_regex,
                 prevent_outside=self.prevent_outside,
+                exclude_prefixes=self.exclude_dirs,
             )
 
             # Recursively call the function to get the children of the children
