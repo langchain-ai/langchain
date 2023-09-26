@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from libs.langchain.langchain.graphs.graph_store import GraphStore
+from langchain.graphs.graph_store import GraphStore
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
