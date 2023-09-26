@@ -41,6 +41,8 @@ from langchain.schema.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    FunctionMessage,
+    FunctionMessageChunk
 )
 from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env
@@ -65,25 +67,6 @@ def _truncate_at_stop_tokens(
         if stop_token_idx != -1:
             text = text[:stop_token_idx]
     return text
-
-
-class FunctionMessage(BaseMessage):
-    """Message for passing the result of executing a function back to a model."""
-
-    name: str
-    """The name of the function that was executed."""
-
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "function"
-
-
-class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
-    """Message Chunk for passing the result of executing a function back to a model."""
-
-    pass
-
 
 def _create_retry_decorator(
     llm: ChatLiteLLM,
