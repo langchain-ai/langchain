@@ -9,8 +9,8 @@ from langchain.prompts.chat import ChatPromptTemplate
 
 SYSTEM_MESSAGE = 'Please act as an impartial judge and evaluate the quality \
 of the responses provided by two AI assistants to the user question displayed below. \
-You should choose the assistant that follows the user\'s instructions\
- and answers \the user\'s question better. \
+You should choose the assistant that follows the user\'s instructions \
+and answers \the user\'s question better. \
 Your evaluation should consider factors such as the \
 helpfulness, relevance, accuracy, depth, creativity, \
 and level of detail of their responses. \
@@ -33,10 +33,10 @@ COMPARISON_TEMPLATE = ChatPromptTemplate.from_messages(
         (
             "human",
             "{criteria}{reference}[User Question]\n{input}\n\n\
-            [The Start of Assistant A's Answer]\n{prediction}\n\
-            [The End of Assistant A's Answer]\
-            \n\n[The Start of Assistant B's Answer]\n{prediction_b}\n\
-            [The End of Assistant B's Answer]",
+[The Start of Assistant A's Answer]\n{prediction}\n\
+[The End of Assistant A's Answer]\
+\n\n[The Start of Assistant B's Answer]\n{prediction_b}\n\
+[The End of Assistant B's Answer]",
         ),
     ]
 )
@@ -47,12 +47,12 @@ COMPARISON_TEMPLATE_WITH_REFERENCE = ChatPromptTemplate.from_messages(
         (
             "human",
             "{criteria}\n\nTo help you evaluate the responses, \
-            here is a reference answer to the user's question:\n\
-            {reference}[User Question]\n{input}\n\n\
-            [The Start of Assistant A's Answer]\n{prediction}\n\
-            [The End of Assistant A's Answer]\
-            \n\n[The Start of Assistant B's Answer]\n{prediction_b}\n\
-            [The End of Assistant B's Answer]",
+here is a reference answer to the user's question:\n\
+{reference}[User Question]\n{input}\n\n\
+[The Start of Assistant A's Answer]\n{prediction}\n\
+[The End of Assistant A's Answer]\
+\n\n[The Start of Assistant B's Answer]\n{prediction_b}\n\
+[The End of Assistant B's Answer]",
         ),
     ]
 )
