@@ -5,15 +5,18 @@ from langchain.graphs.graph_store import GraphStore
 
 node_properties_query = """
 MATCH (n)
-UNWIND labels(n) as l
-UNWIND keys(n) as p
-RETURN {label:l, properties: collect(distinct p)} AS output
+UNWIND labels(n) as l 
+UNWIND keys(n) as p WITH l, 
+collect(distinct p) AS props 
+RETURN {labels:l, properties: props} AS output
 """
 
 rel_properties_query = """
 MATCH ()-[r]->()
-UNWIND keys(r) as p
-RETURN {type:type(r), properties: collect(distinct p)} AS output
+UNWIND type(r) as t
+UNWIND keys(r) as p WITH t,
+collect(distinct p) AS props 
+RETURN {type:t, properties:props} AS output
 """
 
 rel_query = """
@@ -41,6 +44,8 @@ class FalkorDBGraph(GraphStore):
 
         self._driver = redis.Redis(host=host, port=port)
         self._graph = Graph(self._driver, database)
+        self.schema: str = ""
+        self.structured_schema: Dict[str, Any] = {}
 
         try:
             self.refresh_schema()
@@ -52,12 +57,29 @@ class FalkorDBGraph(GraphStore):
         """Returns the schema of the FalkorDB database"""
         return self.schema
 
+    @property
+    def get_structured_schema(self) -> Dict[str, Any]:
+        """Returns the structured schema of the Graph"""
+        return self._structured_schema
+
     def refresh_schema(self) -> None:
         """Refreshes the schema of the FalkorDB database"""
-        self.schema = (
-            f"Node properties: {self.query(node_properties_query)}\n"
-            f"Relationships properties: {self.query(rel_properties_query)}\n"
-            f"Relationships: {self.query(rel_query)}\n"
+        node_properties = self.query(node_properties_query)
+        rel_properties = self.query(rel_properties_query)
+        relationships = self.query(rel_query)
+
+        self._structured_schema = {
+            "node_props": {
+                el[0]["labels"]: el[0]["properties"] for el in node_properties
+            },
+            "rel_props": {el[0]["type"]: el[0]["properties"] for el in rel_properties},
+            "relationships": relationships,
+        }
+
+        self._schema = (
+            f"Node properties: {node_properties}\n"
+            f"Relationships properties: {rel_properties}\n"
+            f"Relationships: {relationships}\n"
         )
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
@@ -78,38 +100,32 @@ class FalkorDBGraph(GraphStore):
         for document in graph_documents:
             # Import nodes
             for node in document.nodes:
-                props = " ".join(
-                    "SET n.{0}='{1}'".format(k, v.replace("'", "\\'"))
-                    if isinstance(v, str)
-                    else "SET n.{0}={1}".format(k, v)
-                    for k, v in node.properties.items()
-                )
-
                 self.query(
                     (
                         # f"{include_docs_query if include_source else ''}"
                         f"MERGE (n:{node.type} {{id:'{node.id}'}}) "
-                        f"{props} "
+                        "SET n += $properties "
                         # f"{'MERGE (d)-[:MENTIONS]->(n) ' if include_source else ''}"
                         "RETURN distinct 'done' AS result"
-                    )
+                    ),
+                    {
+                        "properties": node.properties,
+                        "document": document.source.__dict__,
+                    },
                 )
 
             # Import relationships
             for rel in document.relationships:
-                props = " ".join(
-                    "SET r.{0}='{1}'".format(k, v.replace("'", "\\'"))
-                    if isinstance(v, str)
-                    else "SET r.{0}={1}".format(k, v)
-                    for k, v in rel.properties.items()
-                )
-
                 self.query(
                     (
                         f"MATCH (a:{rel.source.type} {{id:'{rel.source.id}'}}), "
                         f"(b:{rel.target.type} {{id:'{rel.target.id}'}}) "
                         f"MERGE (a)-[r:{(rel.type.replace(' ', '_').upper())}]->(b) "
-                        f"{props} "
+                        "SET r += $properties "
                         "RETURN distinct 'done' AS result"
-                    )
+                    ),
+                    {
+                        "properties": rel.properties,
+                        "document": document.source.__dict__,
+                    },
                 )

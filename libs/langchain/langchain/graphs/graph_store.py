@@ -13,6 +13,12 @@ class GraphStore:
         """Returns the schema of the Graph database"""
         pass
 
+    @property
+    @abstractmethod
+    def get_structured_schema(self) -> Dict[str, Any]:
+        """Returns the schema of the Graph database"""
+        pass
+
     @abstractmethod
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query the graph."""
