@@ -27,7 +27,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import get_args
+from typing_extensions import TypedDict, get_args
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
@@ -96,13 +96,13 @@ class Runnable(Generic[Input, Output], ABC):
     @property
     def input_schema(self) -> Type[BaseModel]:
         return create_model(
-            self.__class__.__name__ + "Input", input=(self.InputType, None)
+            self.__class__.__name__ + "Input", __root__=(self.InputType, None)
         )
 
     @property
     def output_schema(self) -> Type[BaseModel]:
         return create_model(
-            self.__class__.__name__ + "Output", output=(self.OutputType, None)
+            self.__class__.__name__ + "Output", __root__=(self.OutputType, None)
         )
 
     def __or__(
@@ -984,6 +984,14 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
     class Config:
         arbitrary_types_allowed = True
 
+    @property
+    def InputType(self) -> type[Input]:
+        return self.runnable.InputType
+
+    @property
+    def OutputType(self) -> type[Output]:
+        return self.runnable.OutputType
+
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
@@ -1731,6 +1739,21 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     class Config:
         arbitrary_types_allowed = True
 
+    @property
+    def InputType(self) -> Any:
+        for step in self.steps.values():
+            if step.InputType:
+                return step.InputType
+
+        return Any
+
+    @property
+    def OutputType(self) -> type[Dict]:
+        return TypedDict(
+            "RunnableMapOutput",
+            {k: v.OutputType for k, v in self.steps.items()},  # type: ignore
+        )
+
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None
     ) -> Dict[str, Any]:
@@ -1981,6 +2004,32 @@ class RunnableLambda(Runnable[Input, Output]):
                 f"Instead got an unsupported type: {type(func)}"
             )
 
+    @property
+    def InputType(self) -> Any:
+        func = getattr(self, "func", None) or getattr(self, "afunc")
+        try:
+            params = inspect.signature(func).parameters
+            first_param = next(iter(params.values()), None)
+            if first_param and first_param.annotation != inspect.Parameter.empty:
+                return first_param.annotation
+            else:
+                return Any
+        except ValueError:
+            return Any
+
+    @property
+    def OutputType(self) -> Any:
+        func = getattr(self, "func", None) or getattr(self, "afunc")
+        try:
+            sig = inspect.signature(func)
+            return (
+                sig.return_annotation
+                if sig.return_annotation != inspect.Signature.empty
+                else Any
+            )
+        except ValueError:
+            return Any
+
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunnableLambda):
             if hasattr(self, "func") and hasattr(other, "func"):
@@ -2107,6 +2156,14 @@ class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
     class Config:
         arbitrary_types_allowed = True
 
+    @property
+    def InputType(self) -> Any:
+        return List[self.bound.InputType]  # type: ignore[name-defined]
+
+    @property
+    def OutputType(self) -> type[List[Output]]:
+        return List[self.bound.OutputType]  # type: ignore[name-defined]
+
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
@@ -2162,6 +2219,14 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
 
     class Config:
         arbitrary_types_allowed = True
+
+    @property
+    def InputType(self) -> type[Input]:
+        return self.bound.InputType
+
+    @property
+    def OutputType(self) -> type[Output]:
+        return self.bound.OutputType
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
