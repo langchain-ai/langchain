@@ -9,7 +9,6 @@ import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.pydantic_v1 import root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -110,55 +109,6 @@ class WebBaseLoader(BaseLoader):
         self.continue_on_failure = continue_on_failure
         self.autoset_encoding = autoset_encoding
         self.encoding = encoding
-
-    @root_validator()
-    def validate_session(cls, values: dict) -> dict:
-        try:
-            import bs4  # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "bs4 package not found, please install it with `pip install bs4`"
-            )
-
-        # TODO: Deprecate web_path in favor of web_paths, and remove this
-        # left like this because there are a number of loaders that expect single
-        # urls
-        web_paths = values.get("web_paths")
-        if isinstance(web_paths, str):
-            values["web_paths"] = [web_paths]
-        elif isinstance(web_paths, List):
-            values["web_paths"] = web_paths
-        else:
-            raise ValueError(
-                f"Expected web_paths to be List or (deprecated) string, received "
-                f"{type(web_paths)}"
-            )
-
-        if not values["session"]:
-            session = requests.Session()
-            headers = values["header_template"]
-            if not values["header_template"].get("User-Agent"):
-                try:
-                    from fake_useragent import UserAgent
-
-                    headers["User-Agent"] = UserAgent().random
-                except ImportError:
-                    logger.info(
-                        "fake_useragent not found, using default user agent."
-                        "To get a realistic header for requests, "
-                        "`pip install fake_useragent`."
-                    )
-            session.headers = dict(headers)
-            session.verify = values["verify_ssl"]
-            if values["proxies"]:
-                session.proxies.update(values["proxies"])
-            values["session"] = session
-        return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
 
     @property
     def web_path(self) -> str:
