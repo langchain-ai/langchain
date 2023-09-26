@@ -235,7 +235,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         """Initialize the PairwiseStringEvalChain from an LLM.
 
         Args:
-            llm (BaseChatModel): The ChatModel to use.
+            llm (BaseChatModel): The LLM to use (GPT-4 recommended).
             prompt (PromptTemplate, optional): The prompt to use.
             **kwargs (Any): Additional keyword arguments.
 
@@ -243,8 +243,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
             PairwiseStringEvalChain: The initialized PairwiseStringEvalChain.
 
         Raises:
-            ValueError: If the input variables are not as expected or if the LLM is not
-                a chat model.
+            ValueError: If the input variables are not as expected.
 
         """
         if not (isinstance(llm, ChatOpenAI) and llm.model_name.startswith("gpt-4")):
