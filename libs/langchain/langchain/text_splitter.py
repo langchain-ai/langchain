@@ -546,9 +546,9 @@ class HTMLHeaderTextSplitter:
         tree = etree.parse(file, parser)
 
         # document transformation for "structure-aware" chunking is handled with xsl.
-        # see comments in html_chunk.xsl for more detailed information.
-        xsl_path = pathlib.Path(__file__).parent / "document_transformers/xsl/html_chunks_with_headers.xslt"
-        xslt_tree = etree.parse(xsl_path)
+        # see comments in html_chunks_with_headers.xslt for more detailed information.
+        xslt_path = pathlib.Path(__file__).parent / "document_transformers/xsl/html_chunks_with_headers.xslt"
+        xslt_tree = etree.parse(xslt_path)
         transform = etree.XSLT(xslt_tree)
         result = transform(tree)
         result_dom = etree.fromstring(str(result))
@@ -572,7 +572,6 @@ class HTMLHeaderTextSplitter:
                                  # add text of specified headers to metadata using header mapping
                                  header_mapping[node.tag]: node.text for node in filter(
                                     lambda x: x.tag in header_filter, element.findall("*[@class='headers']/*", ns_map))
-                                 # add source url to metadata
                              }
                 ))
 
