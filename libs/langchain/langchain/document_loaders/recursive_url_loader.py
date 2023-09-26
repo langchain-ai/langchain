@@ -126,9 +126,6 @@ class RecursiveUrlLoader(BaseLoader):
 
         if depth >= self.max_depth:
             return
-        # Exclude the links that start with any of the excluded directories
-        if any(url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs):
-            return
 
         # Get all links that can be accessed from the current URL
         visited.add(url)
