@@ -49,15 +49,9 @@ for sample in dataset["train"]:
         )
     )
 
-BASE_PROMPT = ChatPromptTemplate.from_template("""Article: {article}
-
-Write a summary of the above article. Guidelines:
-
-- The summary should be long (4-5 sentences, ~80 words) yet highly non-specific, containing little information beyond the entities marked as missing. Use overly verbose language and fillers (e.g., "this article discusses") to reach ~80 words.
-- Make space with fusion, compression, and removal of uninformative phrases like "the article discusses".
-- The summaries should become highly dense and concise yet self-contained, i.e., easily understood without the article.
-
-Just give your summary and NOTHING else.""")
+BASE_PROMPT = ChatPromptTemplate.from_template("""Write a VERY short summary of the Article. Do not exceed 70 words.
+                                               
+Article: {article}""")
 
 FT_PROMPT = ChatPromptTemplate.from_template("""Give a summary of the following article:\n\n{article}""")
 
@@ -71,7 +65,7 @@ def _reverse_verdict(verdict: str) -> str:
     return "Win" if verdict == "Loss" else "Loss" if verdict == "Win" else "Tie"
 
 async def evaluate(sample: Sample) -> bool:
-    base_summary = sample.starting_summary
+    base_summary = (await base_summarize_chaim.ainvoke({"article": sample.article})).content
     ft_summary = (await ft_summarize_chain.ainvoke({"article": sample.article})).content
     reverse = (len(base_summary) + len(ft_summary)) % 2 == 0
     result = await evaluator.aevaluate_string_pairs(
@@ -79,6 +73,9 @@ async def evaluate(sample: Sample) -> bool:
         prediction=ft_summary if not reverse else base_summary,
         prediction_b=base_summary if not reverse else ft_summary,
     )
+    print("Base summary:", base_summary)
+    print("FT summary:", ft_summary)
+    print("Reverse:", reverse)
     print(result)
     if reverse:
         return _reverse_verdict(result["verdict"])
@@ -105,6 +102,7 @@ async def main() -> None:
         "Win rate:",
         sum([result == "Win" for result in results]) / len(results_excluding_ties),
     )
+    print("Number of ties:", len(results) - len(results_excluding_ties))
 
 if __name__ == "__main__":
     asyncio.run(main())
