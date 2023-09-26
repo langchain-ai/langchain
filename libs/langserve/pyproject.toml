@@ -5,7 +5,7 @@ description = ""
 readme = "README.md"
 authors = ["LangChain"]
 license = "MIT"
-repository = "https://github.com/langchain-ai/langserve/"
+repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">3.8.1,<4"
