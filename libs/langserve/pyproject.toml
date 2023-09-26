@@ -19,6 +19,8 @@ pydantic = "^1"
 [tool.poetry.group.dev.dependencies]
 jupyterlab = "^3.6.1"
 
+[tool.poetry.group.typing.dependencies]
+
 [tool.poetry.group.lint.dependencies]
 black = { version="^23.1.0", extras=["jupyter"] }
 ruff = "^0.0.255"
