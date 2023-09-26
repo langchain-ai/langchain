@@ -62,6 +62,8 @@ class GCSFileLoader(BaseLoader):
         bucket = storage_client.get_bucket(self.bucket)
         # Create a blob object from the filepath
         blob = bucket.blob(self.blob)
+        # retrieve custom metadata associated with the blob
+        metadata = bucket.get_blob(self.blob).metadata
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{self.blob}"
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -72,4 +74,6 @@ class GCSFileLoader(BaseLoader):
             for doc in docs:
                 if "source" in doc.metadata:
                     doc.metadata["source"] = f"gs://{self.bucket}/{self.blob}"
+                if metadata:
+                    doc.metadata.update(metadata)
             return docs
