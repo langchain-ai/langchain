@@ -31,9 +31,14 @@ class EvaluatorType(str, Enum):
     PAIRWISE_STRING = "pairwise_string"
     """The pairwise string evaluator, which predicts the preferred prediction from
     between two models."""
+    SCORED_STRING = "scored_string"
+    """The scored string evaluator, which gives a score between 1 and 10 to a prediction."""
     LABELED_PAIRWISE_STRING = "labeled_pairwise_string"
     """The labeled pairwise string evaluator, which predicts the preferred prediction
     from between two models based on a ground truth reference label."""
+    LABELED_SCORED_STRING = "labeled_scored_string"
+    """The labeled scored string evaluator, which gives a score between 1 and 10
+    to a prediction based on a ground truth reference label."""
     AGENT_TRAJECTORY = "trajectory"
     """The agent trajectory evaluator, which grades the agent's intermediate steps."""
     CRITERIA = "criteria"
