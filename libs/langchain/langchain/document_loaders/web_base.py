@@ -78,7 +78,7 @@ class WebBaseLoader(BaseLoader):
                 "web_path: str init param is deprecated, please use web_paths: "
                 "Sequence[str]."
             )
-        self.web_paths = list(web_paths) or [self.web_path]
+        self.web_paths = list(web_paths) or [web_path]
         self.requests_per_second = requests_per_second
         self.default_parser = default_parser
         self.requests_kwargs = requests_kwargs or {}
