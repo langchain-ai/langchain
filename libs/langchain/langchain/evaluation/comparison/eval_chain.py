@@ -248,7 +248,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
 
         """
         if not (
-            isinstance(llm, ChatOpenAI) and llm.model_name.startswith("gpt-4")
+            isinstance(llm, (ChatOpenAI, AzureChatOpenAI)) and llm.model_name.startswith("gpt-4")
         ) and not isinstance(llm, AzureChatOpenAI):
             logger.warning(
                 "This chain was only tested with GPT-4. \
