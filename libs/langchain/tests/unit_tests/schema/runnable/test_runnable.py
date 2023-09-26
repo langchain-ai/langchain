@@ -1694,8 +1694,9 @@ async def test_llm_with_fallbacks(
 class FakeSplitIntoListParser(BaseOutputParser[List[str]]):
     """Parse the output of an LLM call to a comma-separated list."""
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return True
 
     def get_format_instructions(self) -> str:
