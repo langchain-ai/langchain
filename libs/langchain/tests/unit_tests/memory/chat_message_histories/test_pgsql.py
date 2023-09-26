@@ -56,12 +56,12 @@ def test_messages_order_by_time(
     pgsql_histories: Tuple[PostgresChatMessageHistory, PostgresChatMessageHistory]
 ) -> None:
     pgsql_history, other_history = pgsql_histories
-    pgsql_history.add_user_message("Hello with time!")
-    pgsql_history.add_ai_message("Hi there with time!")
+    pgsql_history.add_user_message("Hello with date and time!")
+    pgsql_history.add_ai_message("Hi there with date and time!")
 
     messages = pgsql_history.messages_order_by_time
     assert len(messages) == 2
     assert isinstance(messages[0], HumanMessage)
     assert isinstance(messages[1], AIMessage)
-    assert messages[0].content == "Hello with time!"
-    assert messages[1].content == "Hi there with time!"
+    assert messages[0].content == "Hello with date and time!"
+    assert messages[1].content == "Hi there with date and time!"

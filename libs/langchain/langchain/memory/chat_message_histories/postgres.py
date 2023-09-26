@@ -81,7 +81,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         """Append the message to the record in PostgreSQL"""
         from psycopg import sql
 
-        created_at = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = sql.SQL(
             "INSERT INTO {} (session_id, message, created_at) VALUES (%s, %s, %s);"
         ).format(sql.Identifier(self.table_name))
