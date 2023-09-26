@@ -154,11 +154,13 @@ class CypherQueryCorrector:
                     match_dict["right_node"], node_variable_dict
                 )
                 relation_direction = self.judge_direction(match_dict["relation"])
-                relation_type = re.search(
+                matched_relation_type = re.search(
                     r":\w+\*?", match_dict["relation"].replace("`", "")
                 )
                 relation_type = (
-                    relation_type.group()[1:] if relation_type is not None else None
+                    matched_relation_type.group()[1:]
+                    if matched_relation_type is not None
+                    else None
                 )
                 end_idx = (
                     start_idx
