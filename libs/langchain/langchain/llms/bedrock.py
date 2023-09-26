@@ -1,4 +1,5 @@
 import json
+import re
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
@@ -26,7 +27,21 @@ class LLMInputOutputAdapter:
         cls, provider: str, prompt: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
-        if provider == "anthropic" or provider == "ai21":
+        if provider == "anthropic":
+            if prompt.startswith("Human:") and prompt.endswith("Assistant:"):
+                reformatted_prompt = prompt  # Already wrapped
+            else:
+                # Guard against common errors in specifying wrong number of newlines.
+                corrected_prompt, n_subs = re.subn(r"^\n*Human:", "Human:", prompt)
+                if n_subs == 1:
+                    reformatted_prompt = corrected_prompt
+
+                # As a last resort, wrap the prompt ourselves to emulate instruct-style.
+                else:
+                    reformatted_prompt = f"{'Human:'} {prompt}{'Assistant:'}"
+
+            input_body["prompt"] = reformatted_prompt
+        elif provider == "ai21":
             input_body["prompt"] = prompt
         elif provider == "amazon":
             input_body = dict()
