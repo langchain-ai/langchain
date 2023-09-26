@@ -802,7 +802,7 @@ class ElasticsearchStore(VectorStore):
         ids: Optional[List[str]] = None,
         refresh_indices: bool = True,
         create_index_if_not_exists: bool = True,
-        bulk_kwargs: Dict = {},
+        bulk_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -829,7 +829,7 @@ class ElasticsearchStore(VectorStore):
                 "Could not import elasticsearch python package. "
                 "Please install it with `pip install elasticsearch`."
             )
-
+        bulk_kwargs = bulk_kwargs or {}
         embeddings = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         requests = []
@@ -909,7 +909,7 @@ class ElasticsearchStore(VectorStore):
         texts: List[str],
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[Dict[str, Any]]] = None,
-        bulk_kwargs: Dict = {},
+        bulk_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> "ElasticsearchStore":
         """Construct ElasticsearchStore wrapper from raw documents.
@@ -1009,7 +1009,7 @@ class ElasticsearchStore(VectorStore):
         cls,
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
-        bulk_kwargs: Dict = {},
+        bulk_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> "ElasticsearchStore":
         """Construct ElasticsearchStore wrapper from documents.
