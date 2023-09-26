@@ -9,10 +9,11 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    TypeAlias,
     TypeVar,
     Union,
 )
+
+from typing_extensions import TypeAlias
 
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage, get_buffer_string
