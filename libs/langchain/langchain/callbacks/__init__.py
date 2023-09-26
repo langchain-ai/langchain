@@ -31,6 +31,7 @@ from langchain.callbacks.mlflow_callback import MlflowCallbackHandler
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.promptlayer_callback import PromptLayerCallbackHandler
 from langchain.callbacks.sagemaker_callback import SageMakerCallbackHandler
+from langchain.callbacks.trubrics_callback import TrubricsCallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -74,4 +75,5 @@ __all__ = [
     "FlyteCallbackHandler",
     "SageMakerCallbackHandler",
     "LabelStudioCallbackHandler",
+    "TrubricsCallbackHandler",
 ]

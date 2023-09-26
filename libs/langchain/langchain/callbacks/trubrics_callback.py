@@ -1,22 +1,34 @@
 import os
+from uuid import UUID
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import LLMResult
 from langchain.schema.messages import BaseMessage
+from langchain.adapters.openai import convert_message_to_dict
 from typing import Any, Dict, Optional, List
 
 class TrubricsCallbackHandler(BaseCallbackHandler):
+    """
+    Callback handler for Trubrics.
+
+    Args:
+        project: a trubrics project, default project is "default"
+        email: a trubrics account email, can equally be set in env variables
+        password: a trubrics account password, can equally be set in env variables
+        **kwargs: all other kwargs are parsed and set to trubrics prompt variables, or added to the `metadata` dict
+    """
     def __init__(
             self,
-            project: str,
+            project: str = "default",
             email: Optional[str] = None,
             password: Optional[str] = None,
+            **kwargs
         ) -> None:
         super().__init__()
         try:
             from trubrics import Trubrics
         except ImportError:
             raise ImportError(
-                "The TrubricsCallbackHandler requires the trubrics package. "
+                "The TrubricsCallbackHandler requires installation of the trubrics package. "
                 "Please install it with `pip install trubrics`."
             )
 
@@ -26,21 +38,40 @@ class TrubricsCallbackHandler(BaseCallbackHandler):
             password=password or os.environ["TRUBRICS_PASSWORD"],
         )
         self.config_model = {}
+        self.prompt = None
+        self.messages = None
+        self.trubrics_kwargs = kwargs if kwargs else None
 
-    def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
-    ) -> Any:
-        return
+    def on_llm_start(self, serialized: Dict[str, Any], prompts: List[str], **kwargs):
+        self.prompt = prompts[0]
 
-    def on_chat_model_start(
-        self, serialized: Dict[str, Any], messages: List[List[BaseMessage]], **kwargs: Any
-    ) -> Any:
-        return
+    def on_chat_model_start(self, serialized: Dict[str, Any], messages: List[List[BaseMessage]], **kwargs):
+        self.messages = [convert_message_to_dict(message) for message in messages[0]]
+        self.prompt = self.messages[-1]["content"]
 
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> Any:
-        # self.trubrics.log_prompt(
-        #     config_model={"model": "gpt-3.5-turbo"},
-        #     prompt="Tell me a joke",
-        #     generation="Why did the chicken cross the road? To get to the other side.",
-        # )
-        return
+    def on_llm_end(self, response: LLMResult, run_id: UUID, **kwargs):
+        tags = ["langchain"]
+        user_id = None
+        session_id = None
+        metadata = {"langchain_run_id": run_id}
+        if self.messages:
+            metadata["messages"] = self.messages
+        if self.trubrics_kwargs:
+            if self.trubrics_kwargs.get("tags"):
+                tags.append(*self.trubrics_kwargs.pop("tags"))
+            user_id = self.trubrics_kwargs.pop("user_id", None)
+            session_id = self.trubrics_kwargs.pop("session_id", None)
+            metadata.update(self.trubrics_kwargs)
+
+        for generation in response.generations:
+            self.trubrics.log_prompt(
+                config_model={
+                    "model": response.llm_output["model_name"]
+                },
+                prompt=self.prompt,
+                generation=generation[0].text,
+                user_id=user_id,
+                session_id=session_id,
+                tags=tags,
+                metadata=metadata
+            )
