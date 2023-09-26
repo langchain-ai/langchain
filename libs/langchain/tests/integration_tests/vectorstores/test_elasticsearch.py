@@ -1,11 +1,11 @@
 """Test ElasticSearch functionality."""
 import logging
 import os
+import re
 import uuid
-from typing import Generator, List, Union, Any, Dict
+from typing import Any, Dict, Generator, List, Union
 
 import pytest
-import re
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
@@ -52,7 +52,6 @@ class TestElasticsearch:
         # Running this integration test with Elastic Cloud
         # Required for in-stack inference testing (ELSER + model_id)
         from elasticsearch import Elasticsearch
-        from elastic_transport import Transport
 
         es_url = os.environ.get("ES_URL", "http://localhost:9200")
         cloud_id = os.environ.get("ES_CLOUD_ID")
@@ -99,13 +98,13 @@ class TestElasticsearch:
     def es_client(self) -> Any:
         # Running this integration test with Elastic Cloud
         # Required for in-stack inference testing (ELSER + model_id)
-        from elasticsearch import Elasticsearch
         from elastic_transport import Transport
+        from elasticsearch import Elasticsearch
 
         class CustomTransport(Transport):
             requests = []
 
-            def perform_request(self, *args, **kwargs):
+            def perform_request(self, *args, **kwargs):  # type: ignore
                 self.requests.append(kwargs)
                 return super().perform_request(*args, **kwargs)
 
