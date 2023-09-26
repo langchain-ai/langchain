@@ -28,7 +28,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypedDict, get_args
+from typing_extensions import get_args
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
