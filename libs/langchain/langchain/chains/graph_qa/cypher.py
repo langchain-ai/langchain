@@ -147,7 +147,7 @@ class GraphCypherQAChain(Chain):
             )
 
         graph_schema = construct_schema(
-            kwargs["graph"].structured_schema, include_types, exclude_types
+            kwargs["graph"].get_structured_schema, include_types, exclude_types
         )
 
         return cls(
