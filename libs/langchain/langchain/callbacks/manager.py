@@ -22,7 +22,7 @@ from typing import (
     cast,
 )
 from uuid import UUID
-
+from phoenix.trace.langchain import OpenInferenceTracer
 from tenacity import RetryCallState
 
 import langchain
@@ -1772,6 +1772,7 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
 
 T = TypeVar("T", CallbackManager, AsyncCallbackManager)
 
+open_inference_tracer = OpenInferenceTracer()
 
 def env_var_is_set(env_var: str) -> bool:
     """Check if an environment variable is set.
@@ -1904,6 +1905,7 @@ def _configure(
                 handler = LangChainTracerV1()
                 handler.load_session(tracer_project)
                 callback_manager.add_handler(handler, True)
+        callback_manager.add_handler(open_inference_tracer, True)
         if wandb_tracing_enabled_ and not any(
             isinstance(handler, WandbTracer) for handler in callback_manager.handlers
         ):
