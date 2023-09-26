@@ -10,8 +10,8 @@ from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 class WolframAlphaQueryRun(BaseTool):
     """Tool that queries using the Wolfram Alpha SDK."""
 
-    name = "wolfram_alpha"
-    description = (
+    name: str = "wolfram_alpha"
+    description: str = (
         "A wrapper around Wolfram Alpha. "
         "Useful for when you need to answer questions about Math, "
         "Science, Technology, Culture, Society and Everyday Life. "

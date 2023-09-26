@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra, Field, root_validator
-
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
@@ -13,6 +11,7 @@ from langchain.prompts.base import (
 from langchain.prompts.chat import BaseChatPromptTemplate, BaseMessagePromptTemplate
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
@@ -72,13 +71,9 @@ class _FewShotPromptTemplateMixin(BaseModel):
 class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
     """Prompt template that contains few shot examples."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Return whether the prompt template is lc_serializable.
-
-        Returns:
-            Boolean indicating whether the prompt template is lc_serializable.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return False
 
     validate_template: bool = True
@@ -279,13 +274,9 @@ class FewShotChatMessagePromptTemplate(
             chain.invoke({"input": "What's 3+3?"})
     """
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Return whether the prompt template is lc_serializable.
-
-        Returns:
-            Boolean indicating whether the prompt template is lc_serializable.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return False
 
     input_variables: List[str] = Field(default_factory=list)

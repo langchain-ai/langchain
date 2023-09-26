@@ -7,7 +7,6 @@ import warnings
 from typing import Any, Dict, List, Optional
 
 import numexpr
-from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -16,6 +15,7 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
@@ -26,7 +26,8 @@ class LLMMathChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import LLMMathChain, OpenAI
+            from langchain.chains import LLMMathChain
+            from langchain.llms import OpenAI
             llm_math = LLMMathChain.from_llm(OpenAI())
     """
 

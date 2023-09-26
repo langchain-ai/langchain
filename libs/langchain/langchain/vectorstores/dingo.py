@@ -1,4 +1,3 @@
-"""Wrapper around the Dingo vector database."""
 from __future__ import annotations
 
 import logging
@@ -8,15 +7,15 @@ from typing import Any, Iterable, List, Optional, Tuple
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
 
 
 class Dingo(VectorStore):
-    """Wrapper around Dingo vector database.
+    """`Dingo` vector store.
 
     To use, you should have the ``dingodb`` python package installed.
 
@@ -112,9 +111,11 @@ class Dingo(VectorStore):
         # upsert to Dingo
         for i in range(0, len(list(texts)), batch_size):
             j = i + batch_size
-            self._client.vector_add(
+            add_res = self._client.vector_add(
                 self._index_name, metadatas_list[i:j], embeds[i:j], ids[i:j]
             )
+            if not add_res:
+                raise Exception("vector add fail")
 
         return ids
 
@@ -205,20 +206,26 @@ class Dingo(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         results = self._client.vector_search(
-            self._index_name, [embedding], search_params, k
+            self._index_name, [embedding], search_params=search_params, top_k=k
         )
 
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
-            [item["floatValues"] for item in results[0]["vectorWithDistances"]],
+            [
+                item["vector"]["floatValues"]
+                for item in results[0]["vectorWithDistances"]
+            ],
             k=k,
             lambda_mult=lambda_mult,
         )
-        selected = [
-            results[0]["vectorWithDistances"][i]["metaData"] for i in mmr_selected
-        ]
+        selected = []
+        for i in mmr_selected:
+            meta_data = {}
+            for k, v in results[0]["vectorWithDistances"][i]["scalarData"].items():
+                meta_data.update({str(k): v["fields"][0]["data"]})
+            selected.append(meta_data)
         return [
-            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)
+            Document(page_content=metadata.pop(self._text_key), metadata=metadata)
             for metadata in selected
         ]
 
@@ -279,7 +286,7 @@ class Dingo(VectorStore):
                 Example:
                     .. code-block:: python
 
-                        from langchain import Dingo
+                        from langchain.vectorstores import Dingo
                         from langchain.embeddings import OpenAIEmbeddings
                         import dingodb
         sss
@@ -328,9 +335,11 @@ class Dingo(VectorStore):
         # upsert to Dingo
         for i in range(0, len(list(texts)), batch_size):
             j = i + batch_size
-            dingo_client.vector_add(
+            add_res = dingo_client.vector_add(
                 index_name, metadatas_list[i:j], embeds[i:j], ids[i:j]
             )
+            if not add_res:
+                raise Exception("vector add fail")
         return cls(embedding, text_key, client=dingo_client, index_name=index_name)
 
     def delete(

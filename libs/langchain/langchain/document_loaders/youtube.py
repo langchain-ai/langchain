@@ -6,11 +6,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
 
-from pydantic import root_validator
-from pydantic.dataclasses import dataclass
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.pydantic_v1 import root_validator
+from langchain.pydantic_v1.dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,7 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 @dataclass
 class GoogleApiClient:
-    """A Generic Google Api Client.
+    """Generic Google API Client.
 
     To use, you should have the ``google_auth_oauthlib,youtube_transcript_api,google``
     python package installed.

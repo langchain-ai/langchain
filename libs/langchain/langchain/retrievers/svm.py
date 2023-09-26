@@ -6,8 +6,8 @@ from typing import Any, Iterable, List, Optional
 import numpy as np
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.embeddings import Embeddings
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
@@ -26,7 +26,7 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
 
 
 class SVMRetriever(BaseRetriever):
-    """SVM Retriever.
+    """`SVM` retriever.
 
     Largely based on
     https://github.com/karpathy/randomfun/blob/master/knn_vs_svm.ipynb

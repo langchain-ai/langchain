@@ -1,4 +1,3 @@
-"""Wrapper around OpenSearch vector database."""
 from __future__ import annotations
 
 import uuid
@@ -7,10 +6,10 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
-from langchain.embeddings.base import Embeddings
 from langchain.schema import Document
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 IMPORT_OPENSEARCH_PY_ERROR = (
@@ -26,7 +25,7 @@ def _import_opensearch() -> Any:
     try:
         from opensearchpy import OpenSearch
     except ImportError:
-        raise ValueError(IMPORT_OPENSEARCH_PY_ERROR)
+        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
     return OpenSearch
 
 
@@ -35,7 +34,7 @@ def _import_bulk() -> Any:
     try:
         from opensearchpy.helpers import bulk
     except ImportError:
-        raise ValueError(IMPORT_OPENSEARCH_PY_ERROR)
+        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
     return bulk
 
 
@@ -44,7 +43,7 @@ def _import_not_found_error() -> Any:
     try:
         from opensearchpy.exceptions import NotFoundError
     except ImportError:
-        raise ValueError(IMPORT_OPENSEARCH_PY_ERROR)
+        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
     return NotFoundError
 
 
@@ -54,7 +53,7 @@ def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
         opensearch = _import_opensearch()
         client = opensearch(opensearch_url, **kwargs)
     except ValueError as e:
-        raise ValueError(
+        raise ImportError(
             f"OpenSearch client string provided is not in proper format. "
             f"Got error: {e} "
         )
@@ -315,12 +314,12 @@ def _get_kwargs_value(kwargs: Any, key: str, default_value: Any) -> Any:
 
 
 class OpenSearchVectorSearch(VectorStore):
-    """Wrapper around OpenSearch as a vector database.
+    """`Amazon OpenSearch Vector Engine` vector store.
 
     Example:
         .. code-block:: python
 
-            from langchain import OpenSearchVectorSearch
+            from langchain.vectorstores import OpenSearchVectorSearch
             opensearch_vector_search = OpenSearchVectorSearch(
                 "http://localhost:9200",
                 "embeddings",
@@ -375,6 +374,7 @@ class OpenSearchVectorSearch(VectorStore):
         """
         embeddings = self.embedding_function.embed_documents(list(texts))
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
+        index_name = _get_kwargs_value(kwargs, "index_name", self.index_name)
         text_field = _get_kwargs_value(kwargs, "text_field", "text")
         dim = len(embeddings[0])
         engine = _get_kwargs_value(kwargs, "engine", "nmslib")
@@ -393,7 +393,7 @@ class OpenSearchVectorSearch(VectorStore):
 
         return _bulk_ingest_embeddings(
             self.client,
-            self.index_name,
+            index_name,
             embeddings,
             texts,
             metadatas=metadatas,
@@ -527,6 +527,7 @@ class OpenSearchVectorSearch(VectorStore):
         embedding = self.embedding_function.embed_query(query)
         search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
         vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
+        index_name = _get_kwargs_value(kwargs, "index_name", self.index_name)
 
         if (
             self.is_aoss
@@ -602,7 +603,7 @@ class OpenSearchVectorSearch(VectorStore):
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
 
-        response = self.client.search(index=self.index_name, body=search_query)
+        response = self.client.search(index=index_name, body=search_query)
 
         return [hit for hit in response["hits"]["hits"]]
 
@@ -664,6 +665,7 @@ class OpenSearchVectorSearch(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         bulk_size: int = 500,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
         """Construct OpenSearchVectorSearch wrapper from raw documents.
@@ -671,7 +673,7 @@ class OpenSearchVectorSearch(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import OpenSearchVectorSearch
+                from langchain.vectorstores import OpenSearchVectorSearch
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 opensearch_vector_search = OpenSearchVectorSearch.from_texts(
@@ -773,6 +775,7 @@ class OpenSearchVectorSearch(VectorStore):
             embeddings,
             texts,
             metadatas=metadatas,
+            ids=ids,
             vector_field=vector_field,
             text_field=text_field,
             mapping=mapping,

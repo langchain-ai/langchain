@@ -10,8 +10,8 @@ from langchain.utilities.wikipedia import WikipediaAPIWrapper
 class WikipediaQueryRun(BaseTool):
     """Tool that searches the Wikipedia API."""
 
-    name = "Wikipedia"
-    description = (
+    name: str = "Wikipedia"
+    description: str = (
         "A wrapper around Wikipedia. "
         "Useful for when you need to answer general questions about "
         "people, places, companies, facts, historical events, or other subjects. "

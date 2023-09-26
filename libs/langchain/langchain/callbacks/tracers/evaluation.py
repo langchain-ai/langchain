@@ -2,27 +2,19 @@
 from __future__ import annotations
 
 import logging
-from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import Any, List, Optional, Sequence, Set, Union
+from concurrent.futures import Future, ThreadPoolExecutor
+from typing import Any, Dict, List, Optional, Sequence, Set, Union
 from uuid import UUID
 
-from langsmith import Client, RunEvaluator
+import langsmith
+from langsmith.evaluation.evaluator import EvaluationResult
 
-from langchain.callbacks.manager import tracing_v2_enabled
+from langchain.callbacks import manager
+from langchain.callbacks.tracers import langchain as langchain_tracer
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.langchain import _get_client
 from langchain.callbacks.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
-
-_TRACERS: List[EvaluatorCallbackHandler] = []
-
-
-def wait_for_all_evaluators() -> None:
-    """Wait for all tracers to finish."""
-    global _TRACERS
-    for tracer in _TRACERS:
-        tracer.wait_for_futures()
 
 
 class EvaluatorCallbackHandler(BaseTracer):
@@ -66,9 +58,9 @@ class EvaluatorCallbackHandler(BaseTracer):
 
     def __init__(
         self,
-        evaluators: Sequence[RunEvaluator],
+        evaluators: Sequence[langsmith.RunEvaluator],
         max_workers: Optional[int] = None,
-        client: Optional[Client] = None,
+        client: Optional[langsmith.Client] = None,
         example_id: Optional[Union[UUID, str]] = None,
         skip_unfinished: bool = True,
         project_name: Optional[str] = "evaluators",
@@ -78,18 +70,15 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.client = client or _get_client()
+        self.client = client or langchain_tracer.get_client()
         self.evaluators = evaluators
-        self.executor = ThreadPoolExecutor(
-            max_workers=max(max_workers or len(evaluators), 1)
-        )
+        self.max_workers = max_workers or len(evaluators)
         self.futures: Set[Future] = set()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
-        global _TRACERS
-        _TRACERS.append(self)
+        self.logged_eval_results: Dict[str, List[EvaluationResult]] = {}
 
-    def _evaluate_in_project(self, run: Run, evaluator: RunEvaluator) -> None:
+    def _evaluate_in_project(self, run: Run, evaluator: langsmith.RunEvaluator) -> None:
         """Evaluate the run in the project.
 
         Parameters
@@ -102,11 +91,11 @@ class EvaluatorCallbackHandler(BaseTracer):
         """
         try:
             if self.project_name is None:
-                self.client.evaluate_run(run, evaluator)
-            with tracing_v2_enabled(
+                eval_result = self.client.evaluate_run(run, evaluator)
+            with manager.tracing_v2_enabled(
                 project_name=self.project_name, tags=["eval"], client=self.client
             ):
-                self.client.evaluate_run(run, evaluator)
+                eval_result = self.client.evaluate_run(run, evaluator)
         except Exception as e:
             logger.error(
                 f"Error evaluating run {run.id} with "
@@ -114,6 +103,8 @@ class EvaluatorCallbackHandler(BaseTracer):
                 exc_info=True,
             )
             raise e
+        example_id = str(run.reference_example_id)
+        self.logged_eval_results.setdefault(example_id, []).append(eval_result)
 
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.
@@ -129,14 +120,15 @@ class EvaluatorCallbackHandler(BaseTracer):
             return
         run_ = run.copy()
         run_.reference_example_id = self.example_id
-        for evaluator in self.evaluators:
-            self.futures.add(
-                self.executor.submit(self._evaluate_in_project, run_, evaluator)
-            )
-
-    def wait_for_futures(self) -> None:
-        """Wait for all futures to complete."""
-        futures = list(self.futures)
-        wait(futures)
-        for future in futures:
-            self.futures.remove(future)
+        if self.max_workers > 0:
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                list(
+                    executor.map(
+                        self._evaluate_in_project,
+                        [run_ for _ in range(len(self.evaluators))],
+                        self.evaluators,
+                    )
+                )
+        else:
+            for evaluator in self.evaluators:
+                self._evaluate_in_project(run_, evaluator)

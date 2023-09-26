@@ -2,6 +2,11 @@
 from langchain.tools import __all__ as public_api
 
 _EXPECTED = [
+    "AINAppOps",
+    "AINOwnerOps",
+    "AINRuleOps",
+    "AINTransfer",
+    "AINValueOps",
     "AIPluginTool",
     "APIOperation",
     "ArxivQueryRun",
@@ -23,6 +28,15 @@ _EXPECTED = [
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
+    "EdenAiExplicitImageTool",
+    "EdenAiObjectDetectionTool",
+    "EdenAiParsingIDTool",
+    "EdenAiParsingInvoiceTool",
+    "EdenAiSpeechToTextTool",
+    "EdenAiTextModerationTool",
+    "EdenAiTextToSpeechTool",
+    "EdenaiTool",
+    "ElevenLabsText2SpeechTool",
     "ExtractHyperlinksTool",
     "ExtractTextTool",
     "FileSearchTool",

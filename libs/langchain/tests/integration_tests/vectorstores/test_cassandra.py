@@ -1,4 +1,5 @@
 """Test Cassandra functionality."""
+import time
 from typing import List, Optional, Type
 
 from cassandra.cluster import Cluster
@@ -61,9 +62,9 @@ def test_cassandra_with_score() -> None:
     docs = [o[0] for o in output]
     scores = [o[1] for o in output]
     assert docs == [
-        Document(page_content="foo", metadata={"page": 0}),
-        Document(page_content="bar", metadata={"page": 1}),
-        Document(page_content="baz", metadata={"page": 2}),
+        Document(page_content="foo", metadata={"page": "0.0"}),
+        Document(page_content="bar", metadata={"page": "1.0"}),
+        Document(page_content="baz", metadata={"page": "2.0"}),
     ]
     assert scores[0] > scores[1] > scores[2]
 
@@ -76,10 +77,10 @@ def test_cassandra_max_marginal_relevance_search() -> None:
 
            ______ v2
           /      \
-         /        \  v1
+         /        |  v1
     v3  |     .    | query
-         \        /  v0
-          \______/                 (N.B. very crude drawing)
+         |        /  v0
+          |______/                 (N.B. very crude drawing)
 
     With fetch_k==3 and k==2, when query is at (1, ),
     one expects that v2 and v0 are returned (in some order).
@@ -94,8 +95,8 @@ def test_cassandra_max_marginal_relevance_search() -> None:
         (mmr_doc.page_content, mmr_doc.metadata["page"]) for mmr_doc in output
     }
     assert output_set == {
-        ("+0.25", 2),
-        ("-0.124", 0),
+        ("+0.25", "2.0"),
+        ("-0.124", "0.0"),
     }
 
 
@@ -150,6 +151,7 @@ def test_cassandra_delete() -> None:
     assert len(output) == 1
 
     docsearch.clear()
+    time.sleep(0.3)
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 0
 

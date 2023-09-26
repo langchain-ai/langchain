@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
-from pydantic import Field, root_validator
 
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema.document import Document
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt import PromptValue
@@ -26,8 +26,9 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
         default_factory=dict
     )
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
         return True
 
     class Config:
@@ -37,7 +38,9 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:
         return self._call_with_config(
-            lambda inner_input: self.format_prompt(**inner_input),
+            lambda inner_input: self.format_prompt(
+                **{key: inner_input[key] for key in self.input_variables}
+            ),
             input,
             config,
             run_type="prompt",

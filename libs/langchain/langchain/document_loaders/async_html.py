@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import warnings
-from typing import Any, Dict, Iterator, List, Optional, Union
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Dict, Iterator, List, Optional, Union, cast
 
 import aiohttp
 import requests
@@ -33,7 +34,7 @@ class AsyncHtmlLoader(BaseLoader):
         verify_ssl: Optional[bool] = True,
         proxies: Optional[dict] = None,
         requests_per_second: int = 2,
-        requests_kwargs: Dict[str, Any] = {},
+        requests_kwargs: Optional[Dict[str, Any]] = None,
         raise_for_status: bool = False,
     ):
         """Initialize with a webpage path."""
@@ -67,7 +68,7 @@ class AsyncHtmlLoader(BaseLoader):
             self.session.proxies.update(proxies)
 
         self.requests_per_second = requests_per_second
-        self.requests_kwargs = requests_kwargs
+        self.requests_kwargs = requests_kwargs or {}
         self.raise_for_status = raise_for_status
 
     async def _fetch(
@@ -129,9 +130,18 @@ class AsyncHtmlLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load text from the url(s) in web_path."""
 
-        results = asyncio.run(self.fetch_all(self.web_paths))
+        try:
+            # Raises RuntimeError if there is no current event loop.
+            asyncio.get_running_loop()
+            # If there is a current event loop, we need to run the async code
+            # in a separate loop, in a separate thread.
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(asyncio.run, self.fetch_all(self.web_paths))
+                results = future.result()
+        except RuntimeError:
+            results = asyncio.run(self.fetch_all(self.web_paths))
         docs = []
-        for i, text in enumerate(results):
+        for i, text in enumerate(cast(List[str], results)):
             metadata = {"source": self.web_paths[i]}
             docs.append(Document(page_content=text, metadata=metadata))
 

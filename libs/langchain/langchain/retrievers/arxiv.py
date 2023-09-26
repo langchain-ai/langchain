@@ -6,8 +6,7 @@ from langchain.utilities.arxiv import ArxivAPIWrapper
 
 
 class ArxivRetriever(BaseRetriever, ArxivAPIWrapper):
-    """
-    Retriever for Arxiv.
+    """`Arxiv` retriever.
 
     It wraps load() to get_relevant_documents().
     It uses all ArxivAPIWrapper arguments without any change.

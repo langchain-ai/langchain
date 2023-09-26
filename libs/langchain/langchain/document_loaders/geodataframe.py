@@ -29,19 +29,43 @@ class GeoDataFrameLoader(BaseLoader):
                 f"Expected data_frame to be a gpd.GeoDataFrame, got {type(data_frame)}"
             )
 
+        if page_content_column not in data_frame.columns:
+            raise ValueError(
+                f"Expected data_frame to have a column named {page_content_column}"
+            )
+
+        if not isinstance(data_frame[page_content_column].iloc[0], gpd.GeoSeries):
+            raise ValueError(
+                f"Expected data_frame[{page_content_column}] to be a GeoSeries"
+            )
+
         self.data_frame = data_frame
         self.page_content_column = page_content_column
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load records from dataframe."""
 
+        # assumes all geometries in GeoSeries are same CRS and Geom Type
+        crs_str = self.data_frame.crs.to_string() if self.data_frame.crs else None
+        geometry_type = self.data_frame.geometry.geom_type.iloc[0]
+
         for _, row in self.data_frame.iterrows():
-            text = row[self.page_content_column]
+            geom = row[self.page_content_column]
+
+            xmin, ymin, xmax, ymax = geom.bounds
+
             metadata = row.to_dict()
+            metadata["crs"] = crs_str
+            metadata["geometry_type"] = geometry_type
+            metadata["xmin"] = xmin
+            metadata["ymin"] = ymin
+            metadata["xmax"] = xmax
+            metadata["ymax"] = ymax
+
             metadata.pop(self.page_content_column)
-            # Enforce str since shapely Point objects
-            # geometry type used in GeoPandas) are not strings
-            yield Document(page_content=str(text), metadata=metadata)
+
+            # using WKT instead of str() to help GIS system interoperability
+            yield Document(page_content=geom.wkt, metadata=metadata)
 
     def load(self) -> List[Document]:
         """Load full dataframe."""

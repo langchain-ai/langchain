@@ -4,7 +4,8 @@ from typing import Any, AsyncGenerator, Dict, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Extra
+
+from langchain.pydantic_v1 import BaseModel, Extra
 
 
 class Requests(BaseModel):
@@ -72,7 +73,7 @@ class Requests(BaseModel):
         self, url: str, **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """GET the URL and return the text asynchronously."""
-        async with self._arequest("GET", url, auth=self.auth, **kwargs) as response:
+        async with self._arequest("GET", url, **kwargs) as response:
             yield response
 
     @asynccontextmanager
@@ -80,9 +81,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """POST to the URL and return the text asynchronously."""
-        async with self._arequest(
-            "POST", url, json=data, auth=self.auth, **kwargs
-        ) as response:
+        async with self._arequest("POST", url, json=data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
@@ -90,9 +89,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """PATCH the URL and return the text asynchronously."""
-        async with self._arequest(
-            "PATCH", url, json=data, auth=self.auth, **kwargs
-        ) as response:
+        async with self._arequest("PATCH", url, json=data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
@@ -100,9 +97,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """PUT the URL and return the text asynchronously."""
-        async with self._arequest(
-            "PUT", url, json=data, auth=self.auth, **kwargs
-        ) as response:
+        async with self._arequest("PUT", url, json=data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
@@ -110,7 +105,7 @@ class Requests(BaseModel):
         self, url: str, **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """DELETE the URL and return the text asynchronously."""
-        async with self._arequest("DELETE", url, auth=self.auth, **kwargs) as response:
+        async with self._arequest("DELETE", url, **kwargs) as response:
             yield response
 
 

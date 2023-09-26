@@ -3,13 +3,12 @@ import functools
 import logging
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
-from pydantic import Field
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
+from langchain.pydantic_v1 import Field
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ class TransformChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import TransformChain
+            from langchain.chains import TransformChain
             transform_chain = TransformChain(input_variables=["text"],
              output_variables["entities"], transform=func())
     """

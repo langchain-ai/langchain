@@ -17,8 +17,8 @@ from typing import (
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ DEFAULT_INSERT_BATCH_SIZE = 100
 
 
 class MongoDBAtlasVectorSearch(VectorStore):
-    """Wrapper around MongoDB Atlas Vector Search.
+    """`MongoDB Atlas Vector Search` vector store.
 
     To use, you should have both:
     - the ``pymongo`` python package installed
