@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-from typing import Any, Dict, List, Match, Optional
+from typing import Any, Dict, List, Optional
 
 Schema = namedtuple("Schema", ["left_node", "relation", "right_node"])
 
@@ -107,7 +107,7 @@ class CypherQueryCorrector:
     def verify_schema(
         self,
         from_node_labels: List[str],
-        relation_type: Optional[Match[str]],
+        relation_type: Optional[str],
         to_node_labels: List[str],
     ) -> bool:
         """
