@@ -466,7 +466,7 @@ def test_schema_complex_seq() -> None:
 
     chain1 = prompt1 | model | StrOutputParser()
 
-    chain2 = (
+    chain2: Runnable = (
         {"city": chain1, "language": itemgetter("language")}
         | prompt2
         | model

@@ -38,7 +38,8 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
 
     @property
     def input_schema(self) -> type[BaseModel]:
-        return create_model(
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
             "PromptInput", **{k: (Any, None) for k in self.input_variables}
         )
 

@@ -1769,7 +1769,8 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     @property
     def input_schema(self) -> type[BaseModel]:
         if all(not s.input_schema.__custom_root_type__ for s in self.steps.values()):
-            return create_model(
+            # This is correct, but pydantic typings/mypy don't think so.
+            return create_model(  # type: ignore[call-overload]
                 "RunnableMapInput",
                 **{
                     k: (v.type_, v.default)
@@ -1782,7 +1783,8 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
 
     @property
     def output_schema(self) -> type[BaseModel]:
-        return create_model(
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
             "RunnableMapOutput",
             **{k: (v.OutputType, None) for k, v in self.steps.items()},
         )
@@ -2216,7 +2218,11 @@ class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
     @property
     def input_schema(self) -> type[BaseModel]:
         return create_model(
-            "RunnableEachInput", __root__=(List[self.bound.input_schema], None)
+            "RunnableEachInput",
+            __root__=(
+                List[self.bound.input_schema],  # type: ignore[name-defined]
+                None,
+            ),
         )
 
     @property
@@ -2226,7 +2232,11 @@ class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
     @property
     def output_schema(self) -> type[BaseModel]:
         return create_model(
-            "RunnableEachOutput", __root__=(List[self.bound.output_schema], None)
+            "RunnableEachOutput",
+            __root__=(
+                List[self.bound.output_schema],  # type: ignore[name-defined]
+                None,
+            ),
         )
 
     @classmethod
