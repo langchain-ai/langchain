@@ -74,7 +74,7 @@ class Neo4jGraph(GraphStore):
     @property
     def get_schema(self) -> str:
         """Returns the schema of the Graph"""
-        return self.schema            
+        return self.schema
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""
