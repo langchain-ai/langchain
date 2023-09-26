@@ -170,7 +170,7 @@ Let's fix that by adding in memory.
 In order to do this, we need to do two things:
 
 1. Add a place for memory variables to go in the prompt
-2. Add memory to the `AgentExecutor` (note that we add it here, and NOT to the agent, as this is the outermost chain)
+2. Keep track of the chat history
 
 First, let's add a place for memory in the prompt.
 We do this by adding a placeholder for messages with the key `"chat_history"`.
@@ -187,15 +187,10 @@ prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name="agent_scratchpad"),
 ])
 ```
-
-Next, let's create a memory object.
-We will do this by using `ConversationBufferMemory`.
-Importantly, we set `memory_key` also equal to `"chat_history"` (to align it with the prompt) and set `return_messages` (to make it return messages rather than a string).
-
-```python
-from langchain.memory import ConversationBufferMemory
-
-memory = ConversationBufferMemory(memory_key=MEMORY_KEY, return_messages=True)
+We can then set up a list to track the chat history
+```
+from langchain.schema.messages import HumanMessage, AIMessage
+chat_history = []
 ```
 
 We can then put it all together!
@@ -206,7 +201,13 @@ agent = {
     "agent_scratchpad": lambda x: format_to_openai_functions(x['intermediate_steps']),
     "chat_history": lambda x: x["chat_history"]
 } | prompt | llm_with_tools | OpenAIFunctionsAgentOutputParser()
-agent_executor = AgentExecutor(agent=agent, tools=tools, memory=memory, verbose=True)
-agent_executor.run("how many letters in the word educa?")
-agent_executor.run("is that a real word?")
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+```
+When running, we now need to track the inputs and outputs as chat history
+```
+input1 = "how many letters in the word educa?"
+result = agent_executor.invoke({"input": input1, "chat_history": chat_history})
+chat_history.append(HumanMessage(content=input1))
+chat_history.append(AIMessage(content=result['output']))
+agent_executor.invoke({"input": "is that a real word?", "chat_history": chat_history})
 ```

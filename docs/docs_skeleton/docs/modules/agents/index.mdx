@@ -9,7 +9,7 @@ In agents, a language model is used as a reasoning engine to determine which act
 
 Some important terminology (and schema) to know:
 
-1. `AgentAction`: This is a dataclass that represents the action an agent should take. It has a `tool` property (which is the tool that should be invoked) and a `tool_input` property (the input to that tool)
+1. `AgentAction`: This is a dataclass that represents the action an agent should take. It has a `tool` property (which is the name of the tool that should be invoked) and a `tool_input` property (the input to that tool)
 2. `AgentFinish`: This is a dataclass that signifies that the agent has finished and should return to the user. It has a `return_values` parameter, which is a dictionary to return. It often only has one key - `output` - that is a string, and so often it is just this key that is returned.
 3. `intermediate_steps`: These represent previous agent actions and corresponding outputs that are passed around. These are important to pass to future iteration so the agent knows what work it has already done. This is typed as a `List[Tuple[AgentAction, Any]]`. Note that observation is currently left as type `Any` to be maximally flexible. In practice, this is often a string.
 

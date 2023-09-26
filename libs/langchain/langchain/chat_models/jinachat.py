@@ -164,8 +164,9 @@ class JinaChat(BaseChatModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"jinachat_api_key": "JINACHAT_API_KEY"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     client: Any  #: :meta private:
