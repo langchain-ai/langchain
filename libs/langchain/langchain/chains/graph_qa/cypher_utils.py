@@ -7,8 +7,9 @@ Schema = namedtuple("Schema", ["left_node", "relation", "right_node"])
 
 class CypherQueryCorrector:
     """
-    Used to correct relationship direction in generated Cypher statements
-    Based on the competition: https://github.com/tomasonjo/cypher-direction-competition
+    Used to correct relationship direction in generated Cypher statements.
+    This code is copied from the winner's submission to the Cypher competition:
+    https://github.com/sakusaku-rich/cypher-direction-competition
     """
 
     property_pattern = re.compile(r"\{.+?\}")
@@ -94,13 +95,13 @@ class CypherQueryCorrector:
             str_node: node in string format
             node_variable_dict: dictionary of node variables
         """
-        splitted = str_node.split(":")
-        variable = splitted[0]
+        splitted_str = str_node.split(":")
+        variable = splitted_str[0]
         labels = []
         if variable in node_variable_dict:
             labels = node_variable_dict[variable]
-        elif variable == "" and len(splitted) > 1:
-            labels = splitted[1:]
+        elif variable == "" and len(splitted_str) > 1:
+            labels = splitted_str[1:]
         return labels
 
     def verify_schema(

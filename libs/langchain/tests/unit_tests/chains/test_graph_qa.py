@@ -1,7 +1,6 @@
 from typing import List
 
 import pandas as pd
-import pytest
 
 from langchain.chains.graph_qa.cypher import construct_schema, extract_cypher
 from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
