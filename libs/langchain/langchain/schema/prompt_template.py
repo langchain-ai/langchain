@@ -38,7 +38,7 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
         arbitrary_types_allowed = True
 
     @property
-    def InputType(self) -> type[TypedDict]:
+    def InputType(self) -> type[Dict]:
         return TypedDict(
             "PromptInput",
             {k: Any for k in self.input_variables},  # type: ignore
