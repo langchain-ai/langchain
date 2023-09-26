@@ -131,11 +131,11 @@ def test_schemas() -> None:
     fake_bound = FakeRunnable().bind(a="b")  # str -> int
 
     assert fake_bound.input_schema.schema() == {
-        "title": "RunnableBindingInput",
+        "title": "FakeRunnableInput",
         "type": "string",
     }
     assert fake_bound.output_schema.schema() == {
-        "title": "RunnableBindingOutput",
+        "title": "FakeRunnableOutput",
         "type": "integer",
     }
 
@@ -286,57 +286,38 @@ def test_schemas() -> None:
         "title": "FakeListChatModelInput",
     }
     assert fake_chat.output_schema.schema() == {
-        "title": "FakeListChatModelOutput",
-        "$ref": "#/definitions/BaseMessageChunk",
-        "definitions": {
-            "BaseMessageChunk": {
-                "title": "BaseMessageChunk",
-                "description": "A Message chunk, which can be concatenated with other Message chunks.",  # noqa: E501
+        "title": "BaseMessageChunk",
+        "description": "A Message chunk, which can be concatenated with other Message chunks.",  # noqa: E501
+        "type": "object",
+        "properties": {
+            "content": {"title": "Content", "type": "string"},
+            "additional_kwargs": {
+                "title": "Additional Kwargs",
                 "type": "object",
-                "properties": {
-                    "content": {"title": "Content", "type": "string"},
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                },
-                "required": ["content"],
-            }
+            },
         },
+        "required": ["content"],
     }
 
     prompt = PromptTemplate.from_template("Hello, {name}!")
 
     assert prompt.input_schema.schema() == {
-        "definitions": {
-            "PromptInput": {
-                "properties": {"name": {"title": "Name"}},
-                "required": ["name"],
-                "title": "PromptInput",
-                "type": "object",
-            }
-        },
-        "$ref": "#/definitions/PromptInput",
-        "title": "PromptTemplateInput",
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"name": {"title": "Name"}},
     }
     assert prompt.output_schema.schema() == {
-        "definitions": {
-            "PromptValue": {
-                "description": "Base abstract class for "
-                "inputs to any language "
-                "model.\n"
-                "\n"
-                "PromptValues can be converted "
-                "to both LLM (pure "
-                "text-generation) inputs and\n"
-                "    ChatModel inputs.",
-                "properties": {},
-                "title": "PromptValue",
-                "type": "object",
-            }
-        },
-        "$ref": "#/definitions/PromptValue",
-        "title": "PromptTemplateOutput",
+        "description": "Base abstract class for "
+        "inputs to any language "
+        "model.\n"
+        "\n"
+        "PromptValues can be converted "
+        "to both LLM (pure "
+        "text-generation) inputs and\n"
+        "    ChatModel inputs.",
+        "properties": {},
+        "title": "PromptValue",
+        "type": "object",
     }
 
     prompt_mapper = PromptTemplate.from_template("Hello, {name}!").map()
@@ -345,7 +326,6 @@ def test_schemas() -> None:
         "definitions": {
             "PromptInput": {
                 "properties": {"name": {"title": "Name"}},
-                "required": ["name"],
                 "title": "PromptInput",
                 "type": "object",
             }
@@ -405,21 +385,14 @@ def test_schemas() -> None:
     seq = prompt | fake_llm | list_parser
 
     assert seq.input_schema.schema() == {
-        "definitions": {
-            "PromptInput": {
-                "properties": {"name": {"title": "Name"}},
-                "required": ["name"],
-                "title": "PromptInput",
-                "type": "object",
-            }
-        },
-        "$ref": "#/definitions/PromptInput",
-        "title": "RunnableSequenceInput",
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"name": {"title": "Name"}},
     }
     assert seq.output_schema.schema() == {
         "type": "array",
         "items": {"type": "string"},
-        "title": "RunnableSequenceOutput",
+        "title": "CommaSeparatedListOutputParserOutput",
     }
 
     router: Runnable = RouterRunnable({})
@@ -452,35 +425,21 @@ def test_schemas() -> None:
     )
 
     assert seq_w_map.input_schema.schema() == {
-        "definitions": {
-            "PromptInput": {
-                "properties": {"name": {"title": "Name"}},
-                "required": ["name"],
-                "title": "PromptInput",
-                "type": "object",
-            }
-        },
-        "$ref": "#/definitions/PromptInput",
-        "title": "RunnableSequenceInput",
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"name": {"title": "Name"}},
     }
     assert seq_w_map.output_schema.schema() == {
-        "title": "RunnableSequenceOutput",
-        "$ref": "#/definitions/RunnableMapOutput",
-        "definitions": {
-            "RunnableMapOutput": {
-                "title": "RunnableMapOutput",
-                "type": "object",
-                "properties": {
-                    "original": {"title": "Original", "type": "string"},
-                    "length": {"title": "Length", "type": "integer"},
-                    "as_list": {
-                        "title": "As List",
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                },
-                "required": ["original", "as_list", "length"],
-            }
+        "title": "RunnableMapOutput",
+        "type": "object",
+        "properties": {
+            "original": {"title": "Original", "type": "string"},
+            "length": {"title": "Length", "type": "integer"},
+            "as_list": {
+                "title": "As List",
+                "type": "array",
+                "items": {"type": "string"},
+            },
         },
     }
 
@@ -494,6 +453,38 @@ def test_schemas() -> None:
     }
     assert json_list_keys_tool.output_schema.schema() == {
         "title": "JsonListKeysToolOutput"
+    }
+
+
+def test_schema_complex_seq() -> None:
+    prompt1 = ChatPromptTemplate.from_template("what is the city {person} is from?")
+    prompt2 = ChatPromptTemplate.from_template(
+        "what country is the city {city} in? respond in {language}"
+    )
+
+    model = FakeListChatModel(responses=[""])
+
+    chain1 = prompt1 | model | StrOutputParser()
+
+    chain2 = (
+        {"city": chain1, "language": itemgetter("language")}
+        | prompt2
+        | model
+        | StrOutputParser()
+    )
+
+    assert chain2.input_schema.schema() == {
+        "title": "RunnableMapInput",
+        "type": "object",
+        "properties": {
+            "person": {"title": "Person"},
+            "language": {"title": "Language"},
+        },
+    }
+
+    assert chain2.output_schema.schema() == {
+        "title": "StrOutputParserOutput",
+        "type": "string",
     }
 
 

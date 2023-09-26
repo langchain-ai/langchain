@@ -6,10 +6,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
-from typing_extensions import TypedDict
 
 from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain.schema.document import Document
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt import PromptValue
@@ -38,10 +37,9 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
         arbitrary_types_allowed = True
 
     @property
-    def InputType(self) -> type[Dict]:
-        return TypedDict(
-            "PromptInput",
-            {k: Any for k in self.input_variables},  # type: ignore
+    def input_schema(self) -> type[BaseModel]:
+        return create_model(
+            "PromptInput", **{k: (Any, None) for k in self.input_variables}
         )
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:

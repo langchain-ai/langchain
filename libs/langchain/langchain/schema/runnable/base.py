@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
 from functools import partial
 from itertools import tee
+from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -95,14 +96,24 @@ class Runnable(Generic[Input, Output], ABC):
 
     @property
     def input_schema(self) -> Type[BaseModel]:
+        root_type = self.InputType
+
+        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+            return root_type
+
         return create_model(
-            self.__class__.__name__ + "Input", __root__=(self.InputType, None)
+            self.__class__.__name__ + "Input", __root__=(root_type, None)
         )
 
     @property
     def output_schema(self) -> Type[BaseModel]:
+        root_type = self.OutputType
+
+        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+            return root_type
+
         return create_model(
-            self.__class__.__name__ + "Output", __root__=(self.OutputType, None)
+            self.__class__.__name__ + "Output", __root__=(root_type, None)
         )
 
     def __or__(
@@ -1249,6 +1260,14 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
     def OutputType(self) -> Type[Output]:
         return self.last.OutputType
 
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        return self.first.input_schema
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        return self.last.output_schema
+
     def __or__(
         self,
         other: Union[
@@ -1748,10 +1767,24 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         return Any
 
     @property
-    def OutputType(self) -> type[Dict]:
-        return TypedDict(
+    def input_schema(self) -> type[BaseModel]:
+        if all(not s.input_schema.__custom_root_type__ for s in self.steps.values()):
+            return create_model(
+                "RunnableMapInput",
+                **{
+                    k: (v.type_, v.default)
+                    for step in self.steps.values()
+                    for k, v in step.input_schema.__fields__.items()
+                },
+            )
+
+        return super().input_schema
+
+    @property
+    def output_schema(self) -> type[BaseModel]:
+        return create_model(
             "RunnableMapOutput",
-            {k: v.OutputType for k, v in self.steps.items()},  # type: ignore
+            **{k: (v.OutputType, None) for k, v in self.steps.items()},
         )
 
     def invoke(
@@ -2018,6 +2051,26 @@ class RunnableLambda(Runnable[Input, Output]):
             return Any
 
     @property
+    def input_schema(self) -> Type[BaseModel]:
+        func = getattr(self, "func", None) or getattr(self, "afunc")
+        if isinstance(func, itemgetter):
+            # This is terrible, but afaict it's not possible to access _items
+            # on itemgetter objects, so we have to parse the repr
+            items = str(func).replace("operator.itemgetter(", "")[:-1].split(", ")
+            if all(
+                item[0] == "'" and item[-1] == "'" and len(item) > 2 for item in items
+            ):
+                # It's a dict, lol
+                return create_model(
+                    "RunnableLambdaInput",
+                    **{item[1:-1]: (Any, None) for item in items},  # type: ignore
+                )
+            else:
+                return create_model("RunnableLambdaInput", __root__=(List[Any], None))
+
+        return super().input_schema
+
+    @property
     def OutputType(self) -> Any:
         func = getattr(self, "func", None) or getattr(self, "afunc")
         try:
@@ -2161,8 +2214,20 @@ class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
         return List[self.bound.InputType]  # type: ignore[name-defined]
 
     @property
+    def input_schema(self) -> type[BaseModel]:
+        return create_model(
+            "RunnableEachInput", __root__=(List[self.bound.input_schema], None)
+        )
+
+    @property
     def OutputType(self) -> type[List[Output]]:
         return List[self.bound.OutputType]  # type: ignore[name-defined]
+
+    @property
+    def output_schema(self) -> type[BaseModel]:
+        return create_model(
+            "RunnableEachOutput", __root__=(List[self.bound.output_schema], None)
+        )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -2227,6 +2292,14 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     @property
     def OutputType(self) -> type[Output]:
         return self.bound.OutputType
+
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        return self.bound.input_schema
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        return self.bound.output_schema
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
