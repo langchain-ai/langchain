@@ -327,6 +327,7 @@ extended_testing = [
  "gql",
  "requests-toolbelt",
  "html2text",
+ "numexpr",
  "py-trello",
  "scikit-learn",
  "streamlit",
