@@ -41,7 +41,7 @@ class WebBaseLoader(BaseLoader):
 
     def __init__(
         self,
-        web_path: str = "",
+        web_path: Union[str, Sequence[str]] = "",
         web_paths: Sequence[str] = (),
         requests_per_second: int = 2,
         default_parser: str = "html.parser",
@@ -68,17 +68,18 @@ class WebBaseLoader(BaseLoader):
             bs_get_text_kwargs: kwargs for beatifulsoup4 get_text
             bs_kwargs: kwargs for beatifulsoup4 web page parsing
         """
+        # web_path kept for backwards-compatibility.
         if web_path and web_paths:
             raise ValueError(
                 "Received web_path and web_paths. Only one can be specified. "
                 "web_path is deprecated, web_paths should be used."
             )
-        if web_path:
-            logger.warning(
-                "web_path: str init param is deprecated, please use web_paths: "
-                "Sequence[str]."
-            )
-        self.web_paths = list(web_paths) or [web_path]
+        if web_paths:
+            self.web_paths = list(web_paths)
+        elif isinstance(web_path, Sequence):
+            self.web_paths = list(web_path)
+        else:
+            self.web_paths = [web_path]
         self.requests_per_second = requests_per_second
         self.default_parser = default_parser
         self.requests_kwargs = requests_kwargs or {}
