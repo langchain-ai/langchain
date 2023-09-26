@@ -20,13 +20,13 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
     A runnable that passes through the input.
     """
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
-    @property
-    def lc_namespace(self) -> List[str]:
-        return self.__class__.__module__.split(".")[:-1]
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        return cls.__module__.split(".")[:-1]
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
         return self._call_with_config(identity, input, config)
