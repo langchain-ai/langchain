@@ -1,11 +1,11 @@
 from typing import Any, Dict, Optional, Type, Union
 
-from langchain import BasePromptTemplate, PromptTemplate
 from langchain.chains.data_generation.base import SyntheticDataGenerator
 from langchain.chains.openai_functions import create_structured_output_chain
 from langchain.chat_models import ChatOpenAI
+from langchain.prompts import PromptTemplate
 from langchain.pydantic_v1 import BaseModel
-from langchain.schema import BaseLLMOutputParser
+from langchain.schema import BaseLLMOutputParser, BasePromptTemplate
 
 OPENAI_TEMPLATE = PromptTemplate(input_variables=["example"], template="{example}")
 
