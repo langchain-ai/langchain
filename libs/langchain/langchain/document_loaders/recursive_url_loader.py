@@ -6,14 +6,13 @@ import re
 from typing import (
     TYPE_CHECKING,
     Callable,
+    Iterable,
     Iterator,
     List,
     Optional,
-    Sequence,
     Set,
     Union,
 )
-from urllib.parse import urljoin, urlparse
 
 import requests
 
