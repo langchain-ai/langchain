@@ -893,6 +893,20 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
         """The namespace of a RunnableBranch is the namespace of its default branch."""
         return cls.__module__.split(".")[:-1]
 
+    @property
+    def input_schema(self) -> type[BaseModel]:
+        runnables = (
+            [self.default]
+            + [r for _, r in self.branches]
+            + [r for r, _ in self.branches]
+        )
+
+        for runnable in runnables:
+            if runnable.input_schema.schema().get("type") is not None:
+                return runnable.input_schema
+
+        return super().input_schema
+
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         """First evaluates the condition, then delegate to true or false branch."""
         config = ensure_config(config)

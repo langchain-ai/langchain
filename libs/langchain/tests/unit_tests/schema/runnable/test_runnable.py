@@ -12,6 +12,8 @@ from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.callbacks.tracers.schemas import Run
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
+from langchain.chains.question_answering import load_qa_chain
+from langchain.chains.summarize import load_summarize_chain
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
@@ -116,7 +118,7 @@ class FakeRetriever(BaseRetriever):
         return [Document(page_content="foo"), Document(page_content="bar")]
 
 
-def test_schemas() -> None:
+def test_schemas(snapshot: SnapshotAssertion) -> None:
     fake = FakeRunnable()  # str -> int
 
     assert fake.input_schema.schema() == {
@@ -198,46 +200,7 @@ def test_schemas() -> None:
 
     fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
 
-    assert fake_llm.input_schema.schema() == {
-        "definitions": {
-            "BaseMessage": {
-                "description": "The base abstract Message "
-                "class.\n"
-                "\n"
-                "Messages are the inputs and "
-                "outputs of ChatModels.",
-                "properties": {
-                    "additional_kwargs": {
-                        "title": "Additional " "Kwargs",
-                        "type": "object",
-                    },
-                    "content": {"title": "Content", "type": "string"},
-                },
-                "required": ["content"],
-                "title": "BaseMessage",
-                "type": "object",
-            },
-            "PromptValue": {
-                "description": "Base abstract class for "
-                "inputs to any language "
-                "model.\n"
-                "\n"
-                "PromptValues can be converted "
-                "to both LLM (pure "
-                "text-generation) inputs and\n"
-                "    ChatModel inputs.",
-                "properties": {},
-                "title": "PromptValue",
-                "type": "object",
-            },
-        },
-        "anyOf": [
-            {"$ref": "#/definitions/PromptValue"},
-            {"type": "string"},
-            {"items": {"$ref": "#/definitions/BaseMessage"}, "type": "array"},
-        ],
-        "title": "FakeListLLMInput",
-    }
+    assert fake_llm.input_schema.schema() == snapshot
     assert fake_llm.output_schema.schema() == {
         "title": "FakeListLLMOutput",
         "type": "string",
@@ -245,59 +208,8 @@ def test_schemas() -> None:
 
     fake_chat = FakeListChatModel(responses=["a"])  # str -> List[List[str]]
 
-    assert fake_chat.input_schema.schema() == {
-        "definitions": {
-            "BaseMessage": {
-                "description": "The base abstract Message "
-                "class.\n"
-                "\n"
-                "Messages are the inputs and "
-                "outputs of ChatModels.",
-                "properties": {
-                    "additional_kwargs": {
-                        "title": "Additional " "Kwargs",
-                        "type": "object",
-                    },
-                    "content": {"title": "Content", "type": "string"},
-                },
-                "required": ["content"],
-                "title": "BaseMessage",
-                "type": "object",
-            },
-            "PromptValue": {
-                "description": "Base abstract class for "
-                "inputs to any language "
-                "model.\n"
-                "\n"
-                "PromptValues can be converted "
-                "to both LLM (pure "
-                "text-generation) inputs and\n"
-                "    ChatModel inputs.",
-                "properties": {},
-                "title": "PromptValue",
-                "type": "object",
-            },
-        },
-        "anyOf": [
-            {"$ref": "#/definitions/PromptValue"},
-            {"type": "string"},
-            {"items": {"$ref": "#/definitions/BaseMessage"}, "type": "array"},
-        ],
-        "title": "FakeListChatModelInput",
-    }
-    assert fake_chat.output_schema.schema() == {
-        "title": "BaseMessageChunk",
-        "description": "A Message chunk, which can be concatenated with other Message chunks.",  # noqa: E501
-        "type": "object",
-        "properties": {
-            "content": {"title": "Content", "type": "string"},
-            "additional_kwargs": {
-                "title": "Additional Kwargs",
-                "type": "object",
-            },
-        },
-        "required": ["content"],
-    }
+    assert fake_chat.input_schema.schema() == snapshot
+    assert fake_chat.output_schema.schema() == snapshot
 
     prompt = PromptTemplate.from_template("Hello, {name}!")
 
@@ -306,19 +218,7 @@ def test_schemas() -> None:
         "type": "object",
         "properties": {"name": {"title": "Name"}},
     }
-    assert prompt.output_schema.schema() == {
-        "description": "Base abstract class for "
-        "inputs to any language "
-        "model.\n"
-        "\n"
-        "PromptValues can be converted "
-        "to both LLM (pure "
-        "text-generation) inputs and\n"
-        "    ChatModel inputs.",
-        "properties": {},
-        "title": "PromptValue",
-        "type": "object",
-    }
+    assert prompt.output_schema.schema() == snapshot
 
     prompt_mapper = PromptTemplate.from_template("Hello, {name}!").map()
 
@@ -334,48 +234,11 @@ def test_schemas() -> None:
         "type": "array",
         "title": "RunnableEachInput",
     }
-    assert prompt_mapper.output_schema.schema() == {
-        "definitions": {
-            "PromptValue": {
-                "description": "Base abstract class for "
-                "inputs to any language "
-                "model.\n"
-                "\n"
-                "PromptValues can be converted "
-                "to both LLM (pure "
-                "text-generation) inputs and\n"
-                "    ChatModel inputs.",
-                "properties": {},
-                "title": "PromptValue",
-                "type": "object",
-            }
-        },
-        "items": {"$ref": "#/definitions/PromptValue"},
-        "type": "array",
-        "title": "RunnableEachOutput",
-    }
+    assert prompt_mapper.output_schema.schema() == snapshot
 
     list_parser = CommaSeparatedListOutputParser()
 
-    assert list_parser.input_schema.schema() == {
-        "title": "CommaSeparatedListOutputParserInput",
-        "anyOf": [{"type": "string"}, {"$ref": "#/definitions/BaseMessage"}],
-        "definitions": {
-            "BaseMessage": {
-                "title": "BaseMessage",
-                "description": "The base abstract Message class.\n\nMessages are the inputs and outputs of ChatModels.",  # noqa: E501
-                "type": "object",
-                "properties": {
-                    "content": {"title": "Content", "type": "string"},
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                },
-                "required": ["content"],
-            }
-        },
-    }
+    assert list_parser.input_schema.schema() == snapshot
     assert list_parser.output_schema.schema() == {
         "title": "CommaSeparatedListOutputParserOutput",
         "type": "array",
@@ -485,6 +348,115 @@ def test_schema_complex_seq() -> None:
     assert chain2.output_schema.schema() == {
         "title": "StrOutputParserOutput",
         "type": "string",
+    }
+
+
+def test_schema_chains() -> None:
+    model = FakeListChatModel(responses=[""])
+
+    stuff_chain = load_summarize_chain(model)
+
+    assert stuff_chain.input_schema.schema() == {
+        "title": "CombineDocumentsInput",
+        "type": "object",
+        "properties": {
+            "input_documents": {
+                "title": "Input Documents",
+                "type": "array",
+                "items": {"$ref": "#/definitions/Document"},
+            }
+        },
+        "definitions": {
+            "Document": {
+                "title": "Document",
+                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "page_content": {"title": "Page Content", "type": "string"},
+                    "metadata": {"title": "Metadata", "type": "object"},
+                },
+                "required": ["page_content"],
+            }
+        },
+    }
+    assert stuff_chain.output_schema.schema() == {
+        "title": "CombineDocumentsOutput",
+        "type": "object",
+        "properties": {"output_text": {"title": "Output Text", "type": "string"}},
+    }
+
+    mapreduce_chain = load_summarize_chain(
+        model, "map_reduce", return_intermediate_steps=True
+    )
+
+    assert mapreduce_chain.input_schema.schema() == {
+        "title": "CombineDocumentsInput",
+        "type": "object",
+        "properties": {
+            "input_documents": {
+                "title": "Input Documents",
+                "type": "array",
+                "items": {"$ref": "#/definitions/Document"},
+            }
+        },
+        "definitions": {
+            "Document": {
+                "title": "Document",
+                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "page_content": {"title": "Page Content", "type": "string"},
+                    "metadata": {"title": "Metadata", "type": "object"},
+                },
+                "required": ["page_content"],
+            }
+        },
+    }
+    assert mapreduce_chain.output_schema.schema() == {
+        "title": "MapReduceDocumentsOutput",
+        "type": "object",
+        "properties": {
+            "output_text": {"title": "Output Text", "type": "string"},
+            "intermediate_steps": {
+                "title": "Intermediate Steps",
+                "type": "array",
+                "items": {"type": "string"},
+            },
+        },
+    }
+
+    maprerank_chain = load_qa_chain(model, "map_rerank", metadata_keys=["hello"])
+
+    assert maprerank_chain.input_schema.schema() == {
+        "title": "CombineDocumentsInput",
+        "type": "object",
+        "properties": {
+            "input_documents": {
+                "title": "Input Documents",
+                "type": "array",
+                "items": {"$ref": "#/definitions/Document"},
+            }
+        },
+        "definitions": {
+            "Document": {
+                "title": "Document",
+                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "page_content": {"title": "Page Content", "type": "string"},
+                    "metadata": {"title": "Metadata", "type": "object"},
+                },
+                "required": ["page_content"],
+            }
+        },
+    }
+    assert maprerank_chain.output_schema.schema() == {
+        "title": "MapRerankOutput",
+        "type": "object",
+        "properties": {
+            "output_text": {"title": "Output Text", "type": "string"},
+            "hello": {"title": "Hello"},
+        },
     }
 
 
@@ -2533,6 +2505,7 @@ def test_runnable_branch_init_coercion(branches: Sequence[Any]) -> None:
         assert isinstance(body, Runnable)
 
     assert isinstance(runnable.default, Runnable)
+    assert runnable.input_schema.schema() == {"title": "RunnableBranchInput"}
 
 
 def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:

@@ -17,7 +17,7 @@ from typing import (
 from typing_extensions import get_args
 
 from langchain.load.serializable import Serializable
-from langchain.schema.messages import BaseMessage
+from langchain.schema.messages import AnyMessage, BaseMessage
 from langchain.schema.output import ChatGeneration, Generation
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable, RunnableConfig
@@ -62,7 +62,7 @@ class BaseGenerationOutputParser(
 
     @property
     def InputType(self) -> Any:
-        return Union[str, BaseMessage]
+        return Union[str, AnyMessage]
 
     @property
     def OutputType(self) -> type[T]:
@@ -143,7 +143,7 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
 
     @property
     def InputType(self) -> Any:
-        return Union[str, BaseMessage]
+        return Union[str, AnyMessage]
 
     @property
     def OutputType(self) -> type[T]:

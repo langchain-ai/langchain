@@ -16,7 +16,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 from langchain.load.serializable import Serializable
-from langchain.schema.messages import BaseMessage, get_buffer_string
+from langchain.schema.messages import AnyMessage, BaseMessage, get_buffer_string
 from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable
@@ -75,7 +75,17 @@ class BaseLanguageModel(
     @property
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
-        return LanguageModelInput
+        from langchain.prompts.base import StringPromptValue
+        from langchain.prompts.chat import ChatPromptValueConcrete
+
+        # This is a version of LanguageModelInput which replaces the abstract
+        # base class BaseMessage with a union of its subclasses, which makes
+        # for a much better schema.
+        return Union[
+            str,
+            Union[StringPromptValue, ChatPromptValueConcrete],
+            List[AnyMessage],
+        ]
 
     @abstractmethod
     def generate_prompt(

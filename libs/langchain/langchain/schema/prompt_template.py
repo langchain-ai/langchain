@@ -37,6 +37,13 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
         arbitrary_types_allowed = True
 
     @property
+    def OutputType(self) -> Any:
+        from langchain.prompts.base import StringPromptValue
+        from langchain.prompts.chat import ChatPromptValueConcrete
+
+        return Union[StringPromptValue, ChatPromptValueConcrete]
+
+    @property
     def input_schema(self) -> type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
