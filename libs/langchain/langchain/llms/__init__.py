@@ -43,6 +43,7 @@ from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.deepsparse import DeepSparse
 from langchain.llms.edenai import EdenAI
+from langchain.llms.erniebot import ERNIEBot
 from langchain.llms.fake import FakeListLLM
 from langchain.llms.fireworks import Fireworks, FireworksChat
 from langchain.llms.forefrontai import ForefrontAI
@@ -166,6 +167,7 @@ __all__ = [
     "Xinference",
     "JavelinAIGateway",
     "QianfanLLMEndpoint",
+    "ERNIEBot",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -237,4 +239,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "xinference": Xinference,
     "javelin-ai-gateway": JavelinAIGateway,
     "qianfan_endpoint": QianfanLLMEndpoint,
+    "erniebot": ERNIEBot,
 }
