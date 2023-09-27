@@ -1,5 +1,4 @@
 import pytest
-from langchain.pydantic_v1 import BaseModel
 
 from langchain import FewShotPromptTemplate
 from langchain.chains.data_generation.base import SyntheticDataGenerator
@@ -12,6 +11,7 @@ from langchain.chains.data_generation.prompts import (
     SYNTHETIC_FEW_SHOT_SUFFIX,
 )
 from langchain.chat_models import ChatOpenAI
+from langchain.pydantic_v1 import BaseModel
 
 
 # Define the desired output schema for individual medical billing record
