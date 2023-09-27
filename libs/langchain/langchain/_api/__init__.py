@@ -13,6 +13,7 @@ from .deprecation import (
     LangChainDeprecationWarning,
     deprecated,
     suppress_langchain_deprecation_warning,
+    surface_langchain_deprecation_warnings,
     warn_deprecated,
 )
 
@@ -20,5 +21,6 @@ __all__ = [
     "deprecated",
     "LangChainDeprecationWarning",
     "suppress_langchain_deprecation_warning",
+    "surface_langchain_deprecation_warnings",
     "warn_deprecated",
 ]

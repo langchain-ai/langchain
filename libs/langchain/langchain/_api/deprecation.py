@@ -21,6 +21,10 @@ class LangChainDeprecationWarning(DeprecationWarning):
     """A class for issuing deprecation warnings for LangChain users."""
 
 
+class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
+    """A class for issuing deprecation warnings for LangChain users."""
+
+
 # PUBLIC API
 
 
@@ -238,6 +242,7 @@ def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
     """Context manager to suppress LangChainDeprecationWarning."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", LangChainDeprecationWarning)
+        warnings.simplefilter("ignore", LangChainPendingDeprecationWarning)
         yield
 
 
@@ -316,6 +321,21 @@ def warn_deprecated(
         if addendum:
             message += f" {addendum}"
 
-    warning_cls = PendingDeprecationWarning if pending else LangChainDeprecationWarning
+    warning_cls = (
+        LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
+    )
     warning = warning_cls(message)
     warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=2)
+
+
+def surface_langchain_deprecation_warnings() -> None:
+    """Unmute LangChain deprecation warnings."""
+    warnings.filterwarnings(
+        "default",
+        category=LangChainPendingDeprecationWarning,
+    )
+
+    warnings.filterwarnings(
+        "default",
+        category=LangChainDeprecationWarning,
+    )
