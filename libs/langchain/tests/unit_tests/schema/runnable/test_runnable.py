@@ -141,9 +141,24 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "type": "integer",
     }
 
-    untyped_lambda = RunnableLambda(lambda x: x)  # Any -> Any
+    fake_w_fallbacks = FakeRunnable().with_fallbacks((fake,))  # str -> int
 
-    assert untyped_lambda.input_schema.schema() == {"title": "RunnableLambdaInput"}
+    assert fake_w_fallbacks.input_schema.schema() == {
+        "title": "FakeRunnableInput",
+        "type": "string",
+    }
+    assert fake_w_fallbacks.output_schema.schema() == {
+        "title": "FakeRunnableOutput",
+        "type": "integer",
+    }
+
+    untyped_lambda = RunnableLambda(lambda x: x["hello"])  # {"hello": Any} -> Any
+
+    assert untyped_lambda.input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"hello": {"title": "Hello"}},
+    }
     assert untyped_lambda.output_schema.schema() == {"title": "RunnableLambdaOutput"}
 
     def typed_lambda_impl(x: str) -> int:
@@ -316,6 +331,58 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     }
     assert json_list_keys_tool.output_schema.schema() == {
         "title": "JsonListKeysToolOutput"
+    }
+
+
+def test_lambda_schemas() -> None:
+    first_lambda = lambda x: x["hello"]  # noqa: E731
+    assert RunnableLambda(first_lambda).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"hello": {"title": "Hello"}},
+    }
+
+    second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
+    assert RunnableLambda(
+        second_lambda,  # type: ignore[arg-type]
+    ).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
+    }
+
+    def get_value(input):  # type: ignore[no-untyped-def]
+        return input["variable_name"]
+
+    assert RunnableLambda(get_value).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"variable_name": {"title": "Variable Name"}},
+    }
+
+    async def aget_value(input):  # type: ignore[no-untyped-def]
+        return input["variable_name"]
+
+    assert RunnableLambda(aget_value).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"variable_name": {"title": "Variable Name"}},
+    }
+
+    async def aget_values(input):  # type: ignore[no-untyped-def]
+        return {
+            "hello": input["variable_name"],
+            "bye": input["variable_name"],
+            "byebye": input["yo"],
+        }
+
+    assert RunnableLambda(aget_values).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {
+            "variable_name": {"title": "Variable Name"},
+            "yo": {"title": "Yo"},
+        },
     }
 
 

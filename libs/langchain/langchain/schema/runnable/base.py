@@ -59,6 +59,7 @@ from langchain.schema.runnable.utils import (
     accepts_config,
     accepts_run_manager,
     gather_with_concurrency,
+    get_function_first_arg_dict_keys,
 )
 from langchain.utils.aiter import atee, py_anext
 from langchain.utils.iter import safetee
@@ -1010,12 +1011,20 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         arbitrary_types_allowed = True
 
     @property
-    def InputType(self) -> type[Input]:
+    def InputType(self) -> Type[Input]:
         return self.runnable.InputType
 
     @property
-    def OutputType(self) -> type[Output]:
+    def OutputType(self) -> Type[Output]:
         return self.runnable.OutputType
+
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        return self.runnable.input_schema
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        return self.runnable.output_schema
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -2069,6 +2078,7 @@ class RunnableLambda(Runnable[Input, Output]):
     @property
     def input_schema(self) -> Type[BaseModel]:
         func = getattr(self, "func", None) or getattr(self, "afunc")
+
         if isinstance(func, itemgetter):
             # This is terrible, but afaict it's not possible to access _items
             # on itemgetter objects, so we have to parse the repr
@@ -2083,6 +2093,12 @@ class RunnableLambda(Runnable[Input, Output]):
                 )
             else:
                 return create_model("RunnableLambdaInput", __root__=(List[Any], None))
+
+        if dict_keys := get_function_first_arg_dict_keys(func):
+            return create_model(
+                "RunnableLambdaInput",
+                **{key: (Any, None) for key in dict_keys},  # type: ignore
+            )
 
         return super().input_schema
 
