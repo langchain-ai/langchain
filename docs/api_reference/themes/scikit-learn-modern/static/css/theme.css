@@ -745,6 +745,11 @@ span.descname {
   background-color: transparent;
   padding: 0;
   font-family: monospace;
+  font-size: 1.2rem;
+}
+
+em.property {
+  font-weight: normal;
 }
 
 span.descclassname {
