@@ -145,7 +145,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs = {"function_call": dict(_dict["function_call"])}
         else:
             additional_kwargs = {}
-        return AIMessage(content=eval(content), additional_kwargs=additional_kwargs)
+        return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
     elif role == "function":
@@ -228,6 +228,11 @@ class ChatChatGLM(BaseChatModel):
     chatglm_organization: Optional[str] = None
     # to support explicit proxy for ChatGLM
     chatglm_proxy: Optional[str] = None
+    return_type: Optional[str] = "text"
+    """Used to control the type of content returned each time, 
+    if empty or absent this field is returned by default according to the text
+    - json_string Returns a standard JSON string
+    - text Returns the original text content"""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to ChatGLM completion API. Default is 600 seconds."""
     max_retries: int = 6
@@ -337,6 +342,7 @@ class ChatChatGLM(BaseChatModel):
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            "return_type": self.return_type,
             **self.model_kwargs,
         }
 

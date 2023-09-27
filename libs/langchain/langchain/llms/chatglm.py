@@ -40,6 +40,11 @@ class ChatGLM(LLM):
     """Top P for nucleus sampling from 0 to 1"""
     with_history: bool = False
     """Whether to use history or not"""
+    return_type: Optional[str] = "text"
+    """Used to control the type of content returned each time, 
+    if empty or absent this field is returned by default according to the text
+    - json_string Returns a standard JSON string
+    - text Returns the original text content"""
 
     @property
     def _llm_type(self) -> str:
@@ -100,6 +105,7 @@ class ChatGLM(LLM):
             "history": self.history,
             "max_length": self.max_token,
             "top_p": self.top_p,
+            "return_type": self.return_type,
         }
         payload.update(_model_kwargs)
         payload.update(kwargs)
@@ -123,7 +129,7 @@ class ChatGLM(LLM):
             if isinstance(parsed_response, dict):
                 content_keys = "data"
                 if content_keys in parsed_response:
-                    text = eval(parsed_response[content_keys]["choices"][0]["content"])
+                    text = parsed_response[content_keys]["choices"][0]["content"]
                 else:
                     raise ValueError(f"No content in response : {parsed_response}")
             else:
