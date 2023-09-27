@@ -10,9 +10,13 @@ from langchain_experimental.llm_symbolic_math.prompt import (
 )
 from tests.unit_tests.fake_llm import FakeLLM
 
+try:
+    import sympy
+except ImportError:
+    pytest.skip("sympy not installed", allow_module_level=True)
+
 
 @pytest.fixture
-@pytest.mark.requires("sympy")
 def fake_llm_symbolic_math_chain() -> LLMSymbolicMathChain:
     """Fake LLM Math chain for testing."""
     queries = {
@@ -35,7 +39,6 @@ def fake_llm_symbolic_math_chain() -> LLMSymbolicMathChain:
     return LLMSymbolicMathChain.from_llm(fake_llm, input_key="q", output_key="a")
 
 
-@pytest.mark.requires("sympy")
 def test_simple_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     """Test simple question that should not need python."""
     question = "What is 1 plus 1?"
@@ -43,7 +46,6 @@ def test_simple_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> 
     assert output == "Answer: 2"
 
 
-@pytest.mark.requires("sympy")
 def test_root_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     """Test irrational number that should need sympy."""
     import sympy
@@ -53,7 +55,6 @@ def test_root_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> No
     assert output == f"Answer: {sympy.sqrt(2)}"
 
 
-@pytest.mark.requires("sympy")
 def test_limit_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     """Test question about limits that needs sympy"""
     question = "What is the limit of sin(x) / x as x goes to 0?"
@@ -61,7 +62,6 @@ def test_limit_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> N
     assert output == "Answer: 1"
 
 
-@pytest.mark.requires("sympy")
 def test_integration_question(
     fake_llm_symbolic_math_chain: LLMSymbolicMathChain,
 ) -> None:
@@ -71,7 +71,6 @@ def test_integration_question(
     assert output == "Answer: 1"
 
 
-@pytest.mark.requires("sympy")
 def test_solver_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     """Test question about solving algebraic equations that needs sympy"""
     question = "What are the solutions to this equation x**2 - x?"
@@ -79,7 +78,6 @@ def test_solver_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> 
     assert output == "Answer: {0, 1}"
 
 
-@pytest.mark.requires("sympy")
 def test_error(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     """Test question that raises error."""
     with pytest.raises(ValueError):
