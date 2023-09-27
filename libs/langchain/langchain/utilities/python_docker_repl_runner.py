@@ -5,15 +5,15 @@ You should not run it for other purposes than testing.
 # it is based only on python standard library and pydantic as other dependencies
 # are not available in the container. See python_docker_repl.py for more info
 # and check _get_dockerfile_content() function.
+
 import ast
 import http.server
+import json
 import sys
 from contextlib import redirect_stdout
 from enum import Enum
 from io import StringIO
-from typing import Dict, Optional, Union
-
-from pydantic import BaseModel, ValidationError
+from typing import Any, Dict, Optional
 
 
 class CommandName(Enum):
@@ -21,34 +21,8 @@ class CommandName(Enum):
     QUIT = "quit"
 
 
-class Cmd(BaseModel):
-    cmd: CommandName
-
-    class Config:
-        extra = "forbid"
-
-
-class Code(BaseModel):
-    code: str
-    use_ast: bool = False
-
-    class Config:
-        extra = "forbid"
-
-
-class InputMessage(BaseModel):
-    __root__: Union[Code, Cmd]
-
-
-class OutputMessage(BaseModel):
-    result: str
-
-    class Config:
-        extra = "forbid"
-
-
-REPL_GLOBALS = {}
-REPL_LOCALS = {}
+REPL_GLOBALS: Dict[str, Any] = {}
+REPL_LOCALS: Dict[str, Any] = {}
 
 
 def _run_ast(
@@ -109,58 +83,63 @@ class PythonREPLService(http.server.BaseHTTPRequestHandler):
     NOTE: this object is created for each request so it is stateless.
     """
 
-    def do_GET(self):
+    def do_GET(self) -> None:
         self.send_response(200, "OK")
         self.end_headers()
         self.wfile.write(b"Hello! I am a python REPL server.")
 
-    def do_POST(self):
+    def do_POST(self) -> None:
         length = int(self.headers.get("content-length"))
         data = self.rfile.read(length)
 
         try:
-            cmd = InputMessage.parse_raw(data)
-        except ValidationError as exc:
+            cmd_json = json.loads(data)
+        except json.JSONDecodeError as exc:
             self.send_response(400, "Bad Request")
             self.end_headers()
-            self.wfile.write(exc.json().encode("utf-8"))
+            self.wfile.write(f"Failed to parse input: {exc}".encode("utf-8"))
             self.close_connection = True
             return
 
-        cmd = cmd.__root__
         global REPL_LOCALS
         global REPL_GLOBALS
-        if isinstance(cmd, Cmd):
-            if cmd.cmd == CommandName.QUIT:
+
+        if "cmd" in cmd_json:
+            if cmd_json["cmd"] not in CommandName._value2member_map_:
+                self.send_response(400, "Bad Request")
+                self.end_headers()
+                self.wfile.write(b"Invalid command provided.")
+                self.close_connection = True
+                return
+
+            if cmd_json["cmd"] == CommandName.QUIT.value:
                 self.send_response(200, "OK")
                 self.end_headers()
                 self.wfile.write(b"")
-                # to kill, we send CTRL_C_EVENT to our own process.
                 import os
                 import signal
 
                 os.kill(os.getpid(), signal.CTRL_C_EVENT)
-            elif cmd.cmd == CommandName.RESET:
+
+            elif cmd_json["cmd"] == CommandName.RESET.value:
                 REPL_GLOBALS = {}
                 REPL_LOCALS = {}
                 self.send_response(200, "OK")
                 self.end_headers()
                 self.wfile.write(b"")
-        elif isinstance(cmd, Code):
-            executor = run_ast if cmd.use_ast else run_code
-            # NOTE: we only pass globals, otherwise for example code like this:
-            # def f():
-            #    return 42
-            # print(f())
-            # would not work.
-            result = str(executor(cmd.code, REPL_GLOBALS))
+
+        elif "code" in cmd_json:
+            use_ast = cmd_json.get("use_ast", False)
+            executor = run_ast if use_ast else run_code
+            result = str(executor(cmd_json["code"], REPL_GLOBALS))
             self.send_response(200, "OK")
             self.end_headers()
-            self.wfile.write(OutputMessage(result=result).json().encode("utf-8"))
+            self.wfile.write(json.dumps({"result": result}).encode("utf-8"))
+
         else:
             self.send_response(400, "Bad Request")
             self.end_headers()
-            self.wfile.write(b"Failed to parse input.")
+            self.wfile.write(b"Invalid input format.")
 
 
 def run_server() -> None:

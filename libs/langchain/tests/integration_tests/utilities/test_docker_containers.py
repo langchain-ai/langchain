@@ -36,7 +36,7 @@ def run_container_cowsay(image: DockerImage) -> None:
         assert ret_code == 0
         assert log.find(b"I like langchain") >= 0, "Cowsay should say same words"
     finally:
-        DockerImage.remove(image)
+        DockerImage.remove(image.name)
 
 
 @pytest.mark.requires("docker")

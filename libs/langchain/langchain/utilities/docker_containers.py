@@ -231,7 +231,7 @@ class DockerContainer:
             self.unsafe_exit()
             return True
 
-    def unsafe_exit(self):
+    def unsafe_exit(self) -> None:
         """Cleanup container on exit. Please prefer to use `with` statement."""
         if self._container is None:
             return

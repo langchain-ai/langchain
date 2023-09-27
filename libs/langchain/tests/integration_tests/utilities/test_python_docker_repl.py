@@ -10,7 +10,7 @@ def test_python_container_repl_can_be_started() -> None:
     del repl
 
 
-def test_python_container_repl_works():
+def test_python_container_repl_works() -> None:
     repl = PythonContainerREPL(port=7121)
     out1 = repl.exec("x = [1, 2, 3]")
     assert out1 == ""

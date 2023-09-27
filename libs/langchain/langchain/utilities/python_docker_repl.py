@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import requests
 
@@ -63,7 +63,7 @@ class PythonContainerREPL:
         port: int = 7123,
         image: Optional[DockerImage] = None,
         base_image: str = "python:3.11-alpine3.18",
-        **kwargs,
+        **kwargs: Dict[str, Any],
     ) -> None:
         """Starts docker container with python REPL server and wait till it
         gets operational.
