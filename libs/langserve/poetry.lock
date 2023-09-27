@@ -1630,7 +1630,7 @@ test = ["hatch", "ipykernel", "openapi-core (>=0.18.0,<0.19.0)", "openapi-spec-v
 
 [[package]]
 name = "langchain"
-version = "0.0.301"
+version = "0.0.303"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1670,7 +1670,7 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 type = "git"
 url = "https://github.com/langchain-ai/langchain"
 reference = "HEAD"
-resolved_reference = "89ef440c14634e74bae069925ef75d3ff4b12445"
+resolved_reference = "410ac8129d0249e78f2dc389c46c5ed5a3067da3"
 subdirectory = "libs/langchain"
 
 [[package]]
