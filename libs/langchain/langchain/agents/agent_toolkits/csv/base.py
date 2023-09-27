@@ -24,7 +24,7 @@ def create_csv_agent(
     if isinstance(path, (str, IOBase)):
         df = pd.read_csv(path, **_kwargs)
     elif isinstance(path, list):
-        if not all(isinstance(item, str) for item in path):
+        if not all(isinstance(item, (str, IOBase)) for item in path):
             raise ValueError(
                 f"Expected all elements in the list to be strings, got {type(path)}."
             )
