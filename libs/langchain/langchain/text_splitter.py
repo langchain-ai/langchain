@@ -99,7 +99,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
         keep_separator: bool = False,
-        add_start_index: bool = False,
+        add_start_index: bool = True,
         strip_whitespace: bool = True,
     ) -> None:
         """Create a new TextSplitter.

@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import uuid
 from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence
-
-NAMESPACE_UUID = uuid.UUID(int=1984)
 
 
 class RecordManager(ABC):

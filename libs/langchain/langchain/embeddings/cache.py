@@ -8,7 +8,6 @@ The text is hashed and the hash is used as the key in the cache.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import uuid
 from functools import partial
@@ -17,19 +16,14 @@ from typing import Callable, List, Sequence, Union, cast
 from langchain.schema import BaseStore
 from langchain.schema.embeddings import Embeddings
 from langchain.storage.encoder_backed import EncoderBackedStore
+from langchain.utils.hash import hash_string_to_uuid
 
 NAMESPACE_UUID = uuid.UUID(int=1985)
 
 
-def _hash_string_to_uuid(input_string: str) -> uuid.UUID:
-    """Hash a string and returns the corresponding UUID."""
-    hash_value = hashlib.sha1(input_string.encode("utf-8")).hexdigest()
-    return uuid.uuid5(NAMESPACE_UUID, hash_value)
-
-
 def _key_encoder(key: str, namespace: str) -> str:
     """Encode a key."""
-    return namespace + str(_hash_string_to_uuid(key))
+    return namespace + str(hash_string_to_uuid(key, NAMESPACE_UUID))
 
 
 def _create_key_encoder(namespace: str) -> Callable[[str], str]:
