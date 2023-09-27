@@ -59,7 +59,7 @@ class ReadTheDocsLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
         docs = []
-        for p in self.file_path.rglob("*"):
+        for p in self.file_path.rglob("*.html"):
             if p.is_dir():
                 continue
             with open(p, encoding=self.encoding, errors=self.errors) as f:
