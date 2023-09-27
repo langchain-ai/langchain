@@ -132,7 +132,6 @@ sqlite-vss = {version = "^0.1.2", optional = true}
 anyio = "<4.0"
 jsonpatch = "^1.33"
 timescale-vector = {version = "^0.0.1", optional = true}
-fireworks-ai = {version = "^0.4.1", optional = true, python = ">=3.9"}
 
 
 [tool.poetry.group.test.dependencies]
