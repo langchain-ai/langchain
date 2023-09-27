@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Un
 import requests
 from requests import Response
 
-from langchain import LLMChain
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
 from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser

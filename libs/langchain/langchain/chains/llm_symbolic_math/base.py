@@ -22,7 +22,8 @@ class LLMSymbolicMathChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import LLMSymbolicMathChain, OpenAI
+            from langchain.chains import LLMSymbolicMathChain
+            from langchain.llms import OpenAI
             llm_symbolic_math = LLMSymbolicMathChain.from_llm(OpenAI())
     """
 

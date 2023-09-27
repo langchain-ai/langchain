@@ -334,9 +334,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         # Pop current run from `self.runs`
         self.payload.pop(run_id)
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when LLM outputs an error."""
         pass
 
@@ -348,9 +346,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         pass
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when LLM chain outputs an error."""
         pass
 
@@ -377,9 +373,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         """Do nothing when tool ends."""
         pass
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when tool outputs an error."""
         pass
 
