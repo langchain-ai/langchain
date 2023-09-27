@@ -126,9 +126,6 @@ class RecursiveUrlLoader(BaseLoader):
 
         if depth >= self.max_depth:
             return
-        # Exclude the links that start with any of the excluded directories
-        if any(url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs):
-            return
 
         # Get all links that can be accessed from the current URL
         visited.add(url)
@@ -233,6 +230,7 @@ class RecursiveUrlLoader(BaseLoader):
                 base_url=self.url,
                 pattern=self.link_regex,
                 prevent_outside=self.prevent_outside,
+                exclude_prefixes=self.exclude_dirs,
             )
 
             # Recursively call the function to get the children of the children

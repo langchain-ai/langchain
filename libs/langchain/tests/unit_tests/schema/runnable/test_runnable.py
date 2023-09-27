@@ -379,7 +379,7 @@ async def test_prompt() -> None:
     assert stream_log[0].ops[0]["value"]["logs"] == []
     assert stream_log[0].ops[0]["value"]["final_output"] is None
     assert stream_log[0].ops[0]["value"]["streamed_output"] == []
-    assert type(stream_log[0].ops[0]["value"]["id"]) == UUID
+    assert type(stream_log[0].ops[0]["value"]["id"]) == str
 
     assert stream_log[1:] == [
         RunLogPatch(
@@ -1414,7 +1414,7 @@ async def test_map_astream() -> None:
 
     assert final_state.state["final_output"] == final_value
     assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
-    assert isinstance(final_state.state["id"], UUID)
+    assert type(final_state.state["id"]) == str
     assert len(final_state.ops) == len(streamed_ops)
     assert len(final_state.state["logs"]) == 5
     assert final_state.state["logs"][0]["name"] == "ChatPromptTemplate"

@@ -1,12 +1,20 @@
 """Base classes for comparing the output of two models."""
 from __future__ import annotations
 
+import logging
+import re
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
-from langchain.evaluation.comparison.prompt import PROMPT, PROMPT_WITH_REFERENCE
+from langchain.chat_models.azure_openai import AzureChatOpenAI
+from langchain.chat_models.openai import ChatOpenAI
+from langchain.evaluation.comparison.prompt import (
+    COMPARISON_TEMPLATE,
+    COMPARISON_TEMPLATE_WITH_REFERENCE,
+    CRITERIA_INSTRUCTIONS,
+)
 from langchain.evaluation.criteria.eval_chain import (
     CRITERIA_TYPE,
     Criteria,
@@ -16,6 +24,10 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import RUN_KEY, BaseOutputParser
 from langchain.schema.language_model import BaseLanguageModel
+
+logger = logging.getLogger(__name__)
+
+_FIND_DOUBLE_BRACKETS = re.compile(r"\[\[(.*?)\]\]")
 
 _SUPPORTED_CRITERIA = {
     Criteria.CONCISENESS: "Is the submission concise and to the point?",
@@ -112,27 +124,26 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
             ValueError: If the verdict is invalid.
 
         """
-        parsed = text.strip().rsplit("\n", maxsplit=1)
-        if len(parsed) == 1:
-            reasoning = ""
-            verdict = parsed[0]
-        else:
-            reasoning, verdict = parsed
-        verdict = verdict.strip("[").strip("]")
-        if verdict not in {"A", "B", "C"}:
+        match = _FIND_DOUBLE_BRACKETS.search(text)
+
+        if match:
+            verdict = match.group(1)
+
+        if not match or verdict not in {"A", "B", "C"}:
             raise ValueError(
-                f"Invalid verdict: {verdict}. "
-                "Verdict must be one of 'A', 'B', or 'C'."
+                f"Invalid output: {text}. "
+                "Output must contain a double bracketed string\
+                 with the verdict 'A', 'B', or 'C'."
             )
         # C means the models are tied. Return 'None' meaning no preference
         verdict_ = None if verdict == "C" else verdict
         score = {
             "A": 1,
             "B": 0,
-            None: 0.5,
-        }.get(verdict_)
+            "C": 0.5,
+        }[verdict]
         return {
-            "reasoning": reasoning,
+            "reasoning": text,
             "value": verdict_,
             "score": score,
         }
@@ -225,7 +236,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         """Initialize the PairwiseStringEvalChain from an LLM.
 
         Args:
-            llm (BaseLanguageModel): The LLM to use.
+            llm (BaseChatModel): The LLM to use (GPT-4 recommended).
             prompt (PromptTemplate, optional): The prompt to use.
             **kwargs (Any): Additional keyword arguments.
 
@@ -236,8 +247,17 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
             ValueError: If the input variables are not as expected.
 
         """
+        if not (
+            isinstance(llm, (ChatOpenAI, AzureChatOpenAI))
+            and llm.model_name.startswith("gpt-4")
+        ):
+            logger.warning(
+                "This chain was only tested with GPT-4. \
+Performance may be significantly worse with other models."
+            )
+
         expected_input_vars = {"prediction", "prediction_b", "input", "criteria"}
-        prompt_ = prompt or PROMPT
+        prompt_ = prompt or COMPARISON_TEMPLATE.partial(reference="")
         if expected_input_vars != set(prompt_.input_variables):
             raise ValueError(
                 f"Input variables should be {expected_input_vars}, "
@@ -245,6 +265,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
             )
         criteria_ = resolve_pairwise_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" if v else k for k, v in criteria_.items())
+        criteria_str = CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else ""
         return cls(llm=llm, prompt=prompt_.partial(criteria=criteria_str), **kwargs)
 
     def _prepare_input(
@@ -418,7 +439,7 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
             "reference",
             "criteria",
         }
-        prompt_ = prompt or PROMPT_WITH_REFERENCE
+        prompt_ = prompt or COMPARISON_TEMPLATE_WITH_REFERENCE
         if expected_input_vars != set(prompt_.input_variables):
             raise ValueError(
                 f"Input variables should be {expected_input_vars}, "
@@ -426,4 +447,5 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
             )
         criteria_ = resolve_pairwise_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items())
+        criteria_str = CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else ""
         return cls(llm=llm, prompt=prompt_.partial(criteria=criteria_str), **kwargs)
