@@ -1,6 +1,4 @@
-def raise_import_error() -> None:
-    """Raise import error for deprecation."""
-    raise ImportError("Module has been moved to langchain_experimental.")
+"""Chain that interprets a prompt and executes python code to do math.
 
-
-raise_import_error()
+Heavily borrowed from llm_math, wrapper for SymPy
+"""
