@@ -1,4 +1,4 @@
-from libs.langchain.langchain.prompts.prompt import PromptTemplate
+from langchain.prompts.prompt import PromptTemplate
 
 DEFAULT_INPUT_KEY = "example"
 DEFAULT_PROMPT = PromptTemplate(

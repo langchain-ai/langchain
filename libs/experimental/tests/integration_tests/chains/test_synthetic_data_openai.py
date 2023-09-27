@@ -4,11 +4,11 @@ from langchain import FewShotPromptTemplate
 
 from langchain.chat_models import ChatOpenAI
 from langchain.pydantic_v1 import BaseModel
-from libs.experimental.langchain_experimental.tabular_synthetic_data.base import \
+from langchain_experimental.tabular_synthetic_data.base import \
     SyntheticDataGenerator
-from libs.experimental.langchain_experimental.tabular_synthetic_data.openai import \
+from langchain_experimental.tabular_synthetic_data.openai import \
     create_openai_data_generator, OPENAI_TEMPLATE
-from libs.experimental.langchain_experimental.tabular_synthetic_data.prompts import \
+from langchain_experimental.tabular_synthetic_data.prompts import \
     SYNTHETIC_FEW_SHOT_SUFFIX, SYNTHETIC_FEW_SHOT_PREFIX
 
 
