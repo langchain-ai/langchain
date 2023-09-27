@@ -115,7 +115,6 @@ __all__ = [
     "EdenAI",
     "FakeListLLM",
     "Fireworks",
-    "FireworksChat",
     "ForefrontAI",
     "GPT4All",
     "GooglePalm",
