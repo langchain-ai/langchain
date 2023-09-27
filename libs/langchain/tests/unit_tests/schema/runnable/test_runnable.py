@@ -1,5 +1,5 @@
-from operator import itemgetter
 import sys
+from operator import itemgetter
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from uuid import UUID
 
