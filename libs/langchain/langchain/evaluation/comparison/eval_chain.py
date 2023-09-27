@@ -230,7 +230,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         llm: BaseLanguageModel,
         *,
         prompt: Optional[PromptTemplate] = None,
-        criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]] = None,
+        criteria: Optional[Union[CRITERIA_TYPE, str]] = None,
         **kwargs: Any,
     ) -> PairwiseStringEvalChain:
         """Initialize the PairwiseStringEvalChain from an LLM.
