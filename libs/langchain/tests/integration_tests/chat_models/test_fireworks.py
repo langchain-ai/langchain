@@ -2,7 +2,6 @@
 
 import pytest
 
-from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.fireworks import ChatFireworks
 from langchain.schema import (
     ChatGeneration,
