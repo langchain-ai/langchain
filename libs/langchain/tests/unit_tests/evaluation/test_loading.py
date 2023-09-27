@@ -41,6 +41,7 @@ def test_load_evaluators(evaluator_type: EvaluatorType) -> None:
             EvaluatorType.LABELED_PAIRWISE_STRING,
         ],
         [EvaluatorType.JSON_EQUALITY],
+        [EvaluatorType.EXACT_MATCH, EvaluatorType.REGEX_MATCH],
     ],
 )
 def test_eval_chain_requires_references(evaluator_types: List[EvaluatorType]) -> None:
