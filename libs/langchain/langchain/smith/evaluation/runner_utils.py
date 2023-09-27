@@ -640,7 +640,12 @@ async def _arun_chain(
 ) -> Union[dict, str]:
     """Run a chain asynchronously on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
-    if isinstance(chain, Chain) and isinstance(inputs_, dict) and len(inputs_) == 1:
+    if (
+        isinstance(chain, Chain)
+        and isinstance(inputs_, dict)
+        and len(inputs_) == 1
+        and chain.input_keys
+    ):
         val = next(iter(inputs_.values()))
         output = await chain.acall(val, callbacks=callbacks, tags=tags)
     else:
@@ -765,7 +770,12 @@ def _run_chain(
 ) -> Union[Dict, str]:
     """Run a chain on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
-    if isinstance(chain, Chain) and isinstance(inputs_, dict) and len(inputs_) == 1:
+    if (
+        isinstance(chain, Chain)
+        and isinstance(inputs_, dict)
+        and len(inputs_) == 1
+        and chain.input_keys
+    ):
         val = next(iter(inputs_.values()))
         output = chain(val, callbacks=callbacks, tags=tags)
     else:
