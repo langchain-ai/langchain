@@ -1,5 +1,4 @@
 from __future__ import annotations
-from _ast import Call
 
 import ast
 import asyncio
@@ -57,7 +56,7 @@ class IsLocalDict(ast.NodeVisitor):
             # we've found a subscript access on the name we're looking for
             self.keys.add(node.slice.value)
 
-    def visit_Call(self, node: Call) -> Any:
+    def visit_Call(self, node: ast.Call) -> Any:
         if (
             isinstance(node.func, ast.Attribute)
             and isinstance(node.func.value, ast.Name)
