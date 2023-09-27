@@ -1,14 +1,16 @@
 """Test Fireworks AI API Wrapper."""
 from typing import Generator
+
+import pytest
+
 from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
 from langchain.llms.fireworks import Fireworks
+from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
 from langchain.schema import LLMResult
-import pytest
 
 
 def test_fireworks_call() -> None:

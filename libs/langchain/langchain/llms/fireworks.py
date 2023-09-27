@@ -1,6 +1,9 @@
+from typing import Any, Callable, Dict, Iterator, List, Optional, Union
+
 import fireworks
 import fireworks.client
-from typing import Any, Callable, Dict, Iterator, List, Optional, Union
+from pydantic import root_validator
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -10,7 +13,6 @@ from langchain.schema.language_model import LanguageModelInput
 from langchain.schema.output import GenerationChunk
 from langchain.schema.runnable.config import RunnableConfig
 from langchain.utils.env import get_from_dict_or_env
-from pydantic import root_validator
 
 
 def _stream_response_to_generation_chunk(

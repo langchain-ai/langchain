@@ -1,8 +1,9 @@
+from typing import Any, Callable, Dict, Iterator, List, Mapping, Optional, Tuple, Union
+
 import fireworks
 import fireworks.client
-from langchain.utils.env import get_from_dict_or_env
 from pydantic import root_validator
-from typing import Any, Callable, Dict, Iterator, List, Mapping, Optional, Tuple, Union
+
 from langchain.adapters.openai import convert_message_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -16,18 +17,16 @@ from langchain.schema.messages import (
     BaseMessage,
     BaseMessageChunk,
     ChatMessage,
-    FunctionMessage,
-    HumanMessage,
-    SystemMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
     ChatMessageChunk,
+    FunctionMessage,
     FunctionMessageChunk,
+    HumanMessage,
     HumanMessageChunk,
+    SystemMessage,
     SystemMessageChunk,
 )
 from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain.utils.env import get_from_dict_or_env
 
 
 def _convert_delta_to_message_chunk(
