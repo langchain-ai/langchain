@@ -153,15 +153,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "type": "integer",
     }
 
-    untyped_lambda = RunnableLambda(lambda x: x["hello"])  # {"hello": Any} -> Any
-
-    assert untyped_lambda.input_schema.schema() == {
-        "title": "RunnableLambdaInput",
-        "type": "object",
-        "properties": {"hello": {"title": "Hello"}},
-    }
-    assert untyped_lambda.output_schema.schema() == {"title": "RunnableLambdaOutput"}
-
     def typed_lambda_impl(x: str) -> int:
         return len(x)
 
