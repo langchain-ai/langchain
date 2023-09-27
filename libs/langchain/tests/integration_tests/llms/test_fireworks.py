@@ -3,13 +3,14 @@ from pathlib import Path
 
 import pytest
 
-from langchain import LLMChain, PromptTemplate
 from langchain.chains import RetrievalQA
+from langchain.chains.llm import LLMChain
 from langchain.document_loaders import TextLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms import OpenAIChat
 from langchain.llms.fireworks import Fireworks, FireworksChat
 from langchain.llms.loading import load_llm
+from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
