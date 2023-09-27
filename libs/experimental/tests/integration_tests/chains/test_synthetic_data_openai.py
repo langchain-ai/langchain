@@ -1,17 +1,15 @@
 import pytest
 
 from langchain import FewShotPromptTemplate
-from langchain.chains.data_generation.base import SyntheticDataGenerator
-from langchain.chains.data_generation.openai import (
-    OPENAI_TEMPLATE,
-    create_openai_data_generator,
-)
-from langchain.chains.data_generation.prompts import (
-    SYNTHETIC_FEW_SHOT_PREFIX,
-    SYNTHETIC_FEW_SHOT_SUFFIX,
-)
+
 from langchain.chat_models import ChatOpenAI
 from langchain.pydantic_v1 import BaseModel
+from libs.experimental.langchain_experimental.tabular_synthetic_data.base import \
+    SyntheticDataGenerator
+from libs.experimental.langchain_experimental.tabular_synthetic_data.openai import \
+    create_openai_data_generator, OPENAI_TEMPLATE
+from libs.experimental.langchain_experimental.tabular_synthetic_data.prompts import \
+    SYNTHETIC_FEW_SHOT_SUFFIX, SYNTHETIC_FEW_SHOT_PREFIX
 
 
 # Define the desired output schema for individual medical billing record
