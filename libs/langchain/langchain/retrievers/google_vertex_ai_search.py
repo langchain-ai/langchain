@@ -117,11 +117,11 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
                 import warnings
 
                 warnings.warn(
-                    "The `search_engine_id` parameter is deprecated. Use `data_store_id` instead.",  # pylint: disable=line-too-long
+                    "The `search_engine_id` parameter is deprecated. Use `data_store_id` instead.",  # noqa: E501
                     DeprecationWarning,
                 )
                 values["data_store_id"] = search_engine_id
-        except:  # pylint: disable=bare-except
+        except:  # noqa: E722
             pass
 
         values["data_store_id"] = get_from_dict_or_env(

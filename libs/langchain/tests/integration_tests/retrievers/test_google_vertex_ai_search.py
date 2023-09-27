@@ -12,6 +12,7 @@ DATA_STORE_ID - the ID of the search engine to use for the test
 """
 
 import os
+
 import pytest
 
 from langchain.retrievers.google_cloud_enterprise_search import (
@@ -39,14 +40,14 @@ def test_google_vertex_ai_search_enterprise_search_deprecation() -> None:
     """Test the deprecation of GoogleCloudEnterpriseSearchRetriever."""
     with pytest.warns(
         DeprecationWarning,
-        match="GoogleCloudEnterpriseSearchRetriever is deprecated, use GoogleVertexAISearchRetriever",  # pylint: disable=line-too-long
+        match="GoogleCloudEnterpriseSearchRetriever is deprecated, use GoogleVertexAISearchRetriever",  # noqa: E501
     ):
         retriever = GoogleCloudEnterpriseSearchRetriever()
 
     os.environ["SEARCH_ENGINE_ID"] = os.getenv("DATA_STORE_ID")
     with pytest.warns(
         DeprecationWarning,
-        match="The `search_engine_id` parameter is deprecated. Use `data_store_id` instead.",  # pylint: disable=line-too-long
+        match="The `search_engine_id` parameter is deprecated. Use `data_store_id` instead.",  # noqa: E501
     ):
         retriever = GoogleCloudEnterpriseSearchRetriever()
 
