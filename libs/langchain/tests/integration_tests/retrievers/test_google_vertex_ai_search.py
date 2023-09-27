@@ -44,7 +44,7 @@ def test_google_vertex_ai_search_enterprise_search_deprecation() -> None:
     ):
         retriever = GoogleCloudEnterpriseSearchRetriever()
 
-    os.environ["SEARCH_ENGINE_ID"] = os.getenv("DATA_STORE_ID")
+    os.environ["SEARCH_ENGINE_ID"] = os.getenv("DATA_STORE_ID", "data_store_id")
     with pytest.warns(
         DeprecationWarning,
         match="The `search_engine_id` parameter is deprecated. Use `data_store_id` instead.",  # noqa: E501
