@@ -7,7 +7,7 @@ import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 
@@ -63,14 +63,14 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     """
 
     @property
-    def input_schema(self) -> type[BaseModel]:
+    def input_schema(self) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "ChainInput", **{k: (Any, None) for k in self.input_keys}
         )
 
     @property
-    def output_schema(self) -> type[BaseModel]:
+    def output_schema(self) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "ChainOutput", **{k: (Any, None) for k in self.output_keys}
