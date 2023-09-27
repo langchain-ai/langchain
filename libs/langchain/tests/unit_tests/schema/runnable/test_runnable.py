@@ -356,12 +356,15 @@ def test_lambda_schemas() -> None:
     }
 
     async def aget_value(input):  # type: ignore[no-untyped-def]
-        return input["variable_name"]
+        return (input["variable_name"], input.get("another"))
 
     assert RunnableLambda(aget_value).input_schema.schema() == {
         "title": "RunnableLambdaInput",
         "type": "object",
-        "properties": {"variable_name": {"title": "Variable Name"}},
+        "properties": {
+            "another": {"title": "Another"},
+            "variable_name": {"title": "Variable Name"},
+        },
     }
 
     async def aget_values(input):  # type: ignore[no-untyped-def]

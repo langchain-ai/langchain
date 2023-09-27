@@ -1,4 +1,5 @@
 from __future__ import annotations
+from _ast import Call
 
 import ast
 import asyncio
@@ -56,6 +57,19 @@ class IsLocalDict(ast.NodeVisitor):
             # we've found a subscript access on the name we're looking for
             self.keys.add(node.slice.value)
 
+    def visit_Call(self, node: Call) -> Any:
+        if (
+            isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == self.name
+            and node.func.attr == "get"
+            and len(node.args) in (1, 2)
+            and isinstance(node.args[0], ast.Constant)
+            and isinstance(node.args[0].value, str)
+        ):
+            # we've found a .get() call on the name we're looking for
+            self.keys.add(node.args[0].value)
+
 
 class IsFunctionArgDict(ast.NodeVisitor):
     def __init__(self) -> None:
@@ -76,9 +90,7 @@ class IsFunctionArgDict(ast.NodeVisitor):
 
 def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
     try:
-        print(func)
         code = inspect.getsource(func)
-        print(code)
         tree = ast.parse(textwrap.dedent(code))
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
