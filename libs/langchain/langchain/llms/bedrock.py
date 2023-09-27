@@ -136,7 +136,7 @@ class BedrockBase(BaseModel, ABC):
             if values["endpoint_url"]:
                 client_params["endpoint_url"] = values["endpoint_url"]
 
-            values["client"] = session.client("bedrock", **client_params)
+            values["client"] = session.client("bedrock-runtime", **client_params)
 
         except ImportError:
             raise ModuleNotFoundError(
