@@ -8,17 +8,19 @@ from typing import Any, Dict, List, Optional, Union
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
+from langchain.chat_models.azure_openai import AzureChatOpenAI
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.evaluation.comparison.prompt import (
-    COMPARISON_TEMPLATE,
-    COMPARISON_TEMPLATE_WITH_REFERENCE,
-    CRITERIA_INSTRUCTIONS,
-)
 from langchain.evaluation.criteria.eval_chain import (
     CRITERIA_TYPE,
     Criteria,
 )
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
+from langchain.evaluation.scoring.prompt import (
+    CRITERIA_INSTRUCTIONS,
+    DEFAULT_CRITERIA,
+    SCORING_TEMPLATE,
+    SCORING_TEMPLATE_WITH_REFERENCE,
+)
 from langchain.prompts.prompt import PromptTemplate
 from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import RUN_KEY, BaseOutputParser
@@ -93,7 +95,7 @@ def resolve_pairwise_criteria(
 
 
 class ScoreStringResultOutputParser(BaseOutputParser[dict]):
-    """A parser for the output of the PairwiseStringEvalChain.
+    """A parser for the output of the ScoreStringEvalChain.
 
     Attributes:
         _type (str): The type of the output parser.
@@ -134,7 +136,7 @@ class ScoreStringResultOutputParser(BaseOutputParser[dict]):
                 "Output must contain a double bracketed string\
                  with the verdict between 1 and 10."
             )
-        
+
         return {
             "reasoning": text,
             "score": int(verdict),
@@ -149,24 +151,20 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     Example:
         >>> from langchain.chat_models import ChatOpenAI
-        >>> from langchain.evaluation.comparison import PairwiseStringEvalChain
-        >>> llm = ChatOpenAI(temperature=0)
-        >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
+        >>> from langchain.evaluation.scoring import PairwiseStringEvalChain
+        >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4")
+        >>> chain = ScoreStringEvalChain.from_llm(llm=llm)
         >>> result = chain.evaluate_string_pairs(
         ...     input = "What is the chemical formula for water?",
         ...     prediction = "H2O",
-        ...     prediction_b = (
-        ...        "The chemical formula for water is H2O, which means"
-        ...        " there are two hydrogen atoms and one oxygen atom."
         ...     reference = "The chemical formula for water is H2O.",
         ... )
         >>> print(result["text"])
         # {
-        #    "value": "B",
-        #    "comment": "Both responses accurately state"
-        #       " that the chemical formula for water is H2O."
-        #       " However, Response B provides additional information"
-        # .     " by explaining what the formula means.\\n[[B]]"
+        #    "score": 8,
+        #    "comment": "The response accurately states "
+        #    "that the chemical formula for water is H2O."
+        #    "However, it does not provide an explanation of what the formula means."
         # }
 
     """
@@ -177,7 +175,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     )
 
     class Config:
-        """Configuration for the PairwiseStringEvalChain."""
+        """Configuration for the ScoreStringEvalChain."""
 
         extra = Extra.ignore
 
@@ -211,8 +209,8 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         """
         return (
             f"Ignoring reference in {self.__class__.__name__}, as it is not expected."
-            "\nTo use a reference, use the LabeledScoringStringEvalChain instead."
-            " (EvaluatorType.LABELED_PAIRWISE_STRING) instead."
+            "\nTo use a reference, use the LabeledScoreStringEvalChain instead."
+            " (EvaluatorType.LABELED_SCORE_STRING) instead."
         )
 
     @classmethod
@@ -224,7 +222,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         criteria: Optional[Union[CRITERIA_TYPE, str]] = None,
         **kwargs: Any,
     ) -> ScoreStringEvalChain:
-        """Initialize the PairwiseStringEvalChain from an LLM.
+        """Initialize the ScoreStringEvalChain from an LLM.
 
         Args:
             llm (BaseChatModel): The LLM to use (GPT-4 recommended).
@@ -238,14 +236,17 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             ValueError: If the input variables are not as expected.
 
         """
-        if not (isinstance(llm, ChatOpenAI) and llm.model_name.startswith("gpt-4")):
+        if not (
+            isinstance(llm, (ChatOpenAI, AzureChatOpenAI))
+            and llm.model_name.startswith("gpt-4")
+        ):
             logger.warning(
                 "This chain was only tested with GPT-4. \
 Performance may be significantly worse with other models."
             )
 
-        expected_input_vars = {"prediction", "prediction_b", "input", "criteria"}
-        prompt_ = prompt or COMPARISON_TEMPLATE.partial(reference="")
+        expected_input_vars = {"prediction", "input", "criteria"}
+        prompt_ = prompt or SCORING_TEMPLATE.partial(reference="")
         if expected_input_vars != set(prompt_.input_variables):
             raise ValueError(
                 f"Input variables should be {expected_input_vars}, "
@@ -253,7 +254,9 @@ Performance may be significantly worse with other models."
             )
         criteria_ = resolve_pairwise_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" if v else k for k, v in criteria_.items())
-        criteria_str = CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else ""
+        criteria_str = (
+            CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else DEFAULT_CRITERIA
+        )
         return cls(llm=llm, prompt=prompt_.partial(criteria=criteria_str), **kwargs)
 
     def _prepare_input(
@@ -289,11 +292,10 @@ Performance may be significantly worse with other models."
             parsed[RUN_KEY] = result[RUN_KEY]
         return parsed
 
-    def _evaluate_string_pairs(
+    def _evaluate_strings(
         self,
         *,
         prediction: str,
-        prediction_b: str,
         input: Optional[str] = None,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
@@ -302,7 +304,7 @@ Performance may be significantly worse with other models."
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """Evaluate whether output A is preferred to output B.
+        """Score the output string.
 
         Args:
             prediction (str): The output string from the first model.
@@ -317,7 +319,7 @@ Performance may be significantly worse with other models."
                 - score: A score between 1 and 10.
 
         """
-        input_ = self._prepare_input(prediction, prediction_b, input, reference)
+        input_ = self._prepare_input(prediction, input, reference)
         result = self(
             inputs=input_,
             callbacks=callbacks,
@@ -331,7 +333,6 @@ Performance may be significantly worse with other models."
         self,
         *,
         prediction: str,
-        prediction_b: str,
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
@@ -340,11 +341,10 @@ Performance may be significantly worse with other models."
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """Asynchronously evaluate whether output A is preferred to output B.
+        """Asynchronously score the output string.
 
         Args:
             prediction (str): The output string from the first model.
-            prediction_b (str): The output string from the second model.
             input (str, optional): The input or task string.
             callbacks (Callbacks, optional): The callbacks to use.
             reference (str, optional): The reference string, if any.
@@ -356,7 +356,7 @@ Performance may be significantly worse with other models."
                 - score: A score between 1 and 10.
 
         """
-        input_ = self._prepare_input(prediction, prediction_b, input, reference)
+        input_ = self._prepare_input(prediction, input, reference)
         result = await self.acall(
             inputs=input_,
             callbacks=callbacks,
@@ -367,10 +367,8 @@ Performance may be significantly worse with other models."
         return self._prepare_output(result)
 
 
-class LabeledScoringStringEvalChain(ScoreStringEvalChain):
-    """A chain for comparing two outputs, such as the outputs
-     of two models, prompts, or outputs of a single model on similar inputs,
-     with labeled preferences.
+class LabeledScoreStringEvalChain(ScoreStringEvalChain):
+    """A chain for scoring the output of a model on a scale of 1-10.
 
     Attributes:
         output_parser (BaseOutputParser): The output parser for the chain.
@@ -395,8 +393,8 @@ class LabeledScoringStringEvalChain(ScoreStringEvalChain):
         prompt: Optional[PromptTemplate] = None,
         criteria: Optional[Union[CRITERIA_TYPE, str]] = None,
         **kwargs: Any,
-    ) -> LabeledScoringStringEvalChain:
-        """Initialize the LabeledPairwiseStringEvalChain from an LLM.
+    ) -> LabeledScoreStringEvalChain:
+        """Initialize the LabeledScoreStringEvalChain from an LLM.
 
         Args:
             llm (BaseLanguageModel): The LLM to use.
@@ -405,7 +403,7 @@ class LabeledScoringStringEvalChain(ScoreStringEvalChain):
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
-            LabeledPairwiseStringEvalChain: The initialized LabeledPairwiseStringEvalChain.
+            LabeledScoreStringEvalChain: The initialized LabeledScoreStringEvalChain.
 
         Raises:
             ValueError: If the input variables are not as expected.
@@ -417,7 +415,7 @@ class LabeledScoringStringEvalChain(ScoreStringEvalChain):
             "reference",
             "criteria",
         }
-        prompt_ = prompt or COMPARISON_TEMPLATE_WITH_REFERENCE
+        prompt_ = prompt or SCORING_TEMPLATE_WITH_REFERENCE
         if expected_input_vars != set(prompt_.input_variables):
             raise ValueError(
                 f"Input variables should be {expected_input_vars}, "
