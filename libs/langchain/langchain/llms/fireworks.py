@@ -1,14 +1,11 @@
-from typing import Any, Callable, Dict, Iterator, List, Optional, Union
-
-import fireworks
-import fireworks.client
-from pydantic import root_validator
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional, Union
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM, create_base_retry_decorator
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema.language_model import LanguageModelInput
 from langchain.schema.output import GenerationChunk
 from langchain.schema.runnable.config import RunnableConfig
@@ -16,7 +13,7 @@ from langchain.utils.env import get_from_dict_or_env
 
 
 def _stream_response_to_generation_chunk(
-    stream_response: Dict[str, Any],
+    stream_response: Any,
 ) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
     return GenerationChunk(
@@ -32,13 +29,23 @@ class Fireworks(LLM):
     """Fireworks models."""
 
     model: str = "accounts/fireworks/models/llama-v2-7b-chat"
-    model_kwargs: Optional[dict] = {"temperature": 0.7, "max_tokens": 512, "top_p": 1}
+    model_kwargs: dict = Field(
+        default_factory=lambda: {
+            "temperature": 0.7,
+            "max_tokens": 512,
+            "top_p": 1,
+        }.copy()
+    )
     fireworks_api_key: Optional[str] = None
     max_retries: int = 20
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key in environment."""
+        try:
+            import fireworks.client
+        except ImportError as e:
+            raise ImportError("") from e
         fireworks_api_key = get_from_dict_or_env(
             values, "fireworks_api_key", "FIREWORKS_API_KEY"
         )
@@ -58,12 +65,12 @@ class Fireworks(LLM):
         **kwargs: Any,
     ) -> str:
         """Run the LLM on the given prompt and input."""
-        params = {
+        params: dict = {
             "model": self.model,
             "prompt": prompt,
             **self.model_kwargs,
         }
-        response = completion_with_retry(self, **params)
+        response = completion_with_retry(self, run_manager=run_manager, **params)
 
         return response.choices[0].text
 
@@ -71,7 +78,7 @@ class Fireworks(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         """Run the LLM on the given prompt and input."""
@@ -80,7 +87,7 @@ class Fireworks(LLM):
             "prompt": prompt,
             **self.model_kwargs,
         }
-        response = await acompletion_with_retry(self, **params)
+        response = await acompletion_with_retry(self, run_manager=run_manager, **params)
 
         return response.choices[0].text
 
@@ -97,7 +104,9 @@ class Fireworks(LLM):
             "stream": True,
             **self.model_kwargs,
         }
-        for stream_resp in completion_with_retry(self, **params):
+        for stream_resp in completion_with_retry(
+            self, run_manager=run_manager, **params
+        ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
 
@@ -105,16 +114,18 @@ class Fireworks(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[GenerationChunk]:
+    ) -> AsyncIterator[GenerationChunk]:
         params = {
             "model": self.model,
             "prompt": prompt,
             "stream": True,
             **self.model_kwargs,
         }
-        async for stream_resp in await acompletion_with_retry_streaming(self, **params):
+        async for stream_resp in await acompletion_with_retry_streaming(
+            self, run_manager=run_manager, **params
+        ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
 
@@ -143,7 +154,7 @@ class Fireworks(LLM):
         *,
         stop: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> Iterator[str]:
+    ) -> AsyncIterator[str]:
         prompt = self._convert_input(input).to_string()
         generation: Optional[GenerationChunk] = None
         async for chunk in self._astream(prompt):
@@ -157,10 +168,13 @@ class Fireworks(LLM):
 
 def completion_with_retry(
     llm: Fireworks,
+    *,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
+    import fireworks.client
+
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
@@ -174,10 +188,13 @@ def completion_with_retry(
 
 async def acompletion_with_retry(
     llm: Fireworks,
-    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    *,
+    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
+    import fireworks.client
+
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
@@ -191,10 +208,13 @@ async def acompletion_with_retry(
 
 async def acompletion_with_retry_streaming(
     llm: Fireworks,
-    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    *,
+    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call for streaming."""
+    import fireworks.client
+
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
@@ -208,11 +228,14 @@ async def acompletion_with_retry_streaming(
 
 def _create_retry_decorator(
     llm: Fireworks,
+    *,
     run_manager: Optional[
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
     """Define retry mechanism."""
+    import fireworks.client
+
     errors = [
         fireworks.client.error.RateLimitError,
         fireworks.client.error.ServiceUnavailableError,
