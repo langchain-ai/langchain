@@ -1,5 +1,4 @@
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Dict,
@@ -13,6 +12,7 @@ from typing import (
 from langchain.load.dump import dumpd, dumps
 from langchain.load.load import load
 from langchain.schema.runnable import Runnable
+from typing_extensions import Annotated
 
 try:
     from pydantic.v1 import BaseModel
@@ -22,12 +22,15 @@ except ImportError:
 from langserve.validation import (
     create_batch_request_model,
     create_invoke_request_model,
+    create_runnable_config_model,
+    create_stream_log_request_model,
+    create_stream_request_model,
     replace_lc_object_types,
 )
 
-if TYPE_CHECKING:
+try:
     from fastapi import APIRouter, FastAPI
-else:
+except ImportError:
     # [server] extra not installed
     APIRouter = FastAPI = Any
 
@@ -92,13 +95,24 @@ def add_routes(
 
     namespace = path or ""
 
-    InvokeRequest = create_invoke_request_model(input_type, config_keys=config_keys)
-    BatchRequest = create_batch_request_model(input_type, config_keys=config_keys)
-    # Stream request is the same as invoke request, but with a different response type
-    StreamRequest = create_invoke_request_model(input_type, config_keys=config_keys)
+    model_namespace = path.strip("/").replace("/", "_")
 
-    @app.post(f"{namespace}/invoke", response_model=InvokeResponse)
-    async def invoke(request: InvokeRequest) -> InvokeResponse:
+    config = create_runnable_config_model(model_namespace, config_keys)
+    InvokeRequest = create_invoke_request_model(model_namespace, input_type, config)
+    BatchRequest = create_batch_request_model(model_namespace, input_type, config)
+    # Stream request is the same as invoke request, but with a different response type
+    StreamRequest = create_stream_request_model(model_namespace, input_type, config)
+    StreamLogRequest = create_stream_log_request_model(
+        model_namespace, input_type, config
+    )
+
+    @app.post(
+        f"{namespace}/invoke",
+        response_model=InvokeResponse,
+    )
+    async def invoke(
+        request: Annotated[InvokeRequest, InvokeRequest]
+    ) -> InvokeResponse:
         """Invoke the runnable with the given input and config."""
         # Request is first validated using InvokeRequest which takes into account
         # config_keys as well as input_type.
@@ -108,8 +122,9 @@ def add_routes(
         output = await runnable.ainvoke(input, config=config, **request.kwargs)
         return InvokeResponse(output=dumpd(output))
 
+    #
     @app.post(f"{namespace}/batch", response_model=BatchResponse)
-    async def batch(request: BatchRequest) -> BatchResponse:
+    async def batch(request: Annotated[BatchRequest, BatchRequest]) -> BatchResponse:
         """Invoke the runnable with the given inputs and config."""
         # Request is first validated using InvokeRequest which takes into account
         # config_keys as well as input_type.
@@ -123,7 +138,9 @@ def add_routes(
         return BatchResponse(output=dumpd(output))
 
     @app.post(f"{namespace}/stream")
-    async def stream(request: StreamRequest) -> EventSourceResponse:
+    async def stream(
+        request: Annotated[StreamRequest, StreamRequest],
+    ) -> EventSourceResponse:
         """Invoke the runnable stream the output."""
         # Request is first validated using InvokeRequest which takes into account
         # config_keys as well as input_type.
@@ -142,3 +159,36 @@ def add_routes(
             yield {"event": "end"}
 
         return EventSourceResponse(_stream())
+
+    @app.post(f"{namespace}/stream_log")
+    async def stream_log(
+        request: Annotated[StreamLogRequest, StreamLogRequest],
+    ) -> EventSourceResponse:
+        """Invoke the runnable stream the output."""
+        # Request is first validated using InvokeRequest which takes into account
+        # config_keys as well as input_type.
+        # After validation, the input is loaded using LangChain's load function.
+        input = load(request.dict()["input"])
+        config = _project_dict(request.config, config_keys)
+
+        async def _stream_log() -> AsyncIterator[dict]:
+            """Stream the output of the runnable."""
+            async for run_log_patch in runnable.astream_log(
+                input,
+                config=config,
+                include_names=request.include_names,
+                include_types=request.include_types,
+                include_tags=request.include_tags,
+                exclude_names=request.exclude_names,
+                exclude_types=request.exclude_types,
+                exclude_tags=request.exclude_tags,
+                **request.kwargs,
+            ):
+                # Temporary adapter
+                yield {
+                    "data": dumps({"ops": run_log_patch.ops}),
+                    "event": "data",
+                }
+            yield {"event": "end"}
+
+        return EventSourceResponse(_stream_log())

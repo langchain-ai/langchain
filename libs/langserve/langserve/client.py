@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import weakref
-from typing import Any, AsyncIterator, Iterator, List, Optional, Union
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, AsyncIterator, Iterator, List, Optional, Sequence, Union
 from urllib.parse import urljoin
 
 import httpx
+from langchain.callbacks.tracers.log_stream import RunLogPatch
 from langchain.load.dump import dumpd
 from langchain.load.load import load, loads
 from langchain.schema.runnable import Runnable
@@ -50,6 +52,16 @@ def _raise_for_status(response: httpx.Response) -> None:
         )
 
 
+def _is_async() -> bool:
+    """Return True if we are in an async context."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return False
+    else:
+        return True
+
+
 def _close_clients(sync_client: httpx.Client, async_client: httpx.AsyncClient) -> None:
     """Close the async and sync clients.
 
@@ -61,8 +73,14 @@ def _close_clients(sync_client: httpx.Client, async_client: httpx.AsyncClient) -
         async_client: The async client to close
     """
     sync_client.close()
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(asyncio.wait_for(async_client.aclose(), timeout=1))
+    if _is_async():
+        # Use a ThreadPoolExecutor to run async_client_close in a separate thread
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            # Submit the async_client_close coroutine to the thread pool
+            future = executor.submit(asyncio.run, async_client.aclose())
+            future.result()
+    else:
+        asyncio.run(async_client.aclose())
 
 
 class RemoteRunnable(Runnable[Input, Output]):
@@ -323,6 +341,82 @@ class RemoteRunnable(Runnable[Input, Output]):
                     elif sse.event == "end":
                         break
 
+                    else:
+                        raise NotImplementedError(f"Unknown event {sse.event}")
+        except BaseException as e:
+            await run_manager.on_chain_error(e)
+            raise
+        else:
+            await run_manager.on_chain_end(final_output)
+
+    async def astream_log(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        *,
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[RunLogPatch]:
+        """Stream all output from a runnable, as reported to the callback system.
+        This includes all inner runs of LLMs, Retrievers, Tools, etc.
+
+        Output is streamed as Log objects, which include a list of
+        jsonpatch ops that describe how the state of the run has changed in each
+        step, and the final state of the run.
+
+        The jsonpatch ops can be applied in order to construct state.
+        """
+
+        # Create a stream handler that will emit Log objects
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
+
+        final_output: Optional[Output] = None
+
+        run_manager = await callback_manager.on_chain_start(
+            dumpd(self),
+            dumpd(input),
+            name=config.get("run_name"),
+        )
+        data = {
+            "input": dumpd(input),
+            "config": _without_callbacks(config),
+            "kwargs": kwargs,
+            "include_names": include_names,
+            "include_types": include_types,
+            "include_tags": include_tags,
+            "exclude_names": exclude_names,
+            "exclude_types": exclude_types,
+            "exclude_tags": exclude_tags,
+        }
+        endpoint = urljoin(self.url, "stream_log")
+
+        try:
+            from httpx_sse import aconnect_sse
+        except ImportError:
+            raise ImportError("You must install `httpx_sse` to use the stream method.")
+
+        try:
+            async with aconnect_sse(
+                self.async_client, "POST", endpoint, json=data
+            ) as event_source:
+                async for sse in event_source.aiter_sse():
+                    if sse.event == "data":
+                        data = loads(sse.data)
+                        chunk = RunLogPatch(*data["ops"])
+                        yield chunk
+
+                        if final_output:
+                            final_output += chunk
+                        else:
+                            final_output = chunk
+                    elif sse.event == "end":
+                        break
                     else:
                         raise NotImplementedError(f"Unknown event {sse.event}")
         except BaseException as e:

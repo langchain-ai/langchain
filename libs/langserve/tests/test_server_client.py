@@ -10,6 +10,7 @@ import pytest_asyncio
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
+from langchain.callbacks.tracers.log_stream import RunLogPatch
 from langchain.schema.messages import HumanMessage, SystemMessage
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.runnable.base import RunnableLambda
@@ -190,6 +191,30 @@ async def test_astream(async_client: RemoteRunnable) -> None:
     assert outputs == [data]
 
 
+@pytest.mark.asyncio
+async def test_astream_log(async_client: RemoteRunnable) -> None:
+    """Test async stream."""
+    outputs = []
+
+    async for chunk in async_client.astream_log(1):
+        outputs.append(chunk)
+
+    assert len(outputs) == 3
+
+    op = outputs[0].ops[0]
+    uuid = op["value"]["id"]
+    assert op == {
+        "op": "replace",
+        "path": "",
+        "value": {
+            "final_output": {"output": 2},
+            "id": uuid,
+            "logs": [],
+            "streamed_output": [],
+        },
+    }
+
+
 def test_invoke_as_part_of_sequence(client: RemoteRunnable) -> None:
     """Test as part of sequence."""
     runnable = client | RunnableLambda(func=lambda x: x + 1)
@@ -218,7 +243,7 @@ async def test_invoke_as_part_of_sequence_async(async_client: RemoteRunnable) ->
     """
     runnable = async_client | RunnableLambda(
         func=lambda x: x + 1 if isinstance(x, int) else x
-    )
+    ).with_config({"run_name": "hello"})
     # without config
     assert await runnable.ainvoke(1) == 3
     # with config
@@ -258,6 +283,31 @@ async def test_invoke_as_part_of_sequence_async(async_client: RemoteRunnable) ->
             HumanMessage(content="hello"), config={"tags": ["test"]}
         )
     ] == [HumanMessage(content="hello")]
+
+    log_patches = [x async for x in runnable.astream_log(1)]
+    for log_patch in log_patches:
+        assert isinstance(log_patch, RunLogPatch)
+    # Only check the first entry (not validating implementation here)
+    first_op = log_patches[0].ops[0]
+    assert first_op["op"] == "replace"
+    assert first_op["path"] == ""
+
+    # Validate with HumanMessage
+    log_patches = [x async for x in runnable.astream_log(HumanMessage(content="hello"))]
+    for log_patch in log_patches:
+        assert isinstance(log_patch, RunLogPatch)
+    # Only check the first entry (not validating implementation here)
+    first_op = log_patches[0].ops[0]
+    assert first_op == {
+        "op": "replace",
+        "path": "",
+        "value": {
+            "final_output": None,
+            "id": first_op["value"]["id"],
+            "logs": [],
+            "streamed_output": [],
+        },
+    }
 
 
 @pytest.mark.asyncio
@@ -394,6 +444,19 @@ async def test_input_validation_with_lc_types(event_loop: AbstractEventLoop) -> 
 
 
 def test_client_close() -> None:
+    """Test that the client can be automatically."""
+    runnable = RemoteRunnable(url="/dev/null", timeout=1)
+    sync_client = runnable.sync_client
+    async_client = runnable.async_client
+    assert async_client.is_closed is False
+    assert sync_client.is_closed is False
+    del runnable
+    assert sync_client.is_closed is True
+    assert async_client.is_closed is True
+
+
+@pytest.mark.asyncio
+async def test_async_client_close() -> None:
     """Test that the client can be automatically."""
     runnable = RemoteRunnable(url="/dev/null", timeout=1)
     sync_client = runnable.sync_client

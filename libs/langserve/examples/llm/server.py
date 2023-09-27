@@ -4,6 +4,7 @@ from typing import List, Union
 
 from fastapi import FastAPI
 from langchain.chat_models import ChatAnthropic, ChatOpenAI
+from langchain.prompts.chat import ChatPromptValue
 from langchain.schema.messages import HumanMessage, SystemMessage
 
 from langserve import add_routes
@@ -14,7 +15,7 @@ app = FastAPI(
     description="Spin up a simple api server using Langchain's Runnable interfaces",
 )
 
-LLMInput = Union[List[Union[SystemMessage, HumanMessage, str]], str]
+LLMInput = Union[List[Union[SystemMessage, HumanMessage, str]], str, ChatPromptValue]
 
 add_routes(
     app,
