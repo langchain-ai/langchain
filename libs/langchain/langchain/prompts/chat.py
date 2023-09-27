@@ -39,13 +39,9 @@ from langchain.schema.messages import (
 class BaseMessagePromptTemplate(Serializable, ABC):
     """Base class for message prompt templates."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether this object should be serialized.
-
-        Returns:
-            Whether this object should be serialized.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return True
 
     @abstractmethod

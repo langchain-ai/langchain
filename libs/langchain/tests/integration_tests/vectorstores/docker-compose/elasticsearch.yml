@@ -7,6 +7,7 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false # security has been disabled, so no login or password is required.
       - xpack.security.http.ssl.enabled=false
+      - xpack.license.self_generated.type=trial
     ports:
       - "9200:9200"
     healthcheck:
