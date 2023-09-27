@@ -53,7 +53,7 @@ def resolve_pairwise_criteria(
     """Resolve the criteria for the pairwise evaluator.
 
     Args:
-        criteria (Union[CRITERIA_TYPE, str], optional): The criteria to use.
+        criteria (Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]): The criteria to use.
 
     Returns:
         dict: The resolved criteria.
@@ -169,7 +169,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         ...        " there are two hydrogen atoms and one oxygen atom."
         ...     reference = "The chemical formula for water is H2O.",
         ... )
-        >>> print(result["text"])
+        >>> print(result)
         # {
         #    "value": "B",
         #    "comment": "Both responses accurately state"
@@ -230,7 +230,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         llm: BaseLanguageModel,
         *,
         prompt: Optional[PromptTemplate] = None,
-        criteria: Optional[Union[CRITERIA_TYPE, str]] = None,
+        criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]] = None,
         **kwargs: Any,
     ) -> PairwiseStringEvalChain:
         """Initialize the PairwiseStringEvalChain from an LLM.
