@@ -247,12 +247,24 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     ) -> None:
         token_usage = (response.llm_output or {}).get("token_usage", {})
 
-        parsed_output = _parse_lc_messages(
-            map(
-                lambda o: o.message if hasattr(o, "message") else None,
-                response.generations[0],
-            )
-        )
+        parsed_output = [
+            {
+                "text": generation.text,
+                "role": "ai",
+                **(
+                    {
+                        "functionCall": generation.message.additional_kwargs[
+                            "function_call"
+                        ]
+                    }
+                    if hasattr(generation, "message")
+                    and hasattr(generation.message, "additional_kwargs")
+                    and "function_call" in generation.message.additional_kwargs
+                    else {}
+                ),
+            }
+            for generation in response.generations[0]
+        ]
 
         event = {
             "event": "end",
