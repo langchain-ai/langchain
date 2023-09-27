@@ -22,12 +22,15 @@ from langchain.evaluation.parsing.base import (
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
 from langchain.evaluation.regex_match.base import RegexMatchStringEvaluator
 from langchain.evaluation.schema import EvaluatorType, LLMEvalChain, StringEvaluator
+from langchain.evaluation.scoring.eval_chain import (
+    LabeledScoreStringEvalChain,
+    ScoreStringEvalChain,
+)
 from langchain.evaluation.string_distance.base import (
     PairwiseStringDistanceEvalChain,
     StringDistanceEvalChain,
 )
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.evaluation.scoring.eval_chain import LabeledScoringStringEvalChain, ScoreStringEvalChain
 
 
 def load_dataset(uri: str) -> List[Dict]:
@@ -71,9 +74,9 @@ _EVALUATOR_MAP: Dict[
     EvaluatorType.COT_QA: CotQAEvalChain,
     EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
     EvaluatorType.PAIRWISE_STRING: PairwiseStringEvalChain,
-    EvaluatorType.SCORED_STRING: ScoreStringEvalChain,
+    EvaluatorType.SCORE_STRING: ScoreStringEvalChain,
     EvaluatorType.LABELED_PAIRWISE_STRING: LabeledPairwiseStringEvalChain,
-    EvaluatorType.LABELED_SCORED_STRING: LabeledScoringStringEvalChain,
+    EvaluatorType.LABELED_SCORE_STRING: LabeledScoreStringEvalChain,
     EvaluatorType.AGENT_TRAJECTORY: TrajectoryEvalChain,
     EvaluatorType.CRITERIA: CriteriaEvalChain,
     EvaluatorType.LABELED_CRITERIA: LabeledCriteriaEvalChain,
