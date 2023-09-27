@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 import pytest
 
-from langchain._api.deprecation import warn_deprecated, deprecated
+from langchain._api.deprecation import deprecated, warn_deprecated
 from langchain.pydantic_v1 import BaseModel
 
 
