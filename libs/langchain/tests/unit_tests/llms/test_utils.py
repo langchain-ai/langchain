@@ -13,6 +13,15 @@ def test_enforce_stop_tokens() -> None:
     text = "foo bar baz"
     output = enforce_stop_tokens(text, ["moo", "bar"])
     assert output == "foo "
+    text = "foo.bar.baz"
+    output = enforce_stop_tokens(text, ["."])
+    assert output == "foo"
+    text = "My favorite number is 7"
+    output = enforce_stop_tokens(text, ["\d"])
+    assert output == text
+    text = "Hello\nWorld"
+    output = enforce_stop_tokens(text, ["\n"])
+    assert output == "Hello"
 
 
 def test_enforce_stop_tokens_none() -> None:
