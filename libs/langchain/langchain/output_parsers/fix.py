@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import Any, TypeVar
 
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
 from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
 from langchain.schema.language_model import BaseLanguageModel
-
-if TYPE_CHECKING:
-    from langchain.chains.llm import LLMChain
 
 T = TypeVar("T")
 
@@ -20,7 +17,8 @@ class OutputFixingParser(BaseOutputParser[T]):
         return True
 
     parser: BaseOutputParser[T]
-    retry_chain: LLMChain
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
+    retry_chain: Any
 
     @classmethod
     def from_llm(
