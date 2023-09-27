@@ -22,7 +22,6 @@ from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    BaseMessageChunk,
     ChatMessage,
     FunctionMessage,
     HumanMessage,
@@ -34,13 +33,6 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-def _convert_resp_to_message_chunk(resp: Mapping[str, Any]) -> BaseMessageChunk:
-    return AIMessageChunk(
-        content=resp["result"],
-        role="assistant",
-    )
-
-
 def convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
@@ -50,7 +42,7 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
         if "function_call" in message.additional_kwargs:
-            message_dict["functions"] = message.additional_kwargs["function_call"]
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
@@ -64,6 +56,18 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         raise TypeError(f"Got unknown type {message}")
 
     return message_dict
+
+
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
+    content = _dict.get("result", "") or ""
+    if _dict.get("function_call"):
+        additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        if "thoughts" in additional_kwargs["function_call"]:
+            # align to api sample, which affects the llm function_call output
+            additional_kwargs["function_call"].pop("thoughts")
+    else:
+        additional_kwargs = {}
+    return AIMessage(content=content, additional_kwargs=additional_kwargs)
 
 
 class QianfanChatEndpoint(BaseChatModel):
@@ -162,6 +166,8 @@ class QianfanChatEndpoint(BaseChatModel):
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
         normal_params = {
+            "model": self.model,
+            "endpoint": self.endpoint,
             "stream": self.streaming,
             "request_timeout": self.request_timeout,
             "top_p": self.top_p,
@@ -241,7 +247,7 @@ class QianfanChatEndpoint(BaseChatModel):
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
         response_payload = self.client.do(**params)
-        lc_msg = AIMessage(content=response_payload["result"], additional_kwargs={})
+        lc_msg = _convert_dict_to_message(response_payload)
         gen = ChatGeneration(
             message=lc_msg,
             generation_info=dict(finish_reason="stop"),
@@ -274,7 +280,7 @@ class QianfanChatEndpoint(BaseChatModel):
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
         response_payload = await self.client.ado(**params)
-        lc_msg = AIMessage(content=response_payload["result"], additional_kwargs={})
+        lc_msg = _convert_dict_to_message(response_payload)
         generations = []
         gen = ChatGeneration(
             message=lc_msg,
@@ -295,9 +301,14 @@ class QianfanChatEndpoint(BaseChatModel):
         params = self._convert_prompt_msg_params(messages, **kwargs)
         for res in self.client.do(**params):
             if res:
+                msg = _convert_dict_to_message(res)
                 chunk = ChatGenerationChunk(
                     text=res["result"],
-                    message=_convert_resp_to_message_chunk(res),
+                    message=AIMessageChunk(
+                        content=msg.content,
+                        role="assistant",
+                        additional_kwargs=msg.additional_kwargs,
+                    ),
                 )
                 yield chunk
                 if run_manager:
@@ -313,9 +324,14 @@ class QianfanChatEndpoint(BaseChatModel):
         params = self._convert_prompt_msg_params(messages, **kwargs)
         async for res in await self.client.ado(**params):
             if res:
+                msg = _convert_dict_to_message(res)
                 chunk = ChatGenerationChunk(
                     text=res["result"],
-                    message=_convert_resp_to_message_chunk(res),
+                    message=AIMessageChunk(
+                        content=msg.content,
+                        role="assistant",
+                        additional_kwargs=msg.additional_kwargs,
+                    ),
                 )
                 yield chunk
                 if run_manager:
