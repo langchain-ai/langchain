@@ -53,7 +53,8 @@ def resolve_pairwise_criteria(
     """Resolve the criteria for the pairwise evaluator.
 
     Args:
-        criteria (Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]): The criteria to use.
+        criteria (Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]], optional):
+        The criteria to use.
 
     Returns:
         dict: The resolved criteria.
