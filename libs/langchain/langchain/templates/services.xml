@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services version="1.0">
+    {% if configurations %}
+    {% for config in configurations %}
+    {% autoescape off %}
+    {{ config.to_text }}
+    {% endautoescape %}
+    {% endfor %}
+    {% endif %}
+    <container id="{{ application_name }}_container" version="1.0">
+        {% if schemas %}
+        <search></search>
+        <document-api></document-api>
+        {% endif %}
+        {% if stateless_model_evaluation %}
+        <model-evaluation/>
+        {% endif %}
+    </container>
+    {% if schemas %}
+    <content id="{{ application_name }}_content" version="1.0">
+        <redundancy reply-after="1">1</redundancy>
+        <documents>
+            {% for schema in schemas %}
+            {% if schema.global_document %}
+            <document type="{{ schema.name }}" mode="index" global="true"></document>
+            {% else %}
+            <document type="{{ schema.name }}" mode="index"></document>
+            {% endif %}
+            {% endfor %}
+        </documents>
+        <nodes>
+            <node distribution-key="0" hostalias="node1"></node>
+        </nodes>
+    </content>
+    {% endif %}
+</services>

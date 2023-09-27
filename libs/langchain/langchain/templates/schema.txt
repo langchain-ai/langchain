@@ -1,0 +1,273 @@
+schema {{ schema_name }} {
+    document {{ document_name }}{% if document.inherits %} inherits {{ document.inherits }}{% endif %} {
+    {% for field in document.fields %}
+        field {{ field.name }} type {{ field.type }} {
+            {% if field.indexing %}
+            indexing: {{ field.indexing_to_text }}
+            {% endif %}
+            {% if field.index %}
+            index: {{ field.index }}
+            {% endif %}
+            {% if field.ann or field.attribute %}
+            attribute {
+                {% if field.ann %}
+                distance-metric: {{ field.ann.distance_metric }}
+                {% endif %}
+                {% if field.attribute %}
+                {% for attribute in field.attribute %}
+                {{ attribute }}
+                {% endfor %}
+                {% endif %}
+            }
+            {% endif %}
+            {% if field.ann %}
+            index {
+                hnsw {
+                    max-links-per-node: {{ field.ann.max_links_per_node }}
+                    neighbors-to-explore-at-insert: {{ field.ann.neighbors_to_explore_at_insert }}
+                }
+            }
+            {% endif %}
+            {% if field.match %}
+            match {
+                {% for match in field.match %}
+                {% if match is string %}
+                {{ match }}
+                {% else %}
+                {{ match.0 }}: {{ match.1 }}
+                {% endif %}
+                {% endfor %}
+            }
+            {% endif %}
+            {% if field.weight %}
+            weight: {{ field.weight }}
+            {% endif %}
+            {% if field.bolding %}
+            bolding: on
+            {% endif %}
+            {% if field.summary %}
+            {% for line in field.summary.as_lines %}
+            {{ line }}
+            {% endfor %}
+            {% endif %}
+            {% if field.stemming %}
+            stemming: {{ field.stemming }}
+            {% endif %}
+            {% if field.rank %}
+            rank: {{ field.rank }}
+            {% endif %}
+            {% if field.query_command %}
+            {% for qc in field.query_command %}
+            query-command: {{ qc }}
+            {% endfor %}
+            {% endif %}
+            {% if field.struct_fields %}
+            {% for struct_field in field.struct_fields %}
+            struct-field {{ struct_field.name }} {
+                {% if struct_field.indexing %}
+                indexing: {{ struct_field.indexing_to_text }}
+                {% endif %}
+                {% if struct_field.attribute %}
+                attribute {
+                    {% for attribute in struct_field.attribute %}
+                    {{ attribute }}
+                    {% endfor %}
+                }
+                {% endif %}
+                {% if struct_field.match %}
+                match {
+                    {% for match in struct_field.match %}
+                    {% if match is string %}
+                    {{ match }}
+                    {% else %}
+                    {{ match.0 }}: {{ match.1 }}
+                    {% endif %}
+                    {% endfor %}
+                }
+                {% endif %}
+                {% if field.query_command %}
+                {% for qc in field.query_command %}
+                query-command: {{ qc }}
+                {% endfor %}
+                {% endif %}
+                {% if struct_field.summary %}
+                summary {% if struct_field.summary.name %}{{struct_field.summary.name}}{% endif %}{% if struct_field.summary.type %} type {{ struct_field.summary.type }} {% endif %}{
+                    {% for field in struct_field.summary.attributes_as_string_list %}
+                    {{ field }}
+                    {% endfor %}
+                }
+                {% endif %}
+            }
+            {% endfor %}
+            {% endif %}
+        }
+        {% endfor %}
+        {% for struct in document.structs %}
+        struct {{struct.name}} {
+            {% for field in struct.fields %}
+            field {{ field.name }} type {{ field.type }} {
+                {% if field.indexing %}
+                indexing: {{ field.indexing_to_text }}
+                {% endif %}
+                {% if field.index %}
+                index: {{ field.index }}
+                {% endif %}
+                {% if field.ann or field.attribute %}
+                attribute {
+                    {% if field.ann %}
+                    distance-metric: {{ field.ann.distance_metric }}
+                    {% endif %}
+                    {% if field.attribute %}
+                    {% for attribute in field.attribute %}
+                    {{ attribute }}
+                    {% endfor %}
+                    {% endif %}
+                }
+                {% endif %}
+                {% if field.ann %}
+                index {
+                    hnsw {
+                        max-links-per-node: {{ field.ann.max_links_per_node }}
+                        neighbors-to-explore-at-insert: {{ field.ann.neighbors_to_explore_at_insert }}
+                    }
+                }
+                {% endif %}
+                {% if field.match %}
+                match {
+                    {% for match in field.match %}
+                    {% if match is string %}
+                    {{ match }}
+                    {% else %}
+                    {{ match.0 }}: {{ match.1 }}
+                    {% endif %}
+                    {% endfor %}
+                }
+                {% endif %}
+                {% if field.weight %}
+                weight: {{ field.weight }}
+                {% endif %}
+                {% if field.bolding %}
+                bolding: on
+                {% endif %}
+                {% if field.summary %}
+                {% for line in field.summary.as_lines %}
+                {{ line }}
+                {% endfor %}
+                {% endif %}
+                {% if field.stemming %}
+                stemming: {{ field.stemming }}
+                {% endif %}
+                {% if field.rank %}
+                rank: {{ field.rank }}
+                {% endif %}
+                {% if field.query_command %}
+                query-command: {{ field.query_command }}
+                {% endif %}
+            }
+            {% endfor %}
+        }
+        {% endfor %}
+    }
+{% for key, value in imported_fields.items() %}
+    import field {{ value.reference_field }}.{{ value.field_to_import }} as {{ key }} {}
+{% endfor %}
+{% for key, value in fieldsets.items() %}
+    fieldset {{ key }} {
+        fields: {{ value.fields_to_text }}
+    }
+{% endfor %}
+{% if models %}
+{% for model in models %}
+    onnx-model {{ model.model_name }} {
+        file: {{ model.file_path }}
+        {% for key_input, value_input in model.inputs.items() %}
+        input {{ key_input }}: {{ value_input }}
+        {% endfor %}
+        {% for key_output, value_output in model.outputs.items() %}
+        output {{ key_output }}: {{ value_output }}
+        {% endfor %}
+    }
+{% endfor %}
+{% endif %}
+{% for key, value in rank_profiles.items() %}
+    rank-profile {{ key }}{% if value.inherits %} inherits {{ value.inherits }}{% endif %} {
+        {% if value.constants %}
+        constants {
+        {% for constant_name, constant_value in value.constants.items() %}
+            {{ constant_name }}: {{ constant_value }}
+        {% endfor %}
+        }
+        {% endif %}
+        {% if value.inputs %}
+        inputs {
+        {% for input in value.inputs %}
+            {{ input.0 }} {{ input.1 }} {% if input.2 %}: {{ input.2 }}{% endif %}
+        {% endfor %}
+        }
+        {% endif %}
+        {% if value.functions %}
+        {% for function in value.functions %}
+        function {{ function.name }}({{ function.args_to_text }}) {
+            expression {
+                {{ function.expression | indent( width=16, first=False) }}
+            }
+        }
+        {% endfor %}
+        {% endif %}
+        {% if value.first_phase %}
+        first-phase {
+            expression {
+                {{ value.first_phase }}
+            }
+        }
+        {% endif %}
+        {% if value.second_phase %}
+        second-phase {
+            rerank-count: {{ value.second_phase.rerank_count }}
+            expression {
+                {{ value.second_phase.expression }}
+            }
+        }
+        {% endif %}
+        {% if value.summary_features %}
+        summary-features {
+        {% for feature in value.summary_features %}
+            {{ feature }}
+        {% endfor %}
+        }
+        {% endif %}
+        {% if value.weight %}
+        {% for weight in value.weight %}
+        weight {{ weight.0 }}: {{ weight.1 }}
+        {% endfor %}
+        {% endif %}
+        {% if value.rank_type %}
+        {% for rank_type in value.rank_type %}
+        rank-type {{ rank_type.0 }}: {{ rank_type.1 }}
+        {% endfor %}
+        {% endif %}
+        {% if value.rank_properties %}
+        rank-properties {
+            {% for rank_property in value.rank_properties %}
+            {{ rank_property.0 }}: "{{ rank_property.1 }}"
+            {% endfor %}
+        }
+        {% endif %}
+    }
+{% endfor %}
+{% for document_summary in document_summaries %}
+    document-summary {{ document_summary.name }}{% if document_summary.inherits %} inherits {{ document_summary.inherits }}{% endif %} {
+        {% for summary in document_summary.summary_fields %}
+        {% for field in summary.as_lines %}
+        {{ field }}
+        {% endfor %}
+        {% endfor %}
+        {% if document_summary.from_disk %}
+        {{ document_summary.from_disk }}
+        {% endif %}
+        {% if document_summary.omit_summary_features %}
+        {{ document_summary.omit_summary_features }}
+        {% endif %}
+    }
+{% endfor %}
+}

@@ -217,7 +217,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         params = {
             "queryVector": embedding,
             "path": self._embedding_key,
-            "numCandidates": k,
+            "numCandidates": k * 10,
             "limit": k,
             "index": self._index_name,
         }

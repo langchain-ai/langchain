@@ -1,0 +1,5 @@
+<query-profile-type id="root">
+    {% for field in query_profile_type.fields %}
+    <field name="{{ field.name }}" type="{{ field.type }}" />
+    {% endfor %}
+</query-profile-type>
