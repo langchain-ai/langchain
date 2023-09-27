@@ -1,15 +1,15 @@
 """Module definitions of agent types together with corresponding agents."""
 from enum import Enum
-from typing import Union, Type, Dict
+from typing import Dict, Type, Union
 
 from langchain.agents import (
     BaseSingleActionAgent,
-    OpenAIMultiFunctionsAgent,
-    ZeroShotAgent,
     ConversationalAgent,
     ConversationalChatAgent,
-    StructuredChatAgent,
     OpenAIFunctionsAgent,
+    OpenAIMultiFunctionsAgent,
+    StructuredChatAgent,
+    ZeroShotAgent,
 )
 from langchain.agents.chat.base import ChatAgent
 from langchain.agents.react.base import ReActDocstoreAgent
