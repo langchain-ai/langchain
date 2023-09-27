@@ -42,7 +42,8 @@ spell_fix:
 ######################
 
 help:
-	@echo '----'
+	@echo '===================='
+	@echo '-- DOCUMENTATION --'
 	@echo 'clean                        - run docs_clean and api_docs_clean'
 	@echo 'docs_build                   - build the documentation'
 	@echo 'docs_clean                   - clean the documentation build artifacts'
@@ -52,3 +53,4 @@ help:
 	@echo 'api_docs_linkcheck           - run linkchecker on the API Reference documentation'
 	@echo 'spell_check               	- run codespell on the project'
 	@echo 'spell_fix               		- run codespell on the project and fix the errors'
+	@echo '-- TEST and LINT tasks are within libs/*/ per-package --'
