@@ -1,5 +1,6 @@
 from typing import Dict
 
+import pytest
 from pytest_mock import MockerFixture
 
 from langchain.llms import GradientLLM
@@ -19,11 +20,7 @@ class MockResponse:
         return self.json_data
 
 
-def mocked_requests_post(
-    url: str,
-    headers: dict,
-    json: dict,
-) -> MockResponse:
+def mocked_requests_post(url: str, headers: dict, json: dict) -> MockResponse:
     assert url.startswith(_GRADIENT_BASE_URL)
     assert _MODEL_ID in url
     assert json
@@ -38,21 +35,31 @@ def mocked_requests_post(
     )
 
 
-def test_gradient_llm_sync(
-    mocker: MockerFixture,
-) -> None:
+@pytest.mark.parametrize(
+    "setup",
+    [
+        dict(
+            gradient_api_url=_GRADIENT_BASE_URL,
+            gradient_access_token=_GRADIENT_SECRET,
+            gradient_workspace_id=_GRADIENT_WORKSPACE_ID,
+            model=_MODEL_ID,
+        ),
+        dict(
+            gradient_api_url=_GRADIENT_BASE_URL,
+            gradient_access_token=_GRADIENT_SECRET,
+            gradient_workspace_id=_GRADIENT_WORKSPACE_ID,
+            model_id=_MODEL_ID,
+        ),
+    ],
+)
+def test_gradient_llm_sync(mocker: MockerFixture, setup: dict) -> None:
     mocker.patch("requests.post", side_effect=mocked_requests_post)
 
-    llm = GradientLLM(
-        gradient_api_url=_GRADIENT_BASE_URL,
-        gradient_access_token=_GRADIENT_SECRET,
-        gradient_workspace_id=_GRADIENT_WORKSPACE_ID,
-        model=_MODEL_ID,
-    )
+    llm = GradientLLM(**setup)
     assert llm.gradient_access_token == _GRADIENT_SECRET
     assert llm.gradient_api_url == _GRADIENT_BASE_URL
     assert llm.gradient_workspace_id == _GRADIENT_WORKSPACE_ID
-    assert llm.model == _MODEL_ID
+    assert llm.model_id == _MODEL_ID
 
     response = llm("Say foo:")
     want = "bar"

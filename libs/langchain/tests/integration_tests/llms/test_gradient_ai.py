@@ -16,7 +16,13 @@ from langchain.llms import GradientLLM
 def test_gradient_acall() -> None:
     """Test simple call to gradient.ai."""
     model = os.environ["GRADIENT_MODEL"]
-    llm = GradientLLM(model=model)
+    gradient_access_token = os.environ["GRADIENT_ACCESS_TOKEN"]
+    gradient_workspace_id = os.environ["GRADIENT_WORKSPACE_ID"]
+    llm = GradientLLM(
+        model=model,
+        gradient_access_token=gradient_access_token,
+        gradient_workspace_id=gradient_workspace_id,
+    )
     output = llm("Say hello:", temperature=0.2, max_tokens=250)
 
     assert llm._llm_type == "gradient"
@@ -28,7 +34,13 @@ def test_gradient_acall() -> None:
 async def test_gradientai_acall() -> None:
     """Test async call to gradient.ai."""
     model = os.environ["GRADIENT_MODEL"]
-    llm = GradientLLM(model=model)
+    gradient_access_token = os.environ["GRADIENT_ACCESS_TOKEN"]
+    gradient_workspace_id = os.environ["GRADIENT_WORKSPACE_ID"]
+    llm = GradientLLM(
+        model=model,
+        gradient_access_token=gradient_access_token,
+        gradient_workspace_id=gradient_workspace_id,
+    )
     output = await llm.agenerate(["Say hello:"], temperature=0.2, max_tokens=250)
     assert llm._llm_type == "gradient"
 

@@ -11,7 +11,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
@@ -44,7 +44,7 @@ class GradientLLM(LLM):
 
     """
 
-    model: str
+    model_id: str = Field(alias="model", min_length=2)
     "Underlying gradient.ai model id (base or fine-tuned)."
 
     gradient_workspace_id: Optional[str] = None
@@ -63,12 +63,13 @@ class GradientLLM(LLM):
     """Endpoint URL to use."""
 
     aiosession: Optional[aiohttp.ClientSession] = None  #: :meta private:
-    """ClientSession, private."""
+    """ClientSession, private, subject to change in upcoming releases."""
 
     # LLM call kwargs
     class Config:
         """Configuration for this pydantic object."""
 
+        allow_population_by_field_name = True
         extra = Extra.forbid
 
     @root_validator(allow_reuse=True)
@@ -154,7 +155,7 @@ class GradientLLM(LLM):
         _params = {**_model_kwargs, **kwargs}
 
         return dict(
-            url=f"{self.gradient_api_url}/models/{self.model}/complete",
+            url=f"{self.gradient_api_url}/models/{self.model_id}/complete",
             headers={
                 "authorization": f"Bearer {self.gradient_access_token}",
                 "x-gradient-workspace-id": f"{self.gradient_workspace_id}",
