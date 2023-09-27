@@ -1,4 +1,5 @@
 from operator import itemgetter
+import sys
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from uuid import UUID
 
@@ -334,6 +335,9 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     }
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
 def test_lambda_schemas() -> None:
     first_lambda = lambda x: x["hello"]  # noqa: E731
     assert RunnableLambda(first_lambda).input_schema.schema() == {
