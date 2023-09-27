@@ -6,6 +6,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Type,
     Union,
 )
 
@@ -36,7 +37,7 @@ from langchain.utils.env import get_from_dict_or_env
 
 
 def _convert_delta_to_message_chunk(
-    _dict: Any, default_class: type[BaseMessageChunk]
+    _dict: Any, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     """Convert a delta response to a message chunk."""
     role = _dict.role
