@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import Any, TypeVar
 
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
@@ -10,9 +10,6 @@ from langchain.schema import (
     PromptValue,
 )
 from langchain.schema.language_model import BaseLanguageModel
-
-if TYPE_CHECKING:
-    from langchain.chains.llm import LLMChain
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}
@@ -48,7 +45,8 @@ class RetryOutputParser(BaseOutputParser[T]):
 
     parser: BaseOutputParser[T]
     """The parser to use to parse the output."""
-    retry_chain: LLMChain
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
+    retry_chain: Any
     """The LLMChain to use to retry the completion."""
 
     @classmethod
@@ -127,7 +125,8 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     """
 
     parser: BaseOutputParser[T]
-    retry_chain: LLMChain
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
+    retry_chain: Any
 
     @classmethod
     def from_llm(
