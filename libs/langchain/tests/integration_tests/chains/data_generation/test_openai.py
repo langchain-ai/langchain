@@ -86,7 +86,6 @@ def test_generate_synthetic(synthetic_data_generator: SyntheticDataGenerator) ->
     assert len(synthetic_results) == 10
     for row in synthetic_results:
         assert isinstance(row, MedicalBilling)
-    print(synthetic_results)
 
 
 @pytest.mark.requires("openai")
@@ -103,4 +102,3 @@ async def test_agenerate_synthetic(
     assert len(synthetic_results) == 10
     for row in synthetic_results:
         assert isinstance(row, MedicalBilling)
-    print(synthetic_results)
