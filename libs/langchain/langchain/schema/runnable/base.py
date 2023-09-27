@@ -32,10 +32,9 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
+    from langchain.callbacks.tracers.log_stream import RunLogPatch
 
 
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.tracers.log_stream import LogStreamCallbackHandler, RunLogPatch
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
@@ -215,6 +214,12 @@ class Runnable(Generic[Input, Output], ABC):
 
         The jsonpatch ops can be applied in order to construct state.
         """
+
+        from langchain.callbacks.base import BaseCallbackManager
+        from langchain.callbacks.tracers.log_stream import (
+            LogStreamCallbackHandler,
+            RunLogPatch,
+        )
 
         # Create a stream handler that will emit Log objects
         stream = LogStreamCallbackHandler(
@@ -867,20 +872,21 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                 )
 
                 if expression_value:
-                    return runnable.invoke(
+                    output = runnable.invoke(
                         input,
                         config=patch_config(
                             config,
                             callbacks=run_manager.get_child(tag=f"branch:{idx + 1}"),
                         ),
                     )
-
-            output = self.default.invoke(
-                input,
-                config=patch_config(
-                    config, callbacks=run_manager.get_child(tag="branch:default")
-                ),
-            )
+                    break
+            else:
+                output = self.default.invoke(
+                    input,
+                    config=patch_config(
+                        config, callbacks=run_manager.get_child(tag="branch:default")
+                    ),
+                )
         except Exception as e:
             run_manager.on_chain_error(e)
             raise
@@ -911,7 +917,7 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                 )
 
                 if expression_value:
-                    return await runnable.ainvoke(
+                    output = await runnable.ainvoke(
                         input,
                         config=patch_config(
                             config,
@@ -919,14 +925,15 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                         ),
                         **kwargs,
                     )
-
-            output = await self.default.ainvoke(
-                input,
-                config=patch_config(
-                    config, callbacks=run_manager.get_child(tag="branch:default")
-                ),
-                **kwargs,
-            )
+                    break
+            else:
+                output = await self.default.ainvoke(
+                    input,
+                    config=patch_config(
+                        config, callbacks=run_manager.get_child(tag="branch:default")
+                    ),
+                    **kwargs,
+                )
         except Exception as e:
             run_manager.on_chain_error(e)
             raise
