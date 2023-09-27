@@ -1,5 +1,5 @@
 import re
-from typing import Any, List, Optional
+from typing import Any, List
 
 from langchain.evaluation.schema import StringEvaluator
 
@@ -25,9 +25,10 @@ class RegexMatchStringEvaluator(StringEvaluator):
             prediction="Mindy is the CTO",
             reference="^Mike.*CEO$|^Mindy.*CTO$",
         )  # This will return {'score': 1.0} as the prediction matches the second pattern in the union
-    """
+    """  # noqa: E501
 
-    def __init__(self, flags=0):  # Default is no flags
+    def __init__(self, *, flags: int = 0, **kwargs: Any):  # Default is no flags
+        super().__init__()
         self.flags = flags
 
     @property
@@ -64,11 +65,11 @@ class RegexMatchStringEvaluator(StringEvaluator):
         """
         return "regex_match"
 
-    def _evaluate_strings(
+    def _evaluate_strings(  # type: ignore[arg-type,override]
         self,
         *,
         prediction: str,
-        reference: Optional[str] = None,
+        reference: str,
         **kwargs: Any,
     ) -> dict:
         """

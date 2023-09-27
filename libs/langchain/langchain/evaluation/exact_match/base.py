@@ -1,5 +1,5 @@
 import string
-from typing import Any, List, Optional
+from typing import Any, List
 
 from langchain.evaluation.schema import StringEvaluator
 
@@ -23,10 +23,13 @@ class ExactMatchStringEvaluator(StringEvaluator):
 
     def __init__(
         self,
-        ignore_case=False,
-        ignore_punctuation=False,
-        ignore_numbers=False,
+        *,
+        ignore_case: bool = False,
+        ignore_punctuation: bool = False,
+        ignore_numbers: bool = False,
+        **kwargs: Any,
     ):
+        super().__init__()
         self.ignore_case = ignore_case
         self.ignore_punctuation = ignore_punctuation
         self.ignore_numbers = ignore_numbers
@@ -65,11 +68,11 @@ class ExactMatchStringEvaluator(StringEvaluator):
         """
         return "exact_match"
 
-    def _evaluate_strings(
+    def _evaluate_strings(  # type: ignore[arg-type,override]
         self,
         *,
         prediction: str,
-        reference: Optional[str] = None,
+        reference: str,
         **kwargs: Any,
     ) -> dict:
         """
