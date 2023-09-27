@@ -48,8 +48,6 @@ def test_simple_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> 
 
 def test_root_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     """Test irrational number that should need sympy."""
-    import sympy
-
     question = "What is the square root of 2?"
     output = fake_llm_symbolic_math_chain.run(question)
     assert output == f"Answer: {sympy.sqrt(2)}"
