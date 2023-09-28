@@ -107,6 +107,7 @@ class OutlookMessageLoader(BaseLoader):
             Document(
                 page_content=msg.body,
                 metadata={
+                    "source": self.file_path,
                     "subject": msg.subject,
                     "sender": msg.sender,
                     "date": msg.date,
