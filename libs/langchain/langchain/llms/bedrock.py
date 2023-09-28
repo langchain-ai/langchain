@@ -8,6 +8,52 @@ from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.output import GenerationChunk
 
+HUMAN_PROMPT = "\n\nHuman:"
+ASSISTANT_PROMPT = "\n\nAssistant:"
+ALTERNATION_ERROR = (
+    "Error: Prompt must alternate between '\n\nHuman:' and '\n\nAssistant:'."
+)
+
+
+def _add_newlines_before_ha(input_text: str) -> str:
+    new_text = input_text
+    for word in ["Human:", "Assistant:"]:
+        new_text = new_text.replace(word, "\n\n" + word)
+        for i in range(2):
+            new_text = new_text.replace("\n\n\n" + word, "\n\n" + word)
+    return new_text
+
+
+def _human_assistant_format(input_text: str) -> str:
+    if input_text.count("Human:") == 0 or (
+        input_text.find("Human:") > input_text.find("Assistant:")
+        and "Assistant:" in input_text
+    ):
+        input_text = HUMAN_PROMPT + " " + input_text  # SILENT CORRECTION
+    if input_text.count("Assistant:") == 0:
+        input_text = input_text + ASSISTANT_PROMPT  # SILENT CORRECTION
+    if input_text[: len("Human:")] == "Human:":
+        input_text = "\n\n" + input_text
+    input_text = _add_newlines_before_ha(input_text)
+    count = 0
+    # track alternation
+    for i in range(len(input_text)):
+        if input_text[i : i + len(HUMAN_PROMPT)] == HUMAN_PROMPT:
+            if count % 2 == 0:
+                count += 1
+            else:
+                raise ValueError(ALTERNATION_ERROR)
+        if input_text[i : i + len(ASSISTANT_PROMPT)] == ASSISTANT_PROMPT:
+            if count % 2 == 1:
+                count += 1
+            else:
+                raise ValueError(ALTERNATION_ERROR)
+
+    if count % 2 == 1:  # Only saw Human, no Assistant
+        input_text = input_text + ASSISTANT_PROMPT  # SILENT CORRECTION
+
+    return input_text
+
 
 class LLMInputOutputAdapter:
     """Adapter class to prepare the inputs from Langchain to a format
@@ -26,7 +72,9 @@ class LLMInputOutputAdapter:
         cls, provider: str, prompt: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
-        if provider == "anthropic" or provider == "ai21":
+        if provider == "anthropic":
+            input_body["prompt"] = _human_assistant_format(prompt)
+        elif provider == "ai21":
             input_body["prompt"] = prompt
         elif provider == "amazon":
             input_body = dict()

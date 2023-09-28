@@ -1,3 +1,4 @@
+import sys
 from operator import itemgetter
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from uuid import UUID
@@ -12,6 +13,8 @@ from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.callbacks.tracers.schemas import Run
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
+from langchain.chains.question_answering import load_qa_chain
+from langchain.chains.summarize import load_summarize_chain
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
@@ -43,6 +46,7 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
+from langchain.tools.json.tool import JsonListKeysTool, JsonSpec
 
 
 class FakeTracer(BaseTracer):
@@ -113,6 +117,412 @@ class FakeRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         return [Document(page_content="foo"), Document(page_content="bar")]
+
+
+def test_schemas(snapshot: SnapshotAssertion) -> None:
+    fake = FakeRunnable()  # str -> int
+
+    assert fake.input_schema.schema() == {
+        "title": "FakeRunnableInput",
+        "type": "string",
+    }
+    assert fake.output_schema.schema() == {
+        "title": "FakeRunnableOutput",
+        "type": "integer",
+    }
+
+    fake_bound = FakeRunnable().bind(a="b")  # str -> int
+
+    assert fake_bound.input_schema.schema() == {
+        "title": "FakeRunnableInput",
+        "type": "string",
+    }
+    assert fake_bound.output_schema.schema() == {
+        "title": "FakeRunnableOutput",
+        "type": "integer",
+    }
+
+    fake_w_fallbacks = FakeRunnable().with_fallbacks((fake,))  # str -> int
+
+    assert fake_w_fallbacks.input_schema.schema() == {
+        "title": "FakeRunnableInput",
+        "type": "string",
+    }
+    assert fake_w_fallbacks.output_schema.schema() == {
+        "title": "FakeRunnableOutput",
+        "type": "integer",
+    }
+
+    def typed_lambda_impl(x: str) -> int:
+        return len(x)
+
+    typed_lambda = RunnableLambda(typed_lambda_impl)  # str -> int
+
+    assert typed_lambda.input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "string",
+    }
+    assert typed_lambda.output_schema.schema() == {
+        "title": "RunnableLambdaOutput",
+        "type": "integer",
+    }
+
+    async def typed_async_lambda_impl(x: str) -> int:
+        return len(x)
+
+    typed_async_lambda: Runnable = RunnableLambda(typed_async_lambda_impl)  # str -> int
+
+    assert typed_async_lambda.input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "string",
+    }
+    assert typed_async_lambda.output_schema.schema() == {
+        "title": "RunnableLambdaOutput",
+        "type": "integer",
+    }
+
+    fake_ret = FakeRetriever()  # str -> List[Document]
+
+    assert fake_ret.input_schema.schema() == {
+        "title": "FakeRetrieverInput",
+        "type": "string",
+    }
+    assert fake_ret.output_schema.schema() == {
+        "title": "FakeRetrieverOutput",
+        "type": "array",
+        "items": {"$ref": "#/definitions/Document"},
+        "definitions": {
+            "Document": {
+                "title": "Document",
+                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "page_content": {"title": "Page Content", "type": "string"},
+                    "metadata": {"title": "Metadata", "type": "object"},
+                },
+                "required": ["page_content"],
+            }
+        },
+    }
+
+    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+
+    assert fake_llm.input_schema.schema() == snapshot
+    assert fake_llm.output_schema.schema() == {
+        "title": "FakeListLLMOutput",
+        "type": "string",
+    }
+
+    fake_chat = FakeListChatModel(responses=["a"])  # str -> List[List[str]]
+
+    assert fake_chat.input_schema.schema() == snapshot
+    assert fake_chat.output_schema.schema() == snapshot
+
+    prompt = PromptTemplate.from_template("Hello, {name}!")
+
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"name": {"title": "Name"}},
+    }
+    assert prompt.output_schema.schema() == snapshot
+
+    prompt_mapper = PromptTemplate.from_template("Hello, {name}!").map()
+
+    assert prompt_mapper.input_schema.schema() == {
+        "definitions": {
+            "PromptInput": {
+                "properties": {"name": {"title": "Name"}},
+                "title": "PromptInput",
+                "type": "object",
+            }
+        },
+        "items": {"$ref": "#/definitions/PromptInput"},
+        "type": "array",
+        "title": "RunnableEachInput",
+    }
+    assert prompt_mapper.output_schema.schema() == snapshot
+
+    list_parser = CommaSeparatedListOutputParser()
+
+    assert list_parser.input_schema.schema() == snapshot
+    assert list_parser.output_schema.schema() == {
+        "title": "CommaSeparatedListOutputParserOutput",
+        "type": "array",
+        "items": {"type": "string"},
+    }
+
+    seq = prompt | fake_llm | list_parser
+
+    assert seq.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"name": {"title": "Name"}},
+    }
+    assert seq.output_schema.schema() == {
+        "type": "array",
+        "items": {"type": "string"},
+        "title": "CommaSeparatedListOutputParserOutput",
+    }
+
+    router: Runnable = RouterRunnable({})
+
+    assert router.input_schema.schema() == {
+        "title": "RouterRunnableInput",
+        "$ref": "#/definitions/RouterInput",
+        "definitions": {
+            "RouterInput": {
+                "title": "RouterInput",
+                "type": "object",
+                "properties": {
+                    "key": {"title": "Key", "type": "string"},
+                    "input": {"title": "Input"},
+                },
+                "required": ["key", "input"],
+            }
+        },
+    }
+    assert router.output_schema.schema() == {"title": "RouterRunnableOutput"}
+
+    seq_w_map: Runnable = (
+        prompt
+        | fake_llm
+        | {
+            "original": RunnablePassthrough(input_type=str),
+            "as_list": list_parser,
+            "length": typed_lambda_impl,
+        }
+    )
+
+    assert seq_w_map.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"name": {"title": "Name"}},
+    }
+    assert seq_w_map.output_schema.schema() == {
+        "title": "RunnableMapOutput",
+        "type": "object",
+        "properties": {
+            "original": {"title": "Original", "type": "string"},
+            "length": {"title": "Length", "type": "integer"},
+            "as_list": {
+                "title": "As List",
+                "type": "array",
+                "items": {"type": "string"},
+            },
+        },
+    }
+
+    json_list_keys_tool = JsonListKeysTool(spec=JsonSpec(dict_={}))
+
+    assert json_list_keys_tool.input_schema.schema() == {
+        "title": "json_spec_list_keysSchema",
+        "type": "object",
+        "properties": {"tool_input": {"title": "Tool Input", "type": "string"}},
+        "required": ["tool_input"],
+    }
+    assert json_list_keys_tool.output_schema.schema() == {
+        "title": "JsonListKeysToolOutput"
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
+def test_lambda_schemas() -> None:
+    first_lambda = lambda x: x["hello"]  # noqa: E731
+    assert RunnableLambda(first_lambda).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"hello": {"title": "Hello"}},
+    }
+
+    second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
+    assert RunnableLambda(
+        second_lambda,  # type: ignore[arg-type]
+    ).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
+    }
+
+    def get_value(input):  # type: ignore[no-untyped-def]
+        return input["variable_name"]
+
+    assert RunnableLambda(get_value).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"variable_name": {"title": "Variable Name"}},
+    }
+
+    async def aget_value(input):  # type: ignore[no-untyped-def]
+        return (input["variable_name"], input.get("another"))
+
+    assert RunnableLambda(aget_value).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {
+            "another": {"title": "Another"},
+            "variable_name": {"title": "Variable Name"},
+        },
+    }
+
+    async def aget_values(input):  # type: ignore[no-untyped-def]
+        return {
+            "hello": input["variable_name"],
+            "bye": input["variable_name"],
+            "byebye": input["yo"],
+        }
+
+    assert RunnableLambda(aget_values).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {
+            "variable_name": {"title": "Variable Name"},
+            "yo": {"title": "Yo"},
+        },
+    }
+
+
+def test_schema_complex_seq() -> None:
+    prompt1 = ChatPromptTemplate.from_template("what is the city {person} is from?")
+    prompt2 = ChatPromptTemplate.from_template(
+        "what country is the city {city} in? respond in {language}"
+    )
+
+    model = FakeListChatModel(responses=[""])
+
+    chain1 = prompt1 | model | StrOutputParser()
+
+    chain2: Runnable = (
+        {"city": chain1, "language": itemgetter("language")}
+        | prompt2
+        | model
+        | StrOutputParser()
+    )
+
+    assert chain2.input_schema.schema() == {
+        "title": "RunnableMapInput",
+        "type": "object",
+        "properties": {
+            "person": {"title": "Person"},
+            "language": {"title": "Language"},
+        },
+    }
+
+    assert chain2.output_schema.schema() == {
+        "title": "StrOutputParserOutput",
+        "type": "string",
+    }
+
+
+def test_schema_chains() -> None:
+    model = FakeListChatModel(responses=[""])
+
+    stuff_chain = load_summarize_chain(model)
+
+    assert stuff_chain.input_schema.schema() == {
+        "title": "CombineDocumentsInput",
+        "type": "object",
+        "properties": {
+            "input_documents": {
+                "title": "Input Documents",
+                "type": "array",
+                "items": {"$ref": "#/definitions/Document"},
+            }
+        },
+        "definitions": {
+            "Document": {
+                "title": "Document",
+                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "page_content": {"title": "Page Content", "type": "string"},
+                    "metadata": {"title": "Metadata", "type": "object"},
+                },
+                "required": ["page_content"],
+            }
+        },
+    }
+    assert stuff_chain.output_schema.schema() == {
+        "title": "CombineDocumentsOutput",
+        "type": "object",
+        "properties": {"output_text": {"title": "Output Text", "type": "string"}},
+    }
+
+    mapreduce_chain = load_summarize_chain(
+        model, "map_reduce", return_intermediate_steps=True
+    )
+
+    assert mapreduce_chain.input_schema.schema() == {
+        "title": "CombineDocumentsInput",
+        "type": "object",
+        "properties": {
+            "input_documents": {
+                "title": "Input Documents",
+                "type": "array",
+                "items": {"$ref": "#/definitions/Document"},
+            }
+        },
+        "definitions": {
+            "Document": {
+                "title": "Document",
+                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "page_content": {"title": "Page Content", "type": "string"},
+                    "metadata": {"title": "Metadata", "type": "object"},
+                },
+                "required": ["page_content"],
+            }
+        },
+    }
+    assert mapreduce_chain.output_schema.schema() == {
+        "title": "MapReduceDocumentsOutput",
+        "type": "object",
+        "properties": {
+            "output_text": {"title": "Output Text", "type": "string"},
+            "intermediate_steps": {
+                "title": "Intermediate Steps",
+                "type": "array",
+                "items": {"type": "string"},
+            },
+        },
+    }
+
+    maprerank_chain = load_qa_chain(model, "map_rerank", metadata_keys=["hello"])
+
+    assert maprerank_chain.input_schema.schema() == {
+        "title": "CombineDocumentsInput",
+        "type": "object",
+        "properties": {
+            "input_documents": {
+                "title": "Input Documents",
+                "type": "array",
+                "items": {"$ref": "#/definitions/Document"},
+            }
+        },
+        "definitions": {
+            "Document": {
+                "title": "Document",
+                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "page_content": {"title": "Page Content", "type": "string"},
+                    "metadata": {"title": "Metadata", "type": "object"},
+                },
+                "required": ["page_content"],
+            }
+        },
+    }
+    assert maprerank_chain.output_schema.schema() == {
+        "title": "MapRerankOutput",
+        "type": "object",
+        "properties": {
+            "output_text": {"title": "Output Text", "type": "string"},
+            "hello": {"title": "Hello"},
+        },
+    }
 
 
 @pytest.mark.asyncio
@@ -2160,6 +2570,7 @@ def test_runnable_branch_init_coercion(branches: Sequence[Any]) -> None:
         assert isinstance(body, Runnable)
 
     assert isinstance(runnable.default, Runnable)
+    assert runnable.input_schema.schema() == {"title": "RunnableBranchInput"}
 
 
 def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:

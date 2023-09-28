@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 import yaml
 
 from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain.schema.document import Document
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt import PromptValue
@@ -35,6 +35,20 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+
+    @property
+    def OutputType(self) -> Any:
+        from langchain.prompts.base import StringPromptValue
+        from langchain.prompts.chat import ChatPromptValueConcrete
+
+        return Union[StringPromptValue, ChatPromptValueConcrete]
+
+    @property
+    def input_schema(self) -> type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "PromptInput", **{k: (Any, None) for k in self.input_variables}
+        )
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:
         return self._call_with_config(
