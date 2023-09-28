@@ -19,6 +19,13 @@ from langchain.utils import (
 from langchain.utils.utils import build_extra_kwargs
 
 
+def _to_secret(value: typing.Union[SecretStr, str]) -> SecretStr:
+    """Convert a string to a SecretStr if needed."""
+    if isinstance(value, SecretStr):
+        return value
+    return SecretStr(value)
+
+
 class _AnthropicCommon(BaseLanguageModel):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
@@ -64,7 +71,7 @@ class _AnthropicCommon(BaseLanguageModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["anthropic_api_key"] = SecretStr(
+        values["anthropic_api_key"] = _to_secret(
             get_from_dict_or_env(values, "anthropic_api_key", "ANTHROPIC_API_KEY")
         )
         # Get custom api url from environment.
