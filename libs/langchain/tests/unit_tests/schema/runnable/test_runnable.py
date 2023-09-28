@@ -2739,3 +2739,34 @@ async def test_runnable_branch_abatch() -> None:
     )
 
     assert await branch.abatch([1, 10, 0]) == [2, 100, -1]
+
+
+def test_reprsentation_of_runnables() -> None:
+    """Test representation of runnables."""
+    runnable = RunnableLambda(lambda x: x * 2)
+    assert repr(runnable) == "RunnableLambda(lambda x: x * 2)"
+
+    def f(x: int) -> int:
+        """Return 2."""
+        return 2
+
+    assert repr(RunnableLambda(func=f)) == "RunnableLambda(...)"
+
+    async def af(x: int) -> int:
+        """Return 2."""
+        return 2
+
+    assert repr(RunnableLambda(func=f, afunc=af)) == "RunnableLambda(...)"
+
+    sequence = RunnableLambda(lambda x: x + 2) | {
+        "a": RunnableLambda(lambda x: x * 2),
+        "b": RunnableLambda(lambda x: x * 3),
+    }
+
+    assert repr(sequence) == (
+        "RunnableLambda(lambda x: x * 3)\n"
+        "| {\n"
+        "    a: RunnableLambda(...),\n"
+        "    b: RunnableLambda(...)\n"
+        "  }"
+    )
