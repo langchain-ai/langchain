@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
@@ -221,9 +221,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     )
                     self.deck.append(self.markdown_renderer().to_html(generation.text))
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when LLM errors."""
         self.step += 1
         self.errors += 1
@@ -266,9 +264,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             self.table_renderer().to_html(self.pandas.DataFrame([resp])) + "\n"
         )
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when chain errors."""
         self.step += 1
         self.errors += 1
@@ -306,9 +302,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             self.table_renderer().to_html(self.pandas.DataFrame([resp])) + "\n"
         )
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when tool errors."""
         self.step += 1
         self.errors += 1

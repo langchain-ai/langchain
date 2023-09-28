@@ -187,6 +187,14 @@ class ChildTool(BaseTool):
 
     # --- Runnable ---
 
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        """The tool's input schema."""
+        if self.args_schema is not None:
+            return self.args_schema
+        else:
+            return create_schema_from_function(self.name, self._run)
+
     def invoke(
         self,
         input: Union[str, Dict],
@@ -199,6 +207,7 @@ class ChildTool(BaseTool):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
             **kwargs,
         )
 
@@ -210,7 +219,7 @@ class ChildTool(BaseTool):
     ) -> Any:
         if type(self)._arun == BaseTool._arun:
             # If the tool does not implement async, fall back to default implementation
-            return super().ainvoke(input, config, **kwargs)
+            return await super().ainvoke(input, config, **kwargs)
 
         config = config or {}
         return await self.arun(
@@ -218,6 +227,7 @@ class ChildTool(BaseTool):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
             **kwargs,
         )
 
@@ -297,6 +307,7 @@ class ChildTool(BaseTool):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -320,6 +331,7 @@ class ChildTool(BaseTool):
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
+            name=run_name,
             **kwargs,
         )
         try:
@@ -370,6 +382,7 @@ class ChildTool(BaseTool):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -392,6 +405,7 @@ class ChildTool(BaseTool):
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
+            name=run_name,
             **kwargs,
         )
         try:
@@ -461,7 +475,7 @@ class Tool(BaseTool):
                 None, partial(self.invoke, input, config, **kwargs)
             )
 
-        return super().ainvoke(input, config, **kwargs)
+        return await super().ainvoke(input, config, **kwargs)
 
     # --- Tool ---
 
