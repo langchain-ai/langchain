@@ -1,5 +1,4 @@
 import json
-import re
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
@@ -16,7 +15,7 @@ ALTERNATION_ERROR = (
 )
 
 
-def _add_newlines_before_ha(input_text):
+def _add_newlines_before_ha(input_text: str) -> str:
     new_text = input_text
     for word in ["Human:", "Assistant:"]:
         new_text = new_text.replace(word, "\n\n" + word)
@@ -25,7 +24,7 @@ def _add_newlines_before_ha(input_text):
     return new_text
 
 
-def _human_assistant_format(input_text):
+def _human_assistant_format(input_text: str) -> str:
     if input_text.count("Human:") == 0 or (
         input_text.find("Human:") > input_text.find("Assistant:")
         and "Assistant:" in input_text

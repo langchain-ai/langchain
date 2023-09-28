@@ -36,7 +36,9 @@ Assistant:""",
 
 Human: Human: Hello
 
-Assistant:""": "Error: Prompt must alternate between '\n\nHuman:' and '\n\nAssistant:'.",
+Assistant:""": (
+        "Error: Prompt must alternate between '\n\nHuman:' and '\n\nAssistant:'."
+    ),
     """Human: Hello
 
 Assistant: Hello
