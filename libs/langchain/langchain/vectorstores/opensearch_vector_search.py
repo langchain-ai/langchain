@@ -341,6 +341,7 @@ class OpenSearchVectorSearch(VectorStore):
         http_auth = _get_kwargs_value(kwargs, "http_auth", None)
         self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
+        self.engine = _get_kwargs_value(kwargs, "engine", None)
 
     @property
     def embeddings(self) -> Embeddings:
@@ -528,6 +529,7 @@ class OpenSearchVectorSearch(VectorStore):
         search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
         vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
         index_name = _get_kwargs_value(kwargs, "index_name", self.index_name)
+        filter = _get_kwargs_value(kwargs, "filter", {})
 
         if (
             self.is_aoss
@@ -563,6 +565,17 @@ class OpenSearchVectorSearch(VectorStore):
                     "Both `lucene_filter` and `boolean_filter` are provided which "
                     "is invalid. `lucene_filter` is deprecated"
                 )
+
+            if (
+                efficient_filter == {}
+                and boolean_filter == {}
+                and lucene_filter == {}
+                and filter != {}
+            ):
+                if self.engine in ["faiss", "lucene"]:
+                    efficient_filter = filter
+                else:
+                    boolean_filter = filter
 
             if boolean_filter != {}:
                 search_query = _approximate_search_query_with_boolean_filter(
@@ -745,6 +758,7 @@ class OpenSearchVectorSearch(VectorStore):
         max_chunk_bytes = _get_kwargs_value(kwargs, "max_chunk_bytes", 1 * 1024 * 1024)
         http_auth = _get_kwargs_value(kwargs, "http_auth", None)
         is_aoss = _is_aoss_enabled(http_auth=http_auth)
+        engine = None
 
         if is_aoss and not is_appx_search:
             raise ValueError(
@@ -782,4 +796,5 @@ class OpenSearchVectorSearch(VectorStore):
             max_chunk_bytes=max_chunk_bytes,
             is_aoss=is_aoss,
         )
+        kwargs["engine"] = engine
         return cls(opensearch_url, index_name, embedding, **kwargs)
