@@ -2,34 +2,32 @@
 from enum import Enum
 from typing import Dict, Type, Union
 
-from langchain.agents import (
-    BaseSingleActionAgent,
-    ConversationalAgent,
-    ConversationalChatAgent,
-    OpenAIFunctionsAgent,
-    OpenAIMultiFunctionsAgent,
-    StructuredChatAgent,
-    ZeroShotAgent,
-)
+from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.chat.base import ChatAgent
+from langchain.agents.conversational.base import ConversationalAgent
+from langchain.agents.conversational_chat.base import ConversationalChatAgent
+from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
+from langchain.agents.openai_functions_multi_agent.base import OpenAIMultiFunctionsAgent
 from langchain.agents.react.base import ReActDocstoreAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
+from langchain.agents.structured_chat.base import StructuredChatAgent
 
 
 class AgentType(str, Enum):
-    """Enumerator with the Agent types."""
+    """An enum for agent types.
+
+    See documentation: https://python.langchain.com/docs/modules/agents/agent_types/
+    """
 
     ZERO_SHOT_REACT_DESCRIPTION = "zero-shot-react-description"
-    """A zero shot agent that does a reasoning step before acting.
-    
-    Optimized for string based language models (not chat LLMs).
-    """
+    """A zero shot agent that does a reasoning step before acting."""
 
     REACT_DOCSTORE = "react-docstore"
     """A zero shot agent that does a reasoning step before acting.
     
-    This agent has access to a document store and can use it to look up relevant
-    information to answering a question.
+    This agent has access to a document store that allows it to look up 
+    relevant information to answering the question.
     """
 
     SELF_ASK_WITH_SEARCH = "self-ask-with-search"
@@ -52,7 +50,7 @@ class AgentType(str, Enum):
     )
     """An zero-shot react agent optimized for chat models.
     
-    This agent invokes tools using structured inputs rather than strings.
+    This agent is capable of invoking tools that have multiple inputs.
     """
 
     OPENAI_FUNCTIONS = "openai-functions"
