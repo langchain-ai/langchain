@@ -101,7 +101,7 @@ Now that the index is created, we can use it to ask questions of the data! Note 
 
 
 ```python
-query = "What did the president say about Ketanji Brown Jackson"
+query = "What did the president say about Ketanji Brown Jackson?"
 index.query(query)
 ```
 
@@ -115,14 +115,14 @@ index.query(query)
 
 
 ```python
-query = "What did the president say about Ketanji Brown Jackson"
+query = "What did the president say about Ketanji Brown Jackson?"
 index.query_with_sources(query)
 ```
 
 <CodeOutputBlock lang="python">
 
 ```
-    {'question': 'What did the president say about Ketanji Brown Jackson',
+    {'question': 'What did the president say about Ketanji Brown Jackson?',
      'answer': " The president said that he nominated Circuit Court of Appeals Judge Ketanji Brown Jackson, one of the nation's top legal minds, to continue Justice Breyer's legacy of excellence, and that she has received a broad range of support from the Fraternal Order of Police to former judges appointed by Democrats and Republicans.\n",
      'sources': '../state_of_the_union.txt'}
 ```
@@ -159,7 +159,7 @@ index.vectorstore.as_retriever()
 
 </CodeOutputBlock>
 
-It can also be convenient to filter the vector store by the metadata associated with documents, particularly when your vector store has multiple sources.  This can be done using the `query` method like so:
+It can also be convenient to filter the vector store by the metadata associated with documents, particularly when your vector store has multiple sources. This can be done using the `query` method, like this:
 
 
 ```python
@@ -244,7 +244,7 @@ qa = RetrievalQA.from_chain_type(llm=OpenAI(), chain_type="stuff", retriever=ret
 
 
 ```python
-query = "What did the president say about Ketanji Brown Jackson"
+query = "What did the president say about Ketanji Brown Jackson?"
 qa.run(query)
 ```
 
