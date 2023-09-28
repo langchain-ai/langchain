@@ -193,7 +193,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         "op": "replace",
                         "path": "",
                         "value": RunState(
-                            id=run.id,
+                            id=str(run.id),
                             streamed_output=[],
                             final_output=None,
                             logs=[],

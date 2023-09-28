@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/modules/agents/agents/examples/mrkl_chat(.html?)",
+      "destination": "/docs/modules/agents/"
+    },
+    {
       "source": "/docs/use_cases(/?)",
       "destination": "/docs/use_cases/question_answering/"
     },
@@ -1967,6 +1971,18 @@
     {
       "source": "/docs/modules/data_connection/document_loaders/integrations/youtube_transcript",
       "destination": "/docs/integrations/document_loaders/youtube_transcript"
+    },
+    {
+      "source": "/docs/integrations/document_loaders/Etherscan",
+      "destination": "/docs/integrations/document_loaders/etherscan"
+    },
+    {
+      "source": "/docs/integrations/document_loaders/merge_doc_loader",
+      "destination": "/docs/integrations/document_loaders/merge_doc"
+    },
+    {
+      "source": "/docs/integrations/document_loaders/recursive_url_loader",
+      "destination": "/docs/integrations/document_loaders/recursive_url"
     },
     {
       "source": "/en/latest/modules/indexes/text_splitters/examples/markdown_header_metadata.html",

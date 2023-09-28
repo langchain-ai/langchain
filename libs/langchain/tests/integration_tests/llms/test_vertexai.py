@@ -15,20 +15,26 @@ from langchain.llms import VertexAI, VertexAIModelGarden
 from langchain.schema import LLMResult
 
 
-def test_vertex_call() -> None:
-    llm = VertexAI(temperature=0)
-    output = llm("Say foo:")
-    assert isinstance(output, str)
+def test_vertex_initialization() -> None:
+    llm = VertexAI()
     assert llm._llm_type == "vertexai"
     assert llm.model_name == llm.client._model_id
 
 
+def test_vertex_call() -> None:
+    llm = VertexAI(temperature=0)
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
+@pytest.mark.scheduled
 def test_vertex_generate() -> None:
     llm = VertexAI(temperate=0)
     output = llm.generate(["Please say foo:"])
     assert isinstance(output, LLMResult)
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_vertex_agenerate() -> None:
     llm = VertexAI(temperate=0)
@@ -36,7 +42,8 @@ async def test_vertex_agenerate() -> None:
     assert isinstance(output, LLMResult)
 
 
-def test_vertext_stream() -> None:
+@pytest.mark.scheduled
+def test_vertex_stream() -> None:
     llm = VertexAI(temperate=0)
     outputs = list(llm.stream("Please say foo:"))
     assert isinstance(outputs[0], str)
@@ -63,7 +70,6 @@ def test_model_garden() -> None:
     project = os.environ["PROJECT"]
     llm = VertexAIModelGarden(endpoint_id=endpoint_id, project=project)
     output = llm("What is the meaning of life?")
-    print(output)
     assert isinstance(output, str)
     assert llm._llm_type == "vertexai_model_garden"
 
