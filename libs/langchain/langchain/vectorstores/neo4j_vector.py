@@ -885,8 +885,8 @@ class Neo4jVector(VectorStore):
                 f"MATCH (n:`{node_label}`) "
                 f"WHERE n.{embedding_node_property} IS null "
                 "AND any(k in $props WHERE n[k] IS NOT null) "
-                f"RETURN elementId(n) AS id, reduce("
-                "str='', k IN $props | str + '\\n' + k + ':' + coalesce(n[k])) AS text "
+                f"RETURN elementId(n) AS id, reduce(str='',"
+                "k IN $props | str + '\\n' + k + ':' + coalesce(n[k], '')) AS text "
                 "LIMIT 1000"
             )
             data = store.query(fetch_query, params={"props": text_node_properties})
