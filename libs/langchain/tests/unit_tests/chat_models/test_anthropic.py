@@ -42,6 +42,14 @@ def test_anthropic_incorrect_field() -> None:
     assert llm.model_kwargs == {"foo": "bar"}
 
 
+@pytest.mark.requires("anthropic")
+def test_anthropic_initialization() -> None:
+    """Test anthropic initialization."""
+    # Verify that chat anthropic can be initialized using a secret key provided
+    # as a parameter rather than an environment variable.
+    ChatAnthropic(model="test", anthropic_api_key="test")
+
+
 def test_formatting() -> None:
     messages: List[BaseMessage] = [HumanMessage(content="Hello")]
     result = convert_messages_to_prompt_anthropic(messages)
