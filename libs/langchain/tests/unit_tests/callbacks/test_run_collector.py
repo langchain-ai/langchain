@@ -13,4 +13,4 @@ def test_collect_runs() -> None:
         assert cb.traced_runs
         assert len(cb.traced_runs) == 1
         assert isinstance(cb.traced_runs[0].id, uuid.UUID)
-        assert cb.traced_runs[0].inputs == {"prompts": ["hi"]}
+        assert cb.traced_runs[0].inputs == {"prompt": "hi"}

@@ -112,9 +112,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if metadata:
             kwargs.update({"metadata": metadata})
         if len(prompts) != 1:
-            raise ValueError(
-                "Tracer does not support multiple prompts for LLM runs."
-            )
+            raise ValueError("Tracer does not support multiple prompts for LLM runs.")
         llm_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
