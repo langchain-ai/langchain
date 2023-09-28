@@ -807,12 +807,16 @@ class Neo4jVector(VectorStore):
         Neo4j credentials are required in the form of `url`, `username`,
         and `password` and optional `database` parameters.
         """
-
+        # Validate the list is not empty
+        if not text_node_properties:
+            raise ValueError(
+                "Parameter `text_node_properties` must not be an empty list"
+            )
         # Prefer retrieval query from params, otherwise construct it
         if not retrieval_query:
             retrieval_query = (
                 f"RETURN reduce(str='', k IN {text_node_properties} |"
-                " str + '\\n' + k + ':' + coalesce(node[k], '')) AS text, "
+                " str + '\\n' + k + ': ' + coalesce(node[k], '')) AS text, "
                 "node {.*, `"
                 + embedding_node_property
                 + "`: Null, id: Null, "
@@ -860,11 +864,11 @@ class Neo4jVector(VectorStore):
         # Populate embeddings
         while True:
             fetch_query = (
-                f"MATCH (n:{node_label}) "
+                f"MATCH (n:`{node_label}`) "
                 f"WHERE n.{embedding_node_property} IS null "
                 "AND any(k in $props WHERE n[k] IS NOT null) "
-                f"RETURN id(n) AS id, reduce("
-                "str='', k IN $props | str + '\\n' + k + ':' + n[k]) AS text "
+                f"RETURN elementId(n) AS id, reduce("
+                "str='', k IN $props | str + '\\n' + k + ':' + coalesce(n[k])) AS text "
                 "LIMIT 1000"
             )
             data = store.query(fetch_query, params={"props": text_node_properties})
@@ -879,13 +883,14 @@ class Neo4jVector(VectorStore):
 
             store.query(
                 "UNWIND $data AS row "
-                f"MATCH (n:{node_label}) "
+                f"MATCH (n:`{node_label}`) "
+                "WHERE elementId(n) = row.id "
                 f"CALL db.create.setVectorProperty(n, "
                 f"'{embedding_node_property}', row.embedding) "
-                "YIELD node RETURN distinct 'done'",
+                "YIELD node RETURN count(*)",
                 params=params,
             )
-
+            # If embedding calculation should be stopped
             if len(data) < 1000:
                 break
         return store
