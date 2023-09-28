@@ -22,7 +22,7 @@ USE_POETRY_OPTION = typer.Option(default_factory=is_poetry_installed)
 
 
 @app.command()
-def create_repo(
+def new(
     project_directory: str,
     author_name: Annotated[str, AUTHOR_NAME_OPTION],
     author_email: Annotated[str, AUTHOR_EMAIL_OPTION],

@@ -3,6 +3,9 @@
 # Default target executed when no arguments are given to make.
 all: help
 
+start:
+	uvicorn ____project_name_identifier.server:app --reload
+
 # Define a variable for the test file path.
 TEST_FILE ?= tests/
 
@@ -29,6 +32,7 @@ format format_diff:
 
 help:
 	@echo '----'
+	@echo 'make start                        - start server'
 	@echo 'make format                       - run code formatters'
 	@echo 'make lint                         - run linters'
 	@echo 'make test                         - run unit tests'

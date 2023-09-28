@@ -10,6 +10,12 @@ packages = [{include = "____project_name_identifier"}]
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = "^____langchain_version"
+langserve = "^0.0.1"
+tiktoken = "^0.4.0"
+openai = "^0.27.8"
+fastapi = "^0.96.0"
+sse-starlette = "^0.3.0"
+uvicorn = {extras = ["standard"], version = "^0.22.0"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"

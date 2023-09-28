@@ -244,6 +244,7 @@ def _pip_install(project_directory_path: Path) -> None:
     )
     subprocess.run(["pwd"], cwd=project_directory_path)
     subprocess.run(["python", "-m", "venv", ".venv"], cwd=project_directory_path)
+    # TODO install dependencies
 
 
 def _init_git(project_directory_path: Path) -> None:

@@ -7,6 +7,12 @@ readme = "README.md"
 requires-python = ">=3.8,<4.0"
 dependencies = [
   "langchain~=____langchain_version",
+  "langserve~=____langserve_version",
+  "tiktoken~=0.4.0",
+  "openai~=0.27.8",
+  "fastapi~=0.96.0",
+  "sse-starlette~=0.3.0",
+  "uvicorn[standard]~=0.22.0",
 ]
 
 [build-system]
