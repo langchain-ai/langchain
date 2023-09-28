@@ -120,7 +120,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             parent_run_id=parent_run_id,
             serialized=serialized,
             # Send a single prompt since the CallbackManager will
-            # split up the list of prompts for us. Invariant: len(messages) == 1
+            # split up the list of prompts for us. Invariant: len(prompts) == 1
             inputs={"prompt": prompts[0]},
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
