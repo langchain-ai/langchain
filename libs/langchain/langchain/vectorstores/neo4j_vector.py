@@ -803,9 +803,27 @@ class Neo4jVector(VectorStore):
         **kwargs: Any,
     ) -> Neo4jVector:
         """
-        Return Neo4jVector initialized from existing graph.
-        Neo4j credentials are required in the form of `url`, `username`,
-        and `password` and optional `database` parameters.
+        Initialize and return a Neo4jVector instance from an existing graph.
+
+        This method initializes a Neo4jVector instance using the provided
+        parameters and the existing graph. It validates the existence of
+        the indices and creates new ones if they don't exist.
+
+        Returns:
+        Neo4jVector: An instance of Neo4jVector initialized with the provided parameters
+                    and existing graph.
+
+        Example:
+        >>> neo4j_vector = Neo4jVector.from_existing_graph(
+        ...     embedding=my_embedding,
+        ...     node_label="Document",
+        ...     embedding_node_property="embedding",
+        ...     text_node_properties=["title", "content"]
+        ... )
+
+        Note:
+        Neo4j credentials are required in the form of `url`, `username`, and `password`,
+        and optional `database` parameters passed as additional keyword arguments.
         """
         # Validate the list is not empty
         if not text_node_properties:
