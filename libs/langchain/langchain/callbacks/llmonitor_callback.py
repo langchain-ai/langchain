@@ -19,19 +19,19 @@ user_props_ctx = ContextVar("user_props_ctx", default=None)
 
 
 class UserContextManager:
-    def __init__(self, user_id, user_props=None):
+    def __init__(self, user_id: str, user_props: Any = None) -> Any:
         user_ctx.set(user_id)
         user_props_ctx.set(user_props)
 
-    def __enter__(self):
+    def __enter__(self) -> Any:
         pass
 
-    def __exit__(self, exc_type, exc_value, exc_tb):
+    def __exit__(self, exc_type: Any, exc_value: Any, exc_tb: Any) -> Any:
         user_ctx.set(None)
         user_props_ctx.set(None)
 
 
-def identify(user_id: str, user_props=None):
+def identify(user_id: str, user_props=None) -> Any:
     return UserContextManager(user_id, user_props)
 
 
