@@ -170,9 +170,19 @@ const config = {
             label: "Integrations",
           },
           {
-            href: "https://api.python.langchain.com",
+            to: "https://api.python.langchain.com",
             label: "API",
             position: "left",
+          },
+          {
+            to: "/docs/community",
+            label: "Community",
+            position: "left",
+          },
+          {
+            to: "https://chat.langchain.com",
+            label: "Chat our docs",
+            position: "right",
           },
           {
             to: "https://smith.langchain.com",

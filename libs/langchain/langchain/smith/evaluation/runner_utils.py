@@ -24,8 +24,11 @@ from langsmith import Client, RunEvaluator
 from langsmith.schemas import Dataset, DataType, Example
 
 from langchain.callbacks.manager import Callbacks
-from langchain.callbacks.tracers.evaluation import EvaluatorCallbackHandler
-from langchain.callbacks.tracers.langchain import LangChainTracer, wait_for_all_tracers
+from langchain.callbacks.tracers.evaluation import (
+    EvaluatorCallbackHandler,
+    wait_for_all_evaluators,
+)
+from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
 from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.schema import (
@@ -915,7 +918,6 @@ def _prepare_run_on_dataset(
                 EvaluatorCallbackHandler(
                     evaluators=run_evaluators or [],
                     client=client,
-                    max_workers=0,
                     example_id=example.id,
                 ),
                 progress_bar,
@@ -934,7 +936,7 @@ def _collect_test_results(
     configs: List[RunnableConfig],
     project_name: str,
 ) -> TestResult:
-    wait_for_all_tracers()
+    wait_for_all_evaluators()
     all_eval_results = {}
     for c in configs:
         for callback in cast(list, c["callbacks"]):
