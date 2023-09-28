@@ -1,6 +1,5 @@
 import pytest
 
-from langchain.schema.runnable.base import RunnableLambda
 from langchain.schema.runnable.utils import (
     get_lambda_source,
     indent_lines_after_first,
