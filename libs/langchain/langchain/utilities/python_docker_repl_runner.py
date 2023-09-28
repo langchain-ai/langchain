@@ -11,15 +11,8 @@ import http.server
 import json
 import sys
 from contextlib import redirect_stdout
-from enum import Enum
 from io import StringIO
 from typing import Any, Dict, Optional
-
-
-class CommandName(Enum):
-    RESET = "reset"
-    QUIT = "quit"
-
 
 REPL_GLOBALS: Dict[str, Any] = {}
 REPL_LOCALS: Dict[str, Any] = {}
@@ -104,31 +97,7 @@ class PythonREPLService(http.server.BaseHTTPRequestHandler):
         global REPL_LOCALS
         global REPL_GLOBALS
 
-        if "cmd" in cmd_json:
-            if cmd_json["cmd"] not in CommandName._value2member_map_:
-                self.send_response(400, "Bad Request")
-                self.end_headers()
-                self.wfile.write(b"Invalid command provided.")
-                self.close_connection = True
-                return
-
-            if cmd_json["cmd"] == CommandName.QUIT.value:
-                self.send_response(200, "OK")
-                self.end_headers()
-                self.wfile.write(b"")
-                import os
-                import signal
-
-                os.kill(os.getpid(), signal.CTRL_C_EVENT)
-
-            elif cmd_json["cmd"] == CommandName.RESET.value:
-                REPL_GLOBALS = {}
-                REPL_LOCALS = {}
-                self.send_response(200, "OK")
-                self.end_headers()
-                self.wfile.write(b"")
-
-        elif "code" in cmd_json:
+        if "code" in cmd_json:
             use_ast = cmd_json.get("use_ast", False)
             executor = run_ast if use_ast else run_code
             result = str(executor(cmd_json["code"], REPL_GLOBALS))
