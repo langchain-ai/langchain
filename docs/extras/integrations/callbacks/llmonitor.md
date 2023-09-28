@@ -37,10 +37,10 @@ llm = OpenAI(
     callbacks=[handler],
 )
 
-chat = ChatOpenAI(
-    callbacks=[handler],
-    metadata={"userId": "123"},  # you can assign user ids to models in the metadata
-)
+chat = ChatOpenAI(callbacks=[handler])
+
+llm("Tell me a joke")
+
 ```
 
 ## Usage with chains and agents
@@ -100,6 +100,18 @@ agent.run(
 )
 ```
 
+## User Tracking
+User tracking allows you to identify your users, track their cost, conversations and more.
+
+```python
+from langchain.callbacks.llmonitor_callback import LLMonitorCallbackHandler, identify
+
+with identify("user-123"):
+    llm("Tell me a joke")
+
+with identify("user-456", user_props={"email": "user456@test.com"}):
+    agen.run("Who is Leo DiCaprio's girlfriend?")
+```
 ## Support
 
 For any question or issue with integration you can reach out to the LLMonitor team on [Discord](http://discord.com/invite/8PafSG58kK) or via [email](mailto:vince@llmonitor.com).

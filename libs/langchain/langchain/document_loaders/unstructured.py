@@ -253,10 +253,7 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
     ):
         """Initialize with file path."""
 
-        if isinstance(file_path, str):
-            validate_unstructured_version(min_unstructured_version="0.6.2")
-        else:
-            validate_unstructured_version(min_unstructured_version="0.6.3")
+        validate_unstructured_version(min_unstructured_version="0.10.15")
 
         self.url = url
         self.api_key = api_key

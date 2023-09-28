@@ -71,6 +71,10 @@ cd tests/integration_tests/vectorstores/docker-compose
 docker-compose -f elasticsearch.yml up
 ```
 
+For environments that requires more involving preparation, look for `*.sh`. For instance,
+`opensearch.sh` builds a required docker image and then launch opensearch.
+
+
 ### Prepare environment variables for local testing:
 
 - copy `tests/.env.example` to `tests/.env`
