@@ -181,7 +181,7 @@ const config = {
           },
           {
             to: "https://chat.langchain.com",
-            label: "Chat LC",
+            label: "Chat our docs",
             position: "right",
           },
           {
