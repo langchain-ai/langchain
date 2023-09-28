@@ -87,6 +87,14 @@ class IsFunctionArgDict(ast.NodeVisitor):
         IsLocalDict(input_arg_name, self.keys).visit(node)
 
 
+class GetLambdaSource(ast.NodeVisitor):
+    def __init__(self) -> None:
+        self.source: Optional[str] = None
+
+    def visit_Lambda(self, node: ast.Lambda) -> Any:
+        self.source = ast.unparse(node)
+
+
 def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
     try:
         code = inspect.getsource(func)
@@ -94,5 +102,23 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
         return list(visitor.keys) if visitor.keys else None
-    except (TypeError, OSError):
+    except (SyntaxError, TypeError, OSError):
         return None
+
+
+def get_lambda_source(func: Callable) -> Optional[str]:
+    try:
+        code = inspect.getsource(func)
+        tree = ast.parse(textwrap.dedent(code))
+        visitor = GetLambdaSource()
+        visitor.visit(tree)
+        return visitor.source
+    except (SyntaxError, TypeError, OSError):
+        return None
+
+
+def indent_lines_after_first(text: str, prefix: str) -> str:
+    n_spaces = len(prefix)
+    spaces = " " * n_spaces
+    lines = text.splitlines()
+    return "\n".join([lines[0]] + [spaces + line for line in lines[1:]])

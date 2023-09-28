@@ -59,6 +59,8 @@ from langchain.schema.runnable.utils import (
     accepts_run_manager,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
+    get_lambda_source,
+    indent_lines_after_first,
 )
 from langchain.utils.aiter import atee, py_anext
 from langchain.utils.iter import safetee
@@ -1298,6 +1300,12 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
     def output_schema(self) -> Type[BaseModel]:
         return self.last.output_schema
 
+    def __repr__(self) -> str:
+        return "\n| ".join(
+            repr(s) if i == 0 else indent_lines_after_first(repr(s), "| ")
+            for i, s in enumerate(self.steps)
+        )
+
     def __or__(
         self,
         other: Union[
@@ -1819,6 +1827,13 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             **{k: (v.OutputType, None) for k, v in self.steps.items()},
         )
 
+    def __repr__(self) -> str:
+        map_for_repr = ",\n  ".join(
+            f"{k}: {indent_lines_after_first(repr(v), '  ' + k + ': ')}"
+            for k, v in self.steps.items()
+        )
+        return "{\n  " + map_for_repr + "\n}"
+
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None
     ) -> Dict[str, Any]:
@@ -2134,7 +2149,7 @@ class RunnableLambda(Runnable[Input, Output]):
             return False
 
     def __repr__(self) -> str:
-        return "RunnableLambda(...)"
+        return f"RunnableLambda({get_lambda_source(self.func) or '...'})"
 
     def _invoke(
         self,

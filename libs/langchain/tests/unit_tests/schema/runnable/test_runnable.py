@@ -867,6 +867,7 @@ async def test_prompt_with_chat_model(
 
     chain = prompt | chat
 
+    assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == []
@@ -1350,6 +1351,7 @@ Question:
         | parser
     )
 
+    assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert isinstance(chain.first, RunnableMap)
     assert chain.middle == [prompt, chat]
@@ -1375,7 +1377,7 @@ Question:
             SystemMessage(content="You are a nice assistant."),
             HumanMessage(
                 content="""Context:
-[Document(page_content='foo', metadata={}), Document(page_content='bar', metadata={})]
+[Document(page_content='foo'), Document(page_content='bar')]
 
 Question:
 What is your name?"""
@@ -1413,6 +1415,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
         }
     )
 
+    assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]
@@ -2196,6 +2199,7 @@ def test_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(RuntimeError):
         runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).invoke(2)
 
@@ -2205,6 +2209,7 @@ def test_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).batch([1, 2, 0])
 
@@ -2214,6 +2219,7 @@ def test_retrying(mocker: MockerFixture) -> None:
 
     output = runnable.with_retry(
         stop_after_attempt=2,
+        wait_exponential_jitter=False,
         retry_if_exception_type=(ValueError,),
     ).batch([1, 2, 0], return_exceptions=True)
 
@@ -2248,6 +2254,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         await runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError, KeyError),
         ).ainvoke(1)
 
@@ -2257,6 +2264,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(RuntimeError):
         await runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).ainvoke(2)
 
@@ -2266,6 +2274,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         await runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).abatch([1, 2, 0])
 
@@ -2275,6 +2284,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
 
     output = await runnable.with_retry(
         stop_after_attempt=2,
+        wait_exponential_jitter=False,
         retry_if_exception_type=(ValueError,),
     ).abatch([1, 2, 0], return_exceptions=True)
 
