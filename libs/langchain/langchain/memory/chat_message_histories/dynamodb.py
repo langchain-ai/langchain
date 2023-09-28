@@ -38,7 +38,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             This argument is optional, but useful when using composite dynamodb keys, or
             isolating records based off of application details such as a user id.
             This may also contain global and local secondary index keys.
-        kms_key_id: an optional AWS KMS Key ID, AWS KMS Key ARN, or AWS KMS Alias for client-side encryption
+        kms_key_id: an optional AWS KMS Key ID, AWS KMS Key ARN, or AWS KMS Alias for
+            client-side encryption
     """
 
     def __init__(
@@ -78,7 +79,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
                 from dynamodb_encryption_sdk.structures import AttributeActions
             except ImportError as e:
                 raise ImportError(
-                    "Unable to import dynamodb_encryption_sdk, please install with `pip install dynamodb-encryption-sdk`."
+                    "Unable to import dynamodb_encryption_sdk, please install with "
+                    "`pip install dynamodb-encryption-sdk`."
                 ) from e
 
             actions = AttributeActions(
