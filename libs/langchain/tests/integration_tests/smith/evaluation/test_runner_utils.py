@@ -80,7 +80,7 @@ def test_chat_model(
     llm = ChatOpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     with pytest.raises(ValueError, match="Must specify reference_key"):
-        run_on_dataset(client, kv_dataset_name, llm, evaluation=eval_config)
+        run_on_dataset(kv_dataset_name, llm, evaluation=eval_config, client=client)
     eval_config = RunEvalConfig(
         evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA],
         reference_key="some_output",
@@ -88,7 +88,7 @@ def test_chat_model(
     with pytest.raises(
         InputFormatError, match="Example inputs do not match language model"
     ):
-        run_on_dataset(client, kv_dataset_name, llm, evaluation=eval_config)
+        run_on_dataset(kv_dataset_name, llm, evaluation=eval_config, client=client)
 
     def input_mapper(d: dict) -> List[BaseMessage]:
         return [HumanMessage(content=d["some_input"])]
@@ -109,7 +109,7 @@ def test_llm(kv_dataset_name: str, eval_project_name: str, client: Client) -> No
     llm = OpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     with pytest.raises(ValueError, match="Must specify reference_key"):
-        run_on_dataset(client, kv_dataset_name, llm, evaluation=eval_config)
+        run_on_dataset(kv_dataset_name, llm, evaluation=eval_config, client=client)
     eval_config = RunEvalConfig(
         evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA],
         reference_key="some_output",
@@ -117,7 +117,7 @@ def test_llm(kv_dataset_name: str, eval_project_name: str, client: Client) -> No
     with pytest.raises(
         InputFormatError, match="Example inputs do not match language model"
     ):
-        run_on_dataset(client, kv_dataset_name, llm, evaluation=eval_config)
+        run_on_dataset(kv_dataset_name, llm, evaluation=eval_config, client=client)
 
     def input_mapper(d: dict) -> str:
         return d["some_input"]
@@ -139,7 +139,9 @@ def test_chain(kv_dataset_name: str, eval_project_name: str, client: Client) -> 
     chain = LLMChain.from_string(llm, "The answer to the {question} is: ")
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     with pytest.raises(ValueError, match="Must specify reference_key"):
-        run_on_dataset(client, kv_dataset_name, lambda: chain, evaluation=eval_config)
+        run_on_dataset(
+            kv_dataset_name, lambda: chain, evaluation=eval_config, client=client
+        )
     eval_config = RunEvalConfig(
         evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA],
         reference_key="some_output",
@@ -147,7 +149,9 @@ def test_chain(kv_dataset_name: str, eval_project_name: str, client: Client) -> 
     with pytest.raises(
         InputFormatError, match="Example inputs do not match chain input keys"
     ):
-        run_on_dataset(client, kv_dataset_name, lambda: chain, evaluation=eval_config)
+        run_on_dataset(
+            kv_dataset_name, lambda: chain, evaluation=eval_config, client=client
+        )
 
     def input_mapper(d: dict) -> dict:
         return {"input": d["some_input"]}
