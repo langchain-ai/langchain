@@ -2,6 +2,7 @@ import sys
 from operator import itemgetter
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from uuid import UUID
+from langchain.tools.base import BaseTool, tool
 
 import pytest
 from freezegun import freeze_time
@@ -2779,3 +2780,25 @@ def test_representation_of_runnables() -> None:
         "    b: RunnableLambda(...)\n"
         "  }"
     ), "repr where code string contains multiple lambdas gives up"
+
+
+def test_tool_from_runnable() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = prompt | llm | StrOutputParser()
+
+    chain_tool = tool("chain_tool", chain)
+
+    assert isinstance(chain_tool, BaseTool)
+    assert chain_tool.name == "chain_tool"
+    assert chain_tool.description.endswith(repr(chain))
+    assert chain_tool.args_schema.schema() == chain.input_schema.schema()
+    assert chain_tool.args_schema.schema() == {
+        "properties": {"question": {"title": "Question"}},
+        "title": "PromptInput",
+        "type": "object",
+    }
