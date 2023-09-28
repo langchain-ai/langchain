@@ -15,7 +15,6 @@ from typing import (
 )
 
 import numpy as np
-from pymongo.errors import OperationFailure
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -234,6 +233,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
+        from pymongo.errors import OperationFailure
+
         if self._use_vectorsearch:
             try:
                 result = self._similarity_search_query_vectorsearch(
