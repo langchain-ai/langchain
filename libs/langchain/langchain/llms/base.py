@@ -199,6 +199,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     # --- Runnable methods ---
 
+    @property
+    def OutputType(self) -> Type[str]:
+        """Get the input type for this runnable."""
+        return str
+
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
         if isinstance(input, PromptValue):
             return input

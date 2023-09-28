@@ -1,4 +1,15 @@
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from tenacity import (
     AsyncRetrying,
@@ -10,14 +21,16 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
 from langchain.schema.runnable.base import Input, Output, RunnableBinding
 from langchain.schema.runnable.config import RunnableConfig, patch_config
 
-T = TypeVar("T", CallbackManagerForChainRun, AsyncCallbackManagerForChainRun)
+if TYPE_CHECKING:
+    from langchain.callbacks.manager import (
+        AsyncCallbackManagerForChainRun,
+        CallbackManagerForChainRun,
+    )
+
+    T = TypeVar("T", CallbackManagerForChainRun, AsyncCallbackManagerForChainRun)
 U = TypeVar("U")
 
 
@@ -54,7 +67,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _patch_config(
         self,
         config: RunnableConfig,
-        run_manager: T,
+        run_manager: "T",
         retry_state: RetryCallState,
     ) -> RunnableConfig:
         attempt = retry_state.attempt_number
@@ -64,7 +77,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _patch_config_list(
         self,
         config: List[RunnableConfig],
-        run_manager: List[T],
+        run_manager: List["T"],
         retry_state: RetryCallState,
     ) -> List[RunnableConfig]:
         return [
@@ -74,7 +87,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _invoke(
         self,
         input: Input,
-        run_manager: CallbackManagerForChainRun,
+        run_manager: "CallbackManagerForChainRun",
         config: RunnableConfig,
     ) -> Output:
         for attempt in self._sync_retrying(reraise=True):
@@ -95,7 +108,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     async def _ainvoke(
         self,
         input: Input,
-        run_manager: AsyncCallbackManagerForChainRun,
+        run_manager: "AsyncCallbackManagerForChainRun",
         config: RunnableConfig,
     ) -> Output:
         async for attempt in self._async_retrying(reraise=True):
@@ -116,7 +129,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _batch(
         self,
         inputs: List[Input],
-        run_manager: List[CallbackManagerForChainRun],
+        run_manager: List["CallbackManagerForChainRun"],
         config: List[RunnableConfig],
     ) -> List[Union[Output, Exception]]:
         results_map: Dict[int, Output] = {}
@@ -180,7 +193,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     async def _abatch(
         self,
         inputs: List[Input],
-        run_manager: List[AsyncCallbackManagerForChainRun],
+        run_manager: List["AsyncCallbackManagerForChainRun"],
         config: List[RunnableConfig],
     ) -> List[Union[Output, Exception]]:
         results_map: Dict[int, Output] = {}
