@@ -111,11 +111,17 @@ class BaseTracer(BaseCallbackHandler, ABC):
         start_time = datetime.utcnow()
         if metadata:
             kwargs.update({"metadata": metadata})
+        if len(prompts) != 1:
+            raise ValueError(
+                "Tracer does not support multiple prompts for LLM runs."
+            )
         llm_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
-            inputs={"prompts": prompts},
+            # Send a single prompt since the CallbackManager will
+            # split up the list of prompts for us. Invariant: len(messages) == 1
+            inputs={"prompt": prompts[0]},
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,

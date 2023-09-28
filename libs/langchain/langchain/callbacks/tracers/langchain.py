@@ -107,11 +107,17 @@ class LangChainTracer(BaseTracer):
         start_time = datetime.utcnow()
         if metadata:
             kwargs.update({"metadata": metadata})
+        if len(messages) != 1:
+            raise ValueError(
+                "LangChainTracer does not support multiple batches of messages."
+            )
         chat_model_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
-            inputs={"messages": [[dumpd(msg) for msg in batch] for batch in messages]},
+            # Send a single batch of messages since the CallbackManager will
+            # split up the messages for us. Invariant: len(messages) == 1
+            inputs={"messages": [dumpd(msg) for msg in messages[0]]},
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
