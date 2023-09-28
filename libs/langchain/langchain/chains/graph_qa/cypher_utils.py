@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 Schema = namedtuple("Schema", ["left_node", "relation", "right_node"])
 
@@ -95,13 +95,13 @@ class CypherQueryCorrector:
             str_node: node in string format
             node_variable_dict: dictionary of node variables
         """
-        splitted = str_node.split(":")
-        variable = splitted[0]
+        splitted_node = str_node.split(":")
+        variable = splitted_node[0]
         labels = []
         if variable in node_variable_dict:
             labels = node_variable_dict[variable]
-        elif variable == "" and len(splitted) > 1:
-            labels = splitted[1:]
+        elif variable == "" and len(splitted_node) > 1:
+            labels = splitted_node[1:]
         return labels
 
     def verify_schema(
