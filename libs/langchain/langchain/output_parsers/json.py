@@ -172,33 +172,39 @@ class SimpleJsonOutputParser(BaseOutputParser[Any]):
         return "simple_json_output_parser"
 
 
-class PartialJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
-    from_function_args: bool = False
-
+class PartialFunctionsJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     @property
     def _type(self) -> str:
-        return "partial_json"
+        return "partial_functions_json"
 
     def parse_result(self, result: List[Generation]) -> Any:
-        if self.from_function_args:
-            if len(result) != 1:
-                raise OutputParserException(
-                    f"Expected exactly one result, but got {len(result)}"
-                )
-            generation = result[0]
-            if not isinstance(generation, ChatGeneration):
-                raise OutputParserException(
-                    "This output parser can only be used with a chat generation."
-                )
-            message = generation.message
-            try:
-                function_call = message.additional_kwargs["function_call"]
-            except KeyError:
-                return None
-            try:
-                return parse_partial_json(function_call["arguments"])
-            except KeyError:
-                return None
+        if len(result) != 1:
+            raise OutputParserException(
+                f"Expected exactly one result, but got {len(result)}"
+            )
+        generation = result[0]
+        if not isinstance(generation, ChatGeneration):
+            raise OutputParserException(
+                "This output parser can only be used with a chat generation."
+            )
+        message = generation.message
+        try:
+            function_call = message.additional_kwargs["function_call"]
+        except KeyError:
+            return None
+        try:
+            return parse_partial_json(function_call["arguments"])
+        except KeyError:
+            return None
 
     def parse(self, text: str) -> Any:
         pass
+
+
+class PartialJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
+    @property
+    def _type(self) -> str:
+        return "partial_functions_json"
+
+    def parse(self, text: str) -> Any:
+        return parse_json_markdown(text)
