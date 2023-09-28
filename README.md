@@ -133,6 +133,7 @@ while(True):
 - [Парсинг списков, содержащихся в ответе](docs/extras/modules/model_io/output_parsers/list.ipynb)
 - [Асинхронная работа с LLM](docs/extras/modules/model_io/models/llms/async_llm.ipynb)
 - [Использование Elastic для поиска ответов по документам](docs/extras/integrations/retrievers/elastic_qna.ipynb)
+- [Генерация и выполнение кода с помощью PythonREPL](docs/extras/expression_language/cookbook/code_writing.ipynb)
 
 ### Примеры работы с другими LLM
 
