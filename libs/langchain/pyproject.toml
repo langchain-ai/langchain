@@ -9,6 +9,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.scripts]
 langchain-server = "langchain.server:main"
+langchain = "langchain.cli.cli:app"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -132,6 +133,7 @@ sqlite-vss = {version = "^0.1.2", optional = true}
 anyio = "<4.0"
 jsonpatch = "^1.33"
 timescale-vector = {version = "^0.0.1", optional = true}
+typer = "^0.9.0"
 
 
 [tool.poetry.group.test.dependencies]
