@@ -1,22 +1,21 @@
-# Description of Hello World
+# Привет, мир!
 
-Basic prompt designed to be use as a test case, will just instruct the LLM to say "Hello World".
+Шаблон простого промпта, в ответ на который GigaChat возвращает фразу «Привет, мир!».
 
+## Входные переменные
 
-## Inputs
+Шаблон не использует входных данных.
 
-This prompt doesn't have any inputs.
+## Использование
 
-
-## Usage
-
-Below is a code snippet for how to use the prompt.
+Пример вызова:
 
 ```python
 from langchain.prompts import load_prompt
+from langchain.chat_models import GigaChat
 from langchain.chains import LLMChain
 
-llm = ...
-prompt = load_prompt('lc://prompts/hello-world/<file-name>')
-chain = LLMChain(llm=llm, prompt=prompt)
+giga = GigaChat(oauth_token="...")
+prompt = load_prompt('lc://prompts/hello_world/prompt.yaml')
+chain = LLMChain(llm=giga, prompt=prompt)
 ```

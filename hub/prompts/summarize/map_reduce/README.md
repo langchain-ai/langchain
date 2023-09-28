@@ -1,24 +1,23 @@
-# Описания промптов для map-reduce суммаризации
+# Суммаризация по алгоритму MapReduce
 
-Данные промпты хорошо подходят для построения суммаризацтора, использующего алгоритм map-reduce.
+Шаблоны, предназначенные для суммаризации текстов с помощью GigaChat по алгоритму MapReduce.
 
-## Inputs
+## Входные переменные
 
-1. `text`: Текст, который нужно суммаризировать
+На вход в промпты можно передать переменную `text`, которая содержит текст, подлежащий суммаризации.
 
+## Использование
 
-## Usage
-
-Below is a code snippet for how to use the prompt.
+Пример вызова суммаризатора:
 
 ```python
 from langchain.prompts import load_prompt
 from langchain.chains.summarize import load_summarize_chain
 
-llm = ...
+giga = GigaChat(oauth_token="...")
 map_prompt = load_prompt('lc://prompts/summarize/map_reduce/map.yaml')
 combine_prompt = load_prompt('lc://prompts/summarize/map_reduce/combine.yaml')
 
-chain = load_summarize_chain(llm, chain_type="map_reduce", map_prompt=map_prompt,
+chain = load_summarize_chain(giga, chain_type="map_reduce", map_prompt=map_prompt,
             combine_prompt=combine_prompt)
 ```
