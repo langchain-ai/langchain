@@ -76,7 +76,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self._index_name = index_name
         self._text_key = text_key
         self._embedding_key = embedding_key
-        self._use_vectorsearch = True
 
     @property
     def embeddings(self) -> Embeddings:
@@ -158,62 +157,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
         insert_result = self._collection.insert_many(to_insert)  # type: ignore
         return insert_result.inserted_ids
 
-    def _similarity_search_query(
-        self,
-        query: Dict[str, Any],
-        *,
-        post_filter_pipeline: Optional[List[Dict]] = None,
-    ) -> List[Tuple[Document, float]]:
-        if self._use_vectorsearch:
-            pipeline = [
-                query,
-                {"$set": {"score": {"$meta": "vectorSearchScore"}}},
-            ]
-        else:
-            pipeline = [
-                query,
-                {"$set": {"score": {"$meta": "searchScore"}}},
-            ]
-        if post_filter_pipeline is not None:
-            pipeline.extend(post_filter_pipeline)
-        cursor = self._collection.aggregate(pipeline)  # type: ignore[arg-type]
-        docs = []
-        for res in cursor:
-            text = res.pop(self._text_key)
-            score = res.pop("score")
-            docs.append((Document(page_content=text, metadata=res), score))
-        return docs
-
-    def _similarity_search_query_search(
+    def _similarity_search_with_score(
         self,
         embedding: List[float],
-        *,
-        k: int = 4,
-        pre_filter: Optional[Dict] = None,
-        post_filter_pipeline: Optional[List[Dict]] = None,
-    ) -> List[Tuple[Document, float]]:
-        knn_beta = {
-            "vector": embedding,
-            "path": self._embedding_key,
-            "k": k,
-        }
-        if pre_filter:
-            knn_beta["filter"] = pre_filter
-        query = {
-            "$search": {
-                "index": self._index_name,
-                "knnBeta": knn_beta,
-            }
-        }
-
-        return self._similarity_search_query(
-            query, post_filter_pipeline=post_filter_pipeline
-        )
-
-    def _similarity_search_query_vectorsearch(
-        self,
-        embedding: List[float],
-        *,
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
@@ -229,51 +175,19 @@ class MongoDBAtlasVectorSearch(VectorStore):
             params["filter"] = pre_filter
         query = {"$vectorSearch": params}
 
-        return self._similarity_search_query(
-            query, post_filter_pipeline=post_filter_pipeline
-        )
-
-    def _similarity_search_with_score(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        pre_filter: Optional[Dict] = None,
-        post_filter_pipeline: Optional[List[Dict]] = None,
-    ) -> List[Tuple[Document, float]]:
-        from pymongo.errors import OperationFailure
-
-        if self._use_vectorsearch:
-            try:
-                result = self._similarity_search_query_vectorsearch(
-                    embedding,
-                    k=k,
-                    pre_filter=pre_filter,
-                    post_filter_pipeline=post_filter_pipeline,
-                )
-            except OperationFailure as e:
-                # QueryFeatureNotAllowed or unknown pipeline stage $vectorSearch
-                if e.code == 224 or "$vectorSearch" in str(e):
-                    logger.error(
-                        f"$vectorSearch not supported for this Atlas version. "
-                        f"Attempting to use $search. Original error:\n\t{e}"
-                    )
-                    self._use_vectorsearch = False
-                    result = self._similarity_search_query_search(
-                        embedding,
-                        k=k,
-                        pre_filter=pre_filter,
-                        post_filter_pipeline=post_filter_pipeline,
-                    )
-                else:
-                    raise
-        else:
-            result = self._similarity_search_query_search(
-                embedding,
-                k=k,
-                pre_filter=pre_filter,
-                post_filter_pipeline=post_filter_pipeline,
-            )
-        return result
+        pipeline = [
+            query,
+            {"$set": {"score": {"$meta": "vectorSearchScore"}}},
+        ]
+        if post_filter_pipeline is not None:
+            pipeline.extend(post_filter_pipeline)
+        cursor = self._collection.aggregate(pipeline)  # type: ignore[arg-type]
+        docs = []
+        for res in cursor:
+            text = res.pop(self._text_key)
+            score = res.pop("score")
+            docs.append((Document(page_content=text, metadata=res), score))
+        return docs
 
     def similarity_search_with_score(
         self,
