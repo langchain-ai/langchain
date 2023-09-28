@@ -161,6 +161,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
     def _similarity_search_query(
         self,
         query: Dict[str, Any],
+        *,
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
         if self._use_vectorsearch:
@@ -186,6 +187,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
     def _similarity_search_query_search(
         self,
         embedding: List[float],
+        *,
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
@@ -204,11 +206,14 @@ class MongoDBAtlasVectorSearch(VectorStore):
             }
         }
 
-        return self._similarity_search_query(query, post_filter_pipeline)
+        return self._similarity_search_query(
+            query, post_filter_pipeline=post_filter_pipeline
+        )
 
     def _similarity_search_query_vectorsearch(
         self,
         embedding: List[float],
+        *,
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
@@ -224,7 +229,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
             params["filter"] = pre_filter
         query = {"$vectorSearch": params}
 
-        return self._similarity_search_query(query, post_filter_pipeline)
+        return self._similarity_search_query(
+            query, post_filter_pipeline=post_filter_pipeline
+        )
 
     def _similarity_search_with_score(
         self,
@@ -238,7 +245,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
         if self._use_vectorsearch:
             try:
                 result = self._similarity_search_query_vectorsearch(
-                    embedding, k, pre_filter, post_filter_pipeline
+                    embedding,
+                    k=k,
+                    pre_filter=pre_filter,
+                    post_filter_pipeline=post_filter_pipeline,
                 )
             except OperationFailure as e:
                 # QueryFeatureNotAllowed or unknown pipeline stage $vectorSearch
@@ -249,13 +259,19 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     )
                     self._use_vectorsearch = False
                     result = self._similarity_search_query_search(
-                        embedding, k, pre_filter, post_filter_pipeline
+                        embedding,
+                        k=k,
+                        pre_filter=pre_filter,
+                        post_filter_pipeline=post_filter_pipeline,
                     )
                 else:
                     raise
         else:
             result = self._similarity_search_query_search(
-                embedding, k, pre_filter, post_filter_pipeline
+                embedding,
+                k=k,
+                pre_filter=pre_filter,
+                post_filter_pipeline=post_filter_pipeline,
             )
         return result
 
