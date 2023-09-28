@@ -565,7 +565,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call"""
-        raise NotImplementedError()
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self._generate, **kwargs), messages, stop, run_manager
+        )
 
     def _stream(
         self,

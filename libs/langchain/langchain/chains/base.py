@@ -227,7 +227,9 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        raise NotImplementedError("Async call not supported for this chain type.")
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self._call, inputs, run_manager
+        )
 
     def __call__(
         self,

@@ -21,12 +21,14 @@ Note: **MarkdownHeaderTextSplitter** does not derive from TextSplitter.
 
 from __future__ import annotations
 
+import asyncio
 import copy
 import logging
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from typing import (
     AbstractSet,
     Any,
@@ -280,7 +282,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         """Asynchronously transform a sequence of documents by splitting them."""
-        raise NotImplementedError
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self.transform_documents, **kwargs), documents
+        )
 
 
 class CharacterTextSplitter(TextSplitter):

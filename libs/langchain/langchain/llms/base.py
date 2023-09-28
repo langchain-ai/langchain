@@ -473,7 +473,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
-        raise NotImplementedError()
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self._generate, **kwargs), prompts, stop, run_manager
+        )
 
     def _stream(
         self,
@@ -1030,7 +1032,9 @@ class LLM(BaseLLM):
         **kwargs: Any,
     ) -> str:
         """Run the LLM on the given prompt and input."""
-        raise NotImplementedError()
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self._call, **kwargs), prompt, stop, run_manager
+        )
 
     def _generate(
         self,
