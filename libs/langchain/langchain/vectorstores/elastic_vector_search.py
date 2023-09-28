@@ -348,9 +348,16 @@ class ElasticVectorSearch(VectorStore):
             self.client.delete(index=self.index_name, id=id)
 
 
+@deprecated("0.0.265", alternative="ElasticsearchStore class.", pending=True)
 class ElasticKnnSearch(VectorStore):
     """[DEPRECATED] `Elasticsearch` with k-nearest neighbor search
     (`k-NN`) vector store.
+
+    Recommended to use ElasticsearchStore instead, which supports
+    metadata filtering, customising the query retriever and much more!
+
+    You can read more on ElasticsearchStore:
+    https://python.langchain.com/docs/integrations/vectorstores/elasticsearch
 
     It creates an Elasticsearch index of text data that
     can be searched using k-NN search. The text data is transformed into
