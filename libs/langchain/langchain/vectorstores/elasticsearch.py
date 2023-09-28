@@ -506,7 +506,9 @@ class ElasticsearchStore(VectorStore):
         self.strategy = strategy
 
         if es_connection is not None:
-            self.client = es_connection
+            self.client = es_connection.options(
+                headers={"user-agent": self.get_user_agent()}
+            )
         elif es_url is not None or es_cloud_id is not None:
             self.client = ElasticsearchStore.connect_to_elasticsearch(
                 es_url=es_url,
@@ -520,6 +522,12 @@ class ElasticsearchStore(VectorStore):
                 """Either provide a pre-existing Elasticsearch connection, \
                 or valid credentials for creating a new connection."""
             )
+
+    @staticmethod
+    def get_user_agent() -> str:
+        from langchain import __version__
+
+        return f"langchain-py-vs/{__version__}"
 
     @staticmethod
     def connect_to_elasticsearch(
@@ -557,7 +565,10 @@ class ElasticsearchStore(VectorStore):
         elif username and password:
             connection_params["basic_auth"] = (username, password)
 
-        es_client = elasticsearch.Elasticsearch(**connection_params)
+        es_client = elasticsearch.Elasticsearch(
+            **connection_params,
+            headers={"user-agent": ElasticsearchStore.get_user_agent()},
+        )
         try:
             es_client.info()
         except Exception as e:
@@ -791,6 +802,7 @@ class ElasticsearchStore(VectorStore):
         ids: Optional[List[str]] = None,
         refresh_indices: bool = True,
         create_index_if_not_exists: bool = True,
+        bulk_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -803,6 +815,9 @@ class ElasticsearchStore(VectorStore):
                             after adding the texts.
             create_index_if_not_exists: Whether to create the Elasticsearch
                                         index if it doesn't already exist.
+            *bulk_kwargs: Additional arguments to pass to Elasticsearch bulk.
+                - chunk_size: Optional. Number of texts to add to the
+                    index at a time. Defaults to 500.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -814,7 +829,7 @@ class ElasticsearchStore(VectorStore):
                 "Could not import elasticsearch python package. "
                 "Please install it with `pip install elasticsearch`."
             )
-
+        bulk_kwargs = bulk_kwargs or {}
         embeddings = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         requests = []
@@ -866,7 +881,11 @@ class ElasticsearchStore(VectorStore):
         if len(requests) > 0:
             try:
                 success, failed = bulk(
-                    self.client, requests, stats_only=True, refresh=refresh_indices
+                    self.client,
+                    requests,
+                    stats_only=True,
+                    refresh=refresh_indices,
+                    **bulk_kwargs,
                 )
                 logger.debug(
                     f"Added {success} and failed to add {failed} texts to index"
@@ -890,6 +909,7 @@ class ElasticsearchStore(VectorStore):
         texts: List[str],
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[Dict[str, Any]]] = None,
+        bulk_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> "ElasticsearchStore":
         """Construct ElasticsearchStore wrapper from raw documents.
@@ -927,6 +947,8 @@ class ElasticsearchStore(VectorStore):
                                 strategy to use. Defaults to "COSINE".
                                 can be one of "COSINE",
                                 "EUCLIDEAN_DISTANCE", "DOT_PRODUCT".
+            bulk_kwargs: Optional. Additional arguments to pass to
+                        Elasticsearch bulk.
         """
 
         elasticsearchStore = ElasticsearchStore._create_cls_from_kwargs(
@@ -934,7 +956,9 @@ class ElasticsearchStore(VectorStore):
         )
 
         # Encode the provided texts and add them to the newly created index.
-        elasticsearchStore.add_texts(texts, metadatas=metadatas)
+        elasticsearchStore.add_texts(
+            texts, metadatas=metadatas, bulk_kwargs=bulk_kwargs
+        )
 
         return elasticsearchStore
 
@@ -985,6 +1009,7 @@ class ElasticsearchStore(VectorStore):
         cls,
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
+        bulk_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> "ElasticsearchStore":
         """Construct ElasticsearchStore wrapper from documents.
@@ -1018,13 +1043,15 @@ class ElasticsearchStore(VectorStore):
             vector_query_field: Optional. Name of the field
                                 to store the embedding vectors in.
             query_field: Optional. Name of the field to store the texts in.
+            bulk_kwargs: Optional. Additional arguments to pass to
+                        Elasticsearch bulk.
         """
 
         elasticsearchStore = ElasticsearchStore._create_cls_from_kwargs(
             embedding=embedding, **kwargs
         )
         # Encode the provided texts and add them to the newly created index.
-        elasticsearchStore.add_documents(documents)
+        elasticsearchStore.add_documents(documents, bulk_kwargs=bulk_kwargs)
 
         return elasticsearchStore
 

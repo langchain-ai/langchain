@@ -14,8 +14,10 @@ from typing import (
     Union,
 )
 
+from typing_extensions import get_args
+
 from langchain.load.serializable import Serializable
-from langchain.schema.messages import BaseMessage
+from langchain.schema.messages import AnyMessage, BaseMessage
 from langchain.schema.output import ChatGeneration, Generation
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable, RunnableConfig
@@ -57,6 +59,16 @@ class BaseGenerationOutputParser(
     BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
 ):
     """Base class to parse the output of an LLM call."""
+
+    @property
+    def InputType(self) -> Any:
+        return Union[str, AnyMessage]
+
+    @property
+    def OutputType(self) -> type[T]:
+        # even though mypy complains this isn't valid,
+        # it is good enough for pydantic to build the schema from
+        return T  # type: ignore[misc]
 
     def invoke(
         self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
@@ -128,6 +140,22 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
                     def _type(self) -> str:
                             return "boolean_output_parser"
     """  # noqa: E501
+
+    @property
+    def InputType(self) -> Any:
+        return Union[str, AnyMessage]
+
+    @property
+    def OutputType(self) -> type[T]:
+        for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
+            type_args = get_args(cls)
+            if type_args and len(type_args) == 1:
+                return type_args[0]
+
+        raise TypeError(
+            f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
+            "Override the OutputType property to specify the output type."
+        )
 
     def invoke(
         self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
