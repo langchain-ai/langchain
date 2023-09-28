@@ -788,6 +788,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nenum ",
                 "\ninterface ",
                 "\nnamespace ",
+                "\ntype ",
                 # Split along class definitions
                 "\nclass ",
                 # Split along function definitions
