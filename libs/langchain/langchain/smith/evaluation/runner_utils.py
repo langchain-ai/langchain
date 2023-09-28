@@ -28,7 +28,11 @@ from langchain.callbacks.tracers.evaluation import EvaluatorCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer, wait_for_all_tracers
 from langchain.chains.base import Chain
 from langchain.evaluation.loading import load_evaluator
-from langchain.evaluation.schema import EvaluatorType, StringEvaluator
+from langchain.evaluation.schema import (
+    EvaluatorType,
+    PairwiseStringEvaluator,
+    StringEvaluator,
+)
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, messages_from_dict
@@ -486,6 +490,15 @@ def _construct_run_evaluator(
             reference_key=reference_key,
             tags=[eval_type_tag],
         )
+    elif isinstance(evaluator_, PairwiseStringEvaluator):
+        raise NotImplementedError(
+            f"Run evaluator for {eval_type_tag} is not implemented."
+            " PairwiseStringEvaluators compare the outputs of two different models"
+            " rather than the output of a single model."
+            " Did you mean to use a StringEvaluator instead?"
+            "\nSee: https://python.langchain.com/docs/guides/evaluation/string/"
+        )
+
     else:
         raise NotImplementedError(
             f"Run evaluator for {eval_type_tag} is not implemented"
