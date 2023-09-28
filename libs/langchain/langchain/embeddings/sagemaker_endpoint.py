@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional
 
-from langchain.embeddings.base import Embeddings
 from langchain.llms.sagemaker_endpoint import ContentHandlerBase
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.schema.embeddings import Embeddings
 
 
 class EmbeddingsContentHandler(ContentHandlerBase[List[str], List[List[float]]]):

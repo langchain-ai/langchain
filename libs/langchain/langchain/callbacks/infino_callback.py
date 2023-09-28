@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -113,9 +113,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
             for generation in generations:
                 self._send_to_infino("prompt_response", generation.text, is_ts=False)
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Set the error flag."""
         self.error = 1
 
@@ -129,9 +127,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         """Do nothing when LLM chain ends."""
         pass
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Need to log the error."""
         pass
 
@@ -158,9 +154,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         """Do nothing when tool ends."""
         pass
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when tool outputs an error."""
         pass
 

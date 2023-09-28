@@ -17,9 +17,9 @@ from typing import (
 
 from langchain._api import deprecated
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
