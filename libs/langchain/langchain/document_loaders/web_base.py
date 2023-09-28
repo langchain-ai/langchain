@@ -74,12 +74,12 @@ class WebBaseLoader(BaseLoader):
                 "Received web_path and web_paths. Only one can be specified. "
                 "web_path is deprecated, web_paths should be used."
             )
-        if isinstance(web_path, str):
+        if web_paths:
+            self.web_paths = list(web_paths)
+        elif isinstance(web_path, str):
             self.web_paths = [web_path]
         elif isinstance(web_path, Sequence):
             self.web_paths = list(web_path)
-        elif web_paths:
-            self.web_paths = list(web_paths)
         else:
             raise TypeError(
                 f"web_path must be str or Sequence[str] got ({type(web_path)}) or"
