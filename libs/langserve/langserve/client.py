@@ -272,7 +272,10 @@ class RemoteRunnable(Runnable[Input, Output]):
         try:
             from httpx_sse import connect_sse
         except ImportError:
-            raise ImportError("You must install `httpx_sse` to use the stream method.")
+            raise ImportError(
+                "Missing `httpx_sse` dependency to use the stream method. "
+                "Install via `pip install httpx_sse`'"
+            )
 
         try:
             with connect_sse(
