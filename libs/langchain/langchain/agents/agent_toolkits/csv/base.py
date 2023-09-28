@@ -24,11 +24,13 @@ def create_csv_agent(
     if isinstance(path, (str, IOBase)):
         df = pd.read_csv(path, **_kwargs)
     elif isinstance(path, list):
-        df = []
-        for item in path:
-            if not isinstance(item, (str, IOBase)):
-                raise ValueError(f"Expected str or file-like object, got {type(path)}")
-            df.append(pd.read_csv(item, **_kwargs))
+        if not all(isinstance(item, (str, IOBase)) for item in path):
+            raise ValueError(
+                f"Expected all elements in the list to be strings, got {type(path)}."
+            )
+        dfs = [pd.read_csv(item, **_kwargs) for item in path]
+        df = pd.concat(dfs, ignore_index=True)
     else:
-        raise ValueError(f"Expected str, list, or file-like object, got {type(path)}")
+        raise ValueError(f"Expected str or list, got {type(path)}")
+
     return create_pandas_dataframe_agent(llm, df, **kwargs)
