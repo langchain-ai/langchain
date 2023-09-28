@@ -161,7 +161,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def _similarity_search_query(
         self,
-        query: dict[str, Any],
+        query: Dict[str, Any],
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
         if self._use_vectorsearch:
@@ -188,7 +188,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        pre_filter: Optional[dict] = None,
+        pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
         knn_beta = {
@@ -211,7 +211,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        pre_filter: Optional[dict] = None,
+        pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
         params = {
@@ -231,7 +231,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        pre_filter: Optional[dict] = None,
+        pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
         if self._use_vectorsearch:
@@ -263,7 +263,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         query: str,
         *,
         k: int = 4,
-        pre_filter: Optional[dict] = None,
+        pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return MongoDB documents most similar to the given query and their scores.
@@ -299,7 +299,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        pre_filter: Optional[dict] = None,
+        pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -337,7 +337,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        pre_filter: Optional[dict] = None,
+        pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -383,7 +383,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[List[Dict]] = None,
         collection: Optional[Collection[MongoDBDocumentType]] = None,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
