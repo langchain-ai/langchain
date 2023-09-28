@@ -71,9 +71,9 @@ const config = {
               test: /\.ipynb$/,
               loader: "raw-loader",
               resolve: {
-                fullySpecified: false
-              }
-            }
+                fullySpecified: false,
+              },
+            },
           ],
         },
       }),
@@ -158,16 +158,16 @@ const config = {
             position: "left",
           },
           {
-            type: 'docSidebar',
-            position: 'left',
-            sidebarId: 'use_cases',
-            label: 'Use cases',
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "use_cases",
+            label: "Use cases",
           },
           {
-            type: 'docSidebar',
-            position: 'left',
-            sidebarId: 'integrations',
-            label: 'Integrations',
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "integrations",
+            label: "Integrations",
           },
           {
             href: "https://api.python.langchain.com",
@@ -187,9 +187,9 @@ const config = {
           // Please keep GitHub link to the right for consistency.
           {
             href: "https://github.com/hwchase17/langchain",
-            position: 'right',
-            className: 'header-github-link',
-            'aria-label': 'GitHub repository',
+            position: "right",
+            className: "header-github-link",
+            "aria-label": "GitHub repository",
           },
         ],
       },
@@ -239,6 +239,14 @@ const config = {
         copyright: `Copyright © ${new Date().getFullYear()} LangChain, Inc.`,
       },
     }),
+
+  scripts: [
+    "/js/google_analytics.js",
+    {
+      src: "https://www.googletagmanager.com/gtag/js?id=G-9B66JQQH2F",
+      async: true,
+    },
+  ],
 };
 
 module.exports = config;
