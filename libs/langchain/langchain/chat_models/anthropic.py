@@ -99,8 +99,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         """Return type of chat model."""
         return "anthropic-chat"
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     def _convert_messages_to_prompt(self, messages: List[BaseMessage]) -> str:

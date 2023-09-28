@@ -28,7 +28,11 @@ from langchain.callbacks.tracers.evaluation import EvaluatorCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer, wait_for_all_tracers
 from langchain.chains.base import Chain
 from langchain.evaluation.loading import load_evaluator
-from langchain.evaluation.schema import EvaluatorType, StringEvaluator
+from langchain.evaluation.schema import (
+    EvaluatorType,
+    PairwiseStringEvaluator,
+    StringEvaluator,
+)
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, messages_from_dict
@@ -137,19 +141,6 @@ def _wrap_in_chain_factory(
                 "(memory=new_memory, ...)\n\n"
                 f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
             )
-        logger.warning(
-            "Directly passing in a chain is not recommended as chains may have state."
-            " This can lead to unexpected behavior as the "
-            "same chain instance could be used across multiple datasets. Instead,"
-            " please pass a chain constructor that creates a new "
-            "chain with fresh memory each time it is called. This will safeguard"
-            " against information leakage between dataset examples. "
-            "\nFor example:\n\n"
-            "def chain_constructor():\n"
-            f"    return {chain_class}(memory=new_memory, ...)\n\n"
-            f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
-        )
-
         return lambda: chain
     elif isinstance(llm_or_chain_factory, BaseLanguageModel):
         return llm_or_chain_factory
@@ -499,6 +490,15 @@ def _construct_run_evaluator(
             reference_key=reference_key,
             tags=[eval_type_tag],
         )
+    elif isinstance(evaluator_, PairwiseStringEvaluator):
+        raise NotImplementedError(
+            f"Run evaluator for {eval_type_tag} is not implemented."
+            " PairwiseStringEvaluators compare the outputs of two different models"
+            " rather than the output of a single model."
+            " Did you mean to use a StringEvaluator instead?"
+            "\nSee: https://python.langchain.com/docs/guides/evaluation/string/"
+        )
+
     else:
         raise NotImplementedError(
             f"Run evaluator for {eval_type_tag} is not implemented"
@@ -653,12 +653,14 @@ async def _arun_chain(
 ) -> Union[dict, str]:
     """Run a chain asynchronously on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
-    if isinstance(chain, Chain):
-        if isinstance(inputs_, dict) and len(inputs_) == 1:
-            val = next(iter(inputs_.values()))
-            output = await chain.acall(val, callbacks=callbacks, tags=tags)
-        else:
-            output = await chain.acall(inputs_, callbacks=callbacks, tags=tags)
+    if (
+        isinstance(chain, Chain)
+        and isinstance(inputs_, dict)
+        and len(inputs_) == 1
+        and chain.input_keys
+    ):
+        val = next(iter(inputs_.values()))
+        output = await chain.acall(val, callbacks=callbacks, tags=tags)
     else:
         runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
         output = await chain.ainvoke(inputs_, config=runnable_config)
@@ -781,12 +783,14 @@ def _run_chain(
 ) -> Union[Dict, str]:
     """Run a chain on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
-    if isinstance(chain, Chain):
-        if isinstance(inputs_, dict) and len(inputs_) == 1:
-            val = next(iter(inputs_.values()))
-            output = chain(val, callbacks=callbacks, tags=tags)
-        else:
-            output = chain(inputs_, callbacks=callbacks, tags=tags)
+    if (
+        isinstance(chain, Chain)
+        and isinstance(inputs_, dict)
+        and len(inputs_) == 1
+        and chain.input_keys
+    ):
+        val = next(iter(inputs_.values()))
+        output = chain(val, callbacks=callbacks, tags=tags)
     else:
         runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
         output = chain.invoke(inputs_, config=runnable_config)
@@ -1251,18 +1255,29 @@ def run_on_dataset(
         input_mapper,
         concurrency_level,
     )
-    with runnable_config.get_executor_for_config(configs[0]) as executor:
-        batch_results = list(
-            executor.map(
-                functools.partial(
-                    _run_llm_or_chain,
-                    llm_or_chain_factory=wrapped_model,
-                    input_mapper=input_mapper,
-                ),
-                examples,
-                configs,
+    if concurrency_level == 0:
+        batch_results = [
+            _run_llm_or_chain(
+                example,
+                config,
+                llm_or_chain_factory=wrapped_model,
+                input_mapper=input_mapper,
             )
-        )
+            for example, config in zip(examples, configs)
+        ]
+    else:
+        with runnable_config.get_executor_for_config(configs[0]) as executor:
+            batch_results = list(
+                executor.map(
+                    functools.partial(
+                        _run_llm_or_chain,
+                        llm_or_chain_factory=wrapped_model,
+                        input_mapper=input_mapper,
+                    ),
+                    examples,
+                    configs,
+                )
+            )
 
     results = _collect_test_results(examples, batch_results, configs, project_name)
     if verbose:
