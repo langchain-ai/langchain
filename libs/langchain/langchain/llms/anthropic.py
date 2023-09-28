@@ -1,6 +1,16 @@
 import re
 import warnings
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Union,
+)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -19,7 +29,7 @@ from langchain.utils import (
 from langchain.utils.utils import build_extra_kwargs
 
 
-def _to_secret(value: typing.Union[SecretStr, str]) -> SecretStr:
+def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
     """Convert a string to a SecretStr if needed."""
     if isinstance(value, SecretStr):
         return value
