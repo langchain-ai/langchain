@@ -124,10 +124,6 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> List[Document]:
-        if type(self).aget_relevant_documents == BaseRetriever.aget_relevant_documents:
-            # If the retriever doesn't implement async, use default implementation
-            return await super().ainvoke(input, config)
-
         config = config or {}
         return await self.aget_relevant_documents(
             input,

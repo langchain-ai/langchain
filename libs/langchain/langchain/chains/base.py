@@ -5,7 +5,6 @@ import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union
 
@@ -98,12 +97,6 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        if type(self)._acall == Chain._acall:
-            # If the chain does not implement async, fall back to default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, **kwargs)
-            )
-
         config = config or {}
         return await self.acall(
             input,
