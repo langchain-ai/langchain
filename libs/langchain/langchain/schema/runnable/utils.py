@@ -107,6 +107,14 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
 
 
 def get_lambda_source(func: Callable) -> Optional[str]:
+    """Get the source code of a lambda function.
+
+    Args:
+        func: a callable that can be a lambda function
+
+    Returns:
+        str: the source code of the lambda function
+    """
     try:
         code = inspect.getsource(func)
         tree = ast.parse(textwrap.dedent(code))
@@ -118,6 +126,15 @@ def get_lambda_source(func: Callable) -> Optional[str]:
 
 
 def indent_lines_after_first(text: str, prefix: str) -> str:
+    """Indent all lines of text after the first line.
+
+    Args:
+        text:  The text to indent
+        prefix: Used to determine the number of spaces to indent
+
+    Returns:
+        str: The indented text
+    """
     n_spaces = len(prefix)
     spaces = " " * n_spaces
     lines = text.splitlines()
