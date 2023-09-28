@@ -17,8 +17,13 @@ from typing import (
 from typing_extensions import get_args
 
 from langchain.load.serializable import Serializable
-from langchain.schema.messages import AnyMessage, BaseMessage
-from langchain.schema.output import ChatGeneration, Generation
+from langchain.schema.messages import AnyMessage, BaseMessage, BaseMessageChunk
+from langchain.schema.output import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    Generation,
+    GenerationChunk,
+)
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable, RunnableConfig
 
@@ -327,6 +332,54 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
             input, self._atransform, config, run_type="parser"
         ):
             yield chunk
+
+
+class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
+    """Base class for an output parser that can handle streaming input."""
+
+    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[Any]:
+        acc_gen = None
+        for chunk in input:
+            if isinstance(chunk, BaseMessageChunk):
+                chunk_gen = ChatGenerationChunk(message=chunk)
+            elif isinstance(chunk, BaseMessage):
+                chunk_gen = ChatGenerationChunk(
+                    message=BaseMessageChunk(**chunk.dict())
+                )
+            else:
+                chunk_gen = GenerationChunk(text=chunk)
+
+            if acc_gen is None:
+                acc_gen = chunk_gen
+            else:
+                acc_gen += chunk_gen
+
+            parsed = self.parse_result([acc_gen])
+            if parsed is not None:
+                yield parsed
+
+    async def _atransform(
+        self, input: AsyncIterator[Union[str, BaseMessage]]
+    ) -> AsyncIterator[T]:
+        acc_gen = None
+        for chunk in input:
+            if isinstance(chunk, BaseMessageChunk):
+                chunk_gen = ChatGenerationChunk(message=chunk)
+            elif isinstance(chunk, BaseMessage):
+                chunk_gen = ChatGenerationChunk(
+                    message=BaseMessageChunk(**chunk.dict())
+                )
+            else:
+                chunk_gen = GenerationChunk(text=chunk)
+
+            if acc_gen is None:
+                acc_gen = chunk_gen
+            else:
+                acc_gen += chunk_gen
+
+            parsed = self.parse_result([acc_gen])
+            if parsed is not None:
+                yield parsed
 
 
 class StrOutputParser(BaseTransformOutputParser[str]):
