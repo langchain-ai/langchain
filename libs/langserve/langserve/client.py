@@ -23,7 +23,7 @@ from langchain.schema.runnable.utils import Input, Output
 def _without_callbacks(config: Optional[RunnableConfig]) -> RunnableConfig:
     """Evict callbacks from the config since those are definitely not supported."""
     _config = config or {}
-    return {k: config[k] for k in _config.keys() if k not in {"callbacks"}}
+    return {k: v for k, v in _config.items() if k != "callbacks"}
 
 
 def _raise_for_status(response: httpx.Response) -> None:
