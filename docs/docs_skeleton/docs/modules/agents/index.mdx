@@ -3,49 +3,100 @@ sidebar_position: 4
 ---
 # Agents
 
-Some applications require a flexible chain of calls to LLMs and other tools based on user input. The **Agent** interface provides the flexibility for such applications. An agent has access to a suite of tools, and determines which ones to use depending on the user input. Agents can use multiple tools, and use the output of one tool as the input to the next.
+The core idea of agents is to use an LLM to choose a sequence of actions to take.
+In chains, a sequence of actions is hardcoded (in code).
+In agents, a language model is used as a reasoning engine to determine which actions to take and in which order.
 
-There are two main types of agents:
+Some important terminology (and schema) to know:
 
-- **Action agents**: at each timestep, decide on the next action using the outputs of all previous actions
-- **Plan-and-execute agents**: decide on the full sequence of actions up front, then execute them all without updating the plan
+1. `AgentAction`: This is a dataclass that represents the action an agent should take. It has a `tool` property (which is the name of the tool that should be invoked) and a `tool_input` property (the input to that tool)
+2. `AgentFinish`: This is a dataclass that signifies that the agent has finished and should return to the user. It has a `return_values` parameter, which is a dictionary to return. It often only has one key - `output` - that is a string, and so often it is just this key that is returned.
+3. `intermediate_steps`: These represent previous agent actions and corresponding outputs that are passed around. These are important to pass to future iteration so the agent knows what work it has already done. This is typed as a `List[Tuple[AgentAction, Any]]`. Note that observation is currently left as type `Any` to be maximally flexible. In practice, this is often a string.
 
-Action agents are suitable for small tasks, while plan-and-execute agents are better for complex or long-running tasks that require maintaining long-term objectives and focus. Often the best approach is to combine the dynamism of an action agent with the planning abilities of a plan-and-execute agent by letting the plan-and-execute agent use action agents to execute plans.
+There are several key components here:
 
-For a full list of agent types see [agent types](/docs/modules/agents/agent_types/). Additional abstractions involved in agents are:
-- [**Tools**](/docs/modules/agents/tools/): the actions an agent can take. What tools you give an agent highly depend on what you want the agent to do
-- [**Toolkits**](/docs/modules/agents/toolkits/): wrappers around collections of tools that can be used together a specific use case. For example, in order for an agent to
-  interact with a SQL database it will likely need one tool to execute queries and another to inspect tables
+## Agent
 
-## Action agents
+This is the chain responsible for deciding what step to take next.
+This is powered by a language model and a prompt.
+The inputs to this chain are:
 
-At a high-level an action agent:
-1. Receives user input
-2. Decides which tool, if any, to use and the tool input
-3. Calls the tool and records the output (also known as an "observation")
-4. Decides the next step using the history of tools, tool inputs, and observations
-5. Repeats 3-4 until it determines it can respond directly to the user
+1. List of available tools
+2. User input
+3. Any previously executed steps (`intermediate_steps`)
 
-Action agents are wrapped in **agent executors**, which are responsible for calling the agent, getting back an action and action input, calling the tool that the action references with the generated input, getting the output of the tool, and then passing all that information back into the agent to get the next action it should take.
+This chain then returns either the next action to take or the final response to send to the user (`AgentAction` or `AgentFinish`).
 
-Although an agent can be constructed in many ways, it typically involves these components:
+Different agents have different prompting styles for reasoning, different ways of encoding input, and different ways of parsing the output.
+For a full list of agent types see [agent types](/docs/modules/agents/agent_types/)
 
-- **Prompt template**: Responsible for taking the user input and previous steps and constructing a prompt
-  to send to the language model
-- **Language model**: Takes the prompt with use input and action history and decides what to do next
-- **Output parser**: Takes the output of the language model and parses it into the next action or a final answer
+## Tools
 
-## Plan-and-execute agents
+Tools are functions that an agent calls.
+There are two important considerations here:
 
-At a high-level a plan-and-execute agent:
-1. Receives user input
-2. Plans the full sequence of steps to take
-3. Executes the steps in order, passing the outputs of past steps as inputs to future steps
+1. Giving the agent access to the right tools
+2. Describing the tools in a way that is most helpful to the agent
 
-The most typical implementation is to have the planner be a language model, and the executor be an action agent. Read more [here](/docs/modules/agents/agent_types/plan_and_execute.html).
+Without both, the agent you are trying to build will not work.
+If you don't give the agent access to a correct set of tools, it will never be able to accomplish the objective.
+If you don't describe the tools properly, the agent won't know how to properly use them.
+
+LangChain provides a wide set of tools to get started, but also makes it easy to define your own (including custom descriptions).
+For a full list of tools, see [here](/docs/modules/agents/tools/)
+
+## Toolkits
+
+Often the set of tools an agent has access to is more important than a single tool.
+For this LangChain provides the concept of toolkits - groups of tools needed to accomplish specific objectives.
+There are generally around 3-5 tools in a toolkit.
+
+LangChain provides a wide set of toolkits to get started.
+For a full list of toolkits, see [here](/docs/modules/agents/toolkits/)
+
+## AgentExecutor
+
+The agent executor is the runtime for an agent.
+This is what actually calls the agent and executes the actions it chooses.
+Pseudocode for this runtime is below:
+
+```python
+next_action = agent.get_action(...)
+while next_action != AgentFinish:
+    observation = run(next_action)
+    next_action = agent.get_action(..., next_action, observation)
+return next_action
+```
+
+While this may seem simple, there are several complexities this runtime handles for you, including:
+
+1. Handling cases where the agent selects a non-existent tool
+2. Handling cases where the tool errors
+3. Handling cases where the agent produces output that cannot be parsed into a tool invocation
+4. Logging and observability at all levels (agent decisions, tool calls) either to stdout or [LangSmith](https://smith.langchain.com).
+
+## Other types of agent runtimes
+
+The `AgentExecutor` class is the main agent runtime supported by LangChain.
+However, there are other, more experimental runtimes we also support.
+These include:
+
+- [Plan-and-execute Agent](/docs/use_cases/more/agents/autonomous_agents/plan_and_execute)
+- [Baby AGI](/docs/use_cases/more/agents/autonomous_agents/baby_agi)
+- [Auto GPT](/docs/use_cases/more/agents/autonomous_agents/autogpt)
 
 ## Get started
 
 import GetStarted from "@snippets/modules/agents/get_started.mdx"
 
 <GetStarted/>
+
+## Next Steps
+
+Awesome! You've now run your first end-to-end agent.
+To dive deeper, you can:
+
+- Check out all the different [agent types](/docs/modules/agents/agent_types/) supported
+- Learn all the controls for [AgentExecutor](/docs/modules/agents/how_to/)
+- See a full list of all the off-the-shelf [toolkits](/docs/modules/agents/toolkits/) we provide
+- Explore all the individual [tools](/docs/modules/agents/tools/) supported
