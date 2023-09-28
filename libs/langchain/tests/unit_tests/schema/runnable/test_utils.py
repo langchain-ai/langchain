@@ -1,10 +1,10 @@
 import pytest
 
+from langchain.schema.runnable.base import RunnableLambda
 from langchain.schema.runnable.utils import (
     get_lambda_source,
     indent_lines_after_first,
 )
-from langchain.schema.runnable.base import RunnableLambda
 
 
 # Test get_lambda_source function
@@ -19,7 +19,6 @@ from langchain.schema.runnable.base import RunnableLambda
 def test_get_lambda_source(func, expected_source):
     source = get_lambda_source(func)
     assert source == expected_source
-
 
 
 @pytest.mark.parametrize(
