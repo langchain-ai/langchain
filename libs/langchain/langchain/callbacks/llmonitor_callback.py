@@ -14,12 +14,12 @@ from langchain.schema.output import LLMResult
 
 DEFAULT_API_URL = "https://app.llmonitor.com"
 
-user_ctx = ContextVar("user_ctx", default=None)
-user_props_ctx = ContextVar("user_props_ctx", default=None)
+user_ctx = ContextVar[Union[str, None]]("user_ctx", default=None)
+user_props_ctx = ContextVar[Union[str, None]]("user_props_ctx", default=None)
 
 
 class UserContextManager:
-    def __init__(self, user_id: str, user_props: Any = None) -> Any:
+    def __init__(self, user_id: str, user_props: Any = None) -> None:
         user_ctx.set(user_id)
         user_props_ctx.set(user_props)
 
@@ -31,7 +31,7 @@ class UserContextManager:
         user_props_ctx.set(None)
 
 
-def identify(user_id: str, user_props=None) -> Any:
+def identify(user_id: str, user_props: Any = None) -> UserContextManager:
     return UserContextManager(user_id, user_props)
 
 
