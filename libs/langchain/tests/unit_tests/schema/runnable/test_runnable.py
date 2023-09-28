@@ -2758,12 +2758,13 @@ def test_reprsentation_of_runnables() -> None:
 
     assert repr(RunnableLambda(func=f, afunc=af)) == "RunnableLambda(...)"
 
-    sequence = RunnableLambda(lambda x: x + 2) | {
-        "a": RunnableLambda(lambda x: x * 2),
-        "b": RunnableLambda(lambda x: x * 3),
-    }
-
-    assert repr(sequence) == (
+    assert repr(
+        RunnableLambda(lambda x: x + 2)
+        | {
+            "a": RunnableLambda(lambda x: x * 2),
+            "b": RunnableLambda(lambda x: x * 3),
+        }
+    ) == (
         "RunnableLambda(lambda x: x * 3)\n"
         "| {\n"
         "    a: RunnableLambda(...),\n"
