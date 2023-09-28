@@ -21,6 +21,7 @@ from typing import (
 import yaml
 
 from langchain.agents.agent_iterator import AgentExecutorIterator
+from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
