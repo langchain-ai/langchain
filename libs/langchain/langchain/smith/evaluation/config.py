@@ -261,4 +261,34 @@ class RunEvalConfig(BaseModel):
 
         evaluator_type: EvaluatorType = EvaluatorType.JSON_EQUALITY
 
+    class ExactMatch(EvalConfig):
+        """Configuration for an exact match string evaluator.
+
+        Parameters
+        ----------
+        ignore_case : bool
+            Whether to ignore case when comparing strings.
+        ignore_punctuation : bool
+            Whether to ignore punctuation when comparing strings.
+        ignore_numbers : bool
+            Whether to ignore numbers when comparing strings.
+        """
+
+        evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
+        ignore_case: bool = False
+        ignore_punctuation: bool = False
+        ignore_numbers: bool = False
+
+    class RegexMatch(EvalConfig):
+        """Configuration for a regex match string evaluator.
+
+        Parameters
+        ----------
+        flags : int
+            The flags to pass to the regex. Example: re.IGNORECASE.
+        """
+
+        evaluator_type: EvaluatorType = EvaluatorType.REGEX_MATCH
+        flags: int = 0
+
     # TODO: Trajectory

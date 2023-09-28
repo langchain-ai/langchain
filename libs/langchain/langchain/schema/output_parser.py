@@ -304,9 +304,9 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 class StrOutputParser(BaseTransformOutputParser[str]):
     """OutputParser that parses LLMResult into the top likely string."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether the class LangChain serializable."""
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
         return True
 
     @property
