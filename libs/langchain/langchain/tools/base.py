@@ -187,6 +187,14 @@ class ChildTool(BaseTool):
 
     # --- Runnable ---
 
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        """The tool's input schema."""
+        if self.args_schema is not None:
+            return self.args_schema
+        else:
+            return create_schema_from_function(self.name, self._run)
+
     def invoke(
         self,
         input: Union[str, Dict],
