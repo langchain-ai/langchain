@@ -89,7 +89,14 @@ def add_routes(
         config_keys: list of config keys that will be accepted, by default
                      no config keys are accepted.
     """
-    from sse_starlette import EventSourceResponse
+    try:
+        from sse_starlette import EventSourceResponse
+    except ImportError:
+        raise ImportError(
+            "sse_starlette must be installed to implement the stream and "
+            "stream_log endpoints. "
+            "Use `pip install sse_starlette` to install."
+        )
 
     input_type = replace_lc_object_types(input_type)
 
