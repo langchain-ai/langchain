@@ -10,11 +10,11 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.poetry.dependencies]
 python = ">3.8.1,<4"
 httpx = "^0.25.0"
-langchain = { git = "https://github.com/langchain-ai/langchain", subdirectory = "libs/langchain" }
 fastapi = {version = ">0.90.1", optional = true}
 sse-starlette = {version = "^1.6.5", optional = true}
 httpx-sse = {version = "^0.3.1", optional = true}
 pydantic = "^1"
+langchain = "^0.0.304"
 
 [tool.poetry.group.dev.dependencies]
 jupyterlab = "^3.6.1"
