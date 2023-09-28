@@ -22,8 +22,8 @@ class ListOutputParser(BaseOutputParser[List[str]]):
 class CommaSeparatedListOutputParser(ListOutputParser):
     """Parse the output of an LLM call to a comma-separated list."""
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     def get_format_instructions(self) -> str:

@@ -45,7 +45,7 @@ from langchain.llms.deepsparse import DeepSparse
 from langchain.llms.edenai import EdenAI
 from langchain.llms.erniebot import ERNIEBot
 from langchain.llms.fake import FakeListLLM
-from langchain.llms.fireworks import Fireworks, FireworksChat
+from langchain.llms.fireworks import Fireworks
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.google_palm import GooglePalm
 from langchain.llms.gooseai import GooseAI
@@ -116,7 +116,6 @@ __all__ = [
     "EdenAI",
     "FakeListLLM",
     "Fireworks",
-    "FireworksChat",
     "ForefrontAI",
     "GPT4All",
     "GooglePalm",
