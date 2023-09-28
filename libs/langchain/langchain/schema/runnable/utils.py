@@ -92,7 +92,8 @@ class GetLambdaSource(ast.NodeVisitor):
         self.source: Optional[str] = None
 
     def visit_Lambda(self, node: ast.Lambda) -> Any:
-        self.source = ast.unparse(node)
+        if hasattr(ast, "unparse"):
+            self.source = ast.unparse(node)
 
 
 def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
