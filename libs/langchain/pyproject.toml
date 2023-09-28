@@ -132,6 +132,7 @@ sqlite-vss = {version = "^0.1.2", optional = true}
 anyio = "<4.0"
 jsonpatch = "^1.33"
 timescale-vector = {version = "^0.0.1", optional = true}
+anthropic = {version = "^0.3.11", optional = true}
 
 
 [tool.poetry.group.test.dependencies]
@@ -180,6 +181,7 @@ openai = "^0.27.4"
 python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
 tiktoken = "^0.3.2"
+anthropic = "^0.3.11"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
@@ -350,6 +352,7 @@ extended_testing = [
  "dashvector",
  "sqlite-vss",
  "timescale-vector",
+ "anthropic",
 ]
 
 [tool.ruff]
