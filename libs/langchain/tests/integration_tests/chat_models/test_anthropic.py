@@ -22,6 +22,13 @@ def test_anthropic_call() -> None:
     assert isinstance(response.content, str)
 
 
+def test_anthropic_initialization() -> None:
+    """Test anthropic initialization."""
+    # Verify that chat anthropic can be initialized using a secret key provided
+    # as a parameter rather than an environment variable.
+    ChatAnthropic(model="test", anthropic_api_key="test")
+
+
 def test_anthropic_generate() -> None:
     """Test generate method of anthropic."""
     chat = ChatAnthropic(model="test")
