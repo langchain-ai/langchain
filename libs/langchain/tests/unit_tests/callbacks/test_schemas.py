@@ -6,16 +6,7 @@ def test_public_api() -> None:
     """Test for changes in the public API."""
     expected_all = [
         "BaseRun",
-        "ChainRun",
-        "LLMRun",
         "Run",
-        "RunTypeEnum",
-        "ToolRun",
-        "TracerSession",
-        "TracerSessionBase",
-        "TracerSessionV1",
-        "TracerSessionV1Base",
-        "TracerSessionV1Create",
     ]
 
     assert sorted(schemas_all) == expected_all

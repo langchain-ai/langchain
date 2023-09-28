@@ -12,7 +12,7 @@ from uuid import UUID
 from langsmith import Client
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run, TracerSession
+from langchain.callbacks.tracers.schemas import Run
 from langchain.env import get_runtime_environment
 from langchain.load.dump import dumpd
 from langchain.schema.messages import BaseMessage
@@ -64,7 +64,6 @@ class LangChainTracer(BaseTracer):
     ) -> None:
         """Initialize the LangChain tracer."""
         super().__init__(**kwargs)
-        self.session: Optional[TracerSession] = None
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )

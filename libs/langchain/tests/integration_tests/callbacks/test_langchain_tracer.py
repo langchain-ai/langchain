@@ -6,7 +6,6 @@ import pytest
 from aiohttp import ClientSession
 
 from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.callbacks import tracing_enabled
 from langchain.callbacks.manager import (
     atrace_as_chain_group,
     trace_as_chain_group,
@@ -106,7 +105,7 @@ def test_tracing_context_manager() -> None:
     )
     if "LANGCHAIN_TRACING" in os.environ:
         del os.environ["LANGCHAIN_TRACING"]
-    with tracing_enabled() as session:
+    with tracing_v2_enabled() as session:
         assert session
         agent.run(questions[0])  # this should be traced
 
@@ -125,7 +124,7 @@ async def test_tracing_context_manager_async() -> None:
 
     # start a background task
     task = asyncio.create_task(agent.arun(questions[0]))  # this should not be traced
-    with tracing_enabled() as session:
+    with tracing_v2_enabled() as session:
         assert session
         tasks = [agent.arun(q) for q in questions[1:4]]  # these should be traced
         await asyncio.gather(*tasks)

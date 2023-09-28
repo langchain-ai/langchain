@@ -23,7 +23,6 @@ from langchain.callbacks.llmonitor_callback import LLMonitorCallbackHandler
 from langchain.callbacks.manager import (
     collect_runs,
     get_openai_callback,
-    tracing_enabled,
     tracing_v2_enabled,
     wandb_tracing_enabled,
 )
@@ -67,7 +66,6 @@ __all__ = [
     "WandbCallbackHandler",
     "WhyLabsCallbackHandler",
     "get_openai_callback",
-    "tracing_enabled",
     "tracing_v2_enabled",
     "collect_runs",
     "wandb_tracing_enabled",
