@@ -71,11 +71,11 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         if kms_key_id:
             try:
                 from dynamodb_encryption_sdk.encrypted.table import EncryptedTable
-                from dynamodb_encryption_sdk.structures import AttributeActions
                 from dynamodb_encryption_sdk.identifiers import CryptoAction
                 from dynamodb_encryption_sdk.material_providers.aws_kms import (
                     AwsKmsCryptographicMaterialsProvider,
                 )
+                from dynamodb_encryption_sdk.structures import AttributeActions
             except ImportError as e:
                 raise ImportError(
                     "Unable to import dynamodb_encryption_sdk, please install with `pip install dynamodb-encryption-sdk`."
