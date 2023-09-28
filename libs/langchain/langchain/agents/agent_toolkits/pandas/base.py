@@ -22,16 +22,19 @@ from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import SystemMessage
 from langchain.tools import BaseTool
+from langchain.tools.pandas_eval.pandas_eval import PandasEvalTool
 from langchain.tools.python.tool import PythonAstREPLTool
 
 
 def _get_multi_prompt(
     dfs: List[Any],
+    llm: BaseLanguageModel,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
+    use_pandas_eval_tool: bool = False,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     num_dfs = len(dfs)
     if suffix is not None:
@@ -54,7 +57,11 @@ def _get_multi_prompt(
     df_locals = {}
     for i, dataframe in enumerate(dfs):
         df_locals[f"df{i + 1}"] = dataframe
-    tools = [PythonAstREPLTool(locals=df_locals)]
+    tools = (
+        [PythonAstREPLTool(locals=df_locals)]
+        if not use_pandas_eval_tool
+        else [PandasEvalTool(dfs=df_locals, model=llm)]
+    )
 
     prompt = ZeroShotAgent.create_prompt(
         tools, prefix=prefix, suffix=suffix_to_use, input_variables=input_variables
@@ -71,11 +78,13 @@ def _get_multi_prompt(
 
 def _get_single_prompt(
     df: Any,
+    llm: BaseLanguageModel,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
+    use_pandas_eval_tool: bool = False,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     if suffix is not None:
         suffix_to_use = suffix
@@ -95,7 +104,11 @@ def _get_single_prompt(
     if prefix is None:
         prefix = PREFIX
 
-    tools = [PythonAstREPLTool(locals={"df": df})]
+    tools = (
+        [PythonAstREPLTool(locals={"df": df})]
+        if not use_pandas_eval_tool
+        else [PandasEvalTool(dfs={"df": df}, model=llm)]
+    )
 
     prompt = ZeroShotAgent.create_prompt(
         tools, prefix=prefix, suffix=suffix_to_use, input_variables=input_variables
@@ -111,11 +124,13 @@ def _get_single_prompt(
 
 def _get_prompt_and_tools(
     df: Any,
+    llm: BaseLanguageModel,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
+    use_pandas_eval_tool: bool = False,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     try:
         import pandas as pd
@@ -135,31 +150,37 @@ def _get_prompt_and_tools(
                 raise ValueError(f"Expected pandas object, got {type(df)}")
         return _get_multi_prompt(
             df,
+            llm,
             prefix=prefix,
             suffix=suffix,
             input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
+            use_pandas_eval_tool=use_pandas_eval_tool,
         )
     else:
         if not isinstance(df, pd.DataFrame):
             raise ValueError(f"Expected pandas object, got {type(df)}")
         return _get_single_prompt(
             df,
+            llm,
             prefix=prefix,
             suffix=suffix,
             input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
+            use_pandas_eval_tool=use_pandas_eval_tool,
         )
 
 
 def _get_functions_single_prompt(
     df: Any,
+    llm: BaseLanguageModel,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
+    use_pandas_eval_tool: bool = False,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     if suffix is not None:
         suffix_to_use = suffix
@@ -177,7 +198,11 @@ def _get_functions_single_prompt(
     if prefix is None:
         prefix = PREFIX_FUNCTIONS
 
-    tools = [PythonAstREPLTool(locals={"df": df})]
+    tools = (
+        [PythonAstREPLTool(locals={"df": df})]
+        if not use_pandas_eval_tool
+        else [PandasEvalTool(dfs={"df": df}, model=llm)]
+    )
     system_message = SystemMessage(content=prefix + suffix_to_use)
     prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
     return prompt, tools
@@ -185,10 +210,12 @@ def _get_functions_single_prompt(
 
 def _get_functions_multi_prompt(
     dfs: Any,
+    llm: BaseLanguageModel,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
+    use_pandas_eval_tool: bool = False,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     if suffix is not None:
         suffix_to_use = suffix
@@ -214,7 +241,11 @@ def _get_functions_multi_prompt(
     df_locals = {}
     for i, dataframe in enumerate(dfs):
         df_locals[f"df{i + 1}"] = dataframe
-    tools = [PythonAstREPLTool(locals=df_locals)]
+    tools = (
+        [PythonAstREPLTool(locals=df_locals)]
+        if not use_pandas_eval_tool
+        else [PandasEvalTool(dfs=df_locals, model=llm)]
+    )
     system_message = SystemMessage(content=prefix + suffix_to_use)
     prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
     return prompt, tools
@@ -222,11 +253,13 @@ def _get_functions_multi_prompt(
 
 def _get_functions_prompt_and_tools(
     df: Any,
+    llm: BaseLanguageModel,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
+    use_pandas_eval_tool: bool = False,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     try:
         import pandas as pd
@@ -248,20 +281,24 @@ def _get_functions_prompt_and_tools(
                 raise ValueError(f"Expected pandas object, got {type(df)}")
         return _get_functions_multi_prompt(
             df,
+            llm,
             prefix=prefix,
             suffix=suffix,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
+            use_pandas_eval_tool=use_pandas_eval_tool,
         )
     else:
         if not isinstance(df, pd.DataFrame):
             raise ValueError(f"Expected pandas object, got {type(df)}")
         return _get_functions_single_prompt(
             df,
+            llm,
             prefix=prefix,
             suffix=suffix,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
+            use_pandas_eval_tool=use_pandas_eval_tool,
         )
 
 
@@ -282,6 +319,7 @@ def create_pandas_dataframe_agent(
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
     extra_tools: Sequence[BaseTool] = (),
+    use_pandas_eval_tool: bool = True,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe."""
@@ -289,11 +327,13 @@ def create_pandas_dataframe_agent(
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
         prompt, base_tools = _get_prompt_and_tools(
             df,
+            llm,
             prefix=prefix,
             suffix=suffix,
             input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
+            use_pandas_eval_tool=use_pandas_eval_tool,
         )
         tools = base_tools + list(extra_tools)
         llm_chain = LLMChain(
@@ -316,6 +356,7 @@ def create_pandas_dataframe_agent(
             input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
+            use_pandas_eval_tool=use_pandas_eval_tool,
         )
         tools = base_tools + list(extra_tools)
         agent = OpenAIFunctionsAgent(
