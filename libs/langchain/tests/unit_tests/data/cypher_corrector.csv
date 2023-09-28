@@ -1,4 +1,4 @@
-statement,schema,correct_query
+"statement","schema","correct_query"
 "MATCH (p:Person)-[:KNOWS]->(:Person) RETURN p, count(*) AS count","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)-[:KNOWS]->(:Person) RETURN p, count(*) AS count"
 "MATCH (p:Person)<-[:KNOWS]-(:Person) RETURN p, count(*) AS count","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)<-[:KNOWS]-(:Person) RETURN p, count(*) AS count"
 "MATCH (p:Person {id:""Foo""})<-[:WORKS_AT]-(o:Organization) RETURN o.name AS name","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person {id:""Foo""})-[:WORKS_AT]->(o:Organization) RETURN o.name AS name"
@@ -504,3 +504,5 @@ ORDER BY date DESC LIMIT 3","(Organization, HAS_CEO, Person), (Article, MENTIONS
 WHERE toLower(c.text) CONTAINS 'partnership'
 RETURN a.title AS title, c.text AS text, a.date AS date
 ORDER BY date DESC LIMIT 3"
+"MATCH (n:`Some Label`)-[:`SOME REL TYPE üäß`]->(m:`Sömé Øther Læbel`) RETURN n,m","(Some Label, SOME REL TYPE üäß, Sömé Øther Læbel)","MATCH (n:`Some Label`)-[:`SOME REL TYPE üäß`]->(m:`Sömé Øther Læbel`) RETURN n,m"
+"MATCH (n:`Some Label`)<-[:`SOME REL TYPE üäß`]-(m:`Sömé Øther Læbel`) RETURN n,m","(Some Label, SOME REL TYPE üäß, Sömé Øther Læbel)","MATCH (n:`Some Label`)-[:`SOME REL TYPE üäß`]->(m:`Sömé Øther Læbel`) RETURN n,m"
