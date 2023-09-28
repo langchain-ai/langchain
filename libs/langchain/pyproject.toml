@@ -346,6 +346,7 @@ extended_testing = [
  "faiss-cpu",
  "openapi-schema-pydantic",
  "markdownify",
+ "arxiv",
  "dashvector",
  "sqlite-vss",
  "timescale-vector",
