@@ -771,8 +771,21 @@ def tool(
     def _make_with_name(tool_name: str) -> Callable:
         def _make_tool(dec_func: Union[Callable, Runnable]) -> BaseTool:
             if isinstance(dec_func, Runnable):
-                coroutine = dec_func.ainvoke
-                func = dec_func.invoke
+                if dec_func.input_schema.schema().get("type") != "object":
+                    raise ValueError("Runnable must have an object schema.")
+
+                async def ainvoke_wrapper(
+                    callbacks: Optional[Callbacks] = None, **kwargs: Any
+                ) -> Any:
+                    return await dec_func.ainvoke(kwargs, {"callbacks": callbacks})
+
+                def invoke_wrapper(
+                    callbacks: Optional[Callbacks] = None, **kwargs: Any
+                ) -> Any:
+                    return dec_func.invoke(kwargs, {"callbacks": callbacks})
+
+                coroutine = ainvoke_wrapper
+                func = invoke_wrapper
                 schema = dec_func.input_schema
                 description = repr(dec_func)
             elif inspect.iscoroutinefunction(dec_func):
