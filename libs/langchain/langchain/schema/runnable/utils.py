@@ -90,8 +90,10 @@ class IsFunctionArgDict(ast.NodeVisitor):
 class GetLambdaSource(ast.NodeVisitor):
     def __init__(self) -> None:
         self.source: Optional[str] = None
+        self.count = 0
 
     def visit_Lambda(self, node: ast.Lambda) -> Any:
+        self.count += 1
         if hasattr(ast, "unparse"):
             self.source = ast.unparse(node)
 
@@ -118,10 +120,11 @@ def get_lambda_source(func: Callable) -> Optional[str]:
     """
     try:
         code = inspect.getsource(func)
+        print(code)
         tree = ast.parse(textwrap.dedent(code))
         visitor = GetLambdaSource()
         visitor.visit(tree)
-        return visitor.source
+        return visitor.source if visitor.count == 1 else None
     except (SyntaxError, TypeError, OSError):
         return None
 

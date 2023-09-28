@@ -2741,6 +2741,9 @@ async def test_runnable_branch_abatch() -> None:
     assert await branch.abatch([1, 10, 0]) == [2, 100, -1]
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
 def test_reprsentation_of_runnables() -> None:
     """Test representation of runnables."""
     runnable = RunnableLambda(lambda x: x * 2)
@@ -2765,9 +2768,9 @@ def test_reprsentation_of_runnables() -> None:
             "b": RunnableLambda(lambda x: x * 3),
         }
     ) == (
-        "RunnableLambda(lambda x: x * 3)\n"
+        "RunnableLambda(...)\n"
         "| {\n"
         "    a: RunnableLambda(...),\n"
         "    b: RunnableLambda(...)\n"
         "  }"
-    )
+    ), "repr where code string contains multiple lambdas gives up"
