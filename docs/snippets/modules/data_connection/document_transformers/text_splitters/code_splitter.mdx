@@ -18,6 +18,7 @@ from langchain.text_splitter import (
      'go',
      'java',
      'js',
+     'ts',
      'php',
      'proto',
      'python',
@@ -102,6 +103,36 @@ js_docs
 
 ```
     [Document(page_content='function helloWorld() {\n  console.log("Hello, World!");\n}', metadata={}),
+     Document(page_content='// Call the function\nhelloWorld();', metadata={})]
+```
+
+</CodeOutputBlock>
+
+## TS
+Here's an example using the TS text splitter:
+
+
+```python
+TS_CODE = """
+function helloWorld(): void {
+  console.log("Hello, World!");
+}
+
+// Call the function
+helloWorld();
+"""
+
+ts_splitter = RecursiveCharacterTextSplitter.from_language(
+    language=Language.TS, chunk_size=60, chunk_overlap=0
+)
+ts_docs = ts_splitter.create_documents([TS_CODE])
+ts_docs
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='function helloWorld(): void {\n  console.log("Hello, World!");\n}', metadata={}),
      Document(page_content='// Call the function\nhelloWorld();', metadata={})]
 ```
 
