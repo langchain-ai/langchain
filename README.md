@@ -85,7 +85,7 @@ from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
 
 # Авторизация в сервисе GigaChat
-chat = GigaChat(user=<user_name>, password=<password>)
+chat = GigaChat(oauth_token=...)
 
 messages = [
     SystemMessage(

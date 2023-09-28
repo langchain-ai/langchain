@@ -79,7 +79,7 @@ class GigaChat(BaseChatModel):
         .. code-block:: python
 
             from langchain.chat_models import GigaChat
-            giga = GigaChat(user="username", password="password")
+            giga = GigaChat(oauth_token=...)
     """
 
     use_auth: Optional[bool] = None
