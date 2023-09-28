@@ -4,15 +4,15 @@ from typing import (
     Any,
     AsyncIterator,
     Callable,
-    Generic,
     Iterator,
     List,
     Mapping,
     Optional,
-    TypedDict,
     Union,
     cast,
 )
+
+from typing_extensions import TypedDict
 
 from langchain.load.serializable import Serializable
 from langchain.schema.runnable.base import (
@@ -43,21 +43,17 @@ class RouterInput(TypedDict):
     input: Any
 
 
-class RouterRunnable(
-    Serializable, Generic[Input, Output], Runnable[RouterInput, Output]
-):
+class RouterRunnable(Serializable, Runnable[RouterInput, Output]):
     """
     A runnable that routes to a set of runnables based on Input['key'].
     Returns the output of the selected runnable.
     """
 
-    runnables: Mapping[str, Runnable[Input, Output]]
+    runnables: Mapping[str, Runnable[Any, Output]]
 
     def __init__(
         self,
-        runnables: Mapping[
-            str, Union[Runnable[Input, Output], Callable[[Input], Output]]
-        ],
+        runnables: Mapping[str, Union[Runnable[Any, Output], Callable[[Any], Output]]],
     ) -> None:
         super().__init__(
             runnables={key: coerce_to_runnable(r) for key, r in runnables.items()}
