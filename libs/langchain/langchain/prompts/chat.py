@@ -39,13 +39,9 @@ from langchain.schema.messages import (
 class BaseMessagePromptTemplate(Serializable, ABC):
     """Base class for message prompt templates."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether this object should be serialized.
-
-        Returns:
-            Whether this object should be serialized.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return True
 
     @abstractmethod
@@ -229,7 +225,7 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 
 class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
-    """Human message prompt template. This is a message that is sent to the user."""
+    """Human message prompt template. This is a message sent from the user."""
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -245,7 +241,7 @@ class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 
 class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
-    """AI message prompt template. This is a message that is not sent to the user."""
+    """AI message prompt template. This is a message sent from the AI."""
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.

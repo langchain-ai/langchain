@@ -1,5 +1,5 @@
 from operator import itemgetter
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from uuid import UUID
 
 import pytest
@@ -7,15 +7,16 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
-from langchain import PromptTemplate
-from langchain.callbacks.manager import Callbacks
+from langchain.callbacks.manager import Callbacks, collect_runs
 from langchain.callbacks.tracers.base import BaseTracer
+from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.callbacks.tracers.schemas import Run
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
+from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     ChatPromptValue,
@@ -34,6 +35,7 @@ from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
     RouterRunnable,
     Runnable,
+    RunnableBranch,
     RunnableConfig,
     RunnableLambda,
     RunnableMap,
@@ -214,7 +216,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -224,7 +226,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -295,7 +297,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=10,
             ),
         ),
@@ -305,7 +307,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=10,
             ),
         ),
@@ -366,6 +368,80 @@ async def test_prompt() -> None:
     assert [
         part async for part in prompt.astream({"question": "What is your name?"})
     ] == [expected]
+
+    stream_log = [
+        part async for part in prompt.astream_log({"question": "What is your name?"})
+    ]
+
+    assert len(stream_log[0].ops) == 1
+    assert stream_log[0].ops[0]["op"] == "replace"
+    assert stream_log[0].ops[0]["path"] == ""
+    assert stream_log[0].ops[0]["value"]["logs"] == []
+    assert stream_log[0].ops[0]["value"]["final_output"] is None
+    assert stream_log[0].ops[0]["value"]["streamed_output"] == []
+    assert type(stream_log[0].ops[0]["value"]["id"]) == str
+
+    assert stream_log[1:] == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "/final_output",
+                "value": {
+                    "id": ["langchain", "prompts", "chat", "ChatPromptValue"],
+                    "kwargs": {
+                        "messages": [
+                            {
+                                "id": [
+                                    "langchain",
+                                    "schema",
+                                    "messages",
+                                    "SystemMessage",
+                                ],
+                                "kwargs": {"content": "You are a nice " "assistant."},
+                                "lc": 1,
+                                "type": "constructor",
+                            },
+                            {
+                                "id": [
+                                    "langchain",
+                                    "schema",
+                                    "messages",
+                                    "HumanMessage",
+                                ],
+                                "kwargs": {
+                                    "additional_kwargs": {},
+                                    "content": "What is your " "name?",
+                                },
+                                "lc": 1,
+                                "type": "constructor",
+                            },
+                        ]
+                    },
+                    "lc": 1,
+                    "type": "constructor",
+                },
+            }
+        ),
+        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
+    ]
+
+
+def test_prompt_template_params() -> None:
+    prompt = ChatPromptTemplate.from_template(
+        "Respond to the following question: {question}"
+    )
+    result = prompt.invoke(
+        {
+            "question": "test",
+            "topic": "test",
+        }
+    )
+    assert result == ChatPromptValue(
+        messages=[HumanMessage(content="Respond to the following question: test")]
+    )
+
+    with pytest.raises(KeyError):
+        prompt.invoke({})
 
 
 @pytest.mark.asyncio
@@ -558,6 +634,136 @@ async def test_prompt_with_llm(
             HumanMessage(content="What is your name?"),
         ]
     )
+
+    prompt_spy.reset_mock()
+    llm_spy.reset_mock()
+    stream_log = [
+        part async for part in chain.astream_log({"question": "What is your name?"})
+    ]
+
+    # remove ids from logs
+    for part in stream_log:
+        for op in part.ops:
+            if (
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
+            ):
+                del op["value"]["id"]
+
+    assert stream_log == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "",
+                "value": {
+                    "logs": [],
+                    "final_output": None,
+                    "streamed_output": [],
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/0",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "ChatPromptTemplate",
+                    "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output_str": [],
+                    "tags": ["seq:step:1"],
+                    "type": "prompt",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/0/final_output",
+                "value": {
+                    "id": ["langchain", "prompts", "chat", "ChatPromptValue"],
+                    "kwargs": {
+                        "messages": [
+                            {
+                                "id": [
+                                    "langchain",
+                                    "schema",
+                                    "messages",
+                                    "SystemMessage",
+                                ],
+                                "kwargs": {
+                                    "additional_kwargs": {},
+                                    "content": "You are a nice " "assistant.",
+                                },
+                                "lc": 1,
+                                "type": "constructor",
+                            },
+                            {
+                                "id": [
+                                    "langchain",
+                                    "schema",
+                                    "messages",
+                                    "HumanMessage",
+                                ],
+                                "kwargs": {
+                                    "additional_kwargs": {},
+                                    "content": "What is your " "name?",
+                                },
+                                "lc": 1,
+                                "type": "constructor",
+                            },
+                        ]
+                    },
+                    "lc": 1,
+                    "type": "constructor",
+                },
+            },
+            {
+                "op": "add",
+                "path": "/logs/0/end_time",
+                "value": "2023-01-01T00:00:00.000",
+            },
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/1",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "FakeListLLM",
+                    "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output_str": [],
+                    "tags": ["seq:step:2"],
+                    "type": "llm",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/1/final_output",
+                "value": {
+                    "generations": [[{"generation_info": None, "text": "foo"}]],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            {
+                "op": "add",
+                "path": "/logs/1/end_time",
+                "value": "2023-01-01T00:00:00.000",
+            },
+        ),
+        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": "foo"}),
+        RunLogPatch(
+            {"op": "replace", "path": "/final_output", "value": {"output": "foo"}}
+        ),
+    ]
 
 
 @pytest.mark.asyncio
@@ -948,7 +1154,7 @@ async def test_higher_order_lambda_runnable(
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 2
     router_run = parent_run.child_runs[1]
-    assert router_run.name == "RunnableLambda"
+    assert router_run.name == "router"
     assert len(router_run.child_runs) == 1
     math_run = router_run.child_runs[0]
     assert math_run.name == "RunnableSequence"
@@ -980,7 +1186,7 @@ async def test_higher_order_lambda_runnable(
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 2
     router_run = parent_run.child_runs[1]
-    assert router_run.name == "RunnableLambda"
+    assert router_run.name == "arouter"
     assert len(router_run.child_runs) == 1
     math_run = router_run.child_runs[0]
     assert math_run.name == "RunnableSequence"
@@ -1194,6 +1400,74 @@ async def test_map_astream() -> None:
         {"question": "What is your name?"}
     )
 
+    # Test astream_log state accumulation
+
+    final_state = None
+    streamed_ops = []
+    async for chunk in chain.astream_log({"question": "What is your name?"}):
+        streamed_ops.extend(chunk.ops)
+        if final_state is None:
+            final_state = chunk
+        else:
+            final_state += chunk
+    final_state = cast(RunLog, final_state)
+
+    assert final_state.state["final_output"] == final_value
+    assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
+    assert type(final_state.state["id"]) == str
+    assert len(final_state.ops) == len(streamed_ops)
+    assert len(final_state.state["logs"]) == 5
+    assert final_state.state["logs"][0]["name"] == "ChatPromptTemplate"
+    assert final_state.state["logs"][0]["final_output"] == dumpd(
+        prompt.invoke({"question": "What is your name?"})
+    )
+    assert final_state.state["logs"][1]["name"] == "RunnableMap"
+    assert sorted(log["name"] for log in final_state.state["logs"][2:]) == [
+        "FakeListChatModel",
+        "FakeStreamingListLLM",
+        "RunnablePassthrough",
+    ]
+
+    # Test astream_log with include filters
+    final_state = None
+    async for chunk in chain.astream_log(
+        {"question": "What is your name?"}, include_names=["FakeListChatModel"]
+    ):
+        if final_state is None:
+            final_state = chunk
+        else:
+            final_state += chunk
+    final_state = cast(RunLog, final_state)
+
+    assert final_state.state["final_output"] == final_value
+    assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
+    assert len(final_state.state["logs"]) == 1
+    assert final_state.state["logs"][0]["name"] == "FakeListChatModel"
+
+    # Test astream_log with exclude filters
+    final_state = None
+    async for chunk in chain.astream_log(
+        {"question": "What is your name?"}, exclude_names=["FakeListChatModel"]
+    ):
+        if final_state is None:
+            final_state = chunk
+        else:
+            final_state += chunk
+    final_state = cast(RunLog, final_state)
+
+    assert final_state.state["final_output"] == final_value
+    assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
+    assert len(final_state.state["logs"]) == 4
+    assert final_state.state["logs"][0]["name"] == "ChatPromptTemplate"
+    assert final_state.state["logs"][0]["final_output"] == dumpd(
+        prompt.invoke({"question": "What is your name?"})
+    )
+    assert final_state.state["logs"][1]["name"] == "RunnableMap"
+    assert sorted(log["name"] for log in final_state.state["logs"][2:]) == [
+        "FakeStreamingListLLM",
+        "RunnablePassthrough",
+    ]
+
 
 @pytest.mark.asyncio
 async def test_map_astream_iterator_input() -> None:
@@ -1250,6 +1524,31 @@ def test_with_config_with_config() -> None:
     assert dumpd(
         llm.with_config({"metadata": {"a": "b"}}).with_config(tags=["a-tag"])
     ) == dumpd(llm.with_config({"metadata": {"a": "b"}, "tags": ["a-tag"]}))
+
+
+def test_metadata_is_merged() -> None:
+    """Test metadata and tags defined in with_config and at are merged/concatend."""
+
+    foo = RunnableLambda(lambda x: x).with_config({"metadata": {"my_key": "my_value"}})
+    expected_metadata = {
+        "my_key": "my_value",
+        "my_other_key": "my_other_value",
+    }
+    with collect_runs() as cb:
+        foo.invoke("hi", {"metadata": {"my_other_key": "my_other_value"}})
+        run = cb.traced_runs[0]
+    assert run.extra["metadata"] == expected_metadata
+
+
+def test_tags_are_appended() -> None:
+    """Test tags from with_config are concatenated with those in invocation."""
+
+    foo = RunnableLambda(lambda x: x).with_config({"tags": ["my_key"]})
+    with collect_runs() as cb:
+        foo.invoke("hi", {"tags": ["invoked_key"]})
+        run = cb.traced_runs[0]
+    assert isinstance(run.tags, list)
+    assert sorted(run.tags) == sorted(["my_key", "invoked_key"])
 
 
 def test_bind_bind() -> None:
@@ -1315,6 +1614,37 @@ async def test_deep_astream() -> None:
     assert "".join(chunks) == "foo-lish"
 
 
+def test_runnable_sequence_transform() -> None:
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = llm | StrOutputParser()
+
+    stream = chain.transform(llm.stream("Hi there!"))
+
+    chunks = []
+    for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
+@pytest.mark.asyncio
+async def test_runnable_sequence_atransform() -> None:
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = llm | StrOutputParser()
+
+    stream = chain.atransform(llm.astream("Hi there!"))
+
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
 @pytest.fixture()
 def llm_with_fallbacks() -> RunnableWithFallbacks:
     error_llm = FakeListLLM(responses=["foo"], i=1)
@@ -1364,8 +1694,9 @@ async def test_llm_with_fallbacks(
 class FakeSplitIntoListParser(BaseOutputParser[List[str]]):
     """Parse the output of an LLM call to a comma-separated list."""
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return True
 
     def get_format_instructions(self) -> str:
@@ -1507,7 +1838,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         await runnable.with_retry(
             stop_after_attempt=2,
-            retry_if_exception_type=(ValueError,),
+            retry_if_exception_type=(ValueError, KeyError),
         ).ainvoke(1)
 
     assert _lambda_mock.call_count == 2  # retried
@@ -1785,3 +2116,205 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
+
+
+def test_runnable_branch_init() -> None:
+    """Verify that runnable branch gets initialized properly."""
+    add = RunnableLambda(lambda x: x + 1)
+    condition = RunnableLambda(lambda x: x > 0)
+
+    # Test failure with less than 2 branches
+    with pytest.raises(ValueError):
+        RunnableBranch((condition, add))
+
+    # Test failure with less than 2 branches
+    with pytest.raises(ValueError):
+        RunnableBranch(condition)
+
+
+@pytest.mark.parametrize(
+    "branches",
+    [
+        [
+            (RunnableLambda(lambda x: x > 0), RunnableLambda(lambda x: x + 1)),
+            RunnableLambda(lambda x: x - 1),
+        ],
+        [
+            (RunnableLambda(lambda x: x > 0), RunnableLambda(lambda x: x + 1)),
+            (RunnableLambda(lambda x: x > 5), RunnableLambda(lambda x: x + 1)),
+            RunnableLambda(lambda x: x - 1),
+        ],
+        [
+            (lambda x: x > 0, lambda x: x + 1),
+            (lambda x: x > 5, lambda x: x + 1),
+            lambda x: x - 1,
+        ],
+    ],
+)
+def test_runnable_branch_init_coercion(branches: Sequence[Any]) -> None:
+    """Verify that runnable branch gets initialized properly."""
+    runnable = RunnableBranch[int, int](*branches)
+    for branch in runnable.branches:
+        condition, body = branch
+        assert isinstance(condition, Runnable)
+        assert isinstance(body, Runnable)
+
+    assert isinstance(runnable.default, Runnable)
+
+
+def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:
+    """Verify that runnables are invoked only when necessary."""
+    # Test with single branch
+    add = RunnableLambda(lambda x: x + 1)
+    sub = RunnableLambda(lambda x: x - 1)
+    condition = RunnableLambda(lambda x: x > 0)
+    spy = mocker.spy(condition, "invoke")
+    add_spy = mocker.spy(add, "invoke")
+
+    branch = RunnableBranch[int, int]((condition, add), (condition, add), sub)
+    assert spy.call_count == 0
+    assert add_spy.call_count == 0
+
+    assert branch.invoke(1) == 2
+    assert add_spy.call_count == 1
+    assert spy.call_count == 1
+
+    assert branch.invoke(2) == 3
+    assert spy.call_count == 2
+    assert add_spy.call_count == 2
+
+    assert branch.invoke(-3) == -4
+    # Should fall through to default branch with condition being evaluated twice!
+    assert spy.call_count == 4
+    # Add should not be invoked
+    assert add_spy.call_count == 2
+
+
+def test_runnable_branch_invoke() -> None:
+    # Test with single branch
+    def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 100, raise_value_error),
+        # mypy cannot infer types from the lambda
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),  # type: ignore[misc]
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert branch.invoke(1) == 2
+    assert branch.invoke(10) == 100
+    assert branch.invoke(0) == -1
+    # Should raise an exception
+    with pytest.raises(ValueError):
+        branch.invoke(1000)
+
+
+def test_runnable_branch_batch() -> None:
+    """Test batch variant."""
+    # Test with single branch
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert branch.batch([1, 10, 0]) == [2, 100, -1]
+
+
+@pytest.mark.asyncio
+async def test_runnable_branch_ainvoke() -> None:
+    """Test async variant of invoke."""
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert await branch.ainvoke(1) == 2
+    assert await branch.ainvoke(10) == 100
+    assert await branch.ainvoke(0) == -1
+
+    # Verify that the async variant is used if available
+    async def condition(x: int) -> bool:
+        return x > 0
+
+    async def add(x: int) -> int:
+        return x + 1
+
+    async def sub(x: int) -> int:
+        return x - 1
+
+    branch = RunnableBranch[int, int]((condition, add), sub)
+
+    assert await branch.ainvoke(1) == 2
+    assert await branch.ainvoke(-10) == -11
+
+
+def test_runnable_branch_invoke_callbacks() -> None:
+    """Verify that callbacks are correctly used in invoke."""
+    tracer = FakeTracer()
+
+    def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 100, raise_value_error),
+        lambda x: x - 1,
+    )
+
+    assert branch.invoke(1, config={"callbacks": [tracer]}) == 0
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error is None
+    assert tracer.runs[0].outputs == {"output": 0}
+
+    # Check that the chain on end is invoked
+    with pytest.raises(ValueError):
+        branch.invoke(1000, config={"callbacks": [tracer]})
+
+    assert len(tracer.runs) == 2
+    assert tracer.runs[1].error == "ValueError('x is too large')"
+    assert tracer.runs[1].outputs is None
+
+
+@pytest.mark.asyncio
+async def test_runnable_branch_ainvoke_callbacks() -> None:
+    """Verify that callbacks are invoked correctly in ainvoke."""
+    tracer = FakeTracer()
+
+    async def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 100, raise_value_error),
+        lambda x: x - 1,
+    )
+
+    assert await branch.ainvoke(1, config={"callbacks": [tracer]}) == 0
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error is None
+    assert tracer.runs[0].outputs == {"output": 0}
+
+    # Check that the chain on end is invoked
+    with pytest.raises(ValueError):
+        await branch.ainvoke(1000, config={"callbacks": [tracer]})
+
+    assert len(tracer.runs) == 2
+    assert tracer.runs[1].error == "ValueError('x is too large')"
+    assert tracer.runs[1].outputs is None
+
+
+@pytest.mark.asyncio
+async def test_runnable_branch_abatch() -> None:
+    """Test async variant of invoke."""
+    branch = RunnableBranch[int, int](
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
+        (lambda x: x > 5, lambda x: x * 10),
+        lambda x: x - 1,
+    )
+
+    assert await branch.abatch([1, 10, 0]) == [2, 100, -1]

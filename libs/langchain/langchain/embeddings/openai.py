@@ -25,8 +25,8 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
@@ -87,8 +87,8 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
 
 
 # https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
-def _check_response(response: dict) -> dict:
-    if any(len(d["embedding"]) == 1 for d in response["data"]):
+def _check_response(response: dict, skip_empty: bool = False) -> dict:
+    if any(len(d["embedding"]) == 1 for d in response["data"]) and not skip_empty:
         import openai
 
         raise openai.error.APIError("OpenAI API returned an empty embedding")
@@ -102,7 +102,7 @@ def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     @retry_decorator
     def _embed_with_retry(**kwargs: Any) -> Any:
         response = embeddings.client.create(**kwargs)
-        return _check_response(response)
+        return _check_response(response, skip_empty=embeddings.skip_empty)
 
     return _embed_with_retry(**kwargs)
 
@@ -113,7 +113,7 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
     @_async_retry_decorator(embeddings)
     async def _async_embed_with_retry(**kwargs: Any) -> Any:
         response = await embeddings.client.acreate(**kwargs)
-        return _check_response(response)
+        return _check_response(response, skip_empty=embeddings.skip_empty)
 
     return await _async_embed_with_retry(**kwargs)
 
@@ -159,7 +159,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model  # to support Azure OpenAI Service custom deployment names
     openai_api_version: Optional[str] = None
@@ -196,6 +196,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Whether to show a progress bar when embedding."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
+    skip_empty: bool = False
+    """Whether to skip empty strings when embedding or raise an error.
+    Defaults to not skipping."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -228,7 +231,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
@@ -254,8 +257,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
             default_api_version = "2022-12-01"
+            # Azure OpenAI embedding models allow a maximum of 16 texts
+            # at a time in each batch
+            # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
+            default_chunk_size = 16
         else:
             default_api_version = ""
+            default_chunk_size = 1000
         values["openai_api_version"] = get_from_dict_or_env(
             values,
             "openai_api_version",
@@ -268,6 +276,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_ORGANIZATION",
             default="",
         )
+        if "chunk_size" not in values:
+            values["chunk_size"] = default_chunk_size
         try:
             import openai
 
@@ -371,6 +381,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
         for i in range(len(indices)):
+            if self.skip_empty and len(batched_embeddings[i]) == 1:
+                continue
             results[indices[i]].append(batched_embeddings[i])
             num_tokens_in_batch[indices[i]].append(len(tokens[i]))
 

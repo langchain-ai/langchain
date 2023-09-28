@@ -107,7 +107,7 @@ class ArxivAPIWrapper(BaseModel):
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search(
-                    id_list=query[: self.ARXIV_MAX_QUERY_LENGTH].split(),
+                    id_list=query.split(),
                     max_results=self.top_k_results,
                 ).results()
             else:

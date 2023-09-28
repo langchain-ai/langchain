@@ -93,7 +93,7 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     name: str = "sql_db_query_checker"
     description: str = """
     Use this tool to double check if your query is correct before executing it.
-    Always use this tool before executing a query with query_sql_db!
+    Always use this tool before executing a query with sql_db_query!
     """
 
     @root_validator(pre=True)

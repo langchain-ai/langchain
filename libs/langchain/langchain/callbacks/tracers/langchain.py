@@ -42,7 +42,7 @@ def wait_for_all_tracers() -> None:
             tracer.wait_for_futures()
 
 
-def _get_client() -> Client:
+def get_client() -> Client:
     """Get the client."""
     global _CLIENT
     if _CLIENT is None:
@@ -83,7 +83,7 @@ class LangChainTracer(BaseTracer):
                 _EXECUTORS.append(self.executor)
         else:
             self.executor = None
-        self.client = client or _get_client()
+        self.client = client or get_client()
         self._futures: Set[Future] = set()
         self.tags = tags or []
         global _TRACERS
@@ -98,6 +98,7 @@ class LangChainTracer(BaseTracer):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
@@ -118,6 +119,7 @@ class LangChainTracer(BaseTracer):
             child_execution_order=execution_order,
             run_type="llm",
             tags=tags,
+            name=name,
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)

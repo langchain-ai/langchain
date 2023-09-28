@@ -1,6 +1,102 @@
 {
   "redirects": [
     {
+      "source": "/docs/modules/agents/agents/examples/mrkl_chat(.html?)",
+      "destination": "/docs/modules/agents/"
+    },
+    {
+      "source": "/docs/use_cases(/?)",
+      "destination": "/docs/use_cases/question_answering/"
+    },
+    {
+      "source": "/docs/integrations(/?)",
+      "destination": "/docs/integrations/providers/"
+    },
+    {
+      "source": "/docs/integrations/platforms(/?)",
+      "destination": "/docs/integrations/providers/"
+    },
+    {
+      "source": "/docs/integrations/platforms(/?)",
+      "destination": "/docs/integrations/providers/"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/routing",
+      "destination": "/docs/expression_language/how_to/routing"
+    },
+    {
+      "source":  "/docs/integrations/providers/amazon_api_gateway",
+      "destination": "/docs/integrations/platforms/aws"
+    },
+    {
+      "source":  "/docs/integrations/providers/azure_blob_storage",
+      "destination": "/docs/integrations/platforms/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/google_vertexai_matchingengine",
+      "destination": "/docs/integrations/platforms/google"
+    },
+    {
+      "source":  "/docs/integrations/providers/aws_s3",
+      "destination": "/docs/integrations/platforms/aws"
+    },
+    {
+      "source":  "/docs/integrations/providers/azure_openai",
+      "destination": "/docs/integrations/platforms/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/azure_blob_storage",
+      "destination": "/docs/integrations/platforms/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/azure_cognitive_search_",
+      "destination": "/docs/integrations/platforms/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/bedrock",
+      "destination": "/docs/integrations/platforms/aws"
+    },
+    {
+      "source":  "/docs/integrations/providers/google_bigquery",
+      "destination": "/docs/integrations/platforms/google"
+    },
+    {
+      "source":  "/docs/integrations/providers/google_cloud_storage",
+      "destination": "/docs/integrations/platforms/google"
+    },
+    {
+      "source":  "/docs/integrations/providers/google_drive",
+      "destination": "/docs/integrations/platforms/google"
+    },
+    {
+      "source":  "/docs/integrations/providers/google_search",
+      "destination": "/docs/integrations/platforms/google"
+    },
+    {
+      "source":  "/docs/integrations/providers/microsoft_onedrive",
+      "destination": "/docs/integrations/platforms/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/microsoft_powerpoint",
+      "destination": "/docs/integrations/platforms/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/microsoft_word",
+      "destination": "/docs/integrations/platforms/microsoft"
+    },
+    {
+      "source":  "/docs/integrations/providers/sagemaker_endpoint",
+      "destination": "/docs/integrations/platforms/aws"
+    },
+    {
+      "source":  "/docs/integrations/providers/sagemaker_tracking",
+      "destination": "/docs/integrations/callbacks/sagemaker_tracking"
+    },
+    {
+      "source":  "/docs/integrations/providers/openai",
+      "destination": "/docs/integrations/platforms/openai"
+    },
+    {
       "source": "/docs/modules/data_connection/caching_embeddings(/?)",
       "destination": "/docs/modules/data_connection/text_embedding/caching_embeddings"
     },
@@ -362,7 +458,7 @@
     },
     {
       "source": "/docs/integrations/openai",
-      "destination": "/docs/integrations/providers/openai"
+      "destination": "/docs/integrations/platforms/openai"
     },
     {
       "source": "/docs/integrations/opensearch",
@@ -1075,6 +1171,10 @@
     {
       "source": "/docs/modules/agents/tools/integrations/zapier",
       "destination": "/docs/integrations/tools/zapier"
+    },
+    {
+      "source": "/docs/integrations/tools/sqlite",
+      "destination": "/docs/use_cases/qa_structured/sqlite"
     },
     {
       "source": "/en/latest/modules/callbacks/filecallbackhandler.html",
@@ -1873,6 +1973,18 @@
       "destination": "/docs/integrations/document_loaders/youtube_transcript"
     },
     {
+      "source": "/docs/integrations/document_loaders/Etherscan",
+      "destination": "/docs/integrations/document_loaders/etherscan"
+    },
+    {
+      "source": "/docs/integrations/document_loaders/merge_doc_loader",
+      "destination": "/docs/integrations/document_loaders/merge_doc"
+    },
+    {
+      "source": "/docs/integrations/document_loaders/recursive_url_loader",
+      "destination": "/docs/integrations/document_loaders/recursive_url"
+    },
+    {
       "source": "/en/latest/modules/indexes/text_splitters/examples/markdown_header_metadata.html",
       "destination": "/docs/modules/data_connection/document_transformers/text_splitters/markdown_header_metadata"
     },
@@ -2215,6 +2327,10 @@
     {
       "source": "/docs/modules/data_connection/text_embedding/integrations/tensorflowhub",
       "destination": "/docs/integrations/text_embedding/tensorflowhub"
+    },
+    {
+      "source": "/docs/integrations/text_embedding/Awa",
+      "destination": "/docs/integrations/text_embedding/awadb"
     },
     {
       "source": "/en/latest/modules/indexes/vectorstores/examples/analyticdb.html",
@@ -3178,7 +3294,11 @@
     },
     {
       "source": "/en/latest/use_cases/tabular.html",
-      "destination": "/docs/use_cases/tabular"
+      "destination": "/docs/use_cases/qa_structured"
+    },
+    {
+      "source": "/docs/use_cases/sql(/?)",
+      "destination": "/docs/use_cases/qa_structured/sql"
     },
     {
       "source": "/en/latest/youtube.html",
@@ -3370,7 +3490,7 @@
     },
     {
       "source": "/docs/modules/chains/popular/sqlite",
-      "destination": "/docs/use_cases/tabular/sqlite"
+      "destination": "/docs/use_cases/qa_structured/sql"
     },
     {
       "source": "/docs/modules/chains/popular/openai_functions",
@@ -3582,7 +3702,7 @@
     },
     {
       "source": "/docs/modules/chains/additional/elasticsearch_database",
-      "destination": "/docs/use_cases/tabular/elasticsearch_database"
+      "destination": "/docs/use_cases/qa_structured/integrations/elasticsearch"
     },
     {
       "source": "/docs/modules/chains/additional/tagging",

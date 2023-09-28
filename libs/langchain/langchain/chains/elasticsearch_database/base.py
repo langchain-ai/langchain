@@ -24,7 +24,8 @@ class ElasticsearchDatabaseChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import ElasticsearchDatabaseChain, OpenAI
+            from langchain.chains import ElasticsearchDatabaseChain
+            from langchain.llms import OpenAI
             from elasticsearch import Elasticsearch
 
             database = Elasticsearch("http://localhost:9200")
