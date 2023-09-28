@@ -7,7 +7,7 @@ import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 
@@ -22,7 +22,13 @@ from langchain.callbacks.manager import (
 )
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field, root_validator, validator
+from langchain.pydantic_v1 import (
+    BaseModel,
+    Field,
+    create_model,
+    root_validator,
+    validator,
+)
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
 from langchain.schema.runnable import Runnable, RunnableConfig
 
@@ -55,6 +61,20 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             output as a string or object. This method can only be used for a subset of
             chains and cannot return as rich of an output as `__call__`.
     """
+
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainInput", **{k: (Any, None) for k in self.input_keys}
+        )
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainOutput", **{k: (Any, None) for k in self.output_keys}
+        )
 
     def invoke(
         self,
