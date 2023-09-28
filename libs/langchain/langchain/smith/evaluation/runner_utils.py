@@ -31,7 +31,11 @@ from langchain.callbacks.tracers.evaluation import (
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
 from langchain.evaluation.loading import load_evaluator
-from langchain.evaluation.schema import EvaluatorType, StringEvaluator
+from langchain.evaluation.schema import (
+    EvaluatorType,
+    PairwiseStringEvaluator,
+    StringEvaluator,
+)
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, messages_from_dict
@@ -489,6 +493,15 @@ def _construct_run_evaluator(
             reference_key=reference_key,
             tags=[eval_type_tag],
         )
+    elif isinstance(evaluator_, PairwiseStringEvaluator):
+        raise NotImplementedError(
+            f"Run evaluator for {eval_type_tag} is not implemented."
+            " PairwiseStringEvaluators compare the outputs of two different models"
+            " rather than the output of a single model."
+            " Did you mean to use a StringEvaluator instead?"
+            "\nSee: https://python.langchain.com/docs/guides/evaluation/string/"
+        )
+
     else:
         raise NotImplementedError(
             f"Run evaluator for {eval_type_tag} is not implemented"
@@ -643,7 +656,12 @@ async def _arun_chain(
 ) -> Union[dict, str]:
     """Run a chain asynchronously on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
-    if isinstance(chain, Chain) and isinstance(inputs_, dict) and len(inputs_) == 1:
+    if (
+        isinstance(chain, Chain)
+        and isinstance(inputs_, dict)
+        and len(inputs_) == 1
+        and chain.input_keys
+    ):
         val = next(iter(inputs_.values()))
         output = await chain.acall(val, callbacks=callbacks, tags=tags)
     else:
@@ -768,7 +786,12 @@ def _run_chain(
 ) -> Union[Dict, str]:
     """Run a chain on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
-    if isinstance(chain, Chain) and isinstance(inputs_, dict) and len(inputs_) == 1:
+    if (
+        isinstance(chain, Chain)
+        and isinstance(inputs_, dict)
+        and len(inputs_) == 1
+        and chain.input_keys
+    ):
         val = next(iter(inputs_.values()))
         output = chain(val, callbacks=callbacks, tags=tags)
     else:

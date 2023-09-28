@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
 from functools import partial
 from itertools import tee
+from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -27,18 +28,19 @@ from typing import (
     cast,
 )
 
+from typing_extensions import get_args
+
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
+    from langchain.callbacks.tracers.log_stream import RunLogPatch
 
 
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.tracers.log_stream import LogStreamCallbackHandler, RunLogPatch
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field
+from langchain.pydantic_v1 import BaseModel, Field, create_model
 from langchain.schema.runnable.config import (
     RunnableConfig,
     acall_func_with_variable_args,
@@ -56,6 +58,7 @@ from langchain.schema.runnable.utils import (
     accepts_config,
     accepts_run_manager,
     gather_with_concurrency,
+    get_function_first_arg_dict_keys,
 )
 from langchain.utils.aiter import atee, py_anext
 from langchain.utils.iter import safetee
@@ -66,6 +69,52 @@ Other = TypeVar("Other")
 class Runnable(Generic[Input, Output], ABC):
     """A Runnable is a unit of work that can be invoked, batched, streamed, or
     transformed."""
+
+    @property
+    def InputType(self) -> Type[Input]:
+        for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
+            type_args = get_args(cls)
+            if type_args and len(type_args) == 2:
+                return type_args[0]
+
+        raise TypeError(
+            f"Runnable {self.__class__.__name__} doesn't have an inferable InputType. "
+            "Override the InputType property to specify the input type."
+        )
+
+    @property
+    def OutputType(self) -> Type[Output]:
+        for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
+            type_args = get_args(cls)
+            if type_args and len(type_args) == 2:
+                return type_args[1]
+
+        raise TypeError(
+            f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
+            "Override the OutputType property to specify the output type."
+        )
+
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        root_type = self.InputType
+
+        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+            return root_type
+
+        return create_model(
+            self.__class__.__name__ + "Input", __root__=(root_type, None)
+        )
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        root_type = self.OutputType
+
+        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+            return root_type
+
+        return create_model(
+            self.__class__.__name__ + "Output", __root__=(root_type, None)
+        )
 
     def __or__(
         self,
@@ -215,6 +264,12 @@ class Runnable(Generic[Input, Output], ABC):
 
         The jsonpatch ops can be applied in order to construct state.
         """
+
+        from langchain.callbacks.base import BaseCallbackManager
+        from langchain.callbacks.tracers.log_stream import (
+            LogStreamCallbackHandler,
+            RunLogPatch,
+        )
 
         # Create a stream handler that will emit Log objects
         stream = LogStreamCallbackHandler(
@@ -844,6 +899,20 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
         """The namespace of a RunnableBranch is the namespace of its default branch."""
         return cls.__module__.split(".")[:-1]
 
+    @property
+    def input_schema(self) -> type[BaseModel]:
+        runnables = (
+            [self.default]
+            + [r for _, r in self.branches]
+            + [r for r, _ in self.branches]
+        )
+
+        for runnable in runnables:
+            if runnable.input_schema.schema().get("type") is not None:
+                return runnable.input_schema
+
+        return super().input_schema
+
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         """First evaluates the condition, then delegate to true or false branch."""
         config = ensure_config(config)
@@ -867,20 +936,21 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                 )
 
                 if expression_value:
-                    return runnable.invoke(
+                    output = runnable.invoke(
                         input,
                         config=patch_config(
                             config,
                             callbacks=run_manager.get_child(tag=f"branch:{idx + 1}"),
                         ),
                     )
-
-            output = self.default.invoke(
-                input,
-                config=patch_config(
-                    config, callbacks=run_manager.get_child(tag="branch:default")
-                ),
-            )
+                    break
+            else:
+                output = self.default.invoke(
+                    input,
+                    config=patch_config(
+                        config, callbacks=run_manager.get_child(tag="branch:default")
+                    ),
+                )
         except Exception as e:
             run_manager.on_chain_error(e)
             raise
@@ -911,7 +981,7 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                 )
 
                 if expression_value:
-                    return await runnable.ainvoke(
+                    output = await runnable.ainvoke(
                         input,
                         config=patch_config(
                             config,
@@ -919,14 +989,15 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                         ),
                         **kwargs,
                     )
-
-            output = await self.default.ainvoke(
-                input,
-                config=patch_config(
-                    config, callbacks=run_manager.get_child(tag="branch:default")
-                ),
-                **kwargs,
-            )
+                    break
+            else:
+                output = await self.default.ainvoke(
+                    input,
+                    config=patch_config(
+                        config, callbacks=run_manager.get_child(tag="branch:default")
+                    ),
+                    **kwargs,
+                )
         except Exception as e:
             run_manager.on_chain_error(e)
             raise
@@ -945,6 +1016,22 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
 
     class Config:
         arbitrary_types_allowed = True
+
+    @property
+    def InputType(self) -> Type[Input]:
+        return self.runnable.InputType
+
+    @property
+    def OutputType(self) -> Type[Output]:
+        return self.runnable.OutputType
+
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        return self.runnable.input_schema
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        return self.runnable.output_schema
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -1194,6 +1281,22 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
 
     class Config:
         arbitrary_types_allowed = True
+
+    @property
+    def InputType(self) -> Type[Input]:
+        return self.first.InputType
+
+    @property
+    def OutputType(self) -> Type[Output]:
+        return self.last.OutputType
+
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        return self.first.input_schema
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        return self.last.output_schema
 
     def __or__(
         self,
@@ -1685,6 +1788,37 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     class Config:
         arbitrary_types_allowed = True
 
+    @property
+    def InputType(self) -> Any:
+        for step in self.steps.values():
+            if step.InputType:
+                return step.InputType
+
+        return Any
+
+    @property
+    def input_schema(self) -> type[BaseModel]:
+        if all(not s.input_schema.__custom_root_type__ for s in self.steps.values()):
+            # This is correct, but pydantic typings/mypy don't think so.
+            return create_model(  # type: ignore[call-overload]
+                "RunnableMapInput",
+                **{
+                    k: (v.type_, v.default)
+                    for step in self.steps.values()
+                    for k, v in step.input_schema.__fields__.items()
+                },
+            )
+
+        return super().input_schema
+
+    @property
+    def output_schema(self) -> type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "RunnableMapOutput",
+            **{k: (v.OutputType, None) for k, v in self.steps.items()},
+        )
+
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None
     ) -> Dict[str, Any]:
@@ -1935,6 +2069,59 @@ class RunnableLambda(Runnable[Input, Output]):
                 f"Instead got an unsupported type: {type(func)}"
             )
 
+    @property
+    def InputType(self) -> Any:
+        func = getattr(self, "func", None) or getattr(self, "afunc")
+        try:
+            params = inspect.signature(func).parameters
+            first_param = next(iter(params.values()), None)
+            if first_param and first_param.annotation != inspect.Parameter.empty:
+                return first_param.annotation
+            else:
+                return Any
+        except ValueError:
+            return Any
+
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        func = getattr(self, "func", None) or getattr(self, "afunc")
+
+        if isinstance(func, itemgetter):
+            # This is terrible, but afaict it's not possible to access _items
+            # on itemgetter objects, so we have to parse the repr
+            items = str(func).replace("operator.itemgetter(", "")[:-1].split(", ")
+            if all(
+                item[0] == "'" and item[-1] == "'" and len(item) > 2 for item in items
+            ):
+                # It's a dict, lol
+                return create_model(
+                    "RunnableLambdaInput",
+                    **{item[1:-1]: (Any, None) for item in items},  # type: ignore
+                )
+            else:
+                return create_model("RunnableLambdaInput", __root__=(List[Any], None))
+
+        if dict_keys := get_function_first_arg_dict_keys(func):
+            return create_model(
+                "RunnableLambdaInput",
+                **{key: (Any, None) for key in dict_keys},  # type: ignore
+            )
+
+        return super().input_schema
+
+    @property
+    def OutputType(self) -> Any:
+        func = getattr(self, "func", None) or getattr(self, "afunc")
+        try:
+            sig = inspect.signature(func)
+            return (
+                sig.return_annotation
+                if sig.return_annotation != inspect.Signature.empty
+                else Any
+            )
+        except ValueError:
+            return Any
+
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunnableLambda):
             if hasattr(self, "func") and hasattr(other, "func"):
@@ -2061,6 +2248,34 @@ class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
     class Config:
         arbitrary_types_allowed = True
 
+    @property
+    def InputType(self) -> Any:
+        return List[self.bound.InputType]  # type: ignore[name-defined]
+
+    @property
+    def input_schema(self) -> type[BaseModel]:
+        return create_model(
+            "RunnableEachInput",
+            __root__=(
+                List[self.bound.input_schema],  # type: ignore[name-defined]
+                None,
+            ),
+        )
+
+    @property
+    def OutputType(self) -> type[List[Output]]:
+        return List[self.bound.OutputType]  # type: ignore[name-defined]
+
+    @property
+    def output_schema(self) -> type[BaseModel]:
+        return create_model(
+            "RunnableEachOutput",
+            __root__=(
+                List[self.bound.output_schema],  # type: ignore[name-defined]
+                None,
+            ),
+        )
+
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
@@ -2116,6 +2331,22 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
 
     class Config:
         arbitrary_types_allowed = True
+
+    @property
+    def InputType(self) -> type[Input]:
+        return self.bound.InputType
+
+    @property
+    def OutputType(self) -> type[Output]:
+        return self.bound.OutputType
+
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        return self.bound.input_schema
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        return self.bound.output_schema
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
