@@ -84,7 +84,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         return self._parse_ai_message(message)
 
     async def aparse_result(
-        self, result: List[Generation]
+        self, result: List[Generation], *, partial: bool = False
     ) -> Union[AgentAction, AgentFinish]:
         return await asyncio.get_running_loop().run_in_executor(
             None, self.parse_result, result
