@@ -4,9 +4,8 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, root_validator
-
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.messages import BaseMessage, BaseMessageChunk
 
 
@@ -22,9 +21,9 @@ class Generation(Serializable):
     """
     # TODO: add log probs as separate attribute
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether this class is LangChain serializable."""
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
         return True
 
 

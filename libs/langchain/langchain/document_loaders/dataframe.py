@@ -4,23 +4,15 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-class DataFrameLoader(BaseLoader):
-    """Load `Pandas` DataFrame."""
-
-    def __init__(self, data_frame: Any, page_content_column: str = "text"):
+class BaseDataFrameLoader(BaseLoader):
+    def __init__(self, data_frame: Any, *, page_content_column: str = "text"):
         """Initialize with dataframe object.
 
         Args:
-            data_frame: Pandas DataFrame object.
+            data_frame: DataFrame object.
             page_content_column: Name of the column containing the page content.
               Defaults to "text".
         """
-        import pandas as pd
-
-        if not isinstance(data_frame, pd.DataFrame):
-            raise ValueError(
-                f"Expected data_frame to be a pd.DataFrame, got {type(data_frame)}"
-            )
         self.data_frame = data_frame
         self.page_content_column = page_content_column
 
@@ -36,3 +28,28 @@ class DataFrameLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load full dataframe."""
         return list(self.lazy_load())
+
+
+class DataFrameLoader(BaseDataFrameLoader):
+    """Load `Pandas` DataFrame."""
+
+    def __init__(self, data_frame: Any, page_content_column: str = "text"):
+        """Initialize with dataframe object.
+
+        Args:
+            data_frame: Pandas DataFrame object.
+            page_content_column: Name of the column containing the page content.
+              Defaults to "text".
+        """
+        try:
+            import pandas as pd
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import pandas, please install with `pip install pandas`."
+            ) from e
+
+        if not isinstance(data_frame, pd.DataFrame):
+            raise ValueError(
+                f"Expected data_frame to be a pd.DataFrame, got {type(data_frame)}"
+            )
+        super().__init__(data_frame, page_content_column=page_content_column)

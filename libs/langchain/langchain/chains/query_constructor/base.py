@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, List, Optional, Sequence
 
-from langchain import FewShotPromptTemplate, LLMChain
+from langchain.chains.llm import LLMChain
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Operator,
@@ -22,6 +22,7 @@ from langchain.chains.query_constructor.prompt import (
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.output_parsers.json import parse_and_check_json_markdown
+from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
 from langchain.schema.language_model import BaseLanguageModel
 

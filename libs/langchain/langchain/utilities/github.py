@@ -4,12 +4,11 @@ from __future__ import annotations
 import json
 import random
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
-
-import tiktoken
-from langchain.utils import get_from_dict_or_env
-from pydantic import BaseModel, Extra, root_validator
-
 import requests
+import tiktoken
+
+from langchain.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 
 if TYPE_CHECKING:
     from github.Issue import Issue

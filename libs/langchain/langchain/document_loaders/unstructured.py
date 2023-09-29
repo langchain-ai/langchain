@@ -8,7 +8,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 def satisfies_min_unstructured_version(min_version: str) -> bool:
-    """Checks to see if the installed unstructured version exceeds the minimum version
+    """Check if the installed `Unstructured` version exceeds the minimum version
     for the feature in question."""
     from unstructured.__version__ import __version__ as __unstructured_version__
 
@@ -25,7 +25,7 @@ def satisfies_min_unstructured_version(min_version: str) -> bool:
 
 
 def validate_unstructured_version(min_unstructured_version: str) -> None:
-    """Raises an error if the unstructured version does not exceed the
+    """Raise an error if the `Unstructured` version does not exceed the
     specified minimum."""
     if not satisfies_min_unstructured_version(min_unstructured_version):
         raise ValueError(
@@ -34,7 +34,7 @@ def validate_unstructured_version(min_unstructured_version: str) -> None:
 
 
 class UnstructuredBaseLoader(BaseLoader, ABC):
-    """Loader that uses Unstructured to load files."""
+    """Base Loader that uses `Unstructured`."""
 
     def __init__(
         self,
@@ -74,7 +74,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
 
     def _post_process_elements(self, elements: list) -> list:
         """Applies post processing functions to extracted unstructured elements.
-        Post processing functions are Element -> Element callables are passed
+        Post processing functions are str -> str callables are passed
         in using the post_processors kwarg when the loader is instantiated."""
         for element in elements:
             for post_processor in self.post_processors:
@@ -84,6 +84,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
     def load(self) -> List[Document]:
         """Load file."""
         elements = self._get_elements()
+        self._post_process_elements(elements)
         if self.mode == "elements":
             docs: List[Document] = list()
             for element in elements:
@@ -181,7 +182,7 @@ def get_elements_from_api(
     api_key: str = "",
     **unstructured_kwargs: Any,
 ) -> List:
-    """Retrieves a list of elements from the Unstructured API."""
+    """Retrieve a list of elements from the `Unstructured API`."""
     if isinstance(file, collections.abc.Sequence) or isinstance(file_path, list):
         from unstructured.partition.api import partition_multiple_via_api
 
@@ -252,10 +253,7 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
     ):
         """Initialize with file path."""
 
-        if isinstance(file_path, str):
-            validate_unstructured_version(min_unstructured_version="0.6.2")
-        else:
-            validate_unstructured_version(min_unstructured_version="0.6.3")
+        validate_unstructured_version(min_unstructured_version="0.10.15")
 
         self.url = url
         self.api_key = api_key

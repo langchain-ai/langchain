@@ -92,6 +92,27 @@ def test_callback_manager() -> None:
     _test_callback_manager(manager, handler1, handler2)
 
 
+def test_callback_manager_with_async() -> None:
+    """Test the CallbackManager."""
+    handler1 = FakeCallbackHandler()
+    handler2 = FakeCallbackHandler()
+    handler3 = FakeAsyncCallbackHandler()
+    handler4 = FakeAsyncCallbackHandler()
+    manager = CallbackManager(handlers=[handler1, handler2, handler3, handler4])
+    _test_callback_manager(manager, handler1, handler2, handler3, handler4)
+
+
+@pytest.mark.asyncio
+async def test_callback_manager_with_async_with_running_loop() -> None:
+    """Test the CallbackManager."""
+    handler1 = FakeCallbackHandler()
+    handler2 = FakeCallbackHandler()
+    handler3 = FakeAsyncCallbackHandler()
+    handler4 = FakeAsyncCallbackHandler()
+    manager = CallbackManager(handlers=[handler1, handler2, handler3, handler4])
+    _test_callback_manager(manager, handler1, handler2, handler3, handler4)
+
+
 def test_ignore_llm() -> None:
     """Test ignore llm param for callback handlers."""
     handler1 = FakeCallbackHandler(ignore_llm_=True)

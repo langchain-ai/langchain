@@ -2,27 +2,32 @@
 from __future__ import annotations
 
 import logging
-from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import Any, List, Optional, Sequence, Set, Union
+import weakref
+from concurrent.futures import Future, wait
+from typing import Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
-from langsmith import Client, RunEvaluator
+import langsmith
+from langsmith import schemas as langsmith_schemas
+from langsmith.evaluation.evaluator import EvaluationResult
 
-from langchain.callbacks.manager import tracing_v2_enabled
+from langchain.callbacks import manager
+from langchain.callbacks.tracers import langchain as langchain_tracer
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.langchain import _get_client
+from langchain.callbacks.tracers.langchain import _get_executor
 from langchain.callbacks.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
 
-_TRACERS: List[EvaluatorCallbackHandler] = []
+_TRACERS: weakref.WeakSet[EvaluatorCallbackHandler] = weakref.WeakSet()
 
 
 def wait_for_all_evaluators() -> None:
     """Wait for all tracers to finish."""
     global _TRACERS
-    for tracer in _TRACERS:
-        tracer.wait_for_futures()
+    for tracer in list(_TRACERS):
+        if tracer is not None:
+            tracer.wait_for_futures()
 
 
 class EvaluatorCallbackHandler(BaseTracer):
@@ -32,9 +37,6 @@ class EvaluatorCallbackHandler(BaseTracer):
     ----------
     evaluators : Sequence[RunEvaluator]
         The run evaluators to apply to all top level runs.
-    max_workers : int, optional
-        The maximum number of worker threads to use for running the evaluators.
-        If not specified, it will default to the number of evaluators.
     client : LangSmith Client, optional
         The LangSmith client instance to use for evaluating the runs.
         If not specified, a new instance will be created.
@@ -66,9 +68,8 @@ class EvaluatorCallbackHandler(BaseTracer):
 
     def __init__(
         self,
-        evaluators: Sequence[RunEvaluator],
-        max_workers: Optional[int] = None,
-        client: Optional[Client] = None,
+        evaluators: Sequence[langsmith.RunEvaluator],
+        client: Optional[langsmith.Client] = None,
         example_id: Optional[Union[UUID, str]] = None,
         skip_unfinished: bool = True,
         project_name: Optional[str] = "evaluators",
@@ -78,18 +79,18 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.client = client or _get_client()
+        self.client = client or langchain_tracer.get_client()
         self.evaluators = evaluators
-        self.executor = ThreadPoolExecutor(
-            max_workers=max(max_workers or len(evaluators), 1)
-        )
-        self.futures: Set[Future] = set()
+        self.executor = _get_executor()
+        self.futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
+        self.logged_feedback: Dict[str, List[langsmith_schemas.Feedback]] = {}
+        self.logged_eval_results: Dict[str, List[EvaluationResult]] = {}
         global _TRACERS
-        _TRACERS.append(self)
+        _TRACERS.add(self)
 
-    def _evaluate_in_project(self, run: Run, evaluator: RunEvaluator) -> None:
+    def _evaluate_in_project(self, run: Run, evaluator: langsmith.RunEvaluator) -> None:
         """Evaluate the run in the project.
 
         Parameters
@@ -102,11 +103,11 @@ class EvaluatorCallbackHandler(BaseTracer):
         """
         try:
             if self.project_name is None:
-                self.client.evaluate_run(run, evaluator)
-            with tracing_v2_enabled(
+                eval_result = self.client.evaluate_run(run, evaluator)
+            with manager.tracing_v2_enabled(
                 project_name=self.project_name, tags=["eval"], client=self.client
             ):
-                self.client.evaluate_run(run, evaluator)
+                eval_result = self.client.evaluate_run(run, evaluator)
         except Exception as e:
             logger.error(
                 f"Error evaluating run {run.id} with "
@@ -114,6 +115,8 @@ class EvaluatorCallbackHandler(BaseTracer):
                 exc_info=True,
             )
             raise e
+        example_id = str(run.reference_example_id)
+        self.logged_eval_results.setdefault(example_id, []).append(eval_result)
 
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.
@@ -136,7 +139,4 @@ class EvaluatorCallbackHandler(BaseTracer):
 
     def wait_for_futures(self) -> None:
         """Wait for all futures to complete."""
-        futures = list(self.futures)
-        wait(futures)
-        for future in futures:
-            self.futures.remove(future)
+        wait(self.futures)

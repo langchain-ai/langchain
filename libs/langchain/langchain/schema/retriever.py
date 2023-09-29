@@ -113,10 +113,14 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
         )
 
     async def ainvoke(
-        self, input: str, config: Optional[RunnableConfig] = None
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> List[Document]:
         if type(self).aget_relevant_documents == BaseRetriever.aget_relevant_documents:
             # If the retriever doesn't implement async, use default implementation
@@ -128,6 +132,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
         )
 
     @abstractmethod
@@ -161,6 +166,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Retrieve documents relevant to a query.
@@ -190,6 +196,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         run_manager = callback_manager.on_retriever_start(
             dumpd(self),
             query,
+            name=run_name,
             **kwargs,
         )
         try:
@@ -217,6 +224,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
@@ -246,6 +254,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         run_manager = await callback_manager.on_retriever_start(
             dumpd(self),
             query,
+            name=run_name,
             **kwargs,
         )
         try:

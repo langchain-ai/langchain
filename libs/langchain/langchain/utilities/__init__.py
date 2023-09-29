@@ -4,6 +4,7 @@ Other LangChain classes use **Utilities** to interact with third-part systems
 and packages.
 """
 from langchain.utilities.alpha_vantage import AlphaVantageAPIWrapper
+from langchain.utilities.apify import ApifyWrapper
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.bash import BashProcess
@@ -26,6 +27,7 @@ from langchain.utilities.pubmed import PubMedAPIWrapper
 from langchain.utilities.python import PythonREPL
 from langchain.utilities.requests import Requests, RequestsWrapper, TextRequestsWrapper
 from langchain.utilities.scenexplain import SceneXplainAPIWrapper
+from langchain.utilities.searchapi import SearchApiAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.spark_sql import SparkSQL
@@ -38,6 +40,7 @@ from langchain.utilities.zapier import ZapierNLAWrapper
 
 __all__ = [
     "AlphaVantageAPIWrapper",
+    "ApifyWrapper",
     "ArxivAPIWrapper",
     "BashProcess",
     "BibtexparserWrapper",
@@ -62,6 +65,7 @@ __all__ = [
     "RequestsWrapper",
     "SQLDatabase",
     "SceneXplainAPIWrapper",
+    "SearchApiAPIWrapper",
     "SearxSearchWrapper",
     "SerpAPIWrapper",
     "SparkSQL",

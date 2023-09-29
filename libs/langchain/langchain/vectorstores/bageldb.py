@@ -1,4 +1,3 @@
-"""BagelDB integration"""
 from __future__ import annotations
 
 import uuid
@@ -20,9 +19,9 @@ if TYPE_CHECKING:
     from bagel.api.types import ID, OneOrMany, Where, WhereDocument
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import xor_args
-from langchain.vectorstores.base import VectorStore
 
 DEFAULT_K = 5
 
@@ -43,7 +42,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
 
 
 class Bagel(VectorStore):
-    """Wrapper around BagelDB.ai vector store.
+    """``BagelDB.ai`` vector store.
 
     To use, you should have the ``betabageldb`` python package installed.
 
@@ -70,7 +69,7 @@ class Bagel(VectorStore):
             import bagel
             import bagel.config
         except ImportError:
-            raise ValueError("Please install bagel `pip install betabageldb`.")
+            raise ImportError("Please install bagel `pip install betabageldb`.")
         if client is not None:
             self._client_settings = client_settings
             self._client = client

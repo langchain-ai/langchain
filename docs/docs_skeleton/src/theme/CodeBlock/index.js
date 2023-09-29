@@ -24,8 +24,7 @@ function Imports({ imports }) {
           <li key={imported}>
             <a href={docs}>
               <span>{imported}</span>
-            </a>{" "}
-            from <code>{source}</code>
+            </a>
           </li>
         ))}
       </ul>

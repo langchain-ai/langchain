@@ -30,6 +30,7 @@ from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.retrievers.google_cloud_enterprise_search import (
     GoogleCloudEnterpriseSearchRetriever,
 )
+from langchain.retrievers.kay import KayAiRetriever
 from langchain.retrievers.kendra import AmazonKendraRetriever
 from langchain.retrievers.knn import KNNRetriever
 from langchain.retrievers.llama_index import (
@@ -40,6 +41,7 @@ from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.milvus import MilvusRetriever
 from langchain.retrievers.multi_query import MultiQueryRetriever
+from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
 from langchain.retrievers.pubmed import PubMedRetriever
@@ -67,6 +69,7 @@ __all__ = [
     "ChaindeskRetriever",
     "ElasticSearchBM25Retriever",
     "GoogleCloudEnterpriseSearchRetriever",
+    "KayAiRetriever",
     "KNNRetriever",
     "LlamaIndexGraphRetriever",
     "LlamaIndexRetriever",
@@ -92,4 +95,5 @@ __all__ = [
     "WebResearchRetriever",
     "EnsembleRetriever",
     "ParentDocumentRetriever",
+    "MultiVectorRetriever",
 ]

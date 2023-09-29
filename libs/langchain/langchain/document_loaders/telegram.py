@@ -47,7 +47,7 @@ class TelegramChatFileLoader(BaseLoader):
 
 
 def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
-    """Converts a string or list of strings to a list of Documents with metadata."""
+    """Convert a string or list of strings to a list of Documents with metadata."""
     if isinstance(text, str):
         # Take a single string as one page
         text = [text]
@@ -78,7 +78,7 @@ def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
 
 
 class TelegramChatApiLoader(BaseLoader):
-    """Loads Telegram chat json directory dump."""
+    """Load `Telegram` chat json directory dump."""
 
     def __init__(
         self,

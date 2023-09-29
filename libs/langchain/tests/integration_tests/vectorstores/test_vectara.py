@@ -5,11 +5,14 @@ from langchain.docstore.document import Document
 from langchain.vectorstores.vectara import Vectara
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
-# For this test to run properly, please setup as follows
-# 1. Create a corpus in Vectara, with a filter attribute called "test_num".
-# 2. Create an API_KEY for this corpus with permissions for query and indexing
-# 3. Setup environment variables:
+#
+# For this test to run properly, please setup as follows:
+# 1. Create a Vectara account: sign up at https://console.vectara.com/signup
+# 2. Create a corpus in your Vectara account, with a filter attribute called "test_num".
+# 3. Create an API_KEY for this corpus with permissions for query and indexing
+# 4. Setup environment variables:
 #    VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
+#
 
 
 def get_abbr(s: str) -> str:
@@ -21,37 +24,65 @@ def get_abbr(s: str) -> str:
 def test_vectara_add_documents() -> None:
     """Test end to end construction and search."""
 
-    # start with some initial texts
-    texts = ["grounded generation", "retrieval augmented generation", "data privacy"]
-    docsearch: Vectara = Vectara.from_texts(
-        texts,
-        embedding=FakeEmbeddings(),
-        metadatas=[
-            {"abbr": "gg", "test_num": "1"},
-            {"abbr": "rag", "test_num": "1"},
-            {"abbr": "dp", "test_num": "1"},
-        ],
+    # create a new Vectara instance
+    docsearch: Vectara = Vectara()
+
+    # start with some initial texts, added with add_texts
+    texts1 = ["grounded generation", "retrieval augmented generation", "data privacy"]
+    md = [{"abbr": get_abbr(t)} for t in texts1]
+    doc_id1 = docsearch.add_texts(
+        texts1,
+        metadatas=md,
         doc_metadata={"test_num": "1"},
     )
 
-    # then add some additional documents
-    new_texts = ["large language model", "information retrieval", "question answering"]
-    docsearch.add_documents(
-        [Document(page_content=t, metadata={"abbr": get_abbr(t)}) for t in new_texts],
-        doc_metadata={"test_num": "1"},
+    # then add some additional documents, now with add_documents
+    texts2 = ["large language model", "information retrieval", "question answering"]
+    doc_id2 = docsearch.add_documents(
+        [Document(page_content=t, metadata={"abbr": get_abbr(t)}) for t in texts2],
+        doc_metadata={"test_num": "2"},
     )
+    doc_ids = doc_id1 + doc_id2
 
-    # finally do a similarity search to see if all works okay
-    output = docsearch.similarity_search(
+    # test without filter
+    output1 = docsearch.similarity_search(
         "large language model",
         k=2,
         n_sentence_context=0,
+    )
+    assert len(output1) == 2
+    assert output1[0].page_content == "large language model"
+    assert output1[0].metadata["abbr"] == "llm"
+    assert output1[1].page_content == "information retrieval"
+    assert output1[1].metadata["abbr"] == "ir"
+
+    # test with metadata filter (doc level)
+    # since the query does not match test_num=1 directly we get "RAG" as the result
+    output2 = docsearch.similarity_search(
+        "large language model",
+        k=1,
+        n_sentence_context=0,
         filter="doc.test_num = 1",
     )
-    assert output[0].page_content == "large language model"
-    assert output[0].metadata == {"abbr": "llm"}
-    assert output[1].page_content == "information retrieval"
-    assert output[1].metadata == {"abbr": "ir"}
+    assert len(output2) == 1
+    assert output2[0].page_content == "retrieval augmented generation"
+    assert output2[0].metadata["abbr"] == "rag"
+
+    # test without filter but with similarity score
+    # this is similar to the first test, but given the score threshold
+    # we only get one result
+    output3 = docsearch.similarity_search_with_score(
+        "large language model",
+        k=2,
+        score_threshold=0.1,
+        n_sentence_context=0,
+    )
+    assert len(output3) == 1
+    assert output3[0][0].page_content == "large language model"
+    assert output3[0][0].metadata["abbr"] == "llm"
+
+    for doc_id in doc_ids:
+        docsearch._delete_doc(doc_id)
 
 
 def test_vectara_from_files() -> None:
@@ -73,8 +104,9 @@ def test_vectara_from_files() -> None:
         urllib.request.urlretrieve(url, name)
         files_list.append(name)
 
-    docsearch: Vectara = Vectara.from_files(
-        files=files_list,
+    docsearch: Vectara = Vectara()
+    doc_ids = docsearch.add_files(
+        files_list=files_list,
         embedding=FakeEmbeddings(),
         metadatas=[{"url": url, "test_num": "2"} for url in urls],
     )
@@ -101,7 +133,6 @@ def test_vectara_from_files() -> None:
         n_sentence_context=1,
         filter="doc.test_num = 2",
     )
-    print(output[0].page_content)
     assert output[0].page_content == (
         """\
 Note the use of “hybrid” in 3) above is different from that used sometimes in the literature, \
@@ -114,3 +145,6 @@ This classification scheme, however, misses a key insight gained in deep learnin
 models can greatly improve the training of DNNs and other deep discriminative models via better regularization.\
 """  # noqa: E501
     )
+
+    for doc_id in doc_ids:
+        docsearch._delete_doc(doc_id)

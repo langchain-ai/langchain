@@ -472,6 +472,33 @@ helloWorld();
     ]
 
 
+def test_typescript_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.TS, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+function helloWorld(): void {
+  console.log("Hello, World!");
+}
+
+// Call the function
+helloWorld();
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "function",
+        "helloWorld():",
+        "void {",
+        'console.log("He',
+        "llo,",
+        'World!");',
+        "}",
+        "// Call the",
+        "function",
+        "helloWorld();",
+    ]
+
+
 def test_java_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.JAVA, chunk_size=CHUNK_SIZE, chunk_overlap=0
@@ -495,6 +522,73 @@ public class HelloWorld {
         'tln("Hello,',
         'World!");',
         "}\n}",
+    ]
+
+
+def test_csharp_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.CSHARP, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+using System;
+class Program
+{
+    static void Main()
+    {
+        int age = 30; // Change the age value as needed
+
+        // Categorize the age without any console output
+        if (age < 18)
+        {
+            // Age is under 18
+        }
+        else if (age >= 18 && age < 65)
+        {
+            // Age is an adult
+        }
+        else
+        {
+            // Age is a senior citizen
+        }
+    }
+}
+    """
+
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "using System;",
+        "class Program\n{",
+        "static void",
+        "Main()",
+        "{",
+        "int age",
+        "= 30; // Change",
+        "the age value",
+        "as needed",
+        "//",
+        "Categorize the",
+        "age without any",
+        "console output",
+        "if (age",
+        "< 18)",
+        "{",
+        "//",
+        "Age is under 18",
+        "}",
+        "else if",
+        "(age >= 18 &&",
+        "age < 65)",
+        "{",
+        "//",
+        "Age is an adult",
+        "}",
+        "else",
+        "{",
+        "//",
+        "Age is a senior",
+        "citizen",
+        "}\n    }",
+        "}",
     ]
 
 

@@ -1,16 +1,68 @@
 from __future__ import annotations
 
 import logging
-from typing import (
-    TYPE_CHECKING,
-    Any,
-)
+import re
+from typing import TYPE_CHECKING, Any, List, Optional, Pattern
 from urllib.parse import urlparse
+
+import numpy as np
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from redis.client import Redis as RedisType
 
-logger = logging.getLogger(__name__)
+
+def _array_to_buffer(array: List[float], dtype: Any = np.float32) -> bytes:
+    return np.array(array).astype(dtype).tobytes()
+
+
+def _buffer_to_array(buffer: bytes, dtype: Any = np.float32) -> List[float]:
+    return np.frombuffer(buffer, dtype=dtype).tolist()
+
+
+class TokenEscaper:
+    """
+    Escape punctuation within an input string.
+    """
+
+    # Characters that RediSearch requires us to escape during queries.
+    # Source: https://redis.io/docs/stack/search/reference/escaping/#the-rules-of-text-field-tokenization
+    DEFAULT_ESCAPED_CHARS = r"[,.<>{}\[\]\\\"\':;!@#$%^&*()\-+=~\/]"
+
+    def __init__(self, escape_chars_re: Optional[Pattern] = None):
+        if escape_chars_re:
+            self.escaped_chars_re = escape_chars_re
+        else:
+            self.escaped_chars_re = re.compile(self.DEFAULT_ESCAPED_CHARS)
+
+    def escape(self, value: str) -> str:
+        def escape_symbol(match: re.Match) -> str:
+            value = match.group(0)
+            return f"\\{value}"
+
+        return self.escaped_chars_re.sub(escape_symbol, value)
+
+
+def check_redis_module_exist(client: RedisType, required_modules: List[dict]) -> None:
+    """Check if the correct Redis modules are installed."""
+    installed_modules = client.module_list()
+    installed_modules = {
+        module[b"name"].decode("utf-8"): module for module in installed_modules
+    }
+    for module in required_modules:
+        if module["name"] in installed_modules and int(
+            installed_modules[module["name"]][b"ver"]
+        ) >= int(module["ver"]):
+            return
+    # otherwise raise error
+    error_message = (
+        "Redis cannot be used as a vector database without RediSearch >=2.4"
+        "Please head to https://redis.io/docs/stack/search/quick_start/"
+        "to know more about installing the RediSearch module within Redis Stack."
+    )
+    logger.error(error_message)
+    raise ValueError(error_message)
 
 
 def get_client(redis_url: str, **kwargs: Any) -> RedisType:
@@ -60,7 +112,7 @@ def get_client(redis_url: str, **kwargs: Any) -> RedisType:
     try:
         import redis
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import redis python package. "
             "Please install it with `pip install redis>=4.1.0`."
         )

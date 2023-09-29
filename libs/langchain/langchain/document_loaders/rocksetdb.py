@@ -93,6 +93,12 @@ class RocksetLoader(BaseLoader):
         self.paginator = QueryPaginator
         self.request_model = QueryRequestSql
 
+        try:
+            self.client.set_application("langchain")
+        except AttributeError:
+            # ignore
+            pass
+
     def load(self) -> List[Document]:
         return list(self.lazy_load())
 

@@ -12,7 +12,7 @@ from langchain.schema.messages import BaseMessage
 
 
 class PromptLayerChatOpenAI(ChatOpenAI):
-    """Wrapper around OpenAI Chat large language models and PromptLayer.
+    """`PromptLayer` and `OpenAI` Chat large language models API.
 
     To use, you should have the ``openai`` and ``promptlayer`` python
     package installed, and the environment variable ``OPENAI_API_KEY``

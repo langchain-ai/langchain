@@ -78,7 +78,9 @@ class CSVLoader(BaseLoader):
 
 
 class UnstructuredCSVLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load CSV files. Like other
+    """Load `CSV` files using `Unstructured`.
+
+    Like other
     Unstructured loaders, UnstructuredCSVLoader can be used in both
     "single" and "elements" mode. If you use the loader in "elements"
     mode, the CSV file will be a single Unstructured Table element.

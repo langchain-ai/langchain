@@ -14,9 +14,16 @@ from typing import (
     Union,
 )
 
+from typing_extensions import get_args
+
 from langchain.load.serializable import Serializable
-from langchain.schema.messages import BaseMessage
-from langchain.schema.output import ChatGeneration, Generation
+from langchain.schema.messages import AnyMessage, BaseMessage, BaseMessageChunk
+from langchain.schema.output import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    Generation,
+    GenerationChunk,
+)
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable, RunnableConfig
 
@@ -27,7 +34,7 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
-    def parse_result(self, result: List[Generation]) -> T:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -38,7 +45,9 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
             Structured output.
         """
 
-    async def aparse_result(self, result: List[Generation]) -> T:
+    async def aparse_result(
+        self, result: List[Generation], *, partial: bool = False
+    ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -57,6 +66,16 @@ class BaseGenerationOutputParser(
     BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
 ):
     """Base class to parse the output of an LLM call."""
+
+    @property
+    def InputType(self) -> Any:
+        return Union[str, AnyMessage]
+
+    @property
+    def OutputType(self) -> type[T]:
+        # even though mypy complains this isn't valid,
+        # it is good enough for pydantic to build the schema from
+        return T  # type: ignore[misc]
 
     def invoke(
         self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
@@ -79,7 +98,10 @@ class BaseGenerationOutputParser(
             )
 
     async def ainvoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(
@@ -126,6 +148,22 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
                             return "boolean_output_parser"
     """  # noqa: E501
 
+    @property
+    def InputType(self) -> Any:
+        return Union[str, AnyMessage]
+
+    @property
+    def OutputType(self) -> type[T]:
+        for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
+            type_args = get_args(cls)
+            if type_args and len(type_args) == 1:
+                return type_args[0]
+
+        raise TypeError(
+            f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
+            "Override the OutputType property to specify the output type."
+        )
+
     def invoke(
         self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
@@ -147,7 +185,10 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
             )
 
     async def ainvoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(
@@ -166,7 +207,7 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
                 run_type="parser",
             )
 
-    def parse_result(self, result: List[Generation]) -> T:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -192,7 +233,9 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
             Structured output.
         """
 
-    async def aparse_result(self, result: List[Generation]) -> T:
+    async def aparse_result(
+        self, result: List[Generation], *, partial: bool = False
+    ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -277,6 +320,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         self,
         input: Iterator[Union[str, BaseMessage]],
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Iterator[T]:
         yield from self._transform_stream_with_config(
             input, self._transform, config, run_type="parser"
@@ -286,6 +330,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         self,
         input: AsyncIterator[Union[str, BaseMessage]],
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[T]:
         async for chunk in self._atransform_stream_with_config(
             input, self._atransform, config, run_type="parser"
@@ -293,12 +338,80 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
             yield chunk
 
 
+class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
+    """Base class for an output parser that can handle streaming input."""
+
+    diff: bool = False
+    """In streaming mode, whether to yield diffs between the previous and current
+    parsed output, or just the current parsed output.
+    """
+
+    def _diff(self, prev: Optional[T], next: T) -> T:
+        """Convert parsed outputs into a diff format. The semantics of this are
+        up to the output parser."""
+        raise NotImplementedError()
+
+    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[Any]:
+        prev_parsed = None
+        acc_gen = None
+        for chunk in input:
+            if isinstance(chunk, BaseMessageChunk):
+                chunk_gen: Generation = ChatGenerationChunk(message=chunk)
+            elif isinstance(chunk, BaseMessage):
+                chunk_gen = ChatGenerationChunk(
+                    message=BaseMessageChunk(**chunk.dict())
+                )
+            else:
+                chunk_gen = GenerationChunk(text=chunk)
+
+            if acc_gen is None:
+                acc_gen = chunk_gen
+            else:
+                acc_gen += chunk_gen
+
+            parsed = self.parse_result([acc_gen], partial=True)
+            if parsed is not None and parsed != prev_parsed:
+                if self.diff:
+                    yield self._diff(prev_parsed, parsed)
+                else:
+                    yield parsed
+                prev_parsed = parsed
+
+    async def _atransform(
+        self, input: AsyncIterator[Union[str, BaseMessage]]
+    ) -> AsyncIterator[T]:
+        prev_parsed = None
+        acc_gen = None
+        async for chunk in input:
+            if isinstance(chunk, BaseMessageChunk):
+                chunk_gen: Generation = ChatGenerationChunk(message=chunk)
+            elif isinstance(chunk, BaseMessage):
+                chunk_gen = ChatGenerationChunk(
+                    message=BaseMessageChunk(**chunk.dict())
+                )
+            else:
+                chunk_gen = GenerationChunk(text=chunk)
+
+            if acc_gen is None:
+                acc_gen = chunk_gen
+            else:
+                acc_gen += chunk_gen
+
+            parsed = self.parse_result([acc_gen], partial=True)
+            if parsed is not None and parsed != prev_parsed:
+                if self.diff:
+                    yield self._diff(prev_parsed, parsed)
+                else:
+                    yield parsed
+                prev_parsed = parsed
+
+
 class StrOutputParser(BaseTransformOutputParser[str]):
     """OutputParser that parses LLMResult into the top likely string."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether the class LangChain serializable."""
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
         return True
 
     @property

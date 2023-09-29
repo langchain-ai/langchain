@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING, Optional, Type
 
-from pydantic import BaseModel, Field
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
 
 if TYPE_CHECKING:
@@ -40,9 +39,14 @@ class MultionCreateSession(BaseTool):
     """
 
     name: str = "create_multion_session"
-    description: str = """Use this tool to create a new Multion Browser Window \
-        with provided fields.Always the first step to run \
-            any activities that can be done using browser."""
+    description: str = """
+        Create a new web browsing session based on a user's command or request. \
+        The command should include the full info required for the session. \
+        Also include an url (defaults to google.com if no better option) \
+        to start the session. \
+        Use this tool to create a new Browser Window with provided fields. \
+        Always the first step to run any activities that can be done using browser.
+        """
     args_schema: Type[CreateSessionSchema] = CreateSessionSchema
 
     def _run(
