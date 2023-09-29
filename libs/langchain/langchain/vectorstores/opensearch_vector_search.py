@@ -347,33 +347,15 @@ class OpenSearchVectorSearch(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding_function
 
-    def add_texts(
+    def __add(
         self,
         texts: Iterable[str],
+        embeddings: List[List[float]],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         bulk_size: int = 500,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
-
-        Args:
-            texts: Iterable of strings to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
-            ids: Optional list of ids to associate with the texts.
-            bulk_size: Bulk API request count; Default: 500
-
-        Returns:
-            List of ids from adding the texts into the vectorstore.
-
-        Optional Args:
-            vector_field: Document field embeddings are stored in. Defaults to
-            "vector_field".
-
-            text_field: Document field the text of the document is stored in. Defaults
-            to "text".
-        """
-        embeddings = self.embedding_function.embed_documents(list(texts))
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         index_name = _get_kwargs_value(kwargs, "index_name", self.index_name)
         text_field = _get_kwargs_value(kwargs, "text_field", "text")
@@ -404,6 +386,79 @@ class OpenSearchVectorSearch(VectorStore):
             mapping=mapping,
             max_chunk_bytes=max_chunk_bytes,
             is_aoss=self.is_aoss,
+        )
+
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        bulk_size: int = 500,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
+            bulk_size: Bulk API request count; Default: 500
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
+        """
+        embeddings = self.embedding_function.embed_documents(list(texts))
+        return self.__add(
+            texts,
+            embeddings,
+            metadatas=metadatas,
+            ids=ids,
+            bulk_size=bulk_size,
+            kwargs=kwargs,
+        )
+
+    def add_embeddings(
+        self,
+        text_embeddings: Iterable[Tuple[str, List[float]]],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        bulk_size: int = 500,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add the given texts and embeddings to the vectorstore.
+
+        Args:
+            text_embeddings: Iterable pairs of string and embedding to
+                add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
+            bulk_size: Bulk API request count; Default: 500
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
+        """
+        texts, embeddings = zip(*text_embeddings)
+        return self.__add(
+            list(texts),
+            list(embeddings),
+            metadatas=metadatas,
+            ids=ids,
+            bulk_size=bulk_size,
+            kwargs=kwargs,
         )
 
     def similarity_search(
