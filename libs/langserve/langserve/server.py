@@ -15,7 +15,7 @@ from langchain.schema.runnable import Runnable
 from typing_extensions import Annotated
 
 try:
-    from pydantic.v1 import BaseModel
+    from pydantic.v1 import BaseModel, create_model
 except ImportError:
     from pydantic import BaseModel, create_model
 

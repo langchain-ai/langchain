@@ -7,6 +7,11 @@ from langchain.schema.messages import (
     SystemMessage,
 )
 
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
 from langserve.serialization import simple_dumps, simple_loads
 
 
@@ -120,3 +125,31 @@ def test_serialization(data: Any, expected_json: Any) -> None:
     assert json.loads(simple_dumps(data)) == expected_json
     # Test decoding
     assert simple_loads(json.dumps(expected_json)) == data
+    # Test full representation are equivalent including the pydantic model classes
+    assert _get_full_representation(data) == _get_full_representation(
+        simple_loads(json.dumps(expected_json))
+    )
+
+
+def _get_full_representation(data: Any) -> Any:
+    """Get the full representation of the data, replacing pydantic models with schema.
+
+    Pydantic tests two different models for equality based on equality
+    of their schema; instead we will rely on the equality of their full
+    schema representation. This will make sure that both models have the
+    same name (e.g., HumanMessage vs. HumanMessageChunk).
+
+    Args:
+        data: python primitives + pydantic models
+
+    Returns:
+        data represented entirely with python primitives
+    """
+    if isinstance(data, dict):
+        return {key: _get_full_representation(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [_get_full_representation(value) for value in data]
+    elif isinstance(data, BaseModel):
+        return data.schema()
+    else:
+        return data
