@@ -58,11 +58,12 @@ class SendgridAPIWrapper(BaseModel):
         """Run body through Sendgrid and respond with status code.
 
         Args:
-            from_email: The sender of the email.
-            to_email: The destination of the email.
-            subject: The subject of the email.
-            content: The content of the email.
-            content_type: The type of content of the email.
+            from_email:     The sender of the email.
+            to_email:       The destination of the email.
+            subject:        The subject of the email.
+            content:        The content of the email.
+            content_type:   The MIME type of the content you are including in the email.
+                            For example, "text/plain", "text/html" or "text/x-amp-html.
         """
         try:
             from sendgrid.helpers.mail import Content, Email, Mail, To
