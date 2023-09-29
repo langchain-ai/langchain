@@ -5,6 +5,10 @@
 <br />
 <div align="center">
 
+  <a href="https://github.com/ai-forever/gigachain">
+    <img src="docs/static/img/logo.png" alt="Logo" width="80" height="80">
+  </a>
+
   <h1 align="center">🦜️🔗 GigaChain (GigaChat + LangChain)</h1>
 
   <p align="center">
@@ -18,6 +22,8 @@
 
 
 ## О проекте
+
+![Product Name Screen Shot](docs/static/img/logo-with-backgroung.png)
 
 Версия библиотеки [LangChain](https://github.com/langchain-ai/langchain) адаптированная для русского языка с поддержкой нейросетевой модели [GigaChat](https://developers.sber.ru/portal/products/gigachat).
 
