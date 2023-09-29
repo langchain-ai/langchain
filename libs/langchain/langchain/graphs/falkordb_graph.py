@@ -31,6 +31,7 @@ UNWIND type(r) as rel_type
 RETURN DISTINCT {start: src_label, type: rel_type, end: dst_label} AS output
 """
 
+
 class FalkorDBGraph(GraphStore):
 
     """FalkorDB wrapper for graph operations."""
