@@ -121,7 +121,7 @@ class InMemoryVectorStore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict[Any, Any]]] = None,
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add the given texts to the store (insert behavior)."""
@@ -132,7 +132,7 @@ class InMemoryVectorStore(VectorStore):
         cls: Type[VST],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict[Any, Any]]] = None,
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
         **kwargs: Any,
     ) -> VST:
         """Create a vector store from a list of texts."""
