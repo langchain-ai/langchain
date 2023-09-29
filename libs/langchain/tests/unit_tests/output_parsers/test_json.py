@@ -4,12 +4,12 @@ from typing import Any, AsyncIterator, Iterator, Tuple
 import pytest
 
 from langchain.output_parsers.json import (
-    PartialFunctionsJsonOutputParser,
-    PartialJsonOutputParser,
+    SimpleJsonOutputParser,
     parse_json_markdown,
     parse_partial_json,
 )
 from langchain.schema.messages import AIMessageChunk
+from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 
 GOOD_JSON = """```json
 {
@@ -455,7 +455,7 @@ def test_partial_text_json_output_parser() -> None:
         for token in STREAMED_TOKENS:
             yield token
 
-    chain = input_iter | PartialJsonOutputParser()
+    chain = input_iter | SimpleJsonOutputParser()
 
     assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
 
@@ -467,7 +467,7 @@ def test_partial_functions_json_output_parser() -> None:
                 content="", additional_kwargs={"function_call": {"arguments": token}}
             )
 
-    chain = input_iter | PartialFunctionsJsonOutputParser()
+    chain = input_iter | JsonOutputFunctionsParser()
 
     assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
 
@@ -477,7 +477,7 @@ def test_partial_text_json_output_parser_diff() -> None:
         for token in STREAMED_TOKENS:
             yield token
 
-    chain = input_iter | PartialJsonOutputParser(diff=True)
+    chain = input_iter | SimpleJsonOutputParser(diff=True)
 
     assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON_DIFF
 
@@ -489,7 +489,7 @@ def test_partial_functions_json_output_parser_diff() -> None:
                 content="", additional_kwargs={"function_call": {"arguments": token}}
             )
 
-    chain = input_iter | PartialFunctionsJsonOutputParser(diff=True)
+    chain = input_iter | JsonOutputFunctionsParser(diff=True)
 
     assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON_DIFF
 
@@ -500,7 +500,7 @@ async def test_partial_text_json_output_parser_async() -> None:
         for token in STREAMED_TOKENS:
             yield token
 
-    chain = input_iter | PartialJsonOutputParser()
+    chain = input_iter | SimpleJsonOutputParser()
 
     assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
 
@@ -513,7 +513,7 @@ async def test_partial_functions_json_output_parser_async() -> None:
                 content="", additional_kwargs={"function_call": {"arguments": token}}
             )
 
-    chain = input_iter | PartialFunctionsJsonOutputParser()
+    chain = input_iter | JsonOutputFunctionsParser()
 
     assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
 
@@ -524,7 +524,7 @@ async def test_partial_text_json_output_parser_diff_async() -> None:
         for token in STREAMED_TOKENS:
             yield token
 
-    chain = input_iter | PartialJsonOutputParser(diff=True)
+    chain = input_iter | SimpleJsonOutputParser(diff=True)
 
     assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON_DIFF
 
@@ -537,6 +537,6 @@ async def test_partial_functions_json_output_parser_diff_async() -> None:
                 content="", additional_kwargs={"function_call": {"arguments": token}}
             )
 
-    chain = input_iter | PartialFunctionsJsonOutputParser(diff=True)
+    chain = input_iter | JsonOutputFunctionsParser(diff=True)
 
     assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON_DIFF
