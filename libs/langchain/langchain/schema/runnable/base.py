@@ -53,6 +53,7 @@ from langchain.schema.runnable.config import (
     patch_config,
 )
 from langchain.schema.runnable.utils import (
+    AddableDict,
     Input,
     Output,
     accepts_config,
@@ -1748,30 +1749,6 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             yield chunk
 
 
-class RunnableMapChunk(Dict[str, Any]):
-    """
-    Partial output from a RunnableMap
-    """
-
-    def __add__(self, other: RunnableMapChunk) -> RunnableMapChunk:
-        chunk = RunnableMapChunk(self)
-        for key in other:
-            if key not in chunk or chunk[key] is None:
-                chunk[key] = other[key]
-            elif other[key] is not None:
-                chunk[key] = chunk[key] + other[key]
-        return chunk
-
-    def __radd__(self, other: RunnableMapChunk) -> RunnableMapChunk:
-        chunk = RunnableMapChunk(other)
-        for key in self:
-            if key not in chunk or chunk[key] is None:
-                chunk[key] = self[key]
-            elif self[key] is not None:
-                chunk[key] = chunk[key] + self[key]
-        return chunk
-
-
 class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     """
     A runnable that runs a mapping of runnables in parallel,
@@ -1814,7 +1791,10 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
 
     @property
     def input_schema(self) -> type[BaseModel]:
-        if all(not s.input_schema.__custom_root_type__ for s in self.steps.values()):
+        if all(
+            s.input_schema.schema().get("type", "object") == "object"
+            for s in self.steps.values()
+        ):
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model(  # type: ignore[call-overload]
                 "RunnableMapInput",
@@ -1822,6 +1802,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                     k: (v.type_, v.default)
                     for step in self.steps.values()
                     for k, v in step.input_schema.__fields__.items()
+                    if k != "__root__"
                 },
             )
 
@@ -1934,7 +1915,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         input: Iterator[Input],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
-    ) -> Iterator[RunnableMapChunk]:
+    ) -> Iterator[AddableDict]:
         # Shallow copy steps to ignore mutations while in progress
         steps = dict(self.steps)
         # Each step gets a copy of the input iterator,
@@ -1967,7 +1948,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                 for future in completed_futures:
                     (step_name, generator) = futures.pop(future)
                     try:
-                        chunk = RunnableMapChunk({step_name: future.result()})
+                        chunk = AddableDict({step_name: future.result()})
                         yield chunk
                         futures[executor.submit(next, generator)] = (
                             step_name,
@@ -1999,7 +1980,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         input: AsyncIterator[Input],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
-    ) -> AsyncIterator[RunnableMapChunk]:
+    ) -> AsyncIterator[AddableDict]:
         # Shallow copy steps to ignore mutations while in progress
         steps = dict(self.steps)
         # Each step gets a copy of the input iterator,
@@ -2038,7 +2019,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             for task in completed_tasks:
                 (step_name, generator) = tasks.pop(task)
                 try:
-                    chunk = RunnableMapChunk({step_name: task.result()})
+                    chunk = AddableDict({step_name: task.result()})
                     yield chunk
                     new_task = asyncio.create_task(get_next_chunk(generator))
                     tasks[new_task] = (step_name, generator)
