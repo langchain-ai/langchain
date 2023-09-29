@@ -4,18 +4,18 @@ from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, Field
 
 
-class OnnxEmbeddings(BaseModel, Embeddings):
+class ONNXEmbeddings(BaseModel, Embeddings):
     """ONNX Embedding models.
     Example:
         .. code-block:: python
-            from langchain.embeddings import OnnxEmbeddings
+            from langchain.embeddings import ONNXEmbeddings
             from langchain.embeddings.huggingface import (
                 DEFAULT_QUERY_BGE_INSTRUCTION_EN
             )
             model_name = "BAAI/bge-large-en"
             model_kwargs = {'device': 'cpu'}
             query_instruction = DEFAULT_QUERY_BGE_INSTRUCTION_EN
-            onnx_emb = OnnxEmbeddings(
+            onnx_emb = ONNXEmbeddings(
                 model_name=model_name,
                 model_kwargs=model_kwargs,
                 query_instruction=query_instruction,
