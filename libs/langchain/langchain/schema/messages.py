@@ -198,9 +198,6 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         return super().__add__(other)
 
 
-AIMessageChunk.update_forward_refs()
-
-
 class SystemMessage(BaseMessage):
     """A Message for priming AI behavior, usually passed in as the first of a sequence
     of input messages.
@@ -217,9 +214,6 @@ class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     """A System Message chunk."""
 
     is_chunk: Literal[True] = True
-
-
-SystemMessageChunk.update_forward_refs()
 
 
 class FunctionMessage(BaseMessage):
@@ -258,9 +252,6 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
         return super().__add__(other)
 
 
-FunctionMessageChunk.update_forward_refs()
-
-
 class ChatMessage(BaseMessage):
     """A Message that can be assigned an arbitrary speaker (i.e. role)."""
 
@@ -296,8 +287,6 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
 
         return super().__add__(other)
 
-
-ChatMessageChunk.update_forward_refs()
 
 AnyMessage = Union[AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage]
 
