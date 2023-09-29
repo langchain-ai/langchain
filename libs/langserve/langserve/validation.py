@@ -1,13 +1,11 @@
-import typing
-from typing import Any, List, Optional, Sequence, Type, Union, get_args, get_origin
+from typing import List, Optional, Sequence, Type, Union
 
-from langchain.load.serializable import Serializable
 from langchain.schema.runnable import RunnableConfig
 
 try:
     from pydantic.v1 import BaseModel, Field, create_model
 except ImportError:
-    from pydantic import BaseModel, Field, create_model, validator
+    from pydantic import BaseModel, Field, create_model
 
 from typing_extensions import TypedDict
 

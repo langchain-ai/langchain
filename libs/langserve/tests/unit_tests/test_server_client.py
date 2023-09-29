@@ -2,7 +2,7 @@
 import asyncio
 from asyncio import AbstractEventLoop
 from contextlib import asynccontextmanager
-from typing import Any, List, Optional, Union
+from typing import List, Optional, Union
 
 import httpx
 import pytest
