@@ -582,7 +582,9 @@ async def test_with_config(mocker: MockerFixture) -> None:
     ) == [5, 7]
 
     assert len(spy.call_args_list) == 2
-    for i, call in enumerate(spy.call_args_list):
+    for i, call in enumerate(
+        sorted(spy.call_args_list, key=lambda x: 0 if x.args[0] == "hello" else 1)
+    ):
         assert call.args[0] == ("hello" if i == 0 else "wooorld")
         if i == 0:
             assert call.args[1].get("recursion_limit") == 5
