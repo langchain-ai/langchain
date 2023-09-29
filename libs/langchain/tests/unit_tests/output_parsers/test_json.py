@@ -1,6 +1,8 @@
+import json
+from typing import Iterator, Tuple
 import pytest
 
-from langchain.output_parsers.json import parse_json_markdown
+from langchain.output_parsers.json import parse_json_markdown, parse_partial_json
 
 GOOD_JSON = """```json
 {
@@ -183,3 +185,135 @@ def test_parse_json_with_python_dict() -> None:
         "action": "Final Answer",
         "action_input": {"foo": "bar", "bar": "foo"},
     }
+
+
+TEST_CASES_PARTIAL = [
+    ('{"foo": "bar", "bar": "foo"}', '{"foo": "bar", "bar": "foo"}'),
+    ('{"foo": "bar", "bar": "foo', '{"foo": "bar", "bar": "foo"}'),
+    ('{"foo": "bar", "bar": "foo}', '{"foo": "bar", "bar": "foo}"}'),
+    ('{"foo": "bar", "bar": "foo[', '{"foo": "bar", "bar": "foo["}'),
+    ('{"foo": "bar", "bar": "foo\\"', '{"foo": "bar", "bar": "foo\\""}'),
+]
+
+
+@pytest.mark.parametrize("json_strings", TEST_CASES_PARTIAL)
+def test_parse_partial_json(json_strings: Tuple[str, str]) -> None:
+    case, expected = json_strings
+    parsed = parse_partial_json(case)
+    assert parsed == json.loads(expected)
+
+
+STREAMED_TOKENS = """
+{
+
+
+ "
+setup
+":
+ "
+Why
+ did
+ the
+ bears
+ go
+ on
+ a
+ picnic
+?",
+
+
+ "
+p
+unch
+line
+":
+ "
+Because
+ they
+ wanted
+ to
+ have
+ a
+ bear
+-y
+ good
+ time
+!"
+
+}
+""".splitlines()
+
+EXPECTED_STREAMED_JSON = [
+    {},
+    {},
+    {"setup": ""},
+    {"setup": "Why"},
+    {"setup": "Why did"},
+    {"setup": "Why did the"},
+    {"setup": "Why did the bears"},
+    {"setup": "Why did the bears start"},
+    {"setup": "Why did the bears start a"},
+    {"setup": "Why did the bears start a band"},
+    {"setup": "Why did the bears start a band called"},
+    {"setup": "Why did the bears start a band called Bears"},
+    {"setup": "Why did the bears start a band called Bears Bears"},
+    {"setup": "Why did the bears start a band called Bears Bears Bears"},
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because they",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because they wanted",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because they wanted to",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because they wanted to play",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because they wanted to play bear",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because they wanted to play bear-y",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because they wanted to play bear-y good",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because they wanted to play bear-y good music",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because they wanted to play bear-y good music!",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because they wanted to play bear-y good music!",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears?",
+        "punchline": "Because they wanted to play bear-y good music!",
+    },
+]
+
+
+def test_partial_text_json_output_parser() -> None:
+    def input_iter() -> Iterator[str]:
+        for token in STREAMED_TOKENS:
+            yield token
