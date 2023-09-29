@@ -50,12 +50,12 @@ lint lint_diff:
 	./scripts/check_pydantic.sh .
 	./scripts/check_imports.sh
 	poetry run ruff .
-	poetry run black $(PYTHON_FILES) --check
-	poetry run mypy $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run black $(PYTHON_FILES) --check
+	[ "$(PYTHON_FILES)" = "" ] || poetry run mypy $(PYTHON_FILES)
 
 format format_diff:
-	poetry run black $(PYTHON_FILES)
-	poetry run ruff --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run black $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I --fix $(PYTHON_FILES)
 
 spell_check:
 	poetry run codespell --toml pyproject.toml

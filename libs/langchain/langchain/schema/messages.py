@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union
+
+from typing_extensions import Literal
 
 from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field
+from langchain.pydantic_v1 import Extra, Field
 
 if TYPE_CHECKING:
     from langchain.prompts.chat import ChatPromptTemplate
@@ -69,10 +70,10 @@ class BaseMessage(Serializable):
     additional_kwargs: dict = Field(default_factory=dict)
     """Any additional information."""
 
-    @property
-    @abstractmethod
-    def type(self) -> str:
-        """Type of the Message, used for serialization."""
+    type: str
+
+    class Config:
+        extra = Extra.allow
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -147,10 +148,10 @@ class HumanMessage(BaseMessage):
         conversation.
     """
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "human"
+    type: Literal["human"] = "human"
+
+
+HumanMessage.update_forward_refs()
 
 
 class HumanMessageChunk(HumanMessage, BaseMessageChunk):
@@ -167,10 +168,10 @@ class AIMessage(BaseMessage):
         conversation.
     """
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "ai"
+    type: Literal["ai"] = "ai"
+
+
+AIMessage.update_forward_refs()
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
@@ -199,10 +200,10 @@ class SystemMessage(BaseMessage):
     of input messages.
     """
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "system"
+    type: Literal["system"] = "system"
+
+
+SystemMessage.update_forward_refs()
 
 
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):
@@ -217,10 +218,10 @@ class FunctionMessage(BaseMessage):
     name: str
     """The name of the function that was executed."""
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "function"
+    type: Literal["function"] = "function"
+
+
+FunctionMessage.update_forward_refs()
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
@@ -250,10 +251,10 @@ class ChatMessage(BaseMessage):
     role: str
     """The speaker / role of the Message."""
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "chat"
+    type: Literal["chat"] = "chat"
+
+
+ChatMessage.update_forward_refs()
 
 
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
@@ -275,6 +276,9 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
             )
 
         return super().__add__(other)
+
+
+AnyMessage = Union[AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage]
 
 
 def _message_to_dict(message: BaseMessage) -> dict:
