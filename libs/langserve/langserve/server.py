@@ -1,31 +1,31 @@
+from inspect import isclass
 from typing import (
     Any,
     AsyncIterator,
     Dict,
     List,
+    Literal,
     Mapping,
     Sequence,
     Type,
     Union,
 )
 
-from langchain.load.dump import dumpd, dumps
-from langchain.load.load import load
 from langchain.schema.runnable import Runnable
 from typing_extensions import Annotated
 
 try:
     from pydantic.v1 import BaseModel
 except ImportError:
-    from pydantic import BaseModel
+    from pydantic import BaseModel, create_model
 
+from langserve.serialization import simple_dumpd, simple_dumps
 from langserve.validation import (
     create_batch_request_model,
     create_invoke_request_model,
     create_runnable_config_model,
     create_stream_log_request_model,
     create_stream_request_model,
-    replace_lc_object_types,
 )
 
 try:
@@ -66,6 +66,31 @@ class BatchResponse(BaseModel):
     """
 
 
+def _unpack_input(validated_model: BaseModel) -> Any:
+    """Unpack the decoded input from the validated model."""
+    if hasattr(validated_model, "__root__"):
+        return validated_model.__root__
+    else:
+        return validated_model
+
+
+_MODEL_REGISTRY = {}
+
+
+def _resolve_input_type(input_type: Union[Type, BaseModel]) -> BaseModel:
+    if isclass(input_type) and issubclass(input_type, BaseModel):
+        input_type_ = input_type
+    else:
+        input_type_ = create_model("Input", __root__=(input_type, ...))
+
+    hash_ = input_type_.schema_json()
+
+    if hash_ not in _MODEL_REGISTRY:
+        _MODEL_REGISTRY[hash_] = input_type_
+
+    return _MODEL_REGISTRY[hash_]
+
+
 # PUBLIC API
 
 
@@ -74,7 +99,7 @@ def add_routes(
     runnable: Runnable,
     *,
     path: str = "",
-    input_type: Type = Any,
+    input_type: Union[Type, Literal["auto"], BaseModel] = "auto",
     config_keys: Sequence[str] = (),
 ) -> None:
     """Register the routes on the given FastAPI app or APIRouter.
@@ -83,9 +108,9 @@ def add_routes(
         app: The FastAPI app or APIRouter to which routes should be added.
         runnable: The runnable to wrap, must not be stateful.
         path: A path to prepend to all routes.
-        input_type: Optional type to define a schema for the input part of the request.
-            If not provided, any input that can be de-serialized with LangChain's
-            serializer will be accepted.
+        input_type: type to use for input validation.
+            Default is "auto" which will use the InputType of the runnable.
+            User is free to provide a custom type annotation.
         config_keys: list of config keys that will be accepted, by default
                      no config keys are accepted.
     """
@@ -98,19 +123,22 @@ def add_routes(
             "Use `pip install sse_starlette` to install."
         )
 
-    input_type = replace_lc_object_types(input_type)
+    if input_type == "auto":
+        input_type_ = _resolve_input_type(runnable.input_schema)
+    else:
+        input_type_ = _resolve_input_type(input_type)
 
     namespace = path or ""
 
     model_namespace = path.strip("/").replace("/", "_")
 
     config = create_runnable_config_model(model_namespace, config_keys)
-    InvokeRequest = create_invoke_request_model(model_namespace, input_type, config)
-    BatchRequest = create_batch_request_model(model_namespace, input_type, config)
+    InvokeRequest = create_invoke_request_model(model_namespace, input_type_, config)
+    BatchRequest = create_batch_request_model(model_namespace, input_type_, config)
     # Stream request is the same as invoke request, but with a different response type
-    StreamRequest = create_stream_request_model(model_namespace, input_type, config)
+    StreamRequest = create_stream_request_model(model_namespace, input_type_, config)
     StreamLogRequest = create_stream_log_request_model(
-        model_namespace, input_type, config
+        model_namespace, input_type_, config
     )
 
     @app.post(
@@ -124,25 +152,25 @@ def add_routes(
         # Request is first validated using InvokeRequest which takes into account
         # config_keys as well as input_type.
         # After validation, the input is loaded using LangChain's load function.
-        input = load(request.dict()["input"])
         config = _project_dict(request.config, config_keys)
-        output = await runnable.ainvoke(input, config=config, **request.kwargs)
-        return InvokeResponse(output=dumpd(output))
+        output = await runnable.ainvoke(
+            _unpack_input(request.input), config=config, **request.kwargs
+        )
+
+        return InvokeResponse(output=simple_dumpd(output))
 
     #
     @app.post(f"{namespace}/batch", response_model=BatchResponse)
     async def batch(request: Annotated[BatchRequest, BatchRequest]) -> BatchResponse:
         """Invoke the runnable with the given inputs and config."""
-        # Request is first validated using InvokeRequest which takes into account
-        # config_keys as well as input_type.
-        # After validation, the input is loaded using LangChain's load function.
-        inputs = load(request.dict()["inputs"])
         if isinstance(request.config, list):
             config = [_project_dict(config, config_keys) for config in request.config]
         else:
             config = _project_dict(request.config, config_keys)
+        inputs = [_unpack_input(input_) for input_ in request.inputs]
         output = await runnable.abatch(inputs, config=config, **request.kwargs)
-        return BatchResponse(output=dumpd(output))
+
+        return BatchResponse(output=simple_dumpd(output))
 
     @app.post(f"{namespace}/stream")
     async def stream(
@@ -152,17 +180,17 @@ def add_routes(
         # Request is first validated using InvokeRequest which takes into account
         # config_keys as well as input_type.
         # After validation, the input is loaded using LangChain's load function.
-        input = load(request.dict()["input"])
+        input_ = _unpack_input(request.input)
         config = _project_dict(request.config, config_keys)
 
         async def _stream() -> AsyncIterator[dict]:
             """Stream the output of the runnable."""
             async for chunk in runnable.astream(
-                input,
+                input_,
                 config=config,
                 **request.kwargs,
             ):
-                yield {"data": dumps(chunk), "event": "data"}
+                yield {"data": simple_dumps(chunk), "event": "data"}
             yield {"event": "end"}
 
         return EventSourceResponse(_stream())
@@ -175,13 +203,13 @@ def add_routes(
         # Request is first validated using InvokeRequest which takes into account
         # config_keys as well as input_type.
         # After validation, the input is loaded using LangChain's load function.
-        input = load(request.dict()["input"])
+        input_ = _unpack_input(request.input)
         config = _project_dict(request.config, config_keys)
 
         async def _stream_log() -> AsyncIterator[dict]:
             """Stream the output of the runnable."""
             async for run_log_patch in runnable.astream_log(
-                input,
+                input_,
                 config=config,
                 include_names=request.include_names,
                 include_types=request.include_types,
@@ -193,7 +221,7 @@ def add_routes(
             ):
                 # Temporary adapter
                 yield {
-                    "data": dumps({"ops": run_log_patch.ops}),
+                    "data": simple_dumps({"ops": run_log_patch.ops}),
                     "event": "data",
                 }
             yield {"event": "end"}
