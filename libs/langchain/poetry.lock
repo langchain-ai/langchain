@@ -320,6 +320,25 @@ boto3 = "*"
 marshmallow = ">=3.14,<4"
 
 [[package]]
+name = "anthropic"
+version = "0.3.11"
+description = "Client library for the anthropic API"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "anthropic-0.3.11-py3-none-any.whl", hash = "sha256:5c81105cd9ee7388bff3fdb739aaddedc83bbae9b95d51c2d50c13b1ad106138"},
+    {file = "anthropic-0.3.11.tar.gz", hash = "sha256:2e0fa5351c9b368cbed0bbd7217deaa9409b82b56afaf244e2196e99eb4fe20e"},
+]
+
+[package.dependencies]
+anyio = ">=3.5.0,<4"
+distro = ">=1.7.0,<2"
+httpx = ">=0.23.0,<1"
+pydantic = ">=1.9.0,<3"
+tokenizers = ">=0.13.0"
+typing-extensions = ">=4.5,<5"
+
+[[package]]
 name = "anyio"
 version = "3.7.1"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
@@ -1948,6 +1967,17 @@ files = [
 graph = ["objgraph (>=1.7.2)"]
 
 [[package]]
+name = "distro"
+version = "1.8.0"
+description = "Distro - an OS platform information API"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "distro-1.8.0-py3-none-any.whl", hash = "sha256:99522ca3e365cac527b44bde033f64c6945d90eb9f769703caaec52b09bbd3ff"},
+    {file = "distro-1.8.0.tar.gz", hash = "sha256:02e111d1dc6a50abb8eed6bf31c3e48ed8b0830d1ea2a1b78c61765c2513fdd8"},
+]
+
+[[package]]
 name = "dnspython"
 version = "2.4.2"
 description = "DNS toolkit"
@@ -3114,7 +3144,7 @@ name = "httpcore"
 version = "0.18.0"
 description = "A minimal low-level HTTP client."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 files = [
     {file = "httpcore-0.18.0-py3-none-any.whl", hash = "sha256:adc5398ee0a476567bf87467063ee63584a8bce86078bf748e48754f60202ced"},
     {file = "httpcore-0.18.0.tar.gz", hash = "sha256:13b5e5cd1dca1a6636a6aaea212b19f4f85cd88c366a2b82304181b769aab3c9"},
@@ -3149,7 +3179,7 @@ name = "httpx"
 version = "0.25.0"
 description = "The next generation HTTP client."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 files = [
     {file = "httpx-0.25.0-py3-none-any.whl", hash = "sha256:181ea7f8ba3a82578be86ef4171554dd45fec26a02556a744db029a0a27b7100"},
     {file = "httpx-0.25.0.tar.gz", hash = "sha256:47ecda285389cb32bb2691cc6e069e3ab0205956f681c5b2ad2325719751d875"},
@@ -9400,7 +9430,7 @@ requests-file = ">=1.4"
 name = "tokenizers"
 version = "0.13.3"
 description = "Fast and Customizable Tokenizers"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "tokenizers-0.13.3-cp310-cp310-macosx_10_11_x86_64.whl", hash = "sha256:f3835c5be51de8c0a092058a4d4380cb9244fb34681fd0a295fbf0a52a5fdf33"},
@@ -10612,7 +10642,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["amazon-textract-caller", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "markdownify", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "openapi-schema-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "xata", "xmltodict"]
+extended-testing = ["amazon-textract-caller", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "markdownify", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "openapi-schema-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "xata", "xmltodict"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -10622,4 +10652,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "0afe371c1d57eea0b3770ae7bac684ca35c1e4ba229ed929b3141e0e07e78358"
+content-hash = "89d73e8d026d8df841d4aaedd687dbd14900bc36ae52d5bb8cf03e8877d8222c"

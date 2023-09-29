@@ -22,7 +22,7 @@ from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema import BasePromptTemplate, BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.vectorstore import VectorStore
 
 # Depending on the memory type and configuration, the chat history format may differ.
 # This needs to be consolidated.
