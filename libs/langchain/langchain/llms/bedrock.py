@@ -122,9 +122,13 @@ class LLMInputOutputAdapter:
             chunk = event.get("chunk")
             if chunk:
                 chunk_obj = json.loads(chunk.get("bytes").decode())
-                if provider == "cohere" and ( chunk_obj["is_finished"] or chunk_obj[cls.provider_to_output_key_map[provider]] == "<EOS_TOKEN>"):
+                if provider == "cohere" and (
+                    chunk_obj["is_finished"]
+                    or chunk_obj[cls.provider_to_output_key_map[provider]]
+                    == "<EOS_TOKEN>"
+                ):
                     return
-    
+
                 # chunk obj format varies with provider
                 yield GenerationChunk(
                     text=chunk_obj[cls.provider_to_output_key_map[provider]]
