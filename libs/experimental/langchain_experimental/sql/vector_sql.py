@@ -8,7 +8,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser, BasePromptTemplate
-from langchain.schema.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 from langchain.utilities.sql_database import SQLDatabase
@@ -76,23 +76,11 @@ class VectorSQLRetrieveAllOutputParser(VectorSQLOutputParser):
         return super().parse(text)
 
 
-def _try_eval(x: Any) -> Any:
-    try:
-        return eval(x)
-    except Exception:
-        return x
-
-
 def get_result_from_sqldb(
     db: SQLDatabase, cmd: str
 ) -> Union[str, List[Dict[str, Any]], Dict[str, Any]]:
     result = db._execute(cmd, fetch="all")  # type: ignore
-    if isinstance(result, list):
-        return [{k: _try_eval(v) for k, v in dict(d._asdict()).items()} for d in result]
-    else:
-        return {
-            k: _try_eval(v) for k, v in dict(result._asdict()).items()  # type: ignore
-        }
+    return result
 
 
 class VectorSQLDatabaseChain(SQLDatabaseChain):

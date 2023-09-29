@@ -34,12 +34,54 @@ def extract_cypher(text: str) -> str:
     return matches[0] if matches else text
 
 
+def construct_schema(
+    structured_schema: Dict[str, Any],
+    include_types: List[str],
+    exclude_types: List[str],
+) -> str:
+    """Filter the schema based on included or excluded types"""
+
+    def filter_func(x: str) -> bool:
+        return x in include_types if include_types else x not in exclude_types
+
+    filtered_schema = {
+        "node_props": {
+            k: v
+            for k, v in structured_schema.get("node_props", {}).items()
+            if filter_func(k)
+        },
+        "rel_props": {
+            k: v
+            for k, v in structured_schema.get("rel_props", {}).items()
+            if filter_func(k)
+        },
+        "relationships": [
+            r
+            for r in structured_schema.get("relationships", [])
+            if all(filter_func(r[t]) for t in ["start", "end", "type"])
+        ],
+    }
+
+    return (
+        f"Node properties are the following: \n {filtered_schema['node_props']}\n"
+        f"Relationships properties are the following: \n {filtered_schema['rel_props']}"
+        "\nRelationships are: \n"
+        + str(
+            [
+                f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
+                for el in filtered_schema["relationships"]
+            ]
+        )
+    )
+
+
 class GraphCypherQAChain(Chain):
     """Chain for question-answering against a graph by generating Cypher statements."""
 
     graph: Neo4jGraph = Field(exclude=True)
     cypher_generation_chain: LLMChain
     qa_chain: LLMChain
+    graph_schema: str
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
     top_k: int = 10
@@ -79,6 +121,8 @@ class GraphCypherQAChain(Chain):
         cypher_prompt: BasePromptTemplate = CYPHER_GENERATION_PROMPT,
         cypher_llm: Optional[BaseLanguageModel] = None,
         qa_llm: Optional[BaseLanguageModel] = None,
+        exclude_types: List[str] = [],
+        include_types: List[str] = [],
         **kwargs: Any,
     ) -> GraphCypherQAChain:
         """Initialize from LLM."""
@@ -96,7 +140,18 @@ class GraphCypherQAChain(Chain):
         qa_chain = LLMChain(llm=qa_llm or llm, prompt=qa_prompt)
         cypher_generation_chain = LLMChain(llm=cypher_llm or llm, prompt=cypher_prompt)
 
+        if exclude_types and include_types:
+            raise ValueError(
+                "Either `exclude_types` or `include_types` "
+                "can be provided, but not both"
+            )
+
+        graph_schema = construct_schema(
+            kwargs["graph"].structured_schema, include_types, exclude_types
+        )
+
         return cls(
+            graph_schema=graph_schema,
             qa_chain=qa_chain,
             cypher_generation_chain=cypher_generation_chain,
             **kwargs,
@@ -115,7 +170,7 @@ class GraphCypherQAChain(Chain):
         intermediate_steps: List = []
 
         generated_cypher = self.cypher_generation_chain.run(
-            {"question": question, "schema": self.graph.get_schema}, callbacks=callbacks
+            {"question": question, "schema": self.graph_schema}, callbacks=callbacks
         )
 
         # Extract Cypher code if it is wrapped in backticks

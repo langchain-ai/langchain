@@ -32,6 +32,7 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
+    from langchain.callbacks.tracers.log_stream import RunLogPatch
 
 
 from langchain.load.dump import dumpd
@@ -190,6 +191,95 @@ class Runnable(Generic[Input, Output], ABC):
         """
         yield await self.ainvoke(input, config, **kwargs)
 
+    async def astream_log(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        *,
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[RunLogPatch]:
+        """
+        Stream all output from a runnable, as reported to the callback system.
+        This includes all inner runs of LLMs, Retrievers, Tools, etc.
+
+        Output is streamed as Log objects, which include a list of
+        jsonpatch ops that describe how the state of the run has changed in each
+        step, and the final state of the run.
+
+        The jsonpatch ops can be applied in order to construct state.
+        """
+
+        from langchain.callbacks.base import BaseCallbackManager
+        from langchain.callbacks.tracers.log_stream import (
+            LogStreamCallbackHandler,
+            RunLogPatch,
+        )
+
+        # Create a stream handler that will emit Log objects
+        stream = LogStreamCallbackHandler(
+            auto_close=False,
+            include_names=include_names,
+            include_types=include_types,
+            include_tags=include_tags,
+            exclude_names=exclude_names,
+            exclude_types=exclude_types,
+            exclude_tags=exclude_tags,
+        )
+
+        # Assign the stream handler to the config
+        config = config or {}
+        callbacks = config.get("callbacks")
+        if callbacks is None:
+            config["callbacks"] = [stream]
+        elif isinstance(callbacks, list):
+            config["callbacks"] = callbacks + [stream]
+        elif isinstance(callbacks, BaseCallbackManager):
+            callbacks = callbacks.copy()
+            callbacks.inheritable_handlers.append(stream)
+            config["callbacks"] = callbacks
+        else:
+            raise ValueError(
+                f"Unexpected type for callbacks: {callbacks}."
+                "Expected None, list or AsyncCallbackManager."
+            )
+
+        # Call the runnable in streaming mode,
+        # add each chunk to the output stream
+        async def consume_astream() -> None:
+            try:
+                async for chunk in self.astream(input, config, **kwargs):
+                    await stream.send_stream.send(
+                        RunLogPatch(
+                            {
+                                "op": "add",
+                                "path": "/streamed_output/-",
+                                "value": chunk,
+                            }
+                        )
+                    )
+            finally:
+                await stream.send_stream.aclose()
+
+        # Start the runnable in a task, so we can start consuming output
+        task = asyncio.create_task(consume_astream())
+
+        try:
+            # Yield each chunk from the output stream
+            async for log in stream:
+                yield log
+        finally:
+            # Wait for the runnable to finish, if not cancelled (eg. by break)
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
     def transform(
         self,
         input: Iterator[Input],
@@ -201,16 +291,19 @@ class Runnable(Generic[Input, Output], ABC):
         Subclasses should override this method if they can start producing output while
         input is still being generated.
         """
-        final: Union[Input, None] = None
+        final: Input
+        got_first_val = False
 
         for chunk in input:
-            if final is None:
+            if not got_first_val:
                 final = chunk
+                got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
-        if final:
+
+        if got_first_val:
             yield from self.stream(final, config, **kwargs)
 
     async def atransform(
@@ -224,17 +317,19 @@ class Runnable(Generic[Input, Output], ABC):
         Subclasses should override this method if they can start producing output while
         input is still being generated.
         """
-        final: Union[Input, None] = None
+        final: Input
+        got_first_val = False
 
         async for chunk in input:
-            if final is None:
+            if not got_first_val:
                 final = chunk
+                got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
 
-        if final:
+        if got_first_val:
             async for output in self.astream(final, config, **kwargs):
                 yield output
 
@@ -744,15 +839,15 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
     class Config:
         arbitrary_types_allowed = True
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         """RunnableBranch is serializable if all its branches are serializable."""
         return True
 
-    @property
-    def lc_namespace(self) -> List[str]:
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
         """The namespace of a RunnableBranch is the namespace of its default branch."""
-        return self.__class__.__module__.split(".")[:-1]
+        return cls.__module__.split(".")[:-1]
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         """First evaluates the condition, then delegate to true or false branch."""
@@ -777,20 +872,21 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                 )
 
                 if expression_value:
-                    return runnable.invoke(
+                    output = runnable.invoke(
                         input,
                         config=patch_config(
                             config,
                             callbacks=run_manager.get_child(tag=f"branch:{idx + 1}"),
                         ),
                     )
-
-            output = self.default.invoke(
-                input,
-                config=patch_config(
-                    config, callbacks=run_manager.get_child(tag="branch:default")
-                ),
-            )
+                    break
+            else:
+                output = self.default.invoke(
+                    input,
+                    config=patch_config(
+                        config, callbacks=run_manager.get_child(tag="branch:default")
+                    ),
+                )
         except Exception as e:
             run_manager.on_chain_error(e)
             raise
@@ -821,7 +917,7 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                 )
 
                 if expression_value:
-                    return await runnable.ainvoke(
+                    output = await runnable.ainvoke(
                         input,
                         config=patch_config(
                             config,
@@ -829,14 +925,15 @@ class RunnableBranch(Serializable, Runnable[Input, Output]):
                         ),
                         **kwargs,
                     )
-
-            output = await self.default.ainvoke(
-                input,
-                config=patch_config(
-                    config, callbacks=run_manager.get_child(tag="branch:default")
-                ),
-                **kwargs,
-            )
+                    break
+            else:
+                output = await self.default.ainvoke(
+                    input,
+                    config=patch_config(
+                        config, callbacks=run_manager.get_child(tag="branch:default")
+                    ),
+                    **kwargs,
+                )
         except Exception as e:
             run_manager.on_chain_error(e)
             raise
@@ -856,13 +953,13 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
     class Config:
         arbitrary_types_allowed = True
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
-    @property
-    def lc_namespace(self) -> List[str]:
-        return self.__class__.__module__.split(".")[:-1]
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        return cls.__module__.split(".")[:-1]
 
     @property
     def runnables(self) -> Iterator[Runnable[Input, Output]]:
@@ -1094,13 +1191,13 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
     def steps(self) -> List[Runnable[Any, Any]]:
         return [self.first] + self.middle + [self.last]
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
-    @property
-    def lc_namespace(self) -> List[str]:
-        return self.__class__.__module__.split(".")[:-1]
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        return cls.__module__.split(".")[:-1]
 
     class Config:
         arbitrary_types_allowed = True
@@ -1584,13 +1681,13 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     ) -> None:
         super().__init__(steps={key: coerce_to_runnable(r) for key, r in steps.items()})
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
-    @property
-    def lc_namespace(self) -> List[str]:
-        return self.__class__.__module__.split(".")[:-1]
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        return cls.__module__.split(".")[:-1]
 
     class Config:
         arbitrary_types_allowed = True
@@ -1628,7 +1725,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                         # mark each step as a child run
                         patch_config(
                             config,
-                            deep_copy_locals=True,
+                            copy_locals=True,
                             callbacks=run_manager.get_child(f"map:key:{key}"),
                         ),
                     )
@@ -1971,13 +2068,13 @@ class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
     class Config:
         arbitrary_types_allowed = True
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
-    @property
-    def lc_namespace(self) -> List[str]:
-        return self.__class__.__module__.split(".")[:-1]
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        return cls.__module__.split(".")[:-1]
 
     def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
         return RunnableEach(bound=self.bound.bind(**kwargs))
@@ -2027,13 +2124,13 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     class Config:
         arbitrary_types_allowed = True
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
-    @property
-    def lc_namespace(self) -> List[str]:
-        return self.__class__.__module__.split(".")[:-1]
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        return cls.__module__.split(".")[:-1]
 
     def _merge_config(self, config: Optional[RunnableConfig]) -> RunnableConfig:
         copy = cast(RunnableConfig, dict(self.config))
@@ -2111,7 +2208,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             )
         else:
             configs = [
-                patch_config(self._merge_config(config), deep_copy_locals=True)
+                patch_config(self._merge_config(config), copy_locals=True)
                 for _ in range(len(inputs))
             ]
         return self.bound.batch(
@@ -2135,7 +2232,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             )
         else:
             configs = [
-                patch_config(self._merge_config(config), deep_copy_locals=True)
+                patch_config(self._merge_config(config), copy_locals=True)
                 for _ in range(len(inputs))
             ]
         return await self.bound.abatch(
