@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, AsyncIterator, Iterator, List, Optional
+from typing import Any, AsyncIterator, Iterator, List, Optional, Type
 
 from langchain.load.serializable import Serializable
 from langchain.schema.runnable.base import Input, Runnable
@@ -20,13 +20,23 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
     A runnable that passes through the input.
     """
 
-    @property
-    def lc_serializable(self) -> bool:
+    input_type: Optional[Type[Input]] = None
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        return cls.__module__.split(".")[:-1]
+
     @property
-    def lc_namespace(self) -> List[str]:
-        return self.__class__.__module__.split(".")[:-1]
+    def InputType(self) -> Any:
+        return self.input_type or Any
+
+    @property
+    def OutputType(self) -> Any:
+        return self.input_type or Any
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
         return self._call_with_config(identity, input, config)

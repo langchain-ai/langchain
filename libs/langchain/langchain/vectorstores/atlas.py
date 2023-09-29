@@ -8,7 +8,7 @@ import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.vectorstore import VectorStore
 
 logger = logging.getLogger(__name__)
 

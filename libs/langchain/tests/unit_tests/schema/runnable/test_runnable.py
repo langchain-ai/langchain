@@ -1,5 +1,16 @@
+import sys
 from operator import itemgetter
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 import pytest
@@ -7,10 +18,13 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
-from langchain.callbacks.manager import Callbacks
+from langchain.callbacks.manager import Callbacks, collect_runs
 from langchain.callbacks.tracers.base import BaseTracer
+from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.callbacks.tracers.schemas import Run
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
+from langchain.chains.question_answering import load_qa_chain
+from langchain.chains.summarize import load_summarize_chain
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
@@ -42,6 +56,9 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
+from langchain.schema.runnable.base import RunnableGenerator
+from langchain.tools.base import BaseTool, tool
+from langchain.tools.json.tool import JsonListKeysTool, JsonSpec
 
 
 class FakeTracer(BaseTracer):
@@ -112,6 +129,412 @@ class FakeRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         return [Document(page_content="foo"), Document(page_content="bar")]
+
+
+def test_schemas(snapshot: SnapshotAssertion) -> None:
+    fake = FakeRunnable()  # str -> int
+
+    assert fake.input_schema.schema() == {
+        "title": "FakeRunnableInput",
+        "type": "string",
+    }
+    assert fake.output_schema.schema() == {
+        "title": "FakeRunnableOutput",
+        "type": "integer",
+    }
+
+    fake_bound = FakeRunnable().bind(a="b")  # str -> int
+
+    assert fake_bound.input_schema.schema() == {
+        "title": "FakeRunnableInput",
+        "type": "string",
+    }
+    assert fake_bound.output_schema.schema() == {
+        "title": "FakeRunnableOutput",
+        "type": "integer",
+    }
+
+    fake_w_fallbacks = FakeRunnable().with_fallbacks((fake,))  # str -> int
+
+    assert fake_w_fallbacks.input_schema.schema() == {
+        "title": "FakeRunnableInput",
+        "type": "string",
+    }
+    assert fake_w_fallbacks.output_schema.schema() == {
+        "title": "FakeRunnableOutput",
+        "type": "integer",
+    }
+
+    def typed_lambda_impl(x: str) -> int:
+        return len(x)
+
+    typed_lambda = RunnableLambda(typed_lambda_impl)  # str -> int
+
+    assert typed_lambda.input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "string",
+    }
+    assert typed_lambda.output_schema.schema() == {
+        "title": "RunnableLambdaOutput",
+        "type": "integer",
+    }
+
+    async def typed_async_lambda_impl(x: str) -> int:
+        return len(x)
+
+    typed_async_lambda: Runnable = RunnableLambda(typed_async_lambda_impl)  # str -> int
+
+    assert typed_async_lambda.input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "string",
+    }
+    assert typed_async_lambda.output_schema.schema() == {
+        "title": "RunnableLambdaOutput",
+        "type": "integer",
+    }
+
+    fake_ret = FakeRetriever()  # str -> List[Document]
+
+    assert fake_ret.input_schema.schema() == {
+        "title": "FakeRetrieverInput",
+        "type": "string",
+    }
+    assert fake_ret.output_schema.schema() == {
+        "title": "FakeRetrieverOutput",
+        "type": "array",
+        "items": {"$ref": "#/definitions/Document"},
+        "definitions": {
+            "Document": {
+                "title": "Document",
+                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "page_content": {"title": "Page Content", "type": "string"},
+                    "metadata": {"title": "Metadata", "type": "object"},
+                },
+                "required": ["page_content"],
+            }
+        },
+    }
+
+    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+
+    assert fake_llm.input_schema.schema() == snapshot
+    assert fake_llm.output_schema.schema() == {
+        "title": "FakeListLLMOutput",
+        "type": "string",
+    }
+
+    fake_chat = FakeListChatModel(responses=["a"])  # str -> List[List[str]]
+
+    assert fake_chat.input_schema.schema() == snapshot
+    assert fake_chat.output_schema.schema() == snapshot
+
+    prompt = PromptTemplate.from_template("Hello, {name}!")
+
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"name": {"title": "Name"}},
+    }
+    assert prompt.output_schema.schema() == snapshot
+
+    prompt_mapper = PromptTemplate.from_template("Hello, {name}!").map()
+
+    assert prompt_mapper.input_schema.schema() == {
+        "definitions": {
+            "PromptInput": {
+                "properties": {"name": {"title": "Name"}},
+                "title": "PromptInput",
+                "type": "object",
+            }
+        },
+        "items": {"$ref": "#/definitions/PromptInput"},
+        "type": "array",
+        "title": "RunnableEachInput",
+    }
+    assert prompt_mapper.output_schema.schema() == snapshot
+
+    list_parser = CommaSeparatedListOutputParser()
+
+    assert list_parser.input_schema.schema() == snapshot
+    assert list_parser.output_schema.schema() == {
+        "title": "CommaSeparatedListOutputParserOutput",
+        "type": "array",
+        "items": {"type": "string"},
+    }
+
+    seq = prompt | fake_llm | list_parser
+
+    assert seq.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"name": {"title": "Name"}},
+    }
+    assert seq.output_schema.schema() == {
+        "type": "array",
+        "items": {"type": "string"},
+        "title": "CommaSeparatedListOutputParserOutput",
+    }
+
+    router: Runnable = RouterRunnable({})
+
+    assert router.input_schema.schema() == {
+        "title": "RouterRunnableInput",
+        "$ref": "#/definitions/RouterInput",
+        "definitions": {
+            "RouterInput": {
+                "title": "RouterInput",
+                "type": "object",
+                "properties": {
+                    "key": {"title": "Key", "type": "string"},
+                    "input": {"title": "Input"},
+                },
+                "required": ["key", "input"],
+            }
+        },
+    }
+    assert router.output_schema.schema() == {"title": "RouterRunnableOutput"}
+
+    seq_w_map: Runnable = (
+        prompt
+        | fake_llm
+        | {
+            "original": RunnablePassthrough(input_type=str),
+            "as_list": list_parser,
+            "length": typed_lambda_impl,
+        }
+    )
+
+    assert seq_w_map.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"name": {"title": "Name"}},
+    }
+    assert seq_w_map.output_schema.schema() == {
+        "title": "RunnableMapOutput",
+        "type": "object",
+        "properties": {
+            "original": {"title": "Original", "type": "string"},
+            "length": {"title": "Length", "type": "integer"},
+            "as_list": {
+                "title": "As List",
+                "type": "array",
+                "items": {"type": "string"},
+            },
+        },
+    }
+
+    json_list_keys_tool = JsonListKeysTool(spec=JsonSpec(dict_={}))
+
+    assert json_list_keys_tool.input_schema.schema() == {
+        "title": "json_spec_list_keysSchema",
+        "type": "object",
+        "properties": {"tool_input": {"title": "Tool Input", "type": "string"}},
+        "required": ["tool_input"],
+    }
+    assert json_list_keys_tool.output_schema.schema() == {
+        "title": "JsonListKeysToolOutput"
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
+def test_lambda_schemas() -> None:
+    first_lambda = lambda x: x["hello"]  # noqa: E731
+    assert RunnableLambda(first_lambda).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"hello": {"title": "Hello"}},
+    }
+
+    second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
+    assert RunnableLambda(
+        second_lambda,  # type: ignore[arg-type]
+    ).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
+    }
+
+    def get_value(input):  # type: ignore[no-untyped-def]
+        return input["variable_name"]
+
+    assert RunnableLambda(get_value).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"variable_name": {"title": "Variable Name"}},
+    }
+
+    async def aget_value(input):  # type: ignore[no-untyped-def]
+        return (input["variable_name"], input.get("another"))
+
+    assert RunnableLambda(aget_value).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {
+            "another": {"title": "Another"},
+            "variable_name": {"title": "Variable Name"},
+        },
+    }
+
+    async def aget_values(input):  # type: ignore[no-untyped-def]
+        return {
+            "hello": input["variable_name"],
+            "bye": input["variable_name"],
+            "byebye": input["yo"],
+        }
+
+    assert RunnableLambda(aget_values).input_schema.schema() == {
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {
+            "variable_name": {"title": "Variable Name"},
+            "yo": {"title": "Yo"},
+        },
+    }
+
+
+def test_schema_complex_seq() -> None:
+    prompt1 = ChatPromptTemplate.from_template("what is the city {person} is from?")
+    prompt2 = ChatPromptTemplate.from_template(
+        "what country is the city {city} in? respond in {language}"
+    )
+
+    model = FakeListChatModel(responses=[""])
+
+    chain1 = prompt1 | model | StrOutputParser()
+
+    chain2: Runnable = (
+        {"city": chain1, "language": itemgetter("language")}
+        | prompt2
+        | model
+        | StrOutputParser()
+    )
+
+    assert chain2.input_schema.schema() == {
+        "title": "RunnableMapInput",
+        "type": "object",
+        "properties": {
+            "person": {"title": "Person"},
+            "language": {"title": "Language"},
+        },
+    }
+
+    assert chain2.output_schema.schema() == {
+        "title": "StrOutputParserOutput",
+        "type": "string",
+    }
+
+
+def test_schema_chains() -> None:
+    model = FakeListChatModel(responses=[""])
+
+    stuff_chain = load_summarize_chain(model)
+
+    assert stuff_chain.input_schema.schema() == {
+        "title": "CombineDocumentsInput",
+        "type": "object",
+        "properties": {
+            "input_documents": {
+                "title": "Input Documents",
+                "type": "array",
+                "items": {"$ref": "#/definitions/Document"},
+            }
+        },
+        "definitions": {
+            "Document": {
+                "title": "Document",
+                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "page_content": {"title": "Page Content", "type": "string"},
+                    "metadata": {"title": "Metadata", "type": "object"},
+                },
+                "required": ["page_content"],
+            }
+        },
+    }
+    assert stuff_chain.output_schema.schema() == {
+        "title": "CombineDocumentsOutput",
+        "type": "object",
+        "properties": {"output_text": {"title": "Output Text", "type": "string"}},
+    }
+
+    mapreduce_chain = load_summarize_chain(
+        model, "map_reduce", return_intermediate_steps=True
+    )
+
+    assert mapreduce_chain.input_schema.schema() == {
+        "title": "CombineDocumentsInput",
+        "type": "object",
+        "properties": {
+            "input_documents": {
+                "title": "Input Documents",
+                "type": "array",
+                "items": {"$ref": "#/definitions/Document"},
+            }
+        },
+        "definitions": {
+            "Document": {
+                "title": "Document",
+                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "page_content": {"title": "Page Content", "type": "string"},
+                    "metadata": {"title": "Metadata", "type": "object"},
+                },
+                "required": ["page_content"],
+            }
+        },
+    }
+    assert mapreduce_chain.output_schema.schema() == {
+        "title": "MapReduceDocumentsOutput",
+        "type": "object",
+        "properties": {
+            "output_text": {"title": "Output Text", "type": "string"},
+            "intermediate_steps": {
+                "title": "Intermediate Steps",
+                "type": "array",
+                "items": {"type": "string"},
+            },
+        },
+    }
+
+    maprerank_chain = load_qa_chain(model, "map_rerank", metadata_keys=["hello"])
+
+    assert maprerank_chain.input_schema.schema() == {
+        "title": "CombineDocumentsInput",
+        "type": "object",
+        "properties": {
+            "input_documents": {
+                "title": "Input Documents",
+                "type": "array",
+                "items": {"$ref": "#/definitions/Document"},
+            }
+        },
+        "definitions": {
+            "Document": {
+                "title": "Document",
+                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "page_content": {"title": "Page Content", "type": "string"},
+                    "metadata": {"title": "Metadata", "type": "object"},
+                },
+                "required": ["page_content"],
+            }
+        },
+    }
+    assert maprerank_chain.output_schema.schema() == {
+        "title": "MapRerankOutput",
+        "type": "object",
+        "properties": {
+            "output_text": {"title": "Output Text", "type": "string"},
+            "hello": {"title": "Hello"},
+        },
+    }
 
 
 @pytest.mark.asyncio
@@ -215,7 +638,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -225,7 +648,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -296,7 +719,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=10,
             ),
         ),
@@ -306,7 +729,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                _locals={},
+                locals={},
                 recursion_limit=10,
             ),
         ),
@@ -368,6 +791,62 @@ async def test_prompt() -> None:
         part async for part in prompt.astream({"question": "What is your name?"})
     ] == [expected]
 
+    stream_log = [
+        part async for part in prompt.astream_log({"question": "What is your name?"})
+    ]
+
+    assert len(stream_log[0].ops) == 1
+    assert stream_log[0].ops[0]["op"] == "replace"
+    assert stream_log[0].ops[0]["path"] == ""
+    assert stream_log[0].ops[0]["value"]["logs"] == []
+    assert stream_log[0].ops[0]["value"]["final_output"] is None
+    assert stream_log[0].ops[0]["value"]["streamed_output"] == []
+    assert isinstance(stream_log[0].ops[0]["value"]["id"], str)
+
+    assert stream_log[1:] == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "/final_output",
+                "value": {
+                    "id": ["langchain", "prompts", "chat", "ChatPromptValue"],
+                    "kwargs": {
+                        "messages": [
+                            {
+                                "id": [
+                                    "langchain",
+                                    "schema",
+                                    "messages",
+                                    "SystemMessage",
+                                ],
+                                "kwargs": {"content": "You are a nice " "assistant."},
+                                "lc": 1,
+                                "type": "constructor",
+                            },
+                            {
+                                "id": [
+                                    "langchain",
+                                    "schema",
+                                    "messages",
+                                    "HumanMessage",
+                                ],
+                                "kwargs": {
+                                    "additional_kwargs": {},
+                                    "content": "What is your " "name?",
+                                },
+                                "lc": 1,
+                                "type": "constructor",
+                            },
+                        ]
+                    },
+                    "lc": 1,
+                    "type": "constructor",
+                },
+            }
+        ),
+        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
+    ]
+
 
 def test_prompt_template_params() -> None:
     prompt = ChatPromptTemplate.from_template(
@@ -400,6 +879,7 @@ async def test_prompt_with_chat_model(
 
     chain = prompt | chat
 
+    assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == []
@@ -560,7 +1040,7 @@ async def test_prompt_with_llm(
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
 
-    # Test stream#
+    # Test stream
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
     llm_spy = mocker.spy(llm.__class__, "astream")
     tracer = FakeTracer()
@@ -577,6 +1057,136 @@ async def test_prompt_with_llm(
             HumanMessage(content="What is your name?"),
         ]
     )
+
+    prompt_spy.reset_mock()
+    llm_spy.reset_mock()
+    stream_log = [
+        part async for part in chain.astream_log({"question": "What is your name?"})
+    ]
+
+    # remove ids from logs
+    for part in stream_log:
+        for op in part.ops:
+            if (
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
+            ):
+                del op["value"]["id"]
+
+    assert stream_log == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "",
+                "value": {
+                    "logs": [],
+                    "final_output": None,
+                    "streamed_output": [],
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/0",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "ChatPromptTemplate",
+                    "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output_str": [],
+                    "tags": ["seq:step:1"],
+                    "type": "prompt",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/0/final_output",
+                "value": {
+                    "id": ["langchain", "prompts", "chat", "ChatPromptValue"],
+                    "kwargs": {
+                        "messages": [
+                            {
+                                "id": [
+                                    "langchain",
+                                    "schema",
+                                    "messages",
+                                    "SystemMessage",
+                                ],
+                                "kwargs": {
+                                    "additional_kwargs": {},
+                                    "content": "You are a nice " "assistant.",
+                                },
+                                "lc": 1,
+                                "type": "constructor",
+                            },
+                            {
+                                "id": [
+                                    "langchain",
+                                    "schema",
+                                    "messages",
+                                    "HumanMessage",
+                                ],
+                                "kwargs": {
+                                    "additional_kwargs": {},
+                                    "content": "What is your " "name?",
+                                },
+                                "lc": 1,
+                                "type": "constructor",
+                            },
+                        ]
+                    },
+                    "lc": 1,
+                    "type": "constructor",
+                },
+            },
+            {
+                "op": "add",
+                "path": "/logs/0/end_time",
+                "value": "2023-01-01T00:00:00.000",
+            },
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/1",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "FakeListLLM",
+                    "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output_str": [],
+                    "tags": ["seq:step:2"],
+                    "type": "llm",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/1/final_output",
+                "value": {
+                    "generations": [[{"generation_info": None, "text": "foo"}]],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            {
+                "op": "add",
+                "path": "/logs/1/end_time",
+                "value": "2023-01-01T00:00:00.000",
+            },
+        ),
+        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": "foo"}),
+        RunLogPatch(
+            {"op": "replace", "path": "/final_output", "value": {"output": "foo"}}
+        ),
+    ]
 
 
 @pytest.mark.asyncio
@@ -679,7 +1289,8 @@ def test_combining_sequences(
     assert chain.first == prompt
     assert chain.middle == [chat]
     assert chain.last == parser
-    assert dumps(chain, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(chain, pretty=True) == snapshot
 
     prompt2 = (
         SystemMessagePromptTemplate.from_template("You are a nicer assistant.")
@@ -697,7 +1308,8 @@ def test_combining_sequences(
     assert chain2.first == input_formatter
     assert chain2.middle == [prompt2, chat2]
     assert chain2.last == parser2
-    assert dumps(chain2, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(chain2, pretty=True) == snapshot
 
     combined_chain = chain | chain2
 
@@ -710,7 +1322,8 @@ def test_combining_sequences(
         chat2,
     ]
     assert combined_chain.last == parser2
-    assert dumps(combined_chain, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(combined_chain, pretty=True) == snapshot
 
     # Test invoke
     tracer = FakeTracer()
@@ -718,7 +1331,8 @@ def test_combining_sequences(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == ["baz", "qux"]
 
-    assert tracer.runs == snapshot
+    if sys.version_info >= (3, 9):
+        assert tracer.runs == snapshot
 
 
 @freeze_time("2023-01-01")
@@ -753,6 +1367,7 @@ Question:
         | parser
     )
 
+    assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert isinstance(chain.first, RunnableMap)
     assert chain.middle == [prompt, chat]
@@ -778,7 +1393,7 @@ Question:
             SystemMessage(content="You are a nice assistant."),
             HumanMessage(
                 content="""Context:
-[Document(page_content='foo', metadata={}), Document(page_content='bar', metadata={})]
+[Document(page_content='foo'), Document(page_content='bar')]
 
 Question:
 What is your name?"""
@@ -816,6 +1431,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
         }
     )
 
+    assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]
@@ -1213,6 +1829,74 @@ async def test_map_astream() -> None:
         {"question": "What is your name?"}
     )
 
+    # Test astream_log state accumulation
+
+    final_state = None
+    streamed_ops = []
+    async for chunk in chain.astream_log({"question": "What is your name?"}):
+        streamed_ops.extend(chunk.ops)
+        if final_state is None:
+            final_state = chunk
+        else:
+            final_state += chunk
+    final_state = cast(RunLog, final_state)
+
+    assert final_state.state["final_output"] == final_value
+    assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
+    assert isinstance(final_state.state["id"], str)
+    assert len(final_state.ops) == len(streamed_ops)
+    assert len(final_state.state["logs"]) == 5
+    assert final_state.state["logs"][0]["name"] == "ChatPromptTemplate"
+    assert final_state.state["logs"][0]["final_output"] == dumpd(
+        prompt.invoke({"question": "What is your name?"})
+    )
+    assert final_state.state["logs"][1]["name"] == "RunnableMap"
+    assert sorted(log["name"] for log in final_state.state["logs"][2:]) == [
+        "FakeListChatModel",
+        "FakeStreamingListLLM",
+        "RunnablePassthrough",
+    ]
+
+    # Test astream_log with include filters
+    final_state = None
+    async for chunk in chain.astream_log(
+        {"question": "What is your name?"}, include_names=["FakeListChatModel"]
+    ):
+        if final_state is None:
+            final_state = chunk
+        else:
+            final_state += chunk
+    final_state = cast(RunLog, final_state)
+
+    assert final_state.state["final_output"] == final_value
+    assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
+    assert len(final_state.state["logs"]) == 1
+    assert final_state.state["logs"][0]["name"] == "FakeListChatModel"
+
+    # Test astream_log with exclude filters
+    final_state = None
+    async for chunk in chain.astream_log(
+        {"question": "What is your name?"}, exclude_names=["FakeListChatModel"]
+    ):
+        if final_state is None:
+            final_state = chunk
+        else:
+            final_state += chunk
+    final_state = cast(RunLog, final_state)
+
+    assert final_state.state["final_output"] == final_value
+    assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
+    assert len(final_state.state["logs"]) == 4
+    assert final_state.state["logs"][0]["name"] == "ChatPromptTemplate"
+    assert final_state.state["logs"][0]["final_output"] == dumpd(
+        prompt.invoke({"question": "What is your name?"})
+    )
+    assert final_state.state["logs"][1]["name"] == "RunnableMap"
+    assert sorted(log["name"] for log in final_state.state["logs"][2:]) == [
+        "FakeStreamingListLLM",
+        "RunnablePassthrough",
+    ]
+
 
 @pytest.mark.asyncio
 async def test_map_astream_iterator_input() -> None:
@@ -1269,6 +1953,31 @@ def test_with_config_with_config() -> None:
     assert dumpd(
         llm.with_config({"metadata": {"a": "b"}}).with_config(tags=["a-tag"])
     ) == dumpd(llm.with_config({"metadata": {"a": "b"}, "tags": ["a-tag"]}))
+
+
+def test_metadata_is_merged() -> None:
+    """Test metadata and tags defined in with_config and at are merged/concatend."""
+
+    foo = RunnableLambda(lambda x: x).with_config({"metadata": {"my_key": "my_value"}})
+    expected_metadata = {
+        "my_key": "my_value",
+        "my_other_key": "my_other_value",
+    }
+    with collect_runs() as cb:
+        foo.invoke("hi", {"metadata": {"my_other_key": "my_other_value"}})
+        run = cb.traced_runs[0]
+    assert run.extra["metadata"] == expected_metadata
+
+
+def test_tags_are_appended() -> None:
+    """Test tags from with_config are concatenated with those in invocation."""
+
+    foo = RunnableLambda(lambda x: x).with_config({"tags": ["my_key"]})
+    with collect_runs() as cb:
+        foo.invoke("hi", {"tags": ["invoked_key"]})
+        run = cb.traced_runs[0]
+    assert isinstance(run.tags, list)
+    assert sorted(run.tags) == sorted(["my_key", "invoked_key"])
 
 
 def test_bind_bind() -> None:
@@ -1408,14 +2117,16 @@ async def test_llm_with_fallbacks(
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
-    assert dumps(runnable, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(runnable, pretty=True) == snapshot
 
 
 class FakeSplitIntoListParser(BaseOutputParser[List[str]]):
     """Parse the output of an LLM call to a comma-separated list."""
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return True
 
     def get_format_instructions(self) -> str:
@@ -1505,6 +2216,7 @@ def test_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(RuntimeError):
         runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).invoke(2)
 
@@ -1514,6 +2226,7 @@ def test_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).batch([1, 2, 0])
 
@@ -1523,6 +2236,7 @@ def test_retrying(mocker: MockerFixture) -> None:
 
     output = runnable.with_retry(
         stop_after_attempt=2,
+        wait_exponential_jitter=False,
         retry_if_exception_type=(ValueError,),
     ).batch([1, 2, 0], return_exceptions=True)
 
@@ -1557,6 +2271,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         await runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError, KeyError),
         ).ainvoke(1)
 
@@ -1566,6 +2281,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(RuntimeError):
         await runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).ainvoke(2)
 
@@ -1575,6 +2291,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         await runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).abatch([1, 2, 0])
 
@@ -1584,6 +2301,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
 
     output = await runnable.with_retry(
         stop_after_attempt=2,
+        wait_exponential_jitter=False,
         retry_if_exception_type=(ValueError,),
     ).abatch([1, 2, 0], return_exceptions=True)
 
@@ -1879,6 +2597,7 @@ def test_runnable_branch_init_coercion(branches: Sequence[Any]) -> None:
         assert isinstance(body, Runnable)
 
     assert isinstance(runnable.default, Runnable)
+    assert runnable.input_schema.schema() == {"title": "RunnableBranchInput"}
 
 
 def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:
@@ -2037,3 +2756,145 @@ async def test_runnable_branch_abatch() -> None:
     )
 
     assert await branch.abatch([1, 10, 0]) == [2, 100, -1]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
+def test_representation_of_runnables() -> None:
+    """Test representation of runnables."""
+    runnable = RunnableLambda(lambda x: x * 2)
+    assert repr(runnable) == "RunnableLambda(lambda x: x * 2)"
+
+    def f(x: int) -> int:
+        """Return 2."""
+        return 2
+
+    assert repr(RunnableLambda(func=f)) == "RunnableLambda(...)"
+
+    async def af(x: int) -> int:
+        """Return 2."""
+        return 2
+
+    assert repr(RunnableLambda(func=f, afunc=af)) == "RunnableLambda(...)"
+
+    assert repr(
+        RunnableLambda(lambda x: x + 2)
+        | {
+            "a": RunnableLambda(lambda x: x * 2),
+            "b": RunnableLambda(lambda x: x * 3),
+        }
+    ) == (
+        "RunnableLambda(...)\n"
+        "| {\n"
+        "    a: RunnableLambda(...),\n"
+        "    b: RunnableLambda(...)\n"
+        "  }"
+    ), "repr where code string contains multiple lambdas gives up"
+
+
+@pytest.mark.asyncio
+async def test_tool_from_runnable() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = prompt | llm | StrOutputParser()
+
+    chain_tool = tool("chain_tool", chain)
+
+    assert isinstance(chain_tool, BaseTool)
+    assert chain_tool.name == "chain_tool"
+    assert chain_tool.run({"question": "What up"}) == chain.invoke(
+        {"question": "What up"}
+    )
+    assert await chain_tool.arun({"question": "What up"}) == await chain.ainvoke(
+        {"question": "What up"}
+    )
+    assert chain_tool.description.endswith(repr(chain))
+    assert chain_tool.args_schema.schema() == chain.input_schema.schema()
+    assert chain_tool.args_schema.schema() == {
+        "properties": {"question": {"title": "Question"}},
+        "title": "PromptInput",
+        "type": "object",
+    }
+
+
+@pytest.mark.asyncio
+async def test_runnable_gen() -> None:
+    """Test that a generator can be used as a runnable."""
+
+    def gen(input: Iterator[Any]) -> Iterator[int]:
+        yield 1
+        yield 2
+        yield 3
+
+    runnable = RunnableGenerator(gen)
+
+    assert runnable.input_schema.schema() == {"title": "RunnableGeneratorInput"}
+    assert runnable.output_schema.schema() == {
+        "title": "RunnableGeneratorOutput",
+        "type": "integer",
+    }
+
+    assert runnable.invoke(None) == 6
+    assert list(runnable.stream(None)) == [1, 2, 3]
+    assert runnable.batch([None, None]) == [6, 6]
+
+    async def agen(input: AsyncIterator[Any]) -> AsyncIterator[int]:
+        yield 1
+        yield 2
+        yield 3
+
+    arunnable = RunnableGenerator(agen)
+
+    assert await arunnable.ainvoke(None) == 6
+    assert [p async for p in arunnable.astream(None)] == [1, 2, 3]
+    assert await arunnable.abatch([None, None]) == [6, 6]
+
+
+@pytest.mark.asyncio
+async def test_runnable_gen_transform() -> None:
+    """Test that a generator can be used as a runnable."""
+
+    def gen_indexes(length_iter: Iterator[int]) -> Iterator[int]:
+        for i in range(next(length_iter)):
+            yield i
+
+    async def agen_indexes(length_iter: AsyncIterator[int]) -> AsyncIterator[int]:
+        async for length in length_iter:
+            for i in range(length):
+                yield i
+
+    def plus_one(input: Iterator[int]) -> Iterator[int]:
+        for i in input:
+            yield i + 1
+
+    async def aplus_one(input: AsyncIterator[int]) -> AsyncIterator[int]:
+        async for i in input:
+            yield i + 1
+
+    chain: Runnable = RunnableGenerator(gen_indexes, agen_indexes) | plus_one
+    achain = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
+
+    assert chain.input_schema.schema() == {
+        "title": "RunnableGeneratorInput",
+        "type": "integer",
+    }
+    assert chain.output_schema.schema() == {
+        "title": "RunnableGeneratorOutput",
+        "type": "integer",
+    }
+    assert achain.input_schema.schema() == {
+        "title": "RunnableGeneratorInput",
+        "type": "integer",
+    }
+    assert achain.output_schema.schema() == {
+        "title": "RunnableGeneratorOutput",
+        "type": "integer",
+    }
+
+    assert list(chain.stream(3)) == [1, 2, 3]
+    assert [p async for p in achain.astream(4)] == [1, 2, 3, 4]
