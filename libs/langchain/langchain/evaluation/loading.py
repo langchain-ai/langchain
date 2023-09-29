@@ -14,11 +14,13 @@ from langchain.evaluation.embedding_distance.base import (
     EmbeddingDistanceEvalChain,
     PairwiseEmbeddingDistanceEvalChain,
 )
+from langchain.evaluation.exact_match.base import ExactMatchStringEvaluator
 from langchain.evaluation.parsing.base import (
     JsonEqualityEvaluator,
     JsonValidityEvaluator,
 )
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
+from langchain.evaluation.regex_match.base import RegexMatchStringEvaluator
 from langchain.evaluation.schema import EvaluatorType, LLMEvalChain, StringEvaluator
 from langchain.evaluation.string_distance.base import (
     PairwiseStringDistanceEvalChain,
@@ -78,6 +80,8 @@ _EVALUATOR_MAP: Dict[
     EvaluatorType.PAIRWISE_EMBEDDING_DISTANCE: PairwiseEmbeddingDistanceEvalChain,
     EvaluatorType.JSON_VALIDITY: JsonValidityEvaluator,
     EvaluatorType.JSON_EQUALITY: JsonEqualityEvaluator,
+    EvaluatorType.REGEX_MATCH: RegexMatchStringEvaluator,
+    EvaluatorType.EXACT_MATCH: ExactMatchStringEvaluator,
 }
 
 
@@ -111,7 +115,7 @@ def load_evaluator(
     if evaluator not in _EVALUATOR_MAP:
         raise ValueError(
             f"Unknown evaluator type: {evaluator}"
-            f"Valid types are: {list(_EVALUATOR_MAP.keys())}"
+            f"\nValid types are: {list(_EVALUATOR_MAP.keys())}"
         )
     evaluator_cls = _EVALUATOR_MAP[evaluator]
     if issubclass(evaluator_cls, LLMEvalChain):

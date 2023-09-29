@@ -28,6 +28,7 @@ from langchain.schema import (
 )
 from langchain.schema.messages import (
     AIMessage,
+    AnyMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
@@ -280,7 +281,7 @@ class ChatPromptValue(PromptValue):
     A type of a prompt value that is built from messages.
     """
 
-    messages: List[BaseMessage]
+    messages: Sequence[BaseMessage]
     """List of messages."""
 
     def to_string(self) -> str:
@@ -289,7 +290,14 @@ class ChatPromptValue(PromptValue):
 
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as a list of messages."""
-        return self.messages
+        return list(self.messages)
+
+
+class ChatPromptValueConcrete(ChatPromptValue):
+    """Chat prompt value which explicitly lists out the message types it accepts.
+    For use in external schemas."""
+
+    messages: Sequence[AnyMessage]
 
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
