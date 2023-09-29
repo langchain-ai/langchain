@@ -168,7 +168,7 @@ class BedrockBase(BaseModel, ABC):
         "anthropic": "stop_sequences",
         "amazon": "stopSequences",
         "ai21": "stop_sequences",
-        "cohere": "stop_words",
+        "cohere": "stop_sequences",
     }
 
     @root_validator()
@@ -270,7 +270,7 @@ class BedrockBase(BaseModel, ABC):
             # stop sequence from _generate() overrides
             # stop sequences in the class attribute
             _model_kwargs[
-                self.provider_stop_sequence_key_name_map.get(provider),
+                self.provider_stop_sequence_key_name_map.get(provider)
             ] = stop
 
         if provider == "cohere":
