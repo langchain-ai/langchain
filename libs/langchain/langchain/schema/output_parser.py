@@ -340,6 +340,8 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
     diff: bool = False
 
     def _diff(self, prev: Optional[T], next: T) -> T:
+        """Convert parsed outputs into a diff format. The semantics of this are
+        up to the output parser."""
         raise NotImplementedError()
 
     def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[Any]:

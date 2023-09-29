@@ -1,5 +1,5 @@
 import json
-from typing import Any, Iterator, Tuple
+from typing import Any, AsyncIterator, Iterator, Tuple
 
 import pytest
 
@@ -492,3 +492,51 @@ def test_partial_functions_json_output_parser_diff() -> None:
     chain = input_iter | PartialFunctionsJsonOutputParser(diff=True)
 
     assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON_DIFF
+
+
+@pytest.mark.asyncio
+async def test_partial_text_json_output_parser_async() -> None:
+    async def input_iter(_: Any) -> AsyncIterator[str]:
+        for token in STREAMED_TOKENS:
+            yield token
+
+    chain = input_iter | PartialJsonOutputParser()
+
+    assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
+
+
+@pytest.mark.asyncio
+async def test_partial_functions_json_output_parser_async() -> None:
+    async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
+        for token in STREAMED_TOKENS:
+            yield AIMessageChunk(
+                content="", additional_kwargs={"function_call": {"arguments": token}}
+            )
+
+    chain = input_iter | PartialFunctionsJsonOutputParser()
+
+    assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
+
+
+@pytest.mark.asyncio
+async def test_partial_text_json_output_parser_diff_async() -> None:
+    async def input_iter(_: Any) -> AsyncIterator[str]:
+        for token in STREAMED_TOKENS:
+            yield token
+
+    chain = input_iter | PartialJsonOutputParser(diff=True)
+
+    assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON_DIFF
+
+
+@pytest.mark.asyncio
+async def test_partial_functions_json_output_parser_diff_async() -> None:
+    async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
+        for token in STREAMED_TOKENS:
+            yield AIMessageChunk(
+                content="", additional_kwargs={"function_call": {"arguments": token}}
+            )
+
+    chain = input_iter | PartialFunctionsJsonOutputParser(diff=True)
+
+    assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON_DIFF
