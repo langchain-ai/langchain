@@ -120,7 +120,6 @@ def get_lambda_source(func: Callable) -> Optional[str]:
     """
     try:
         code = inspect.getsource(func)
-        print(code)
         tree = ast.parse(textwrap.dedent(code))
         visitor = GetLambdaSource()
         visitor.visit(tree)
