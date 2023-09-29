@@ -9,6 +9,7 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.schema.output import GenerationChunk
 
+
 class DeepSparse(LLM):
     """Neural Magic DeepSparse LLM interface.
     To use, you should have the ``deepsparse`` or ``deepsparse-nightly``
@@ -101,7 +102,13 @@ class DeepSparse(LLM):
                 combined_output += chunk.text
             text = combined_output
         else:
-            text = self.pipeline(sequences=prompt, generation_config=self.generation_config).generations[0].text
+            text = (
+                self.pipeline(
+                    sequences=prompt, generation_config=self.generation_config
+                )
+                .generations[0]
+                .text
+            )
 
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
@@ -135,7 +142,13 @@ class DeepSparse(LLM):
                 combined_output += chunk.text
             text = combined_output
         else:
-            text = self.pipeline(sequences=prompt, generation_config=self.generation_config).generations[0].text
+            text = (
+                self.pipeline(
+                    sequences=prompt, generation_config=self.generation_config
+                )
+                .generations[0]
+                .text
+            )
 
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
@@ -170,14 +183,15 @@ class DeepSparse(LLM):
                         stop=["'","\n"]):
                     print(chunk, end='', flush=True)
         """
-        inference = self.pipeline(sequences=prompt, generation_config=self.generation_config, streaming=True)
+        inference = self.pipeline(
+            sequences=prompt, generation_config=self.generation_config, streaming=True
+        )
         for token in inference:
             chunk = GenerationChunk(text=token.generations[0].text)
             yield chunk
 
             if run_manager:
                 run_manager.on_llm_new_token(token=chunk.text)
-
 
     async def _astream(
         self,
@@ -207,7 +221,9 @@ class DeepSparse(LLM):
                         stop=["'","\n"]):
                     print(chunk, end='', flush=True)
         """
-        inference = self.pipeline(sequences=prompt, generation_config=self.generation_config, streaming=True)
+        inference = self.pipeline(
+            sequences=prompt, generation_config=self.generation_config, streaming=True
+        )
         for token in inference:
             chunk = GenerationChunk(text=token.generations[0].text)
             yield chunk
