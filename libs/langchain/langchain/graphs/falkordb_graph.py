@@ -5,28 +5,34 @@ from langchain.graphs.graph_store import GraphStore
 
 node_properties_query = """
 MATCH (n)
-UNWIND labels(n) as l 
-UNWIND keys(n) as p WITH l, 
-collect(distinct p) AS props 
-RETURN {labels:l, properties: props} AS output
+WITH keys(n) as keys, labels(n) AS labels
+WITH CASE WHEN keys = [] THEN [NULL] ELSE keys END AS keys, labels
+UNWIND labels AS label
+UNWIND keys AS key
+WITH label, collect(DISTINCT key) AS keys
+RETURN {label:label, keys:keys} AS output
 """
 
 rel_properties_query = """
 MATCH ()-[r]->()
-UNWIND type(r) as t
-UNWIND keys(r) as p WITH t,
-collect(distinct p) AS props 
-RETURN {type:t, properties:props} AS output
+WITH keys(r) as keys, type(r) AS types
+WITH CASE WHEN keys = [] THEN [NULL] ELSE keys END AS keys, types 
+UNWIND types AS type
+UNWIND keys AS key WITH type,
+collect(DISTINCT key) AS keys 
+RETURN {types:type, keys:keys} AS output
 """
 
 rel_query = """
 MATCH (n)-[r]->(m)
-WITH labels(n)[0] AS src, labels(m)[0] AS dst, type(r) AS type
-RETURN DISTINCT "(:" + src + ")-[:" + type + "]->(:" + dst + ")" AS output
+UNWIND labels(n) as src_label
+UNWIND labels(m) as dst_label
+UNWIND type(r) as rel_type
+RETURN DISTINCT {start: src_label, type: rel_type, end: dst_label} AS output
 """
 
-
 class FalkorDBGraph(GraphStore):
+
     """FalkorDB wrapper for graph operations."""
 
     def __init__(
@@ -64,16 +70,14 @@ class FalkorDBGraph(GraphStore):
 
     def refresh_schema(self) -> None:
         """Refreshes the schema of the FalkorDB database"""
-        node_properties = self.query(node_properties_query)
-        rel_properties = self.query(rel_properties_query)
-        relationships = self.query(rel_query)
+        node_properties: List[Any] = self.query(node_properties_query)
+        rel_properties: List[Any] = self.query(rel_properties_query)
+        relationships: List[Any] = self.query(rel_query)
 
         self.structured_schema = {
-            "node_props": {
-                el[0]["labels"]: el[0]["properties"] for el in node_properties
-            },
-            "rel_props": {el[0]["type"]: el[0]["properties"] for el in rel_properties},
-            "relationships": relationships,
+            "node_props": {el[0]["label"]: el[0]["keys"] for el in node_properties},
+            "rel_props": {el[0]["types"]: el[0]["keys"] for el in rel_properties},
+            "relationships": [el[0] for el in relationships],
         }
 
         self.schema = (
@@ -102,16 +106,11 @@ class FalkorDBGraph(GraphStore):
             for node in document.nodes:
                 self.query(
                     (
-                        # f"{include_docs_query if include_source else ''}"
                         f"MERGE (n:{node.type} {{id:'{node.id}'}}) "
                         "SET n += $properties "
-                        # f"{'MERGE (d)-[:MENTIONS]->(n) ' if include_source else ''}"
                         "RETURN distinct 'done' AS result"
                     ),
-                    {
-                        "properties": node.properties,
-                        "document": document.source.__dict__,
-                    },
+                    {"properties": node.properties},
                 )
 
             # Import relationships
@@ -124,8 +123,5 @@ class FalkorDBGraph(GraphStore):
                         "SET r += $properties "
                         "RETURN distinct 'done' AS result"
                     ),
-                    {
-                        "properties": rel.properties,
-                        "document": document.source.__dict__,
-                    },
+                    {"properties": rel.properties},
                 )
