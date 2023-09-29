@@ -2164,9 +2164,9 @@
             'type': 'boolean',
           }),
           'type': dict({
-            'default': 'ai',
+            'default': 'ai_chunk',
             'enum': list([
-              'ai',
+              'ai_chunk',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2194,9 +2194,9 @@
             'type': 'string',
           }),
           'type': dict({
-            'default': 'chat',
+            'default': 'chat_chunk',
             'enum': list([
-              'chat',
+              'chat_chunk',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2225,9 +2225,9 @@
             'type': 'string',
           }),
           'type': dict({
-            'default': 'function',
+            'default': 'function_chunk',
             'enum': list([
-              'function',
+              'function_chunk',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2257,9 +2257,9 @@
             'type': 'boolean',
           }),
           'type': dict({
-            'default': 'human',
+            'default': 'human_chunk',
             'enum': list([
-              'human',
+              'human_chunk',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2283,9 +2283,9 @@
             'type': 'string',
           }),
           'type': dict({
-            'default': 'system',
+            'default': 'system_chunk',
             'enum': list([
-              'system',
+              'system_chunk',
             ]),
             'title': 'Type',
             'type': 'string',

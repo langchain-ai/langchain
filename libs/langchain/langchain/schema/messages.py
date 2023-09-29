@@ -157,7 +157,10 @@ HumanMessage.update_forward_refs()
 class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     """A Human Message chunk."""
 
-    pass
+    type: Literal["human_chunk"] = "human_chunk"
+
+
+HumanMessageChunk.update_forward_refs()
 
 
 class AIMessage(BaseMessage):
@@ -177,6 +180,8 @@ AIMessage.update_forward_refs()
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     """A Message chunk from an AI."""
 
+    type: Literal["ai_chunk"] = "ai_chunk"
+
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
             if self.example != other.example:
@@ -195,6 +200,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         return super().__add__(other)
 
 
+AIMessageChunk.update_forward_refs()
+
+
 class SystemMessage(BaseMessage):
     """A Message for priming AI behavior, usually passed in as the first of a sequence
     of input messages.
@@ -209,7 +217,10 @@ SystemMessage.update_forward_refs()
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     """A System Message chunk."""
 
-    pass
+    type: Literal["system_chunk"] = "system_chunk"
+
+
+SystemMessageChunk.update_forward_refs()
 
 
 class FunctionMessage(BaseMessage):
@@ -226,6 +237,8 @@ FunctionMessage.update_forward_refs()
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     """A Function Message chunk."""
+
+    type: Literal["function_chunk"] = "function_chunk"
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):
@@ -245,6 +258,9 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
         return super().__add__(other)
 
 
+FunctionMessageChunk.update_forward_refs()
+
+
 class ChatMessage(BaseMessage):
     """A Message that can be assigned an arbitrary speaker (i.e. role)."""
 
@@ -259,6 +275,8 @@ ChatMessage.update_forward_refs()
 
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     """A Chat Message chunk."""
+
+    type: Literal["chat_chunk"] = "chat_chunk"
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ChatMessageChunk):
@@ -277,6 +295,8 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
 
         return super().__add__(other)
 
+
+ChatMessageChunk.update_forward_refs()
 
 AnyMessage = Union[AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage]
 
