@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional, Union
 
 from langsmith import RunEvaluator
 
-from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
 from langchain.evaluation.embedding_distance.base import (
     EmbeddingDistance as EmbeddingDistanceEnum,
@@ -14,6 +13,7 @@ from langchain.evaluation.string_distance.base import (
     StringDistance as StringDistanceEnum,
 )
 from langchain.pydantic_v1 import BaseModel, Field
+from langchain.schema.embeddings import Embeddings
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 
@@ -260,5 +260,35 @@ class RunEvalConfig(BaseModel):
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.JSON_EQUALITY
+
+    class ExactMatch(EvalConfig):
+        """Configuration for an exact match string evaluator.
+
+        Parameters
+        ----------
+        ignore_case : bool
+            Whether to ignore case when comparing strings.
+        ignore_punctuation : bool
+            Whether to ignore punctuation when comparing strings.
+        ignore_numbers : bool
+            Whether to ignore numbers when comparing strings.
+        """
+
+        evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
+        ignore_case: bool = False
+        ignore_punctuation: bool = False
+        ignore_numbers: bool = False
+
+    class RegexMatch(EvalConfig):
+        """Configuration for a regex match string evaluator.
+
+        Parameters
+        ----------
+        flags : int
+            The flags to pass to the regex. Example: re.IGNORECASE.
+        """
+
+        evaluator_type: EvaluatorType = EvaluatorType.REGEX_MATCH
+        flags: int = 0
 
     # TODO: Trajectory
