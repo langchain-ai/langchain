@@ -7,9 +7,10 @@ from typing import Any, Callable, List, Optional
 
 import jsonpatch
 
-from langchain.schema import BaseOutputParser, OutputParserException
-from langchain.schema.output import ChatGeneration, Generation
-from langchain.schema.output_parser import BaseCumulativeTransformOutputParser
+from langchain.schema.output_parser import (
+    BaseCumulativeTransformOutputParser,
+    OutputParserException,
+)
 
 
 def _replace_new_line(match: re.Match[str]) -> str:
@@ -44,10 +45,10 @@ def _custom_parser(multiline_string: str) -> str:
 
 # Adapted from https://github.com/KillianLucas/open-interpreter/blob/main/interpreter/utils/parse_partial_json.py
 # MIT License
-def parse_partial_json(s: str) -> Any:
+def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     # Attempt to parse the string as-is.
     try:
-        return json.loads(s)
+        return json.loads(s, strict=strict)
     except json.JSONDecodeError:
         pass
 
@@ -97,7 +98,7 @@ def parse_partial_json(s: str) -> Any:
 
     # Attempt to parse the modified string as JSON.
     try:
-        return json.loads(new_s)
+        return json.loads(new_s, strict=strict)
     except json.JSONDecodeError:
         # If we still can't parse the string as JSON, return None to indicate failure.
         return None
@@ -162,62 +163,26 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
     return json_obj
 
 
-class SimpleJsonOutputParser(BaseOutputParser[Any]):
-    """Parse the output of an LLM call to a JSON object."""
+class SimpleJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
+    """Parse the output of an LLM call to a JSON object.
+
+    When used in streaming mode, it will yield partial JSON objects containing
+    all the keys that have been returned so far.
+
+    In streaming, if `diff` is set to `True`, yields JSONPatch operations
+    describing the difference between the previous and the current object.
+    """
+
+    def _diff(self, prev: Optional[Any], next: Any) -> Any:
+        return jsonpatch.make_patch(prev, next).patch
 
     def parse(self, text: str) -> Any:
         text = text.strip()
         try:
-            return parse_partial_json(text)
+            return parse_json_markdown(text.strip(), parse_partial_json)
         except JSONDecodeError as e:
             raise OutputParserException(f"Invalid json output: {text}") from e
 
     @property
     def _type(self) -> str:
         return "simple_json_output_parser"
-
-
-class PartialFunctionsJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
-    @property
-    def _type(self) -> str:
-        return "partial_functions_json"
-
-    def parse_result(self, result: List[Generation]) -> Any:
-        if len(result) != 1:
-            raise OutputParserException(
-                f"Expected exactly one result, but got {len(result)}"
-            )
-        generation = result[0]
-        if not isinstance(generation, ChatGeneration):
-            raise OutputParserException(
-                "This output parser can only be used with a chat generation."
-            )
-        message = generation.message
-        try:
-            function_call = message.additional_kwargs["function_call"]
-        except KeyError:
-            return None
-        try:
-            return parse_partial_json(function_call["arguments"])
-        except KeyError:
-            return None
-
-    def _diff(self, prev: Optional[Any], next: Any) -> Any:
-        return jsonpatch.make_patch(prev, next).patch
-
-    # This method would be called by the default implementation of `parse_result`
-    # but we're overriding that method so it's not needed.
-    def parse(self, text: str) -> Any:
-        raise NotImplementedError()
-
-
-class PartialJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
-    @property
-    def _type(self) -> str:
-        return "partial_functions_json"
-
-    def _diff(self, prev: Optional[Any], next: Any) -> Any:
-        return jsonpatch.make_patch(prev, next).patch
-
-    def parse(self, text: str) -> Any:
-        return parse_json_markdown(text, parse_partial_json)

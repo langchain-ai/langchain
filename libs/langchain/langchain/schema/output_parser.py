@@ -338,6 +338,9 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
     """Base class for an output parser that can handle streaming input."""
 
     diff: bool = False
+    """In streaming mode, whether to yield diffs between the previous and current
+    parsed output, or just the current parsed output.
+    """
 
     def _diff(self, prev: Optional[T], next: T) -> T:
         """Convert parsed outputs into a diff format. The semantics of this are
