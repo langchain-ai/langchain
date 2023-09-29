@@ -1,7 +1,7 @@
 import pytest
-from langchain.chat_models import ChatOpenAI
 
 from langchain import FewShotPromptTemplate
+from langchain.chat_models import ChatOpenAI
 from langchain.pydantic_v1 import BaseModel
 from langchain_experimental.tabular_synthetic_data.base import SyntheticDataGenerator
 from langchain_experimental.tabular_synthetic_data.openai import (
