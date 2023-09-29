@@ -1,4 +1,3 @@
-"""Loads EPub files."""
 from typing import List
 
 from langchain.document_loaders.unstructured import (
@@ -8,7 +7,7 @@ from langchain.document_loaders.unstructured import (
 
 
 class UnstructuredEPubLoader(UnstructuredFileLoader):
-    """Loader that uses Unstructured to load EPUB files.
+    """Load `EPub` files using `Unstructured`.
 
     You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single

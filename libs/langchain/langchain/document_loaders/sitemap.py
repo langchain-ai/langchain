@@ -1,4 +1,3 @@
-"""Loader that fetches a sitemap and loads those URLs."""
 import itertools
 import re
 from typing import Any, Callable, Generator, Iterable, List, Optional
@@ -22,7 +21,7 @@ def _batch_block(iterable: Iterable, size: int) -> Generator[List[dict], None, N
 
 
 class SitemapLoader(WebBaseLoader):
-    """Loader that fetches a sitemap and loads those URLs."""
+    """Load a sitemap and its URLs."""
 
     def __init__(
         self,
@@ -34,6 +33,7 @@ class SitemapLoader(WebBaseLoader):
         meta_function: Optional[Callable] = None,
         is_local: bool = False,
         continue_on_failure: bool = False,
+        **kwargs: Any,
     ):
         """Initialize with webpage path and optional filter URLs.
 
@@ -68,7 +68,7 @@ class SitemapLoader(WebBaseLoader):
                 "lxml package not found, please install it with " "`pip install lxml`"
             )
 
-        super().__init__(web_path)
+        super().__init__(web_paths=[web_path], **kwargs)
 
         self.filter_urls = filter_urls
         self.parsing_function = parsing_function or _default_parsing_function
@@ -131,7 +131,7 @@ class SitemapLoader(WebBaseLoader):
             fp = open(self.web_path)
             soup = bs4.BeautifulSoup(fp, "xml")
         else:
-            soup = self.scrape("xml")
+            soup = self._scrape(self.web_path, parser="xml")
 
         els = self.parse_sitemap(soup)
 

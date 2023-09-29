@@ -1,9 +1,8 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
-
-from langchain.embeddings.base import Embeddings
-from langchain.requests import Requests
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.schema.embeddings import Embeddings
+from langchain.utilities.requests import Requests
 from langchain.utils import get_from_dict_or_env
 
 
@@ -15,8 +14,14 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
 
     edenai_api_key: Optional[str] = Field(None, description="EdenAI API Token")
 
-    provider: Optional[str] = "openai"
+    provider: str = "openai"
     """embedding provider to use (eg: openai,google etc.)"""
+
+    model: Optional[str] = None
+    """
+    model name for above provider (eg: 'text-davinci-003' for openai)
+    available models are shown on https://docs.edenai.co/ under 'available providers'
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -31,6 +36,12 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
         )
         return values
 
+    @staticmethod
+    def get_user_agent() -> str:
+        from langchain import __version__
+
+        return f"langchain/{__version__}"
+
     def _generate_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Compute embeddings using EdenAi api."""
         url = "https://api.edenai.run/v2/text/embeddings"
@@ -39,9 +50,14 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
             "accept": "application/json",
             "content-type": "application/json",
             "authorization": f"Bearer {self.edenai_api_key}",
+            "User-Agent": self.get_user_agent(),
         }
 
-        payload = {"texts": texts, "providers": self.provider}
+        payload: Dict[str, Any] = {"texts": texts, "providers": self.provider}
+
+        if self.model is not None:
+            payload["settings"] = {self.provider: self.model}
+
         request = Requests(headers=headers)
         response = request.post(url=url, data=payload)
         if response.status_code >= 500:
@@ -55,6 +71,11 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
             )
 
         temp = response.json()
+
+        provider_response = temp[self.provider]
+        if provider_response.get("status") == "fail":
+            err_msg = provider_response.get("error", {}).get("message")
+            raise Exception(err_msg)
 
         embeddings = []
         for embed_item in temp[self.provider]["items"]:

@@ -3,13 +3,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.elasticsearch_database.prompts import ANSWER_PROMPT, DSL_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.json import SimpleJsonOutputParser
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BaseLLMOutputParser, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
@@ -25,7 +24,8 @@ class ElasticsearchDatabaseChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import ElasticsearchDatabaseChain, OpenAI
+            from langchain.chains import ElasticsearchDatabaseChain
+            from langchain.llms import OpenAI
             from elasticsearch import Elasticsearch
 
             database = Elasticsearch("http://localhost:9200")

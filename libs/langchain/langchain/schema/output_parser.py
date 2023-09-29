@@ -14,8 +14,10 @@ from typing import (
     Union,
 )
 
+from typing_extensions import get_args
+
 from langchain.load.serializable import Serializable
-from langchain.schema.messages import BaseMessage
+from langchain.schema.messages import AnyMessage, BaseMessage
 from langchain.schema.output import ChatGeneration, Generation
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable, RunnableConfig
@@ -58,6 +60,16 @@ class BaseGenerationOutputParser(
 ):
     """Base class to parse the output of an LLM call."""
 
+    @property
+    def InputType(self) -> Any:
+        return Union[str, AnyMessage]
+
+    @property
+    def OutputType(self) -> type[T]:
+        # even though mypy complains this isn't valid,
+        # it is good enough for pydantic to build the schema from
+        return T  # type: ignore[misc]
+
     def invoke(
         self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
@@ -79,7 +91,10 @@ class BaseGenerationOutputParser(
             )
 
     async def ainvoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(
@@ -126,6 +141,22 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
                             return "boolean_output_parser"
     """  # noqa: E501
 
+    @property
+    def InputType(self) -> Any:
+        return Union[str, AnyMessage]
+
+    @property
+    def OutputType(self) -> type[T]:
+        for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
+            type_args = get_args(cls)
+            if type_args and len(type_args) == 1:
+                return type_args[0]
+
+        raise TypeError(
+            f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
+            "Override the OutputType property to specify the output type."
+        )
+
     def invoke(
         self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
@@ -147,7 +178,10 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
             )
 
     async def ainvoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(
@@ -277,6 +311,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         self,
         input: Iterator[Union[str, BaseMessage]],
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Iterator[T]:
         yield from self._transform_stream_with_config(
             input, self._transform, config, run_type="parser"
@@ -286,6 +321,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         self,
         input: AsyncIterator[Union[str, BaseMessage]],
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[T]:
         async for chunk in self._atransform_stream_with_config(
             input, self._atransform, config, run_type="parser"
@@ -296,9 +332,9 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 class StrOutputParser(BaseTransformOutputParser[str]):
     """OutputParser that parses LLMResult into the top likely string."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether the class LangChain serializable."""
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
         return True
 
     @property

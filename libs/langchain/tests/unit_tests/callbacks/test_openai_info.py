@@ -1,3 +1,6 @@
+from unittest.mock import MagicMock
+from uuid import uuid4
+
 import pytest
 
 from langchain.callbacks import OpenAICallbackHandler
@@ -124,3 +127,7 @@ def test_on_llm_end_no_cost_invalid_model(
     )
     handler.on_llm_end(response)
     assert handler.total_cost == 0
+
+
+def test_on_retry_works(handler: OpenAICallbackHandler) -> None:
+    handler.on_retry(MagicMock(), run_id=uuid4())

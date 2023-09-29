@@ -7,13 +7,9 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
-      test_type:
-        type: string
-        description: "Test types to run"
-        default: '["core", "extended"]'
 
 env:
-  POETRY_VERSION: "1.4.2"
+  POETRY_VERSION: "1.5.1"
 
 jobs:
   build:
@@ -28,34 +24,34 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-        test_type: ${{ fromJSON(inputs.test_type) }}
-    name: Python ${{ matrix.python-version }} ${{ matrix.test_type }}
+    name: Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
-          poetry-version: "1.4.2"
-          cache-key: ${{ matrix.test_type }}
-          install-command: |
-              if [ "${{ matrix.test_type }}" == "core" ]; then
-                echo "Running core tests, installing dependencies with poetry..."
-                poetry install
-              else
-                echo "Running extended tests, installing dependencies with poetry..."
-                poetry install -E extended_testing
-              fi
-      - name: Install langchain editable
-        if: ${{ inputs.working-directory != 'langchain' }}
-        run: |
-          pip install -e ../langchain
-      - name: Run ${{matrix.test_type}} tests
-        run: |
-          if [ "${{ matrix.test_type }}" == "core" ]; then
-            make test
-          else
-            make extended_tests
-          fi
+          cache-key: core
+
+      - name: Install dependencies
         shell: bash
+        run: poetry install
+
+      - name: Run core tests
+        shell: bash
+        run: make test
+
+      - name: Ensure the tests did not create any additional files
+        shell: bash
+        run: |
+          set -eu
+
+          STATUS="$(git status)"
+          echo "$STATUS"
+
+          # grep will exit non-zero if the target message isn't found,
+          # and `set -e` above will cause the step to fail.
+          echo "$STATUS" | grep 'nothing to commit, working tree clean'

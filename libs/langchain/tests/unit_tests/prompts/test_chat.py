@@ -282,6 +282,42 @@ def test_convert_to_message(
     assert _convert_to_message(args) == expected
 
 
+def test_chat_prompt_template_indexing() -> None:
+    message1 = SystemMessage(content="foo")
+    message2 = HumanMessage(content="bar")
+    message3 = HumanMessage(content="baz")
+    template = ChatPromptTemplate.from_messages([message1, message2, message3])
+    assert template[0] == message1
+    assert template[1] == message2
+
+    # Slice starting from index 1
+    slice_template = template[1:]
+    assert slice_template[0] == message2
+    assert len(slice_template) == 2
+
+
+def test_chat_prompt_template_append_and_extend() -> None:
+    """Test append and extend methods of ChatPromptTemplate."""
+    message1 = SystemMessage(content="foo")
+    message2 = HumanMessage(content="bar")
+    message3 = HumanMessage(content="baz")
+    template = ChatPromptTemplate.from_messages([message1])
+    template.append(message2)
+    template.append(message3)
+    assert len(template) == 3
+    template.extend([message2, message3])
+    assert len(template) == 5
+    assert template.messages == [
+        message1,
+        message2,
+        message3,
+        message2,
+        message3,
+    ]
+    template.append(("system", "hello!"))
+    assert template[-1] == SystemMessagePromptTemplate.from_template("hello!")
+
+
 def test_convert_to_message_is_strict() -> None:
     """Verify that _convert_to_message is strict."""
     with pytest.raises(ValueError):

@@ -4,8 +4,7 @@
 import logging
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, root_validator
-
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 
@@ -25,7 +24,7 @@ class GooglePlacesAPIWrapper(BaseModel):
         .. code-block:: python
 
 
-            from langchain import GooglePlacesAPIWrapper
+            from langchain.utilities import GooglePlacesAPIWrapper
             gplaceapi = GooglePlacesAPIWrapper()
     """
 

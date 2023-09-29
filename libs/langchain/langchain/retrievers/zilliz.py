@@ -1,18 +1,17 @@
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.zilliz import Zilliz
 
 # TODO: Update to ZillizClient + Hybrid Search when available
 
 
 class ZillizRetriever(BaseRetriever):
-    """Retriever for the Zilliz API."""
+    """`Zilliz API` retriever."""
 
     embedding_function: Embeddings
     """The underlying embedding function from which documents will be retrieved."""

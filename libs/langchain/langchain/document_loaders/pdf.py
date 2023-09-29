@@ -1,4 +1,3 @@
-"""Loads PDF files."""
 import json
 import logging
 import os
@@ -7,7 +6,7 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 from urllib.parse import urlparse
 
 import requests
@@ -17,6 +16,7 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     AmazonTextractPDFParser,
+    DocumentIntelligenceParser,
     PDFMinerParser,
     PDFPlumberParser,
     PyMuPDFParser,
@@ -30,7 +30,8 @@ logger = logging.getLogger(__file__)
 
 
 class UnstructuredPDFLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load PDF files.
+    """Load `PDF` files using `Unstructured`.
+
     You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single
     langchain Document object. If you use "elements" mode, the unstructured
@@ -59,16 +60,22 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
 
 
 class BasePDFLoader(BaseLoader, ABC):
-    """Base loader class for PDF files.
+    """Base Loader class for `PDF` files.
 
-    Defaults to check for local file, but if the file is a web path, it will download it
-    to a temporary file, use it, then clean up the temporary file after completion
+    If the file is a web path, it will download it to a temporary file, use it, then
+        clean up the temporary file after completion.
     """
 
-    def __init__(self, file_path: str):
-        """Initialize with a file path."""
+    def __init__(self, file_path: str, *, headers: Optional[Dict] = None):
+        """Initialize with a file path.
+
+        Args:
+            file_path: Either a local, S3 or web path to a PDF file.
+            headers: Headers to use for GET request to download a file from a web path.
+        """
         self.file_path = file_path
         self.web_path = None
+        self.headers = headers
         if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
@@ -77,18 +84,15 @@ class BasePDFLoader(BaseLoader, ABC):
             self.temp_dir = tempfile.TemporaryDirectory()
             _, suffix = os.path.splitext(self.file_path)
             temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
-            if self._is_s3_url(self.file_path):
-                self.web_path = self.file_path
-            else:
-                r = requests.get(self.file_path)
-
+            self.web_path = self.file_path
+            if not self._is_s3_url(self.file_path):
+                r = requests.get(self.file_path, headers=self.headers)
                 if r.status_code != 200:
                     raise ValueError(
                         "Check the url of your file; returned status code %s"
                         % r.status_code
                     )
 
-                self.web_path = self.file_path
                 with open(temp_pdf, mode="wb") as f:
                     f.write(r.content)
                 self.file_path = str(temp_pdf)
@@ -122,7 +126,7 @@ class BasePDFLoader(BaseLoader, ABC):
 
 
 class OnlinePDFLoader(BasePDFLoader):
-    """Loads online PDFs."""
+    """Load online `PDF`."""
 
     def load(self) -> List[Document]:
         """Load documents."""
@@ -131,13 +135,16 @@ class OnlinePDFLoader(BasePDFLoader):
 
 
 class PyPDFLoader(BasePDFLoader):
-    """Loads a PDF with pypdf and chunks at character level.
+    """Load `PDF using `pypdf` and chunks at character level.
 
     Loader also stores page numbers in metadata.
     """
 
     def __init__(
-        self, file_path: str, password: Optional[Union[str, bytes]] = None
+        self,
+        file_path: str,
+        password: Optional[Union[str, bytes]] = None,
+        headers: Optional[Dict] = None,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -147,7 +154,7 @@ class PyPDFLoader(BasePDFLoader):
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
         self.parser = PyPDFParser(password=password)
-        super().__init__(file_path)
+        super().__init__(file_path, headers=headers)
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
@@ -162,11 +169,11 @@ class PyPDFLoader(BasePDFLoader):
 
 
 class PyPDFium2Loader(BasePDFLoader):
-    """Loads a PDF with pypdfium2 and chunks at character level."""
+    """Load `PDF` using `pypdfium2` and chunks at character level."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, *, headers: Optional[Dict] = None):
         """Initialize with a file path."""
-        super().__init__(file_path)
+        super().__init__(file_path, headers=headers)
         self.parser = PyPDFium2Parser()
 
     def load(self) -> List[Document]:
@@ -182,7 +189,7 @@ class PyPDFium2Loader(BasePDFLoader):
 
 
 class PyPDFDirectoryLoader(BaseLoader):
-    """Loads a directory with PDF files with pypdf and chunks at character level.
+    """Load a directory with `PDF` files using `pypdf` and chunks at character level.
 
     Loader also stores page numbers in metadata.
     """
@@ -227,9 +234,9 @@ class PyPDFDirectoryLoader(BaseLoader):
 
 
 class PDFMinerLoader(BasePDFLoader):
-    """Loader that uses PDFMiner to load PDF files."""
+    """Load `PDF` files using `PDFMiner`."""
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, *, headers: Optional[Dict] = None) -> None:
         """Initialize with file path."""
         try:
             from pdfminer.high_level import extract_text  # noqa:F401
@@ -239,7 +246,7 @@ class PDFMinerLoader(BasePDFLoader):
                 "`pip install pdfminer.six`"
             )
 
-        super().__init__(file_path)
+        super().__init__(file_path, headers=headers)
         self.parser = PDFMinerParser()
 
     def load(self) -> List[Document]:
@@ -255,9 +262,9 @@ class PDFMinerLoader(BasePDFLoader):
 
 
 class PDFMinerPDFasHTMLLoader(BasePDFLoader):
-    """Loader that uses PDFMiner to load PDF files as HTML content."""
+    """Load `PDF` files as HTML content using `PDFMiner`."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, *, headers: Optional[Dict] = None):
         """Initialize with a file path."""
         try:
             from pdfminer.high_level import extract_text_to_fp  # noqa:F401
@@ -267,7 +274,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
                 "`pip install pdfminer.six`"
             )
 
-        super().__init__(file_path)
+        super().__init__(file_path, headers=headers)
 
     def load(self) -> List[Document]:
         """Load file."""
@@ -289,9 +296,9 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 
 
 class PyMuPDFLoader(BasePDFLoader):
-    """Loader that uses PyMuPDF to load PDF files."""
+    """Load `PDF` files using `PyMuPDF`."""
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, *, headers: Optional[Dict] = None) -> None:
         """Initialize with a file path."""
         try:
             import fitz  # noqa:F401
@@ -301,7 +308,7 @@ class PyMuPDFLoader(BasePDFLoader):
                 "`pip install pymupdf`"
             )
 
-        super().__init__(file_path)
+        super().__init__(file_path, headers=headers)
 
     def load(self, **kwargs: Optional[Any]) -> List[Document]:
         """Load file."""
@@ -314,12 +321,12 @@ class PyMuPDFLoader(BasePDFLoader):
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:
 # https://gist.github.com/danielgross/3ab4104e14faccc12b49200843adab21
 class MathpixPDFLoader(BasePDFLoader):
-    """This class uses Mathpix service to load PDF files."""
+    """Load `PDF` files using `Mathpix` service."""
 
     def __init__(
         self,
         file_path: str,
-        processed_file_format: str = "mmd",
+        processed_file_format: str = "md",
         max_wait_time_seconds: int = 500,
         should_clean_pdf: bool = False,
         **kwargs: Any,
@@ -328,25 +335,25 @@ class MathpixPDFLoader(BasePDFLoader):
 
         Args:
             file_path: a file for loading.
-            processed_file_format: a format of the processed file. Default is "mmd".
+            processed_file_format: a format of the processed file. Default is "md".
             max_wait_time_seconds: a maximum time to wait for the response from
              the server. Default is 500.
             should_clean_pdf: a flag to clean the PDF file. Default is False.
             **kwargs: additional keyword arguments.
         """
-        super().__init__(file_path)
         self.mathpix_api_key = get_from_dict_or_env(
             kwargs, "mathpix_api_key", "MATHPIX_API_KEY"
         )
         self.mathpix_api_id = get_from_dict_or_env(
             kwargs, "mathpix_api_id", "MATHPIX_API_ID"
         )
+        super().__init__(file_path, **kwargs)
         self.processed_file_format = processed_file_format
         self.max_wait_time_seconds = max_wait_time_seconds
         self.should_clean_pdf = should_clean_pdf
 
     @property
-    def headers(self) -> dict:
+    def _mathpix_headers(self) -> Dict[str, str]:
         return {"app_id": self.mathpix_api_id, "app_key": self.mathpix_api_key}
 
     @property
@@ -362,7 +369,7 @@ class MathpixPDFLoader(BasePDFLoader):
         with open(self.file_path, "rb") as f:
             files = {"file": f}
             response = requests.post(
-                self.url, headers=self.headers, files=files, data=self.data
+                self.url, headers=self._mathpix_headers, files=files, data=self.data
             )
         response_data = response.json()
         if "pdf_id" in response_data:
@@ -433,10 +440,14 @@ class MathpixPDFLoader(BasePDFLoader):
 
 
 class PDFPlumberLoader(BasePDFLoader):
-    """Loader that uses pdfplumber to load PDF files."""
+    """Load `PDF` files using `pdfplumber`."""
 
     def __init__(
-        self, file_path: str, text_kwargs: Optional[Mapping[str, Any]] = None
+        self,
+        file_path: str,
+        text_kwargs: Optional[Mapping[str, Any]] = None,
+        dedupe: bool = False,
+        headers: Optional[Dict] = None,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -447,19 +458,20 @@ class PDFPlumberLoader(BasePDFLoader):
                 "`pip install pdfplumber`"
             )
 
-        super().__init__(file_path)
+        super().__init__(file_path, headers=headers)
         self.text_kwargs = text_kwargs or {}
+        self.dedupe = dedupe
 
     def load(self) -> List[Document]:
         """Load file."""
 
-        parser = PDFPlumberParser(text_kwargs=self.text_kwargs)
+        parser = PDFPlumberParser(text_kwargs=self.text_kwargs, dedupe=self.dedupe)
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
 
 class AmazonTextractPDFLoader(BasePDFLoader):
-    """Loads a PDF document from local file system, HTTP or S3.
+    """Load `PDF` files from a local file system, HTTP or S3.
 
     To authenticate, the AWS client uses the following methods to
     automatically load credentials:
@@ -488,6 +500,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
         endpoint_url: Optional[str] = None,
+        headers: Optional[Dict] = None,
     ) -> None:
         """Initialize the loader.
 
@@ -502,7 +515,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             endpoint_url: endpoint url for the textract service (Optional)
 
         """
-        super().__init__(file_path)
+        super().__init__(file_path, headers=headers)
 
         try:
             import textractcaller as tc  # noqa: F401
@@ -597,3 +610,55 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             return 1
         else:
             raise ValueError(f"unsupported mime type: {blob.mimetype}")
+
+
+class DocumentIntelligenceLoader(BasePDFLoader):
+    """Loads a PDF with Azure Document Intelligence"""
+
+    def __init__(
+        self,
+        file_path: str,
+        client: Any,
+        model: str = "prebuilt-document",
+        headers: Optional[Dict] = None,
+    ) -> None:
+        """
+        Initialize the object for file processing with Azure Document Intelligence
+        (formerly Form Recognizer).
+
+        This constructor initializes a DocumentIntelligenceParser object to be used
+        for parsing files using the Azure Document Intelligence API. The load method
+        generates a Document node including metadata (source blob and page number)
+        for each page.
+
+        Parameters:
+        -----------
+        file_path : str
+            The path to the file that needs to be parsed.
+        client: Any
+            A DocumentAnalysisClient to perform the analysis of the blob
+        model : str
+            The model name or ID to be used for form recognition in Azure.
+
+        Examples:
+        ---------
+        >>> obj = DocumentIntelligenceLoader(
+        ...     file_path="path/to/file",
+        ...     client=client,
+        ...     model="prebuilt-document"
+        ... )
+        """
+
+        self.parser = DocumentIntelligenceParser(client=client, model=model)
+        super().__init__(file_path, headers=headers)
+
+    def load(self) -> List[Document]:
+        """Load given path as pages."""
+        return list(self.lazy_load())
+
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        """Lazy load given path as pages."""
+        blob = Blob.from_path(self.file_path)
+        yield from self.parser.parse(blob)

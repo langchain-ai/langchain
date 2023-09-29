@@ -1,13 +1,12 @@
-"""Wrapper around Typesense vector search"""
 from __future__ import annotations
 
 import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_env
-from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
     from typesense.client import Client
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class Typesense(VectorStore):
-    """Wrapper around Typesense vector search.
+    """`Typesense` vector store.
 
     To use, you should have the ``typesense`` python package installed.
 
@@ -61,7 +60,7 @@ class Typesense(VectorStore):
         try:
             from typesense import Client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import typesense python package. "
                 "Please install it with `pip install typesense`."
             )

@@ -186,6 +186,34 @@ def test_pgvector_with_filter_in_set() -> None:
     ]
 
 
+def test_pgvector_delete_docs() -> None:
+    """Add and delete documents."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection_filter",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        metadatas=metadatas,
+        ids=["1", "2", "3"],
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    docsearch.delete(["1", "2"])
+    with docsearch._make_session() as session:
+        records = list(session.query(docsearch.EmbeddingStore).all())
+        # ignoring type error since mypy cannot determine whether
+        # the list is sortable
+        assert sorted(record.custom_id for record in records) == ["3"]  # type: ignore
+
+    docsearch.delete(["2", "3"])  # Should not raise on missing ids
+    with docsearch._make_session() as session:
+        records = list(session.query(docsearch.EmbeddingStore).all())
+        # ignoring type error since mypy cannot determine whether
+        # the list is sortable
+        assert sorted(record.custom_id for record in records) == []  # type: ignore
+
+
 def test_pgvector_relevance_score() -> None:
     """Test to make sure the relevance score is scaled to 0-1."""
     texts = ["foo", "bar", "baz"]
@@ -251,3 +279,31 @@ def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
     )
     output = retriever.get_relevant_documents("foo")
     assert output == []
+
+
+def test_pgvector_max_marginal_relevance_search() -> None:
+    """Test max marginal relevance search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.max_marginal_relevance_search("foo", k=1, fetch_k=3)
+    assert output == [Document(page_content="foo")]
+
+
+def test_pgvector_max_marginal_relevance_search_with_score() -> None:
+    """Test max marginal relevance search with relevance scores."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.max_marginal_relevance_search_with_score("foo", k=1, fetch_k=3)
+    assert output == [(Document(page_content="foo"), 0.0)]

@@ -1,4 +1,3 @@
-"""Load documents from a directory."""
 import concurrent
 import logging
 import random
@@ -26,7 +25,7 @@ def _is_visible(p: Path) -> bool:
 
 
 class DirectoryLoader(BaseLoader):
-    """Load documents from a directory."""
+    """Load from a directory."""
 
     def __init__(
         self,

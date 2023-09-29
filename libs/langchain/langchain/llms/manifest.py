@@ -1,9 +1,8 @@
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Extra, root_validator
 
 
 class ManifestWrapper(LLM):
@@ -35,7 +34,10 @@ class ManifestWrapper(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         kwargs = self.llm_kwargs or {}
-        return {**self.client.client.get_model_params(), **kwargs}
+        return {
+            **self.client.client_pool.get_current_client().get_model_params(),
+            **kwargs,
+        }
 
     @property
     def _llm_type(self) -> str:
