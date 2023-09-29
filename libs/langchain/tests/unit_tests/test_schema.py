@@ -3,14 +3,10 @@
 import unittest
 from typing import Union
 
-import pytest
-
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
     FunctionMessage,
