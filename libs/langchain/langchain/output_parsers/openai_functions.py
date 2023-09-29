@@ -1,5 +1,4 @@
 import copy
-import json
 from typing import Any, Dict, List, Optional, Type, Union
 
 import jsonpatch

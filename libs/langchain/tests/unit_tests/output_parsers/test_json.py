@@ -8,8 +8,8 @@ from langchain.output_parsers.json import (
     parse_json_markdown,
     parse_partial_json,
 )
-from langchain.schema.messages import AIMessageChunk
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
+from langchain.schema.messages import AIMessageChunk
 
 GOOD_JSON = """```json
 {
