@@ -951,6 +951,44 @@ def test_cleanup_with_different_batchsize(
     }
 
 
+@pytest.mark.asyncio
+async def test_cleanup_with_different_batchsize(
+    arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Check that we can clean up with different batch size."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": str(d)},
+        )
+        for d in range(1000)
+    ]
+
+    assert await aindex(docs, arecord_manager, vector_store, cleanup="full") == {
+        "num_added": 1000,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    docs = [
+        Document(
+            page_content="Different doc",
+            metadata={"source": str(d)},
+        )
+        for d in range(1001)
+    ]
+
+    assert await aindex(
+        docs, arecord_manager, vector_store, cleanup="full", cleanup_batch_size=17
+    ) == {
+        "num_added": 1001,
+        "num_deleted": 1000,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+
 def test_deduplication_v2(
     record_manager: SQLRecordManager, vector_store: VectorStore
 ) -> None:
