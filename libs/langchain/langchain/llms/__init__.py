@@ -17,7 +17,7 @@ access to the large language model (**LLM**) APIs and services.
     CallbackManager, AsyncCallbackManager,
     AIMessage, BaseMessage
 """  # noqa: E501
-from typing import Any, Dict, Type
+from typing import Any, Callable, Dict, Type
 
 from langchain.llms.base import BaseLLM
 
@@ -699,7 +699,7 @@ __all__ = [
 ]
 
 
-def get_type_to_cls_dict() -> Dict[str, Type[BaseLLM]]:
+def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
     return {
         "ai21": _import_ai21,
         "aleph_alpha": _import_aleph_alpha,
