@@ -47,8 +47,9 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         """Return type of chat model."""
         return "ollama-chat"
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     def _format_message_as_text(self, message: BaseMessage) -> str:

@@ -11,6 +11,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Union,
     cast,
 )
 
@@ -37,9 +38,14 @@ from langchain.schema import (
 from langchain.schema.language_model import BaseLanguageModel, LanguageModelInput
 from langchain.schema.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
+    ChatMessageChunk,
+    FunctionMessageChunk,
     HumanMessage,
+    HumanMessageChunk,
+    SystemMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
 from langchain.schema.runnable import RunnableConfig
@@ -106,6 +112,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         arbitrary_types_allowed = True
 
     # --- Runnable methods ---
+
+    @property
+    def OutputType(self) -> Any:
+        """Get the input type for this runnable."""
+        return Union[
+            HumanMessageChunk,
+            AIMessageChunk,
+            ChatMessageChunk,
+            FunctionMessageChunk,
+            SystemMessageChunk,
+        ]
 
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
         if isinstance(input, PromptValue):
@@ -290,7 +307,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         return {**params, **kwargs}
 
     def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
-        if self.lc_serializable:
+        if self.is_lc_serializable():
             params = {**kwargs, **{"stop": stop}}
             param_string = str(sorted([(k, v) for k, v in params.items()]))
             llm_string = dumps(self)
