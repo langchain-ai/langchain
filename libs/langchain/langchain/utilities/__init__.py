@@ -26,6 +26,7 @@ from langchain.utilities.python import PythonREPL
 from langchain.utilities.requests import Requests, RequestsWrapper, TextRequestsWrapper
 from langchain.utilities.scenexplain import SceneXplainAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
+from langchain.utilities.sendgrid import SendgridAPIWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.spark_sql import SparkSQL
 from langchain.utilities.sql_database import SQLDatabase
@@ -61,6 +62,7 @@ __all__ = [
     "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearxSearchWrapper",
+    "SendgridAPIWrapper",
     "SerpAPIWrapper",
     "SparkSQL",
     "TensorflowDatasets",

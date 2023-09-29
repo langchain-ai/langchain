@@ -52,6 +52,7 @@ from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.graphql import GraphQLAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
+from langchain.utilities.sendgrid import SendgridAPIWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
@@ -246,6 +247,12 @@ def _get_searx_search_results_json(**kwargs: Any) -> BaseTool:
     wrapper_kwargs = {k: v for k, v in kwargs.items() if k != "num_results"}
     return SearxSearchResults(wrapper=SearxSearchWrapper(**wrapper_kwargs), **kwargs)
 
+def _get_sendgrid(**kwargs: Any) -> BaseTool:
+    return Tool(
+        name="Email",
+        description="Useful for when you need to send an email.",
+        func=SendgridAPIWrapper(**kwargs).run,
+    )
 
 def _get_bing_search(**kwargs: Any) -> BaseTool:
     return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
@@ -317,6 +324,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "dalle-image-generator": (_get_dalle_image_generator, ["openai_api_key"]),
     "twilio": (_get_twilio, ["account_sid", "auth_token", "from_number"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
+    "sendgrid": (_get_sendgrid, ["api_key"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
     "arxiv": (
         _get_arxiv,
