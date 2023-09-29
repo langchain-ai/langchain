@@ -12,7 +12,6 @@ from typing import (
     cast,
 )
 from uuid import UUID
-from langchain.schema.runnable.base import RunnableGenerator
 
 import pytest
 from freezegun import freeze_time
@@ -57,6 +56,7 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
+from langchain.schema.runnable.base import RunnableGenerator
 from langchain.tools.base import BaseTool, tool
 from langchain.tools.json.tool import JsonListKeysTool, JsonSpec
 
@@ -2876,7 +2876,7 @@ async def test_runnable_gen_transform() -> None:
         async for i in input:
             yield i + 1
 
-    chain = RunnableGenerator(gen_indexes, agen_indexes) | plus_one
+    chain: Runnable = RunnableGenerator(gen_indexes, agen_indexes) | plus_one
     achain = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
 
     assert chain.input_schema.schema() == {
