@@ -4,11 +4,10 @@ from typing import Any
 import pytest
 from langchain.schema.messages import (
     HumanMessage,
-    HumanMessageChunk,
     SystemMessage,
 )
 
-from langserve.serialization import WellKnownLCObject, simple_dumps, simple_loads
+from langserve.serialization import simple_dumps, simple_loads
 
 
 @pytest.mark.parametrize(
@@ -100,7 +99,7 @@ from langserve.serialization import WellKnownLCObject, simple_dumps, simple_load
             {
                 "message": HumanMessage(content="Greetings"),
                 "numbers": [1, 2, 3],
-                "text": "Hello, world!",
+                "boom": "Hello, world!",
             },
             {
                 "message": {
@@ -110,7 +109,7 @@ from langserve.serialization import WellKnownLCObject, simple_dumps, simple_load
                     "type": "human",
                 },
                 "numbers": [1, 2, 3],
-                "text": "Hello, world!",
+                "boom": "Hello, world!",
             },
         ),
     ],
