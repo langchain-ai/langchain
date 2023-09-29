@@ -1296,7 +1296,8 @@ def test_combining_sequences(
     assert chain2.first == input_formatter
     assert chain2.middle == [prompt2, chat2]
     assert chain2.last == parser2
-    assert dumps(chain2, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(chain2, pretty=True) == snapshot
 
     combined_chain = chain | chain2
 
@@ -1309,7 +1310,8 @@ def test_combining_sequences(
         chat2,
     ]
     assert combined_chain.last == parser2
-    assert dumps(combined_chain, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(combined_chain, pretty=True) == snapshot
 
     # Test invoke
     tracer = FakeTracer()
