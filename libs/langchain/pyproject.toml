@@ -133,6 +133,7 @@ anyio = "<4.0"
 jsonpatch = "^1.33"
 timescale-vector = {version = "^0.0.1", optional = true}
 anthropic = {version = "^0.3.11", optional = true}
+erniebot = {version = "^0.3.1", optional = true}
 
 
 [tool.poetry.group.test.dependencies]
@@ -206,7 +207,7 @@ playwright = "^1.28.0"
 setuptools = "^67.6.1"
 
 [tool.poetry.extras]
-llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers", "erniebot"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
@@ -225,6 +226,7 @@ azure = [
     "azure-cognitiveservices-speech",
     "azure-search-documents",
 ]
+erniebot = ["erniebot"]
 all = [
     "clarifai",
     "cohere",
@@ -299,6 +301,7 @@ all = [
     "amadeus",
     "librosa",
     "python-arango",
+    "erniebot",
 ]
 
 # An extra used to be able to add extended testing.
