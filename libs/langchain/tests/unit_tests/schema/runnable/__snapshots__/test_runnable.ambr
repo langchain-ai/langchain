@@ -1693,6 +1693,14 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -1966,6 +1974,14 @@
           'example': dict({
             'default': False,
             'title': 'Example',
+            'type': 'boolean',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
             'type': 'boolean',
           }),
           'type': dict({
@@ -2432,6 +2448,14 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -2672,6 +2696,14 @@
           'example': dict({
             'default': False,
             'title': 'Example',
+            'type': 'boolean',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
             'type': 'boolean',
           }),
           'type': dict({
@@ -2949,6 +2981,14 @@
           'example': dict({
             'default': False,
             'title': 'Example',
+            'type': 'boolean',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
             'type': 'boolean',
           }),
           'type': dict({
