@@ -34,7 +34,7 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
-    def parse_result(self, result: List[Generation]) -> T:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -45,7 +45,9 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
             Structured output.
         """
 
-    async def aparse_result(self, result: List[Generation]) -> T:
+    async def aparse_result(
+        self, result: List[Generation], *, partial: bool = False
+    ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -205,7 +207,7 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
                 run_type="parser",
             )
 
-    def parse_result(self, result: List[Generation]) -> T:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -231,7 +233,9 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
             Structured output.
         """
 
-    async def aparse_result(self, result: List[Generation]) -> T:
+    async def aparse_result(
+        self, result: List[Generation], *, partial: bool = False
+    ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -365,7 +369,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
             else:
                 acc_gen += chunk_gen
 
-            parsed = self.parse_result([acc_gen])
+            parsed = self.parse_result([acc_gen], partial=True)
             if parsed is not None and parsed != prev_parsed:
                 if self.diff:
                     yield self._diff(prev_parsed, parsed)
@@ -393,7 +397,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
             else:
                 acc_gen += chunk_gen
 
-            parsed = self.parse_result([acc_gen])
+            parsed = self.parse_result([acc_gen], partial=True)
             if parsed is not None and parsed != prev_parsed:
                 if self.diff:
                     yield self._diff(prev_parsed, parsed)
