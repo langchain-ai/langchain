@@ -16,19 +16,12 @@ prefixes = {
     "xsd": """PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n""",
 }
 
-cls_query_rdf = prefixes["rdfs"] + (
+cls_query_rdf = prefixes["rdfs"] + prefixes["rdf"] + (
     """SELECT DISTINCT ?cls ?com\n"""
     """WHERE { \n"""
     """    ?instance a ?cls . \n"""
     """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
-    """}"""
-)
-
-cls_query_rdfs = prefixes["rdfs"] + (
-    """SELECT DISTINCT ?cls ?com\n"""
-    """WHERE { \n"""
-    """    ?instance a/rdfs:subClassOf* ?cls . \n"""
-    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+    """    FILTER (!STRSTARTS(STR(?cls), STR(rdfs:)) && !STRSTARTS(STR(?cls), STR(rdf:))) \n"""
     """}"""
 )
 
@@ -45,20 +38,11 @@ rel_query_rdf = prefixes["rdfs"] + (
     """SELECT DISTINCT ?rel ?com\n"""
     """WHERE { \n"""
     """    ?subj ?rel ?obj . \n"""
-    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
-    """}"""
-)
-
-rel_query_rdfs = (
-    prefixes["rdf"]
-    + prefixes["rdfs"]
-    + (
-        """SELECT DISTINCT ?rel ?com\n"""
-        """WHERE { \n"""
-        """    ?rel a/rdfs:subPropertyOf* rdf:Property . \n"""
-        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
-        """}"""
-    )
+    """    OPTIONAL {                        \n"""
+    """              ?cls rdfs:comment ?com . \n"""
+    """              FILTER (?cls = ?rel)}    \n"""
+    """    FILTER (!STRSTARTS(STR(?rel), STR(rdfs:)) && !STRSTARTS(STR(?rel), STR(rdf:))) \n"""
+    """    }"""
 )
 
 op_query_owl = (
@@ -86,6 +70,26 @@ dp_query_owl = (
 )
 
 
+def _get_namespaces(graph: rdflib.Graph) -> str:
+    """ Get namespaces defined in the RDF graph.
+    This can sometime improve query generation when the llm
+    cannot infere the correct prefix from the uri or the prefix
+    is not in the schema.
+    
+    :param source_file: either a path for a local file or a URL.
+        currently only .ttl files are supported.
+
+    :return: a string containing the custom namespaces.
+     
+    """
+    filter_ns = list(prefixes.keys())
+    ns = list(graph.namespaces())
+    namespaces = "".join(
+        [f"@prefix {prefix}: <{uri}>\n" for prefix, uri in ns if prefix not in filter_ns]
+        )
+    
+    return namespaces
+
 class RdfGraph:
     """
     RDFlib wrapper for graph operations.
@@ -104,6 +108,7 @@ class RdfGraph:
         update_endpoint: Optional[str] = None,
         standard: Optional[str] = "rdf",
         local_copy: Optional[str] = None,
+        include_prefixes: Optional[bool] = False,
     ) -> None:
         """
         Set up the RDFlib graph
@@ -114,6 +119,8 @@ class RdfGraph:
         :param update_endpoint: SPARQL endpoint for UPDATE queries, write access
         :param standard: RDF, RDFS, or OWL
         :param local_copy: new local copy for storing changes
+        :param include_prefixes: include custom prefixes in the schema to enhance
+            query generation
         """
         self.source_file = source_file
         self.serialization = serialization
@@ -121,6 +128,7 @@ class RdfGraph:
         self.update_endpoint = update_endpoint
         self.standard = standard
         self.local_copy = local_copy
+        self.include_prefixes = include_prefixes
 
         try:
             import rdflib
@@ -155,7 +163,7 @@ class RdfGraph:
                 self.mode = "local"
                 if self.local_copy is None:
                     self.local_copy = self.source_file
-            self.graph = rdflib.Graph()
+            self.graph = rdflib.Graph(bind_namespaces="none")
             self.graph.parse(source_file, format=self.serialization)
 
         if query_endpoint:
@@ -249,23 +257,31 @@ class RdfGraph:
             classes: List[rdflib.query.ResultRow],
             relationships: List[rdflib.query.ResultRow],
         ) -> str:
-            return (
-                f"In the following, each IRI is followed by the local name and "
-                f"optionally its description in parentheses. \n"
+            
+            schema_def = (
+                f"Each IRI is followed by the local name and "
+                f"optionally its description in parentheses showing example usages.\n"
                 f"The RDF graph supports the following node types:\n"
                 f'{", ".join([self._res_to_str(r, "cls") for r in classes])}\n'
                 f"The RDF graph supports the following relationships:\n"
                 f'{", ".join([self._res_to_str(r, "rel") for r in relationships])}\n'
-            )
+                )
+            
+            if self.include_prefixes:
+                prefix = (
+                    f"The RDF graph supports the following custom prefixes "
+                    f"in addition to standard ones:\n"
+                    f'{_get_namespaces(self.graph)}\n'
+                    )
+                schema_def = prefix + schema_def
 
-        if self.standard == "rdf":
+            return schema_def
+
+        if self.standard in ["rdf", "rdfs"]:
             clss = self.query(cls_query_rdf)
             rels = self.query(rel_query_rdf)
             self.schema = _rdf_s_schema(clss, rels)
-        elif self.standard == "rdfs":
-            clss = self.query(cls_query_rdfs)
-            rels = self.query(rel_query_rdfs)
-            self.schema = _rdf_s_schema(clss, rels)
+        
         elif self.standard == "owl":
             clss = self.query(cls_query_owl)
             ops = self.query(op_query_owl)
