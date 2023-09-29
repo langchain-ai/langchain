@@ -231,19 +231,6 @@ def test_invoke_as_part_of_sequence(client: RemoteRunnable) -> None:
     # assert list(runnable.stream([1, 2], config={"tags": ["test"]})) == [3, 4]
 
 
-def test_pydantic_root():
-    from pydantic import BaseModel
-
-    class Model(BaseModel):
-        __root__: str
-
-    class Q(BaseModel):
-        input: Model
-
-    # s = Model(__root__=[23])
-    Q(input="hello")
-
-
 @pytest.mark.asyncio
 async def test_invoke_as_part_of_sequence_async(async_client: RemoteRunnable) -> None:
     """Test as part of a sequence.
