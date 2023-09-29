@@ -447,9 +447,13 @@ def _import_vertex_model_garden() -> Any:
 def _import_vllm() -> Any:
     from langchain.llms.vllm import VLLM
 
+    return VLLM
+
 
 def _import_vllm_openai() -> Any:
     from langchain.llms.vllm import VLLMOpenAI
+
+    return VLLMOpenAI
 
 
 def _import_writer() -> Any:
@@ -483,8 +487,6 @@ def __getattr__(name: str) -> Any:
         return _import_baidu_qianfan_endpoint()
     elif name == "Banana":
         return _import_bananadev()
-    elif name == "BaseLLM":
-        return _import_base()
     elif name == "Baseten":
         return _import_baseten()
     elif name == "Beam":
