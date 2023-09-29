@@ -367,16 +367,65 @@ def index(
     }
 
 
+# Define an asynchronous generator function
+async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
+    """Convert an iterable to an async iterator."""
+    for item in iterator:
+        yield item
+
+
 async def aindex(
-    docs_source: Union[BaseLoader, Iterable[Document]],
+    docs_source: Union[BaseLoader, Iterable[Document], AsyncIterator[Document]],
     record_manager: RecordManager,
     vector_store: VectorStore,
     *,
     batch_size: int = 100,
     cleanup: Literal["incremental", "full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
+    cleanup_batch_size: int = 1_000,
 ) -> IndexingResult:
-    """Index data from the loader into the vector store."""
+    """Index data from the loader into the vector store.
+
+    Indexing functionality uses a manager to keep track of which documents
+    are in the vector store.
+
+    This allows us to keep track of which documents were updated, and which
+    documents were deleted, which documents should be skipped.
+
+    For the time being, documents are indexed using their hashes, and users
+     are not able to specify the uid of the document.
+
+    IMPORTANT:
+       if auto_cleanup is set to True, the loader should be returning
+       the entire dataset, and not just a subset of the dataset.
+       Otherwise, the auto_cleanup will remove documents that it is not
+       supposed to.
+
+    Args:
+        docs_source: Data loader or iterable of documents to index.
+        record_manager: Timestamped set to keep track of which documents were
+                         updated.
+        vector_store: Vector store to index the documents into.
+        batch_size: Batch size to use when indexing.
+        cleanup: How to handle clean up of documents.
+            - Incremental: Cleans up all documents that haven't been updated AND
+                           that are associated with source ids that were seen
+                           during indexing.
+                           Clean up is done continuously during indexing helping
+                           to minimize the probability of users seeing duplicated
+                           content.
+            - Full: Delete all documents that haven to been returned by the loader.
+                    Clean up runs after all documents have been indexed.
+                    This means that users may see duplicated content during indexing.
+            - None: Do not delete any documents.
+        source_id_key: Optional key that helps identify the original source
+            of the document.
+        cleanup_batch_size: Batch size to use when cleaning up documents.
+
+    Returns:
+        Indexing result which contains information about how many documents
+        were added, updated, deleted, or skipped.
+    """
 
     if cleanup not in {"incremental", "full", None}:
         raise ValueError(
@@ -403,21 +452,16 @@ async def aindex(
 
     if isinstance(docs_source, BaseLoader):
         try:
-            doc_iterator = await docs_source.alazy_load()
+            doc_iterator = docs_source.lazy_load()
         except NotImplementedError:
+            doc_iterator = iter(docs_source.load())
 
-            async def _docs_source() -> AsyncIterator[Document]:
-                for doc in await docs_source.aload():
-                    yield doc
-
-            doc_iterator = _docs_source()
+        async_doc_iterator = _to_async_iterator(doc_iterator)
     else:
-
-        async def _docs_source() -> AsyncIterator[Document]:
-            for doc in docs_source:
-                yield doc
-
-        doc_iterator = _docs_source()
+        if hasattr(docs_source, "__aiter__"):
+            async_doc_iterator = docs_source  # type: ignore[assignment]
+        else:
+            async_doc_iterator = _to_async_iterator(docs_source)
 
     source_id_assigner = _get_source_id_assigner(source_id_key)
 
@@ -428,7 +472,7 @@ async def aindex(
     num_updated = 0
     num_deleted = 0
 
-    async for doc_batch in _abatch(batch_size, doc_iterator):
+    async for doc_batch in _abatch(batch_size, async_doc_iterator):
         hashed_docs = list(
             _deduplicate_in_order(
                 [_HashedDocument.from_document(doc) for doc in doc_batch]
@@ -458,7 +502,7 @@ async def aindex(
         uids: list[str] = []
         docs_to_index: list[Document] = []
 
-        for doc, hashed_doc, doc_exists in zip(doc_batch, hashed_docs, exists_batch):
+        for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
                 # Must be updated to refresh timestamp.
                 await record_manager.aupdate(
@@ -467,7 +511,7 @@ async def aindex(
                 num_skipped += 1
                 continue
             uids.append(hashed_doc.uid)
-            docs_to_index.append(doc)
+            docs_to_index.append(hashed_doc.to_document())
 
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
@@ -508,14 +552,14 @@ async def aindex(
                 num_deleted += len(uids_to_delete)
 
     if cleanup == "full":
-        uids_to_delete = await record_manager.alist_keys(before=index_start_dt)
-
-        if uids_to_delete:
+        while uids_to_delete := await record_manager.alist_keys(
+            before=index_start_dt, limit=cleanup_batch_size
+        ):
             # First delete from record store.
             await vector_store.adelete(uids_to_delete)
             # Then delete from record manager.
             await record_manager.adelete_keys(uids_to_delete)
-            num_deleted = len(uids_to_delete)
+            num_deleted += len(uids_to_delete)
 
     return {
         "num_added": num_added,

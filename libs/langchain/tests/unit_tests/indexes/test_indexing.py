@@ -20,7 +20,6 @@ from langchain.embeddings.base import Embeddings
 from langchain.indexes import aindex, index
 from langchain.indexes._sql_record_manager import SQLRecordManager
 from langchain.schema import Document
-from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VST, VectorStore
 
 
@@ -43,7 +42,7 @@ class ToyLoader(BaseLoader):
     async def alazy_load(
         self,
     ) -> AsyncIterator[Document]:
-        async def async_generator():
+        async def async_generator() -> AsyncIterator[Document]:
             for document in self.documents:
                 yield document
 
@@ -890,7 +889,6 @@ def test_deduplication(
     }
 
 
-
 @pytest.mark.asyncio
 async def test_adeduplication(
     arecord_manager: SQLRecordManager, vector_store: VectorStore
@@ -914,6 +912,7 @@ async def test_adeduplication(
         "num_skipped": 0,
         "num_updated": 0,
     }
+
 
 def test_cleanup_with_different_batchsize(
     record_manager: SQLRecordManager, vector_store: VectorStore

@@ -468,6 +468,7 @@ class SQLRecordManager(RecordManager):
         before: Optional[float] = None,
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
+        limit: Optional[int] = None,
     ) -> List[str]:
         """List records in the SQLite database based on the provided date range."""
         async with self._amake_session() as session:
@@ -488,6 +489,9 @@ class SQLRecordManager(RecordManager):
                 query = query.filter(  # type: ignore[attr-defined]
                     UpsertionRecord.group_id.in_(group_ids)
                 )
+
+            if limit:
+                query = query.limit(limit)  # type: ignore[attr-defined]
             records = (await session.execute(query)).scalars().all()
         return list(records)
 
