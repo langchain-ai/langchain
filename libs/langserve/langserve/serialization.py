@@ -6,6 +6,8 @@ can be expected to be frequently transmitted between chains.
 import json
 from typing import Any, Union
 
+from langchain.prompts.base import StringPromptValue
+from langchain.prompts.chat import ChatPromptValueConcrete
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
@@ -18,7 +20,7 @@ from langchain.schema.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from pydantic import BaseModel, ValidationError, create_model
+from pydantic import BaseModel, ValidationError
 
 
 class WellKnownLCObject(BaseModel):
@@ -35,6 +37,8 @@ class WellKnownLCObject(BaseModel):
         ChatMessageChunk,
         FunctionMessageChunk,
         AIMessageChunk,
+        StringPromptValue,
+        ChatPromptValueConcrete,
     ]
 
 
