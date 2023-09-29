@@ -49,6 +49,7 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-35-turbo-16k-0613-completion": 0.004,
     # Others
     "text-ada-001": 0.0004,
+    "text-embedding-ada-002": 0.0001,
     "ada": 0.0004,
     "text-babbage-001": 0.0005,
     "babbage": 0.0005,

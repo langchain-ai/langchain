@@ -25,6 +25,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from langchain.callbacks.openai_info import get_openai_token_cost_for_model
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
@@ -322,7 +323,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     def _get_len_safe_embeddings(
-        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
+        self,
+        texts: List[str],
+        *,
+        engine: str,
+        chunk_size: Optional[int] = None,
+        log_usage: bool = False,
     ) -> List[List[float]]:
         embeddings: List[List[float]] = [[] for _ in range(len(texts))]
         try:
@@ -337,6 +343,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         tokens = []
         indices = []
         model_name = self.tiktoken_model_name or self.model
+        total_tokens: int = 0
         try:
             encoding = tiktoken.encoding_for_model(model_name)
         except KeyError:
@@ -377,6 +384,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 **self._invocation_params,
             )
             batched_embeddings.extend(r["embedding"] for r in response["data"])
+            total_tokens += response["usage"]["total_tokens"]
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
@@ -389,23 +397,33 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
-                average = embed_with_retry(
+                response = embed_with_retry(
                     self,
                     input="",
                     **self._invocation_params,
-                )[
-                    "data"
-                ][0]["embedding"]
+                )
+                average = response["data"][0]["embedding"]
+                total_tokens += response["usage"]["total_tokens"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
 
+        if log_usage:
+            total_cost = get_openai_token_cost_for_model(model_name, total_tokens)
+            logger.debug(
+                f"Tokens Used: {total_tokens}\n" f"Total Cost (USD): ${total_cost}"
+            )
         return embeddings
 
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     async def _aget_len_safe_embeddings(
-        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
+        self,
+        texts: List[str],
+        *,
+        engine: str,
+        chunk_size: Optional[int] = None,
+        log_usage: bool = False,
     ) -> List[List[float]]:
         embeddings: List[List[float]] = [[] for _ in range(len(texts))]
         try:
@@ -420,6 +438,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         tokens = []
         indices = []
         model_name = self.tiktoken_model_name or self.model
+        total_tokens: int = 0
         try:
             encoding = tiktoken.encoding_for_model(model_name)
         except KeyError:
@@ -449,6 +468,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 **self._invocation_params,
             )
             batched_embeddings.extend(r["embedding"] for r in response["data"])
+            total_tokens += response["usage"]["total_tokens"]
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
@@ -459,21 +479,26 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
-                average = (
-                    await async_embed_with_retry(
-                        self,
-                        input="",
-                        **self._invocation_params,
-                    )
-                )["data"][0]["embedding"]
+                response = await async_embed_with_retry(
+                    self,
+                    input="",
+                    **self._invocation_params,
+                )
+                average = response["data"][0]["embedding"]
+                total_tokens += response["usage"]["total_tokens"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
 
+        if log_usage:
+            total_cost = get_openai_token_cost_for_model(model_name, total_tokens)
+            logger.debug(
+                f"Tokens Used: {total_tokens}\n" f"Total Cost (USD): ${total_cost}"
+            )
         return embeddings
 
     def embed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
+        self, texts: List[str], chunk_size: Optional[int] = 0, log_usage: bool = False
     ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
@@ -481,16 +506,20 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             texts: The list of texts to embed.
             chunk_size: The chunk size of embeddings. If None, will use the chunk size
                 specified by the class.
+            log_usage: Whether to display token usage and cost of the embedding model.
+                Default False.
 
         Returns:
             List of embeddings, one for each text.
         """
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        return self._get_len_safe_embeddings(texts, engine=self.deployment)
+        return self._get_len_safe_embeddings(
+            texts, engine=self.deployment, log_usage=log_usage
+        )
 
     async def aembed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
+        self, texts: List[str], chunk_size: Optional[int] = 0, log_usage: bool = False
     ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint async for embedding search docs.
 
@@ -498,33 +527,40 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             texts: The list of texts to embed.
             chunk_size: The chunk size of embeddings. If None, will use the chunk size
                 specified by the class.
+            log_usage: Whether to display token usage and cost of the embedding model.
+                Default False.
 
         Returns:
             List of embeddings, one for each text.
         """
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        return await self._aget_len_safe_embeddings(texts, engine=self.deployment)
+        return await self._aget_len_safe_embeddings(
+            texts, engine=self.deployment, log_usage=log_usage
+        )
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str, log_usage: bool = False) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
 
         Args:
             text: The text to embed.
-
+            log_usage: Whether to display token usage and cost of the embedding model.
+                Default False.
         Returns:
             Embedding for the text.
         """
-        return self.embed_documents([text])[0]
+        return self.embed_documents([text], log_usage=log_usage)[0]
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def aembed_query(self, text: str, log_usage: bool = False) -> List[float]:
         """Call out to OpenAI's embedding endpoint async for embedding query text.
 
         Args:
             text: The text to embed.
+            log_usage: Whether to display token usage and cost of the embedding model.
+                Default False.
 
         Returns:
             Embedding for the text.
         """
-        embeddings = await self.aembed_documents([text])
+        embeddings = await self.aembed_documents([text], log_usage=log_usage)
         return embeddings[0]
