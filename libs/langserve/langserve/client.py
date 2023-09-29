@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import weakref
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, AsyncIterator, Iterator, List, Optional, Sequence, Union
