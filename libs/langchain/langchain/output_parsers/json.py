@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 import re
 from json import JSONDecodeError
-from typing import Any, List
+from typing import Any, List, Optional
+
+import jsonpatch
 
 from langchain.schema import BaseOutputParser, OutputParserException
 from langchain.schema.output import ChatGeneration, Generation
@@ -42,7 +44,7 @@ def _custom_parser(multiline_string: str) -> str:
 
 # Adapted from https://github.com/KillianLucas/open-interpreter/blob/main/interpreter/utils/parse_partial_json.py
 # MIT License
-def parse_partial_json(s):
+def parse_partial_json(s: str) -> Any:
     # Attempt to parse the string as-is.
     try:
         return json.loads(s)
@@ -84,7 +86,8 @@ def parse_partial_json(s):
         # Append the processed character to the new string.
         new_s += char
 
-    # If we're still inside a string at the end of processing, we need to close the string.
+    # If we're still inside a string at the end of processing,
+    # we need to close the string.
     if is_inside_string:
         new_s += '"'
 
@@ -197,6 +200,9 @@ class PartialFunctionsJsonOutputParser(BaseCumulativeTransformOutputParser[Any])
         except KeyError:
             return None
 
+    def _diff(self, prev: Optional[Any], next: Any) -> Any:
+        return jsonpatch.make_patch(prev, next).patch
+
     def parse(self, text: str) -> Any:
         pass
 
@@ -205,6 +211,9 @@ class PartialJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     @property
     def _type(self) -> str:
         return "partial_functions_json"
+
+    def _diff(self, prev: Optional[Any], next: Any) -> Any:
+        return jsonpatch.make_patch(prev, next).patch
 
     def parse(self, text: str) -> Any:
         return parse_json_markdown(text)
