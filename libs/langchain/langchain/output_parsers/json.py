@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from json import JSONDecodeError
-from typing import Any, List, Optional
+from typing import Any, Callable, List, Optional
 
 import jsonpatch
 
@@ -103,7 +103,9 @@ def parse_partial_json(s: str) -> Any:
         return None
 
 
-def parse_json_markdown(json_string: str) -> dict:
+def parse_json_markdown(
+    json_string: str, parser: Callable[[str], Any] = json.loads
+) -> dict:
     """
     Parse a JSON string from a Markdown string.
 
@@ -130,7 +132,7 @@ def parse_json_markdown(json_string: str) -> dict:
     json_str = _custom_parser(json_str)
 
     # Parse the JSON string into a Python dictionary
-    parsed = parse_partial_json(json_str)
+    parsed = parser(json_str)
 
     return parsed
 
@@ -216,4 +218,4 @@ class PartialJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         return jsonpatch.make_patch(prev, next).patch
 
     def parse(self, text: str) -> Any:
-        return parse_json_markdown(text)
+        return parse_json_markdown(text, parse_partial_json)
