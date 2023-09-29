@@ -1,3 +1,4 @@
+import sys
 from typing import Callable
 
 import pytest
@@ -8,6 +9,9 @@ from langchain.schema.runnable.utils import (
 )
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
 @pytest.mark.parametrize(
     "func, expected_source",
     [
