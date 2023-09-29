@@ -960,7 +960,11 @@ async def test_prompt_with_chat_model(
     tracer = FakeTracer()
     assert [
         *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
-    ] == [AIMessage(content="f"), AIMessage(content="o"), AIMessage(content="o")]
+    ] == [
+        AIMessageChunk(content="f"),
+        AIMessageChunk(content="o"),
+        AIMessageChunk(content="o"),
+    ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
