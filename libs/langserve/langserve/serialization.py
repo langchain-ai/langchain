@@ -1,5 +1,10 @@
+"""Serialization module for Well Known LangChain objects.
+
+Specialized JSON serialization for well known LangChain objects that
+can be expected to be frequently transmitted between chains.
+"""
 import json
-from typing import Union, Any
+from typing import Union, Any, Dict
 
 from pydantic import BaseModel
 from pydantic import ValidationError
@@ -49,17 +54,17 @@ class WellKnownLCObject(BaseModel):
 
 
 # Custom JSON Encoder
-class LangChainEncoder(json.JSONEncoder):
-    """Custom JSON Encoder that handles well known LangChain objects."""
+class _LangChainEncoder(json.JSONEncoder):
+    """Custom JSON Encoder that can encode pydantic objects as well."""
 
-    def default(self, obj):
-        if isinstance(obj, WellKnownTypes):
+    def default(self, obj) -> Any:
+        if isinstance(obj, BaseModel):
             return obj.dict()
         return super().default(obj)
 
 
 # Custom JSON Decoder
-class LangChainDecoder(json.JSONDecoder):
+class _LangChainDecoder(json.JSONDecoder):
     """Custom JSON Decoder that handles well known LangChain objects."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -75,3 +80,21 @@ class LangChainDecoder(json.JSONDecoder):
             except ValidationError:
                 return value
         return value
+
+
+# PUBLIC API
+
+
+def simple_dumpd(obj: Any) -> Any:
+    """Convert the given object to a JSON serializable object."""
+    return json.loads(json.dumps(obj, cls=_LangChainEncoder))
+
+
+def dumps(obj: Any) -> str:
+    """Dump the given object as a JSON string."""
+    return json.dumps(obj, cls=_LangChainEncoder)
+
+
+def loads(s: str) -> Any:
+    """Load the given JSON string."""
+    return json.loads(s, cls=_LangChainDecoder)

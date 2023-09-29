@@ -8,7 +8,7 @@ from langchain.schema.messages import (
     SystemMessage,
     HumanMessageChunk,
 )
-from langserve.custom_json import LangChainEncoder, LangChainDecoder
+from langserve.serialization import _LangChainEncoder, _LangChainDecoder
 
 
 @pytest.mark.parametrize(
@@ -105,6 +105,6 @@ from langserve.custom_json import LangChainEncoder, LangChainDecoder
 def test_serialization(data: Any, expected_json: Any) -> None:
     """Test that the LangChainEncoder encodes the data as expected."""
     # Test encoding
-    assert json.loads(LangChainEncoder().encode(data)) == expected_json
+    assert json.loads(_LangChainEncoder().encode(data)) == expected_json
     # Test decoding
-    assert LangChainDecoder().decode(json.dumps(expected_json)) == data
+    assert _LangChainDecoder().decode(json.dumps(expected_json)) == data
