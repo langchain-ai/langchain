@@ -867,6 +867,7 @@ async def test_prompt_with_chat_model(
 
     chain = prompt | chat
 
+    assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == []
@@ -1276,7 +1277,8 @@ def test_combining_sequences(
     assert chain.first == prompt
     assert chain.middle == [chat]
     assert chain.last == parser
-    assert dumps(chain, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(chain, pretty=True) == snapshot
 
     prompt2 = (
         SystemMessagePromptTemplate.from_template("You are a nicer assistant.")
@@ -1294,7 +1296,8 @@ def test_combining_sequences(
     assert chain2.first == input_formatter
     assert chain2.middle == [prompt2, chat2]
     assert chain2.last == parser2
-    assert dumps(chain2, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(chain2, pretty=True) == snapshot
 
     combined_chain = chain | chain2
 
@@ -1307,7 +1310,8 @@ def test_combining_sequences(
         chat2,
     ]
     assert combined_chain.last == parser2
-    assert dumps(combined_chain, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(combined_chain, pretty=True) == snapshot
 
     # Test invoke
     tracer = FakeTracer()
@@ -1315,7 +1319,8 @@ def test_combining_sequences(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == ["baz", "qux"]
 
-    assert tracer.runs == snapshot
+    if sys.version_info >= (3, 9):
+        assert tracer.runs == snapshot
 
 
 @freeze_time("2023-01-01")
@@ -1350,6 +1355,7 @@ Question:
         | parser
     )
 
+    assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert isinstance(chain.first, RunnableMap)
     assert chain.middle == [prompt, chat]
@@ -1375,7 +1381,7 @@ Question:
             SystemMessage(content="You are a nice assistant."),
             HumanMessage(
                 content="""Context:
-[Document(page_content='foo', metadata={}), Document(page_content='bar', metadata={})]
+[Document(page_content='foo'), Document(page_content='bar')]
 
 Question:
 What is your name?"""
@@ -1413,6 +1419,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
         }
     )
 
+    assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]
@@ -2098,7 +2105,8 @@ async def test_llm_with_fallbacks(
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
-    assert dumps(runnable, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(runnable, pretty=True) == snapshot
 
 
 class FakeSplitIntoListParser(BaseOutputParser[List[str]]):
@@ -2196,6 +2204,7 @@ def test_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(RuntimeError):
         runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).invoke(2)
 
@@ -2205,6 +2214,7 @@ def test_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).batch([1, 2, 0])
 
@@ -2214,6 +2224,7 @@ def test_retrying(mocker: MockerFixture) -> None:
 
     output = runnable.with_retry(
         stop_after_attempt=2,
+        wait_exponential_jitter=False,
         retry_if_exception_type=(ValueError,),
     ).batch([1, 2, 0], return_exceptions=True)
 
@@ -2248,6 +2259,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         await runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError, KeyError),
         ).ainvoke(1)
 
@@ -2257,6 +2269,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(RuntimeError):
         await runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).ainvoke(2)
 
@@ -2266,6 +2279,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         await runnable.with_retry(
             stop_after_attempt=2,
+            wait_exponential_jitter=False,
             retry_if_exception_type=(ValueError,),
         ).abatch([1, 2, 0])
 
@@ -2275,6 +2289,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
 
     output = await runnable.with_retry(
         stop_after_attempt=2,
+        wait_exponential_jitter=False,
         retry_if_exception_type=(ValueError,),
     ).abatch([1, 2, 0], return_exceptions=True)
 
@@ -2729,3 +2744,38 @@ async def test_runnable_branch_abatch() -> None:
     )
 
     assert await branch.abatch([1, 10, 0]) == [2, 100, -1]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
+def test_representation_of_runnables() -> None:
+    """Test representation of runnables."""
+    runnable = RunnableLambda(lambda x: x * 2)
+    assert repr(runnable) == "RunnableLambda(lambda x: x * 2)"
+
+    def f(x: int) -> int:
+        """Return 2."""
+        return 2
+
+    assert repr(RunnableLambda(func=f)) == "RunnableLambda(...)"
+
+    async def af(x: int) -> int:
+        """Return 2."""
+        return 2
+
+    assert repr(RunnableLambda(func=f, afunc=af)) == "RunnableLambda(...)"
+
+    assert repr(
+        RunnableLambda(lambda x: x + 2)
+        | {
+            "a": RunnableLambda(lambda x: x * 2),
+            "b": RunnableLambda(lambda x: x * 3),
+        }
+    ) == (
+        "RunnableLambda(...)\n"
+        "| {\n"
+        "    a: RunnableLambda(...),\n"
+        "    b: RunnableLambda(...)\n"
+        "  }"
+    ), "repr where code string contains multiple lambdas gives up"
