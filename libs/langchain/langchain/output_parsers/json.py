@@ -105,7 +105,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
 
 
 def parse_json_markdown(
-    json_string: str, parser: Callable[[str], Any] = json.loads
+    json_string: str, *, parser: Callable[[str], Any] = json.loads
 ) -> dict:
     """
     Parse a JSON string from a Markdown string.
