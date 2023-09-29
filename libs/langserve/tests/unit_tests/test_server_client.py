@@ -2,7 +2,7 @@
 import asyncio
 from asyncio import AbstractEventLoop
 from contextlib import asynccontextmanager
-from typing import Any, List, Optional
+from typing import List, Optional, Union
 
 import httpx
 import pytest
@@ -34,18 +34,16 @@ def event_loop():
 def app(event_loop: AbstractEventLoop) -> FastAPI:
     """A simple server that wraps a Runnable and exposes it as an API."""
 
-    async def add_one_or_passthrough(x: Any) -> int:
+    async def add_one_or_passthrough(
+        x: Union[int, HumanMessage]
+    ) -> Union[int, HumanMessage]:
         """Add one to int or passthrough."""
         if isinstance(x, int):
             return x + 1
         else:
             return x
 
-    def raise_on_call(x: int) -> int:
-        """Sync function server side should never be called."""
-        raise AssertionError("Should not be called")
-
-    runnable_lambda = RunnableLambda(func=raise_on_call, afunc=add_one_or_passthrough)
+    runnable_lambda = RunnableLambda(func=add_one_or_passthrough)
     app = FastAPI()
     try:
         add_routes(app, runnable_lambda)
@@ -132,7 +130,6 @@ def test_invoke(client: RemoteRunnable) -> None:
     """Test sync invoke."""
     assert client.invoke(1) == 2
     assert client.invoke(HumanMessage(content="hello")) == HumanMessage(content="hello")
-
     # Test invocation with config
     assert client.invoke(1, config={"tags": ["test"]}) == 2
 
@@ -232,6 +229,19 @@ def test_invoke_as_part_of_sequence(client: RemoteRunnable) -> None:
     # assert list(runnable.stream([1, 2])) == [3, 4]
     # # with config
     # assert list(runnable.stream([1, 2], config={"tags": ["test"]})) == [3, 4]
+
+
+def test_pydantic_root():
+    from pydantic import BaseModel
+
+    class Model(BaseModel):
+        __root__: str
+
+    class Q(BaseModel):
+        input: Model
+
+    # s = Model(__root__=[23])
+    Q(input="hello")
 
 
 @pytest.mark.asyncio
@@ -466,3 +476,35 @@ async def test_async_client_close() -> None:
     del runnable
     assert sync_client.is_closed is True
     assert async_client.is_closed is True
+
+
+@pytest.mark.asyncio
+async def test_openapi_docs_with_identical_runnables(
+    event_loop: AbstractEventLoop, mocker: MockerFixture
+) -> None:
+    """Test client side and server side exceptions."""
+
+    async def add_one(x: int) -> int:
+        """Add one to simulate a valid function"""
+        return x + 1
+
+    server_runnable = RunnableLambda(func=add_one)
+    server_runnable2 = RunnableLambda(func=add_one)
+
+    app = FastAPI()
+    add_routes(
+        app,
+        server_runnable,
+        path="/1",
+    )
+    # Add another route that uses the same schema (inferred from runnable input schema)
+    add_routes(
+        app,
+        server_runnable2,
+        path="/2",
+        config_keys=["tags", "run_name"],
+    )
+
+    async with AsyncClient(app=app, base_url="http://localhost:9999") as async_client:
+        response = await async_client.get("/openapi.json")
+        assert response.status_code == 200
