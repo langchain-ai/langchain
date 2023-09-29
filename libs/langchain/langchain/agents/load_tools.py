@@ -22,6 +22,7 @@ from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.metaphor_search.tool import MetaphorSearchResults
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
+from langchain.tools.searchapi.tool import SearchAPIResults, SearchAPIRun
 from langchain.tools.graphql.tool import BaseGraphQLTool
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
@@ -52,6 +53,7 @@ from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.graphql import GraphQLAPIWrapper
+from langchain.utilities.searchapi import SearchApiAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.twilio import TwilioAPIWrapper
@@ -214,6 +216,14 @@ def _get_google_search_results_json(**kwargs: Any) -> BaseTool:
     return GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
 
 
+def _get_searchapi(**kwargs: Any) -> BaseTool:
+    return SearchAPIRun(api_wrapper=SearchApiAPIWrapper(**kwargs))
+
+
+def _get_searchapi_results_json(**kwargs: Any) -> BaseTool:
+    return SearchAPIResults(api_wrapper=SearchApiAPIWrapper(**kwargs))
+
+
 def _get_serpapi(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Search",
@@ -298,7 +308,6 @@ _EXTRA_LLM_TOOLS: Dict[
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
     "podcast-api": (_get_podcast_api, ["listen_api_key"]),
 }
-
 _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[str]]] = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
@@ -317,6 +326,11 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "google-serper-results-json": (
         _get_google_serper_results_json,
         ["serper_api_key", "aiosession"],
+    ),
+    "searchapi": (_get_searchapi, ["searchapi_api_key", "aiosession"]),
+    "searchapi-results-json": (
+        _get_searchapi_results_json,
+        ["searchapi_api_key", "aiosession"],
     ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "dalle-image-generator": (_get_dalle_image_generator, ["openai_api_key"]),

@@ -8,8 +8,8 @@ import numpy as np
 
 from langchain.schema import Document
 from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 IMPORT_OPENSEARCH_PY_ERROR = (
@@ -341,38 +341,21 @@ class OpenSearchVectorSearch(VectorStore):
         http_auth = _get_kwargs_value(kwargs, "http_auth", None)
         self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
+        self.engine = _get_kwargs_value(kwargs, "engine", None)
 
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
 
-    def add_texts(
+    def __add(
         self,
         texts: Iterable[str],
+        embeddings: List[List[float]],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         bulk_size: int = 500,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
-
-        Args:
-            texts: Iterable of strings to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
-            ids: Optional list of ids to associate with the texts.
-            bulk_size: Bulk API request count; Default: 500
-
-        Returns:
-            List of ids from adding the texts into the vectorstore.
-
-        Optional Args:
-            vector_field: Document field embeddings are stored in. Defaults to
-            "vector_field".
-
-            text_field: Document field the text of the document is stored in. Defaults
-            to "text".
-        """
-        embeddings = self.embedding_function.embed_documents(list(texts))
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         index_name = _get_kwargs_value(kwargs, "index_name", self.index_name)
         text_field = _get_kwargs_value(kwargs, "text_field", "text")
@@ -403,6 +386,79 @@ class OpenSearchVectorSearch(VectorStore):
             mapping=mapping,
             max_chunk_bytes=max_chunk_bytes,
             is_aoss=self.is_aoss,
+        )
+
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        bulk_size: int = 500,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
+            bulk_size: Bulk API request count; Default: 500
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
+        """
+        embeddings = self.embedding_function.embed_documents(list(texts))
+        return self.__add(
+            texts,
+            embeddings,
+            metadatas=metadatas,
+            ids=ids,
+            bulk_size=bulk_size,
+            kwargs=kwargs,
+        )
+
+    def add_embeddings(
+        self,
+        text_embeddings: Iterable[Tuple[str, List[float]]],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        bulk_size: int = 500,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add the given texts and embeddings to the vectorstore.
+
+        Args:
+            text_embeddings: Iterable pairs of string and embedding to
+                add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
+            bulk_size: Bulk API request count; Default: 500
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
+        """
+        texts, embeddings = zip(*text_embeddings)
+        return self.__add(
+            list(texts),
+            list(embeddings),
+            metadatas=metadatas,
+            ids=ids,
+            bulk_size=bulk_size,
+            kwargs=kwargs,
         )
 
     def similarity_search(
@@ -528,6 +584,7 @@ class OpenSearchVectorSearch(VectorStore):
         search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
         vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
         index_name = _get_kwargs_value(kwargs, "index_name", self.index_name)
+        filter = _get_kwargs_value(kwargs, "filter", {})
 
         if (
             self.is_aoss
@@ -563,6 +620,17 @@ class OpenSearchVectorSearch(VectorStore):
                     "Both `lucene_filter` and `boolean_filter` are provided which "
                     "is invalid. `lucene_filter` is deprecated"
                 )
+
+            if (
+                efficient_filter == {}
+                and boolean_filter == {}
+                and lucene_filter == {}
+                and filter != {}
+            ):
+                if self.engine in ["faiss", "lucene"]:
+                    efficient_filter = filter
+                else:
+                    boolean_filter = filter
 
             if boolean_filter != {}:
                 search_query = _approximate_search_query_with_boolean_filter(
@@ -812,6 +880,8 @@ class OpenSearchVectorSearch(VectorStore):
         max_chunk_bytes = _get_kwargs_value(kwargs, "max_chunk_bytes", 1 * 1024 * 1024)
         http_auth = _get_kwargs_value(kwargs, "http_auth", None)
         is_aoss = _is_aoss_enabled(http_auth=http_auth)
+        engine = None
+
         if is_aoss and not is_appx_search:
             raise ValueError(
                 "Amazon OpenSearch Service Serverless only "
@@ -848,4 +918,5 @@ class OpenSearchVectorSearch(VectorStore):
             max_chunk_bytes=max_chunk_bytes,
             is_aoss=is_aoss,
         )
+        kwargs["engine"] = engine
         return cls(opensearch_url, index_name, embedding, **kwargs)
