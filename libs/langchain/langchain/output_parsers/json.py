@@ -205,8 +205,10 @@ class PartialFunctionsJsonOutputParser(BaseCumulativeTransformOutputParser[Any])
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
+    # This method would be called by the default implementation of `parse_result`
+    # but we're overriding that method so it's not needed.
     def parse(self, text: str) -> Any:
-        pass
+        raise NotImplementedError()
 
 
 class PartialJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
