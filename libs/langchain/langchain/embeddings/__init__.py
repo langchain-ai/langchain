@@ -29,7 +29,6 @@ from langchain.embeddings.deepinfra import DeepInfraEmbeddings
 from langchain.embeddings.edenai import EdenAiEmbeddings
 from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
 from langchain.embeddings.embaas import EmbaasEmbeddings
-from langchain.embeddings.ernie import ErnieEmbeddings
 from langchain.embeddings.erniebot import ERNIEBotEmbeddings
 from langchain.embeddings.fake import DeterministicFakeEmbedding, FakeEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
@@ -110,7 +109,6 @@ __all__ = [
     "LocalAIEmbeddings",
     "AwaEmbeddings",
     "HuggingFaceBgeEmbeddings",
-    "ErnieEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "OllamaEmbeddings",
     "QianfanEmbeddingsEndpoint",
