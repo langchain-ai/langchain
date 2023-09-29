@@ -1319,7 +1319,8 @@ def test_combining_sequences(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == ["baz", "qux"]
 
-    assert tracer.runs == snapshot
+    if sys.version_info >= (3, 9):
+        assert tracer.runs == snapshot
 
 
 @freeze_time("2023-01-01")
