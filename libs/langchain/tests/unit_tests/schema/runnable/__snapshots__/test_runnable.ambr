@@ -1719,6 +1719,14 @@
             'title': 'Content',
             'type': 'string',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'role': dict({
             'title': 'Role',
             'type': 'string',
@@ -1786,6 +1794,14 @@
             'title': 'Content',
             'type': 'string',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -1820,6 +1836,14 @@
           'example': dict({
             'default': False,
             'title': 'Example',
+            'type': 'boolean',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
             'type': 'boolean',
           }),
           'type': dict({
@@ -1864,6 +1888,14 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
           }),
           'type': dict({
             'default': 'system',
@@ -1962,6 +1994,14 @@
             'title': 'Content',
             'type': 'string',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'role': dict({
             'title': 'Role',
             'type': 'string',
@@ -2029,6 +2069,14 @@
             'title': 'Content',
             'type': 'string',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -2063,6 +2111,14 @@
           'example': dict({
             'default': False,
             'title': 'Example',
+            'type': 'boolean',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
             'type': 'boolean',
           }),
           'type': dict({
@@ -2107,6 +2163,14 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
           }),
           'type': dict({
             'default': 'system',
@@ -2163,10 +2227,18 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'type': dict({
-            'default': 'ai_chunk',
+          'is_chunk': dict({
+            'default': True,
             'enum': list([
-              'ai_chunk',
+              True,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
+          'type': dict({
+            'default': 'ai',
+            'enum': list([
+              'ai',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2189,14 +2261,22 @@
             'title': 'Content',
             'type': 'string',
           }),
+          'is_chunk': dict({
+            'default': True,
+            'enum': list([
+              True,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'role': dict({
             'title': 'Role',
             'type': 'string',
           }),
           'type': dict({
-            'default': 'chat_chunk',
+            'default': 'chat',
             'enum': list([
-              'chat_chunk',
+              'chat',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2220,14 +2300,22 @@
             'title': 'Content',
             'type': 'string',
           }),
+          'is_chunk': dict({
+            'default': True,
+            'enum': list([
+              True,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
           }),
           'type': dict({
-            'default': 'function_chunk',
+            'default': 'function',
             'enum': list([
-              'function_chunk',
+              'function',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2256,10 +2344,18 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'type': dict({
-            'default': 'human_chunk',
+          'is_chunk': dict({
+            'default': True,
             'enum': list([
-              'human_chunk',
+              True,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
+          'type': dict({
+            'default': 'human',
+            'enum': list([
+              'human',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2282,10 +2378,18 @@
             'title': 'Content',
             'type': 'string',
           }),
-          'type': dict({
-            'default': 'system_chunk',
+          'is_chunk': dict({
+            'default': True,
             'enum': list([
-              'system_chunk',
+              True,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
+          'type': dict({
+            'default': 'system',
+            'enum': list([
+              'system',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2354,6 +2458,14 @@
             'title': 'Content',
             'type': 'string',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'role': dict({
             'title': 'Role',
             'type': 'string',
@@ -2421,6 +2533,14 @@
             'title': 'Content',
             'type': 'string',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -2455,6 +2575,14 @@
           'example': dict({
             'default': False,
             'title': 'Example',
+            'type': 'boolean',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
             'type': 'boolean',
           }),
           'type': dict({
@@ -2499,6 +2627,14 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
           }),
           'type': dict({
             'default': 'system',
@@ -2564,6 +2700,14 @@
             'title': 'Content',
             'type': 'string',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'role': dict({
             'title': 'Role',
             'type': 'string',
@@ -2631,6 +2775,14 @@
             'title': 'Content',
             'type': 'string',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -2665,6 +2817,14 @@
           'example': dict({
             'default': False,
             'title': 'Example',
+            'type': 'boolean',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
             'type': 'boolean',
           }),
           'type': dict({
@@ -2720,6 +2880,14 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
           }),
           'type': dict({
             'default': 'system',
@@ -2809,6 +2977,14 @@
             'title': 'Content',
             'type': 'string',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'role': dict({
             'title': 'Role',
             'type': 'string',
@@ -2839,6 +3015,14 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
           }),
           'name': dict({
             'title': 'Name',
@@ -2876,6 +3060,14 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -2904,6 +3096,14 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
           }),
           'type': dict({
             'default': 'system',

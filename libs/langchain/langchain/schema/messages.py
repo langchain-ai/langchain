@@ -149,6 +149,7 @@ class HumanMessage(BaseMessage):
     """
 
     type: Literal["human"] = "human"
+    is_chunk: Literal[False] = False
 
 
 HumanMessage.update_forward_refs()
@@ -157,10 +158,7 @@ HumanMessage.update_forward_refs()
 class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     """A Human Message chunk."""
 
-    type: Literal["human_chunk"] = "human_chunk"
-
-
-HumanMessageChunk.update_forward_refs()
+    is_chunk: Literal[True] = True
 
 
 class AIMessage(BaseMessage):
@@ -180,7 +178,7 @@ AIMessage.update_forward_refs()
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     """A Message chunk from an AI."""
 
-    type: Literal["ai_chunk"] = "ai_chunk"
+    is_chunk: Literal[True] = True
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
@@ -208,6 +206,7 @@ class SystemMessage(BaseMessage):
     of input messages.
     """
 
+    is_chunk: Literal[False] = False
     type: Literal["system"] = "system"
 
 
@@ -217,7 +216,7 @@ SystemMessage.update_forward_refs()
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     """A System Message chunk."""
 
-    type: Literal["system_chunk"] = "system_chunk"
+    is_chunk: Literal[True] = True
 
 
 SystemMessageChunk.update_forward_refs()
@@ -229,6 +228,7 @@ class FunctionMessage(BaseMessage):
     name: str
     """The name of the function that was executed."""
 
+    is_chunk: Literal[False] = False
     type: Literal["function"] = "function"
 
 
@@ -238,7 +238,7 @@ FunctionMessage.update_forward_refs()
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     """A Function Message chunk."""
 
-    type: Literal["function_chunk"] = "function_chunk"
+    is_chunk: Literal[True] = True
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):
@@ -267,6 +267,7 @@ class ChatMessage(BaseMessage):
     role: str
     """The speaker / role of the Message."""
 
+    is_chunk: Literal[False] = False
     type: Literal["chat"] = "chat"
 
 
@@ -276,7 +277,7 @@ ChatMessage.update_forward_refs()
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     """A Chat Message chunk."""
 
-    type: Literal["chat_chunk"] = "chat_chunk"
+    is_chunk: Literal[True] = True
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ChatMessageChunk):
