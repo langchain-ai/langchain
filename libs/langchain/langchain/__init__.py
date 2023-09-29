@@ -20,7 +20,21 @@ debug: bool = False
 llm_cache: Optional["BaseCache"] = None
 
 
+def _is_interactive_env() -> bool:
+    """Determine if running within IPython or Jupyter."""
+    import sys
+
+    return hasattr(sys, "ps2")
+
+
 def _warn_on_import(name: str) -> None:
+    """Warn on import of deprecated module."""
+    if _is_interactive_env():
+        # No warnings for interactive environments.
+        # This is done to avoid polluting the output of interactive environments
+        # where users rely on auto-complete and may trigger this warning
+        # even if they are not using any deprecated modules
+        return
     warnings.warn(
         f"Importing {name} from langchain root module is no longer supported."
     )
