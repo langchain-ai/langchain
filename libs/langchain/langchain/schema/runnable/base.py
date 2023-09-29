@@ -2100,7 +2100,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             params = inspect.signature(func).parameters
             first_param = next(iter(params.values()), None)
             if first_param and first_param.annotation != inspect.Parameter.empty:
-                return first_param.annotation
+                return getattr(first_param.annotation, "__args__", (Any,))[0]
             else:
                 return Any
         except ValueError:
@@ -2112,7 +2112,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         try:
             sig = inspect.signature(func)
             return (
-                sig.return_annotation
+                getattr(sig.return_annotation, "__args__", (Any,))[0]
                 if sig.return_annotation != inspect.Signature.empty
                 else Any
             )
@@ -2162,7 +2162,7 @@ class RunnableGenerator(Runnable[Input, Output]):
                 final += output
         return final
 
-    async def atransform(
+    def atransform(
         self,
         input: AsyncIterator[Input],
         config: Optional[RunnableConfig] = None,
@@ -2175,7 +2175,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             input, self._atransform, config, **kwargs
         )
 
-    async def astream(
+    def astream(
         self,
         input: Input,
         config: Optional[RunnableConfig] = None,
