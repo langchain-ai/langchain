@@ -10,7 +10,7 @@ class SendgridAPIWrapper(BaseModel):
     """Email Client using Sendgrid.
 
     To use, you should have the ``sendgrid`` python package installed,
-    and the environment variable ``SENDGRID_API_KEY`` , or pass api_key 
+    and the environment variable ``SENDGRID_API_KEY`` , or pass api_key
     as a named parameter to the constructor.
 
     Example:
@@ -26,6 +26,7 @@ class SendgridAPIWrapper(BaseModel):
     client: Any  #: :meta private:
     api_key: Optional[str] = None
     """Sendgrid API key."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -47,8 +48,14 @@ class SendgridAPIWrapper(BaseModel):
         values["client"] = sendgrid.SendGridAPIClient(api_key=api_key)
         return values
 
-    def run(self, from_email: str, to_email: str, subject: str, content: str, content_type: str ) -> str:
-
+    def run(
+        self,
+        from_email: str,
+        to_email: str,
+        subject: str,
+        content: str,
+        content_type: str,
+    ) -> str:
         """Run body through Sendgrid and respond with status code.
 
         Args:
@@ -59,9 +66,9 @@ class SendgridAPIWrapper(BaseModel):
             content_type: The type of content of the email.
         """
         try:
-            from sendgrid.helpers.mail import Email, To, Content, Mail
+            from sendgrid.helpers.mail import Content, Email, Mail, To
         except ImportError:
-             raise ImportError(
+            raise ImportError(
                 "Could not import sendgrid python package. "
                 "Please install it with `pip install sendgrid`."
             )
@@ -70,5 +77,5 @@ class SendgridAPIWrapper(BaseModel):
         content = Content(content_type, content)
         mail = Mail(from_email, to_email, subject, content)
         response = self.client.send(mail)
-        
+
         return response.status_code

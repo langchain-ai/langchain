@@ -1553,6 +1553,14 @@
       "destination": "/docs/integrations/tools/searx_search"
     },
     {
+      "source": "/en/latest/modules/agents/tools/examples/sendgrid.html",
+      "destination": "/docs/integrations/tools/sendgrid"
+    },
+    {
+      "source": "/docs/modules/agents/tools/integrations/sendgrid",
+      "destination": "/docs/integrations/tools/sendgrid"
+    },
+    {
       "source": "/en/latest/modules/agents/tools/examples/serpapi.html",
       "destination": "/docs/integrations/tools/serpapi"
     },

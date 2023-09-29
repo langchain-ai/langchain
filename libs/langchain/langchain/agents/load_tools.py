@@ -247,12 +247,14 @@ def _get_searx_search_results_json(**kwargs: Any) -> BaseTool:
     wrapper_kwargs = {k: v for k, v in kwargs.items() if k != "num_results"}
     return SearxSearchResults(wrapper=SearxSearchWrapper(**wrapper_kwargs), **kwargs)
 
+
 def _get_sendgrid(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Email",
         description="Useful for when you need to send an email.",
         func=SendgridAPIWrapper(**kwargs).run,
     )
+
 
 def _get_bing_search(**kwargs: Any) -> BaseTool:
     return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
