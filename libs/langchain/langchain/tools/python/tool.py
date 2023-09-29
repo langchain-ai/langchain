@@ -6,7 +6,7 @@ import re
 import sys
 from contextlib import redirect_stdout
 from io import StringIO
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Type, Union
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -14,7 +14,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.tools.base import BaseTool
-from langchain.utilities import PythonREPL
+from langchain.utilities import PythonContainerREPL, PythonREPL
 
 
 def _get_default_python_repl() -> PythonREPL:
@@ -49,7 +49,9 @@ class PythonREPLTool(BaseTool):
         "If you want to see the output of a value, you should print it out "
         "with `print(...)`."
     )
-    python_repl: PythonREPL = Field(default_factory=_get_default_python_repl)
+    python_repl: Union[PythonContainerREPL, PythonREPL] = Field(
+        default_factory=_get_default_python_repl
+    )
     sanitize_input: bool = True
 
     def _run(

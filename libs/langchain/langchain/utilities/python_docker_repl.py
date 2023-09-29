@@ -142,3 +142,15 @@ class PythonContainerREPL:
     def exec(self, code: str) -> str:
         """Execute code and return stdout."""
         return self._exec(code, use_ast=False)
+
+    def run(self, command: str, timeout: Optional[int] = None) -> str:
+        """Run command and returns anything printed.
+        Timeout, if provided, is not currently supported and will be ignored."""
+
+        # potentially add a warning or log message if a timeout is provided,
+        # as it's not supported in the current implementation.
+        if timeout is not None:
+            print("Warning: timeout is not supported in the current implementation.")
+
+        # exec method is used here as it will execute the command and return stdout.
+        return self.exec(command)
