@@ -77,6 +77,13 @@ class Serializable(BaseModel, ABC):
     class Config:
         extra = "ignore"
 
+    def __repr_args__(self) -> Any:
+        return [
+            (k, v)
+            for k, v in super().__repr_args__()
+            if (k not in self.__fields__ or self.__fields__[k].get_default() != v)
+        ]
+
     _lc_kwargs = PrivateAttr(default_factory=dict)
 
     def __init__(self, **kwargs: Any) -> None:

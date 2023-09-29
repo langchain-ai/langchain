@@ -87,6 +87,17 @@ class IsFunctionArgDict(ast.NodeVisitor):
         IsLocalDict(input_arg_name, self.keys).visit(node)
 
 
+class GetLambdaSource(ast.NodeVisitor):
+    def __init__(self) -> None:
+        self.source: Optional[str] = None
+        self.count = 0
+
+    def visit_Lambda(self, node: ast.Lambda) -> Any:
+        self.count += 1
+        if hasattr(ast, "unparse"):
+            self.source = ast.unparse(node)
+
+
 def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
     try:
         code = inspect.getsource(func)
@@ -94,5 +105,40 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
         return list(visitor.keys) if visitor.keys else None
-    except (TypeError, OSError):
+    except (SyntaxError, TypeError, OSError):
         return None
+
+
+def get_lambda_source(func: Callable) -> Optional[str]:
+    """Get the source code of a lambda function.
+
+    Args:
+        func: a callable that can be a lambda function
+
+    Returns:
+        str: the source code of the lambda function
+    """
+    try:
+        code = inspect.getsource(func)
+        tree = ast.parse(textwrap.dedent(code))
+        visitor = GetLambdaSource()
+        visitor.visit(tree)
+        return visitor.source if visitor.count == 1 else None
+    except (SyntaxError, TypeError, OSError):
+        return None
+
+
+def indent_lines_after_first(text: str, prefix: str) -> str:
+    """Indent all lines of text after the first line.
+
+    Args:
+        text:  The text to indent
+        prefix: Used to determine the number of spaces to indent
+
+    Returns:
+        str: The indented text
+    """
+    n_spaces = len(prefix)
+    spaces = " " * n_spaces
+    lines = text.splitlines()
+    return "\n".join([lines[0]] + [spaces + line for line in lines[1:]])
