@@ -952,7 +952,7 @@ def test_cleanup_with_different_batchsize(
 
 
 @pytest.mark.asyncio
-async def test_cleanup_with_different_batchsize(
+async def test_async_cleanup_with_different_batchsize(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
     """Check that we can clean up with different batch size."""
