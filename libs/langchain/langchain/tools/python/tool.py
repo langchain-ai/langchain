@@ -6,7 +6,7 @@ import re
 import sys
 from contextlib import redirect_stdout
 from io import StringIO
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -15,9 +15,7 @@ from langchain.callbacks.manager import (
 from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.tools.base import BaseTool
 from langchain.utilities import PythonREPL
-
-if TYPE_CHECKING:
-    from langchain.utilities import PythonContainerREPL
+from langchain.utilities.python_docker_repl import PythonContainerREPL
 
 
 def _get_default_python_repl() -> PythonREPL:
