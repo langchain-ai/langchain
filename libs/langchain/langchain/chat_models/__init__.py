@@ -24,8 +24,8 @@ from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from langchain.chat_models.bedrock import BedrockChat
 from langchain.chat_models.ernie import ErnieBotChat
 from langchain.chat_models.fake import FakeListChatModel
-from langchain.chat_models.gigachat import GigaChat
 from langchain.chat_models.fireworks import ChatFireworks
+from langchain.chat_models.gigachat import GigaChat
 from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.human import HumanInputChatModel
 from langchain.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
