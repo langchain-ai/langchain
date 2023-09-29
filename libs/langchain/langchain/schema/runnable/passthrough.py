@@ -223,9 +223,8 @@ class RunnableAssign(Serializable, Runnable[Dict[str, Any], Dict[str, Any]]):
         # create map output stream
         map_output = self.mapper.atransform(for_map, config, **kwargs)
         # start map output stream
-        first_map_chunk_task = cast(
-            asyncio.Task[Dict[str, Any]],
-            asyncio.create_task(py_anext(map_output)),  # type: ignore[arg-type]
+        first_map_chunk_task: asyncio.Task = asyncio.create_task(
+            py_anext(map_output),  # type: ignore[arg-type]
         )
         # consume passthrough stream
         async for chunk in for_passthrough:
