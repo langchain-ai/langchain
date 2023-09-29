@@ -16,8 +16,9 @@ class MongodbLoader(BaseLoader):
         connection_string: str,
         db_name: str,
         collection_name: str,
+        *,
         filter_criteria: Optional[Dict] = None,
-    ):
+    ) -> None:
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
         except ImportError as e:
@@ -42,10 +43,21 @@ class MongodbLoader(BaseLoader):
         self.collection = self.db.get_collection(collection_name)
 
     def load(self) -> List[Document]:
-        result = asyncio.run(self.aload())
-        return result
+        """Load data into Document objects.
+
+        Attention:
+
+        This implementation starts an asyncio event loop which
+        will only work if running in a sync env. In an async env, it should
+        fail since there is already an event loop running.
+
+        This code should be updated to kick off the event loop from a separate
+        thread if running within an async context.
+        """
+        return asyncio.run(self.aload())
 
     async def aload(self) -> List[Document]:
+        """Load data into Document objects."""
         result = []
         total_docs = await self.collection.count_documents(self.filter_criteria)
         async for doc in self.collection.find(self.filter_criteria):
