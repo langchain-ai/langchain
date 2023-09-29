@@ -8,6 +8,7 @@ from typing import Any, Union
 
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValueConcrete
+from langchain.schema.document import Document
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
@@ -27,6 +28,7 @@ class WellKnownLCObject(BaseModel):
     """A well known LangChain object."""
 
     __root__: Union[
+        Document,
         HumanMessage,
         SystemMessage,
         ChatMessage,
