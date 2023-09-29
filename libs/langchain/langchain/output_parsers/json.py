@@ -179,7 +179,7 @@ class SimpleJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     def parse(self, text: str) -> Any:
         text = text.strip()
         try:
-            return parse_json_markdown(text.strip(), parse_partial_json)
+            return parse_json_markdown(text.strip(), parser=parse_partial_json)
         except JSONDecodeError as e:
             raise OutputParserException(f"Invalid json output: {text}") from e
 
