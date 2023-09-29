@@ -170,6 +170,7 @@ class AIMessage(BaseMessage):
     """
 
     type: Literal["ai"] = "ai"
+    is_chunk: Literal[False] = False
 
 
 AIMessage.update_forward_refs()
@@ -203,8 +204,8 @@ class SystemMessage(BaseMessage):
     of input messages.
     """
 
-    is_chunk: Literal[False] = False
     type: Literal["system"] = "system"
+    is_chunk: Literal[False] = False
 
 
 SystemMessage.update_forward_refs()
@@ -222,8 +223,8 @@ class FunctionMessage(BaseMessage):
     name: str
     """The name of the function that was executed."""
 
-    is_chunk: Literal[False] = False
     type: Literal["function"] = "function"
+    is_chunk: Literal[False] = False
 
 
 FunctionMessage.update_forward_refs()
@@ -258,8 +259,8 @@ class ChatMessage(BaseMessage):
     role: str
     """The speaker / role of the Message."""
 
-    is_chunk: Literal[False] = False
     type: Literal["chat"] = "chat"
+    is_chunk: Literal[False] = False
 
 
 ChatMessage.update_forward_refs()
