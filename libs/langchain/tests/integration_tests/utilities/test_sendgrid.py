@@ -11,7 +11,7 @@ def test_call() -> None:
         "test@test.com",
         "test@test.com",
         "langchain - test",
-        " langchain FTW",
+        "langchain FTW",
         "text/plain",
     )
     assert output == 202
