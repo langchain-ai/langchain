@@ -9,6 +9,7 @@ from urllib.parse import urljoin
 
 import httpx
 from langchain.callbacks.tracers.log_stream import RunLogPatch
+from langchain.load.dump import dumpd
 from langchain.schema.runnable import Runnable
 from langchain.schema.runnable.config import (
     RunnableConfig,
@@ -17,8 +18,8 @@ from langchain.schema.runnable.config import (
     get_callback_manager_for_config,
 )
 from langchain.schema.runnable.utils import Input, Output
-from langchain.load.dump import dumpd
-from langserve.serialization import  simple_dumpd, loads
+
+from langserve.serialization import simple_dumpd, simple_loads
 
 
 def _without_callbacks(config: Optional[RunnableConfig]) -> RunnableConfig:
@@ -129,7 +130,7 @@ class RemoteRunnable(Runnable[Input, Output]):
             },
         )
         _raise_for_status(response)
-        return loads(response.text)["output"]
+        return simple_loads(response.text)["output"]
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -150,7 +151,7 @@ class RemoteRunnable(Runnable[Input, Output]):
             },
         )
         _raise_for_status(response)
-        return loads(response.text)["output"]
+        return simple_loads(response.text)["output"]
 
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -188,7 +189,7 @@ class RemoteRunnable(Runnable[Input, Output]):
             },
         )
         _raise_for_status(response)
-        return loads(response.text)["output"]
+        return simple_loads(response.text)["output"]
 
     def batch(
         self,
@@ -230,7 +231,7 @@ class RemoteRunnable(Runnable[Input, Output]):
             },
         )
         _raise_for_status(response)
-        return loads(response.text)["output"]
+        return simple_loads(response.text)["output"]
 
     async def abatch(
         self,
@@ -285,7 +286,7 @@ class RemoteRunnable(Runnable[Input, Output]):
             ) as event_source:
                 for sse in event_source.iter_sse():
                     if sse.event == "data":
-                        chunk = loads(sse.data)
+                        chunk = simple_loads(sse.data)
                         yield chunk
 
                         if final_output:
@@ -336,7 +337,7 @@ class RemoteRunnable(Runnable[Input, Output]):
             ) as event_source:
                 async for sse in event_source.aiter_sse():
                     if sse.event == "data":
-                        chunk = loads(sse.data)
+                        chunk = simple_loads(sse.data)
                         yield chunk
 
                         if final_output:
@@ -412,7 +413,7 @@ class RemoteRunnable(Runnable[Input, Output]):
             ) as event_source:
                 async for sse in event_source.aiter_sse():
                     if sse.event == "data":
-                        data = loads(sse.data)
+                        data = simple_loads(sse.data)
                         chunk = RunLogPatch(*data["ops"])
                         yield chunk
 

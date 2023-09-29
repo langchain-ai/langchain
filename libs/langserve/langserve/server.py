@@ -1,24 +1,25 @@
+from inspect import isclass
 from typing import (
     Any,
     AsyncIterator,
     Dict,
     List,
+    Literal,
     Mapping,
     Sequence,
     Type,
     Union,
-    Literal,
 )
 
-from typing_extensions import Annotated
-
 from langchain.schema.runnable import Runnable
+from typing_extensions import Annotated
 
 try:
     from pydantic.v1 import BaseModel
 except ImportError:
     from pydantic import BaseModel, create_model
 
+from langserve.serialization import simple_dumpd, simple_dumps
 from langserve.validation import (
     create_batch_request_model,
     create_invoke_request_model,
@@ -26,7 +27,6 @@ from langserve.validation import (
     create_stream_log_request_model,
     create_stream_request_model,
 )
-from langserve.serialization import simple_dumpd, dumps
 
 try:
     from fastapi import APIRouter, FastAPI
@@ -74,6 +74,23 @@ def _unpack_input(validated_model: BaseModel) -> Any:
         return validated_model
 
 
+_MODEL_REGISTRY = {}
+
+
+def _resolve_input_type(input_type: Union[Type, BaseModel]) -> BaseModel:
+    if isclass(input_type) and issubclass(input_type, BaseModel):
+        input_type_ = input_type
+    else:
+        input_type_ = create_model("Input", __root__=(input_type, ...))
+
+    hash_ = input_type_.schema_json()
+
+    if hash_ not in _MODEL_REGISTRY:
+        _MODEL_REGISTRY[hash_] = input_type_
+
+    return _MODEL_REGISTRY[hash_]
+
+
 # PUBLIC API
 
 
@@ -107,11 +124,9 @@ def add_routes(
         )
 
     if input_type == "auto":
-        input_type_ = runnable.input_schema
-    elif issubclass(input_type, BaseModel):
-        input_type_ = input_type
+        input_type_ = _resolve_input_type(runnable.input_schema)
     else:
-        input_type_ = create_model("Input", __root__=(input_type, ...))
+        input_type_ = _resolve_input_type(input_type)
 
     namespace = path or ""
 
@@ -175,7 +190,7 @@ def add_routes(
                 config=config,
                 **request.kwargs,
             ):
-                yield {"data": dumps(chunk), "event": "data"}
+                yield {"data": simple_dumps(chunk), "event": "data"}
             yield {"event": "end"}
 
         return EventSourceResponse(_stream())
@@ -206,7 +221,7 @@ def add_routes(
             ):
                 # Temporary adapter
                 yield {
-                    "data": dumps({"ops": run_log_patch.ops}),
+                    "data": simple_dumps({"ops": run_log_patch.ops}),
                     "event": "data",
                 }
             yield {"event": "end"}

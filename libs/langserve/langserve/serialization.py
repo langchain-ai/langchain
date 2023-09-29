@@ -4,36 +4,21 @@ Specialized JSON serialization for well known LangChain objects that
 can be expected to be frequently transmitted between chains.
 """
 import json
-from typing import Union, Any, Dict
-
-from pydantic import BaseModel
-from pydantic import ValidationError
+from typing import Any, Union
 
 from langchain.schema.messages import (
-    HumanMessage,
-    SystemMessage,
-    ChatMessage,
-    FunctionMessage,
     AIMessage,
-    HumanMessageChunk,
-    SystemMessageChunk,
-    ChatMessageChunk,
-    FunctionMessageChunk,
     AIMessageChunk,
-)
-
-WellKnownTypes = (
-    HumanMessage,
-    SystemMessage,
     ChatMessage,
-    FunctionMessage,
-    AIMessage,
-    HumanMessageChunk,
-    SystemMessageChunk,
     ChatMessageChunk,
+    FunctionMessage,
     FunctionMessageChunk,
-    AIMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
 )
+from pydantic import BaseModel, ValidationError, create_model
 
 
 class WellKnownLCObject(BaseModel):
@@ -76,10 +61,13 @@ class _LangChainDecoder(json.JSONDecoder):
         if isinstance(value, dict):
             try:
                 obj = WellKnownLCObject.parse_obj(value)
-                return obj.dict()["__root__"]
+                return obj.__root__
             except ValidationError:
-                return value
-        return value
+                return {key: self.decoder(v) for key, v in value.items()}
+        elif isinstance(value, list):
+            return [self.decoder(item) for item in value]
+        else:
+            return value
 
 
 # PUBLIC API
@@ -90,11 +78,11 @@ def simple_dumpd(obj: Any) -> Any:
     return json.loads(json.dumps(obj, cls=_LangChainEncoder))
 
 
-def dumps(obj: Any) -> str:
+def simple_dumps(obj: Any) -> str:
     """Dump the given object as a JSON string."""
     return json.dumps(obj, cls=_LangChainEncoder)
 
 
-def loads(s: str) -> Any:
+def simple_loads(s: str) -> Any:
     """Load the given JSON string."""
     return json.loads(s, cls=_LangChainDecoder)
