@@ -78,13 +78,12 @@ This tool will fetch a list of the repository's Pull Requests (PRs). It will ret
 """
 
 LIST_PULL_REQUEST_FILES="""
-This will fetch the full text of all files in a pull request (PR) given the PR number as an input, useful for when you want to understand the code in a PR or contribute to it. This is only for reading files in a PR, not regular files. **VERY IMPORTANT**: You must specify the PR number as an integer input parameter.
+This tool will fetch the full text of all files in a pull request (PR) given the PR number as an input. This is useful for understanding the code changes in a PR or contributing to it. **VERY IMPORTANT**: You must specify the PR number as an integer input parameter.
 """
 
-# TODOS
-GET_PR_DETAILS_PROMPT = """
-Fetch file tree (or CTAGS) of the entire commit.
-"""
+# GET_PR_DETAILS_PROMPT = """
+# This tool will fetch the file tree (or CTAGS) of the entire commit. **VERY IMPORTANT**: You must specify the commit hash as a string input parameter.
+# """
 
 OVERVIEW_EXISTING_FILES_IN_MAIN = """
 This tool will provide an overview of all existing files in the main branch of the repository. It will list the file names, their respective paths, and a brief summary of their contents. This can be useful for understanding the structure and content of the repository, especially when navigating through large codebases. No input parameters are required.
@@ -94,17 +93,36 @@ OVERVIEW_EXISTING_FILES_BOT_BRANCH = """
 This tool will provide an overview of all files in your current working branch where you should implement changes. This is great for getting a high level overview of the structure of your code. No input parameters are required.
 """
 
+SEARCH_ISSUES_AND_PRS_PROMPT = """
+This tool will search for issues and pull requests in the repository. **VERY IMPORTANT**: You must specify the search query as a string input parameter.
+"""
+
+SEARCH_CODE_PROMPT = """
+This tool will search for code in the repository. **VERY IMPORTANT**: You must specify the search query as a string input parameter.
+"""
+
+CREATE_REVIEW_REQUEST_PROMPT = """
+This tool will create a review request on the open pull request that matches the current active branch. **VERY IMPORTANT**: You must specify the username of the person who is being requested as a string input parameter.
+"""
+
+LIST_BRANCHES_IN_REPO_PROMPT = """
+This tool will fetch a list of all branches in the repository. It will return the name of each branch. No input parameters are required.
+"""
+
+SET_ACTIVE_BRANCH_PROMPT = """
+This tool will set the active branch in the repository. **VERY IMPORTANT**: You must specify the name of the branch as a string input parameter.
+"""
+
+CREATE_BRANCH_PROMPT = """
+This tool will create a new branch in the repository. **VERY IMPORTANT**: You must specify the name of the new branch as a string input parameter.
+"""
+
+GET_FILES_FROM_DIRECTORY_PROMPT = """
+This tool will fetch a list of all files in a specified directory. **VERY IMPORTANT**: You must specify the path of the directory as a string input parameter.
+"""
+
 # TODOs:
-# https://docs.github.com/en/rest/search/search?apiVersion=2022-11-28#search-issues-and-pull-requests
 # get_reviews(), get_review_requests(), get_labels(), add_to_labels([labels])
-# if I'm requested, do a review. Can't request bots, use Labels instead. 
-
-# get_files
-
+# improve get_files
 # for comments use get_issue_comments (even for PRs)
-
-# create_review_request
-
-# search issues and pull requests
-
-# search code. 
+# if bot is requested, do a review. Actually, Github won't allow you to request bots, use Labels instead (as a hacky workaround). 

@@ -4,15 +4,20 @@ from typing import Dict, List
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
 from langchain.tools.github.prompt import (COMMENT_ON_ISSUE_PROMPT,
+                                           CREATE_BRANCH_PROMPT,
                                            CREATE_FILE_PROMPT,
-                                           CREATE_PULL_REQUEST_PROMPT,
+                                           CREATE_PULL_REQUEST_PROMPT, CREATE_REVIEW_REQUEST_PROMPT,
                                            DELETE_FILE_PROMPT,
+                                           GET_FILES_FROM_DIRECTORY_PROMPT,
                                            GET_ISSUE_PROMPT, GET_ISSUES_PROMPT,
-                                           GET_PR_PROMPT, LIST_PRS_PROMPT,
+                                           GET_PR_PROMPT,
+                                           LIST_BRANCHES_IN_REPO_PROMPT,
+                                           LIST_PRS_PROMPT,
                                            LIST_PULL_REQUEST_FILES,
                                            OVERVIEW_EXISTING_FILES_BOT_BRANCH,
                                            OVERVIEW_EXISTING_FILES_IN_MAIN,
-                                           READ_FILE_PROMPT,
+                                           READ_FILE_PROMPT, SEARCH_CODE_PROMPT, SEARCH_ISSUES_AND_PRS_PROMPT,
+                                           SET_ACTIVE_BRANCH_PROMPT,
                                            UPDATE_FILE_PROMPT)
 from langchain.tools.github.tool import GitHubAction
 from langchain.utilities.github import GitHubAPIWrapper
@@ -54,6 +59,11 @@ class GitHubToolkit(BaseToolkit):
                 "description": GET_PR_PROMPT,
             },
             {
+                "mode": "list_pull_request_files",
+                "name": "Get an overview of the files in any Pull Request (fetch by PR number)",
+                "description": LIST_PULL_REQUEST_FILES,
+            },
+            {
                 "mode": "create_pull_request",
                 "name": "Create Pull Request",
                 "description": CREATE_PULL_REQUEST_PROMPT,
@@ -85,13 +95,48 @@ class GitHubToolkit(BaseToolkit):
             },
             {
                 "mode": "list_files_in_main_branch",
-                "name": "Overview of existing files in Main branch",
+                "name": "Overview of existing files in Main branch (no input)",
                 "description": OVERVIEW_EXISTING_FILES_IN_MAIN,
             },
             {
                 "mode": "list_files_in_bot_branch",
                 "name": "Overview of files in your current working branch",
                 "description": OVERVIEW_EXISTING_FILES_BOT_BRANCH,
+            },
+            {
+                "mode": "list_branches_in_repo",
+                "name": "List branches in this repository",
+                "description": LIST_BRANCHES_IN_REPO_PROMPT,
+            },
+            {
+                "mode": "set_active_branch",
+                "name": "Set active branch",
+                "description": SET_ACTIVE_BRANCH_PROMPT,
+            },
+            {
+                "mode": "create_branch",
+                "name": "Create a new branch",
+                "description": CREATE_BRANCH_PROMPT,
+            },
+            {
+                "mode": "get_files_from_directory",
+                "name": "Get files from a directory",
+                "description": GET_FILES_FROM_DIRECTORY_PROMPT,
+            },
+            {
+                "mode": "search_issues_and_prs",
+                "name": "Search issues and pull requests",
+                "description": SEARCH_ISSUES_AND_PRS_PROMPT,
+            },
+            {
+                "mode": "search_code",
+                "name": "Search code",
+                "description": SEARCH_CODE_PROMPT,
+            },
+            {
+                "mode": "create_review_request",
+                "name": "Create review request",
+                "description": CREATE_REVIEW_REQUEST_PROMPT,
             },
         ]
         tools = [
