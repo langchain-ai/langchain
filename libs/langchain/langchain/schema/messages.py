@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union
+
+from typing_extensions import Literal
 
 from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field
+from langchain.pydantic_v1 import Extra, Field
 
 if TYPE_CHECKING:
     from langchain.prompts.chat import ChatPromptTemplate
@@ -69,10 +70,10 @@ class BaseMessage(Serializable):
     additional_kwargs: dict = Field(default_factory=dict)
     """Any additional information."""
 
-    @property
-    @abstractmethod
-    def type(self) -> str:
-        """Type of the Message, used for serialization."""
+    type: str
+
+    class Config:
+        extra = Extra.allow
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -147,16 +148,20 @@ class HumanMessage(BaseMessage):
         conversation.
     """
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "human"
+    type: Literal["human"] = "human"
+    is_chunk: Literal[False] = False
+
+
+HumanMessage.update_forward_refs()
 
 
 class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     """A Human Message chunk."""
 
-    pass
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    is_chunk: Literal[True] = True  # type: ignore[assignment]
 
 
 class AIMessage(BaseMessage):
@@ -167,14 +172,20 @@ class AIMessage(BaseMessage):
         conversation.
     """
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "ai"
+    type: Literal["ai"] = "ai"
+    is_chunk: Literal[False] = False
+
+
+AIMessage.update_forward_refs()
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     """A Message chunk from an AI."""
+
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    is_chunk: Literal[True] = True  # type: ignore[assignment]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
@@ -199,16 +210,20 @@ class SystemMessage(BaseMessage):
     of input messages.
     """
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "system"
+    type: Literal["system"] = "system"
+    is_chunk: Literal[False] = False
+
+
+SystemMessage.update_forward_refs()
 
 
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     """A System Message chunk."""
 
-    pass
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    is_chunk: Literal[True] = True  # type: ignore[assignment]
 
 
 class FunctionMessage(BaseMessage):
@@ -217,14 +232,20 @@ class FunctionMessage(BaseMessage):
     name: str
     """The name of the function that was executed."""
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "function"
+    type: Literal["function"] = "function"
+    is_chunk: Literal[False] = False
+
+
+FunctionMessage.update_forward_refs()
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     """A Function Message chunk."""
+
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    is_chunk: Literal[True] = True  # type: ignore[assignment]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):
@@ -250,14 +271,20 @@ class ChatMessage(BaseMessage):
     role: str
     """The speaker / role of the Message."""
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "chat"
+    type: Literal["chat"] = "chat"
+    is_chunk: Literal[False] = False
+
+
+ChatMessage.update_forward_refs()
 
 
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     """A Chat Message chunk."""
+
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    is_chunk: Literal[True] = True  # type: ignore[assignment]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ChatMessageChunk):
@@ -275,6 +302,9 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
             )
 
         return super().__add__(other)
+
+
+AnyMessage = Union[AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage]
 
 
 def _message_to_dict(message: BaseMessage) -> dict:
