@@ -83,6 +83,21 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
 
 class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     """An Agent driven by OpenAIs function powered API.
+    The primary distinction between `OpenAIMultiFunctionsAgent` and
+    `OpenAIFunctionsAgent` is their execution capabilities.
+    `OpenAIMultiFunctionsAgent` has the ability to perform multiple actions in
+    a single function call, whereas `OpenAIFunctionsAgent`is limited to executing
+    only one action per function call.
+
+    To illustrate, consider a scenario where you have a `sqrt` tool for calculating
+    the square root of various numbers. If you need to find the square root of
+    multiple numbers, `OpenAIMultiFunctionsAgent` can execute `sqrt()` for all
+    these numbers in just one function call.
+    On the other hand, `OpenAIFunctionsAgent` would necessitate individual function
+    calls for each number to calculate the square root.
+
+    For more implementation details, please refer to `def functions(self)` part
+    of the `OpenAIMultiFunctionsAgent` class.
 
     Args:
         llm: This should be an instance of ChatOpenAI, specifically a model
