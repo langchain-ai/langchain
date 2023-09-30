@@ -807,29 +807,27 @@ class RecursiveCharacterTextSplitter(CharacterTextSplitter):
             ]
         elif language == Language.TS:
             return [
-                "\nenum ",
-                "\ninterface ",
-                "\nnamespace ",
-                "\ntype ",
-                # Split along class definitions
-                "\nclass ",
-                # Split along function definitions
-                "\nfunction ",
-                "\nconst ",
-                "\nlet ",
-                "\nvar ",
-                # Split along control flow statements
-                "\nif ",
-                "\nfor ",
-                "\nwhile ",
-                "\nswitch ",
-                "\ncase ",
-                "\ndefault ",
+                # "\nenum ",
+                # "\ninterface ",
+                # "\nnamespace ",
+                # "\ntype ",
+                # # Split along class definitions
+                # "\nclass ",
+                # # Split along function definitions
+                # "\nfunction ",
+                # "\nconst ",
+                # "\nlet ",
+                # "\nvar ",
+                # # Split along control flow statements
+                # "\nif ",
+                # "\nfor ",
+                # "\nwhile ",
+                # "\nswitch ",
+                # "\ncase ",
+                # "\ndefault ",
                 # Split by the normal type of lines
-                "\n\n",
-                "\n",
-                " ",
-                "",
+                "\n+",
+                " +",
             ]
         elif language == Language.PHP:
             return [
