@@ -27,6 +27,8 @@ class GPT4All(LLM):
     """Path to the pre-trained GPT4All model file."""
 
     backend: Optional[str] = Field(None, alias="backend")
+    """ Model file format e.g., "ggml", "gptj", "mpt" 
+    for more details: https://github.com/ggerganov/ggml/issues/220 """
 
     max_tokens: int = Field(200, alias="max_tokens")
     """Token context window."""
