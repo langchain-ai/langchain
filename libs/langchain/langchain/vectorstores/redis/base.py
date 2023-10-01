@@ -707,9 +707,14 @@ class Redis(VectorStore):
 
         # Write data to redis
         pipeline = self.client.pipeline(transaction=False)
+        if not embeddings:
+            embeddings = []
+            for i, text in enumerate(texts):
+                embeddings.append(self._embeddings.embed_query(text))
+        self._create_index(len(embeddings[0]))
         for i, text in enumerate(texts):
             # Use provided values by default or fallback
-            key = keys_or_ids[i] if keys_or_ids else _redis_key(prefix)
+            key = f"{prefix}:{keys_or_ids[i]}" if keys_or_ids else _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
             metadata = _prepare_metadata(metadata) if clean_metadata else metadata
             embedding = (
