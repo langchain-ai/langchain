@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.schema.embeddings import Embeddings
 
 
 class LlamaCppEmbeddings(BaseModel, Embeddings):
@@ -54,6 +54,9 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     n_gpu_layers: Optional[int] = Field(None, alias="n_gpu_layers")
     """Number of layers to be loaded into gpu memory. Default None."""
 
+    verbose: bool = Field(True, alias="verbose")
+    """Print verbose output to stderr."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -73,6 +76,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             "use_mlock",
             "n_threads",
             "n_batch",
+            "verbose",
         ]
         model_params = {k: values[k] for k in model_param_names}
         # For backwards compatibility, only include if non-null.

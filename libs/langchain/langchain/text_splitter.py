@@ -100,6 +100,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         length_function: Callable[[str], int] = len,
         keep_separator: bool = False,
         add_start_index: bool = False,
+        strip_whitespace: bool = True,
     ) -> None:
         """Create a new TextSplitter.
 
@@ -109,6 +110,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             length_function: Function that measures the length of given chunks
             keep_separator: Whether to keep the separator in the chunks
             add_start_index: If `True`, includes chunk's start index in metadata
+            strip_whitespace: If `True`, strips whitespace from the start and end of
+                              every document
         """
         if chunk_overlap > chunk_size:
             raise ValueError(
@@ -120,6 +123,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._length_function = length_function
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
+        self._strip_whitespace = strip_whitespace
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
@@ -152,7 +156,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
     def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
         text = separator.join(docs)
-        text = text.strip()
+        if self._strip_whitespace:
+            text = text.strip()
         if text == "":
             return None
         else:
@@ -610,6 +615,7 @@ class Language(str, Enum):
     GO = "go"
     JAVA = "java"
     JS = "js"
+    TS = "ts"
     PHP = "php"
     PROTO = "proto"
     PYTHON = "python"
@@ -622,6 +628,7 @@ class Language(str, Enum):
     LATEX = "latex"
     HTML = "html"
     SOL = "sol"
+    CSHARP = "csharp"
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
@@ -763,6 +770,32 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nlet ",
                 "\nvar ",
                 "\nclass ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                "\ncase ",
+                "\ndefault ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.TS:
+            return [
+                "\nenum ",
+                "\ninterface ",
+                "\nnamespace ",
+                "\ntype ",
+                # Split along class definitions
+                "\nclass ",
+                # Split along function definitions
+                "\nfunction ",
+                "\nconst ",
+                "\nlet ",
+                "\nvar ",
                 # Split along control flow statements
                 "\nif ",
                 "\nfor ",
@@ -997,6 +1030,43 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "<title",
                 "",
             ]
+        elif language == Language.CSHARP:
+            return [
+                "\ninterface ",
+                "\nenum ",
+                "\nimplements ",
+                "\ndelegate ",
+                "\nevent ",
+                # Split along class definitions
+                "\nclass ",
+                "\nabstract ",
+                # Split along method definitions
+                "\npublic ",
+                "\nprotected ",
+                "\nprivate ",
+                "\nstatic ",
+                "\nreturn ",
+                # Split along control flow statements
+                "\nif ",
+                "\ncontinue ",
+                "\nfor ",
+                "\nforeach ",
+                "\nwhile ",
+                "\nswitch ",
+                "\nbreak ",
+                "\ncase ",
+                "\nelse ",
+                # Split by exceptions
+                "\ntry ",
+                "\nthrow ",
+                "\nfinally ",
+                "\ncatch ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         elif language == Language.SOL:
             return [
                 # Split along compiler information definitions
@@ -1027,6 +1097,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+
         else:
             raise ValueError(
                 f"Language {language} is not supported! "
@@ -1037,7 +1108,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 class NLTKTextSplitter(TextSplitter):
     """Splitting text using NLTK package."""
 
-    def __init__(self, separator: str = "\n\n", **kwargs: Any) -> None:
+    def __init__(
+        self, separator: str = "\n\n", language: str = "english", **kwargs: Any
+    ) -> None:
         """Initialize the NLTK splitter."""
         super().__init__(**kwargs)
         try:
@@ -1049,11 +1122,12 @@ class NLTKTextSplitter(TextSplitter):
                 "NLTK is not installed, please install it with `pip install nltk`."
             )
         self._separator = separator
+        self._language = language
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
-        splits = self._tokenizer(text)
+        splits = self._tokenizer(text, language=self._language)
         return self._merge_splits(splits, self._separator)
 
 

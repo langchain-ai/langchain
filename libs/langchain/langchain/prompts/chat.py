@@ -28,6 +28,7 @@ from langchain.schema import (
 )
 from langchain.schema.messages import (
     AIMessage,
+    AnyMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
@@ -39,13 +40,9 @@ from langchain.schema.messages import (
 class BaseMessagePromptTemplate(Serializable, ABC):
     """Base class for message prompt templates."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether this object should be serialized.
-
-        Returns:
-            Whether this object should be serialized.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return True
 
     @abstractmethod
@@ -229,7 +226,7 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 
 class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
-    """Human message prompt template. This is a message that is sent to the user."""
+    """Human message prompt template. This is a message sent from the user."""
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -245,7 +242,7 @@ class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 
 class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
-    """AI message prompt template. This is a message that is not sent to the user."""
+    """AI message prompt template. This is a message sent from the AI."""
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -284,7 +281,7 @@ class ChatPromptValue(PromptValue):
     A type of a prompt value that is built from messages.
     """
 
-    messages: List[BaseMessage]
+    messages: Sequence[BaseMessage]
     """List of messages."""
 
     def to_string(self) -> str:
@@ -293,7 +290,14 @@ class ChatPromptValue(PromptValue):
 
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as a list of messages."""
-        return self.messages
+        return list(self.messages)
+
+
+class ChatPromptValueConcrete(ChatPromptValue):
+    """Chat prompt value which explicitly lists out the message types it accepts.
+    For use in external schemas."""
+
+    messages: Sequence[AnyMessage]
 
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):

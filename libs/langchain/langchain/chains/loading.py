@@ -20,6 +20,7 @@ from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
+from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 from langchain.llms.loading import load_llm, load_llm_from_config
@@ -357,10 +358,16 @@ def _load_qa_with_sources_chain(config: dict, **kwargs: Any) -> QAWithSourcesCha
 
 
 def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
+    from langchain_experimental.sql import SQLDatabaseChain
+
     if "database" in kwargs:
         database = kwargs.pop("database")
     else:
         raise ValueError("`database` must be present.")
+    if "llm_chain" in config:
+        llm_chain_config = config.pop("llm_chain")
+        chain = load_chain_from_config(llm_chain_config)
+        return SQLDatabaseChain(llm_chain=chain, database=database, **config)
     if "llm" in config:
         llm_config = config.pop("llm")
         llm = load_llm_from_config(llm_config)
@@ -373,7 +380,6 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
         prompt = load_prompt_from_config(prompt_config)
     else:
         prompt = None
-    from langchain_experimental.sql import SQLDatabaseChain
 
     return SQLDatabaseChain.from_llm(llm, database, prompt=prompt, **config)
 
@@ -418,6 +424,30 @@ def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
             "`combine_documents_chain_path` must be present."
         )
     return RetrievalQA(
+        combine_documents_chain=combine_documents_chain,
+        retriever=retriever,
+        **config,
+    )
+
+
+def _load_retrieval_qa_with_sources_chain(
+    config: dict, **kwargs: Any
+) -> RetrievalQAWithSourcesChain:
+    if "retriever" in kwargs:
+        retriever = kwargs.pop("retriever")
+    else:
+        raise ValueError("`retriever` must be present.")
+    if "combine_documents_chain" in config:
+        combine_documents_chain_config = config.pop("combine_documents_chain")
+        combine_documents_chain = load_chain_from_config(combine_documents_chain_config)
+    elif "combine_documents_chain_path" in config:
+        combine_documents_chain = load_chain(config.pop("combine_documents_chain_path"))
+    else:
+        raise ValueError(
+            "One of `combine_documents_chain` or "
+            "`combine_documents_chain_path` must be present."
+        )
+    return RetrievalQAWithSourcesChain(
         combine_documents_chain=combine_documents_chain,
         retriever=retriever,
         **config,
@@ -537,6 +567,7 @@ type_to_loader_dict = {
     "vector_db_qa_with_sources_chain": _load_vector_db_qa_with_sources_chain,
     "vector_db_qa": _load_vector_db_qa,
     "retrieval_qa": _load_retrieval_qa,
+    "retrieval_qa_with_sources_chain": _load_retrieval_qa_with_sources_chain,
     "graph_cypher_chain": _load_graph_cypher_chain,
 }
 

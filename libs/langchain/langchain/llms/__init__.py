@@ -26,6 +26,7 @@ from langchain.llms.anthropic import Anthropic
 from langchain.llms.anyscale import Anyscale
 from langchain.llms.aviary import Aviary
 from langchain.llms.azureml_endpoint import AzureMLOnlineEndpoint
+from langchain.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
 from langchain.llms.baseten import Baseten
@@ -37,21 +38,24 @@ from langchain.llms.chatglm import ChatGLM
 from langchain.llms.clarifai import Clarifai
 from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
+from langchain.llms.ctranslate2 import CTranslate2
 from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.deepsparse import DeepSparse
 from langchain.llms.edenai import EdenAI
 from langchain.llms.fake import FakeListLLM
-from langchain.llms.fireworks import Fireworks, FireworksChat
+from langchain.llms.fireworks import Fireworks
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.google_palm import GooglePalm
 from langchain.llms.gooseai import GooseAI
 from langchain.llms.gpt4all import GPT4All
+from langchain.llms.gradient_ai import GradientLLM
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.llms.human import HumanInputLLM
+from langchain.llms.javelin_ai_gateway import JavelinAIGateway
 from langchain.llms.koboldai import KoboldApiLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
@@ -100,6 +104,7 @@ __all__ = [
     "Beam",
     "Bedrock",
     "CTransformers",
+    "CTranslate2",
     "CerebriumAI",
     "ChatGLM",
     "Clarifai",
@@ -110,11 +115,11 @@ __all__ = [
     "EdenAI",
     "FakeListLLM",
     "Fireworks",
-    "FireworksChat",
     "ForefrontAI",
     "GPT4All",
     "GooglePalm",
     "GooseAI",
+    "GradientLLM",
     "HuggingFaceEndpoint",
     "HuggingFaceHub",
     "HuggingFacePipeline",
@@ -158,6 +163,8 @@ __all__ = [
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
+    "JavelinAIGateway",
+    "QianfanLLMEndpoint",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -178,6 +185,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "clarifai": Clarifai,
     "cohere": Cohere,
     "ctransformers": CTransformers,
+    "ctranslate2": CTranslate2,
     "databricks": Databricks,
     "deepinfra": DeepInfra,
     "deepsparse": DeepSparse,
@@ -186,6 +194,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "forefrontai": ForefrontAI,
     "google_palm": GooglePalm,
     "gooseai": GooseAI,
+    "gradient": GradientLLM,
     "gpt4all": GPT4All,
     "huggingface_endpoint": HuggingFaceEndpoint,
     "huggingface_hub": HuggingFaceHub,
@@ -225,4 +234,6 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "vllm_openai": VLLMOpenAI,
     "writer": Writer,
     "xinference": Xinference,
+    "javelin-ai-gateway": JavelinAIGateway,
+    "qianfan_endpoint": QianfanLLMEndpoint,
 }

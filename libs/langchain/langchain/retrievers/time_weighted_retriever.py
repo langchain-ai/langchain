@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import Field
 from langchain.schema import BaseRetriever, Document
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.vectorstore import VectorStore
 
 
 def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> float:
@@ -47,6 +47,14 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
 
         arbitrary_types_allowed = True
 
+    def _document_get_date(self, field: str, document: Document) -> datetime.datetime:
+        """Return the value of the date field of a document."""
+        if field in document.metadata:
+            if isinstance(document.metadata[field], float):
+                return datetime.datetime.fromtimestamp(document.metadata[field])
+            return document.metadata[field]
+        return datetime.datetime.now()
+
     def _get_combined_score(
         self,
         document: Document,
@@ -56,7 +64,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
         """Return the combined score for a document."""
         hours_passed = _get_hours_passed(
             current_time,
-            document.metadata["last_accessed_at"],
+            self._document_get_date("last_accessed_at", document),
         )
         score = (1.0 - self.decay_rate) ** hours_passed
         for key in self.other_score_keys:
