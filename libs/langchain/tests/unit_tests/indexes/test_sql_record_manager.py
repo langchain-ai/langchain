@@ -18,6 +18,7 @@ def manager() -> SQLRecordManager:
 
 
 @pytest_asyncio.fixture  # type: ignore
+@pytest.mark.requires("aiosqlite")
 async def amanager() -> SQLRecordManager:
     """Initialize the test database and yield the TimestampedSet instance."""
     # Initialize and yield the TimestampedSet instance
@@ -274,6 +275,7 @@ def test_update_with_group_ids(manager: SQLRecordManager) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_aupdate_with_group_ids(amanager: SQLRecordManager) -> None:
     """Test updating records in the database."""
     # no keys should be present in the set
@@ -303,6 +305,7 @@ def test_exists(manager: SQLRecordManager) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_aexists(amanager: SQLRecordManager) -> None:
     """Test checking if keys exist in the database."""
     # Insert records
@@ -406,6 +409,7 @@ def test_list_keys(manager: SQLRecordManager) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_alist_keys(amanager: SQLRecordManager) -> None:
     """Test listing keys based on the provided date range."""
     # Insert records
@@ -524,6 +528,7 @@ def test_namespace_is_used(manager: SQLRecordManager) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_anamespace_is_used(amanager: SQLRecordManager) -> None:
     """Verify that namespace is taken into account for all operations."""
     assert amanager.namespace == "kittens"
@@ -567,6 +572,7 @@ def test_delete_keys(manager: SQLRecordManager) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_adelete_keys(amanager: SQLRecordManager) -> None:
     """Test deleting keys from the database."""
     # Insert records

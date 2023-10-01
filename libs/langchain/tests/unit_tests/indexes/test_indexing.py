@@ -155,6 +155,7 @@ def record_manager() -> SQLRecordManager:
 
 
 @pytest_asyncio.fixture  # type: ignore
+@pytest.mark.requires("aiosqlite")
 async def arecord_manager() -> SQLRecordManager:
     """Timestamped set fixture."""
     record_manager = SQLRecordManager(
@@ -207,6 +208,7 @@ def test_indexing_same_content(
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_aindexing_same_content(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
@@ -317,6 +319,7 @@ def test_index_simple_delete_full(
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_aindex_simple_delete_full(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
@@ -429,6 +432,7 @@ def test_incremental_fails_with_bad_source_ids(
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_aincremental_fails_with_bad_source_ids(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
@@ -547,6 +551,7 @@ def test_no_delete(
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_ano_delete(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
@@ -733,6 +738,7 @@ def test_incremental_delete(
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_aincremental_delete(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
@@ -852,6 +858,7 @@ def test_indexing_with_no_docs(
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_aindexing_with_no_docs(
     arecord_manager: SQLRecordManager, vector_store: VectorStore
 ) -> None:
@@ -891,6 +898,7 @@ def test_deduplication(
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_adeduplication(
     arecord_manager: SQLRecordManager, vector_store: VectorStore
 ) -> None:
@@ -953,6 +961,7 @@ def test_cleanup_with_different_batchsize(
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_async_cleanup_with_different_batchsize(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
