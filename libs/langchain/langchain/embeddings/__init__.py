@@ -37,6 +37,8 @@ from langchain.embeddings.huggingface import (
     HuggingFaceEmbeddings,
     HuggingFaceInstructEmbeddings,
 )
+from langchain.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
+
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain.embeddings.jina import JinaEmbeddings
 from langchain.embeddings.llamacpp import LlamaCppEmbeddings
@@ -103,6 +105,7 @@ __all__ = [
     "AwaEmbeddings",
     "HuggingFaceBgeEmbeddings",
     "ErnieEmbeddings",
+    "JohnSnowLabsEmbeddings",
 ]
 
 
