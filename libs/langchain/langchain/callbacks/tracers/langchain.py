@@ -226,3 +226,29 @@ class LangChainTracer(BaseTracer):
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
         wait(self._futures)
+
+
+class LangChainTraceCollector(LangChainTracer):
+    name: str = "langchain_trace_collector_callback_handler"
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.traced_runs: List[Run] = []
+
+    def _persist_run(self, run: Run) -> None:
+        run_ = run.copy()
+        run_.reference_example_id = self.example_id
+        self.traced_runs.append(run_)
+
+    def get_trace_url(self, index: int = 0) -> Optional[str]:
+        """Get the LangSmith trace URL.
+        
+        Parameters
+        ----------
+        index : int, default=0
+            The index of the run to get the URL for. Defaults to 0.
+        """
+        if not self.traced_runs:
+            raise ValueError("No traced runs found.")
+        run = self.traced_runs[index]
+        return self.client.get_run_url(run=run)

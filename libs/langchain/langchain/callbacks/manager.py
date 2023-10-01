@@ -41,7 +41,10 @@ from langchain.callbacks.base import (
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import run_collector
-from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.tracers.langchain import (
+    LangChainTraceCollector,
+    LangChainTracer,
+)
 from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.callbacks.tracers.wandb import WandbTracer
@@ -181,7 +184,7 @@ def tracing_v2_enabled(
     """
     if isinstance(example_id, str):
         example_id = UUID(example_id)
-    cb = LangChainTracer(
+    cb = LangChainTraceCollector(
         example_id=example_id,
         project_name=project_name,
         tags=tags,
