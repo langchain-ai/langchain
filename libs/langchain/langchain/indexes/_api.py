@@ -123,18 +123,17 @@ def _batch(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
 
 async def _abatch(size: int, iterable: AsyncIterable[T]) -> AsyncIterator[List[T]]:
     """Utility batching function."""
-    it = iterable.__aiter__()
-    while True:
-        chunk: List[T] = []
-        for _ in range(size):
-            try:
-                item = await anext(it)
-                chunk.append(item)
-            except StopAsyncIteration:
-                break
-        if not chunk:
-            return
-        yield chunk
+    batch: List[T] = []
+    async for element in iterable:
+        if len(batch) < size:
+            batch.append(element)
+
+        if len(batch) >= size:
+            yield batch
+            batch = []
+
+    if batch:
+        yield batch
 
 
 def _get_source_id_assigner(

@@ -18,6 +18,7 @@ import pytest_asyncio
 from langchain.document_loaders.base import BaseLoader
 from langchain.embeddings.base import Embeddings
 from langchain.indexes import aindex, index
+from langchain.indexes._api import _abatch
 from langchain.indexes._sql_record_manager import SQLRecordManager
 from langchain.schema import Document
 from langchain.schema.vectorstore import VST, VectorStore
@@ -1025,3 +1026,29 @@ def test_deduplication_v2(
         [document.page_content for document in vector_store.store.values()]
     )
     assert contents == ["1", "2", "3"]
+
+
+async def _to_async_iter(it: Iterable[Any]) -> AsyncIterator[Any]:
+    """Convert an iterable to an async iterator."""
+    for i in it:
+        yield i
+
+
+@pytest.mark.asyncio
+async def test_abatch() -> None:
+    """Test the abatch function."""
+    batches = _abatch(5, _to_async_iter(range(12)))
+    assert isinstance(batches, AsyncIterator)
+    assert [batch async for batch in batches] == [
+        [0, 1, 2, 3, 4],
+        [5, 6, 7, 8, 9],
+        [10, 11],
+    ]
+
+    batches = _abatch(1, _to_async_iter(range(3)))
+    assert isinstance(batches, AsyncIterator)
+    assert [batch async for batch in batches] == [[0], [1], [2]]
+
+    batches = _abatch(2, _to_async_iter(range(5)))
+    assert isinstance(batches, AsyncIterator)
+    assert [batch async for batch in batches] == [[0, 1], [2, 3], [4]]
