@@ -1,7 +1,6 @@
 # flake8: noqa
 GET_ISSUES_PROMPT = """
-This tool will fetch a list of the repository's issues. It will return the title, and issue number of 5 issues. It takes no input.
-"""
+This tool will fetch a list of the repository's issues. It will return the title, and issue number of 5 issues. It takes no input."""
 
 GET_ISSUE_PROMPT = """
 This tool will fetch the title, body, and comment thread of a specific issue. **VERY IMPORTANT**: You must specify the issue number as an integer.
@@ -42,8 +41,7 @@ test contents
 """
 
 READ_FILE_PROMPT = """
-This tool is a wrapper for the GitHub API, useful when you need to read the contents of a file. Simply pass in the full file path of the file you would like to read. **IMPORTANT**: the path must not start with a slash
-"""
+This tool is a wrapper for the GitHub API, useful when you need to read the contents of a file. Simply pass in the full file path of the file you would like to read. **IMPORTANT**: the path must not start with a slash"""
 
 UPDATE_FILE_PROMPT = """
 This tool is a wrapper for the GitHub API, useful when you need to update the contents of a file in a GitHub repository. **VERY IMPORTANT**: Your input to this tool MUST strictly follow these rules:
@@ -62,8 +60,7 @@ old contents
 >>>> OLD
 NEW <<<<
 new contents
->>>> NEW
-"""
+>>>> NEW"""
 
 DELETE_FILE_PROMPT = """
 This tool is a wrapper for the GitHub API, useful when you need to delete a file in a GitHub repository. Simply pass in the full file path of the file you would like to delete. **IMPORTANT**: the path must not start with a slash
@@ -110,7 +107,7 @@ This tool will fetch a list of all branches in the repository. It will return th
 """
 
 SET_ACTIVE_BRANCH_PROMPT = """
-This tool will set the active branch in the repository. **VERY IMPORTANT**: You must specify the name of the branch as a string input parameter.
+This tool will set the active branch in the repository, equivalent to `git checkout <branch_name>`. **VERY IMPORTANT**: You must specify the name of the branch as a string input parameter.
 """
 
 CREATE_BRANCH_PROMPT = """
