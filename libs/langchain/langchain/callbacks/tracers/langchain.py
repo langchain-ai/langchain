@@ -240,9 +240,9 @@ class LangChainTraceCollector(LangChainTracer):
         run_.reference_example_id = self.example_id
         self.traced_runs.append(run_)
 
-    def get_trace_url(self, index: int = 0) -> Optional[str]:
-        """Get the LangSmith trace URL.
-        
+    def get_run_url(self, index: int = 0) -> Optional[str]:
+        """Get the LangSmith root run URL
+
         Parameters
         ----------
         index : int, default=0
