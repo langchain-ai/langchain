@@ -44,6 +44,7 @@ def test_update(manager: SQLRecordManager) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_aupdate(amanager: SQLRecordManager) -> None:
     """Test updating records in the database."""
     # no keys should be present in the set
@@ -149,6 +150,7 @@ def test_update_timestamp(manager: SQLRecordManager) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_aupdate_timestamp(amanager: SQLRecordManager) -> None:
     """Test updating records in the database."""
     # no keys should be present in the set
