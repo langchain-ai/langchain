@@ -50,7 +50,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
 
     def get_allowed_tools(self) -> List[str]:
         """Get allowed tools."""
-        return list([t.name for t in self.tools])
+        return [t.name for t in self.tools]
 
     @root_validator
     def validate_llm(cls, values: dict) -> dict:
