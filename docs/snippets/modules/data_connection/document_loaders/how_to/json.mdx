@@ -89,7 +89,8 @@ Suppose we are interested in extracting the values under the `content` field wit
 ```python
 loader = JSONLoader(
     file_path='./example_data/facebook_chat.json',
-    jq_schema='.messages[].content')
+    jq_schema='.messages[].content',
+    text_content=False)
 
 data = loader.load()
 ```
@@ -145,6 +146,7 @@ pprint(Path(file_path).read_text())
 loader = JSONLoader(
     file_path='./example_data/facebook_chat_messages.jsonl',
     jq_schema='.content',
+    text_content=False,
     json_lines=True)
 
 data = loader.load()

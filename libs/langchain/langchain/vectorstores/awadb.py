@@ -1,4 +1,3 @@
-"""Wrapper around AwaDB for embedding vectors"""
 from __future__ import annotations
 
 import logging
@@ -8,8 +7,8 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set, Tupl
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -20,7 +19,7 @@ DEFAULT_TOPN = 4
 
 
 class AwaDB(VectorStore):
-    """Interface implemented by AwaDB vector stores."""
+    """`AwaDB` vector store."""
 
     _DEFAULT_TABLE_NAME = "langchain_awadb"
 
@@ -50,7 +49,7 @@ class AwaDB(VectorStore):
         try:
             import awadb
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import awadb python package. "
                 "Please install it with `pip install awadb`."
             )
@@ -167,10 +166,9 @@ class AwaDB(VectorStore):
         if self.using_table_name in self.table2embeddings:
             embedding = self.table2embeddings[self.using_table_name].embed_query(query)
         else:
-            from awadb import llm_embedding
+            from awadb import AwaEmbedding
 
-            llm = llm_embedding.LLMEmbedding()
-            embedding = llm.Embedding(query)
+            embedding = AwaEmbedding().Embedding(query)
 
         not_include_fields: Set[str] = {"text_embedding", "_id", "score"}
         return self.similarity_search_by_vector(
@@ -210,10 +208,9 @@ class AwaDB(VectorStore):
         if self.using_table_name in self.table2embeddings:
             embedding = self.table2embeddings[self.using_table_name].embed_query(query)
         else:
-            from awadb import llm_embedding
+            from awadb import AwaEmbedding
 
-            llm = llm_embedding.LLMEmbedding()
-            embedding = llm.Embedding(query)
+            embedding = AwaEmbedding().Embedding(query)
 
         results: List[Tuple[Document, float]] = []
 
@@ -333,10 +330,9 @@ class AwaDB(VectorStore):
         if self.using_table_name in self.table2embeddings:
             embedding = self.table2embeddings[self.using_table_name].embed_query(query)
         else:
-            from awadb import llm_embedding
+            from awadb import AwaEmbedding
 
-            llm = llm_embedding.LLMEmbedding()
-            embedding = llm.Embedding(query)
+            embedding = AwaEmbedding().Embedding(query)
 
         if embedding.__len__() == 0:
             return []

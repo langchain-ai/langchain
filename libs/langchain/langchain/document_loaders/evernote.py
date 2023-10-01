@@ -11,9 +11,11 @@ from typing import Any, Dict, Iterator, List, Optional
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
+logger = logging.getLogger(__name__)
+
 
 class EverNoteLoader(BaseLoader):
-    """EverNote Loader.
+    """Load from `EverNote`.
 
     Loads an EverNote notebook export file e.g. my_notebook.enex into Documents.
     Instructions on producing this file can be found at
@@ -72,12 +74,11 @@ class EverNoteLoader(BaseLoader):
 
             return html2text.html2text(content).strip()
         except ImportError as e:
-            logging.error(
+            raise ImportError(
                 "Could not import `html2text`. Although it is not a required package "
                 "to use Langchain, using the EverNote loader requires `html2text`. "
                 "Please install `html2text` via `pip install html2text` and try again."
-            )
-            raise e
+            ) from e
 
     @staticmethod
     def _parse_resource(resource: list) -> dict:
@@ -133,7 +134,7 @@ class EverNoteLoader(BaseLoader):
         try:
             from lxml import etree
         except ImportError as e:
-            logging.error(
+            logger.error(
                 "Could not import `lxml`. Although it is not a required package to use "
                 "Langchain, using the EverNote loader requires `lxml`. Please install "
                 "`lxml` via `pip install lxml` and try again."

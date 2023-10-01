@@ -1,8 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
-
-from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 
@@ -24,6 +23,8 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
     client: Any  #: :meta private:
     """Cohere client."""
+    async_client: Any  #: :meta private:
+    """Cohere async client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
 
@@ -47,6 +48,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
             import cohere
 
             values["client"] = cohere.Client(cohere_api_key)
+            values["async_client"] = cohere.AsyncClient(cohere_api_key)
         except ImportError:
             raise ValueError(
                 "Could not import cohere python package. "
@@ -68,6 +70,20 @@ class CohereEmbeddings(BaseModel, Embeddings):
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Async call out to Cohere's embedding endpoint.
+
+        Args:
+            texts: The list of texts to embed.
+
+        Returns:
+            List of embeddings, one for each text.
+        """
+        embeddings = await self.async_client.embed(
+            model=self.model, texts=texts, truncate=self.truncate
+        )
+        return [list(map(float, e)) for e in embeddings.embeddings]
+
     def embed_query(self, text: str) -> List[float]:
         """Call out to Cohere's embedding endpoint.
 
@@ -77,7 +93,16 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embedding = self.client.embed(
-            model=self.model, texts=[text], truncate=self.truncate
-        ).embeddings[0]
-        return list(map(float, embedding))
+        return self.embed_documents([text])[0]
+
+    async def aembed_query(self, text: str) -> List[float]:
+        """Async call out to Cohere's embedding endpoint.
+
+        Args:
+            text: The text to embed.
+
+        Returns:
+            Embeddings for the text.
+        """
+        embeddings = await self.aembed_documents([text])
+        return embeddings[0]

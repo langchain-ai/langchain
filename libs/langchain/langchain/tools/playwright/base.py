@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Tuple, Type
 
-from pydantic import root_validator
-
+from langchain.pydantic_v1 import root_validator
 from langchain.tools.base import BaseTool
 
 if TYPE_CHECKING:
@@ -30,7 +29,7 @@ def lazy_import_playwright_browsers() -> Tuple[Type[AsyncBrowser], Type[SyncBrow
         from playwright.async_api import Browser as AsyncBrowser  # noqa: F401
         from playwright.sync_api import Browser as SyncBrowser  # noqa: F401
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "The 'playwright' package is required to use the playwright tools."
             " Please install it with 'pip install playwright'."
         )

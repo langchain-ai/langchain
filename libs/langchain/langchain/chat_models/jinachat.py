@@ -4,16 +4,18 @@ from __future__ import annotations
 import logging
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Dict,
+    Iterator,
     List,
     Mapping,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 
-from pydantic import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -26,16 +28,30 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _agenerate_from_stream,
+    _generate_from_stream,
+)
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     AIMessage,
     BaseMessage,
     ChatGeneration,
     ChatMessage,
     ChatResult,
+    FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
+from langchain.schema.messages import (
+    AIMessageChunk,
+    BaseMessageChunk,
+    ChatMessageChunk,
+    HumanMessageChunk,
+    SystemMessageChunk,
+)
+from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
@@ -75,6 +91,24 @@ async def acompletion_with_retry(llm: JinaChat, **kwargs: Any) -> Any:
     return await _completion_with_retry(**kwargs)
 
 
+def _convert_delta_to_message_chunk(
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    role = _dict.get("role")
+    content = _dict.get("content") or ""
+
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content)
+    elif role == "assistant" or default_class == AIMessageChunk:
+        return AIMessageChunk(content=content)
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content)
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role)
+    else:
+        return default_class(content=content)
+
+
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["role"]
     if role == "user":
@@ -97,6 +131,12 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "assistant", "content": message.content}
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, FunctionMessage):
+        message_dict = {
+            "role": "function",
+            "name": message.name,
+            "content": message.content,
+        }
     else:
         raise ValueError(f"Got unknown type {message}")
     if "name" in message.additional_kwargs:
@@ -105,8 +145,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class JinaChat(BaseChatModel):
-    """JinaChat is a wrapper for Jina AI's LLM service, providing cost-effective
-    image chat capabilities in comparison to other LLM APIs.
+    """`Jina AI` Chat models API.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``JINACHAT_API_KEY`` set to your API key, which you
@@ -126,8 +165,9 @@ class JinaChat(BaseChatModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"jinachat_api_key": "JINACHAT_API_KEY"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     client: Any  #: :meta private:
@@ -258,6 +298,25 @@ class JinaChat(BaseChatModel):
                     overall_token_usage[k] = v
         return {"token_usage": overall_token_usage}
 
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs, "stream": True}
+
+        default_chunk_class = AIMessageChunk
+        for chunk in self.completion_with_retry(messages=message_dicts, **params):
+            delta = chunk["choices"][0]["delta"]
+            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            default_chunk_class = chunk.__class__
+            yield ChatGenerationChunk(message=chunk)
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.content)
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -265,27 +324,14 @@ class JinaChat(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.streaming:
+            stream_iter = self._stream(
+                messages=messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return _generate_from_stream(stream_iter)
+
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        if self.streaming:
-            inner_completion = ""
-            role = "assistant"
-            params["stream"] = True
-            for stream_resp in self.completion_with_retry(
-                messages=message_dicts, **params
-            ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content") or ""
-                inner_completion += token
-                if run_manager:
-                    run_manager.on_llm_new_token(token)
-            message = _convert_dict_to_message(
-                {
-                    "content": inner_completion,
-                    "role": role,
-                }
-            )
-            return ChatResult(generations=[ChatGeneration(message=message)])
         response = self.completion_with_retry(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
@@ -309,6 +355,27 @@ class JinaChat(BaseChatModel):
         llm_output = {"token_usage": response["usage"]}
         return ChatResult(generations=generations, llm_output=llm_output)
 
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs, "stream": True}
+
+        default_chunk_class = AIMessageChunk
+        async for chunk in await acompletion_with_retry(
+            self, messages=message_dicts, **params
+        ):
+            delta = chunk["choices"][0]["delta"]
+            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            default_chunk_class = chunk.__class__
+            yield ChatGenerationChunk(message=chunk)
+            if run_manager:
+                await run_manager.on_llm_new_token(chunk.content)
+
     async def _agenerate(
         self,
         messages: List[BaseMessage],
@@ -316,32 +383,16 @@ class JinaChat(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.streaming:
+            stream_iter = self._astream(
+                messages=messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await _agenerate_from_stream(stream_iter)
+
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        if self.streaming:
-            inner_completion = ""
-            role = "assistant"
-            params["stream"] = True
-            async for stream_resp in await acompletion_with_retry(
-                self, messages=message_dicts, **params
-            ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content", "")
-                inner_completion += token or ""
-                if run_manager:
-                    await run_manager.on_llm_new_token(token)
-            message = _convert_dict_to_message(
-                {
-                    "content": inner_completion,
-                    "role": role,
-                }
-            )
-            return ChatResult(generations=[ChatGeneration(message=message)])
-        else:
-            response = await acompletion_with_retry(
-                self, messages=message_dicts, **params
-            )
-            return self._create_chat_result(response)
+        response = await acompletion_with_retry(self, messages=message_dicts, **params)
+        return self._create_chat_result(response)
 
     @property
     def _invocation_params(self) -> Mapping[str, Any]:

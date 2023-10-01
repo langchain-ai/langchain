@@ -1,4 +1,33 @@
-"""Interface for agents."""
+"""
+**Agent** is a class that uses an LLM to choose a sequence of actions to take.
+
+In Chains, a sequence of actions is hardcoded. In Agents,
+a language model is used as a reasoning engine to determine which actions
+to take and in which order.
+
+Agents select and use **Tools** and **Toolkits** for actions.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseSingleActionAgent --> LLMSingleActionAgent
+                              OpenAIFunctionsAgent
+                              XMLAgent
+                              Agent --> <name>Agent  # Examples: ZeroShotAgent, ChatAgent
+                                        
+
+    BaseMultiActionAgent  --> OpenAIMultiFunctionsAgent
+    
+    
+**Main helpers:**
+
+.. code-block::
+
+    AgentType, AgentExecutor, AgentOutputParser, AgentExecutorIterator,
+    AgentAction, AgentFinish
+    
+"""  # noqa: E501
 from langchain.agents.agent import (
     Agent,
     AgentExecutor,
@@ -39,6 +68,7 @@ from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.agents.structured_chat.base import StructuredChatAgent
 from langchain.agents.tools import Tool, tool
+from langchain.agents.xml.base import XMLAgent
 
 __all__ = [
     "Agent",
@@ -78,4 +108,5 @@ __all__ = [
     "load_tools",
     "tool",
     "create_xorbits_agent",
+    "XMLAgent",
 ]

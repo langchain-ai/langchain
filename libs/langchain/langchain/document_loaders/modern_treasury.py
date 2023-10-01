@@ -1,4 +1,3 @@
-"""Loader that fetches data from Modern Treasury"""
 import json
 import urllib.request
 from base64 import b64encode
@@ -27,7 +26,7 @@ incoming_payment_details",
 
 
 class ModernTreasuryLoader(BaseLoader):
-    """Loader that fetches data from Modern Treasury."""
+    """Load from `Modern Treasury`."""
 
     def __init__(
         self,

@@ -7,7 +7,9 @@ from langchain.document_loaders.unstructured import (
 
 
 class UnstructuredTSVLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load TSV files. Like other
+    """Load `TSV` files using `Unstructured`.
+
+    Like other
     Unstructured loaders, UnstructuredTSVLoader can be used in both
     "single" and "elements" mode. If you use the loader in "elements"
     mode, the TSV file will be a single Unstructured Table element.

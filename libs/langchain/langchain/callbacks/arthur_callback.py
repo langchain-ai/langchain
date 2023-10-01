@@ -6,7 +6,7 @@ import uuid
 from collections import defaultdict
 from datetime import datetime
 from time import time
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional
 
 import numpy as np
 
@@ -257,17 +257,13 @@ class ArthurCallbackHandler(BaseCallbackHandler):
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """On chain end, do nothing."""
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when LLM outputs an error."""
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """On new token, pass."""
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when LLM chain outputs an error."""
 
     def on_tool_start(
@@ -290,9 +286,7 @@ class ArthurCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Do nothing when tool ends."""
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when tool outputs an error."""
 
     def on_text(self, text: str, **kwargs: Any) -> None:

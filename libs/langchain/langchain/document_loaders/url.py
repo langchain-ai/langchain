@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class UnstructuredURLLoader(BaseLoader):
-    """Loader that use Unstructured to load files from remote URLs.
+    """Load files from remote URLs using `Unstructured`.
+
     Use the unstructured partition function to detect the MIME type
     and route the file to the appropriate partitioner.
 
@@ -25,7 +26,7 @@ class UnstructuredURLLoader(BaseLoader):
     from langchain.document_loaders import UnstructuredURLLoader
 
     loader = UnstructuredURLLoader(
-        ursl=["<url-1>", "<url-2>"], mode="elements", strategy="fast",
+        urls=["<url-1>", "<url-2>"], mode="elements", strategy="fast",
     )
     docs = loader.load()
 
@@ -49,7 +50,7 @@ class UnstructuredURLLoader(BaseLoader):
 
             self.__version = __unstructured_version__
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )

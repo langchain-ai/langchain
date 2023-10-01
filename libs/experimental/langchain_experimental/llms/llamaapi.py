@@ -9,10 +9,7 @@ from typing import (
     Tuple,
 )
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     ChatGeneration,
@@ -115,15 +112,6 @@ class ChatLlamaAPI(BaseChatModel):
             )
             generations.append(gen)
         return ChatResult(generations=generations)
-
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        raise NotImplementedError
 
     @property
     def _client_params(self) -> Mapping[str, Any]:

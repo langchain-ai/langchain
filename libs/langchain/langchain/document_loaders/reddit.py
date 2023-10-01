@@ -1,4 +1,3 @@
-"""Reddit document loader."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence
@@ -14,14 +13,15 @@ def _dependable_praw_import() -> praw:
     try:
         import praw
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "praw package not found, please install it with `pip install praw`"
         )
     return praw
 
 
 class RedditPostsLoader(BaseLoader):
-    """Reddit posts loader.
+    """Load `Reddit` posts.
+
     Read posts on a subreddit.
     First, you need to go to
     https://www.reddit.com/prefs/apps/

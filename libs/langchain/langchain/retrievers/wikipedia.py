@@ -1,15 +1,12 @@
 from typing import List
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 
 
 class WikipediaRetriever(BaseRetriever, WikipediaAPIWrapper):
-    """Retriever for Wikipedia API.
+    """`Wikipedia API` retriever.
 
     It wraps load() to get_relevant_documents().
     It uses all WikipediaAPIWrapper arguments without any change.
@@ -19,8 +16,3 @@ class WikipediaRetriever(BaseRetriever, WikipediaAPIWrapper):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         return self.load(query=query)
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError

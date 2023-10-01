@@ -1,11 +1,10 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra, Field, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -16,6 +15,7 @@ class Banana(LLM):
 
     To use, you should have the ``banana-dev`` python package installed,
     and the environment variable ``BANANA_API_KEY`` set with your API key.
+    This is the team API key available in the Banana dashboard.
 
     Any parameters that are valid to be passed to the call can be passed
     in, even if not explicitly saved on this class.
@@ -24,10 +24,13 @@ class Banana(LLM):
         .. code-block:: python
 
             from langchain.llms import Banana
-            banana = Banana(model_key="")
+            banana = Banana(model_key="", model_url_slug="")
     """
 
     model_key: str = ""
+    """model key to use"""
+
+    model_url_slug: str = ""
     """model endpoint to use"""
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -73,6 +76,7 @@ class Banana(LLM):
         """Get the identifying parameters."""
         return {
             **{"model_key": self.model_key},
+            **{"model_url_slug": self.model_url_slug},
             **{"model_kwargs": self.model_kwargs},
         }
 
@@ -90,7 +94,7 @@ class Banana(LLM):
     ) -> str:
         """Call to Banana endpoint."""
         try:
-            import banana_dev as banana
+            from banana_dev import Client
         except ImportError:
             raise ImportError(
                 "Could not import banana-dev python package. "
@@ -100,19 +104,25 @@ class Banana(LLM):
         params = {**params, **kwargs}
         api_key = self.banana_api_key
         model_key = self.model_key
+        model_url_slug = self.model_url_slug
         model_inputs = {
             # a json specific to your model.
             "prompt": prompt,
             **params,
         }
-        response = banana.run(api_key, model_key, model_inputs)
+        model = Client(
+            # Found in main dashboard
+            api_key=api_key,
+            # Both found in model details page
+            model_key=model_key,
+            url=f"https://{model_url_slug}.run.banana.dev",
+        )
+        response, meta = model.call("/", model_inputs)
         try:
-            text = response["modelOutputs"][0]["output"]
+            text = response["outputs"]
         except (KeyError, TypeError):
-            returned = response["modelOutputs"][0]
             raise ValueError(
-                "Response should be of schema: {'output': 'text'}."
-                f"\nResponse was: {returned}"
+                "Response should be of schema: {'outputs': 'text'}."
                 "\nTo fix this:"
                 "\n- fork the source repo of the Banana model"
                 "\n- modify app.py to return the above schema"

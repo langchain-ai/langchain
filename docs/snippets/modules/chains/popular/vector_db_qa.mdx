@@ -117,3 +117,38 @@ qa.run(query)
 ```
 
 </CodeOutputBlock>
+
+## Vectorstore Retriever Options
+You can adjust how documents are retrieved from your vectorstore depending on the specific task.
+
+There are two main ways to retrieve documents relevant to a query- Similarity Search and Max Marginal Relevance Search (MMR Search). Similarity Search is the default, but you can use MMR by adding the `search_type` parameter:
+
+```python
+docsearch.as_retriever(search_type="mmr")
+```
+
+You can also modify the search by passing specific search arguments through the retriever to the search function, using the `search_kwargs` keyword argument.
+
+- `k` defines how many documents are returned; defaults to 4.
+- `score_threshold` allows you to set a minimum relevance for documents returned by the retriever, if you are using the "similarity_score_threshold" search type.
+- `fetch_k` determines the amount of documents to pass to the MMR algorithm; defaults to 20. 
+- `lambda_mult` controls the diversity of results returned by the MMR algorithm, with 1 being minimum diversity and 0 being maximum. Defaults to 0.5.
+- `filter` allows you to define a filter on what documents should be retrieved, based on the documents' metadata. This has no effect if the Vectorstore doesn't store any metadata.
+
+Some examples for how these parameters can be used:
+```python
+# Retrieve more documents with higher diversity- useful if your dataset has many similar documents
+docsearch.as_retriever(search_type="mmr", search_kwargs={'k': 6, 'lambda_mult': 0.25})
+
+# Fetch more documents for the MMR algorithm to consider, but only return the top 5
+docsearch.as_retriever(search_type="mmr", search_kwargs={'k': 5, 'fetch_k': 50})
+
+# Only retrieve documents that have a relevance score above a certain threshold
+docsearch.as_retriever(search_type="similarity_score_threshold", search_kwargs={'score_threshold': 0.8})
+
+# Only get the single most similar document from the dataset
+docsearch.as_retriever(search_kwargs={'k': 1})
+
+# Use a filter to only retrieve documents from a specific paper 
+docsearch.as_retriever(search_kwargs={'filter': {'paper_title':'GPT-4 Technical Report'}})
+```

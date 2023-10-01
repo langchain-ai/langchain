@@ -2,12 +2,12 @@
 
 These evaluators are useful for evaluating the
 output of a language model or chain against
-custom criteria or rubric.
+specified criteria or rubric.
 
 Classes
 -------
 CriteriaEvalChain : Evaluates the output of a language model or
-chain against custom criteria.
+chain against specified criteria.
 
 Examples
 --------

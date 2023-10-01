@@ -1,16 +1,21 @@
-"""Chains are easily reusable components which can be linked together.
+"""**Chains** are easily reusable components linked together.
 
-    Chains should be used to encode a sequence of calls to components like
-    models, document retrievers, other chains, etc., and provide a simple interface
-    to this sequence.
+Chains encode a sequence of calls to components like models, document retrievers,
+other Chains, etc., and provide a simple interface to this sequence.
 
-    The Chain interface makes it easy to create apps that are:
-        - Stateful: add Memory to any Chain to give it state,
-        - Observable: pass Callbacks to a Chain to execute additional functionality,
-            like logging, outside the main sequence of component calls,
-        - Composable: the Chain API is flexible enough that it is easy to combine
-            Chains with other components, including other Chains.
-    """
+The Chain interface makes it easy to create apps that are:
+
+    - **Stateful:** add Memory to any Chain to give it state,
+    - **Observable:** pass Callbacks to a Chain to execute additional functionality,
+      like logging, outside the main sequence of component calls,
+    - **Composable:** combine Chains with other components, including other Chains.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    Chain --> <name>Chain  # Examples: LLMChain, MapReduceChain, RouterChain
+"""
 
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
@@ -28,11 +33,14 @@ from langchain.chains.conversational_retrieval.base import (
 )
 from langchain.chains.example_generator import generate_example
 from langchain.chains.flare.base import FlareChain
+from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain.chains.graph_qa.falkordb import FalkorDBQAChain
 from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
 from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
+from langchain.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
@@ -54,7 +62,6 @@ from langchain.chains.openai_functions import (
     create_tagging_chain,
     create_tagging_chain_pydantic,
 )
-from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_generation.base import QAGenerationChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
@@ -68,19 +75,18 @@ from langchain.chains.router import (
     RouterChain,
 )
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
-from langchain.chains.sql_database.base import (
-    SQLDatabaseChain,
-    SQLDatabaseSequentialChain,
-)
+from langchain.chains.sql_database.query import create_sql_query_chain
 from langchain.chains.transform import TransformChain
 
 __all__ = [
     "APIChain",
     "AnalyzeDocumentChain",
+    "ArangoGraphQAChain",
     "ChatVectorDBChain",
     "ConstitutionalChain",
     "ConversationChain",
     "ConversationalRetrievalChain",
+    "FalkorDBQAChain",
     "FlareChain",
     "GraphCypherQAChain",
     "GraphQAChain",
@@ -103,9 +109,9 @@ __all__ = [
     "MultiRouteChain",
     "NatBotChain",
     "NebulaGraphQAChain",
+    "NeptuneOpenCypherQAChain",
     "OpenAIModerationChain",
     "OpenAPIEndpointChain",
-    "PALChain",
     "QAGenerationChain",
     "QAWithSourcesChain",
     "ReduceDocumentsChain",
@@ -113,8 +119,6 @@ __all__ = [
     "RetrievalQA",
     "RetrievalQAWithSourcesChain",
     "RouterChain",
-    "SQLDatabaseChain",
-    "SQLDatabaseSequentialChain",
     "SequentialChain",
     "SimpleSequentialChain",
     "StuffDocumentsChain",
@@ -130,4 +134,5 @@ __all__ = [
     "create_tagging_chain_pydantic",
     "generate_example",
     "load_chain",
+    "create_sql_query_chain",
 ]

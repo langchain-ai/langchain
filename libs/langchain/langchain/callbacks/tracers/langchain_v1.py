@@ -19,6 +19,8 @@ from langchain.callbacks.tracers.schemas import (
 from langchain.schema.messages import get_buffer_string
 from langchain.utils import raise_for_status_with_text
 
+logger = logging.getLogger(__name__)
+
 
 def get_headers() -> Dict[str, Any]:
     """Get the headers for the LangChain API."""
@@ -137,7 +139,7 @@ class LangChainTracerV1(BaseTracer):
             )
             raise_for_status_with_text(response)
         except Exception as e:
-            logging.warning(f"Failed to persist run: {e}")
+            logger.warning(f"Failed to persist run: {e}")
 
     def _persist_session(
         self, session_create: TracerSessionV1Base
@@ -151,7 +153,7 @@ class LangChainTracerV1(BaseTracer):
             )
             session = TracerSessionV1(id=r.json()["id"], **session_create.dict())
         except Exception as e:
-            logging.warning(f"Failed to create session, using default session: {e}")
+            logger.warning(f"Failed to create session, using default session: {e}")
             session = TracerSessionV1(id=1, **session_create.dict())
         return session
 
@@ -166,7 +168,7 @@ class LangChainTracerV1(BaseTracer):
             tracer_session = TracerSessionV1(**r.json()[0])
         except Exception as e:
             session_type = "default" if not session_name else session_name
-            logging.warning(
+            logger.warning(
                 f"Failed to load {session_type} session, using empty session: {e}"
             )
             tracer_session = TracerSessionV1(id=1)

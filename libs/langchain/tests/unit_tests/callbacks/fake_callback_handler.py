@@ -3,9 +3,8 @@ from itertools import chain
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel
-
 from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.messages import BaseMessage
 
 
@@ -39,6 +38,7 @@ class BaseFakeCallbackHandler(BaseModel):
     retriever_starts: int = 0
     retriever_ends: int = 0
     retriever_errors: int = 0
+    retries: int = 0
 
 
 class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
@@ -58,8 +58,10 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
     def on_llm_new_token_common(self) -> None:
         self.llm_streams += 1
 
+    def on_retry_common(self) -> None:
+        self.retries += 1
+
     def on_chain_start_common(self) -> None:
-        ("CHAIN START")
         self.chain_starts += 1
         self.starts += 1
 
@@ -82,7 +84,6 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
         self.errors += 1
 
     def on_agent_action_common(self) -> None:
-        print("AGENT ACTION")
         self.agent_actions += 1
         self.starts += 1
 
@@ -91,7 +92,6 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
         self.ends += 1
 
     def on_chat_model_start_common(self) -> None:
-        print("STARTING CHAT MODEL")
         self.chat_model_starts += 1
         self.starts += 1
 
@@ -161,6 +161,13 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
         **kwargs: Any,
     ) -> Any:
         self.on_llm_error_common()
+
+    def on_retry(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        self.on_retry_common()
 
     def on_chain_start(
         self,
@@ -281,6 +288,13 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     def ignore_agent(self) -> bool:
         """Whether to ignore agent callbacks."""
         return self.ignore_agent_
+
+    async def on_retry(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        self.on_retry_common()
 
     async def on_llm_start(
         self,

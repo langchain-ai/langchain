@@ -41,7 +41,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         try:
             from cassio.history import StoredBlobHistory
         except (ImportError, ModuleNotFoundError):
-            raise ValueError(
+            raise ImportError(
                 "Could not import cassio python package. "
                 "Please install it with `pip install cassio`."
             )

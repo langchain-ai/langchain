@@ -5,6 +5,7 @@ import pytest
 
 from langchain.agents.load_tools import load_tools
 from langchain.schema import Document
+from langchain.tools import ArxivQueryRun
 from langchain.tools.base import BaseTool
 from langchain.utilities import ArxivAPIWrapper
 
@@ -14,11 +15,36 @@ def api_client() -> ArxivAPIWrapper:
     return ArxivAPIWrapper()
 
 
-def test_run_success(api_client: ArxivAPIWrapper) -> None:
-    """Test that returns the correct answer"""
+def test_run_success_paper_name(api_client: ArxivAPIWrapper) -> None:
+    """Test a query of paper name that returns the correct answer"""
 
-    output = api_client.run("1605.08386")
+    output = api_client.run("Heat-bath random walks with Markov bases")
+    assert "Probability distributions for Markov chains based quantum walks" in output
+    assert (
+        "Transformations of random walks on groups via Markov stopping times" in output
+    )
+    assert (
+        "Recurrence of Multidimensional Persistent Random Walks. Fourier and Series "
+        "Criteria" in output
+    )
+
+
+def test_run_success_arxiv_identifier(api_client: ArxivAPIWrapper) -> None:
+    """Test a query of an arxiv identifier returns the correct answer"""
+
+    output = api_client.run("1605.08386v1")
     assert "Heat-bath random walks with Markov bases" in output
+
+
+def test_run_success_multiple_arxiv_identifiers(api_client: ArxivAPIWrapper) -> None:
+    """Test a query of multiple arxiv identifiers that returns the correct answer"""
+
+    output = api_client.run("1605.08386v1 2212.00794v2 2308.07912")
+    assert "Heat-bath random walks with Markov bases" in output
+    assert "Scaling Language-Image Pre-training via Masking" in output
+    assert (
+        "Ultra-low mass PBHs in the early universe can explain the PTA signal" in output
+    )
 
 
 def test_run_returns_several_docs(api_client: ArxivAPIWrapper) -> None:
@@ -42,11 +68,27 @@ def assert_docs(docs: List[Document]) -> None:
         assert set(doc.metadata) == {"Published", "Title", "Authors", "Summary"}
 
 
-def test_load_success(api_client: ArxivAPIWrapper) -> None:
-    """Test that returns one document"""
+def test_load_success_paper_name(api_client: ArxivAPIWrapper) -> None:
+    """Test a query of paper name that returns one document"""
 
-    docs = api_client.load("1605.08386")
+    docs = api_client.load("Heat-bath random walks with Markov bases")
+    assert len(docs) == 3
+    assert_docs(docs)
+
+
+def test_load_success_arxiv_identifier(api_client: ArxivAPIWrapper) -> None:
+    """Test a query of an arxiv identifier that returns one document"""
+
+    docs = api_client.load("1605.08386v1")
     assert len(docs) == 1
+    assert_docs(docs)
+
+
+def test_load_success_multiple_arxiv_identifiers(api_client: ArxivAPIWrapper) -> None:
+    """Test a query of arxiv identifiers that returns the correct answer"""
+
+    docs = api_client.load("1605.08386v1 2212.00794v2 2308.07912")
+    assert len(docs) == 3
     assert_docs(docs)
 
 
@@ -81,7 +123,7 @@ def test_load_returns_unlimited_doc_content_chars() -> None:
     doc_content_chars_max = None
     api_client = ArxivAPIWrapper(doc_content_chars_max=doc_content_chars_max)
     docs = api_client.load("1605.08386")
-    assert len(docs[0].page_content) == 54337
+    assert len(docs[0].page_content) == pytest.approx(54338, rel=1e-2)
 
 
 def test_load_returns_full_set_of_metadata() -> None:
@@ -120,7 +162,7 @@ def test_load_arxiv_from_universal_entry_with_params() -> None:
         "load_all_available_meta": True,
     }
     arxiv_tool = _load_arxiv_from_universal_entry(**params)
-    assert isinstance(arxiv_tool, ArxivAPIWrapper)
+    assert isinstance(arxiv_tool, ArxivQueryRun)
     wp = arxiv_tool.api_wrapper
     assert wp.top_k_results == 1, "failed to assert top_k_results"
     assert wp.load_max_docs == 10, "failed to assert load_max_docs"

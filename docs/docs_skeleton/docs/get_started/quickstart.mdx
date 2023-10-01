@@ -25,13 +25,12 @@ import OpenAISetup from "@snippets/get_started/quickstart/openai_setup.mdx"
 Now we can start building our language model application. LangChain provides many modules that can be used to build language model applications.
 Modules can be used as stand-alones in simple applications and they can be combined for more complex use cases.
 
-The core building block of LangChain applications is the LLMChain.
-This combines three things:
+The most common and most important chain that LangChain helps create contains three things:
 - LLM: The language model is the core reasoning engine here. In order to work with LangChain, you need to understand the different types of language models and how to work with them.
 - Prompt Templates: This provides instructions to the language model. This controls what the language model outputs, so understanding how to construct prompts and different prompting strategies is crucial.
 - Output Parsers: These translate the raw response from the LLM to a more workable format, making it easy to use the output downstream.
 
-In this getting started guide we will cover those three components by themselves, and then cover the LLMChain which combines all of them.
+In this getting started guide we will cover those three components by themselves, and then go over how to combine all of them.
 Understanding these concepts will set you up well for being able to use and customize LangChain applications.
 Most LangChain applications allow you to configure the LLM and/or the prompt used, so knowing how to take advantage of this will be a big enabler.
 
@@ -59,8 +58,8 @@ LangChain provides several objects to easily distinguish between different roles
 If none of those roles sound right, there is also a `ChatMessage` class where you can specify the role manually.
 For more information on how to use these different messages most effectively, see our prompting guide.
 
-LangChain exposes a standard interface for both, but it's useful to understand this difference in order to construct prompts for a given language model.
-The standard interface that LangChain exposes has two methods:
+LangChain provides a standard interface for both, but it's useful to understand this difference in order to construct prompts for a given language model.
+The standard interface that LangChain provides has two methods:
 - `predict`: Takes in a string, returns a string
 - `predict_messages`: Takes in a list of messages, returns a message.
 
@@ -107,7 +106,7 @@ import PromptTemplateChatModel from "@snippets/get_started/quickstart/prompt_tem
 <PromptTemplateLLM/>
 
 However, the advantages of using these over raw string formatting are several.
-You can "partial" out variables - eg you can format only some of the variables at a time.
+You can "partial" out variables - e.g. you can format only some of the variables at a time.
 You can compose them together, easily combining different templates into a single prompt.
 For explanations of these functionalities, see the [section on prompts](/docs/modules/model_io/prompts) for more detail.
 
@@ -119,14 +118,14 @@ Let's take a look at this below:
 
 <PromptTemplateChatModel/>
 
-ChatPromptTemplates can also include other things besides ChatMessageTemplates - see the [section on prompts](/docs/modules/model_io/prompts) for more detail.
+ChatPromptTemplates can also be constructed in other ways - see the [section on prompts](/docs/modules/model_io/prompts) for more detail.
 
-## Output Parsers
+## Output parsers
 
 OutputParsers convert the raw output of an LLM into a format that can be used downstream.
 There are few main type of OutputParsers, including:
 
-- Convert text from LLM -> structured information (eg JSON)
+- Convert text from LLM -> structured information (e.g. JSON)
 - Convert a ChatMessage into just a string
 - Convert the extra information returned from a call besides the message (like OpenAI function invocation) into a string.
 
@@ -138,10 +137,10 @@ import OutputParser from "@snippets/get_started/quickstart/output_parser.mdx"
 
 <OutputParser/>
 
-## LLMChain
+## PromptTemplate + LLM + OutputParser
 
 We can now combine all these into one chain.
-This chain will take input variables, pass those to a prompt template to create a prompt, pass the prompt to an LLM, and then pass the output through an (optional) output parser.
+This chain will take input variables, pass those to a prompt template to create a prompt, pass the prompt to a language model, and then pass the output through an (optional) output parser.
 This is a convenient way to bundle up a modular piece of logic.
 Let's see it in action!
 
@@ -149,14 +148,19 @@ import LLMChain from "@snippets/get_started/quickstart/llm_chain.mdx"
 
 <LLMChain/>
 
-## Next Steps
+Note that we are using the `|` syntax to join these components together.
+This `|` syntax is called the LangChain Expression Language.
+To learn more about this syntax, read the documentation [here](/docs/expression_language).
+
+## Next steps
 
 This is it!
-We've now gone over how to create the core building block of LangChain applications - the LLMChains.
+We've now gone over how to create the core building block of LangChain applications.
 There is a lot more nuance in all these components (LLMs, prompts, output parsers) and a lot more different components to learn about as well.
 To continue on your journey:
 
 - [Dive deeper](/docs/modules/model_io) into LLMs, prompts, and output parsers
 - Learn the other [key components](/docs/modules)
+- Read up on [LangChain Expression Language](/docs/expression_language) to learn how to chain these components together
 - Check out our [helpful guides](/docs/guides) for detailed walkthroughs on particular topics
 - Explore [end-to-end use cases](/docs/use_cases)

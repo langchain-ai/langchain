@@ -98,7 +98,8 @@
             "name"
           ],
           "template": "hello {name}!",
-          "template_format": "f-string"
+          "template_format": "f-string",
+          "partial_variables": {}
         }
       }
     }
@@ -176,7 +177,8 @@
                       "name"
                     ],
                     "template": "hello {name}!",
-                    "template_format": "f-string"
+                    "template_format": "f-string",
+                    "partial_variables": {}
                   }
                 }
               }
@@ -227,7 +229,8 @@
               "api_resources",
               "completion",
               "Completion"
-            ]
+            ],
+            "repr": "<class 'openai.api_resources.completion.Completion'>"
           }
         }
       },
@@ -245,7 +248,8 @@
             "name"
           ],
           "template": "hello {name}!",
-          "template_format": "f-string"
+          "template_format": "f-string",
+          "partial_variables": {}
         }
       }
     }

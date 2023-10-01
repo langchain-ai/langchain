@@ -3,23 +3,25 @@ from __future__ import annotations
 
 import logging
 import os
+import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, TracerSession
+from langchain.callbacks.tracers.schemas import Run, TracerSession
 from langchain.env import get_runtime_environment
 from langchain.load.dump import dumpd
 from langchain.schema.messages import BaseMessage
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-_TRACERS: List[LangChainTracer] = []
+_TRACERS: weakref.WeakSet[LangChainTracer] = weakref.WeakSet()
 _CLIENT: Optional[Client] = None
+_EXECUTOR: Optional[ThreadPoolExecutor] = None
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -34,16 +36,25 @@ def log_error_once(method: str, exception: Exception) -> None:
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
     global _TRACERS
-    for tracer in _TRACERS:
-        tracer.wait_for_futures()
+    for tracer in list(_TRACERS):
+        if tracer is not None:
+            tracer.wait_for_futures()
 
 
-def _get_client() -> Client:
+def get_client() -> Client:
     """Get the client."""
     global _CLIENT
     if _CLIENT is None:
         _CLIENT = Client()
     return _CLIENT
+
+
+def _get_executor() -> ThreadPoolExecutor:
+    """Get the executor."""
+    global _EXECUTOR
+    if _EXECUTOR is None:
+        _EXECUTOR = ThreadPoolExecutor()
+    return _EXECUTOR
 
 
 class LangChainTracer(BaseTracer):
@@ -67,18 +78,12 @@ class LangChainTracer(BaseTracer):
         self.project_name = project_name or os.getenv(
             "LANGCHAIN_PROJECT", os.getenv("LANGCHAIN_SESSION", "default")
         )
-        if use_threading:
-            # set max_workers to 1 to process tasks in order
-            self.executor: Optional[ThreadPoolExecutor] = ThreadPoolExecutor(
-                max_workers=1
-            )
-        else:
-            self.executor = None
-        self.client = client or _get_client()
-        self._futures: Set[Future] = set()
+        self.client = client or get_client()
+        self._futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.tags = tags or []
+        self.executor = _get_executor() if use_threading else None
         global _TRACERS
-        _TRACERS.append(self)
+        _TRACERS.add(self)
 
     def on_chat_model_start(
         self,
@@ -89,6 +94,7 @@ class LangChainTracer(BaseTracer):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
@@ -107,8 +113,9 @@ class LangChainTracer(BaseTracer):
             start_time=start_time,
             execution_order=execution_order,
             child_execution_order=execution_order,
-            run_type=RunTypeEnum.llm,
+            run_type="llm",
             tags=tags,
+            name=name,
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
@@ -218,7 +225,4 @@ class LangChainTracer(BaseTracer):
 
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
-        futures = list(self._futures)
-        wait(futures)
-        for future in futures:
-            self._futures.remove(future)
+        wait(self._futures)

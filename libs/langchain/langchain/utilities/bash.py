@@ -11,23 +11,36 @@ if TYPE_CHECKING:
     import pexpect
 
 
-def _lazy_import_pexpect() -> pexpect:
-    """Import pexpect only when needed."""
-    if platform.system() == "Windows":
-        raise ValueError("Persistent bash processes are not yet supported on Windows.")
-    try:
-        import pexpect
-
-    except ImportError:
-        raise ImportError(
-            "pexpect required for persistent bash processes."
-            " To install, run `pip install pexpect`."
-        )
-    return pexpect
-
-
 class BashProcess:
-    """Executes bash commands and returns the output."""
+    """
+    Wrapper class for starting subprocesses.
+    Uses the python built-in subprocesses.run()
+    Persistent processes are **not** available
+    on Windows systems, as pexpect makes use of
+    Unix pseudoterminals (ptys). MacOS and Linux
+    are okay.
+
+    Example:
+        .. code-block:: python
+
+        from langchain.utilities.bash import BashProcess
+            bash = BashProcess(
+                strip_newlines = False,
+                return_err_output = False,
+                persistent = False
+            )
+            bash.run('echo \'hello world\'')
+
+    """
+
+    strip_newlines: bool = False
+    """Whether or not to run .strip() on the output"""
+    return_err_output: bool = False
+    """Whether or not to return the output of a failed
+    command, or just the error message and stacktrace"""
+    persistent: bool = False
+    """Whether or not to spawn a persistent session
+    NOTE: Unavailable for Windows environments"""
 
     def __init__(
         self,
@@ -35,20 +48,47 @@ class BashProcess:
         return_err_output: bool = False,
         persistent: bool = False,
     ):
-        """Initialize with stripping newlines."""
+        """
+        Initializes with default settings
+        """
         self.strip_newlines = strip_newlines
         self.return_err_output = return_err_output
         self.prompt = ""
         self.process = None
         if persistent:
             self.prompt = str(uuid4())
-            self.process = self._initialize_persistent_process(self.prompt)
+            self.process = self._initialize_persistent_process(self, self.prompt)
 
     @staticmethod
-    def _initialize_persistent_process(prompt: str) -> pexpect.spawn:
+    def _lazy_import_pexpect() -> pexpect:
+        """Import pexpect only when needed."""
+        if platform.system() == "Windows":
+            raise ValueError(
+                "Persistent bash processes are not yet supported on Windows."
+            )
+        try:
+            import pexpect
+
+        except ImportError:
+            raise ImportError(
+                "pexpect required for persistent bash processes."
+                " To install, run `pip install pexpect`."
+            )
+        return pexpect
+
+    @staticmethod
+    def _initialize_persistent_process(self: BashProcess, prompt: str) -> pexpect.spawn:
         # Start bash in a clean environment
         # Doesn't work on windows
-        pexpect = _lazy_import_pexpect()
+        """
+        Initializes a persistent bash setting in a
+        clean environment.
+        NOTE: Unavailable on Windows
+
+        Args:
+            Prompt(str): the bash command to execute
+        """  # noqa: E501
+        pexpect = self._lazy_import_pexpect()
         process = pexpect.spawn(
             "env", ["-i", "bash", "--norc", "--noprofile"], encoding="utf-8"
         )
@@ -59,7 +99,14 @@ class BashProcess:
         return process
 
     def run(self, commands: Union[str, List[str]]) -> str:
-        """Run commands and return final output."""
+        """
+        Run commands in either an existing persistent
+        subprocess or on in a new subprocess environment.
+
+        Args:
+            commands(List[str]): a list of commands to
+                execute in the session
+        """  # noqa: E501
         if isinstance(commands, str):
             commands = [commands]
         commands = ";".join(commands)
@@ -71,7 +118,13 @@ class BashProcess:
             return self._run(commands)
 
     def _run(self, command: str) -> str:
-        """Run commands and return final output."""
+        """
+        Runs a command in a subprocess and returns
+        the output.
+
+        Args:
+            command: The command to run
+        """  # noqa: E501
         try:
             output = subprocess.run(
                 command,
@@ -89,14 +142,26 @@ class BashProcess:
         return output
 
     def process_output(self, output: str, command: str) -> str:
-        # Remove the command from the output using a regular expression
+        """
+        Uses regex to remove the command from the output
+
+        Args:
+            output: a process' output string
+            command: the executed command
+        """  # noqa: E501
         pattern = re.escape(command) + r"\s*\n"
         output = re.sub(pattern, "", output, count=1)
         return output.strip()
 
     def _run_persistent(self, command: str) -> str:
-        """Run commands and return final output."""
-        pexpect = _lazy_import_pexpect()
+        """
+        Runs commands in a persistent environment
+        and returns the output.
+
+        Args:
+            command: the command to execute
+        """  # noqa: E501
+        pexpect = self._lazy_import_pexpect()
         if self.process is None:
             raise ValueError("Process not initialized")
         self.process.sendline(command)

@@ -43,6 +43,10 @@ Now:
 
 `from langchain_experimental.sql import SQLDatabaseChain`
 
+Alternatively, if you are just interested in using the query generation part of the SQL chain, you can check out [`create_sql_query_chain`](https://github.com/langchain-ai/langchain/blob/master/docs/extras/use_cases/tabular/sql_query.ipynb)
+
+`from langchain.chains import create_sql_query_chain`
+
 ## `load_prompt` for Python files
 
 Note: this only applies if you want to load Python files as prompts.

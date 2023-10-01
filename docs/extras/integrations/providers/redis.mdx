@@ -1,18 +1,29 @@
 # Redis
 
+>[Redis (Remote Dictionary Server)](https://en.wikipedia.org/wiki/Redis) is an open-source in-memory storage, 
+> used as a distributed, in-memory key–value database, cache and message broker, with optional durability. 
+> Because it holds all data in memory and because of its design, `Redis` offers low-latency reads and writes, 
+> making it particularly suitable for use cases that require a cache. Redis is the most popular NoSQL database, 
+> and one of the most popular databases overall.
+
 This page covers how to use the [Redis](https://redis.com) ecosystem within LangChain.
 It is broken into two parts: installation and setup, and then references to specific Redis wrappers.
 
 ## Installation and Setup
-- Install the Redis Python SDK with `pip install redis`
+
+Install the Python SDK:
+
+```bash
+pip install redis
+```
 
 ## Wrappers
 
-All wrappers needing a redis url connection string to connect to the database support either a stand alone Redis server
+All wrappers need a redis url connection string to connect to the database support either a stand alone Redis server
 or a High-Availability setup with Replication and Redis Sentinels.
 
 ### Redis Standalone connection url
-For standalone Redis server the official redis connection url formats can be used as describe in the python redis modules
+For standalone `Redis` server, the official redis connection url formats can be used as describe in the python redis modules
 "from_url()" method [Redis.from_url](https://redis-py.readthedocs.io/en/stable/connections.html#redis.Redis.from_url)
 
 Example: `redis_url = "redis://:secret-pass@localhost:6379/0"`
@@ -20,7 +31,7 @@ Example: `redis_url = "redis://:secret-pass@localhost:6379/0"`
 ### Redis Sentinel connection url
 
 For [Redis sentinel setups](https://redis.io/docs/management/sentinel/) the connection scheme is "redis+sentinel". 
-This is an un-offical extensions to the official IANA registered protocol schemes as long as there is no connection url
+This is an unofficial extensions to the official IANA registered protocol schemes as long as there is no connection url
 for Sentinels available.
 
 Example: `redis_url = "redis+sentinel://:secret-pass@sentinel-host:26379/mymaster/0"`
@@ -92,7 +103,7 @@ To import this vectorstore:
 from langchain.vectorstores import Redis
 ```
 
-For a more detailed walkthrough of the Redis vectorstore wrapper, see [this notebook](/docs/modules/data_connection/vectorstores/integrations/redis.html).
+For a more detailed walkthrough of the Redis vectorstore wrapper, see [this notebook](/docs/integrations/vectorstores/redis.html).
 
 ### Retriever
 
@@ -103,7 +114,7 @@ Redis can be used to persist LLM conversations.
 
 #### Vector Store Retriever Memory
 
-For a more detailed walkthrough of the `VectorStoreRetrieverMemory` wrapper, see [this notebook](/docs/modules/memory/integrations/vectorstore_retriever_memory.html).
+For a more detailed walkthrough of the `VectorStoreRetrieverMemory` wrapper, see [this notebook](/docs/modules/memory/types/vectorstore_retriever_memory.html).
 
 #### Chat Message History Memory
-For a detailed example of Redis to cache conversation message history, see [this notebook](/docs/modules/memory/integrations/redis_chat_message_history.html).
+For a detailed example of Redis to cache conversation message history, see [this notebook](/docs/integrations/memory/redis_chat_message_history.html).

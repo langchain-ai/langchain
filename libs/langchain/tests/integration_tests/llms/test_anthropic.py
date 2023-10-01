@@ -9,22 +9,34 @@ from langchain.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
+@pytest.mark.requires("anthropic")
+def test_anthropic_model_name_param() -> None:
+    llm = Anthropic(model_name="foo")
+    assert llm.model == "foo"
+
+
+@pytest.mark.requires("anthropic")
+def test_anthropic_model_param() -> None:
+    llm = Anthropic(model="foo")
+    assert llm.model == "foo"
+
+
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
-    llm = Anthropic(model="test")
+    llm = Anthropic(model="claude-instant-1")
     output = llm("Say foo:")
     assert isinstance(output, str)
 
 
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    llm = Anthropic(model="test")
+    llm = Anthropic(model="claude-instant-1")
     generator = llm.stream("I'm Pickle Rick")
 
     assert isinstance(generator, Generator)
 
     for token in generator:
-        assert isinstance(token["completion"], str)
+        assert isinstance(token, str)
 
 
 def test_anthropic_streaming_callback() -> None:

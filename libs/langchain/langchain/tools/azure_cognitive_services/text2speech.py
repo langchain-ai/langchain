@@ -4,12 +4,8 @@ import logging
 import tempfile
 from typing import Any, Dict, Optional
 
-from pydantic import root_validator
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import root_validator
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
 
@@ -28,8 +24,8 @@ class AzureCogsText2SpeechTool(BaseTool):
     speech_language: str = "en-US"  #: :meta private:
     speech_config: Any  #: :meta private:
 
-    name = "azure_cognitive_services_text2speech"
-    description = (
+    name: str = "azure_cognitive_services_text2speech"
+    description: str = (
         "A wrapper around Azure Cognitive Services Text2Speech. "
         "Useful for when you need to convert text to speech. "
     )
@@ -104,11 +100,3 @@ class AzureCogsText2SpeechTool(BaseTool):
             return speech_file
         except Exception as e:
             raise RuntimeError(f"Error while running AzureCogsText2SpeechTool: {e}")
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        raise NotImplementedError("AzureCogsText2SpeechTool does not support async")

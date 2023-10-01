@@ -1,4 +1,3 @@
-"""Wrapper around Rockset vector database."""
 from __future__ import annotations
 
 import logging
@@ -6,14 +5,14 @@ from enum import Enum
 from typing import Any, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 
 logger = logging.getLogger(__name__)
 
 
 class Rockset(VectorStore):
-    """Wrapper arpund Rockset vector database.
+    """`Rockset` vector store.
 
     To use, you should have the `rockset` python package installed. Note that to use
     this, the collection being used must already exist in your Rockset instance.
@@ -23,7 +22,6 @@ class Rockset(VectorStore):
     See: https://rockset.com/blog/introducing-vector-search-on-rockset/ for more details
 
     Everything below assumes `commons` Rockset workspace.
-    TODO: Add support for workspace args.
 
     Example:
         .. code-block:: python
@@ -50,6 +48,7 @@ class Rockset(VectorStore):
         collection_name: str,
         text_key: str,
         embedding_key: str,
+        workspace: str = "commons",
     ):
         """Initialize with Rockset client.
         Args:
@@ -82,6 +81,13 @@ class Rockset(VectorStore):
         self._embeddings = embeddings
         self._text_key = text_key
         self._embedding_key = embedding_key
+        self._workspace = workspace
+
+        try:
+            self._client.set_application("langchain")
+        except AttributeError:
+            # ignore
+            pass
 
     @property
     def embeddings(self) -> Embeddings:
@@ -303,7 +309,7 @@ class Rockset(VectorStore):
         where_str = f"WHERE {where_str}\n" if where_str else ""
         return f"""\
 SELECT * EXCEPT({self._embedding_key}), {distance_str}
-FROM {self._collection_name}
+FROM {self._workspace}.{self._collection_name}
 {where_str}\
 ORDER BY dist {distance_func.order_by()}
 LIMIT {str(k)}
@@ -311,7 +317,7 @@ LIMIT {str(k)}
 
     def _write_documents_to_rockset(self, batch: List[dict]) -> List[str]:
         add_doc_res = self._client.Documents.add_documents(
-            collection=self._collection_name, data=batch
+            collection=self._collection_name, data=batch, workspace=self._workspace
         )
         return [doc_status._id for doc_status in add_doc_res.data]
 
@@ -328,4 +334,5 @@ LIMIT {str(k)}
         self._client.Documents.delete_documents(
             collection=self._collection_name,
             data=[DeleteDocumentsRequestData(id=i) for i in ids],
+            workspace=self._workspace,
         )

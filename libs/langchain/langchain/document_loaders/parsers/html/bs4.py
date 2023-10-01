@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class BS4HTMLParser(BaseBlobParser):
-    """Parser that uses beautiful soup to parse HTML files."""
+    """Pparse HTML files using `Beautiful Soup`."""
 
     def __init__(
         self,
@@ -24,7 +24,7 @@ class BS4HTMLParser(BaseBlobParser):
         try:
             import bs4  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "beautifulsoup4 package not found, please install it with "
                 "`pip install beautifulsoup4`"
             )

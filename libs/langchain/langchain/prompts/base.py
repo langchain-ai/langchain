@@ -5,10 +5,10 @@ import warnings
 from abc import ABC
 from typing import Any, Callable, Dict, List, Set
 
-from langchain.schema import BasePromptTemplate
 from langchain.schema.messages import BaseMessage, HumanMessage
 from langchain.schema.prompt import PromptValue
-from langchain.utils import formatter
+from langchain.schema.prompt_template import BasePromptTemplate
+from langchain.utils.formatting import formatter
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -27,7 +27,7 @@ def jinja2_formatter(template: str, **kwargs: Any) -> str:
 def validate_jinja2(template: str, input_variables: List[str]) -> None:
     """
     Validate that the input variables are valid for the template.
-    Issues an warning if missing or extra variables are found.
+    Issues a warning if missing or extra variables are found.
 
     Args:
         template: The template string.
@@ -110,7 +110,7 @@ class StringPromptValue(PromptValue):
 
 
 class StringPromptTemplate(BasePromptTemplate, ABC):
-    """String prompt should expose the format method, returning a prompt."""
+    """String prompt that exposes the format method, returning a prompt."""
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""

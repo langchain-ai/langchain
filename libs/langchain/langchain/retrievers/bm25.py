@@ -1,16 +1,8 @@
-"""
-BM25 Retriever without elastic search
-"""
-
-
 from __future__ import annotations
 
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 
 
@@ -19,7 +11,7 @@ def default_preprocessing_func(text: str) -> List[str]:
 
 
 class BM25Retriever(BaseRetriever):
-    """BM25 Retriever without elastic search."""
+    """`BM25` retriever without Elasticsearch."""
 
     vectorizer: Any
     """ BM25 vectorizer."""
@@ -108,8 +100,3 @@ class BM25Retriever(BaseRetriever):
         processed_query = self.preprocess_func(query)
         return_docs = self.vectorizer.get_top_n(processed_query, self.docs, n=self.k)
         return return_docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError
