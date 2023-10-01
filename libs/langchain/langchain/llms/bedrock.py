@@ -269,9 +269,7 @@ class BedrockBase(BaseModel, ABC):
 
             # stop sequence from _generate() overrides
             # stop sequences in the class attribute
-            _model_kwargs[
-                self.provider_stop_sequence_key_name_map.get(provider)
-            ] = stop
+            _model_kwargs[self.provider_stop_sequence_key_name_map.get(provider)] = stop
 
         if provider == "cohere":
             _model_kwargs["stream"] = True
