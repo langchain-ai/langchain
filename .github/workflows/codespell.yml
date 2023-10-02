@@ -21,6 +21,6 @@ jobs:
       - name: Codespell
         uses: codespell-project/actions-codespell@v2
         with:
+          toml: ./libs/langchain/pyproject.toml
           skip: guide_imports.json
           ignore_words_list: aadd
-          toml: /libs/langchain/pyproject.toml
