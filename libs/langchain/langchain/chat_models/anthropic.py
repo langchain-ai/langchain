@@ -34,7 +34,7 @@ def _convert_one_message_to_text(
     elif isinstance(message, AIMessage):
         message_text = f"{ai_prompt} {message.content}"
     elif isinstance(message, SystemMessage):
-        message_text = f"{human_prompt} <admin>{message.content}</admin>"
+        message_text = f"<admin>{message.content}</admin>"
     else:
         raise ValueError(f"Got unknown type {message}")
     return message_text
@@ -55,17 +55,7 @@ def convert_messages_to_prompt_anthropic(
         str: Combined string with necessary human_prompt and ai_prompt tags.
     """
 
-    if (
-        len(messages) >= 2
-        and isinstance(messages[0], SystemMessage)
-        and isinstance(messages[1], HumanMessage)
-    ):
-        sys = messages[0]
-        human = messages[1]
-        content = "<admin>" + sys.content + "</admin>\n\n" + human.content
-        messages = [HumanMessage(content=content)] + messages[2:].copy()
-    else:
-        messages = messages.copy()
+    messages = messages.copy()
     if not isinstance(messages[-1], AIMessage):
         messages.append(AIMessage(content=""))
 
