@@ -23,3 +23,4 @@ jobs:
         with:
           skip: guide_imports.json
           ignore_words_list: aadd
+          toml: /libs/langchain/pyproject.toml
