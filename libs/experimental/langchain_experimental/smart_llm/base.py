@@ -10,12 +10,12 @@ from langchain.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
+    ChatPromptValue,
     HumanMessagePromptTemplate,
 )
 from langchain.schema import LLMResult, PromptValue
 
 from langchain_experimental.pydantic_v1 import Extra, root_validator
-
 
 class SmartLLMChain(Chain):
     """
@@ -79,6 +79,8 @@ class SmartLLMChain(Chain):
     return_intermediate_steps: bool = False
     """Whether to return ideas and critique, in addition to resolution."""
     history: SmartLLMChainHistory = SmartLLMChainHistory()
+    merge_consecutive_messages: bool = False
+    """Whether to merge consecutive messages of the same type into one message. Necessary for some LLMs."""
 
     class Config:
         extra = Extra.forbid
@@ -289,6 +291,8 @@ class SmartLLMChain(Chain):
         )
         callbacks = run_manager.handlers if run_manager else None
         if llm:
+            if self.merge_consecutive_messages:
+                prompt = self._merge_consecutive_messages(prompt)
             critique = self._get_text_from_llm_result(
                 llm.generate_prompt([prompt], stop, callbacks), step="critique"
             )
@@ -312,6 +316,8 @@ class SmartLLMChain(Chain):
         )
         callbacks = run_manager.handlers if run_manager else None
         if llm:
+            if self.merge_consecutive_messages:
+                prompt = self._merge_consecutive_messages(prompt)
             resolution = self._get_text_from_llm_result(
                 llm.generate_prompt([prompt], stop, callbacks), step="resolve"
             )
@@ -322,3 +328,23 @@ class SmartLLMChain(Chain):
             return resolution
         else:
             raise ValueError("llm is none, which should never happen")
+
+    def _merge_consecutive_messages(self, prompt: ChatPromptValue) -> ChatPromptValue:
+        original_messages = prompt.to_messages()
+        if not original_messages:
+            return ChatPromptValue(messages=[])
+
+        merged_messages = []
+        prev_message = original_messages[0]
+
+        for message in original_messages[1:]:
+            if type(prev_message) == type(message):
+                prev_message.content += "\n\n" + message.content
+            else:
+                merged_messages.append(prev_message)
+                prev_message = message
+
+        # Append the last message
+        merged_messages.append(prev_message)
+
+        return ChatPromptValue(messages=merged_messages)

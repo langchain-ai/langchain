@@ -11,7 +11,7 @@ from langchain.schema.output import GenerationChunk
 HUMAN_PROMPT = "\n\nHuman:"
 ASSISTANT_PROMPT = "\n\nAssistant:"
 ALTERNATION_ERROR = (
-    "Error: Prompt must alternate between '\n\nHuman:' and '\n\nAssistant:'."
+    "Error: Prompt must alternate between '\\n\\nHuman:' and '\\n\\nAssistant:'."
 )
 
 
