@@ -245,6 +245,7 @@ def get_unique_config_specs(
             unique.append(first)
         else:
             raise ValueError(
-                f"RunnableSequence contains conflicting config specs for {id}: {[first] + others}"
+                "RunnableSequence contains conflicting config specs"
+                f"for {id}: {[first] + others}"
             )
     return unique

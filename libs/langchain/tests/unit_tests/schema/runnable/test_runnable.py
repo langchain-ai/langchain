@@ -675,7 +675,7 @@ def test_configurable_fields() -> None:
         == "c"
     )
 
-    chain_with_map_configurable = prompt_configurable | {
+    chain_with_map_configurable: Runnable = prompt_configurable | {
         "llm1": fake_llm_configurable | StrOutputParser(),
         "llm2": fake_llm_configurable | StrOutputParser(),
         "llm3": fake_llm.configurable_fields(
