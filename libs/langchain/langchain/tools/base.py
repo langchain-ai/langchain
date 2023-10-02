@@ -17,6 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import (
     BaseModel,
     Extra,
@@ -25,7 +26,7 @@ from langchain.pydantic_v1 import (
     root_validator,
     validate_arguments,
 )
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import Runnable, RunnableConfig, RunnableSerializable
 
 
 class SchemaAnnotationError(TypeError):
@@ -97,7 +98,7 @@ class ToolException(Exception):
     pass
 
 
-class BaseTool(BaseModel, Runnable[Union[str, Dict], Any]):
+class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
     """Interface LangChain tools must implement."""
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -165,10 +166,9 @@ class ChildTool(BaseTool):
     ] = False
     """Handle the content of the ToolException thrown."""
 
-    class Config:
+    class Config(Serializable.Config):
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @property
