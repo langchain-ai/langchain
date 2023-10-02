@@ -9,6 +9,10 @@ from langchain._api.deprecation import surface_langchain_deprecation_warnings
 if TYPE_CHECKING:
     from langchain.schema import BaseCache
 
+    verbose: bool
+    debug: bool
+    llm_cache: Optional[BaseCache]
+
 
 try:
     __version__ = metadata.version(__package__)
@@ -16,10 +20,6 @@ except metadata.PackageNotFoundError:
     # Case where package metadata is not available.
     __version__ = ""
 del metadata  # optional, avoids polluting the results of dir(__package__)
-
-verbose: bool = False
-debug: bool = False
-llm_cache: Optional["BaseCache"] = None
 
 
 def _is_interactive_env() -> bool:
@@ -324,6 +324,24 @@ def __getattr__(name: str) -> Any:
         _warn_on_import(name)
 
         return SerpAPIWrapper
+    elif name == "verbose":
+        from langchain.utils.globals import verbose
+
+        _warn_on_import(name)
+
+        return verbose
+    elif name == "debug":
+        from langchain.utils.globals import debug
+
+        _warn_on_import(name)
+
+        return debug
+    elif name == "llm_cache":
+        from langchain.utils.globals import llm_cache
+
+        _warn_on_import(name)
+
+        return llm_cache
     else:
         raise AttributeError(f"Could not find: {name}")
 
