@@ -10,8 +10,8 @@ class YouRetriever(BaseRetriever):
     """`You` retriever that uses You.com's search API.
 
     To connect to the You.com api requires an API key which
-    you can get by emailing api@you.com.
-    You can check out our Swagger docs at https://api.ydc-index.io/docs/docs/index.html.
+    you can get at https://documentation.you.com.
+    You can also find our swagger docs there!
 
     You need to set the environment variable `YDC_API_KEY` for retriever to operate.
     """
