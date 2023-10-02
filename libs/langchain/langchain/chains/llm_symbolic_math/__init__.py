@@ -8,7 +8,7 @@ warn_deprecated(
     since="0.0.304",
     message=(
         "On 2023-10-06 this module will be moved to langchain-experimental as "
-        "it relies on sympify https://github.com/sympy/sympy/issues/10805"
+        "it relies on sympy https://github.com/sympy/sympy/issues/10805"
     ),
     pending=True,
 )
