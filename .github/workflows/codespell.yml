@@ -23,22 +23,10 @@ jobs:
         run: |
           pip install toml
 
-      # print working directory for debugging purposes
-
-      - name: Print Working Directory
-        run: |
-          pwd
-
-      # Display files in working directory for debugging purposes
-
-      - name: Display Files in Working Directory
-        run: |
-          ls -a
-
       - name: Extract Ignore Words List
         run: |
           # Use a Python script to extract the ignore words list from pyproject.toml
-          python .github/workflows/extract_ignore_words.py
+          python .github/workflows/extract_ignored_words_list.py
         id: extract_ignore_words
 
       - name: Codespell
