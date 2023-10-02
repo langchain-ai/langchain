@@ -36,6 +36,9 @@ if TYPE_CHECKING:
         CallbackManagerForChainRun,
     )
     from langchain.callbacks.tracers.log_stream import RunLogPatch
+    from langchain.schema.runnable.fallbacks import (
+        RunnableWithFallbacks as RunnableWithFallbacksT,
+    )
 
 
 from langchain.load.dump import dumpd
@@ -455,7 +458,9 @@ class Runnable(Generic[Input, Output], ABC):
         fallbacks: Sequence[Runnable[Input, Output]],
         *,
         exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,),
-    ) -> RunnableWithFallbacks[Input, Output]:
+    ) -> RunnableWithFallbacksT[Input, Output]:
+        from langchain.schema.runnable.fallbacks import RunnableWithFallbacks
+
         return RunnableWithFallbacks(
             runnable=self,
             fallbacks=fallbacks,
