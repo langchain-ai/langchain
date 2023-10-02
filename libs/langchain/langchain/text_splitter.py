@@ -28,7 +28,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from io import StringIO
+from io import StringIO, BytesIO
 from typing import (
     AbstractSet,
     Any,
@@ -533,7 +533,8 @@ class HTMLHeaderTextSplitter:
         Args:
             url: web URL
         """
-        return self.split_text(requests.get(url).text)
+        r = requests.get(url)
+        return self.split_text_from_file(BytesIO(r.content))
 
     def split_text(self, text: str) -> List[Document]:
         """Split HTML text string
