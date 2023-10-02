@@ -7,15 +7,14 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
 
-from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain.schema.document import Document
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt import PromptValue
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 
-class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
+class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
