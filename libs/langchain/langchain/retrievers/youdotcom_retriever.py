@@ -26,7 +26,7 @@ class YouRetriever(BaseRetriever):
         if not os.getenv("YDC_API_KEY"):
             raise RuntimeError("YDC_API_KEY environment variable not found")
         else:
-            values["ydc_api_key"] = os.get("YDC_API_KEY")
+            values["ydc_api_key"] = os.getenv("YDC_API_KEY")
         return values
 
     def add_documents(self, docs: List[Document], **kwargs: Any) -> List[str]:
