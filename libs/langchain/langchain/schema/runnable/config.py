@@ -34,6 +34,10 @@ if TYPE_CHECKING:
     )
 
 
+class EmptyDict(TypedDict, total=False):
+    pass
+
+
 class RunnableConfig(TypedDict, total=False):
     """Configuration for a Runnable."""
 
@@ -76,6 +80,13 @@ class RunnableConfig(TypedDict, total=False):
     recursion_limit: int
     """
     Maximum number of times a call can recurse. If not provided, defaults to 10.
+    """
+
+    configurable: Dict[str, Any]
+    """
+    Runtime values for attributes previously made configurable by this Runnable,
+    or sub-Runnables, through .make_configurable(). Check .output_schema for
+    a description of the attributes that have been made configurable.
     """
 
 
