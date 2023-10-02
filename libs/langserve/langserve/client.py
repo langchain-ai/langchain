@@ -6,6 +6,13 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, AsyncIterator, Iterator, List, Optional, Sequence, Union
 from urllib.parse import urljoin
 
+from langchain.schema.runnable.call import (
+    abatch_with_config,
+    acall_with_config,
+    batch_with_config,
+    call_with_config,
+)
+
 import httpx
 from langchain.callbacks.tracers.log_stream import RunLogPatch
 from langchain.load.dump import dumpd
@@ -136,7 +143,7 @@ class RemoteRunnable(Runnable[Input, Output]):
     ) -> Output:
         if kwargs:
             raise NotImplementedError("kwargs not implemented yet.")
-        return self._call_with_config(self._invoke, input, config=config)
+        return call_with_config(self._invoke, input, config=config)
 
     async def _ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -157,7 +164,7 @@ class RemoteRunnable(Runnable[Input, Output]):
     ) -> Output:
         if kwargs:
             raise NotImplementedError("kwargs not implemented yet.")
-        return await self._acall_with_config(self._ainvoke, input, config)
+        return await acall_with_config(self._ainvoke, input, config)
 
     def _batch(
         self,
@@ -198,7 +205,7 @@ class RemoteRunnable(Runnable[Input, Output]):
     ) -> List[Output]:
         if kwargs:
             raise NotImplementedError("kwargs not implemented yet.")
-        return self._batch_with_config(self._batch, inputs, config)
+        return batch_with_config(self._batch, inputs, config)
 
     async def _abatch(
         self,
@@ -245,7 +252,7 @@ class RemoteRunnable(Runnable[Input, Output]):
             raise NotImplementedError("kwargs not implemented yet.")
         if not inputs:
             return []
-        return await self._abatch_with_config(self._abatch, inputs, config)
+        return await abatch_with_config(self._abatch, inputs, config)
 
     def stream(
         self,

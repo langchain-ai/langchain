@@ -23,6 +23,12 @@ from langchain.schema.runnable.base import (
     RunnableMap,
     RunnableSerializable,
 )
+from langchain.schema.runnable.call import (
+    acall_with_config,
+    atransform_stream_with_config,
+    call_with_config,
+    transform_stream_with_config,
+)
 from langchain.schema.runnable.config import RunnableConfig, get_executor_for_config
 from langchain.schema.runnable.utils import AddableDict
 from langchain.utils.aiter import atee, py_anext
@@ -85,7 +91,7 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
         return RunnableAssign(RunnableMap(kwargs))
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
-        return self._call_with_config(identity, input, config)
+        return call_with_config(identity, input, config)
 
     async def ainvoke(
         self,
@@ -93,7 +99,7 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Input:
-        return await self._acall_with_config(aidentity, input, config)
+        return await acall_with_config(aidentity, input, config)
 
     def transform(
         self,
@@ -101,7 +107,7 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Iterator[Input]:
-        return self._transform_stream_with_config(input, identity, config)
+        return transform_stream_with_config(input, identity, config)
 
     async def atransform(
         self,
@@ -109,7 +115,7 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Input]:
-        async for chunk in self._atransform_stream_with_config(input, identity, config):
+        async for chunk in atransform_stream_with_config(input, identity, config):
             yield chunk
 
 

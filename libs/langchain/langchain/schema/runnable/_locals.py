@@ -12,6 +12,7 @@ from typing import (
 )
 
 from langchain.schema.runnable.base import Input, Output, RunnableSerializable
+from langchain.schema.runnable.call import acall_with_config, call_with_config
 from langchain.schema.runnable.config import RunnableConfig
 from langchain.schema.runnable.passthrough import RunnablePassthrough
 
@@ -149,7 +150,7 @@ class GetLocalVar(
                 "therefore always receive a non-null config."
             )
 
-        return self._call_with_config(self._get, input, config)
+        return call_with_config(self._get, input, config)
 
     async def ainvoke(
         self,
@@ -163,4 +164,4 @@ class GetLocalVar(
                 "therefore always receive a non-null config."
             )
 
-        return await self._acall_with_config(self._aget, input, config)
+        return await acall_with_config(self._aget, input, config)

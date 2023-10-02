@@ -4,6 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from langchain.schema.runnable.call import call_with_config
 
 import yaml
 
@@ -50,7 +51,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
         )
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:
-        return self._call_with_config(
+        return call_with_config(
             lambda inner_input: self.format_prompt(
                 **{key: inner_input[key] for key in self.input_variables}
             ),

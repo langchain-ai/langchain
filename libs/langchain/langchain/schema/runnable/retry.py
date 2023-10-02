@@ -10,6 +10,12 @@ from typing import (
     Union,
     cast,
 )
+from langchain.schema.runnable.call import (
+    abatch_with_config,
+    acall_with_config,
+    batch_with_config,
+    call_with_config,
+)
 
 from tenacity import (
     AsyncRetrying,
@@ -103,7 +109,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        return self._call_with_config(self._invoke, input, config, **kwargs)
+        return call_with_config(self._invoke, input, config, **kwargs)
 
     async def _ainvoke(
         self,
@@ -124,7 +130,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
+        return await acall_with_config(self._ainvoke, input, config, **kwargs)
 
     def _batch(
         self,
@@ -186,7 +192,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Any
     ) -> List[Output]:
-        return self._batch_with_config(
+        return batch_with_config(
             self._batch, inputs, config, return_exceptions=return_exceptions, **kwargs
         )
 
@@ -250,7 +256,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Any
     ) -> List[Output]:
-        return await self._abatch_with_config(
+        return await abatch_with_config(
             self._abatch, inputs, config, return_exceptions=return_exceptions, **kwargs
         )
 

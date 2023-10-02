@@ -12,6 +12,7 @@ from typing import (
     cast,
 )
 from uuid import UUID
+from langchain.schema.runnable.call import abatch_with_config, batch_with_config
 
 import pytest
 from freezegun import freeze_time
@@ -2547,7 +2548,7 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
             return_exceptions: bool = False,
             **kwargs: Any,
         ) -> List[str]:
-            return self._batch_with_config(
+            return batch_with_config(
                 self._batch,
                 inputs,
                 config,
@@ -2667,7 +2668,7 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
             return_exceptions: bool = False,
             **kwargs: Any,
         ) -> List[str]:
-            return await self._abatch_with_config(
+            return await abatch_with_config(
                 self._abatch,
                 inputs,
                 config,

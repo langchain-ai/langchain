@@ -25,6 +25,12 @@ from langchain.schema.output import (
 )
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import RunnableConfig, RunnableSerializable
+from langchain.schema.runnable.call import (
+    acall_with_config,
+    atransform_stream_with_config,
+    call_with_config,
+    transform_stream_with_config,
+)
 
 T = TypeVar("T")
 
@@ -80,7 +86,7 @@ class BaseGenerationOutputParser(
         self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self._call_with_config(
+            return call_with_config(
                 lambda inner_input: self.parse_result(
                     [ChatGeneration(message=inner_input)]
                 ),
@@ -89,7 +95,7 @@ class BaseGenerationOutputParser(
                 run_type="parser",
             )
         else:
-            return self._call_with_config(
+            return call_with_config(
                 lambda inner_input: self.parse_result([Generation(text=inner_input)]),
                 input,
                 config,
@@ -103,7 +109,7 @@ class BaseGenerationOutputParser(
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
-            return await self._acall_with_config(
+            return await acall_with_config(
                 lambda inner_input: self.aparse_result(
                     [ChatGeneration(message=inner_input)]
                 ),
@@ -112,7 +118,7 @@ class BaseGenerationOutputParser(
                 run_type="parser",
             )
         else:
-            return await self._acall_with_config(
+            return await acall_with_config(
                 lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
                 input,
                 config,
@@ -169,7 +175,7 @@ class BaseOutputParser(
         self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self._call_with_config(
+            return call_with_config(
                 lambda inner_input: self.parse_result(
                     [ChatGeneration(message=inner_input)]
                 ),
@@ -178,7 +184,7 @@ class BaseOutputParser(
                 run_type="parser",
             )
         else:
-            return self._call_with_config(
+            return call_with_config(
                 lambda inner_input: self.parse_result([Generation(text=inner_input)]),
                 input,
                 config,
@@ -192,7 +198,7 @@ class BaseOutputParser(
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
-            return await self._acall_with_config(
+            return await acall_with_config(
                 lambda inner_input: self.aparse_result(
                     [ChatGeneration(message=inner_input)]
                 ),
@@ -201,7 +207,7 @@ class BaseOutputParser(
                 run_type="parser",
             )
         else:
-            return await self._acall_with_config(
+            return await acall_with_config(
                 lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
                 input,
                 config,
@@ -323,7 +329,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Iterator[T]:
-        yield from self._transform_stream_with_config(
+        yield from transform_stream_with_config(
             input, self._transform, config, run_type="parser"
         )
 
@@ -333,7 +339,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> AsyncIterator[T]:
-        async for chunk in self._atransform_stream_with_config(
+        async for chunk in atransform_stream_with_config(
             input, self._atransform, config, run_type="parser"
         ):
             yield chunk
