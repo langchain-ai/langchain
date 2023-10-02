@@ -6,7 +6,7 @@ import pytest
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models import BedrockChat
 from langchain.schema import ChatGeneration, LLMResult
-from langchain.schema.messages import BaseMessage, HumanMessage
+from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -18,8 +18,9 @@ def chat() -> BedrockChat:
 @pytest.mark.scheduled
 def test_chat_bedrock(chat: BedrockChat) -> None:
     """Test BedrockChat wrapper."""
-    message = HumanMessage(content="Hello")
-    response = chat([message])
+    system = SystemMessage(content="You are a helpful assistant.")
+    human = HumanMessage(content="Hello")
+    response = chat([system, human])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
