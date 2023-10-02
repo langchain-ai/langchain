@@ -1,4 +1,4 @@
-"""Base classes for comparing the output of two models."""
+"""Base classes for scoring the output of a model on a scale of 1-10."""
 from __future__ import annotations
 
 import logging
@@ -48,7 +48,7 @@ _SUPPORTED_CRITERIA = {
 }
 
 
-def resolve_pairwise_criteria(
+def resolve_criteria(
     criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]]
 ) -> dict:
     """Resolve the criteria for the pairwise evaluator.
@@ -81,7 +81,7 @@ def resolve_pairwise_criteria(
         criteria_ = {
             k: v
             for criterion in criteria
-            for k, v in resolve_pairwise_criteria(criterion).items()
+            for k, v in resolve_criteria(criterion).items()
         }
     else:
         if not criteria:
@@ -252,7 +252,7 @@ Performance may be significantly worse with other models."
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
-        criteria_ = resolve_pairwise_criteria(criteria)
+        criteria_ = resolve_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" if v else k for k, v in criteria_.items())
         criteria_str = (
             CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else DEFAULT_CRITERIA
@@ -421,7 +421,7 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
-        criteria_ = resolve_pairwise_criteria(criteria)
+        criteria_ = resolve_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items())
         criteria_str = CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else ""
         return cls(llm=llm, prompt=prompt_.partial(criteria=criteria_str), **kwargs)
