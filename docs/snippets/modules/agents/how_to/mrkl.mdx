@@ -13,7 +13,7 @@ db = SQLDatabase.from_uri("sqlite:///../../../../../notebooks/Chinook.db")
 db_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True)
 tools = [
     Tool(
-        name = "Search",
+        name="Search",
         func=search.run,
         description="useful for when you need to answer questions about current events. You should ask targeted questions"
     ),

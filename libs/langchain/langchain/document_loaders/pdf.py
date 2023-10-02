@@ -326,7 +326,7 @@ class MathpixPDFLoader(BasePDFLoader):
     def __init__(
         self,
         file_path: str,
-        processed_file_format: str = "mmd",
+        processed_file_format: str = "md",
         max_wait_time_seconds: int = 500,
         should_clean_pdf: bool = False,
         **kwargs: Any,
@@ -335,7 +335,7 @@ class MathpixPDFLoader(BasePDFLoader):
 
         Args:
             file_path: a file for loading.
-            processed_file_format: a format of the processed file. Default is "mmd".
+            processed_file_format: a format of the processed file. Default is "md".
             max_wait_time_seconds: a maximum time to wait for the response from
              the server. Default is 500.
             should_clean_pdf: a flag to clean the PDF file. Default is False.
