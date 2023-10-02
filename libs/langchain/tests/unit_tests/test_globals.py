@@ -82,7 +82,6 @@ def test_verbose_is_settable_directly() -> None:
         langchain.verbose = previous_value
 
 
-
 def test_verbose_is_settable_via_setter() -> None:
     from langchain.chains.base import _get_verbosity
     from langchain.utils import globals
