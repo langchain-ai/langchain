@@ -25,7 +25,7 @@ def test_debug_is_settable_directly() -> None:
     finally:
         # Make sure we don't alter global state, even if the test fails.
         # Always reset `debug` to the value it had before.
-        langchain.debug = previous_value
+        set_debug(previous_value)
 
 
 def test_debug_is_settable_via_setter() -> None:
@@ -52,7 +52,7 @@ def test_debug_is_settable_via_setter() -> None:
     finally:
         # Make sure we don't alter global state, even if the test fails.
         # Always reset `debug` to the value it had before.
-        globals.debug = previous_value
+        set_debug(previous_value)
 
 
 def test_verbose_is_settable_directly() -> None:
@@ -79,7 +79,7 @@ def test_verbose_is_settable_directly() -> None:
     finally:
         # Make sure we don't alter global state, even if the test fails.
         # Always reset `verbose` to the value it had before.
-        langchain.verbose = previous_value
+        set_verbose(previous_value)
 
 
 def test_verbose_is_settable_via_setter() -> None:
@@ -106,4 +106,4 @@ def test_verbose_is_settable_via_setter() -> None:
     finally:
         # Make sure we don't alter global state, even if the test fails.
         # Always reset `verbose` to the value it had before.
-        globals.verbose = previous_value
+        set_verbose(previous_value)
