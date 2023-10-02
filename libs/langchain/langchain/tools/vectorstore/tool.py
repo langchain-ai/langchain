@@ -17,6 +17,9 @@ class BaseVectorStoreTool(BaseModel):
     vectorstore: VectorStore = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
 
+    class Config(BaseTool.Config):
+        pass
+
 
 def _create_description_from_template(values: Dict[str, Any]) -> Dict[str, Any]:
     values["description"] = values["template"].format(name=values["name"])
