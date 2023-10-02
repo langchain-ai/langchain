@@ -32,7 +32,7 @@ best way to get our attention.
 
 ### 🚩GitHub Issues
 
-Our [issues](https://github.com/hwchase17/langchain/issues) page is kept up to date
+Our [issues](https://github.com/langchain-ai/langchain/issues) page is kept up to date
 with bugs, improvements, and feature requests.
 
 There is a taxonomy of labels to help with sorting and discovery of issues of interest. Please use these to help
@@ -60,7 +60,7 @@ we do not want these to get in the way of getting good code into the codebase.
 ## 🚀 Quick Start
 
 This quick start describes running the repository locally.
-For a [development container](https://containers.dev/), see the [.devcontainer folder](https://github.com/hwchase17/langchain/tree/master/.devcontainer).
+For a [development container](https://containers.dev/), see the [.devcontainer folder](https://github.com/langchain-ai/langchain/tree/master/.devcontainer).
 
 ### Dependency Management: Poetry and other env/dependency managers
 
