@@ -17,6 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import (
     BaseModel,
     Extra,
@@ -165,7 +166,7 @@ class ChildTool(BaseTool):
     ] = False
     """Handle the content of the ToolException thrown."""
 
-    class Config:
+    class Config(Serializable.Config):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
