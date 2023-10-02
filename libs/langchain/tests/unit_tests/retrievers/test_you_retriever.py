@@ -1,6 +1,7 @@
 import json
 import os
 from unittest import mock
+
 from requests import Response
 
 from langchain.retrievers.you_retriever import YouRetriever
@@ -19,4 +20,7 @@ class TestYouRetriever:
             mock_get.return_value = response
 
             actual = retriever.get_relevant_documents("test")
-            assert actual == [Document(page_content="yo"), Document(page_content="bird up")]
+            assert actual == [
+                Document(page_content="yo"),
+                Document(page_content="bird up"),
+            ]
