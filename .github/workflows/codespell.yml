@@ -23,6 +23,12 @@ jobs:
         run: |
           pip install toml
 
+      # Display files in working directory for debugging purposes
+
+      - name: Display Files in Working Directory
+        run: |
+          ls -a
+
       - name: Extract Ignore Words List
         run: |
           # Use a Python script to extract the ignore words list from pyproject.toml
