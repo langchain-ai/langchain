@@ -11,8 +11,7 @@ from typing import (
     Union,
 )
 
-from langchain.load.serializable import Serializable
-from langchain.schema.runnable.base import Input, Output, Runnable
+from langchain.schema.runnable.base import Input, Output, RunnableSerializable
 from langchain.schema.runnable.config import RunnableConfig
 from langchain.schema.runnable.passthrough import RunnablePassthrough
 
@@ -104,7 +103,7 @@ class PutLocalVar(RunnablePassthrough):
 
 
 class GetLocalVar(
-    Serializable, Runnable[Input, Union[Output, Dict[str, Union[Input, Output]]]]
+    RunnableSerializable[Input, Union[Output, Dict[str, Union[Input, Output]]]]
 ):
     key: str
     """The key to extract from the local state."""
