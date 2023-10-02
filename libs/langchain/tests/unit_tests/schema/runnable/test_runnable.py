@@ -12,7 +12,6 @@ from typing import (
     cast,
 )
 from uuid import UUID
-from langchain.schema.runnable.call import abatch_with_config, batch_with_config
 
 import pytest
 from freezegun import freeze_time
@@ -58,6 +57,7 @@ from langchain.schema.runnable import (
     RunnableWithFallbacks,
 )
 from langchain.schema.runnable.base import RunnableGenerator
+from langchain.schema.runnable.call import abatch_with_config, batch_with_config
 from langchain.schema.runnable.utils import add
 from langchain.tools.base import BaseTool, tool
 from langchain.tools.json.tool import JsonListKeysTool, JsonSpec
