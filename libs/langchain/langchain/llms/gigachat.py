@@ -41,7 +41,7 @@ class GigaChat(BaseLLM):
     Example:
         .. code-block:: python
 
-            from langchain.chat_models import GigaChat
+            from langchain.llms import GigaChat
             giga = GigaChat(credentials=..., verify_ssl_certs=False)
     """
 
