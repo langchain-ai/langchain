@@ -6,7 +6,6 @@ import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
 from functools import partial
-from itertools import tee
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
