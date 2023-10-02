@@ -22,3 +22,4 @@ jobs:
         uses: codespell-project/actions-codespell@v2
         with:
           skip: guide_imports.json
+          ignore_words_list: aadd
