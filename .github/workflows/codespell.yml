@@ -23,6 +23,12 @@ jobs:
         run: |
           pip install toml
 
+      # print working directory for debugging purposes
+
+      - name: Print Working Directory
+        run: |
+          pwd
+
       # Display files in working directory for debugging purposes
 
       - name: Display Files in Working Directory
