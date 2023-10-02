@@ -228,7 +228,8 @@ def test_list_raises_401_invalid_api_key() -> None:
     mock_response = MagicMock()
     mock_response.status_code = 401
     mock_response.raise_for_status.side_effect = requests.HTTPError(
-        "401 Client Error: Unauthorized for url: https://nla.zapier.com/api/v1/exposed/",
+        "401 Client Error: Unauthorized for url: "
+        "https://nla.zapier.com/api/v1/exposed/",
         response=mock_response,
     )
     mock_session = MagicMock()
@@ -251,7 +252,8 @@ def test_list_raises_401_invalid_access_token() -> None:
     mock_response = MagicMock()
     mock_response.status_code = 401
     mock_response.raise_for_status.side_effect = requests.HTTPError(
-        "401 Client Error: Unauthorized for url: https://nla.zapier.com/api/v1/exposed/",
+        "401 Client Error: Unauthorized for url: "
+        "https://nla.zapier.com/api/v1/exposed/",
         response=mock_response,
     )
     mock_session = MagicMock()
