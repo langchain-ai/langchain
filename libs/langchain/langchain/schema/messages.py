@@ -117,6 +117,24 @@ class BaseMessageChunk(BaseMessage):
     ) -> Dict[str, Any]:
         """Merge additional_kwargs from another BaseMessageChunk into this one."""
         return _merge_kwargs_dict(left, right)
+        merged = left.copy()
+        for k, v in right.items():
+            if k not in merged:
+                merged[k] = v
+            elif type(merged[k]) != type(v):
+                raise ValueError(
+                    f'additional_kwargs["{k}"] already exists in this message,'
+                    " but with a different type."
+                )
+            elif isinstance(merged[k], str):
+                merged[k] += v
+            elif isinstance(merged[k], dict):
+                merged[k] = self._merge_kwargs_dict(merged[k], v)
+            else:
+                raise ValueError(
+                    f"Additional kwargs key {k} already exists in this message."
+                )
+        return merged
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, BaseMessageChunk):
