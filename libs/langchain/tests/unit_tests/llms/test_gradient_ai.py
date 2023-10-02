@@ -28,9 +28,12 @@ def mocked_requests_post(url: str, headers: dict, json: dict) -> MockResponse:
 
     assert headers.get("authorization") == f"Bearer {_GRADIENT_SECRET}"
     assert headers.get("x-gradient-workspace-id") == f"{_GRADIENT_WORKSPACE_ID}"
+    query = json.get("query")
+    assert query and isinstance(query, str)
+    output = "bar" if "foo" in query else "baz"
 
     return MockResponse(
-        json_data={"generatedOutput": "bar"},
+        json_data={"generatedOutput": output},
         status_code=200,
     )
 
@@ -87,10 +90,10 @@ def test_gradient_llm_sync_batch(mocker: MockerFixture, setup: dict) -> None:
     assert llm.gradient_workspace_id == _GRADIENT_WORKSPACE_ID
     assert llm.model_id == _MODEL_ID
 
-    inputs = ["Say foo:", "Say foo again", "Three times foo?"]
+    inputs = ["Say foo:", "Say baz:", "Say foo again"]
     response = llm._generate(inputs)
 
-    want = "bar"
+    want = ["bar", "baz", "bar"]
     assert len(response.generations) == len(inputs)
-    for gen in response.generations:
-        assert gen[0].text == want
+    for i, gen in enumerate(response.generations):
+        assert gen[0].text == want[i]
