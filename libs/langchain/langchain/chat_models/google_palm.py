@@ -252,7 +252,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"google_api_key": "GOOGLE_API_KEY"}
 
-    @property
+    @classmethod
     def is_lc_serializable(self) -> bool:
         return True
 
