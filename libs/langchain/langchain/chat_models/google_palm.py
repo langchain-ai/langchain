@@ -253,7 +253,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         return {"google_api_key": "GOOGLE_API_KEY"}
 
     @property
-    def lc_serializable(self) -> bool:
+    def is_lc_serializable(self) -> bool:
         return True
 
     @root_validator()
