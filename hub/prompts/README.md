@@ -51,7 +51,7 @@ _type: prompt
   input_variables: [dataset_size_min, dataset_size_max, subject]
   ```
 
-- `output_parser` — [парсер выходных данных](docs/docs_skeleton/docs/modules/model_io/output_parsers/index.mdx), полученных от нейросетевой модели. Используется для дополнительной обработки и структуризации ответов. Значение по умолчанию — `null`.
+- `output_parser` — [парсер выходных данных](./docs/docs_skeleton/docs/modules/model_io/output_parsers/index.mdx), полученных от нейросетевой модели. Используется для дополнительной обработки и структуризации ответов. Значение по умолчанию — `null`.
 
 - `template` — текст шаблона. Может содержать переменные, заданные с помощью фигурных скобок. Переменные, использованные в тексте, должны быть заданы в списке `input_variables`.
   
