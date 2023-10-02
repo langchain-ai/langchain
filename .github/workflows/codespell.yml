@@ -29,6 +29,12 @@ jobs:
           python .github/workflows/extract_ignored_words_list.py
         id: extract_ignore_words
 
+      # For debugging purposes, print the ignore words list
+
+      - name: Print Ignore Words List
+        run: |
+          echo "${{ steps.extract_ignore_words.outputs.ignore_words_list }}"
+
       - name: Codespell
         uses: codespell-project/actions-codespell@v2
         with:
