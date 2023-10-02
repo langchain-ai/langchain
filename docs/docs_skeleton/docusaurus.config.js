@@ -170,9 +170,19 @@ const config = {
             label: "Integrations",
           },
           {
-            href: "https://api.python.langchain.com",
+            to: "https://api.python.langchain.com",
             label: "API",
             position: "left",
+          },
+          {
+            to: "/docs/community",
+            label: "Community",
+            position: "left",
+          },
+          {
+            to: "https://chat.langchain.com",
+            label: "Chat our docs",
+            position: "right",
           },
           {
             to: "https://smith.langchain.com",
@@ -186,7 +196,7 @@ const config = {
           },
           // Please keep GitHub link to the right for consistency.
           {
-            href: "https://github.com/hwchase17/langchain",
+            href: "https://github.com/langchain-ai/langchain",
             position: "right",
             className: "header-github-link",
             "aria-label": "GitHub repository",
@@ -214,11 +224,11 @@ const config = {
             items: [
               {
                 label: "Python",
-                href: "https://github.com/hwchase17/langchain",
+                href: "https://github.com/langchain-ai/langchain",
               },
               {
                 label: "JS/TS",
-                href: "https://github.com/hwchase17/langchainjs",
+                href: "https://github.com/langchain-ai/langchainjs",
               },
             ],
           },

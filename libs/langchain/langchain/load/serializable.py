@@ -50,23 +50,39 @@ class Serializable(BaseModel, ABC):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        """
-        Return a map of constructor argument names to secret ids.
-        eg. {"openai_api_key": "OPENAI_API_KEY"}
+        """A map of constructor argument names to secret ids.
+
+        For example,
+            {"openai_api_key": "OPENAI_API_KEY"}
         """
         return dict()
 
     @property
     def lc_attributes(self) -> Dict:
-        """
-        Return a list of attribute names that should be included in the
-        serialized kwargs. These attributes must be accepted by the
-        constructor.
+        """List of attribute names that should be included in the serialized kwargs.
+
+        These attributes must be accepted by the constructor.
         """
         return {}
 
+    @classmethod
+    def lc_id(cls) -> List[str]:
+        """A unique identifier for this class for serialization purposes.
+
+        The unique identifier is a list of strings that describes the path
+        to the object.
+        """
+        return [*cls.get_lc_namespace(), cls.__name__]
+
     class Config:
         extra = "ignore"
+
+    def __repr_args__(self) -> Any:
+        return [
+            (k, v)
+            for k, v in super().__repr_args__()
+            if (k not in self.__fields__ or self.__fields__[k].get_default() != v)
+        ]
 
     _lc_kwargs = PrivateAttr(default_factory=dict)
 
@@ -122,7 +138,7 @@ class Serializable(BaseModel, ABC):
         return {
             "lc": 1,
             "type": "constructor",
-            "id": [*self.get_lc_namespace(), self.__class__.__name__],
+            "id": self.lc_id(),
             "kwargs": lc_kwargs
             if not secrets
             else _replace_secrets(lc_kwargs, secrets),

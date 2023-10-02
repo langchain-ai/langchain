@@ -6,8 +6,7 @@ import time
 import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
 
-from langchain.docstore.document import Document
-from langchain.embeddings import TensorflowHubEmbeddings
+from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
 
@@ -15,6 +14,8 @@ if TYPE_CHECKING:
     from google.cloud import storage
     from google.cloud.aiplatform import MatchingEngineIndex, MatchingEngineIndexEndpoint
     from google.oauth2.service_account import Credentials
+
+    from langchain.embeddings import TensorflowHubEmbeddings
 
 logger = logging.getLogger()
 
@@ -443,10 +444,13 @@ class MatchingEngine(VectorStore):
         )
 
     @classmethod
-    def _get_default_embeddings(cls) -> TensorflowHubEmbeddings:
+    def _get_default_embeddings(cls) -> "TensorflowHubEmbeddings":
         """This function returns the default embedding.
 
         Returns:
             Default TensorflowHubEmbeddings to use.
         """
+
+        from langchain.embeddings import TensorflowHubEmbeddings
+
         return TensorflowHubEmbeddings()
