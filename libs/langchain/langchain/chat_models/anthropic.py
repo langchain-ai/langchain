@@ -17,6 +17,7 @@ from langchain.schema.messages import (
     ChatMessage,
     HumanMessage,
     SystemMessage,
+    _merge_kwargs_dict,
 )
 from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain.schema.prompt import PromptValue
@@ -55,12 +56,27 @@ def convert_messages_to_prompt_anthropic(
         str: Combined string with necessary human_prompt and ai_prompt tags.
     """
 
-    messages = messages.copy()  # don't mutate the original list
-
+    if (
+        len(messages) >= 2
+        and isinstance(messages[0], SystemMessage)
+        and isinstance(messages[1], HumanMessage)
+    ):
+        sys = messages[0]
+        human = messages[1]
+        content = "<admin>" + sys.content + "</admin>\n\n" + human.content
+        consolidated = HumanMessage(
+            content=content,
+            additional_kwargs=_merge_kwargs_dict(
+                sys.additional_kwargs, human.additional_kwargs
+            ),
+        )
+        messages = [consolidated] + messages[2:].copy()
+    else:
+        messages = messages.copy()
     if not isinstance(messages[-1], AIMessage):
         messages.append(AIMessage(content=""))
 
-    text = "".join(
+    text = "\n\n".join(
         _convert_one_message_to_text(message, human_prompt, ai_prompt)
         for message in messages
     )
