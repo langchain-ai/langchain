@@ -124,7 +124,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     model_name: str = "chat-bison"
     "Underlying model name."
 
-    @property
+    @classmethod
     def is_lc_serializable(self) -> bool:
         return True
 

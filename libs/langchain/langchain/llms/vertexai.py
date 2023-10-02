@@ -229,7 +229,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
     tuned_model_name: Optional[str] = None
     "The name of a tuned model. If provided, model_name is ignored."
 
-    @property
+    @classmethod
     def is_lc_serializable(self) -> bool:
         return True
 
