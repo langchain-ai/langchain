@@ -8,6 +8,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Union,
     cast,
 )
@@ -26,7 +27,11 @@ from langchain.schema.runnable.config import (
     get_config_list,
     get_executor_for_config,
 )
-from langchain.schema.runnable.utils import gather_with_concurrency
+from langchain.schema.runnable.utils import (
+    ConfigurableFieldSpec,
+    gather_with_concurrency,
+    get_unique_config_specs,
+)
 
 
 class RouterInput(TypedDict):
@@ -48,6 +53,12 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     """
 
     runnables: Mapping[str, Runnable[Any, Output]]
+
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return get_unique_config_specs(
+            spec for step in self.runnables.values() for spec in step.config_specs
+        )
 
     def __init__(
         self,
