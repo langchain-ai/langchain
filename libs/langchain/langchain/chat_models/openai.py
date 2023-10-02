@@ -87,7 +87,7 @@ async def acompletion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
-    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+    retry_decorator = llm.custom_retry_decorator if llm.custom_retry_decorator else _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
@@ -180,7 +180,13 @@ class ChatOpenAI(BaseChatModel):
     when using one of the many model providers that expose an OpenAI-like 
     API but with different models. In those cases, in order to avoid erroring 
     when tiktoken is called, you can specify a model name to use here."""
-
+    custom_retry_decorator: Optional[Callable[[Any], Any]] = None
+    """Custom retry decorator for handling specific use cases and errors.
+    
+    This decorator will be used in the `acompletion_with_retry` and `completion_with_retry` methods.
+    If not provided, the default retry decorator will be used.
+    The custom decorator should take a function that makes the API call and return a function that handles retries.
+    """
     class Config:
         """Configuration for this pydantic object."""
 
@@ -275,7 +281,7 @@ class ChatOpenAI(BaseChatModel):
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
-        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
+        retry_decorator = self.custom_retry_decorator if self.custom_retry_decorator else _create_retry_decorator(self, run_manager=run_manager)
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
