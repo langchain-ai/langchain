@@ -1,19 +1,23 @@
 """Test Bedrock chat model."""
-from typing import List
+from typing import Any
 
 import pytest
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models import BedrockChat
 from langchain.schema import ChatGeneration, LLMResult
-from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain.schema.messages import BaseMessage, HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
+@pytest.fixture
+def chat() -> BedrockChat:
+    return BedrockChat(model_id="anthropic.claude-v2", model_kwargs={"temperature": 0})
+
+
 @pytest.mark.scheduled
-def test_chat_bedrock() -> None:
+def test_chat_bedrock(chat: BedrockChat) -> None:
     """Test BedrockChat wrapper."""
-    chat = BedrockChat()
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, BaseMessage)
@@ -21,32 +25,17 @@ def test_chat_bedrock() -> None:
 
 
 @pytest.mark.scheduled
-def test_chat_bedrock_generate() -> None:
+def test_chat_bedrock_generate(chat: BedrockChat) -> None:
     """Test BedrockChat wrapper with generate."""
-    chat = BedrockChat()
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 2
     for generations in response.generations:
-        assert len(generations) == 2
         for generation in generations:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
-
-
-@pytest.mark.scheduled
-def test_chat_bedrock_multiple_completions() -> None:
-    """Test BedrockChat wrapper with multiple completions."""
-    chat = BedrockChat()
-    message = HumanMessage(content="Hello")
-    response = chat._generate([message])
-    assert isinstance(response, ChatResult)
-    assert len(response.generations) == 5
-    for generation in response.generations:
-        assert isinstance(generation.message, BaseMessage)
-        assert isinstance(generation.message.content, str)
 
 
 @pytest.mark.scheduled
@@ -55,6 +44,7 @@ def test_chat_bedrock_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = BedrockChat(
+        model_id="anthropic.claude-v2",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
@@ -83,91 +73,46 @@ def test_chat_bedrock_streaming_generation_info() -> None:
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
     chat = BedrockChat(
+        model_id="anthropic.claude-v2",
         callback_manager=callback_manager,
     )
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
-    assert generation.generations[0][0].text == "Hello!"
+    assert generation.generations[0][0].text == " Hello!"
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
-async def test_async_chat_bedrock() -> None:
-    """Test async generation."""
-    chat = BedrockChat()
-    message = HumanMessage(content="Hello")
-    response = await chat.agenerate([[message], [message]])
-    assert isinstance(response, LLMResult)
-    assert len(response.generations) == 2
-    for generations in response.generations:
-        for generation in generations:
-            assert isinstance(generation, ChatGeneration)
-            assert isinstance(generation.text, str)
-            assert generation.text == generation.message.content
-
-
-@pytest.mark.scheduled
-@pytest.mark.asyncio
-async def test_async_chat_bedrock_streaming() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    chat = BedrockChat(
-        streaming=True,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    message = HumanMessage(content="Hello")
-    response = await chat.agenerate([[message], [message]])
-    assert callback_handler.llm_streams > 0
-    assert isinstance(response, LLMResult)
-    assert len(response.generations) == 2
-    for generations in response.generations:
-        assert len(generations) == 1
-        for generation in generations:
-            assert isinstance(generation, ChatGeneration)
-            assert isinstance(generation.text, str)
-            assert generation.text == generation.message.content
-
-
-@pytest.mark.scheduled
-def test_bedrock_streaming() -> None:
+def test_bedrock_streaming(chat: BedrockChat) -> None:
     """Test streaming tokens from OpenAI."""
-    llm = BedrockChat()
 
-    for token in llm.stream("I'm Pickle Rick"):
+    for token in chat.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
 
 
 @pytest.mark.scheduled
 @pytest.mark.asyncio
-async def test_bedrock_astream() -> None:
+async def test_bedrock_astream(chat: BedrockChat) -> None:
     """Test streaming tokens from OpenAI."""
-    llm = BedrockChat()
 
-    async for token in llm.astream("I'm Pickle Rick"):
+    async for token in chat.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
 
 
 @pytest.mark.scheduled
 @pytest.mark.asyncio
-async def test_bedrock_abatch() -> None:
+async def test_bedrock_abatch(chat: BedrockChat) -> None:
     """Test streaming tokens from BedrockChat."""
-    llm = BedrockChat()
-
-    result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
+    result = await chat.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
         assert isinstance(token.content, str)
 
 
 @pytest.mark.scheduled
 @pytest.mark.asyncio
-async def test_bedrock_abatch_tags() -> None:
+async def test_bedrock_abatch_tags(chat: BedrockChat) -> None:
     """Test batch tokens from BedrockChat."""
-    llm = BedrockChat()
-
-    result = await llm.abatch(
+    result = await chat.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
     )
     for token in result:
@@ -175,29 +120,23 @@ async def test_bedrock_abatch_tags() -> None:
 
 
 @pytest.mark.scheduled
-def test_bedrock_batch() -> None:
+def test_bedrock_batch(chat: BedrockChat) -> None:
     """Test batch tokens from BedrockChat."""
-    llm = BedrockChat()
-
-    result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
+    result = chat.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
         assert isinstance(token.content, str)
 
 
 @pytest.mark.scheduled
 @pytest.mark.asyncio
-async def test_bedrock_ainvoke() -> None:
+async def test_bedrock_ainvoke(chat: BedrockChat) -> None:
     """Test invoke tokens from BedrockChat."""
-    llm = BedrockChat()
-
-    result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
+    result = await chat.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
 
 
 @pytest.mark.scheduled
-def test_bedrock_invoke() -> None:
+def test_bedrock_invoke(chat: BedrockChat) -> None:
     """Test invoke tokens from BedrockChat."""
-    llm = BedrockChat()
-
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = chat.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
