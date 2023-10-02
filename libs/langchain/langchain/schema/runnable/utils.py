@@ -220,6 +220,7 @@ class ConfigurableField(NamedTuple):
     id: str
     name: Optional[str] = None
     description: Optional[str] = None
+    annotation: Optional[Any] = None
 
 
 class ConfigurableFieldSpec(NamedTuple):

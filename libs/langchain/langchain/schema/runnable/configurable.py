@@ -203,7 +203,8 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 name=spec.name,
                 description=spec.description
                 or self.bound.__fields__[field_name].field_info.description,
-                annotation=self.bound.__fields__[field_name].annotation,
+                annotation=spec.annotation
+                or self.bound.__fields__[field_name].annotation,
                 default=getattr(self.bound, field_name),
             )
             for field_name, spec in self.fields.items()
