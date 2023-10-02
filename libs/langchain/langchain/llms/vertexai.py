@@ -230,7 +230,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
     "The name of a tuned model. If provided, model_name is ignored."
 
     @property
-    def lc_serializable(self) -> bool:
+    def is_lc_serializable(self) -> bool:
         return True
 
     @root_validator()

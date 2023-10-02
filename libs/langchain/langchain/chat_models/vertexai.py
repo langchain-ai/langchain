@@ -125,7 +125,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     "Underlying model name."
 
     @property
-    def lc_serializable(self) -> bool:
+    def is_lc_serializable(self) -> bool:
         return True
 
     @root_validator()
