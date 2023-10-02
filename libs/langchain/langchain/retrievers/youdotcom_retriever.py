@@ -16,7 +16,7 @@ class YouRetriever(BaseRetriever):
     You need to set the environment variable `YDC_API_KEY` for retriever to operate.
     """
 
-    ydc_api_key: Optional[str] = None
+    ydc_api_key: str = None
 
     @root_validator(pre=True)
     def validate_client(
