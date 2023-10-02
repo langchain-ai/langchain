@@ -11,3 +11,9 @@ jobs:
     with:
       working-directory: libs/langchain
     secrets: inherit
+
+  release-docker:
+    needs:
+      - release
+    uses:
+      ./.github/workflows/langchain_release_docker.yml
