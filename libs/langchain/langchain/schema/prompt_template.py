@@ -4,7 +4,6 @@ import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
-from langchain.schema.runnable.call import call_with_config
 
 import yaml
 
@@ -13,6 +12,7 @@ from langchain.schema.document import Document
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import RunnableConfig, RunnableSerializable
+from langchain.schema.runnable.call import call_with_config
 
 
 class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):

@@ -10,12 +10,6 @@ from typing import (
     Union,
     cast,
 )
-from langchain.schema.runnable.call import (
-    abatch_with_config,
-    acall_with_config,
-    batch_with_config,
-    call_with_config,
-)
 
 from tenacity import (
     AsyncRetrying,
@@ -28,6 +22,12 @@ from tenacity import (
 )
 
 from langchain.schema.runnable.base import Input, Output, RunnableBinding
+from langchain.schema.runnable.call import (
+    abatch_with_config,
+    acall_with_config,
+    batch_with_config,
+    call_with_config,
+)
 from langchain.schema.runnable.config import RunnableConfig, patch_config
 
 if TYPE_CHECKING:
