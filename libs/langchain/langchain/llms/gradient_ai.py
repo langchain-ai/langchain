@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Mapping, Optional
 
 import aiohttp
@@ -257,11 +258,23 @@ class GradientLLM(LLM):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        generations = []
 
-        for prompt in prompts:
-            text = self._call(prompt, stop=stop, run_manager=run_manager, **kwargs)
-            generations.append([Generation(text=text)])
+        # same thing with threading
+        def _inner_generate(prompt: str) -> List[Generation]:
+            return [
+                Generation(
+                    text=self._call(
+                        prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+                    )
+                )
+            ]
+
+        if len(prompts) <= 1:
+            generations = list(map(_inner_generate, prompts))
+        else:
+            with ThreadPoolExecutor(min(8, len(prompts))) as p:
+                generations = list(p.map(_inner_generate, prompts))
+
         return LLMResult(generations=generations)
 
     async def _agenerate(

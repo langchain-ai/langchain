@@ -65,3 +65,32 @@ def test_gradient_llm_sync(mocker: MockerFixture, setup: dict) -> None:
     want = "bar"
 
     assert response == want
+
+
+@pytest.mark.parametrize(
+    "setup",
+    [
+        dict(
+            gradient_api_url=_GRADIENT_BASE_URL,
+            gradient_access_token=_GRADIENT_SECRET,
+            gradient_workspace_id=_GRADIENT_WORKSPACE_ID,
+            model=_MODEL_ID,
+        )
+    ],
+)
+def test_gradient_llm_sync_batch(mocker: MockerFixture, setup: dict) -> None:
+    mocker.patch("requests.post", side_effect=mocked_requests_post)
+
+    llm = GradientLLM(**setup)
+    assert llm.gradient_access_token == _GRADIENT_SECRET
+    assert llm.gradient_api_url == _GRADIENT_BASE_URL
+    assert llm.gradient_workspace_id == _GRADIENT_WORKSPACE_ID
+    assert llm.model_id == _MODEL_ID
+
+    inputs = ["Say foo:", "Say foo again", "Three times foo?"]
+    response = llm._generate(inputs)
+
+    want = "bar"
+    assert len(response.generations) == len(inputs)
+    for gen in response.generations:
+        assert gen[0].text == want
