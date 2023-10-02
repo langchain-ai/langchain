@@ -21,14 +21,6 @@ class BaseSparkSQLTool(BaseModel):
 
     db: SparkSQL = Field(exclude=True)
 
-    # Override BaseTool.Config to appease mypy
-    # See https://github.com/pydantic/pydantic/issues/4173
-    class Config(BaseTool.Config):
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-        extra = Extra.forbid
-
 
 class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for querying a Spark SQL."""

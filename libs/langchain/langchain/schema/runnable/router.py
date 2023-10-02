@@ -14,8 +14,13 @@ from typing import (
 
 from typing_extensions import TypedDict
 
-from langchain.load.serializable import Serializable
-from langchain.schema.runnable.base import Input, Output, Runnable, coerce_to_runnable
+from langchain.schema.runnable.base import (
+    Input,
+    Output,
+    Runnable,
+    RunnableSerializable,
+    coerce_to_runnable,
+)
 from langchain.schema.runnable.config import (
     RunnableConfig,
     get_config_list,
@@ -36,7 +41,7 @@ class RouterInput(TypedDict):
     input: Any
 
 
-class RouterRunnable(Serializable, Runnable[RouterInput, Output]):
+class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     """
     A runnable that routes to a set of runnables based on Input['key'].
     Returns the output of the selected runnable.
