@@ -99,19 +99,18 @@ class RunProcessor:
 
         base_span.results = [
             self.trace_tree.Result(
-                inputs={"prompt": prompt},
+                inputs={"prompt": run.inputs["prompt"]},
                 outputs={
                     f"gen_{g_i}": gen["text"]
-                    for g_i, gen in enumerate(run.outputs["generations"][ndx])
+                    for g_i, gen in enumerate(run.outputs["generations"][0])
                 }
                 if (
                     run.outputs is not None
-                    and len(run.outputs["generations"]) > ndx
-                    and len(run.outputs["generations"][ndx]) > 0
+                    and len(run.outputs["generations"]) > 0
+                    and len(run.outputs["generations"][0]) > 0
                 )
                 else None,
             )
-            for ndx, prompt in enumerate(run.inputs["prompts"] or [])
         ]
         base_span.span_kind = self.trace_tree.SpanKind.LLM
 
