@@ -33,4 +33,4 @@ jobs:
         uses: codespell-project/actions-codespell@v2
         with:
           skip: guide_imports.json
-          ignore_words_list: ${{ steps.extract_ignore_words.outputs.ignore_words_list }}
+          #ignore_words_list: ${{ steps.extract_ignore_words.outputs.ignore_words_list }}
