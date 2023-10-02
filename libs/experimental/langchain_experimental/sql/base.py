@@ -120,7 +120,7 @@ class SQLDatabaseChain(Chain):
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
             "table_info": table_info,
-            "stop": ["\nSQLResult:"],
+            "stop": ["\nSQLResult:", "\nQuestion:"],
         }
         intermediate_steps: List = []
         try:
