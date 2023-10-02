@@ -152,9 +152,9 @@ def call_func_with_variable_args(
     input: Input,
     run_manager: CallbackManagerForChainRun,
     config: RunnableConfig,
+    **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config."""
-    kwargs: Dict[str, Any] = {}
     if accepts_config(func):
         kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
     if accepts_run_manager(func):
@@ -174,9 +174,9 @@ async def acall_func_with_variable_args(
     input: Input,
     run_manager: AsyncCallbackManagerForChainRun,
     config: RunnableConfig,
+    **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config."""
-    kwargs: Dict[str, Any] = {}
     if accepts_config(func):
         kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
     if accepts_run_manager(func):

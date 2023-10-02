@@ -9,7 +9,6 @@ from urllib.parse import urljoin
 import httpx
 from langchain.callbacks.tracers.log_stream import RunLogPatch
 from langchain.load.dump import dumpd
-from langchain.load.load import load, loads
 from langchain.schema.runnable import Runnable
 from langchain.schema.runnable.config import (
     RunnableConfig,
@@ -18,6 +17,8 @@ from langchain.schema.runnable.config import (
     get_callback_manager_for_config,
 )
 from langchain.schema.runnable.utils import Input, Output
+
+from langserve.serialization import simple_dumpd, simple_loads
 
 
 def _without_callbacks(config: Optional[RunnableConfig]) -> RunnableConfig:
@@ -111,6 +112,7 @@ class RemoteRunnable(Runnable[Input, Output]):
         self.url = url
         self.sync_client = httpx.Client(base_url=url, timeout=timeout)
         self.async_client = httpx.AsyncClient(base_url=url, timeout=timeout)
+
         # Register cleanup handler once RemoteRunnable is garbage collected
         weakref.finalize(self, _close_clients, self.sync_client, self.async_client)
 
@@ -121,13 +123,13 @@ class RemoteRunnable(Runnable[Input, Output]):
         response = self.sync_client.post(
             "/invoke",
             json={
-                "input": dumpd(input),
+                "input": simple_dumpd(input),
                 "config": _without_callbacks(config),
                 "kwargs": kwargs,
             },
         )
         _raise_for_status(response)
-        return load(response.json())["output"]
+        return simple_loads(response.text)["output"]
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -142,13 +144,13 @@ class RemoteRunnable(Runnable[Input, Output]):
         response = await self.async_client.post(
             "/invoke",
             json={
-                "input": dumpd(input),
+                "input": simple_dumpd(input),
                 "config": _without_callbacks(config),
                 "kwargs": kwargs,
             },
         )
         _raise_for_status(response)
-        return load(response.json())["output"]
+        return simple_loads(response.text)["output"]
 
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -180,13 +182,13 @@ class RemoteRunnable(Runnable[Input, Output]):
         response = self.sync_client.post(
             "/batch",
             json={
-                "inputs": dumpd(inputs),
+                "inputs": simple_dumpd(inputs),
                 "config": _config,
                 "kwargs": kwargs,
             },
         )
         _raise_for_status(response)
-        return load(response.json())["output"]
+        return simple_loads(response.text)["output"]
 
     def batch(
         self,
@@ -222,13 +224,13 @@ class RemoteRunnable(Runnable[Input, Output]):
         response = await self.async_client.post(
             "/batch",
             json={
-                "inputs": dumpd(inputs),
+                "inputs": simple_dumpd(inputs),
                 "config": _config,
                 "kwargs": kwargs,
             },
         )
         _raise_for_status(response)
-        return load(response.json())["output"]
+        return simple_loads(response.text)["output"]
 
     async def abatch(
         self,
@@ -259,11 +261,11 @@ class RemoteRunnable(Runnable[Input, Output]):
 
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
-            dumpd(input),
+            simple_dumpd(input),
             name=config.get("run_name"),
         )
         data = {
-            "input": dumpd(input),
+            "input": simple_dumpd(input),
             "config": _without_callbacks(config),
             "kwargs": kwargs,
         }
@@ -283,7 +285,7 @@ class RemoteRunnable(Runnable[Input, Output]):
             ) as event_source:
                 for sse in event_source.iter_sse():
                     if sse.event == "data":
-                        chunk = loads(sse.data)
+                        chunk = simple_loads(sse.data)
                         yield chunk
 
                         if final_output:
@@ -313,11 +315,11 @@ class RemoteRunnable(Runnable[Input, Output]):
 
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
-            dumpd(input),
+            simple_dumpd(input),
             name=config.get("run_name"),
         )
         data = {
-            "input": dumpd(input),
+            "input": simple_dumpd(input),
             "config": _without_callbacks(config),
             "kwargs": kwargs,
         }
@@ -334,7 +336,7 @@ class RemoteRunnable(Runnable[Input, Output]):
             ) as event_source:
                 async for sse in event_source.aiter_sse():
                     if sse.event == "data":
-                        chunk = loads(sse.data)
+                        chunk = simple_loads(sse.data)
                         yield chunk
 
                         if final_output:
@@ -383,11 +385,11 @@ class RemoteRunnable(Runnable[Input, Output]):
 
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
-            dumpd(input),
+            simple_dumpd(input),
             name=config.get("run_name"),
         )
         data = {
-            "input": dumpd(input),
+            "input": simple_dumpd(input),
             "config": _without_callbacks(config),
             "kwargs": kwargs,
             "include_names": include_names,
@@ -410,7 +412,7 @@ class RemoteRunnable(Runnable[Input, Output]):
             ) as event_source:
                 async for sse in event_source.aiter_sse():
                     if sse.event == "data":
-                        data = loads(sse.data)
+                        data = simple_loads(sse.data)
                         chunk = RunLogPatch(*data["ops"])
                         yield chunk
 
