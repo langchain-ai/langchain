@@ -5,23 +5,27 @@ from langchain.schema.runnable.base import (
     RunnableLambda,
     RunnableMap,
     RunnableSequence,
-    RunnableWithFallbacks,
+    RunnableSerializable,
 )
+from langchain.schema.runnable.branch import RunnableBranch
 from langchain.schema.runnable.config import RunnableConfig, patch_config
+from langchain.schema.runnable.fallbacks import RunnableWithFallbacks
 from langchain.schema.runnable.passthrough import RunnablePassthrough
 from langchain.schema.runnable.router import RouterInput, RouterRunnable
 
 __all__ = [
-    "patch_config",
     "GetLocalVar",
+    "patch_config",
     "PutLocalVar",
     "RouterInput",
     "RouterRunnable",
     "Runnable",
+    "RunnableSerializable",
     "RunnableBinding",
+    "RunnableBranch",
     "RunnableConfig",
-    "RunnableMap",
     "RunnableLambda",
+    "RunnableMap",
     "RunnablePassthrough",
     "RunnableSequence",
     "RunnableWithFallbacks",

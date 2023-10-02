@@ -615,6 +615,7 @@ class Language(str, Enum):
     GO = "go"
     JAVA = "java"
     JS = "js"
+    TS = "ts"
     PHP = "php"
     PROTO = "proto"
     PYTHON = "python"
@@ -769,6 +770,32 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nlet ",
                 "\nvar ",
                 "\nclass ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                "\ncase ",
+                "\ndefault ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.TS:
+            return [
+                "\nenum ",
+                "\ninterface ",
+                "\nnamespace ",
+                "\ntype ",
+                # Split along class definitions
+                "\nclass ",
+                # Split along function definitions
+                "\nfunction ",
+                "\nconst ",
+                "\nlet ",
+                "\nvar ",
                 # Split along control flow statements
                 "\nif ",
                 "\nfor ",

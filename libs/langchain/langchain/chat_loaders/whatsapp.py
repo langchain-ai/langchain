@@ -4,9 +4,9 @@ import re
 import zipfile
 from typing import Iterator, List, Union
 
-from langchain import schema
-from langchain.chat_loaders.base import BaseChatLoader, ChatSession
-from langchain.schema import messages
+from langchain.chat_loaders.base import BaseChatLoader
+from langchain.schema import AIMessage, HumanMessage
+from langchain.schema.chat import ChatSession
 
 logger = logging.getLogger(__name__)
 
@@ -66,14 +66,14 @@ class WhatsAppChatLoader(BaseChatLoader):
                 current_message += " " + line.strip()
         if current_message:
             chat_lines.append(current_message)
-        results: List[Union[messages.HumanMessage, messages.AIMessage]] = []
+        results: List[Union[HumanMessage, AIMessage]] = []
         for line in chat_lines:
             result = self._message_line_regex.match(line.strip())
             if result:
                 timestamp, sender, text = result.groups()
                 if not self._ignore_lines.match(text.strip()):
                     results.append(
-                        schema.HumanMessage(
+                        HumanMessage(
                             role=sender,
                             content=text,
                             additional_kwargs={

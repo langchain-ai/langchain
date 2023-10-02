@@ -29,7 +29,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
 from langchain.utilities.redis import (
     _array_to_buffer,
     _buffer_to_array,
@@ -37,7 +38,6 @@ from langchain.utilities.redis import (
     get_client,
 )
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 from langchain.vectorstores.redis.constants import (
     REDIS_REQUIRED_MODULES,
     REDIS_TAG_SEPARATOR,
@@ -1220,7 +1220,7 @@ class Redis(VectorStore):
             )
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
@@ -1425,6 +1425,7 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
         "similarity",
         "similarity_distance_threshold",
         "similarity_score_threshold",
+        "mmr",
     ]
     """Allowed search types."""
 
@@ -1438,7 +1439,6 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
-
         elif self.search_type == "similarity_distance_threshold":
             if self.search_kwargs["distance_threshold"] is None:
                 raise ValueError(
@@ -1454,6 +1454,10 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
+        elif self.search_type == "mmr":
+            docs = self.vectorstore.max_marginal_relevance_search(
+                query, **self.search_kwargs
+            )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs

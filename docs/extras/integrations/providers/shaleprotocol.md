@@ -20,7 +20,7 @@ As of June 2023, the API supports Vicuna-13B by default. We are going to support
 For example
 ```python
 from langchain.llms import OpenAI
-from langchain import PromptTemplate, LLMChain
+from langchain.prompts import PromptTemplate\nfrom langchain.chains import LLMChain
 
 import os
 os.environ['OPENAI_API_BASE'] = "https://shale.live/v1"

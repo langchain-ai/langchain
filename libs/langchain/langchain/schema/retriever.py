@@ -6,9 +6,8 @@ from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.load.dump import dumpd
-from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
@@ -18,7 +17,7 @@ if TYPE_CHECKING:
     )
 
 
-class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
+class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
     """Abstract base class for a Document retrieval system.
 
     A retrieval system is defined as something that can take string queries and return
@@ -113,6 +112,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
         )
 
     async def ainvoke(
@@ -131,6 +131,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
         )
 
     @abstractmethod
@@ -164,6 +165,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Retrieve documents relevant to a query.
@@ -193,6 +195,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         run_manager = callback_manager.on_retriever_start(
             dumpd(self),
             query,
+            name=run_name,
             **kwargs,
         )
         try:
@@ -220,6 +223,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
@@ -249,6 +253,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         run_manager = await callback_manager.on_retriever_start(
             dumpd(self),
             query,
+            name=run_name,
             **kwargs,
         )
         try:

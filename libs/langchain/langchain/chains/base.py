@@ -7,7 +7,7 @@ import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 
@@ -21,10 +21,15 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.load.dump import dumpd
-from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field, root_validator, validator
+from langchain.pydantic_v1 import (
+    BaseModel,
+    Field,
+    create_model,
+    root_validator,
+    validator,
+)
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +38,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
+class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     """Abstract base class for creating structured sequences of calls to components.
 
     Chains should be used to encode a sequence of calls to components like
@@ -55,6 +60,20 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             output as a string or object. This method can only be used for a subset of
             chains and cannot return as rich of an output as `__call__`.
     """
+
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainInput", **{k: (Any, None) for k in self.input_keys}
+        )
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainOutput", **{k: (Any, None) for k in self.output_keys}
+        )
 
     def invoke(
         self,
@@ -287,7 +306,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
                 if new_arg_supported
                 else self._call(inputs)
             )
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             run_manager.on_chain_error(e)
             raise e
         run_manager.on_chain_end(outputs)
@@ -356,7 +375,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
                 if new_arg_supported
                 else await self._acall(inputs)
             )
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             await run_manager.on_chain_error(e)
             raise e
         await run_manager.on_chain_end(outputs)

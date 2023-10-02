@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils.iter import batch_iterate
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -396,7 +396,7 @@ class Pinecone(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Pinecone
+                from langchain.vectorstores import Pinecone
                 from langchain.embeddings import OpenAIEmbeddings
                 import pinecone
 
