@@ -2,7 +2,7 @@
 You should not run it for other purposes than testing.
 """
 # CAREFUL! This file is copied to docker container and executed there.
-# it is based only on python standard library and pydantic as other dependencies
+# it is based only on python standard library as other dependencies
 # are not available in the container. See python_docker_repl.py for more info
 # and check _get_dockerfile_content() function.
 
