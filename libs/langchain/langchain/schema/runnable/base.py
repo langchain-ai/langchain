@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     )
     from langchain.callbacks.tracers.log_stream import RunLogPatch
     from langchain.schema.runnable.configurable import (
-        ConfigurableRunnable as ConfigurableRunnableT,
+        RunnableConfigurableFields as RunnableConfigurableFieldsT,
     )
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
@@ -866,8 +866,8 @@ class Runnable(Generic[Input, Output], ABC):
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_fields(
         self, **kwargs: ConfigurableField
-    ) -> ConfigurableRunnableT[Input, Output]:
-        from langchain.schema.runnable.configurable import ConfigurableRunnable
+    ) -> RunnableConfigurableFieldsT[Input, Output]:
+        from langchain.schema.runnable.configurable import RunnableConfigurableFields
 
         for key in kwargs:
             if key not in self.__fields__:
@@ -876,7 +876,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
                     "available keys are {self.__fields__.keys()}"
                 )
 
-        return ConfigurableRunnable(bound=self, specs=kwargs)
+        return RunnableConfigurableFields(bound=self, specs=kwargs)
 
 
 class RunnableSequence(RunnableSerializable[Input, Output]):

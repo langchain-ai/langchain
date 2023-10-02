@@ -29,7 +29,7 @@ from langchain.schema.runnable.utils import (
 )
 
 
-class ConfigurableRunnable(RunnableSerializable[Input, Output]):
+class RunnableConfigurableFields(RunnableSerializable[Input, Output]):
     bound: RunnableSerializable[Input, Output]
 
     specs: Dict[str, ConfigurableField]
@@ -77,7 +77,7 @@ class ConfigurableRunnable(RunnableSerializable[Input, Output]):
 
     def configurable_fields(
         self, **kwargs: ConfigurableField
-    ) -> ConfigurableRunnable[Input, Output]:
+    ) -> RunnableConfigurableFields[Input, Output]:
         return self.bound.configurable_fields(**{**self.specs, **kwargs})
 
     def _prepare(
