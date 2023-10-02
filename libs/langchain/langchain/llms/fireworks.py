@@ -70,7 +70,9 @@ class Fireworks(LLM):
             "prompt": prompt,
             **self.model_kwargs,
         }
-        response = completion_with_retry(self, run_manager=run_manager, **params)
+        response = completion_with_retry(
+            self, run_manager=run_manager, stop=stop, **params
+        )
 
         return response.choices[0].text
 
@@ -87,7 +89,9 @@ class Fireworks(LLM):
             "prompt": prompt,
             **self.model_kwargs,
         }
-        response = await acompletion_with_retry(self, run_manager=run_manager, **params)
+        response = await acompletion_with_retry(
+            self, run_manager=run_manager, stop=stop, **params
+        )
 
         return response.choices[0].text
 
@@ -105,7 +109,7 @@ class Fireworks(LLM):
             **self.model_kwargs,
         }
         for stream_resp in completion_with_retry(
-            self, run_manager=run_manager, **params
+            self, run_manager=run_manager, stop=stop, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
@@ -124,7 +128,7 @@ class Fireworks(LLM):
             **self.model_kwargs,
         }
         async for stream_resp in await acompletion_with_retry_streaming(
-            self, run_manager=run_manager, **params
+            self, run_manager=run_manager, stop=stop, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
