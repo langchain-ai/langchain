@@ -13,17 +13,17 @@ from langchain.schema import BaseRetriever, Document
 class ChaindeskRetriever(BaseRetriever):
     """`Chaindesk API` retriever."""
 
-    datastore_url: str
+    datastore_id: str
     top_k: Optional[int]
     api_key: Optional[str]
 
     def __init__(
         self,
-        datastore_url: str,
+        datastore_id: str,
         top_k: Optional[int] = None,
         api_key: Optional[str] = None,
     ):
-        self.datastore_url = datastore_url
+        self.datastore_id = datastore_id
         self.api_key = api_key
         self.top_k = top_k
 
@@ -35,7 +35,7 @@ class ChaindeskRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         response = requests.post(
-            self.datastore_url,
+            "https://app.chaindesk.ai/api/datastores/{self.datastore_id}/query",
             json={
                 "query": query,
                 **({"topK": self.top_k} if self.top_k is not None else {}),
@@ -68,7 +68,7 @@ class ChaindeskRetriever(BaseRetriever):
         async with aiohttp.ClientSession() as session:
             async with session.request(
                 "POST",
-                self.datastore_url,
+                "https://app.chaindesk.ai/api/datastores/{self.datastore_id}/query",
                 json={
                     "query": query,
                     **({"topK": self.top_k} if self.top_k is not None else {}),
