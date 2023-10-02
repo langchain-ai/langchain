@@ -15,7 +15,7 @@ def set_verbose(value: bool) -> None:
     global verbose
     verbose = value
 
-g
+
 def set_debug(value: bool) -> None:
     """Set a new value for the `debug` global setting."""
     global debug
