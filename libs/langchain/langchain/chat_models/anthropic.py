@@ -76,7 +76,7 @@ def convert_messages_to_prompt_anthropic(
     if not isinstance(messages[-1], AIMessage):
         messages.append(AIMessage(content=""))
 
-    text = "\n\n".join(
+    text = "".join(
         _convert_one_message_to_text(message, human_prompt, ai_prompt)
         for message in messages
     )
