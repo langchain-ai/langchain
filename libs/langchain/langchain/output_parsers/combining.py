@@ -25,7 +25,7 @@ class CombiningOutputParser(BaseOutputParser):
             if parser._type == "combining":
                 raise ValueError("Cannot nest combining parsers")
             if parser._type == "list":
-                raise ValueError("Cannot comine list parsers")
+                raise ValueError("Cannot combine list parsers")
         return values
 
     @property
