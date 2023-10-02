@@ -14,10 +14,12 @@ from typing import (
 
 import gigachat
 from gigachat.models import (
+    Chat,
     ChatCompletion,
-    MessagesRes,
+    Messages,
     MessagesRole,
 )
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -44,7 +46,7 @@ from langchain.schema.output import (
 logger = logging.getLogger(__name__)
 
 
-def _convert_dict_to_message(message: MessagesRes) -> BaseMessage:
+def _convert_dict_to_message(message: Messages) -> BaseMessage:
     if message.role == MessagesRole.SYSTEM:
         return SystemMessage(content=message.content)
     elif message.role == MessagesRole.USER:
@@ -55,17 +57,15 @@ def _convert_dict_to_message(message: MessagesRes) -> BaseMessage:
         raise TypeError(f"Got unknown role {message.role} {message}")
 
 
-def _convert_message_to_dict(message: BaseMessage) -> Dict[str, str]:
+def _convert_message_to_dict(message: BaseMessage) -> Messages:
     if isinstance(message, SystemMessage):
-        return {"role": "system", "content": message.content}
+        return Messages(role=MessagesRole.SYSTEM, content=message.content)
     elif isinstance(message, HumanMessage):
-        return {"role": "user", "content": message.content}
+        return Messages(role=MessagesRole.USER, content=message.content)
     elif isinstance(message, AIMessage):
-        return {"role": "assistant", "content": message.content}
+        return Messages(role=MessagesRole.ASSISTANT, content=message.content)
     elif isinstance(message, ChatMessage):
-        if message.role not in [role for role in MessagesRole]:
-            raise TypeError(f"Got unknown role {message.role} {message}")
-        return {"role": message.role, "content": message.content}
+        return Messages(role=MessagesRole(message.role), content=message.content)
     else:
         raise TypeError(f"Got unknown type {message}")
 
@@ -79,25 +79,26 @@ class GigaChat(BaseChatModel):
         .. code-block:: python
 
             from langchain.chat_models import GigaChat
-            giga = GigaChat(oauth_token=...)
+            giga = GigaChat(credentials=..., verify_ssl_certs=False)
     """
 
-    use_auth: Optional[bool] = None
-    api_base_url: Optional[str] = None
-    token: Optional[str] = None
+    base_url: Optional[str] = None
+    """ Адрес относительно которого выполняются запросы """
+    auth_url: Optional[str] = None
+    credentials: Optional[str] = None
+    """ Авторизационные данные """
+    scope: Optional[str] = None
+
+    access_token: Optional[str] = None
+    model: Optional[str] = None
     user: Optional[str] = None
     password: Optional[str] = None
-    model: Optional[str] = None
+
     timeout: Optional[float] = None
-    verify_ssl: Optional[bool] = None
+    verify_ssl_certs: Optional[bool] = None
     """ Check certificates for all requests """
-    client_id: Optional[str] = None
-    client_secret: Optional[str] = None
-    oauth_base_url: Optional[str] = None
-    oauth_token: Optional[str] = None
-    oauth_scope: Optional[str] = None
-    oauth_timeout: Optional[float] = None
-    oauth_verify_ssl: Optional[bool] = None
+
+    use_auth: Optional[bool] = None
 
     profanity: bool = True
     streaming: bool = False
@@ -113,10 +114,9 @@ class GigaChat(BaseChatModel):
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {
-            "token": "GIGA_TOKEN",
-            "password": "GIGA_PASSWORD",
-            "client_secret": "GIGA_CLIENT_SECRET",
-            "oauth_token": "GIGA_OAUTH_TOKEN",
+            "credentials": "GIGACHAT_CREDENTIALS",
+            "access_token": "GIGACHAT_ACCESS_TOKEN",
+            "password": "GIGACHAT_PASSWORD",
         }
 
     @property
@@ -125,20 +125,32 @@ class GigaChat(BaseChatModel):
 
     @cached_property
     def _client(self) -> gigachat.GigaChat:
-        return gigachat.GigaChat(**self.__dict__)
+        return gigachat.GigaChat(
+            base_url=self.base_url,
+            auth_url=self.auth_url,
+            credentials=self.credentials,
+            scope=self.scope,
+            access_token=self.access_token,
+            model=self.model,
+            user=self.user,
+            password=self.password,
+            timeout=self.timeout,
+            verify_ssl_certs=self.verify_ssl_certs,
+            use_auth=self.use_auth,
+        )
 
-    def _build_payload(self, messages: List[BaseMessage]) -> Dict[str, Any]:
-        payload: Dict[str, Any] = {
-            "messages": [_convert_message_to_dict(m) for m in messages],
-            "profanity_check": self.profanity,
-        }
+    def _build_payload(self, messages: List[BaseMessage]) -> Chat:
+        payload = Chat(
+            messages=[_convert_message_to_dict(m) for m in messages],
+            profanity_check=self.profanity,
+        )
         if self.temperature > 0:
-            payload["temperature"] = self.temperature
+            payload.temperature = self.temperature
         if self.max_tokens > 0:
-            payload["max_tokens"] = self.max_tokens
+            payload.max_tokens = self.max_tokens
 
         if self.verbose:
-            logger.warning("Giga request: %s", payload)
+            logger.warning("Giga request: %s", payload.dict())
 
         return payload
 
@@ -159,8 +171,7 @@ class GigaChat(BaseChatModel):
                 )
             if self.verbose:
                 logger.warning("Giga response: %s", message.content)
-        token_usage = response.usage
-        llm_output = {"token_usage": token_usage, "model_name": response.model}
+        llm_output = {"token_usage": response.usage, "model_name": response.model}
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _generate(

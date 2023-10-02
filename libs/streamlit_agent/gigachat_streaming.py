@@ -10,23 +10,20 @@ st.title("GigaChain Bot")
 
 with st.sidebar:
     st.title("GIGACHAT API")
-    api_base_url = st.selectbox(
-        "GIGA_API_BASE_URL",
+    base_url = st.selectbox(
+        "GIGACHAT_BASE_URL",
         (
             "https://gigachat.devices.sberbank.ru/api/v1",
             "https://beta.saluteai.sberdevices.ru/v1",
         ),
     )
-    st.title("Авторизация")
-    client_id = st.text_input("GIGA_CLIENT_ID")
-    client_secret = st.text_input("GIGA_CLIENT_SECRET", type="password")
+    st.title("Авторизационные данные")
+    credentials = st.text_input("GIGACHAT_CREDENTIALS", type="password")
     st.title("OR")
-    oauth_token = st.text_input("GIGA_OAUTH_TOKEN", type="password")
+    access_token = st.text_input("GIGACHAT_ACCESS_TOKEN", type="password")
     st.title("OR")
-    user = st.text_input("GIGA_USER")
-    password = st.text_input("GIGA_PASSWORD", type="password")
-    st.title("OR")
-    token = st.text_input("GIGA_TOKEN", type="password")
+    user = st.text_input("GIGACHAT_USER")
+    password = st.text_input("GIGACHAT_PASSWORD", type="password")
 
 
 # Initialize chat history
@@ -48,24 +45,20 @@ for message in st.session_state.messages:
 
 if prompt := st.chat_input():
     if (
-        not (user and password)
-        and not (client_id and client_secret)
-        and not oauth_token
-        and not token
+        not access_token
+        and not credentials
+        and not (user and password)
     ):
         st.info("Заполните данные GigaChat для того, чтобы продолжить")
         st.stop()
 
     chat = GigaChat(
-        api_base_url=api_base_url,
-        token=st.session_state.get("token") or token,  # Переиспользуем токен
+        base_url=base_url,
+        credentials=credentials,
+        access_token=st.session_state.get("token") or access_token,  # Переиспользуем токен
         user=user,
         password=password,
-        client_id=client_id,
-        client_secret=client_secret,
-        oauth_token=oauth_token,
-        verify_ssl=False,
-        oauth_verify_ssl=False,
+        verify_ssl_certs=False,
     )
 
     message = ChatMessage(role="user", content=prompt)

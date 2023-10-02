@@ -7,8 +7,7 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/ai-forever/gigachain"
 packages = [
-    {include = "langchain"},
-    {include = "gigachat"}
+    {include = "langchain"}
 ]
 
 [tool.poetry.scripts]
@@ -136,8 +135,8 @@ sqlite-vss = {version = "^0.1.2", optional = true}
 anyio = "<4.0"
 jsonpatch = "^1.33"
 timescale-vector = {version = "^0.0.1", optional = true}
-httpx = "^0.25.0"
 anthropic = {version = "^0.3.11", optional = true}
+gigachat = "^0.1.3"
 
 
 [tool.poetry.group.test.dependencies]
