@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from typing import (
     Any,
     AsyncIterator,
     Dict,
     Iterator,
     List,
+    Literal,
     Optional,
     Sequence,
     Type,
@@ -29,10 +31,8 @@ from langchain.schema.runnable.utils import (
 )
 
 
-class RunnableConfigurableFields(RunnableSerializable[Input, Output]):
+class DynamicRunnable(RunnableSerializable[Input, Output]):
     bound: RunnableSerializable[Input, Output]
-
-    specs: Dict[str, ConfigurableField]
 
     class Config:
         arbitrary_types_allowed = True
@@ -61,40 +61,11 @@ class RunnableConfigurableFields(RunnableSerializable[Input, Output]):
     def output_schema(self) -> Type[BaseModel]:
         return self.bound.output_schema
 
-    @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
-        return [
-            ConfigurableFieldSpec(
-                id=spec.id,
-                name=spec.name,
-                description=spec.description
-                or self.bound.__fields__[field_name].field_info.description,
-                annotation=self.bound.__fields__[field_name].annotation,
-                default=getattr(self.bound, field_name),
-            )
-            for field_name, spec in self.specs.items()
-        ]
-
-    def configurable_fields(
-        self, **kwargs: ConfigurableField
-    ) -> RunnableConfigurableFields[Input, Output]:
-        return self.bound.configurable_fields(**{**self.specs, **kwargs})
-
+    @abstractmethod
     def _prepare(
         self, config: Optional[RunnableConfig] = None
     ) -> Runnable[Input, Output]:
-        config = config or {}
-        specs_by_id = {spec.id: (key, spec) for key, spec in self.specs.items()}
-        configurable = {
-            specs_by_id[k][0]: v
-            for k, v in config.get("configurable", {}).items()
-            if k in specs_by_id
-        }
-
-        if configurable:
-            return self.bound.__class__(**{**self.bound.dict(), **configurable})
-        else:
-            return self.bound
+        ...
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -219,3 +190,86 @@ class RunnableConfigurableFields(RunnableSerializable[Input, Output]):
     ) -> AsyncIterator[Output]:
         async for chunk in self._prepare(config).atransform(input, config, **kwargs):
             yield chunk
+
+
+class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
+    fields: Dict[str, ConfigurableField]
+
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return [
+            ConfigurableFieldSpec(
+                id=spec.id,
+                name=spec.name,
+                description=spec.description
+                or self.bound.__fields__[field_name].field_info.description,
+                annotation=self.bound.__fields__[field_name].annotation,
+                default=getattr(self.bound, field_name),
+            )
+            for field_name, spec in self.fields.items()
+        ]
+
+    def configurable_fields(
+        self, **kwargs: ConfigurableField
+    ) -> RunnableSerializable[Input, Output]:
+        return self.bound.configurable_fields(**{**self.fields, **kwargs})
+
+    def _prepare(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Runnable[Input, Output]:
+        config = config or {}
+        specs_by_id = {spec.id: (key, spec) for key, spec in self.fields.items()}
+        configurable = {
+            specs_by_id[k][0]: v
+            for k, v in config.get("configurable", {}).items()
+            if k in specs_by_id
+        }
+
+        if configurable:
+            return self.bound.__class__(**{**self.bound.dict(), **configurable})
+        else:
+            return self.bound
+
+
+class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
+    which: ConfigurableField
+
+    alternatives: Dict[str, RunnableSerializable[Input, Output]]
+
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        alt_keys = self.alternatives.keys()
+        which_keys = tuple(Literal[k] for k in alt_keys) + (  # type: ignore
+            Literal["default"],
+        )
+        return [
+            ConfigurableFieldSpec(
+                id=self.which.id,
+                name=self.which.name,
+                description=self.which.description,
+                annotation=Union[which_keys],  # type: ignore
+                default="default",
+            ),
+            *self.bound.config_specs,
+        ] + [s for alt in self.alternatives.values() for s in alt.config_specs]
+
+    def configurable_fields(
+        self, **kwargs: ConfigurableField
+    ) -> RunnableSerializable[Input, Output]:
+        return self.__class__(
+            which=self.which,
+            bound=self.bound.configurable_fields(**kwargs),
+            alternatives=self.alternatives,
+        )
+
+    def _prepare(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Runnable[Input, Output]:
+        config = config or {}
+        which = config.get("configurable", {}).get(self.which.id)
+        if not which:
+            return self.bound
+        elif which in self.alternatives:
+            return self.alternatives[which]
+        else:
+            raise ValueError(f"Unknown alternative: {which}")

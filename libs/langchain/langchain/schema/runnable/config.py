@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     )
 
 
-class EmptyConfig(TypedDict, total=False):
+class EmptyDict(TypedDict, total=False):
     pass
 
 
