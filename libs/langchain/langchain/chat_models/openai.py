@@ -187,10 +187,9 @@ class ChatOpenAI(BaseChatModel):
     custom_retry_decorator: Optional[Callable[[Any], Any]] = None
     """Custom retry decorator for handling specific use cases and errors.
     This decorator will be used in the `acompletion_with_retry` and 
-    `completion_with_retry` methods.
-    If not provided, the default retry decorator will be used.
-    The custom decorator should take a function that makes the API call and 
-    return a function that handles retries."""
+    `completion_with_retry` methods. If not provided, the default retry 
+    decorator will be used. The custom decorator should take a function that 
+    makes the API call and return a function that handles retries."""
 
     class Config:
         """Configuration for this pydantic object."""
