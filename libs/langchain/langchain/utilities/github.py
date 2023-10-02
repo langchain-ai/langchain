@@ -230,6 +230,7 @@ class GitHubAPIWrapper(BaseModel):
         for i in range(1000):
             try:
                 self.github_repo_instance.create_git_ref(ref=f"refs/heads/{new_branch_name}", sha=base_branch.commit.sha)
+                self.active_branch = new_branch_name
                 return f"Branch '{new_branch_name}' created successfully, and set as current active branch."
             except GithubException as e:
                 if e.status == 422 and "Reference already exists" in e.data['message']:
