@@ -20,7 +20,12 @@ logger = logging.getLogger(__name__)
 class LLMBashChain(Chain):
     """Chain that interprets a prompt and executes bash operations.
 
+    Warning:
+        This chain can execute arbitrary code using bash.
+        This can be dangerous if not properly sandboxed.
+
     Example:
+
         .. code-block:: python
 
             from langchain.chains import LLMBashChain
