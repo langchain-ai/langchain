@@ -21,6 +21,9 @@ class BaseSQLDatabaseTool(BaseModel):
 
     db: SQLDatabase = Field(exclude=True)
 
+    class Config(BaseTool.Config):
+        pass
+
 
 class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for querying a SQL database."""
