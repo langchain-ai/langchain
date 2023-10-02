@@ -1,8 +1,17 @@
 import asyncio
-from ctypes import Union
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Sequence, Tuple, Type
-from langchain.load.dump import dumpd
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
+from langchain.load.dump import dumpd
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.runnable.base import Runnable, RunnableSerializable
 from langchain.schema.runnable.config import (
