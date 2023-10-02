@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.299"
+version = "0.0.305"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -31,7 +31,7 @@ transformers = {version = "^4", optional = true}
 beautifulsoup4 = {version = "^4", optional = true}
 torch = {version = ">=1,<3", optional = true}
 jinja2 = {version = "^3", optional = true}
-tiktoken = {version = "^0.3.2", optional = true, python="^3.9"}
+tiktoken = {version = ">=0.3.2,<0.6.0", optional = true, python=">=3.9"}
 pinecone-client = {version = "^2", optional = true}
 pinecone-text = {version = "^0.4.2", optional = true}
 pymongo = {version = "^4.3.3", optional = true}
@@ -55,7 +55,7 @@ sentence-transformers = {version = "^2", optional = true}
 aiohttp = "^3.8.3"
 arxiv = {version = "^1.4", optional = true}
 pypdf = {version = "^3.4.0", optional = true}
-networkx = {version="^2.6.3", optional = true}
+networkx = {version=">=2.6.3, <4", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
 deeplake = {version = "^3.6.8", optional = true}
 libdeeplake = {version = "^0.0.60", optional = true}
@@ -129,9 +129,11 @@ markdownify = {version = "^0.11.6", optional = true}
 assemblyai = {version = "^0.17.0", optional = true}
 dashvector = {version = "^1.0.1", optional = true}
 sqlite-vss = {version = "^0.1.2", optional = true}
+motor = {version = "^3.3.1", optional = true}
 anyio = "<4.0"
 jsonpatch = "^1.33"
 timescale-vector = {version = "^0.0.1", optional = true}
+anthropic = {version = "^0.3.11", optional = true}
 
 
 [tool.poetry.group.test.dependencies]
@@ -173,13 +175,14 @@ optional = true
 #    Instead write unit tests that use the `responses` library or mock.patch with
 #    fixtures. Keep the fixtures minimal.
 # See CONTRIBUTING.md for more instructions on working with optional dependencies.
-# https://github.com/hwchase17/langchain/blob/master/.github/CONTRIBUTING.md#working-with-optional-dependencies
+# https://github.com/langchain-ai/langchain/blob/master/.github/CONTRIBUTING.md#working-with-optional-dependencies
 pytest-vcr = "^1.0.2"
 wrapt = "^1.15.0"
 openai = "^0.27.4"
 python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
 tiktoken = "^0.3.2"
+anthropic = "^0.3.11"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
@@ -346,9 +349,12 @@ extended_testing = [
  "faiss-cpu",
  "openapi-schema-pydantic",
  "markdownify",
+ "arxiv",
  "dashvector",
  "sqlite-vss",
+ "motor",
  "timescale-vector",
+ "anthropic",
 ]
 
 [tool.ruff]
@@ -400,4 +406,4 @@ ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
 # aapply - async apply
 # unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate'
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd'

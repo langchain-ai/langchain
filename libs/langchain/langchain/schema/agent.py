@@ -27,11 +27,9 @@ class AgentAction(Serializable):
     ):
         super().__init__(tool=tool, tool_input=tool_input, log=log, **kwargs)
 
-    @property
-    def lc_serializable(self) -> bool:
-        """
-        Return whether or not the class is serializable.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return True
 
 
@@ -62,9 +60,7 @@ class AgentFinish(Serializable):
     def __init__(self, return_values: dict, log: str, **kwargs: Any):
         super().__init__(return_values=return_values, log=log, **kwargs)
 
-    @property
-    def lc_serializable(self) -> bool:
-        """
-        Return whether or not the class is serializable.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return True
