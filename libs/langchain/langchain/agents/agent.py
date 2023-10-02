@@ -331,6 +331,11 @@ class RunnableAgent(BaseSingleActionAgent):
         arbitrary_types_allowed = True
 
     @property
+    def return_values(self) -> List[str]:
+        """Return values of the agent."""
+        return []
+
+    @property
     def input_keys(self) -> List[str]:
         """Return the input keys.
 
@@ -745,7 +750,6 @@ class AgentExecutor(Chain):
     ] = False
     """How to handle errors raised by the agent's output parser.
     Defaults to `False`, which raises the error.
-s
     If `true`, the error will be sent back to the LLM as an observation.
     If a string, the string itself will be sent to the LLM as an observation.
     If a callable function, the function will be called with the exception

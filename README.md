@@ -5,6 +5,10 @@
 <br />
 <div align="center">
 
+  <a href="https://github.com/ai-forever/gigachain">
+    <img src="docs/static/img/logo.png" alt="Logo" width="80" height="80">
+  </a>
+
   <h1 align="center">🦜️🔗 GigaChain (GigaChat + LangChain)</h1>
 
   <p align="center">
@@ -18,6 +22,8 @@
 
 
 ## О проекте
+
+![Product Name Screen Shot](docs/static/img/logo-with-backgroung.png)
 
 Версия библиотеки [LangChain](https://github.com/langchain-ai/langchain) адаптированная для русского языка с поддержкой нейросетевой модели [GigaChat](https://developers.sber.ru/portal/products/gigachat).
 
@@ -85,7 +91,7 @@ from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
 
 # Авторизация в сервисе GigaChat
-chat = GigaChat(oauth_token="...")
+chat = GigaChat(oauth_token=...)
 
 messages = [
     SystemMessage(
@@ -119,10 +125,6 @@ while(True):
 > [!NOTE]
 > Модуль не поддерживает работу с функциями, так как в настоящий момент они отсутствуют в GigaChat.
 
-### Включение и отключение цензора
-
-GigaChat избегает давать ответы по острым и противоречивым темам. Модуль позволяет повлиять на такое поведение с помощью флага [`profanity=True/False`](https://github.com/ai-forever/gigachain/blob/4f63280bebbdc4c925732c0749f660d3e97eb3e3/libs/langchain/langchain/chat_models/gigachat.py#L44C7-L44C7).
-
 ## Коллекция примеров
 
 Ниже представлен список примеров использования GigaChain.
@@ -137,11 +139,16 @@ GigaChat избегает давать ответы по острым и про�
 - [Парсинг списков, содержащихся в ответе](docs/extras/modules/model_io/output_parsers/list.ipynb)
 - [Асинхронная работа с LLM](docs/extras/modules/model_io/models/llms/async_llm.ipynb)
 - [Использование Elastic для поиска ответов по документам](docs/extras/integrations/retrievers/elastic_qna.ipynb)
+- [Генерация и выполнение кода с помощью PythonREPL](docs/extras/expression_language/cookbook/code_writing.ipynb)
 
 ### Примеры работы с другими LLM
 
 - [Агент-менеджер по продажам с автоматическим поиском по каталогу и формированием заказа](docs/extras/modules/agents/how_to/add_memory_openai_functions.ipynb)
 - [Поиск ответов в интернете с автоматическими промежуточными вопросами (self-ask)](docs/extras/modules/agents/agent_types/self_ask_with_search.ipynb)
+
+### Примеры приложений для Streamlit
+
+- [Чат-бот на базе GigaChat с потоковой генерацией и разными видами авторизации](libs/streamlit_agent/gigachat_streaming.py) [Try demo](https://gigachat-streaming.streamlit.app/)
 
 ## Участие в проекте
 

@@ -5,63 +5,55 @@ and answers the question. The prompt is based on the paper from
 Zheng, et. al. https://arxiv.org/abs/2306.05685
 """
 # flake8: noqa
-from langchain.prompts import PromptTemplate
+from langchain.prompts.chat import ChatPromptTemplate
 
-template = """Выступи в роли справедливого судьи и оцени два ответа на приведенный ниже вопрос.\
- Выбери ответ, который лучше всего следовал инструкциям и ответил на вопрос.\
- Твоя оценка должна учитывать следующие критерии:
-{criteria}\
- Начни с сравнения обоих ответов и дай краткое обоснование.\
- Избегай предвзятости из-за порядка представления или длины ответа.
-После того как ты дал обоснование, прими окончательное решение, используя этот формат:\
- "[[A]]", если помощник A лучше, "[[B]]", если помощник B лучше,\
- и "[[C]]" в случае ничьей. Наконец, повтори решение еще раз само по себе на новой строке.
+SYSTEM_MESSAGE = 'Please act as an impartial judge and evaluate the quality \
+of the responses provided by two AI assistants to the user question displayed below. \
+You should choose the assistant that follows the user\'s instructions \
+and answers \the user\'s question better. \
+Your evaluation should consider factors such as the \
+helpfulness, relevance, accuracy, depth, creativity, \
+and level of detail of their responses. \
+Begin your evaluation by comparing the two responses and provide a short explanation. \
+Avoid any position biases and ensure that the order in which \
+the responses were presented does not influence your decision. \
+Do not allow the length of the responses to influence your evaluation. \
+Do not favor certain names of the assistants. Be as objective as possible. \
+After providing your explanation, output your final verdict by strictly following \
+this format: "[[A]]" if assistant A is better, "[[B]]" if assistant B is better, \
+and "[[C]]" for a tie.'
 
-[ВОПРОС]
-{input}
-[/ВОПРОС]
-
-[ОТВЕТ A]
-{prediction}
-[/ОТВЕТ A]
-
-[ОТВЕТ B]
-{prediction_b}
-[/ОТВЕТ B]"""
-PROMPT = PromptTemplate(
-    input_variables=["input", "prediction", "prediction_b", "criteria"],
-    template=template,
+CRITERIA_INSTRUCTIONS = (
+    "For this evaluation, you should primarily consider the following criteria:\n"
 )
 
-template = """Выступи в роли справедливого судьи и оцени два ответа на приведенный ниже вопрос.\
- Выбери ответ, который лучше всего следовал инструкциям и ответил на вопрос.\
- Твоя оценка должна учитывать следующие критерии:
-{criteria}\
- Начни с сравнения обоих ответов и дай краткое обоснование.\
- Избегай предвзятости из-за порядка представления или длины ответа.\
- Оцени точность на основе следующего эталонного ответа на вопрос:
+COMPARISON_TEMPLATE = ChatPromptTemplate.from_messages(
+    [
+        ("system", SYSTEM_MESSAGE),
+        (
+            "human",
+            "{criteria}[User Question]\n{input}\n\n\
+[The Start of Assistant A's Answer]\n{prediction}\n\
+[The End of Assistant A's Answer]\
+\n\n[The Start of Assistant B's Answer]\n{prediction_b}\n\
+[The End of Assistant B's Answer]",
+        ),
+    ]
+)
 
-[ЭТАЛОН]
-{reference}
-[/ЭТАЛОН]
-
-После того как ты дал обоснование, прими окончательное решение, используя этот формат:\
- "[[A]]", если помощник A лучше, "[[B]]", если помощник B лучше,\
- и "[[C]]" в случае ничьей. Наконец, повтори решение еще раз само по себе на новой строке.
-
-[ВОПРОС]
-{input}
-[/ВОПРОС]
-
-[ОТВЕТ A]
-{prediction}
-[/ОТВЕТ A]
-
-[ОТВЕТ B]
-{prediction_b}
-[/ОТВЕТ B]"""
-
-PROMPT_WITH_REFERENCE = PromptTemplate(
-    input_variables=["input", "prediction", "prediction_b", "reference", "criteria"],
-    template=template,
+COMPARISON_TEMPLATE_WITH_REFERENCE = ChatPromptTemplate.from_messages(
+    [
+        ("system", SYSTEM_MESSAGE),
+        (
+            "human",
+            "{criteria}\n\nTo help you evaluate the responses, \
+here is a reference answer to the user's question:\n\
+{reference}\
+[User Question]\n{input}\n\n\
+[The Start of Assistant A's Answer]\n{prediction}\n\
+[The End of Assistant A's Answer]\
+\n\n[The Start of Assistant B's Answer]\n{prediction_b}\n\
+[The End of Assistant B's Answer]",
+        ),
+    ]
 )

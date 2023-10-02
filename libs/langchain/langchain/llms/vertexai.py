@@ -1,28 +1,57 @@
 from __future__ import annotations
 
-import asyncio
 from concurrent.futures import Executor, ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Union,
+)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM, create_base_retry_decorator
-from langchain.llms.utils import enforce_stop_tokens
+from langchain.llms.base import BaseLLM, create_base_retry_decorator
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import (
     Generation,
     LLMResult,
 )
+from langchain.schema.output import GenerationChunk
 from langchain.utilities.vertexai import (
     init_vertexai,
     raise_vertex_import_error,
 )
 
 if TYPE_CHECKING:
-    from google.cloud.aiplatform.gapic import PredictionServiceClient
-    from vertexai.language_models._language_models import _LanguageModel
+    from google.cloud.aiplatform.gapic import (
+        PredictionServiceAsyncClient,
+        PredictionServiceClient,
+    )
+    from vertexai.language_models._language_models import (
+        TextGenerationResponse,
+        _LanguageModel,
+    )
+
+
+def _response_to_generation(
+    response: TextGenerationResponse,
+) -> GenerationChunk:
+    """Convert a stream response to a generation chunk."""
+    try:
+        generation_info = {
+            "is_blocked": response.is_blocked,
+            "safety_attributes": response.safety_attributes,
+        }
+    except Exception:
+        generation_info = None
+    return GenerationChunk(text=response.text, generation_info=generation_info)
 
 
 def is_codey_model(model_name: str) -> bool:
@@ -36,7 +65,13 @@ def is_codey_model(model_name: str) -> bool:
     return "code" in model_name
 
 
-def _create_retry_decorator(llm: VertexAI) -> Callable[[Any], Any]:
+def _create_retry_decorator(
+    llm: VertexAI,
+    *,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
     import google.api_core
 
     errors = [
@@ -46,20 +81,57 @@ def _create_retry_decorator(llm: VertexAI) -> Callable[[Any], Any]:
         google.api_core.exceptions.DeadlineExceeded,
     ]
     decorator = create_base_retry_decorator(
-        error_types=errors, max_retries=llm.max_retries  # type: ignore
+        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
     return decorator
 
 
-def completion_with_retry(llm: VertexAI, *args: Any, **kwargs: Any) -> Any:
+def completion_with_retry(
+    llm: VertexAI,
+    *args: Any,
+    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
         return llm.client.predict(*args, **kwargs)
 
     return _completion_with_retry(*args, **kwargs)
+
+
+def stream_completion_with_retry(
+    llm: VertexAI,
+    *args: Any,
+    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+
+    @retry_decorator
+    def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
+        return llm.client.predict_streaming(*args, **kwargs)
+
+    return _completion_with_retry(*args, **kwargs)
+
+
+async def acompletion_with_retry(
+    llm: VertexAI,
+    *args: Any,
+    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+
+    @retry_decorator
+    async def _acompletion_with_retry(*args: Any, **kwargs: Any) -> Any:
+        return await llm.client.predict_async(*args, **kwargs)
+
+    return await _acompletion_with_retry(*args, **kwargs)
 
 
 class _VertexAIBase(BaseModel):
@@ -77,13 +149,6 @@ class _VertexAIBase(BaseModel):
     "Optional list of stop words to use when generating."
     model_name: Optional[str] = None
     "Underlying model name."
-
-    def _enforce_stop_words(self, text: str, stop: Optional[List[str]] = None) -> str:
-        if stop is None and self.stop is not None:
-            stop = self.stop
-        if stop:
-            return enforce_stop_tokens(text, stop)
-        return text
 
     @classmethod
     def _get_task_executor(cls, request_parallelism: int = 5) -> Executor:
@@ -110,6 +175,11 @@ class _VertexAICommon(_VertexAIBase):
     "The default custom credentials (google.auth.credentials.Credentials) to use "
     "when making API calls. If not provided, credentials will be ascertained from "
     "the environment."
+    streaming: bool = False
+
+    @property
+    def _llm_type(self) -> str:
+        return "vertexai"
 
     @property
     def is_codey_model(self) -> bool:
@@ -135,17 +205,6 @@ class _VertexAICommon(_VertexAIBase):
                 "top_p": self.top_p,
             }
 
-    def _predict(
-        self, prompt: str, stop: Optional[List[str]] = None, **kwargs: Any
-    ) -> str:
-        params = {**self._default_params, **kwargs}
-        res = completion_with_retry(self, prompt, **params)  # type: ignore
-        return self._enforce_stop_words(res.text, stop)
-
-    @property
-    def _llm_type(self) -> str:
-        return "vertexai"
-
     @classmethod
     def _try_init_vertexai(cls, values: Dict) -> None:
         allowed_params = ["project", "location", "credentials"]
@@ -153,8 +212,16 @@ class _VertexAICommon(_VertexAIBase):
         init_vertexai(**params)
         return None
 
+    def _prepare_params(
+        self,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        stop_sequences = stop or self.stop
+        return {**self._default_params, "stop_sequences": stop_sequences, **kwargs}
 
-class VertexAI(_VertexAICommon, LLM):
+
+class VertexAI(_VertexAICommon, BaseLLM):
     """Google Vertex AI large language models."""
 
     model_name: str = "text-bison"
@@ -191,51 +258,74 @@ class VertexAI(_VertexAICommon, LLM):
             raise_vertex_import_error()
         return values
 
-    def _call(
+    def _generate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        should_stream = stream if stream is not None else self.streaming
+        params = self._prepare_params(stop=stop, **kwargs)
+        generations = []
+        for prompt in prompts:
+            if should_stream:
+                generation = GenerationChunk(text="")
+                for chunk in self._stream(
+                    prompt, stop=stop, run_manager=run_manager, **kwargs
+                ):
+                    generation += chunk
+                generations.append([generation])
+            else:
+                res = completion_with_retry(
+                    self, prompt, run_manager=run_manager, **params
+                )
+                generations.append([_response_to_generation(res)])
+        return LLMResult(generations=generations)
+
+    async def _agenerate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        params = self._prepare_params(stop=stop, **kwargs)
+        generations = []
+        for prompt in prompts:
+            res = await acompletion_with_retry(
+                self, prompt, run_manager=run_manager, **params
+            )
+            generations.append([_response_to_generation(res)])
+        return LLMResult(generations=generations)
+
+    def _stream(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> str:
-        """Call Vertex model to get predictions based on the prompt.
-
-        Args:
-            prompt: The prompt to pass into the model.
-            stop: A list of stop words (optional).
-            run_manager: A Callbackmanager for LLM run, optional.
-
-        Returns:
-            The string generated by the model.
-        """
-        return self._predict(prompt, stop, **kwargs)
-
-    async def _acall(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
-        """Call Vertex model to get predictions based on the prompt.
-
-        Args:
-            prompt: The prompt to pass into the model.
-            stop: A list of stop words (optional).
-            run_manager: A callback manager for async interaction with LLMs.
-
-        Returns:
-            The string generated by the model.
-        """
-        return await asyncio.wrap_future(
-            self._get_task_executor().submit(self._call, prompt, stop)
-        )
+    ) -> Iterator[GenerationChunk]:
+        params = self._prepare_params(stop=stop, **kwargs)
+        for stream_resp in stream_completion_with_retry(
+            self, prompt, run_manager=run_manager, **params
+        ):
+            chunk = _response_to_generation(stream_resp)
+            yield chunk
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    chunk.text,
+                    chunk=chunk,
+                    verbose=self.verbose,
+                )
 
 
-class VertexAIModelGarden(_VertexAIBase, LLM):
+class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     """Large language models served from Vertex AI Model Garden."""
 
     client: "PredictionServiceClient" = None  #: :meta private:
+    async_client: "PredictionServiceAsyncClient" = None  #: :meta private:
     endpoint_id: str
     "A name of an endpoint where the model has been deployed."
     allowed_model_args: Optional[List[str]] = None
@@ -247,7 +337,11 @@ class VertexAIModelGarden(_VertexAIBase, LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
-            from google.cloud.aiplatform.gapic import PredictionServiceClient
+            from google.api_core.client_options import ClientOptions
+            from google.cloud.aiplatform.gapic import (
+                PredictionServiceAsyncClient,
+                PredictionServiceClient,
+            )
         except ImportError:
             raise_vertex_import_error()
 
@@ -256,37 +350,18 @@ class VertexAIModelGarden(_VertexAIBase, LLM):
                 "A GCP project should be provided to run inference on Model Garden!"
             )
 
-        client_options = {
-            "api_endpoint": f"{values['location']}-aiplatform.googleapis.com"
-        }
+        client_options = ClientOptions(
+            api_endpoint=f"{values['location']}-aiplatform.googleapis.com"
+        )
         values["client"] = PredictionServiceClient(client_options=client_options)
+        values["async_client"] = PredictionServiceAsyncClient(
+            client_options=client_options
+        )
         return values
 
     @property
     def _llm_type(self) -> str:
         return "vertexai_model_garden"
-
-    def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
-        """Call Vertex model to get predictions based on the prompt.
-
-        Args:
-            prompt: The prompt to pass into the model.
-            stop: A list of stop words (optional).
-            run_manager: A Callbackmanager for LLM run, optional.
-
-        Returns:
-            The string generated by the model.
-        """
-        result = self._generate(
-            prompts=[prompt], stop=stop, run_manager=run_manager, **kwargs
-        )
-        return result.generations[0][0].text
 
     def _generate(
         self,
@@ -331,23 +406,47 @@ class VertexAIModelGarden(_VertexAIBase, LLM):
             )
         return LLMResult(generations=generations)
 
-    async def _acall(
+    async def _agenerate(
         self,
-        prompt: str,
+        prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> str:
-        """Call Vertex model to get predictions based on the prompt.
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+        try:
+            from google.protobuf import json_format
+            from google.protobuf.struct_pb2 import Value
+        except ImportError:
+            raise ImportError(
+                "protobuf package not found, please install it with"
+                " `pip install protobuf`"
+            )
 
-        Args:
-            prompt: The prompt to pass into the model.
-            stop: A list of stop words (optional).
-            run_manager: A callback manager for async interaction with LLMs.
+        instances = []
+        for prompt in prompts:
+            if self.allowed_model_args:
+                instance = {
+                    k: v for k, v in kwargs.items() if k in self.allowed_model_args
+                }
+            else:
+                instance = {}
+            instance[self.prompt_arg] = prompt
+            instances.append(instance)
 
-        Returns:
-            The string generated by the model.
-        """
-        return await asyncio.wrap_future(
-            self._get_task_executor().submit(self._call, prompt, stop)
+        predict_instances = [
+            json_format.ParseDict(instance_dict, Value()) for instance_dict in instances
+        ]
+
+        endpoint = self.async_client.endpoint_path(
+            project=self.project, location=self.location, endpoint=self.endpoint_id
         )
+        response = await self.async_client.predict(
+            endpoint=endpoint, instances=predict_instances
+        )
+        generations: List[List[Generation]] = []
+        for result in response.predictions:
+            generations.append(
+                [Generation(text=prediction[self.result_arg]) for prediction in result]
+            )
+        return LLMResult(generations=generations)
