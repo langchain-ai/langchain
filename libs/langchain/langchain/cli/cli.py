@@ -1,3 +1,4 @@
+"""A CLI for creating a new project with LangChain."""
 import typer
 from typing_extensions import Annotated
 
@@ -12,8 +13,8 @@ app = typer.Typer(no_args_is_help=True, add_completion=False)
 
 
 @app.callback()
-def callback() -> None:
-    pass
+def main() -> None:
+    """Create a new project with LangChain."""
 
 
 AUTHOR_NAME_OPTION = typer.Option(default_factory=get_git_user_name, prompt=True)
@@ -28,4 +29,16 @@ def new(
     author_email: Annotated[str, AUTHOR_EMAIL_OPTION],
     use_poetry: Annotated[bool, USE_POETRY_OPTION],
 ) -> None:
+    """Create a new project with LangChain.
+
+    Args:
+        project_directory (str): The directory to create the project in.
+        author_name (str): The name of the author.
+        author_email (str): The email of the author.
+        use_poetry (bool): Whether to use Poetry to manage the project.
+    """
     return create(project_directory, author_name, author_email, use_poetry)
+
+
+if __name__ == "__main__":
+    main()
