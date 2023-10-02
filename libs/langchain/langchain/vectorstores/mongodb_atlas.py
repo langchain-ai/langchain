@@ -17,8 +17,8 @@ from typing import (
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -89,6 +89,18 @@ class MongoDBAtlasVectorSearch(VectorStore):
         embedding: Embeddings,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
+        """Construct a `MongoDB Atlas Vector Search` vector store
+        from a MongoDB connection URI.
+
+        Args:
+            connection_string: A valid MongoDB connection URI.
+            namespace: A valid MongoDB namespace (database and collection).
+            embedding: The text embedding model to use for the vector store.
+
+        Returns:
+            A new MongoDBAtlasVectorSearch instance.
+
+        """
         try:
             from pymongo import MongoClient
         except ImportError:
@@ -149,24 +161,23 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        pre_filter: Optional[dict] = None,
+        pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
-        knn_beta = {
-            "vector": embedding,
+        params = {
+            "queryVector": embedding,
             "path": self._embedding_key,
-            "k": k,
+            "numCandidates": k * 10,
+            "limit": k,
+            "index": self._index_name,
         }
         if pre_filter:
-            knn_beta["filter"] = pre_filter
+            params["filter"] = pre_filter
+        query = {"$vectorSearch": params}
+
         pipeline = [
-            {
-                "$search": {
-                    "index": self._index_name,
-                    "knnBeta": knn_beta,
-                }
-            },
-            {"$set": {"score": {"$meta": "searchScore"}}},
+            query,
+            {"$set": {"score": {"$meta": "vectorSearchScore"}}},
         ]
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
@@ -183,12 +194,12 @@ class MongoDBAtlasVectorSearch(VectorStore):
         query: str,
         *,
         k: int = 4,
-        pre_filter: Optional[dict] = None,
+        pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
     ) -> List[Tuple[Document, float]]:
-        """Return MongoDB documents most similar to query, along with scores.
+        """Return MongoDB documents most similar to the given query and their scores.
 
-        Use the knnBeta Operator available in MongoDB Atlas Search
+        Uses the knnBeta Operator available in MongoDB Atlas Search.
         This feature is in early access and available only for evaluation purposes, to
         validate functionality, and to gather feedback from a small closed group of
         early access users. It is not recommended for production deployments as we
@@ -197,14 +208,14 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            k: Optional Number of Documents to return. Defaults to 4.
-            pre_filter: Optional Dictionary of argument(s) to prefilter on document
-                fields.
-            post_filter_pipeline: Optional Pipeline of MongoDB aggregation stages
-                following the knnBeta search.
+            k: (Optional) number of documents to return. Defaults to 4.
+            pre_filter: (Optional) dictionary of argument(s) to prefilter document
+                fields on.
+            post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
+                following the knnBeta vector search.
 
         Returns:
-            List of Documents most similar to the query and score for each
+            List of documents most similar to the query and their scores.
         """
         embedding = self._embedding.embed_query(query)
         docs = self._similarity_search_with_score(
@@ -219,29 +230,29 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        pre_filter: Optional[dict] = None,
+        pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        """Return MongoDB documents most similar to query.
+        """Return MongoDB documents most similar to the given query.
 
-        Use the knnBeta Operator available in MongoDB Atlas Search
+        Uses the knnBeta Operator available in MongoDB Atlas Search.
         This feature is in early access and available only for evaluation purposes, to
         validate functionality, and to gather feedback from a small closed group of
-        early access users. It is not recommended for production deployments as we may
-        introduce breaking changes.
+        early access users. It is not recommended for production deployments as we
+        may introduce breaking changes.
         For more: https://www.mongodb.com/docs/atlas/atlas-search/knn-beta
 
         Args:
             query: Text to look up documents similar to.
-            k: Optional Number of Documents to return. Defaults to 4.
-            pre_filter: Optional Dictionary of argument(s) to prefilter on document
-                fields.
-            post_filter_pipeline: Optional Pipeline of MongoDB aggregation stages
-                following the knnBeta search.
+            k: (Optional) number of documents to return. Defaults to 4.
+            pre_filter: (Optional) dictionary of argument(s) to prefilter document
+                fields on.
+            post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
+                following the knnBeta vector search.
 
         Returns:
-            List of Documents most similar to the query and score for each
+            List of documents most similar to the query and their scores.
         """
         docs_and_scores = self.similarity_search_with_score(
             query,
@@ -257,30 +268,30 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        pre_filter: Optional[dict] = None,
+        pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        """Return docs selected using the maximal marginal relevance.
+        """Return documents selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
 
         Args:
             query: Text to look up documents similar to.
-            k: Optional Number of Documents to return. Defaults to 4.
-            fetch_k: Optional Number of Documents to fetch before passing to MMR
+            k: (Optional) number of documents to return. Defaults to 4.
+            fetch_k: (Optional) number of documents to fetch before passing to MMR
                 algorithm. Defaults to 20.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            pre_filter: Optional Dictionary of argument(s) to prefilter on document
+            pre_filter: (Optional) dictionary of argument(s) to prefilter on document
                 fields.
-            post_filter_pipeline: Optional Pipeline of MongoDB aggregation stages
-                following the knnBeta search.
+            post_filter_pipeline: (Optional) pipeline of MongoDB aggregation stages
+                following the knnBeta vector search.
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            List of documents selected by maximal marginal relevance.
         """
         query_embedding = self._embedding.embed_query(query)
         docs = self._similarity_search_with_score(
@@ -303,11 +314,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[List[Dict]] = None,
         collection: Optional[Collection[MongoDBDocumentType]] = None,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
-        """Construct MongoDBAtlasVectorSearch wrapper from raw documents.
+        """Construct a `MongoDB Atlas Vector Search` vector store from raw documents.
 
         This is a user-friendly interface that:
             1. Embeds documents.
