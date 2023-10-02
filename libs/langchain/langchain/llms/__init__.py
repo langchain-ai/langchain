@@ -46,6 +46,7 @@ from langchain.llms.edenai import EdenAI
 from langchain.llms.fake import FakeListLLM
 from langchain.llms.fireworks import Fireworks
 from langchain.llms.forefrontai import ForefrontAI
+from langchain.llms.gigachat import GigaChat
 from langchain.llms.google_palm import GooglePalm
 from langchain.llms.gooseai import GooseAI
 from langchain.llms.gpt4all import GPT4All
@@ -165,6 +166,7 @@ __all__ = [
     "Xinference",
     "JavelinAIGateway",
     "QianfanLLMEndpoint",
+    "GigaChat",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
