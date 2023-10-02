@@ -47,6 +47,14 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
 
         arbitrary_types_allowed = True
 
+    def _document_get_date(self, field: str, document: Document) -> datetime.datetime:
+        """Return the value of the date field of a document."""
+        if field in document.metadata:
+            if isinstance(document.metadata[field], float):
+                return datetime.datetime.fromtimestamp(document.metadata[field])
+            return document.metadata[field]
+        return datetime.datetime.now()
+
     def _get_combined_score(
         self,
         document: Document,

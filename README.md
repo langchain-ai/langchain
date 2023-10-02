@@ -116,7 +116,7 @@ while(True):
 Модуль [`gigachat`](libs/langchain/langchain/chat_models/gigachat.py) позволяет авторизовать запросы от вашего приложения в GigaChat с помощью GigaChat API. Модуль поддерживает работу как в синхронном, так и в асинхронном режиме. Кроме этого модуль поддерживает обработку [потоковой передачи токенов](https://developers.sber.ru/docs/ru/gigachat/api/response-token-streaming)[^1].
 
 > [!NOTE]
-> Сейчас GigaChat API доступно только юридическим лицам и индивидуальным предпринимателям после подписания договора.
+> Сейчас проект GigaChat API доступен только юридическим лицам и индивидуальным предпринимателям после подписания договора.
 >
 > Как подключить GigaChat API читайте в [официальной документации](https://developers.sber.ru/docs/ru/gigachat/api/integration).
 
@@ -132,7 +132,7 @@ while(True):
 ### Примеры работы с GigaChat
 
 - [Ответы на вопросы по статьям из wikipedia](docs/extras/integrations/retrievers/wikipedia.ipynb)
-- [Суммаризация map-reduce](docs/extras/use_cases/summarization.ipynb) (см. раздел map/reduce)
+- [Суммаризация по алгоритму MapReduce](docs/extras/use_cases/summarization.ipynb) (см. раздел map/reduce)
 - [Игра Blade Runner: GPT-4 и GigaChat выясняют, кто из них бот](docs/extras/use_cases/more/fun/blade_runner.ipynb)
 - [Работа с хабом промптов, цепочками и парсером JSON](docs/extras/modules/model_io/output_parsers/json.ipynb)
 - [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/extras/use_cases/agent_simulations/multi_llm_thre_player_dnd.ipynb)
