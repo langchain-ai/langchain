@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class VespaRetriever(BaseRetriever):
     """`Vespa` retriever."""
 
-    app: Vespa
+    app: Any
     """Vespa application to query."""
     body: Dict
     """Body of the query."""
