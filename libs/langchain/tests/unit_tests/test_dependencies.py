@@ -42,7 +42,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "anyio",
         "async-timeout",
         "dataclasses-json",
-        "httpx",
+        "gigachat",
         "jsonpatch",
         "langsmith",
         "numexpr",

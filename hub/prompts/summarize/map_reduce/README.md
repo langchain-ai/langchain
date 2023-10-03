@@ -14,7 +14,7 @@
 from langchain.prompts import load_prompt
 from langchain.chains.summarize import load_summarize_chain
 
-giga = GigaChat(oauth_token="...")
+giga = GigaChat(credentials="...")
 map_prompt = load_prompt('lc://prompts/summarize/map_reduce/map.yaml')
 combine_prompt = load_prompt('lc://prompts/summarize/map_reduce/combine.yaml')
 
