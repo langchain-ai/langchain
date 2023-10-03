@@ -57,6 +57,8 @@ from langchain.schema.runnable.config import (
 )
 from langchain.schema.runnable.utils import (
     AddableDict,
+    ConfigurableField,
+    ConfigurableFieldSpec,
     Input,
     Output,
     accepts_config,
@@ -64,6 +66,7 @@ from langchain.schema.runnable.utils import (
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
     get_lambda_source,
+    get_unique_config_specs,
     indent_lines_after_first,
 )
 from langchain.utils.aiter import atee, py_anext
@@ -122,6 +125,10 @@ class Runnable(Generic[Input, Output], ABC):
             self.__class__.__name__ + "Output", __root__=(root_type, None)
         )
 
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return []
+
     def config_schema(
         self, *, include: Optional[Sequence[str]] = None
     ) -> Type[BaseModel]:
@@ -129,10 +136,28 @@ class Runnable(Generic[Input, Output], ABC):
             arbitrary_types_allowed = True
 
         include = include or []
+        config_specs = self.config_specs
+        configurable = (
+            create_model(  # type: ignore[call-overload]
+                "Configurable",
+                **{
+                    spec.id: (
+                        spec.annotation,
+                        Field(
+                            spec.default, title=spec.name, description=spec.description
+                        ),
+                    )
+                    for spec in config_specs
+                },
+            )
+            if config_specs
+            else None
+        )
 
         return create_model(  # type: ignore[call-overload]
             self.__class__.__name__ + "Config",
             __config__=_Config,
+            **({"configurable": (configurable, None)} if configurable else {}),
             **{
                 field_name: (field_type, None)
                 for field_name, field_type in RunnableConfig.__annotations__.items()
@@ -836,7 +861,32 @@ class Runnable(Generic[Input, Output], ABC):
 
 
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
-    pass
+    def configurable_fields(
+        self, **kwargs: ConfigurableField
+    ) -> RunnableSerializable[Input, Output]:
+        from langchain.schema.runnable.configurable import RunnableConfigurableFields
+
+        for key in kwargs:
+            if key not in self.__fields__:
+                raise ValueError(
+                    f"Configuration key {key} not found in {self}: "
+                    "available keys are {self.__fields__.keys()}"
+                )
+
+        return RunnableConfigurableFields(bound=self, fields=kwargs)
+
+    def configurable_alternatives(
+        self,
+        which: ConfigurableField,
+        **kwargs: Runnable[Input, Output],
+    ) -> RunnableSerializable[Input, Output]:
+        from langchain.schema.runnable.configurable import (
+            RunnableConfigurableAlternatives,
+        )
+
+        return RunnableConfigurableAlternatives(
+            which=which, bound=self, alternatives=kwargs
+        )
 
 
 class RunnableSequence(RunnableSerializable[Input, Output]):
@@ -878,6 +928,12 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     @property
     def output_schema(self) -> Type[BaseModel]:
         return self.last.output_schema
+
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return get_unique_config_specs(
+            spec for step in self.steps for spec in step.config_specs
+        )
 
     def __repr__(self) -> str:
         return "\n| ".join(
@@ -1386,6 +1442,12 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
         return create_model(  # type: ignore[call-overload]
             "RunnableMapOutput",
             **{k: (v.OutputType, None) for k, v in self.steps.items()},
+        )
+
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return get_unique_config_specs(
+            spec for step in self.steps.values() for spec in step.config_specs
         )
 
     def __repr__(self) -> str:
@@ -1985,6 +2047,10 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
             ),
         )
 
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return self.bound.config_specs
+
     def config_schema(
         self, *, include: Optional[Sequence[str]] = None
     ) -> Type[BaseModel]:
@@ -2061,6 +2127,10 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     @property
     def output_schema(self) -> Type[BaseModel]:
         return self.bound.output_schema
+
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return self.bound.config_specs
 
     def config_schema(
         self, *, include: Optional[Sequence[str]] = None

@@ -11,6 +11,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     Union,
     cast,
@@ -24,7 +25,7 @@ from langchain.schema.runnable.base import (
     RunnableSerializable,
 )
 from langchain.schema.runnable.config import RunnableConfig, get_executor_for_config
-from langchain.schema.runnable.utils import AddableDict
+from langchain.schema.runnable.utils import AddableDict, ConfigurableFieldSpec
 from langchain.utils.aiter import atee, py_anext
 from langchain.utils.iter import safetee
 
@@ -159,6 +160,10 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
             )
 
         return super().output_schema
+
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return self.mapper.config_specs
 
     def invoke(
         self,
