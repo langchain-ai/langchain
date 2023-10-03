@@ -1,13 +1,15 @@
 """Test Meilisearch functionality."""
-from typing import Generator
+from typing import TYPE_CHECKING, Generator
 
-import meilisearch
 import pytest
 import requests
 
 from langchain.docstore.document import Document
 from langchain.vectorstores import Meilisearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+
+if TYPE_CHECKING:
+    import meilisearch
 
 INDEX_NAME = "test-langchain-demo"
 TEST_MEILI_HTTP_ADDR = "http://localhost:7700"
@@ -49,7 +51,9 @@ class TestMeilisearchVectorSearch:
             task = client.index(index.uid).delete()
             client.wait_for_task(task.task_uid)
 
-    def client(self) -> meilisearch.Client:
+    def client(self) -> "meilisearch.Client":
+        import meilisearch
+
         return meilisearch.Client(TEST_MEILI_HTTP_ADDR, TEST_MEILI_MASTER_KEY)
 
     def _wait_last_task(self) -> None:

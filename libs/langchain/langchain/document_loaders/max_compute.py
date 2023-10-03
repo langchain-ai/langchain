@@ -8,7 +8,7 @@ from langchain.utilities.max_compute import MaxComputeAPIWrapper
 
 
 class MaxComputeLoader(BaseLoader):
-    """Loads a query result from Alibaba Cloud MaxCompute table into documents."""
+    """Load from `Alibaba Cloud MaxCompute` table."""
 
     def __init__(
         self,

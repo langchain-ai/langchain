@@ -100,6 +100,9 @@ extensions = [
 ]
 source_suffix = [".rst"]
 
+# some autodoc pydantic options are repeated in the actual template.
+# potentially user error, but there may be bugs in the sphinx extension
+# with options not being passed through correctly (from either the location in the code)
 autodoc_pydantic_model_show_json = False
 autodoc_pydantic_field_list_validators = False
 autodoc_pydantic_config_members = False
@@ -112,13 +115,6 @@ autodoc_member_order = "groupwise"
 autoclass_content = "both"
 autodoc_typehints_format = "short"
 
-autodoc_default_options = {
-    "members": True,
-    "show-inheritance": True,
-    "inherited-members": "BaseModel",
-    "undoc-members": True,
-    "special-members": "__call__",
-}
 # autodoc_typehints = "description"
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["templates"]
@@ -160,7 +156,7 @@ html_context = {
 html_static_path = ["_static"]
 
 # These paths are either relative to html_static_path
-# or fully qualified paths (eg. https://...)
+# or fully qualified paths (e.g. https://...)
 html_css_files = [
     "css/custom.css",
 ]

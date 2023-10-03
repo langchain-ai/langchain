@@ -4,9 +4,8 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, root_validator
-
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.messages import BaseMessage, BaseMessageChunk
 
 
@@ -22,13 +21,15 @@ class Generation(Serializable):
     """
     # TODO: add log probs as separate attribute
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether this class is LangChain serializable."""
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
         return True
 
 
 class GenerationChunk(Generation):
+    """A Generation chunk, which can be concatenated with other Generation chunks."""
+
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
         if isinstance(other, GenerationChunk):
             generation_info = (
@@ -62,6 +63,13 @@ class ChatGeneration(Generation):
 
 
 class ChatGenerationChunk(ChatGeneration):
+    """A ChatGeneration chunk, which can be concatenated with other
+      ChatGeneration chunks.
+
+    Attributes:
+        message: The message chunk output by the chat model.
+    """
+
     message: BaseMessageChunk
 
     def __add__(self, other: ChatGenerationChunk) -> ChatGenerationChunk:

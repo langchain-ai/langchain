@@ -1,5 +1,3 @@
-"""Loader that uses bs4 to load HTML files, enriching metadata with page title."""
-
 import logging
 from typing import Dict, List, Union
 
@@ -10,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class BSHTMLLoader(BaseLoader):
-    """Loader that uses beautiful soup to parse HTML files."""
+    """Load `HTML` files and parse them with `beautiful soup`."""
 
     def __init__(
         self,

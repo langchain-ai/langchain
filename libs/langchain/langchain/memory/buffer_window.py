@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.schema.messages import BaseMessage, get_buffer_string
@@ -14,9 +14,24 @@ class ConversationBufferWindowMemory(BaseChatMemory):
     """Number of messages to store in buffer."""
 
     @property
-    def buffer(self) -> List[BaseMessage]:
+    def buffer(self) -> Union[str, List[BaseMessage]]:
         """String buffer of memory."""
-        return self.chat_memory.messages
+        return self.buffer_as_messages if self.return_messages else self.buffer_as_str
+
+    @property
+    def buffer_as_str(self) -> str:
+        """Exposes the buffer as a string in case return_messages is True."""
+        messages = self.chat_memory.messages[-self.k * 2 :] if self.k > 0 else []
+        return get_buffer_string(
+            messages,
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+
+    @property
+    def buffer_as_messages(self) -> List[BaseMessage]:
+        """Exposes the buffer as a list of messages in case return_messages is False."""
+        return self.chat_memory.messages[-self.k * 2 :] if self.k > 0 else []
 
     @property
     def memory_variables(self) -> List[str]:
@@ -26,14 +41,6 @@ class ConversationBufferWindowMemory(BaseChatMemory):
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-
-        buffer: Any = self.buffer[-self.k * 2 :] if self.k > 0 else []
-        if not self.return_messages:
-            buffer = get_buffer_string(
-                buffer,
-                human_prefix=self.human_prefix,
-                ai_prefix=self.ai_prefix,
-            )
-        return {self.memory_key: buffer}
+        return {self.memory_key: self.buffer}

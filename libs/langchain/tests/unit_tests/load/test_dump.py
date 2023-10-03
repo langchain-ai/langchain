@@ -19,8 +19,8 @@ class Person(Serializable):
 
     you_can_see_me: str = "hello"
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     @property
@@ -57,6 +57,7 @@ def test_person(snapshot: Any) -> None:
     assert dumps(p, pretty=True) == snapshot
     sp = SpecialPerson(another_secret="Wooo", secret="Hmm")
     assert dumps(sp, pretty=True) == snapshot
+    assert Person.lc_id() == ["test_dump", "Person"]
 
 
 @pytest.mark.requires("openai")

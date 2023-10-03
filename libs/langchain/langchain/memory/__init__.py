@@ -42,6 +42,8 @@ from langchain.memory.chat_message_histories import (
     PostgresChatMessageHistory,
     RedisChatMessageHistory,
     SQLChatMessageHistory,
+    StreamlitChatMessageHistory,
+    XataChatMessageHistory,
     ZepChatMessageHistory,
 )
 from langchain.memory.combined import CombinedMemory
@@ -87,7 +89,9 @@ __all__ = [
     "SQLChatMessageHistory",
     "SQLiteEntityStore",
     "SimpleMemory",
+    "StreamlitChatMessageHistory",
     "VectorStoreRetrieverMemory",
+    "XataChatMessageHistory",
     "ZepChatMessageHistory",
     "ZepMemory",
 ]

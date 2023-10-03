@@ -1,14 +1,15 @@
 """Base interface that all chains should implement."""
+import asyncio
 import inspect
 import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
+from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
-from pydantic import Field, root_validator, validator
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -20,9 +21,15 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.load.dump import dumpd
-from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import (
+    BaseModel,
+    Field,
+    create_model,
+    root_validator,
+    validator,
+)
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +38,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
+class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     """Abstract base class for creating structured sequences of calls to components.
 
     Chains should be used to encode a sequence of calls to components like
@@ -54,19 +61,57 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             chains and cannot return as rich of an output as `__call__`.
     """
 
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainInput", **{k: (Any, None) for k in self.input_keys}
+        )
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainOutput", **{k: (Any, None) for k in self.output_keys}
+        )
+
     def invoke(
-        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
-        return self(input, **(config or {}))
+        config = config or {}
+        return self(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
+            **kwargs,
+        )
 
     async def ainvoke(
-        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         if type(self)._acall == Chain._acall:
             # If the chain does not implement async, fall back to default implementation
-            return await super().ainvoke(input, config)
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self.invoke, input, config, **kwargs)
+            )
 
-        return await self.acall(input, **(config or {}))
+        config = config or {}
+        return await self.acall(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
+            **kwargs,
+        )
 
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.
@@ -112,6 +157,12 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     def raise_callback_manager_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
+            if values.get("callbacks") is not None:
+                raise ValueError(
+                    "Cannot specify both callback_manager and callbacks. "
+                    "callback_manager is deprecated, callbacks is the preferred "
+                    "parameter to pass in."
+                )
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
@@ -205,6 +256,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Execute the chain.
@@ -246,6 +298,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
             inputs,
+            name=run_name,
         )
         try:
             outputs = (
@@ -253,7 +306,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
                 if new_arg_supported
                 else self._call(inputs)
             )
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             run_manager.on_chain_error(e)
             raise e
         run_manager.on_chain_end(outputs)
@@ -272,6 +325,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Asynchronously execute the chain.
@@ -313,6 +367,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
             inputs,
+            name=run_name,
         )
         try:
             outputs = (
@@ -320,7 +375,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
                 if new_arg_supported
                 else await self._acall(inputs)
             )
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             await run_manager.on_chain_error(e)
             raise e
         await run_manager.on_chain_end(outputs)
@@ -553,7 +608,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             A dictionary representation of the chain.
 
         Example:
-            ..code-block:: python
+            .. code-block:: python
 
                 chain.dict(exclude_unset=True)
                 # -> {"_type": "foo", "verbose": False, ...}

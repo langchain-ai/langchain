@@ -2,13 +2,13 @@
 
 If you're building with LLMs, at some point something will break, and you'll need to debug. A model call will fail, or the model output will be misformatted, or there will be some nested model calls and it won't be clear where along the way an incorrect output was created.
 
-Here's a few different tools and functionalities to aid in debugging.
+Here are a few different tools and functionalities to aid in debugging.
 
 
 
 ## Tracing
 
-Platforms with tracing capabilities like [LangSmith](/docs/guides/langsmith/) and [WandB](/docs/ecosystem/integrations/agent_with_wandb_tracing) are the most comprehensive solutions for debugging. These platforms make it easy to not only log and visualize LLM apps, but also to actively debug, test and refine them.
+Platforms with tracing capabilities like [LangSmith](/docs/guides/langsmith/) and [WandB](/docs/integrations/providers/wandb_tracing) are the most comprehensive solutions for debugging. These platforms make it easy to not only log and visualize LLM apps, but also to actively debug, test and refine them.
 
 For anyone building production-grade LLM applications, we highly recommend using a platform like this.
 
@@ -18,9 +18,9 @@ For anyone building production-grade LLM applications, we highly recommend using
 
 If you're prototyping in Jupyter Notebooks or running Python scripts, it can be helpful to print out the intermediate steps of a Chain run. 
 
-There's a number of ways to enable printing at varying degrees of verbosity.
+There are a number of ways to enable printing at varying degrees of verbosity.
 
-Let's suppose we have a simple agent and want to visualize the actions it takes and tool outputs it receives. Without any debugging, here's what we see:
+Let's suppose we have a simple agent, and want to visualize the actions it takes and tool outputs it receives. Without any debugging, here's what we see:
 
 
 ```python

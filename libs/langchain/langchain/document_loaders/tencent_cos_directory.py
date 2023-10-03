@@ -1,4 +1,3 @@
-"""Loading logic for loading documents from Tencent Cloud COS directory."""
 from typing import Any, Iterator, List
 
 from langchain.docstore.document import Document
@@ -7,7 +6,7 @@ from langchain.document_loaders.tencent_cos_file import TencentCOSFileLoader
 
 
 class TencentCOSDirectoryLoader(BaseLoader):
-    """Loader for Tencent Cloud COS directory."""
+    """Load from `Tencent Cloud COS` directory."""
 
     def __init__(self, conf: Any, bucket: str, prefix: str = ""):
         """Initialize with COS config, bucket and prefix.

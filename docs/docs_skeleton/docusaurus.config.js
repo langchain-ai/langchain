@@ -71,9 +71,9 @@ const config = {
               test: /\.ipynb$/,
               loader: "raw-loader",
               resolve: {
-                fullySpecified: false
-              }
-            }
+                fullySpecified: false,
+              },
+            },
           ],
         },
       }),
@@ -128,6 +128,10 @@ const config = {
           hideable: true,
         },
       },
+      colorMode: {
+        disableSwitch: false,
+        respectPrefersColorScheme: true,
+      },
       prism: {
         theme: {
           ...baseLightCodeBlockTheme,
@@ -154,21 +158,31 @@ const config = {
             position: "left",
           },
           {
-            type: 'docSidebar',
-            position: 'left',
-            sidebarId: 'use_cases',
-            label: 'Use cases',
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "use_cases",
+            label: "Use cases",
           },
           {
-            type: 'docSidebar',
-            position: 'left',
-            sidebarId: 'integrations',
-            label: 'Integrations',
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "integrations",
+            label: "Integrations",
           },
           {
-            href: "https://api.python.langchain.com",
+            to: "https://api.python.langchain.com",
             label: "API",
             position: "left",
+          },
+          {
+            to: "/docs/community",
+            label: "Community",
+            position: "left",
+          },
+          {
+            to: "https://chat.langchain.com",
+            label: "Chat our docs",
+            position: "right",
           },
           {
             to: "https://smith.langchain.com",
@@ -182,10 +196,10 @@ const config = {
           },
           // Please keep GitHub link to the right for consistency.
           {
-            href: "https://github.com/hwchase17/langchain",
-            position: 'right',
-            className: 'header-github-link',
-            'aria-label': 'GitHub repository',
+            href: "https://github.com/langchain-ai/langchain",
+            position: "right",
+            className: "header-github-link",
+            "aria-label": "GitHub repository",
           },
         ],
       },
@@ -210,11 +224,11 @@ const config = {
             items: [
               {
                 label: "Python",
-                href: "https://github.com/hwchase17/langchain",
+                href: "https://github.com/langchain-ai/langchain",
               },
               {
                 label: "JS/TS",
-                href: "https://github.com/hwchase17/langchainjs",
+                href: "https://github.com/langchain-ai/langchainjs",
               },
             ],
           },
@@ -235,6 +249,14 @@ const config = {
         copyright: `Copyright © ${new Date().getFullYear()} LangChain, Inc.`,
       },
     }),
+
+  scripts: [
+    "/js/google_analytics.js",
+    {
+      src: "https://www.googletagmanager.com/gtag/js?id=G-9B66JQQH2F",
+      async: true,
+    },
+  ],
 };
 
 module.exports = config;

@@ -1,10 +1,10 @@
 """Util that calls Arxiv."""
 import logging
 import os
+import re
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
-
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -18,10 +18,13 @@ class ArxivAPIWrapper(BaseModel):
     This wrapper will use the Arxiv API to conduct searches and
     fetch document summaries. By default, it will return the document summaries
     of the top-k results.
+    If the query is in the form of arxiv identifier
+    (see https://info.arxiv.org/help/find/index.html), it will return the paper
+    corresponding to the arxiv identifier.
     It limits the Document content by doc_content_chars_max.
     Set doc_content_chars_max=None if you don't want to limit the content size.
 
-    Args:
+    Attributes:
         top_k_results: number of the top-scored document used for the arxiv tool
         ARXIV_MAX_QUERY_LENGTH: the cut limit on the query used for the arxiv tool.
         load_max_docs: a limit to the number of loaded documents
@@ -50,10 +53,22 @@ class ArxivAPIWrapper(BaseModel):
     arxiv_search: Any  #: :meta private:
     arxiv_exceptions: Any  # :meta private:
     top_k_results: int = 3
-    ARXIV_MAX_QUERY_LENGTH = 300
+    ARXIV_MAX_QUERY_LENGTH: int = 300
     load_max_docs: int = 100
     load_all_available_meta: bool = False
     doc_content_chars_max: Optional[int] = 4000
+
+    def is_arxiv_identifier(self, query: str) -> bool:
+        """Check if a query is an arxiv identifier."""
+        arxiv_identifier_pattern = r"\d{2}(0[1-9]|1[0-2])\.\d{4,5}(v\d+|)|\d{7}.*"
+        for query_item in query[: self.ARXIV_MAX_QUERY_LENGTH].split():
+            match_result = re.match(arxiv_identifier_pattern, query_item)
+            if not match_result:
+                return False
+            assert match_result is not None
+            if not match_result.group(0) == query_item:
+                return False
+        return True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -89,9 +104,15 @@ class ArxivAPIWrapper(BaseModel):
             query: a plaintext search query
         """  # noqa: E501
         try:
-            results = self.arxiv_search(  # type: ignore
-                query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
-            ).results()
+            if self.is_arxiv_identifier(query):
+                results = self.arxiv_search(
+                    id_list=query.split(),
+                    max_results=self.top_k_results,
+                ).results()
+            else:
+                results = self.arxiv_search(  # type: ignore
+                    query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
+                ).results()
         except self.arxiv_exceptions as ex:
             return f"Arxiv exception: {ex}"
         docs = [
@@ -128,9 +149,17 @@ class ArxivAPIWrapper(BaseModel):
             )
 
         try:
-            results = self.arxiv_search(  # type: ignore
-                query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.load_max_docs
-            ).results()
+            # Remove the ":" and "-" from the query, as they can cause search problems
+            query = query.replace(":", "").replace("-", "")
+            if self.is_arxiv_identifier(query):
+                results = self.arxiv_search(
+                    id_list=query[: self.ARXIV_MAX_QUERY_LENGTH].split(),
+                    max_results=self.load_max_docs,
+                ).results()
+            else:
+                results = self.arxiv_search(  # type: ignore
+                    query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.load_max_docs
+                ).results()
         except self.arxiv_exceptions as ex:
             logger.debug("Error on arxiv: %s", ex)
             return []
@@ -141,7 +170,7 @@ class ArxivAPIWrapper(BaseModel):
                 doc_file_name: str = result.download_pdf()
                 with fitz.open(doc_file_name) as doc_file:
                     text: str = "".join(page.get_text() for page in doc_file)
-            except FileNotFoundError as f_ex:
+            except (FileNotFoundError, fitz.fitz.FileDataError) as f_ex:
                 logger.debug(f_ex)
                 continue
             if self.load_all_available_meta:

@@ -1,9 +1,11 @@
 """Interfaces to be implemented by general evaluators."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
+from functools import partial
 from typing import Any, Optional, Sequence, Tuple
 from warnings import warn
 
@@ -29,9 +31,15 @@ class EvaluatorType(str, Enum):
     PAIRWISE_STRING = "pairwise_string"
     """The pairwise string evaluator, which predicts the preferred prediction from
     between two models."""
+    SCORE_STRING = "score_string"
+    """The scored string evaluator, which gives a score between 1 and 10 
+    to a prediction."""
     LABELED_PAIRWISE_STRING = "labeled_pairwise_string"
     """The labeled pairwise string evaluator, which predicts the preferred prediction
     from between two models based on a ground truth reference label."""
+    LABELED_SCORE_STRING = "labeled_score_string"
+    """The labeled scored string evaluator, which gives a score between 1 and 10
+    to a prediction based on a ground truth reference label."""
     AGENT_TRAJECTORY = "trajectory"
     """The agent trajectory evaluator, which grades the agent's intermediate steps."""
     CRITERIA = "criteria"
@@ -42,12 +50,20 @@ class EvaluatorType(str, Enum):
     custom set of criteria, with a reference label."""
     STRING_DISTANCE = "string_distance"
     """Compare predictions to a reference answer using string edit distances."""
+    EXACT_MATCH = "exact_match"
+    """Compare predictions to a reference answer using exact matching."""
+    REGEX_MATCH = "regex_match"
+    """Compare predictions to a reference answer using regular expressions."""
     PAIRWISE_STRING_DISTANCE = "pairwise_string_distance"
     """Compare predictions based on string edit distances."""
     EMBEDDING_DISTANCE = "embedding_distance"
     """Compare a prediction to a reference label using embedding distance."""
     PAIRWISE_EMBEDDING_DISTANCE = "pairwise_embedding_distance"
     """Compare two predictions using embedding distance."""
+    JSON_VALIDITY = "json_validity"
+    """Check if a prediction is valid JSON."""
+    JSON_EQUALITY = "json_equality"
+    """Check if a prediction is equal to a reference JSON."""
 
 
 class LLMEvalChain(Chain):
@@ -115,7 +131,7 @@ class StringEvaluator(_EvalArgsMixin, ABC):
     @property
     def evaluation_name(self) -> str:
         """The name of the evaluation."""
-        raise NotImplementedError()
+        return self.__class__.__name__
 
     @property
     def requires_reference(self) -> bool:
@@ -168,9 +184,15 @@ class StringEvaluator(_EvalArgsMixin, ABC):
                      - value: the string value of the evaluation, if applicable.
                      - reasoning: the reasoning for the evaluation, if applicable.
         """  # noqa: E501
-        raise NotImplementedError(
-            f"{self.__class__.__name__} hasn't implemented an async "
-            "aevaluate_strings method."
+        return await asyncio.get_running_loop().run_in_executor(
+            None,
+            partial(
+                self._evaluate_strings,
+                prediction=prediction,
+                reference=reference,
+                input=input,
+                **kwargs,
+            ),
         )
 
     def evaluate_strings(
@@ -265,9 +287,16 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: A dictionary containing the preference, scores, and/or other information.
         """  # noqa: E501
-        raise NotImplementedError(
-            f"{self.__class__.__name__} hasn't implemented an async "
-            "aevaluate_string_pairs method."
+        return await asyncio.get_running_loop().run_in_executor(
+            None,
+            partial(
+                self._evaluate_string_pairs,
+                prediction=prediction,
+                prediction_b=prediction_b,
+                reference=reference,
+                input=input,
+                **kwargs,
+            ),
         )
 
     def evaluate_string_pairs(
@@ -381,9 +410,16 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: The evaluation result.
         """
-        raise NotImplementedError(
-            f"{self.__class__.__name__} hasn't implemented an async "
-            "aevaluate_agent_trajectory method."
+        return await asyncio.get_running_loop().run_in_executor(
+            None,
+            partial(
+                self._evaluate_agent_trajectory,
+                prediction=prediction,
+                agent_trajectory=agent_trajectory,
+                reference=reference,
+                input=input,
+                **kwargs,
+            ),
         )
 
     def evaluate_agent_trajectory(

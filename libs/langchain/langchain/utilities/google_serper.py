@@ -3,10 +3,9 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic.class_validators import root_validator
-from pydantic.main import BaseModel
 from typing_extensions import Literal
 
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.utils import get_from_dict_or_env
 
 
@@ -22,7 +21,7 @@ class GoogleSerperAPIWrapper(BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import GoogleSerperAPIWrapper
+            from langchain.utilities import GoogleSerperAPIWrapper
             google_serper = GoogleSerperAPIWrapper()
     """
 

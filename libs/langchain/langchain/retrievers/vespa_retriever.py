@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class VespaRetriever(BaseRetriever):
-    """Retriever that uses Vespa."""
+    """`Vespa` retriever."""
 
     app: Vespa
     """Vespa application to query."""

@@ -1,13 +1,12 @@
-"""Wrapper around Meilisearch vector database."""
 from __future__ import annotations
 
 import uuid
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_env
-from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
     from meilisearch import Client
@@ -21,7 +20,7 @@ def _create_client(
     try:
         import meilisearch
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import meilisearch python package. "
             "Please install it with `pip install meilisearch`."
         )
@@ -45,7 +44,7 @@ def _create_client(
 
 
 class Meilisearch(VectorStore):
-    """Initialize wrapper around Meilisearch vector database.
+    """`Meilisearch` vector store.
 
     To use this, you need to have `meilisearch` python package installed,
     and a running Meilisearch instance.
@@ -282,7 +281,7 @@ class Meilisearch(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Meilisearch
+                from langchain.vectorstores import Meilisearch
                 from langchain.embeddings import OpenAIEmbeddings
                 import meilisearch
 

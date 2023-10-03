@@ -1,8 +1,9 @@
+import uuid
 from typing import Callable, Optional
 
 import pytest
 
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -24,7 +25,7 @@ def test_qdrant_embedding_interface(
     from qdrant_client import QdrantClient
 
     client = QdrantClient(":memory:")
-    collection_name = "test"
+    collection_name = uuid.uuid4().hex
 
     Qdrant(
         client,
@@ -48,7 +49,7 @@ def test_qdrant_embedding_interface_raises_value_error(
     from qdrant_client import QdrantClient
 
     client = QdrantClient(":memory:")
-    collection_name = "test"
+    collection_name = uuid.uuid4().hex
 
     with pytest.raises(ValueError):
         Qdrant(

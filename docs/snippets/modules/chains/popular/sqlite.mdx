@@ -537,7 +537,7 @@ Sometimes you may not have the luxury of using OpenAI or other service-hosted la
 import logging
 import torch
 from transformers import AutoTokenizer, GPT2TokenizerFast, pipeline, AutoModelForSeq2SeqLM, AutoModelForCausalLM
-from langchain import HuggingFacePipeline
+from langchain.llms import HuggingFacePipeline
 
 # Note: This model requires a large GPU, e.g. an 80GB A100. See documentation for other ways to run private non-OpenAI models.
 model_id = "google/flan-ul2"
@@ -628,7 +628,7 @@ local_chain("How many customers are there?")
 
 </CodeOutputBlock>
 
-Even this relatively large model will most likely fail to generate more complicated SQL by itself. However, you can log its inputs and outputs so that you can hand-correct them and use the corrected examples for few shot prompt examples later. In practice, you could log any executions of your chain that raise exceptions (as shown in the example below) or get direct user feedback in cases where the results are incorrect (but did not raise an exception).
+Even this relatively large model will most likely fail to generate more complicated SQL by itself. However, you can log its inputs and outputs so that you can hand-correct them and use the corrected examples for few-shot prompt examples later. In practice, you could log any executions of your chain that raise exceptions (as shown in the example below) or get direct user feedback in cases where the results are incorrect (but did not raise an exception).
 
 
 ```bash
@@ -878,11 +878,11 @@ YAML_EXAMPLES = """
 """
 ```
 
-Now that you have some examples (with manually corrected output SQL), you can do few shot prompt seeding the usual way:
+Now that you have some examples (with manually corrected output SQL), you can do few-shot prompt seeding the usual way:
 
 
 ```python
-from langchain import FewShotPromptTemplate, PromptTemplate
+from langchain.prompts import FewShotPromptTemplate, PromptTemplate
 from langchain.chains.sql_database.prompt import _sqlite_prompt, PROMPT_SUFFIX
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.prompts.example_selector.semantic_similarity import SemanticSimilarityExampleSelector
@@ -925,7 +925,7 @@ few_shot_prompt = FewShotPromptTemplate(
 
 </CodeOutputBlock>
 
-The model should do better now with this few shot prompt, especially for inputs similar to the examples you have seeded it with.
+The model should do better now with this few-shot prompt, especially for inputs similar to the examples you have seeded it with.
 
 
 ```python

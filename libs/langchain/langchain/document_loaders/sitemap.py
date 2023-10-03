@@ -1,4 +1,3 @@
-"""Loader that fetches a sitemap and loads those URLs."""
 import itertools
 import re
 from typing import Any, Callable, Generator, Iterable, List, Optional
@@ -22,7 +21,7 @@ def _batch_block(iterable: Iterable, size: int) -> Generator[List[dict], None, N
 
 
 class SitemapLoader(WebBaseLoader):
-    """Loader that fetches a sitemap and loads those URLs."""
+    """Load a sitemap and its URLs."""
 
     def __init__(
         self,
@@ -33,6 +32,8 @@ class SitemapLoader(WebBaseLoader):
         blocknum: int = 0,
         meta_function: Optional[Callable] = None,
         is_local: bool = False,
+        continue_on_failure: bool = False,
+        **kwargs: Any,
     ):
         """Initialize with webpage path and optional filter URLs.
 
@@ -48,6 +49,10 @@ class SitemapLoader(WebBaseLoader):
                 remember when setting this method to also copy metadata["loc"]
                 to metadata["source"] if you are using this field
             is_local: whether the sitemap is a local file. Default: False
+            continue_on_failure: whether to continue loading the sitemap if an error
+                occurs loading a url, emitting a warning instead of raising an
+                exception. Setting this to True makes the loader more robust, but also
+                may result in missing data. Default: False
         """
 
         if blocksize is not None and blocksize < 1:
@@ -63,7 +68,7 @@ class SitemapLoader(WebBaseLoader):
                 "lxml package not found, please install it with " "`pip install lxml`"
             )
 
-        super().__init__(web_path)
+        super().__init__(web_paths=[web_path], **kwargs)
 
         self.filter_urls = filter_urls
         self.parsing_function = parsing_function or _default_parsing_function
@@ -71,6 +76,7 @@ class SitemapLoader(WebBaseLoader):
         self.blocksize = blocksize
         self.blocknum = blocknum
         self.is_local = is_local
+        self.continue_on_failure = continue_on_failure
 
     def parse_sitemap(self, soup: Any) -> List[dict]:
         """Parse sitemap xml and load into a list of dicts.
@@ -125,7 +131,7 @@ class SitemapLoader(WebBaseLoader):
             fp = open(self.web_path)
             soup = bs4.BeautifulSoup(fp, "xml")
         else:
-            soup = self.scrape("xml")
+            soup = self._scrape(self.web_path, parser="xml")
 
         els = self.parse_sitemap(soup)
 

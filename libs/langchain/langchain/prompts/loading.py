@@ -2,15 +2,14 @@
 import json
 import logging
 from pathlib import Path
-from typing import Union
+from typing import Callable, Dict, Union
 
 import yaml
 
-from langchain.output_parsers.regex import RegexParser
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, StrOutputParser
-from langchain.utilities.loading import try_load_from_hub
+from langchain.utils.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
 logger = logging.getLogger(__name__)
@@ -77,6 +76,8 @@ def _load_output_parser(config: dict) -> dict:
         _config = config.pop("output_parser")
         output_parser_type = _config.pop("_type")
         if output_parser_type == "regex_parser":
+            from langchain.output_parsers.regex import RegexParser
+
             output_parser: BaseLLMOutputParser = RegexParser(**_config)
         elif output_parser_type == "default":
             output_parser = StrOutputParser(**_config)
@@ -145,8 +146,7 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     return load_prompt_from_config(config)
 
 
-type_to_loader_dict = {
+type_to_loader_dict: Dict[str, Callable[[dict], BasePromptTemplate]] = {
     "prompt": _load_prompt,
     "few_shot": _load_few_shot_prompt,
-    # "few_shot_with_templates": _load_few_shot_with_templates_prompt,
 }

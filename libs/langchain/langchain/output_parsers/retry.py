@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
-from langchain.chains.llm import LLMChain
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseOutputParser,
@@ -46,7 +45,8 @@ class RetryOutputParser(BaseOutputParser[T]):
 
     parser: BaseOutputParser[T]
     """The parser to use to parse the output."""
-    retry_chain: LLMChain
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
+    retry_chain: Any
     """The LLMChain to use to retry the completion."""
 
     @classmethod
@@ -56,6 +56,8 @@ class RetryOutputParser(BaseOutputParser[T]):
         parser: BaseOutputParser[T],
         prompt: BasePromptTemplate = NAIVE_RETRY_PROMPT,
     ) -> RetryOutputParser[T]:
+        from langchain.chains.llm import LLMChain
+
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 
@@ -73,6 +75,26 @@ class RetryOutputParser(BaseOutputParser[T]):
             parsed_completion = self.parser.parse(completion)
         except OutputParserException:
             new_completion = self.retry_chain.run(
+                prompt=prompt_value.to_string(), completion=completion
+            )
+            parsed_completion = self.parser.parse(new_completion)
+
+        return parsed_completion
+
+    async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
+        """Parse the output of an LLM call using a wrapped parser.
+
+        Args:
+            completion: The chain completion to parse.
+            prompt_value: The prompt to use to parse the completion.
+
+        Returns:
+            The parsed completion.
+        """
+        try:
+            parsed_completion = self.parser.parse(completion)
+        except OutputParserException:
+            new_completion = await self.retry_chain.arun(
                 prompt=prompt_value.to_string(), completion=completion
             )
             parsed_completion = self.parser.parse(new_completion)
@@ -103,7 +125,8 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     """
 
     parser: BaseOutputParser[T]
-    retry_chain: LLMChain
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
+    retry_chain: Any
 
     @classmethod
     def from_llm(
@@ -122,6 +145,8 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
         Returns:
             A RetryWithErrorOutputParser.
         """
+        from langchain.chains.llm import LLMChain
+
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 
@@ -130,6 +155,17 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
             parsed_completion = self.parser.parse(completion)
         except OutputParserException as e:
             new_completion = self.retry_chain.run(
+                prompt=prompt_value.to_string(), completion=completion, error=repr(e)
+            )
+            parsed_completion = self.parser.parse(new_completion)
+
+        return parsed_completion
+
+    async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
+        try:
+            parsed_completion = self.parser.parse(completion)
+        except OutputParserException as e:
+            new_completion = await self.retry_chain.arun(
                 prompt=prompt_value.to_string(), completion=completion, error=repr(e)
             )
             parsed_completion = self.parser.parse(new_completion)

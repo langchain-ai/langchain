@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
-from langchain.chains.llm import LLMChain
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
 from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
 from langchain.schema.language_model import BaseLanguageModel
@@ -13,12 +12,13 @@ T = TypeVar("T")
 class OutputFixingParser(BaseOutputParser[T]):
     """Wraps a parser and tries to fix parsing errors."""
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     parser: BaseOutputParser[T]
-    retry_chain: LLMChain
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
+    retry_chain: Any
 
     @classmethod
     def from_llm(
@@ -37,6 +37,8 @@ class OutputFixingParser(BaseOutputParser[T]):
         Returns:
             OutputFixingParser
         """
+        from langchain.chains.llm import LLMChain
+
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 
@@ -45,6 +47,19 @@ class OutputFixingParser(BaseOutputParser[T]):
             parsed_completion = self.parser.parse(completion)
         except OutputParserException as e:
             new_completion = self.retry_chain.run(
+                instructions=self.parser.get_format_instructions(),
+                completion=completion,
+                error=repr(e),
+            )
+            parsed_completion = self.parser.parse(new_completion)
+
+        return parsed_completion
+
+    async def aparse(self, completion: str) -> T:
+        try:
+            parsed_completion = self.parser.parse(completion)
+        except OutputParserException as e:
+            new_completion = await self.retry_chain.arun(
                 instructions=self.parser.get_format_instructions(),
                 completion=completion,
                 error=repr(e),

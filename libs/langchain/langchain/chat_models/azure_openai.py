@@ -4,9 +4,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Mapping
 
-from pydantic import root_validator
-
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import ChatResult
 from langchain.utils import get_from_dict_or_env
 
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class AzureChatOpenAI(ChatOpenAI):
-    """Wrapper around Azure OpenAI Chat Completion API.
+    """`Azure OpenAI` Chat Completion API.
 
     To use this class you
     must have a deployed model on Azure OpenAI. Use `deployment_name` in the
@@ -40,12 +39,21 @@ class AzureChatOpenAI(ChatOpenAI):
 
     Be aware the API version may change.
 
+    You can also specify the version of the model using ``model_version`` constructor
+    parameter, as Azure OpenAI doesn't return model version with the response.
+
+    Default is empty. When you specify the version, it will be appended to the
+    model name in the response. Setting correct version will help you to calculate the
+    cost properly. Model version is not validated, so make sure you set it correctly
+    to get the correct cost.
+
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
     """
 
     deployment_name: str = ""
-    openai_api_type: str = "azure"
+    model_version: str = ""
+    openai_api_type: str = ""
     openai_api_base: str = ""
     openai_api_version: str = ""
     openai_api_key: str = ""
@@ -71,9 +79,7 @@ class AzureChatOpenAI(ChatOpenAI):
             "OPENAI_API_VERSION",
         )
         values["openai_api_type"] = get_from_dict_or_env(
-            values,
-            "openai_api_type",
-            "OPENAI_API_TYPE",
+            values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
         values["openai_organization"] = get_from_dict_or_env(
             values,
@@ -139,7 +145,19 @@ class AzureChatOpenAI(ChatOpenAI):
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 raise ValueError(
-                    "Azure has not provided the response due to a content"
-                    " filter being triggered"
+                    "Azure has not provided the response due to a content filter "
+                    "being triggered"
                 )
-        return super()._create_chat_result(response)
+        chat_result = super()._create_chat_result(response)
+
+        if "model" in response:
+            model = response["model"]
+            if self.model_version:
+                model = f"{model}-{self.model_version}"
+
+            if chat_result.llm_output is not None and isinstance(
+                chat_result.llm_output, dict
+            ):
+                chat_result.llm_output["model_name"] = model
+
+        return chat_result

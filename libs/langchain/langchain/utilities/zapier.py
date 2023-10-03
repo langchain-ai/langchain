@@ -16,9 +16,9 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Extra, root_validator
 from requests import Request, Session
 
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 
@@ -186,11 +186,13 @@ class ZapierNLAWrapper(BaseModel):
                     raise requests.HTTPError(
                         f"An unauthorized response occurred. Check that your "
                         f"access token is correct and doesn't need to be "
-                        f"refreshed. Err: {http_err}"
+                        f"refreshed. Err: {http_err}",
+                        response=response,
                     )
                 raise requests.HTTPError(
                     f"An unauthorized response occurred. Check that your api "
-                    f"key is correct. Err: {http_err}"
+                    f"key is correct. Err: {http_err}",
+                    response=response,
                 )
             raise http_err
         return response.json()["results"]
