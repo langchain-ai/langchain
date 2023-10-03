@@ -4,7 +4,7 @@ from unittest import mock
 
 from requests import Response
 
-from langchain.retrievers.you_retriever import YouRetriever
+from langchain.retrievers.you import YouRetriever
 from langchain.schema import Document
 
 

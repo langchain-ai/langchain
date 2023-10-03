@@ -1,6 +1,6 @@
 import os
 
-from langchain.retrievers.you_retriever import YouRetriever
+from langchain.retrievers.you import YouRetriever
 
 
 class TestYouRetriever:

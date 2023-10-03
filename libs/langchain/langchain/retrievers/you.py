@@ -29,11 +29,6 @@ class YouRetriever(BaseRetriever):
             values["ydc_api_key"] = os.getenv("YDC_API_KEY")
         return values
 
-    def add_documents(self, docs: List[Document], **kwargs: Any) -> List[str]:
-        raise NotImplementedError(
-            "The You.com API does not support adding documents to the index"
-        )
-
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
