@@ -191,6 +191,112 @@ result["intermediate_steps"]
 
 </CodeOutputBlock>
 
+## Adding Memory
+
+How to add memory to a SQLDatabaseChain:
+
+```python
+from langchain.llms import OpenAI
+from langchain.utilities import SQLDatabase
+from langchain_experimental.sql import SQLDatabaseChain
+```
+
+Set up the SQLDatabase and LLM
+
+```python
+db = SQLDatabase.from_uri("sqlite:///../../../../notebooks/Chinook.db")
+llm = OpenAI(temperature=0, verbose=True)
+```
+
+Set up the memory
+
+```python
+from langchain.memory import ConversationBufferMemory
+memory = ConversationBufferMemory()
+```
+
+Now we need to add a place for memory in the prompt template
+
+```python
+from langchain.prompts import PromptTemplate
+PROMPT_SUFFIX = """Only use the following tables:
+{table_info}
+
+Previous Conversation:
+{history}
+
+Question: {input}"""
+
+_DEFAULT_TEMPLATE = """Given an input question, first create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer. Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results. You can order the results by a relevant column to return the most interesting examples in the database.
+
+Never query for all the columns from a specific table, only ask for a the few relevant columns given the question.
+
+Pay attention to use only the column names that you can see in the schema description. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
+
+Use the following format:
+
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
+
+"""
+
+PROMPT = PromptTemplate.from_template(
+    _DEFAULT_TEMPLATE + PROMPT_SUFFIX,
+)
+```
+
+Now let's create and run out chain
+
+```python
+db_chain = SQLDatabaseChain.from_llm(llm, db, prompt=PROMPT, verbose=True, memory=memory)
+db_chain.run("name one employee")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    > Entering new SQLDatabaseChain chain...
+    name one employee
+    SQLQuery:SELECT FirstName, LastName FROM Employee LIMIT 1
+    SQLResult: [('Andrew', 'Adams')]
+    Answer:Andrew Adams
+    > Finished chain.
+
+
+
+
+
+    'Andrew Adams'
+```
+
+</CodeOutputBlock>
+
+```python
+db_chain.run("how many letters in their name?")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    > Entering new SQLDatabaseChain chain...
+    how many letters in their name?
+    SQLQuery:SELECT LENGTH(FirstName) + LENGTH(LastName) AS 'NameLength' FROM Employee WHERE FirstName = 'Andrew' AND LastName = 'Adams'
+    SQLResult: [(11,)]
+    Answer:Andrew Adams has 11 letters in their name.
+    > Finished chain.
+
+
+
+
+
+    'Andrew Adams has 11 letters in their name.'
+```
+
+</CodeOutputBlock>
+
+
 ## Choosing how to limit the number of rows returned
 If you are querying for several rows of a table you can select the maximum number of results you want to get by using the 'top_k' parameter (default is 10). This is useful for avoiding query results that exceed the prompt max length or consume tokens unnecessarily.
 
