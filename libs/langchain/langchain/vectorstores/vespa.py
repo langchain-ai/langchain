@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable, Optional, List, Any, Tuple, Type, Dict
 
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.docstore.document import Document
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 from vespa.exceptions import VespaError
