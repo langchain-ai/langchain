@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from typing_extensions import TypeAlias
 
@@ -62,7 +62,10 @@ class PandasEvalTool(BaseTool):
     def _run(
         self,
         query: str,
-        run_manager: CallbackManagerForToolRun,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Any:
         chain = get_pandas_eval_chain(self.model, self.dfs)
-        return chain.invoke({"input": query}, {"callbacks": run_manager.get_child()})
+        return chain.invoke(
+            {"input": query},
+            {"callbacks": run_manager.get_child()} if run_manager else {},
+        )
