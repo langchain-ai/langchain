@@ -1685,8 +1685,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -1724,8 +1741,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -1799,8 +1833,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -1838,8 +1889,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -1894,8 +1962,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -1968,8 +2053,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2007,8 +2109,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -2082,8 +2201,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -2121,8 +2257,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2177,8 +2330,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -2235,8 +2405,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2274,8 +2461,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': True,
@@ -2313,8 +2517,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': True,
@@ -2352,8 +2573,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2391,8 +2629,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': True,
@@ -2440,8 +2695,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2479,8 +2751,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -2554,8 +2843,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -2593,8 +2899,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2649,8 +2972,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -2690,8 +3030,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2729,8 +3086,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -2804,8 +3178,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -2843,8 +3234,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2910,8 +3318,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -2975,8 +3400,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -3014,8 +3456,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -3053,8 +3512,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
@@ -3092,8 +3568,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -3134,8 +3627,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'is_chunk': dict({
             'default': False,
