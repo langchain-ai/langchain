@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever, Document
+from langchain.utils import get_from_dict_or_env
 
 
 class YouRetriever(BaseRetriever):
@@ -26,7 +27,8 @@ class YouRetriever(BaseRetriever):
         if not os.getenv("YDC_API_KEY"):
             raise RuntimeError("YDC_API_KEY environment variable not found")
         else:
-            values["ydc_api_key"] = os.getenv("YDC_API_KEY")
+            ydc_api_key = get_from_dict_or_env(values, "ydc_api_key", "YDC_API_KEY")
+            values["ydc_api_key"] = ydc_api_key
         return values
 
     def _get_relevant_documents(
