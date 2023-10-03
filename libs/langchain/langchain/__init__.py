@@ -4,7 +4,10 @@ import warnings
 from importlib import metadata
 from typing import TYPE_CHECKING, Any, Optional
 
-from langchain._api.deprecation import surface_langchain_deprecation_warnings
+from langchain._api.deprecation import (
+    surface_langchain_deprecation_warnings,
+    LangChainDeprecationWarning,
+)
 
 if TYPE_CHECKING:
     from langchain.schema import BaseCache
@@ -38,7 +41,8 @@ def _warn_on_import(name: str) -> None:
         # even if they are not using any deprecated modules
         return
     warnings.warn(
-        f"Importing {name} from langchain root module is no longer supported."
+        f"Importing {name} from langchain root module is no longer supported.",
+        LangChainDeprecationWarning,
     )
 
 
