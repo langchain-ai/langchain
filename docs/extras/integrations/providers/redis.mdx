@@ -1,7 +1,10 @@
 # Redis
 
->[Redis](https://redis.com) is an open-source key-value store that can be used as a cache, 
-> message broker, database, vector database and more.
+>[Redis (Remote Dictionary Server)](https://en.wikipedia.org/wiki/Redis) is an open-source in-memory storage, 
+> used as a distributed, in-memory key–value database, cache and message broker, with optional durability. 
+> Because it holds all data in memory and because of its design, `Redis` offers low-latency reads and writes, 
+> making it particularly suitable for use cases that require a cache. Redis is the most popular NoSQL database, 
+> and one of the most popular databases overall.
 
 This page covers how to use the [Redis](https://redis.com) ecosystem within LangChain.
 It is broken into two parts: installation and setup, and then references to specific Redis wrappers.
@@ -111,7 +114,7 @@ Redis can be used to persist LLM conversations.
 
 #### Vector Store Retriever Memory
 
-For a more detailed walkthrough of the `VectorStoreRetrieverMemory` wrapper, see [this notebook](/docs/modules/memory/integrations/vectorstore_retriever_memory.html).
+For a more detailed walkthrough of the `VectorStoreRetrieverMemory` wrapper, see [this notebook](/docs/modules/memory/types/vectorstore_retriever_memory.html).
 
 #### Chat Message History Memory
 For a detailed example of Redis to cache conversation message history, see [this notebook](/docs/integrations/memory/redis_chat_message_history.html).

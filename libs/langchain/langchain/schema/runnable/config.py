@@ -34,6 +34,10 @@ if TYPE_CHECKING:
     )
 
 
+class EmptyDict(TypedDict, total=False):
+    pass
+
+
 class RunnableConfig(TypedDict, total=False):
     """Configuration for a Runnable."""
 
@@ -76,6 +80,13 @@ class RunnableConfig(TypedDict, total=False):
     recursion_limit: int
     """
     Maximum number of times a call can recurse. If not provided, defaults to 10.
+    """
+
+    configurable: Dict[str, Any]
+    """
+    Runtime values for attributes previously made configurable by this Runnable,
+    or sub-Runnables, through .make_configurable(). Check .output_schema for
+    a description of the attributes that have been made configurable.
     """
 
 
@@ -152,9 +163,9 @@ def call_func_with_variable_args(
     input: Input,
     run_manager: CallbackManagerForChainRun,
     config: RunnableConfig,
+    **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config."""
-    kwargs: Dict[str, Any] = {}
     if accepts_config(func):
         kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
     if accepts_run_manager(func):
@@ -174,9 +185,9 @@ async def acall_func_with_variable_args(
     input: Input,
     run_manager: AsyncCallbackManagerForChainRun,
     config: RunnableConfig,
+    **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config."""
-    kwargs: Dict[str, Any] = {}
     if accepts_config(func):
         kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
     if accepts_run_manager(func):
