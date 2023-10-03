@@ -168,6 +168,29 @@ class FAISS(VectorStore):
         embeddings = [self.embedding_function(text) for text in texts]
         return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
 
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore
+            asynchronously.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        embeddings = await asyncio.gather(
+            *[self.embedding_function(text) for text in texts]
+        )
+        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
+
     def add_embeddings(
         self,
         text_embeddings: Iterable[Tuple[str, List[float]]],
@@ -531,6 +554,45 @@ class FAISS(VectorStore):
             docs_and_scores.append((doc, score))
         return docs_and_scores
 
+    async def amax_marginal_relevance_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        *,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and their similarity scores selected using the maximal marginal
+            relevance asynchronously.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch before filtering to
+                     pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents and similarity scores selected by maximal marginal
+                relevance and score for each.
+        """
+        # This is a temporary workaround to make the similarity search asynchronous.
+        func = partial(
+            self.max_marginal_relevance_search_with_score_by_vector,
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+        )
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -562,6 +624,39 @@ class FAISS(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance asynchronously.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch before filtering to
+                     pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        docs_and_scores = (
+            await self.amax_marginal_relevance_search_with_score_by_vector(
+                embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, filter=filter
+            )
+        )
+        return [doc for doc, _ in docs_and_scores]
+
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -590,6 +685,43 @@ class FAISS(VectorStore):
         """
         embedding = self.embedding_function(query)
         docs = self.max_marginal_relevance_search_by_vector(
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )
+        return docs
+
+    async def amax_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance asynchronously.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch before filtering (if needed) to
+                     pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        embedding = await self.embedding_function(query)
+        docs = await self.amax_marginal_relevance_search_by_vector(
             embedding,
             k=k,
             fetch_k=fetch_k,
