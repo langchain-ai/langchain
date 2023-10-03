@@ -114,7 +114,8 @@ def _messages_to_prompt_dict(
         if isinstance(input_message, SystemMessage):
             if index != 0:
                 raise ChatGooglePalmError("System message must be first input message.")
-            context = cast(input_message.content, str)
+            content = input_message.content
+            context = cast(content, str)
         elif isinstance(input_message, HumanMessage) and input_message.example:
             if messages:
                 raise ChatGooglePalmError(
