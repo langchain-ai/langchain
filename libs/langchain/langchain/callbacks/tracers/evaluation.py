@@ -6,6 +6,7 @@ import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from uuid import UUID
+import threading
 
 import langsmith
 from langsmith.evaluation.evaluator import EvaluationResult
@@ -92,6 +93,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
         self.logged_eval_results: Dict[Tuple[str, str], List[EvaluationResult]] = {}
+        self.lock = threading.Lock()
         global _TRACERS
         _TRACERS.add(self)
 
@@ -121,9 +123,10 @@ class EvaluatorCallbackHandler(BaseTracer):
             )
             raise e
         example_id = str(run.reference_example_id)
-        self.logged_eval_results.setdefault((str(run.id), example_id), []).append(
-            eval_result
-        )
+        with self.lock:
+            self.logged_eval_results.setdefault((str(run.id), example_id), []).append(
+                eval_result
+            )
 
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.
