@@ -20,7 +20,7 @@ class HumanInputRun(BaseTool):
     description: str = (
         "You can ask a human for guidance when you think you "
         "got stuck or you are not sure what to do next. "
-        "The input should be a question for the human, be sure to include sufficient context about what you've done, what tools you need access to if any, or anything else they might need to know to help you. Use best practices for asking good questions."
+        "The input should be a question for the human."
     )
     prompt_func: Callable[[str], None] = Field(default_factory=lambda: _print_func)
     input_func: Callable = Field(default_factory=lambda: input)
