@@ -4,11 +4,10 @@ from __future__ import annotations
 import logging
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from uuid import UUID
 
 import langsmith
-from langsmith import schemas as langsmith_schemas
 from langsmith.evaluation.evaluator import EvaluationResult
 
 from langchain.callbacks import manager
@@ -83,17 +82,16 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.client = client or langchain_tracer.get_client()
         self.evaluators = evaluators
         if max_concurrency is None:
-            self.executor = _get_executor()
+            self.executor: Optional[ThreadPoolExecutor] = _get_executor()
         elif max_concurrency > 0:
             self.executor = ThreadPoolExecutor(max_workers=max_concurrency)
-            weakref.finalize(self, self.executor.shutdown, False)
+            weakref.finalize(self, lambda: self.executor.shutdown(wait=True))
         else:
             self.executor = None
         self.futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
-        self.logged_feedback: Dict[str, List[langsmith_schemas.Feedback]] = {}
-        self.logged_eval_results: Dict[str, List[EvaluationResult]] = {}
+        self.logged_eval_results: Dict[Tuple[str, str], List[EvaluationResult]] = {}
         global _TRACERS
         _TRACERS.add(self)
 
@@ -123,7 +121,9 @@ class EvaluatorCallbackHandler(BaseTracer):
             )
             raise e
         example_id = str(run.reference_example_id)
-        self.logged_eval_results.setdefault(example_id, []).append(eval_result)
+        self.logged_eval_results.setdefault((str(run.id), example_id), []).append(
+            eval_result
+        )
 
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.
