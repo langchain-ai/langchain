@@ -8,9 +8,9 @@ readme = "README.md"
 packages = [{include = "____project_name_identifier"}]
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = "^3.8.1"
 langchain = "^____langchain_version"
-langserve = ">=0.0.3"
+langserve = { version = ">=0.0.5", extras = ["server"] }
 tiktoken = "^0.4.0"
 openai = "^0.27.8"
 fastapi = "^0.96.0"

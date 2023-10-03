@@ -1,4 +1,8 @@
 """A CLI for creating a new project with LangChain."""
+from pathlib import Path
+
+from typing import Optional
+
 import typer
 from typing_extensions import Annotated
 
@@ -34,7 +38,9 @@ USE_POETRY_OPTION = typer.Option(
 
 @app.command()
 def new(
-    project_directory: Annotated[str, "The directory to create the project in."],
+    project_directory: Annotated[
+        Optional[Path], typer.Argument(help="The directory to create the project in.")
+    ],
     author_name: Annotated[str, AUTHOR_NAME_OPTION],
     author_email: Annotated[str, AUTHOR_EMAIL_OPTION],
     use_poetry: Annotated[bool, USE_POETRY_OPTION],

@@ -1,4 +1,6 @@
 """"""
+import pathlib
+
 import os
 import string
 import subprocess
@@ -68,7 +70,7 @@ def _check_conflicting_files(
                     f"{typer.style('Error:', fg=typer.colors.RED)}"
                     f" The project directory already contains a file"
                     f" {typer.style(project_file_path, fg=typer.colors.BRIGHT_CYAN)}"
-                    f" that  would be overwritten by the template.",
+                    f" that would be overwritten by the template.",
                     err=True,
                 )
                 typer.echo(
@@ -156,44 +158,58 @@ def _init_git(project_directory_path: Path) -> None:
     )
 
 
-def _validate_name(project_name: str, project_name_identifier: str) -> None:
-    """Validate project name."""
-    project_name_diagnostics = lint_name(project_name_identifier)
-    if project_name_diagnostics:
-        typer.echo(
-            f"{typer.style('Error:', fg=typer.colors.RED)}"
-            f" The project name"
-            f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
-            f" is not valid:",
-            err=True,
+def _select_project_name(suggested_project_name: str) -> str:
+    """Help the user select a valid project name."""
+    while True:
+        project_name = typer.prompt(
+            "Please choose a project name: ", default=suggested_project_name
         )
-        for diagnostic in project_name_diagnostics:
-            typer.echo(f"  - {diagnostic}")
-        typer.echo(
-            "Please choose another name and try again.",
-            err=True,
-        )
-        raise typer.Exit(code=1)
-    if is_name_taken(project_name):
-        typer.echo(
-            f"{typer.style('Error:', fg=typer.colors.RED)}"
-            f" The project name"
-            f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
-            f" is already taken.",
-            err=True,
-        )
-        typer.echo(
-            "Please choose another name and try again.",
-            err=True,
-        )
-        raise typer.Exit(code=1)
+
+        project_name_diagnostics = lint_name(project_name)
+        if project_name_diagnostics:
+            typer.echo(
+                f"{typer.style('Error:', fg=typer.colors.RED)}"
+                f" The project name"
+                f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
+                f" is not valid:",
+                err=True,
+            )
+
+            for diagnostic in project_name_diagnostics:
+                typer.echo(f"  - {diagnostic}")
+
+            if typer.confirm(
+                "Would you like to choose another name? "
+                "Choose NO to proceed with existing name.",
+                default=True,
+            ):
+                continue
+
+        if is_name_taken(project_name):
+            typer.echo(
+                f"{typer.style('Error:', fg=typer.colors.RED)}"
+                f" The project name"
+                f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
+                f" is already taken on pypi",
+                err=True,
+            )
+
+            if typer.confirm(
+                "Would you like to choose another name? "
+                "Choose NO to proceed with existing name.",
+                default=True,
+            ):
+                continue
+
+        # If we got here then the project name is valid and not taken
+        return project_name
 
 
 # PUBLIC API
 
 
 def create(
-    project_directory: str,
+    project_directory: pathlib.Path,
     author_name: str,
     author_email: str,
     use_poetry: bool,
@@ -208,17 +224,18 @@ def create(
     """
 
     project_directory_path = Path(project_directory)
-    project_name = project_directory_path.name
-    project_name_identifier = project_name.replace("-", "_")
+    project_name_suggestion = project_directory_path.name.replace("-", "_")
+    project_name = _select_project_name(project_name_suggestion)
+    project_name_identifier = project_name
 
-    _validate_name(project_name, project_name_identifier)
-
-    typer.echo(
+    if not typer.confirm(
         f"\n{typer.style('1.', bold=True, fg=typer.colors.GREEN)} Creating new"
         f" LangChain project {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
         f" in"
-        f" {typer.style(project_directory_path.resolve(), fg=typer.colors.BRIGHT_CYAN)}"
-    )
+        f" {typer.style(project_directory_path.resolve(), fg=typer.colors.BRIGHT_CYAN)}",
+        default=True,
+    ):
+        typer.Exit(code=0)
 
     _create_project_dir(
         project_directory_path,
@@ -229,10 +246,11 @@ def create(
         author_email,
     )
 
-    if use_poetry:
-        _poetry_install(project_directory_path)
-    else:
-        _pip_install(project_directory_path)
+    # TODO(Team): Add installation
+    # if use_poetry:
+    #     _poetry_install(project_directory_path)
+    # else:
+    #     _pip_install(project_directory_path)
 
     _init_git(project_directory_path)
 
@@ -244,24 +262,25 @@ def create(
         f" {typer.style(project_directory_path.resolve(), fg=typer.colors.BRIGHT_CYAN)}"
         f"."
     )
-    cd_dir = typer.style(
-        f"cd {project_directory_path.resolve()}", fg=typer.colors.BRIGHT_CYAN
-    )
-    typer.echo(
-        f"\nChange into the project directory with {cd_dir}."
-        f" The following commands are available:"
-    )
-    subprocess.run(["make"], cwd=project_directory_path)
+    # TODO(Team): Add surfacing information from make file and installation
+    # cd_dir = typer.style(
+    #     f"cd {project_directory_path.resolve()}", fg=typer.colors.BRIGHT_CYAN
+    # )
+    # typer.echo(
+    #     f"\nChange into the project directory with {cd_dir}."
+    #     f" The following commands are available:"
+    # )
+    # subprocess.run(["make"], cwd=project_directory_path)
 
-    if not use_poetry:
-        pip_install = typer.style(
-            'pip install -e ".[dev]"', fg=typer.colors.BRIGHT_CYAN
-        )
-        typer.echo(
-            f"\nTo install all dependencies activate your environment run:"
-            f"\n{typer.style('source .venv/bin/activate', fg=typer.colors.BRIGHT_CYAN)}"
-            f"\n{pip_install}."
-        )
+    # if not use_poetry:
+    #     pip_install = typer.style(
+    #         'pip install -e ".[dev]"', fg=typer.colors.BRIGHT_CYAN
+    #     )
+    #     typer.echo(
+    #         f"\nTo install all dependencies activate your environment run:"
+    #         f"\n{typer.style('source .venv/bin/activate', fg=typer.colors.BRIGHT_CYAN)}"
+    #         f"\n{pip_install}."
+    #     )
 
 
 def is_poetry_installed() -> bool:

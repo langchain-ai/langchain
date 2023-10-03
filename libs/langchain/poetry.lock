@@ -9764,7 +9764,7 @@ http = ["aiohttp (>=3.8.1,<4.0.0)", "geventhttpclient (>=1.4.4,<=2.0.2)", "numpy
 name = "typer"
 version = "0.9.0"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "typer-0.9.0-py3-none-any.whl", hash = "sha256:5d96d986a21493606a358cae4461bd8cdf83cbf33a5aa950ae629ca3b51467ee"},
@@ -10697,4 +10697,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "d2f8bc08ec7d9c18112ebf17fff44b879fd4949a902973ccfba129b0cafa3494"
+content-hash = "2b0c9c331967d8d2ee9e70ed17cd7ca66b874444b0a4300cc52963db965185aa"
