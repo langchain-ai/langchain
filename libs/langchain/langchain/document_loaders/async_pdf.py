@@ -1,12 +1,13 @@
 import asyncio
-import os
 import logging
-import requests
+import os
 import tempfile
 import warnings
-
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, List, Union, Optional
+
+import requests
+
 from langchain.docstore.document import Document
 from langchain.document_loaders import PyPDFLoader
 from langchain.document_loaders.base import BaseLoader
@@ -85,7 +86,7 @@ class AsyncPdfLoader(BaseLoader):
                 verify=self.verify_ssl,
                 timeout=(self.http_connect_timeout, self.http_request_timeout)) as r:
             r.raise_for_status()
-            logger.info(f"Status ok downloading '{url}';  Saving to file '{temp_pdf}'")
+            logger.info(f"Status ok downloading '{url}'; Saving to file '{temp_pdf}'")
             with open(temp_pdf, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
@@ -114,7 +115,12 @@ class AsyncPdfLoader(BaseLoader):
             from tqdm.asyncio import tqdm_asyncio
 
             results = []
-            for done in tqdm_asyncio.as_completed(tasks, desc="Fetching PDF documents", ascii=True, mininterval=1):
+            for done in tqdm_asyncio.as_completed(
+                    tasks,
+                    desc="Fetching PDF documents",
+                    ascii=True,
+                    mininterval=1
+            ):
                 try:
                     results.append(await done)
                 except Exception as e:

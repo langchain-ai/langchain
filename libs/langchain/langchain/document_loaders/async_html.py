@@ -86,8 +86,8 @@ class AsyncHtmlLoader(BaseLoader):
 
     async def fetch_all(self, urls: List[str]) -> Any:
         """
-        Fetch all urls concurrently with rate limiting.  Exceptions are handled and logged, since
-        we don't want a single url failure to stop the entire process.
+        Fetch all urls concurrently with rate limiting.  Exceptions are handled and
+        logged, since we don't want a single url failure to stop the entire process.
         :param urls: the urls to fetch.
         :return: list of fetched page contents.
         """
@@ -100,7 +100,12 @@ class AsyncHtmlLoader(BaseLoader):
             from tqdm.asyncio import tqdm_asyncio
 
             results = []
-            for done in tqdm_asyncio.as_completed(tasks, desc="Fetching pages", ascii=True, mininterval=1):
+            for done in tqdm_asyncio.as_completed(
+                    tasks,
+                    desc="Fetching pages",
+                    ascii=True,
+                    mininterval=1
+            ):
                 try:
                     results.append(await done)
                 except Exception as e:

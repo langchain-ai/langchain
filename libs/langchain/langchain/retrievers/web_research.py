@@ -223,11 +223,14 @@ class WebResearchRetriever(BaseRetriever):
                 docs = list(html2text.transform_documents(docs))
 
             if len(pdf_urls) > 0:
-                pdf_loader = AsyncPdfLoader(pdf_urls, retries=1, verify_ssl=self.verify_ssl)
+                pdf_loader = AsyncPdfLoader(
+                    pdf_urls,
+                    retries=1,
+                    verify_ssl=self.verify_ssl)
                 docs = docs + pdf_loader.load()
 
-            # add_documents will throw an error if the doc list is empty, which can happen if we were unable
-            # to decode any of the URL targets.
+            # add_documents will throw an error if the doc list is empty, which can
+            # happen if we were unable to decode any of the URL targets.
             if docs is not None and len(docs) > 0:
                 docs = self.text_splitter.split_documents(docs)
                 self.vectorstore.add_documents(docs)
@@ -281,7 +284,6 @@ class WebResearchRetriever(BaseRetriever):
             except Exception as e:
                 logger.warning(f"Error while checking url type for '{url}':\n{e}")
 
-                # We couldn't determine the type, so attempt to choose based on the file extension
                 if ".pdf" in url:
                     pdf_urls.append(url)
                 else:
