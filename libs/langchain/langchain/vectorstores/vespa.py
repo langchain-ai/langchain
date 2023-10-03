@@ -115,7 +115,9 @@ class VespaStore(VectorStore):
         results = self._vespa_app.feed_batch(batch)
         for result in results:
             if not(str(result.status_code).startswith("2")):
-                raise RuntimeError("Could not add document to Vespa. Error code: {}. Message: {}".format(result.status_code, result.json["message"]))
+                raise RuntimeError(f"Could not add document to Vespa. "
+                                   f"Error code: {result.status_code}. "
+                                   f"Message: {result.json['message']}")
         return ids
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
@@ -135,10 +137,11 @@ class VespaStore(VectorStore):
         filter = kwargs["filter"] if "filter" in kwargs else None
 
         approximate = kwargs["approximate"] if "approximate" in kwargs else False
-        nearest_neighbor_options = f"{{targetHits: {hits}, approximate: {'true' if approximate else 'false'}}}"
-        nearest_neighbor_expression = f"{nearest_neighbor_options}nearestNeighbor({doc_embedding_field}, {input_embedding_field})"
+        approximate = "true" if approximate else "false"
 
-        yql = f"select * from sources * where {nearest_neighbor_expression}"
+        yql = f"select * from sources * where "
+        yql += f"{{targetHits: {hits}, approximate: {approximate}}}"
+        yql += f"nearestNeighbor({doc_embedding_field}, {input_embedding_field})"
         if filter is not None:
             yql += f" and {filter}"
 
@@ -161,19 +164,27 @@ class VespaStore(VectorStore):
         Args:
             query_embedding: Embeddings vector to search for.
             k: Number of results to return.
-            custom_query: Custom query to use instead of a this vector store's default query (kwargs)
-            kwargs: other vectorstore specific parameters
+            custom_query: Use this custom query instead default query (kwargs)
+            kwargs: other vector store specific parameters
 
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        query = kwargs["custom_query"] if "custom_query" in kwargs else self._create_query(query_embedding, k, **kwargs)
+        if "custom_query" in kwargs:
+            query = kwargs["custom_query"]
+        else:
+            query = self._create_query(query_embedding, k, **kwargs)
+
         try:
             response = self._vespa_app.query(body=query)
         except Exception as e:
-            raise RuntimeError("Could not retrieve data from Vespa: {}. Error: {}".format(e.args[0][0]["summary"], e.args[0][0]["message"]))
+            raise RuntimeError(f"Could not retrieve data from Vespa: "
+                               f"{e.args[0][0]['summary']}. "
+                               f"Error: {e.args[0][0]['message']}")
         if not str(response.status_code).startswith("2"):
-            raise RuntimeError("Could not retrieve data from Vespa. Error code: {}. Message: {}".format(response.status_code, response.json["message"]))
+            raise RuntimeError(f"Could not retrieve data from Vespa. "
+                               f"Error code: {response.status_code}. "
+                               f"Message: {response.json['message']}")
 
         root = response.json["root"]
         if "errors" in root:
@@ -186,19 +197,28 @@ class VespaStore(VectorStore):
             metadata = {mf: child["fields"].get(mf) for mf in self._metadata_fields}
             metadata["id"] = child["id"]
             score = child["relevance"]
-            docs.append((Document(page_content=page_content, metadata=metadata), score))
+            doc = Document(page_content=page_content, metadata=metadata)
+            docs.append((doc, score))
         return docs
 
-    def similarity_search_by_vector(self, embedding: List[float], k: int = 4, **kwargs: Any) -> List[Document]:
+    def similarity_search_by_vector(self,
+                                    embedding: List[float],
+                                    k: int = 4,
+                                    **kwargs: Any) -> List[Document]:
         results = self.similarity_search_by_vector_with_score(embedding, k, **kwargs)
         return [r[0] for r in results]
 
-    def similarity_search_with_score(self, query: str, k: int = 4, **kwargs: Any) -> List[Tuple[Document, float]]:
-        query_embedding = self._embedding_function.embed_query(query)
-        results = self.similarity_search_by_vector_with_score(query_embedding, k, **kwargs)
-        return results
+    def similarity_search_with_score(self,
+                                     query: str,
+                                     k: int = 4,
+                                     **kwargs: Any) -> List[Tuple[Document, float]]:
+        query_emb = self._embedding_function.embed_query(query)
+        return self.similarity_search_by_vector_with_score(query_emb, k, **kwargs)
 
-    def similarity_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
+    def similarity_search(self,
+                          query: str,
+                          k: int = 4,
+                          **kwargs: Any) -> List[Document]:
         results = self.similarity_search_with_score(query, k, **kwargs)
         return [r[0] for r in results]
 

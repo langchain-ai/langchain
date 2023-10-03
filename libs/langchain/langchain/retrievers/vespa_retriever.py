@@ -6,9 +6,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 
-if TYPE_CHECKING:
-    from vespa.application import Vespa
-
 
 class VespaRetriever(BaseRetriever):
     """`Vespa` retriever."""
