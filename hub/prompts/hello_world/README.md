@@ -15,7 +15,7 @@ from langchain.prompts import load_prompt
 from langchain.chat_models import GigaChat
 from langchain.chains import LLMChain
 
-giga = GigaChat(oauth_token="...")
+giga = GigaChat(credentials="...")
 prompt = load_prompt('lc://prompts/hello_world/prompt.yaml')
 chain = LLMChain(llm=giga, prompt=prompt)
 ```
