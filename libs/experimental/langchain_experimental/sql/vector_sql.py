@@ -1,7 +1,7 @@
 """Vector SQL Database Chain Retriever"""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.llm import LLMChain
@@ -78,8 +78,8 @@ class VectorSQLRetrieveAllOutputParser(VectorSQLOutputParser):
 
 def get_result_from_sqldb(
     db: SQLDatabase, cmd: str
-) -> Union[str, List[Dict[str, Any]], Dict[str, Any]]:
-    result = db._execute(cmd, fetch="all")  # type: ignore
+) -> Sequence[Dict[str, Any]]:
+    result = db._execute(cmd, fetch="all")
     return result
 
 
