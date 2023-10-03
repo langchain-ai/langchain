@@ -208,7 +208,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or llm_run.run_type != "llm":
             raise TracerException(f"No LLM Run found to be traced for {run_id}")
-        llm_run.outputs = response.dict()
+        if len(response.generations) != 1:
+            raise ValueError(
+                "Tracer expects single batch of generations for LLM runs."
+            )
+        outputs = response.dict()
+        outputs["generations"] = outputs["generations"][0]
+        llm_run.outputs = outputs
         for i, generations in enumerate(response.generations):
             for j, generation in enumerate(generations):
                 output_generation = llm_run.outputs["generations"][i][j]
