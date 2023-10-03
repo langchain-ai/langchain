@@ -392,11 +392,12 @@ class SQLDatabase:
                     pass
                 elif self.dialect == "trino":
                     connection.exec_driver_sql("USE ?", (self._schema,))
-                elif self.dialect == "duckdb":  # postgres-like but uses colon-escaping
-                    connection.exec_driver_sql(
-                        "SET search_path TO :schema",
-                        {"schema": self._schema},
-                    )
+                elif self.dialect == "duckdb":
+                    # Unclear which parameterized argument syntax duckdb supports.
+                    # The docs for the duckdb client say they support multiple,
+                    # but `duckdb_engine` seemed to struggle with all of them:
+                    # https://github.com/Mause/duckdb_engine/issues/796
+                    connection.exec_driver_sql(f"SET search_path TO {self._schema}")
                 else:  # postgresql and other compatible dialects
                     connection.exec_driver_sql("SET search_path TO %s", (self._schema,))
             cursor = connection.execute(text(command))
