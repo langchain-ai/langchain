@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.304"
+version = "0.0.306"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -68,7 +68,7 @@ gptcache = {version = ">=0.1.7", optional = true}
 atlassian-python-api = {version = "^3.36.0", optional=true}
 pytesseract = {version = "^0.3.10", optional=true}
 html2text = {version="^2020.1.16", optional=true}
-numexpr = "^2.8.4"
+numexpr = {version="^2.8.6", optional=true}
 duckduckgo-search = {version="^3.8.3", optional=true}
 azure-cosmos = {version="^4.4.0b1", optional=true}
 lark = {version="^1.1.5", optional=true}
@@ -129,6 +129,7 @@ markdownify = {version = "^0.11.6", optional = true}
 assemblyai = {version = "^0.17.0", optional = true}
 dashvector = {version = "^1.0.1", optional = true}
 sqlite-vss = {version = "^0.1.2", optional = true}
+motor = {version = "^3.3.1", optional = true}
 anyio = "<4.0"
 jsonpatch = "^1.33"
 timescale-vector = {version = "^0.0.1", optional = true}
@@ -174,7 +175,7 @@ optional = true
 #    Instead write unit tests that use the `responses` library or mock.patch with
 #    fixtures. Keep the fixtures minimal.
 # See CONTRIBUTING.md for more instructions on working with optional dependencies.
-# https://github.com/hwchase17/langchain/blob/master/.github/CONTRIBUTING.md#working-with-optional-dependencies
+# https://github.com/langchain-ai/langchain/blob/master/.github/CONTRIBUTING.md#working-with-optional-dependencies
 pytest-vcr = "^1.0.2"
 wrapt = "^1.15.0"
 openai = "^0.27.4"
@@ -329,6 +330,7 @@ extended_testing = [
  "gql",
  "requests-toolbelt",
  "html2text",
+ "numexpr",
  "py-trello",
  "scikit-learn",
  "streamlit",
@@ -351,6 +353,7 @@ extended_testing = [
  "arxiv",
  "dashvector",
  "sqlite-vss",
+ "motor",
  "timescale-vector",
  "anthropic",
 ]
@@ -404,4 +407,4 @@ ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
 # aapply - async apply
 # unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate'
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia'

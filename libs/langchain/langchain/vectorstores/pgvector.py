@@ -555,7 +555,7 @@ class PGVector(VectorStore):
         **kwargs: Any,
     ) -> PGVector:
         """
-        Get intsance of an existing PGVector store.This method will
+        Get instance of an existing PGVector store.This method will
         return the instance of the store without inserting any new
         embeddings
         """
