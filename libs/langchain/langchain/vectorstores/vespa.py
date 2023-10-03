@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import Iterable, Optional, List, Any, Tuple, Type, Dict
 
-from langchain.schema.embeddings import Embeddings
 from langchain.docstore.document import Document
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
-from vespa.exceptions import VespaError
 
 
 class VespaStore(VectorStore):
@@ -171,7 +170,7 @@ class VespaStore(VectorStore):
         query = kwargs["custom_query"] if "custom_query" in kwargs else self._create_query(query_embedding, k, **kwargs)
         try:
             response = self._vespa_app.query(body=query)
-        except VespaError as e:
+        except Exception as e:
             raise RuntimeError("Could not retrieve data from Vespa: {}. Error: {}".format(e.args[0][0]["summary"], e.args[0][0]["message"]))
         if not str(response.status_code).startswith("2"):
             raise RuntimeError("Could not retrieve data from Vespa. Error code: {}. Message: {}".format(response.status_code, response.json["message"]))
