@@ -55,7 +55,7 @@ class PandasEvalTool(BaseTool):
 
     description: str = "Evaluate pandas code against one or more dataframes."
 
-    dfs: dict[str, DF]
+    dfs: Dict[str, DF]
 
     model: BaseLanguageModel
 
