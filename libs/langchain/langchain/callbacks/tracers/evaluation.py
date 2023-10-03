@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import weakref
-from concurrent.futures import Future, wait
+from concurrent.futures import Future, ThreadPoolExecutor, wait
 from typing import Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
@@ -73,6 +73,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         example_id: Optional[Union[UUID, str]] = None,
         skip_unfinished: bool = True,
         project_name: Optional[str] = "evaluators",
+        max_concurrency: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -81,7 +82,13 @@ class EvaluatorCallbackHandler(BaseTracer):
         )
         self.client = client or langchain_tracer.get_client()
         self.evaluators = evaluators
-        self.executor = _get_executor()
+        if max_concurrency is None:
+            self.executor = _get_executor()
+        elif max_concurrency > 0:
+            self.executor = ThreadPoolExecutor(max_workers=max_concurrency)
+            weakref.finalize(self, self.executor.shutdown, False)
+        else:
+            self.executor = None
         self.futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
@@ -111,7 +118,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         except Exception as e:
             logger.error(
                 f"Error evaluating run {run.id} with "
-                f"{evaluator.__class__.__name__}: {e}",
+                f"{evaluator.__class__.__name__}: {repr(e)}",
                 exc_info=True,
             )
             raise e
@@ -133,9 +140,12 @@ class EvaluatorCallbackHandler(BaseTracer):
         run_ = run.copy()
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
-            self.futures.add(
-                self.executor.submit(self._evaluate_in_project, run_, evaluator)
-            )
+            if self.executor is None:
+                self._evaluate_in_project(run_, evaluator)
+            else:
+                self.futures.add(
+                    self.executor.submit(self._evaluate_in_project, run_, evaluator)
+                )
 
     def wait_for_futures(self) -> None:
         """Wait for all futures to complete."""
