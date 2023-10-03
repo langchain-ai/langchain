@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import operator
 import os
 import pickle
 import uuid
 import warnings
+from functools import partial
 from pathlib import Path
 from typing import (
     Any,
@@ -251,6 +253,42 @@ class FAISS(VectorStore):
             ]
         return docs[:k]
 
+    async def asimilarity_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query asynchronously.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, Any]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+            **kwargs: kwargs to be passed to similarity search. Can include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of documents most similar to the query text and L2 distance
+            in float for each. Lower score represents more similarity.
+        """
+
+        # This is a temporary workaround to make the similarity search asynchronous.
+        func = partial(
+            self.similarity_search_with_score_by_vector,
+            embedding,
+            k=k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
     def similarity_search_with_score(
         self,
         query: str,
@@ -274,6 +312,37 @@ class FAISS(VectorStore):
         """
         embedding = self.embedding_function(query)
         docs = self.similarity_search_with_score_by_vector(
+            embedding,
+            k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        return docs
+
+    async def asimilarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query asynchronously.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+
+        Returns:
+            List of documents most similar to the query text with
+            L2 distance in float. Lower score represents more similarity.
+        """
+        embedding = await self.embedding_function(query)
+        docs = await self.asimilarity_search_with_score_by_vector(
             embedding,
             k,
             filter=filter,
@@ -311,6 +380,35 @@ class FAISS(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    async def asimilarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector asynchronously.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+
+        Returns:
+            List of Documents most similar to the embedding.
+        """
+        docs_and_scores = await self.asimilarity_search_with_score_by_vector(
+            embedding,
+            k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        return [doc for doc, _ in docs_and_scores]
+
     def similarity_search(
         self,
         query: str,
@@ -332,6 +430,31 @@ class FAISS(VectorStore):
             List of Documents most similar to the query.
         """
         docs_and_scores = self.similarity_search_with_score(
+            query, k, filter=filter, fetch_k=fetch_k, **kwargs
+        )
+        return [doc for doc, _ in docs_and_scores]
+
+    async def asimilarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to query asynchronously.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        docs_and_scores = await self.asimilarity_search_with_score(
             query, k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
@@ -573,6 +696,36 @@ class FAISS(VectorStore):
         return vecstore
 
     @classmethod
+    def __afrom(
+        cls,
+        texts: Iterable[str],
+        embeddings: List[List[float]],
+        embedding: Embeddings,
+        metadatas: Optional[Iterable[dict]] = None,
+        ids: Optional[List[str]] = None,
+        normalize_L2: bool = False,
+        distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
+        **kwargs: Any,
+    ) -> FAISS:
+        faiss = dependable_faiss_import()
+        if distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+            index = faiss.IndexFlatIP(len(embeddings[0]))
+        else:
+            # Default to L2, currently other metric types not initialized.
+            index = faiss.IndexFlatL2(len(embeddings[0]))
+        vecstore = cls(
+            embedding.aembed_query,
+            index,
+            InMemoryDocstore(),
+            {},
+            normalize_L2=normalize_L2,
+            distance_strategy=distance_strategy,
+            **kwargs,
+        )
+        vecstore.__add(texts, embeddings, metadatas=metadatas, ids=ids)
+        return vecstore
+
+    @classmethod
     def from_texts(
         cls,
         texts: List[str],
@@ -601,6 +754,43 @@ class FAISS(VectorStore):
         """
         embeddings = embedding.embed_documents(texts)
         return cls.__from(
+            texts,
+            embeddings,
+            embedding,
+            metadatas=metadatas,
+            ids=ids,
+            **kwargs,
+        )
+
+    @classmethod
+    async def afrom_texts(
+        cls,
+        texts: list[str],
+        embedding: Embeddings,
+        metadatas: List[dict] | None = None,
+        ids: List[str] | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Construct FAISS wrapper from raw documents asynchronously.
+
+        This is a user friendly interface that:
+            1. Embeds documents.
+            2. Creates an in memory docstore
+            3. Initializes the FAISS database
+
+        This is intended to be a quick way to get started.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.vectorstores import FAISS
+                from langchain.embeddings import OpenAIEmbeddings
+
+                embeddings = OpenAIEmbeddings()
+                faiss = await FAISS.afrom_texts(texts, embeddings)
+        """
+        embeddings = await embedding.aembed_documents(texts)
+        return cls.__afrom(
             texts,
             embeddings,
             embedding,
@@ -641,6 +831,46 @@ class FAISS(VectorStore):
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
         return cls.__from(
+            texts,
+            embeddings,
+            embedding,
+            metadatas=metadatas,
+            ids=ids,
+            **kwargs,
+        )
+
+    @classmethod
+    async def afrom_embeddings(
+        cls,
+        text_embeddings: Iterable[Tuple[str, List[float]]],
+        embedding: Embeddings,
+        metadatas: Optional[Iterable[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> FAISS:
+        """Construct FAISS wrapper from raw documents asynchronously.
+
+        This is a user friendly interface that:
+            1. Embeds documents.
+            2. Creates an in memory docstore
+            3. Initializes the FAISS database
+
+        This is intended to be a quick way to get started.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.vectorstores import FAISS
+                from langchain.embeddings import OpenAIEmbeddings
+
+                embeddings = OpenAIEmbeddings()
+                text_embeddings = embeddings.embed_documents(texts)
+                text_embedding_pairs = zip(texts, text_embeddings)
+                faiss = await FAISS.afrom_embeddings(text_embedding_pairs, embeddings)
+        """
+        texts = [t[0] for t in text_embeddings]
+        embeddings = [t[1] for t in text_embeddings]
+        return cls.__afrom(
             texts,
             embeddings,
             embedding,
