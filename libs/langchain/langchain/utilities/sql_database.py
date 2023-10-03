@@ -392,8 +392,8 @@ class SQLDatabase:
                     pass
                 elif self.dialect == "trino":
                     connection.exec_driver_sql("USE ?", (self._schema,))
-                elif self.dialect == "duckdb":  # postgres-like but uses qmark escaping
-                    connection.exec_driver_sql("SET search_path TO ?", (self._schema,))
+                elif self.dialect == "duckdb":  # postgres-like but uses dollar escaping
+                    connection.exec_driver_sql("SET search_path TO $1", (self._schema,))
                 else:  # postgresql and other compatible dialects
                     connection.exec_driver_sql("SET search_path TO %s", (self._schema,))
             cursor = connection.execute(text(command))
