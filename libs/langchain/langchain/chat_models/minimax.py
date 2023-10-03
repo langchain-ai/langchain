@@ -27,7 +27,7 @@ def _parse_chat_history(history: List[BaseMessage]) -> List:
     """Parse a sequence of messages into history."""
     chat_history = []
     for message in history:
-        content = cast(message.content, str)
+        content = cast(str, message.content)
         if isinstance(message, HumanMessage):
             chat_history.append(_parse_message("USER", content))
         if isinstance(message, AIMessage):

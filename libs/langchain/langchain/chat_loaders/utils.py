@@ -21,6 +21,11 @@ def merge_chat_runs_in_session(
     """
     messages: List[BaseMessage] = []
     for message in chat_session["messages"]:
+        if not isinstance(message.content, str):
+            raise ValueError(
+                "Chat Loaders only support messages with content type string, "
+                f"got {message.content}"
+            )
         if not messages:
             messages.append(deepcopy(message))
         elif (

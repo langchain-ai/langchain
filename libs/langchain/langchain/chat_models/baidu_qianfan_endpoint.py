@@ -192,7 +192,7 @@ class QianfanChatEndpoint(BaseChatModel):
         for i in [i for i, m in enumerate(messages) if isinstance(m, SystemMessage)]:
             if "system" not in messages_dict:
                 messages_dict["system"] = ""
-            messages_dict["system"] += cast(messages[i].content, str) + "\n"
+            messages_dict["system"] += cast(str, messages[i].content) + "\n"
 
         return {
             **messages_dict,

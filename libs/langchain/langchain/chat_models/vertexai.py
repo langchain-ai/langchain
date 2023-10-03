@@ -60,7 +60,7 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
 
     vertex_messages, context = [], None
     for i, message in enumerate(history):
-        content = cast(message.content, str)
+        content = cast(str, message.content)
         if i == 0 and isinstance(message, SystemMessage):
             context = content
         elif isinstance(message, AIMessage):
