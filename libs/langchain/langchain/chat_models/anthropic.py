@@ -34,7 +34,7 @@ def _convert_one_message_to_text(
     elif isinstance(message, AIMessage):
         message_text = f"{ai_prompt} {message.content}"
     elif isinstance(message, SystemMessage):
-        message_text = f"<admin>{message.content}</admin>"
+        message_text = message.content
     else:
         raise ValueError(f"Got unknown type {message}")
     return message_text

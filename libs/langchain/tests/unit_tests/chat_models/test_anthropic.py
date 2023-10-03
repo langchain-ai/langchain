@@ -64,14 +64,14 @@ def test_anthropic_initialization() -> None:
                 HumanMessage(content="Hello"),
                 AIMessage(content="Answer:"),
             ],
-            "<admin>You're an assistant</admin>\n\nHuman: Hello\n\nAssistant: Answer:",
+            "You're an assistant\n\nHuman: Hello\n\nAssistant: Answer:",
         ),
         (
             [
                 SystemMessage(content="You're an assistant"),
                 AIMessage(content="Answer:"),
             ],
-            "<admin>You're an assistant</admin>\n\nAssistant: Answer:",
+            "You're an assistant\n\nAssistant: Answer:",
         ),
     ],
 )
