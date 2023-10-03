@@ -384,8 +384,7 @@ class SQLDatabase:
             if self._schema is not None:
                 if self.dialect == "snowflake":
                     connection.exec_driver_sql(
-                        "ALTER SESSION SET search_path = %s",
-                        (self._schema,)
+                        "ALTER SESSION SET search_path = %s", (self._schema,)
                     )
                 elif self.dialect == "bigquery":
                     connection.exec_driver_sql("SET @@dataset_id=?", (self._schema,))
