@@ -6,9 +6,8 @@ from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.load.dump import dumpd
-from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
@@ -18,7 +17,7 @@ if TYPE_CHECKING:
     )
 
 
-class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
+class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
     """Abstract base class for a Document retrieval system.
 
     A retrieval system is defined as something that can take string queries and return

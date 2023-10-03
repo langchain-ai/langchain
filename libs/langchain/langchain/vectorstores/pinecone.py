@@ -116,11 +116,28 @@ class Pinecone(VectorStore):
         for i, (text, embedding) in enumerate(zip(texts, embeddings)):
             metadata = metadatas[i] if metadatas else {}
             metadata[self._text_key] = text
-            docs.append((ids[i], embedding, metadata))
-        # upsert to Pinecone
-        self._index.upsert(
-            vectors=docs, namespace=namespace, batch_size=batch_size, **kwargs
-        )
+
+        # For loops to avoid memory issues and optimize when using HTTP based embeddings
+        # The first loop runs the embeddings, it benefits when using OpenAI embeddings
+        # The second loops runs the pinecone upsert asynchronously.
+        for i in range(0, len(texts), embedding_chunk_size):
+            chunk_texts = texts[i : i + embedding_chunk_size]
+            chunk_ids = ids[i : i + embedding_chunk_size]
+            chunk_metadatas = metadatas[i : i + embedding_chunk_size]
+            embeddings = self._embed_documents(chunk_texts)
+            async_res = [
+                self._index.upsert(
+                    vectors=batch,
+                    namespace=namespace,
+                    async_req=True,
+                    **kwargs,
+                )
+                for batch in batch_iterate(
+                    batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
+                )
+            ]
+            [res.get() for res in async_res]
+
         return ids
 
     def similarity_search_with_score(
