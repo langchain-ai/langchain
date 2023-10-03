@@ -93,6 +93,10 @@ def _import_bedrock() -> Any:
 
     return Bedrock
 
+def_import_bedrock_chat() -> Any:
+    from langchain.chat_models import BedrockChat
+
+    return BedrockChat
 
 def _import_bittensor() -> Any:
     from langchain.llms.bittensor import NIBittensorLLM
@@ -493,6 +497,8 @@ def __getattr__(name: str) -> Any:
         return _import_beam()
     elif name == "Bedrock":
         return _import_bedrock()
+    elif name == "BedrockChat":
+        return _import_bedrock_chat()
     elif name == "NIBittensorLLM":
         return _import_bittensor()
     elif name == "CerebriumAI":
@@ -634,6 +640,7 @@ __all__ = [
     "Baseten",
     "Beam",
     "Bedrock",
+    "BedrockChat",
     "CTransformers",
     "CTranslate2",
     "CerebriumAI",
@@ -705,6 +712,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "aleph_alpha": _import_aleph_alpha,
         "amazon_api_gateway": _import_amazon_api_gateway,
         "amazon_bedrock": _import_bedrock,
+        "amazon_bedrock_chat": _import_bedrock_chat,
         "anthropic": _import_anthropic,
         "anyscale": _import_anyscale,
         "aviary": _import_aviary,
