@@ -185,7 +185,7 @@ def tracing_v2_enabled(
 
         >>> with tracing_v2_enabled() as cb:
         ...     chain.invoke("foo")
-        ...     run_url = cb.run_url
+        ...     run_url = cb.get_run_url()
     """
     if isinstance(example_id, str):
         example_id = UUID(example_id)
