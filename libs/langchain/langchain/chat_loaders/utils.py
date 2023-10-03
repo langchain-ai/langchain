@@ -34,6 +34,11 @@ def merge_chat_runs_in_session(
             and messages[-1].additional_kwargs["sender"]
             == message.additional_kwargs.get("sender")
         ):
+            if not isinstance(messages[-1].content, str):
+                raise ValueError(
+                    "Chat Loaders only support messages with content type string, "
+                    f"got {messages[-1].content}"
+                )
             messages[-1].content = (
                 messages[-1].content + delimiter + message.content
             ).strip()
