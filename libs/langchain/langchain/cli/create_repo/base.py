@@ -230,14 +230,15 @@ def create(
     resolved_path = project_directory_path.resolve()
 
     if not typer.confirm(
-        f"\n{typer.style('1.', bold=True, fg=typer.colors.GREEN)} "
+        f"\n{typer.style('>', bold=True, fg=typer.colors.GREEN)} "
         f"Creating new LangChain project "
         f"{typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
         f" in"
         f" {typer.style(resolved_path, fg=typer.colors.BRIGHT_CYAN)}",
         default=True,
     ):
-        typer.Exit(code=0)
+        typer.echo("OK! Canceling project creation.")
+        raise typer.Exit(code=0)
 
     _create_project_dir(
         project_directory_path,
