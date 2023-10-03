@@ -448,7 +448,11 @@ class SQLDatabase:
             """Format the error message"""
             return f"Error: {e}"
 
-    def run_no_throw(self, command: str, fetch: str = "all") -> str:
+    def run_no_throw(
+        self,
+        command: str,
+        fetch: Union[Literal["all"], Literal["one"]] = "all",
+    ) -> str:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
