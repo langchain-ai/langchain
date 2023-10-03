@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any
+from typing import Any, Dict
 
 from typing_extensions import TypeAlias
 
@@ -30,7 +30,7 @@ def evaluate_sql_on_dfs(sql: str, **dfs: DF) -> DF:
     return conn.execute(sql).fetchall()
 
 
-def get_pandas_eval_chain(model: BaseLanguageModel, dfs: dict[str, DF]) -> Runnable:
+def get_pandas_eval_chain(model: BaseLanguageModel, dfs: Dict[str, DF]) -> Runnable:
     prompt = PromptTemplate.from_template(
         """You are an expert data scientist, tasked with converting python code manipulating pandas dataframes into SQL queries.
 
