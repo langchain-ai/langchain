@@ -24,11 +24,9 @@ class YouRetriever(BaseRetriever):
         cls,
         values: Dict[str, Any],
     ) -> Dict[str, Any]:
-        if not os.getenv("YDC_API_KEY"):
-            raise RuntimeError("YDC_API_KEY environment variable not found")
-        else:
-            ydc_api_key = get_from_dict_or_env(values, "ydc_api_key", "YDC_API_KEY")
-            values["ydc_api_key"] = ydc_api_key
+        values["ydc_api_key"] = get_from_dict_or_env(
+            values, "ydc_api_key", "YDC_API_KEY"
+        )
         return values
 
     def _get_relevant_documents(
