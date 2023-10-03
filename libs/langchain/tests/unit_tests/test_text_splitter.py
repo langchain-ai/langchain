@@ -540,7 +540,6 @@ class HelloWorld {
 }
     """
     chunks = splitter.split_text(code)
-    print(chunks)
     assert chunks == [
         "class",
         "HelloWorld {",
