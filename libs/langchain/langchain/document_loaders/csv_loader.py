@@ -7,6 +7,7 @@ from langchain.document_loaders.unstructured import (
     UnstructuredFileLoader,
     validate_unstructured_version,
 )
+from langchain.document_loaders.helpers import detect_file_encodings
 
 
 class CSVLoader(BaseLoader):
@@ -36,6 +37,7 @@ class CSVLoader(BaseLoader):
         source_column: Optional[str] = None,
         csv_args: Optional[Dict] = None,
         encoding: Optional[str] = None,
+        autodetect_encoding: bool = False,
     ):
         """
 
@@ -46,17 +48,21 @@ class CSVLoader(BaseLoader):
             csv_args: A dictionary of arguments to pass to the csv.DictReader.
               Optional. Defaults to None.
             encoding: The encoding of the CSV file. Optional. Defaults to None.
+            autodetect_encoding: Whether to try to autodetect the file encoding.
         """
         self.file_path = file_path
         self.source_column = source_column
         self.encoding = encoding
         self.csv_args = csv_args or {}
+        self.autodetect_encoding = autodetect_encoding
 
     def load(self) -> List[Document]:
         """Load data into document objects."""
 
         docs = []
-        with open(self.file_path, newline="", encoding=self.encoding) as csvfile:
+        if self.autodetect_encoding:
+            detected_encodings = detect_file_encodings(self.file_path)
+        with open(self.file_path, newline="", encoding=detected_encodings if self.autodetect_encoding else self.encoding) as csvfile:
             csv_reader = csv.DictReader(csvfile, **self.csv_args)  # type: ignore
             for i, row in enumerate(csv_reader):
                 content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
