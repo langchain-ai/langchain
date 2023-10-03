@@ -37,7 +37,7 @@ class TextLoader(BaseLoader):
         """Load from file path."""
         text = ""
         try:
-            with open(self.file_path, encoding=self.encoding) as f:
+            with open(self.file_path, encoding=self.encoding, errors='replace') as f:
                 text = f.read()
         except UnicodeDecodeError as e:
             if self.autodetect_encoding:
