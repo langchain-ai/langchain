@@ -80,7 +80,7 @@ class Xinference(LLM):
     model_uid: Optional[str]
     """UID of the launched model"""
     model_kwargs: Dict[str, Any]
-    """Key word arguments to be passed to xinference.LLM"""
+    """Keyword arguments to be passed to xinference.LLM"""
 
     def __init__(
         self,
