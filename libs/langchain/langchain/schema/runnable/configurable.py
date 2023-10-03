@@ -239,7 +239,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
-        which_enum = enum.StrEnum(
+        which_enum = enum.StrEnum(  # type: ignore[misc]
             self.which.name, list(self.alternatives.keys()) + ["default"]
         )
         return [
