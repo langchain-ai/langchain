@@ -82,6 +82,7 @@ class LangChainTracer(BaseTracer):
         self._futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.tags = tags or []
         self.executor = _get_executor() if use_threading else None
+        self.latest_run: Optional[Run] = None
         global _TRACERS
         _TRACERS.add(self)
 
@@ -121,7 +122,16 @@ class LangChainTracer(BaseTracer):
         self._on_chat_model_start(chat_model_run)
 
     def _persist_run(self, run: Run) -> None:
-        """The Langchain Tracer uses Post/Patch rather than persist."""
+        run_ = run.copy()
+        run_.reference_example_id = self.example_id
+        self.latest_run = run_
+
+    @property
+    def run_url(self) -> str:
+        """Get the LangSmith root run URL"""
+        if not self.latest_run:
+            raise ValueError("No traced run found.")
+        return self.client.get_run_url(run=self.run_url)
 
     def _get_tags(self, run: Run) -> List[str]:
         """Get combined tags for a run."""
@@ -226,29 +236,3 @@ class LangChainTracer(BaseTracer):
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
         wait(self._futures)
-
-
-class LangChainTraceCollector(LangChainTracer):
-    name: str = "langchain_trace_collector_callback_handler"
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.traced_runs: List[Run] = []
-
-    def _persist_run(self, run: Run) -> None:
-        run_ = run.copy()
-        run_.reference_example_id = self.example_id
-        self.traced_runs.append(run_)
-
-    def get_run_url(self, index: int = 0) -> Optional[str]:
-        """Get the LangSmith root run URL
-
-        Parameters
-        ----------
-        index : int, default=0
-            The index of the run to get the URL for. Defaults to 0.
-        """
-        if not self.traced_runs:
-            raise ValueError("No traced runs found.")
-        run = self.traced_runs[index]
-        return self.client.get_run_url(run=run)
