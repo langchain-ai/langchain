@@ -30,6 +30,7 @@ from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
 from langchain.prompts import PromptTemplate
+from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     ChatPromptValue,
@@ -56,7 +57,7 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
-from langchain.schema.runnable.base import RunnableGenerator
+from langchain.schema.runnable.base import ConfigurableField, RunnableGenerator
 from langchain.schema.runnable.utils import add
 from langchain.tools.base import BaseTool, tool
 from langchain.tools.json.tool import JsonListKeysTool, JsonSpec
@@ -142,6 +143,15 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     assert fake.output_schema.schema() == {
         "title": "FakeRunnableOutput",
         "type": "integer",
+    }
+    assert fake.config_schema(include=["tags", "metadata", "run_name"]).schema() == {
+        "title": "FakeRunnableConfig",
+        "type": "object",
+        "properties": {
+            "metadata": {"title": "Metadata", "type": "object"},
+            "run_name": {"title": "Run Name", "type": "string"},
+            "tags": {"items": {"type": "string"}, "title": "Tags", "type": "array"},
+        },
     }
 
     fake_bound = FakeRunnable().bind(a="b")  # str -> int
@@ -536,6 +546,261 @@ def test_schema_chains() -> None:
             "hello": {"title": "Hello"},
         },
     }
+
+
+def test_configurable_fields() -> None:
+    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+
+    assert fake_llm.invoke("...") == "a"
+
+    fake_llm_configurable = fake_llm.configurable_fields(
+        responses=ConfigurableField(
+            id="llm_responses",
+            name="LLM Responses",
+            description="A list of fake responses for this LLM",
+        )
+    )
+
+    assert fake_llm_configurable.invoke("...") == "a"
+
+    assert fake_llm_configurable.config_schema().schema() == {
+        "title": "RunnableConfigurableFieldsConfig",
+        "type": "object",
+        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
+        "definitions": {
+            "Configurable": {
+                "title": "Configurable",
+                "type": "object",
+                "properties": {
+                    "llm_responses": {
+                        "title": "LLM Responses",
+                        "description": "A list of fake responses for this LLM",
+                        "default": ["a"],
+                        "type": "array",
+                        "items": {"type": "string"},
+                    }
+                },
+            }
+        },
+    }
+
+    fake_llm_configured = fake_llm_configurable.with_config(
+        configurable={"llm_responses": ["b"]}
+    )
+
+    assert fake_llm_configured.invoke("...") == "b"
+
+    prompt = PromptTemplate.from_template("Hello, {name}!")
+
+    assert prompt.invoke({"name": "John"}) == StringPromptValue(text="Hello, John!")
+
+    prompt_configurable = prompt.configurable_fields(
+        template=ConfigurableField(
+            id="prompt_template",
+            name="Prompt Template",
+            description="The prompt template for this chain",
+        )
+    )
+
+    assert prompt_configurable.invoke({"name": "John"}) == StringPromptValue(
+        text="Hello, John!"
+    )
+
+    assert prompt_configurable.config_schema().schema() == {
+        "title": "RunnableConfigurableFieldsConfig",
+        "type": "object",
+        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
+        "definitions": {
+            "Configurable": {
+                "title": "Configurable",
+                "type": "object",
+                "properties": {
+                    "prompt_template": {
+                        "title": "Prompt Template",
+                        "description": "The prompt template for this chain",
+                        "default": "Hello, {name}!",
+                        "type": "string",
+                    }
+                },
+            }
+        },
+    }
+
+    prompt_configured = prompt_configurable.with_config(
+        configurable={"prompt_template": "Hello, {name}! {name}!"}
+    )
+
+    assert prompt_configured.invoke({"name": "John"}) == StringPromptValue(
+        text="Hello, John! John!"
+    )
+
+    chain_configurable = prompt_configurable | fake_llm_configurable | StrOutputParser()
+
+    assert chain_configurable.invoke({"name": "John"}) == "a"
+
+    assert chain_configurable.config_schema().schema() == {
+        "title": "RunnableSequenceConfig",
+        "type": "object",
+        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
+        "definitions": {
+            "Configurable": {
+                "title": "Configurable",
+                "type": "object",
+                "properties": {
+                    "llm_responses": {
+                        "title": "LLM Responses",
+                        "description": "A list of fake responses for this LLM",
+                        "default": ["a"],
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "prompt_template": {
+                        "title": "Prompt Template",
+                        "description": "The prompt template for this chain",
+                        "default": "Hello, {name}!",
+                        "type": "string",
+                    },
+                },
+            }
+        },
+    }
+
+    assert (
+        chain_configurable.with_config(
+            configurable={
+                "prompt_template": "A very good morning to you, {name}!",
+                "llm_responses": ["c"],
+            }
+        ).invoke({"name": "John"})
+        == "c"
+    )
+
+    chain_with_map_configurable: Runnable = prompt_configurable | {
+        "llm1": fake_llm_configurable | StrOutputParser(),
+        "llm2": fake_llm_configurable | StrOutputParser(),
+        "llm3": fake_llm.configurable_fields(
+            responses=ConfigurableField("other_responses")
+        )
+        | StrOutputParser(),
+    }
+
+    assert chain_with_map_configurable.invoke({"name": "John"}) == {
+        "llm1": "a",
+        "llm2": "a",
+        "llm3": "a",
+    }
+
+    assert chain_with_map_configurable.config_schema().schema() == {
+        "title": "RunnableSequenceConfig",
+        "type": "object",
+        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
+        "definitions": {
+            "Configurable": {
+                "title": "Configurable",
+                "type": "object",
+                "properties": {
+                    "llm_responses": {
+                        "title": "LLM Responses",
+                        "description": "A list of fake responses for this LLM",
+                        "default": ["a"],
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "other_responses": {
+                        "title": "Other Responses",
+                        "default": ["a"],
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "prompt_template": {
+                        "title": "Prompt Template",
+                        "description": "The prompt template for this chain",
+                        "default": "Hello, {name}!",
+                        "type": "string",
+                    },
+                },
+            }
+        },
+    }
+
+    assert chain_with_map_configurable.with_config(
+        configurable={
+            "prompt_template": "A very good morning to you, {name}!",
+            "llm_responses": ["c"],
+            "other_responses": ["d"],
+        }
+    ).invoke({"name": "John"}) == {"llm1": "c", "llm2": "c", "llm3": "d"}
+
+
+def test_configurable_fields_example() -> None:
+    fake_llm = (
+        FakeListLLM(responses=["a"])
+        .configurable_fields(
+            responses=ConfigurableField(
+                id="llm_responses",
+                name="LLM Responses",
+                description="A list of fake responses for this LLM",
+            )
+        )
+        .configurable_alternatives(
+            ConfigurableField(id="llm", name="LLM"),
+            chat=FakeListChatModel(responses=["b"]) | StrOutputParser(),
+        )
+    )
+
+    prompt = PromptTemplate.from_template("Hello, {name}!").configurable_fields(
+        template=ConfigurableField(
+            id="prompt_template",
+            name="Prompt Template",
+            description="The prompt template for this chain",
+        )
+    )
+
+    chain_configurable = prompt | fake_llm
+
+    assert chain_configurable.invoke({"name": "John"}) == "a"
+
+    assert chain_configurable.config_schema().schema() == {
+        "title": "RunnableSequenceConfig",
+        "type": "object",
+        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
+        "definitions": {
+            "Configurable": {
+                "title": "Configurable",
+                "type": "object",
+                "properties": {
+                    "llm": {
+                        "title": "LLM",
+                        "default": "default",
+                        "anyOf": [
+                            {"enum": ["chat"], "type": "string"},
+                            {"enum": ["default"], "type": "string"},
+                        ],
+                    },
+                    "llm_responses": {
+                        "title": "LLM Responses",
+                        "description": "A list of fake responses for this LLM",
+                        "default": ["a"],
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "prompt_template": {
+                        "title": "Prompt Template",
+                        "description": "The prompt template for this chain",
+                        "default": "Hello, {name}!",
+                        "type": "string",
+                    },
+                },
+            }
+        },
+    }
+
+    assert (
+        chain_configurable.with_config(configurable={"llm": "chat"}).invoke(
+            {"name": "John"}
+        )
+        == "b"
+    )
 
 
 @pytest.mark.asyncio
