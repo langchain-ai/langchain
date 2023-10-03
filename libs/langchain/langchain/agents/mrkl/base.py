@@ -92,7 +92,8 @@ class ZeroShotAgent(Agent):
         """Construct the scratchpad that lets the agent continue its thought process."""
         thoughts = ""
         for action, observation in intermediate_steps:
-            thoughts += re.sub(r"Observation:\s.+$", '', action.log, 0, re.MULTILINE)
+            thoughts += re.sub(r"Observation:\s.+", '', action.log, 0,
+                               re.MULTILINE | re.DOTALL)
             thoughts += f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}"
         return thoughts
 

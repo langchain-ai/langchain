@@ -65,26 +65,20 @@ tools = [
         # noqa: E501
     ),
     Tool.from_function(
-        func=lambda query: "10 руб.",
+        func=lambda query: "творог стоит 10 руб.",
         name="SEARCH",
-        description="Описание: находит цену продукта в базе данных \n Параметры: строка с названием продукта\n"
+        description="Описание: находит цену продукта в базе данных \n Параметры: {{'query': 'строка с названием продукта'}}\n"
         # noqa: E501
     ),
     Tool.from_function(
         func=lambda query: '1$',
         name="CONVERT_CURRENCY",
-        description="Описание: переводит цену в рублях в доллары \n Параметры: строка с ценой\n"
+        description="Описание: переводит цену в рублях в доллары \n Параметры: {{'amount': числовое значение для перевода}}\n"
         # noqa: E501
     ),
 ]
 
-PREFIX = """
-Ты бот-ассистент. Ты можешь выбирать какую функцию выполнить и какие параметры ей передать.
-Ты ничего не знаешь о ценах на товары и не знаешь как переводить цены в валюту
-Ты не умеешь выполнять функции и получать ответы функций. Их выполняет пользователь
-Ответь не следующие вопросы как можно лучше. Ты можешь вызвать следующие функции:"""
-
-agent = ZeroShotAgent.from_llm_and_tools(llm=llm, tools=tools, prefix=PREFIX)
+agent = ZeroShotAgent.from_llm_and_tools(llm=llm, tools=tools)
 agent_executor = AgentExecutor.from_agent_and_tools(
     agent=agent, tools=tools, verbose=True
 )
