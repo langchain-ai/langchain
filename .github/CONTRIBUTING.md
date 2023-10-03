@@ -196,7 +196,7 @@ If codespell is incorrectly flagging a word, you can skip spellcheck for that wo
 [tool.codespell]
 ...
 # Add here:
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure'
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,symbl'
 ```
 
 ## Working with Optional Dependencies
