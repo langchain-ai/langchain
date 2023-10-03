@@ -44,7 +44,7 @@ class CohereRerank(BaseDocumentCompressor):
         try:
             import cohere
 
-            values["client"] = cohere.Client(cohere_api_key)
+            values["client"] = cohere.Client(cohere_api_key, client_name="langchain")
         except ImportError:
             raise ImportError(
                 "Could not import cohere python package. "
