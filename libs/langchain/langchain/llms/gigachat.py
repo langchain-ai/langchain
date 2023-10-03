@@ -18,7 +18,6 @@ import gigachat
 from gigachat.models import (
     ChatCompletion,
 )
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,

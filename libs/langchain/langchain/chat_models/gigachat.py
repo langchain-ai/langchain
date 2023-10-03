@@ -19,7 +19,6 @@ from gigachat.models import (
     Messages,
     MessagesRole,
 )
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
