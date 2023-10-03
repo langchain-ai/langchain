@@ -90,7 +90,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
     """  # noqa: E501
 
     model_kwargs: Optional[Dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     endpoint_kwargs: Optional[Dict] = None
     """Optional attributes passed to the invoke_endpoint
