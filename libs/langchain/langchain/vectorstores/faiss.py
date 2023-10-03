@@ -1038,6 +1038,7 @@ class FAISS(VectorStore):
         folder_path: str,
         embeddings: Embeddings,
         index_name: str = "index",
+        asynchronous: bool = False,
         **kwargs: Any,
     ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id from disk.
@@ -1047,6 +1048,7 @@ class FAISS(VectorStore):
                 and index_to_docstore_id from.
             embeddings: Embeddings to use when generating queries
             index_name: for saving with a specific index file name
+            asynchronous: whether to use async version or not
         """
         path = Path(folder_path)
         # load index separately since it is not picklable
@@ -1058,9 +1060,14 @@ class FAISS(VectorStore):
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
-        return cls(
-            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
-        )
+        if asynchronous:
+            return cls(
+                embeddings.aembed_query, index, docstore, index_to_docstore_id, **kwargs
+            )
+        else:
+            return cls(
+                embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
+            )
 
     def serialize_to_bytes(self) -> bytes:
         """Serialize FAISS index, docstore, and index_to_docstore_id to bytes."""
@@ -1071,13 +1078,19 @@ class FAISS(VectorStore):
         cls,
         serialized: bytes,
         embeddings: Embeddings,
+        asynchronous: bool = False,
         **kwargs: Any,
     ) -> FAISS:
         """Deserialize FAISS index, docstore, and index_to_docstore_id from bytes."""
         index, docstore, index_to_docstore_id = pickle.loads(serialized)
-        return cls(
-            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
-        )
+        if asynchronous:
+            return cls(
+                embeddings.aembed_query, index, docstore, index_to_docstore_id, **kwargs
+            )
+        else:
+            return cls(
+                embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
+            )
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
