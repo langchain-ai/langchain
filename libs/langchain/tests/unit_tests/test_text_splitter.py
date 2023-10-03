@@ -5,10 +5,13 @@ from typing import List
 import pytest
 
 from langchain.docstore.document import Document
-from langchain.text_splitter import (CharacterTextSplitter, Language,
-                                     MarkdownHeaderTextSplitter,
-                                     PythonCodeTextSplitter,
-                                     RecursiveCharacterTextSplitter)
+from langchain.text_splitter import (
+    CharacterTextSplitter,
+    Language,
+    MarkdownHeaderTextSplitter,
+    PythonCodeTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 
 FAKE_PYTHON_TEXT = """
 class Foo:
