@@ -78,7 +78,7 @@ def _get_search_client(
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
     from azure.identity import DefaultAzureCredential
-    from azure.search.documents import SearchClient, InteractiveBrowserCredential
+    from azure.search.documents import InteractiveBrowserCredential, SearchClient
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
         HnswVectorSearchAlgorithmConfiguration,
