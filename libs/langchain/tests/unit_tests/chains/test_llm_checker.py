@@ -1,4 +1,4 @@
-# flake8: noqa E501
+# flake8: noqa: E501
 
 """Test LLMCheckerChain functionality."""
 
