@@ -1,3 +1,4 @@
+# flake8: noqa: I001
 """
 GigaChatModel for GigaChat.
 """
