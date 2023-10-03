@@ -1,12 +1,16 @@
 import json
 import logging
 from time import time
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from langchain.schema import BaseChatMessageHistory
 from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
 
+if TYPE_CHECKING:
+    from elasticsearch import Elasticsearch
+
 logger = logging.getLogger(__name__)
+
 
 class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in Elasticsearch.
@@ -20,7 +24,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
 
     def __init__(
         self,
-        client,
+        client: Elasticsearch,
         index: str,
         session_id: str,
     ):
@@ -37,7 +41,9 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
         self.session_id: str = session_id
 
         if client.indices.exists(index=index):
-            logger.debug(f"Chat history index {index} already exists, skipping creation.")
+            logger.debug(
+                f"Chat history index {index} already exists, skipping creation."
+            )
         else:
             logger.debug(f"Creating index {index} for storing chat history.")
 
@@ -47,13 +53,13 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
                     "properties": {
                         "session_id": {"type": "keyword"},
                         "created_at": {"type": "date"},
-                        "history": {"type": "text"}
+                        "history": {"type": "text"},
                     }
-                }
+                },
             )
 
     @property
-    def messages(self) -> List[BaseMessage]:
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """Retrieve the messages from Elasticsearch"""
         try:
             from elasticsearch import ApiError
@@ -61,13 +67,16 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
             result = self.client.search(
                 index=self.index,
                 query={"term": {"session_id": self.session_id}},
-                sort="created_at:asc"
+                sort="created_at:asc",
             )
         except ApiError as err:
             logger.error(err)
 
         if result and len(result["hits"]["hits"]) > 0:
-            items = [json.loads(document["_source"]["history"]) for document in result["hits"]["hits"]]
+            items = [
+                json.loads(document["_source"]["history"])
+                for document in result["hits"]["hits"]
+            ]
         else:
             items = []
 
@@ -78,15 +87,15 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
         try:
             from elasticsearch import ApiError
 
-            print('indexing message', message)
+            print("indexing message", message)
             self.client.index(
                 index=self.index,
                 document={
                     "session_id": self.session_id,
                     "created_at": round(time() * 1000),
-                    "history": json.dumps(_message_to_dict(message))
+                    "history": json.dumps(_message_to_dict(message)),
                 },
-                refresh=True
+                refresh=True,
             )
         except ApiError as err:
             logger.error(err)
@@ -99,7 +108,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
             self.client.delete_by_query(
                 index=self.index,
                 query={"term": {"session_id": self.session_id}},
-                refresh=True
+                refresh=True,
             )
         except ApiError:
             logger.error("Could not clear session memory in Elasticsearch")

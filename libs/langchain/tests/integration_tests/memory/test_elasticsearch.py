@@ -1,8 +1,10 @@
 import json
 import os
 import uuid
+from typing import Generator
 
 import pytest
+from elasticsearch import Elasticsearch
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import ElasticsearchChatMessageHistory
@@ -19,13 +21,13 @@ To run against Elastic Cloud, set the following environment variables:
 - ES_PASSWORD
 """
 
+
 class TestElasticsearch:
     @pytest.fixture(scope="class", autouse=True)
-    def elasticsearch_connection(self):
+    def elasticsearch_connection(self) -> Generator[Elasticsearch, None, None]:
         """Return the Elasticsearch client."""
-        from elasticsearch import Elasticsearch
-
-        # Run this integration test against Elasticsearch on localhost or an Elastic Cloud instance
+        # Run this integration test against Elasticsearch on localhost,
+        # or an Elastic Cloud instance
         es_url = os.environ.get("ES_URL", "http://localhost:9200")
         cloud_id = os.environ.get("ES_CLOUD_ID")
         es_username = os.environ.get("ES_USERNAME", "elastic")
@@ -51,20 +53,16 @@ class TestElasticsearch:
         return f"test_{uuid.uuid4().hex}"
 
     def test_memory_with_message_store(
-        self, elasticsearch_connection: dict, index_name: str
+        self, elasticsearch_connection: Elasticsearch, index_name: str
     ) -> None:
         """Test the memory with a message store."""
         # setup Elasticsearch as a message store
         message_history = ElasticsearchChatMessageHistory(
-            client=elasticsearch_connection,
-            index=index_name,
-            session_id="test-session"
+            client=elasticsearch_connection, index=index_name, session_id="test-session"
         )
 
         memory = ConversationBufferMemory(
-            memory_key="baz",
-            chat_memory=message_history,
-            return_messages=True
+            memory_key="baz", chat_memory=message_history, return_messages=True
         )
 
         # add some messages
