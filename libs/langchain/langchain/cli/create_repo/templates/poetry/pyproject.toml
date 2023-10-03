@@ -14,7 +14,6 @@ langserve = { version = ">=0.0.5", extras = ["server"] }
 tiktoken = "^0.4.0"
 openai = "^0.27.8"
 fastapi = "^0.96.0"
-sse-starlette = "^0.3.0"
 uvicorn = {extras = ["standard"], version = "^0.22.0"}
 
 [tool.poetry.group.dev.dependencies]

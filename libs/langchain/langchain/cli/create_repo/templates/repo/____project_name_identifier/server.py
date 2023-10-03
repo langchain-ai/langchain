@@ -8,7 +8,7 @@ app = FastAPI()
 add_routes(
     app,
     get_chain(),
-    config_keys=["tags", "metadata"],
+    config_keys=["tags"],
 )
 
 if __name__ == "__main__":
