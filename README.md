@@ -151,6 +151,9 @@ while(True):
 
 - [Чат-бот на базе GigaChat с потоковой генерацией и разными видами авторизации](libs/streamlit_agent/gigachat_streaming.py) [Try demo](https://gigachat-streaming.streamlit.app/)
 
+### Примеры сторонних приложений, использующих GigaChain
+- [GigaShell - copilot для командной строки](https://github.com/Rai220/GigaShell)
+
 ## Участие в проекте
 
 GigaChain — это проект с открытым исходным кодом в быстроразвивающейся области. Мы приветствуем любое участие в разработке, развитии инфраструктуры или улучшении документации.
