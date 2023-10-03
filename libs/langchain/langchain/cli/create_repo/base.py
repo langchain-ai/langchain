@@ -1,7 +1,6 @@
 """"""
-import pathlib
-
 import os
+import pathlib
 import string
 import subprocess
 from pathlib import Path
@@ -228,11 +227,14 @@ def create(
     project_name = _select_project_name(project_name_suggestion)
     project_name_identifier = project_name
 
+    resolved_path = project_directory_path.resolve()
+
     if not typer.confirm(
-        f"\n{typer.style('1.', bold=True, fg=typer.colors.GREEN)} Creating new"
-        f" LangChain project {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
+        f"\n{typer.style('1.', bold=True, fg=typer.colors.GREEN)} "
+        f"Creating new LangChain project "
+        f"{typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
         f" in"
-        f" {typer.style(project_directory_path.resolve(), fg=typer.colors.BRIGHT_CYAN)}",
+        f" {typer.style(resolved_path, fg=typer.colors.BRIGHT_CYAN)}",
         default=True,
     ):
         typer.Exit(code=0)
@@ -278,7 +280,7 @@ def create(
     #     )
     #     typer.echo(
     #         f"\nTo install all dependencies activate your environment run:"
-    #         f"\n{typer.style('source .venv/bin/activate', fg=typer.colors.BRIGHT_CYAN)}"
+    #     f"\n{typer.style('source .venv/bin/activate', fg=typer.colors.BRIGHT_CYAN)}"
     #         f"\n{pip_install}."
     #     )
 

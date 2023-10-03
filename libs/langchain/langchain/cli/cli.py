@@ -1,17 +1,11 @@
 """A CLI for creating a new project with LangChain."""
 from pathlib import Path
 
-from typing import Optional
-
 import typer
 from typing_extensions import Annotated
 
-from langchain.cli.create_repo import (
-    create,
-    get_git_user_email,
-    get_git_user_name,
-    is_poetry_installed,
-)
+from langchain.cli.create_repo.base import create, is_poetry_installed
+from langchain.cli.create_repo.user_info import get_git_user_email, get_git_user_name
 
 app = typer.Typer(no_args_is_help=False, add_completion=False)
 
@@ -39,14 +33,14 @@ USE_POETRY_OPTION = typer.Option(
 @app.command()
 def new(
     project_directory: Annotated[
-        Optional[Path], typer.Argument(help="The directory to create the project in.")
+        Path, typer.Argument(help="The directory to create the project in.")
     ],
     author_name: Annotated[str, AUTHOR_NAME_OPTION],
     author_email: Annotated[str, AUTHOR_EMAIL_OPTION],
     use_poetry: Annotated[bool, USE_POETRY_OPTION],
 ) -> None:
     """Create a new project with LangChain."""
-    return create(project_directory, author_name, author_email, use_poetry)
+    create(project_directory, author_name, author_email, use_poetry)
 
 
 if __name__ == "__main__":

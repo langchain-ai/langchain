@@ -26,6 +26,7 @@ def _request_pypi(name: str) -> Optional[dict]:
     response = requests.get(target_url)
     return response.json() if response.status_code != 404 else None
 
+
 # PUBLIC API
 
 
@@ -62,7 +63,8 @@ def is_name_taken(name: str) -> bool:
     response = _request_pypi(name)
 
     if response:
-        module_name = response.get("info").get("package_url").split("/")[-2]  # type: ignore
+        package_url = response.get("info").get("package_url")  # type: ignore
+        module_name = package_url.split("/")[-2]
         return name.lower() == module_name.lower()
 
     return False
