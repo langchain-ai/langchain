@@ -5,8 +5,8 @@ from importlib import metadata
 from typing import TYPE_CHECKING, Any, Optional
 
 from langchain._api.deprecation import (
-    surface_langchain_deprecation_warnings,
     LangChainDeprecationWarning,
+    surface_langchain_deprecation_warnings,
 )
 
 if TYPE_CHECKING:
