@@ -423,11 +423,14 @@ class SQLDatabase:
         result = self._execute(command, fetch)
         # Convert columns values to string to avoid issues with sqlalchemy
         # truncating text
-        res: Sequence = [
+        res = [
             tuple(truncate_word(c, length=self._max_string_length) for c in r.values())
             for r in result
         ]
-        return str(res)
+        if not res:
+            return ""
+        else:
+            return str(res)
 
     def get_table_info_no_throw(self, table_names: Optional[List[str]] = None) -> str:
         """Get information about specified tables.
