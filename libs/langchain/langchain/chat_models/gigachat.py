@@ -3,22 +3,10 @@ GigaChatModel for GigaChat.
 """
 import logging
 from functools import cached_property
-from typing import (
-    Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-)
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 import gigachat
-from gigachat.models import (
-    Chat,
-    ChatCompletion,
-    Messages,
-    MessagesRole,
-)
+from gigachat.models import Chat, ChatCompletion, Messages, MessagesRole
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -37,10 +25,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import (
-    ChatGeneration,
-    ChatGenerationChunk,
-)
+from langchain.schema.output import ChatGeneration, ChatGenerationChunk
 
 logger = logging.getLogger(__name__)
 

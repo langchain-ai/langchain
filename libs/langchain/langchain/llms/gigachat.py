@@ -5,29 +5,16 @@ from __future__ import annotations
 
 import logging
 from functools import cached_property
-from typing import (
-    Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-)
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 import gigachat
-from gigachat.models import (
-    ChatCompletion,
-)
+from gigachat.models import ChatCompletion
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM
-from langchain.schema.output import (
-    Generation,
-    GenerationChunk,
-    LLMResult,
-)
+from langchain.schema.output import Generation, GenerationChunk, LLMResult
 
 logger = logging.getLogger(__name__)
 
