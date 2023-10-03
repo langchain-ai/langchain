@@ -58,7 +58,10 @@ def _collect_yaml_input(
         if message is None:
             return HumanMessage(content="")
         if stop:
-            message.content = enforce_stop_tokens(message.content, stop)
+            if isinstance(message.content, str):
+                message.content = enforce_stop_tokens(message.content, stop)
+            else:
+                raise ValueError("Cannot use when output is not a string.")
         return message
     except yaml.YAMLError:
         raise ValueError("Invalid YAML string entered.")

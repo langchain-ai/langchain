@@ -1,7 +1,7 @@
 import asyncio
 import json
 from json import JSONDecodeError
-from typing import List, Union
+from typing import List, Union, cast
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.schema import (
@@ -72,7 +72,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
             )
 
         return AgentFinish(
-            return_values={"output": message.content}, log=message.content
+            return_values={"output": cast(message.content, str)}, log=message.content
         )
 
     def parse_result(

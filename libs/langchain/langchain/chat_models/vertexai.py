@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -60,8 +60,9 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
 
     vertex_messages, context = [], None
     for i, message in enumerate(history):
+        content = cast(message.content, str)
         if i == 0 and isinstance(message, SystemMessage):
-            context = message.content
+            context = content
         elif isinstance(message, AIMessage):
             vertex_message = ChatMessage(content=message.content, author="bot")
             vertex_messages.append(vertex_message)
