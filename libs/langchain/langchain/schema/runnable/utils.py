@@ -5,6 +5,7 @@ import asyncio
 import inspect
 import textwrap
 from inspect import signature
+from itertools import groupby
 from typing import (
     Any,
     AsyncIterable,
@@ -13,8 +14,10 @@ from typing import (
     Dict,
     Iterable,
     List,
+    NamedTuple,
     Optional,
     Protocol,
+    Sequence,
     Set,
     TypeVar,
     Union,
@@ -211,3 +214,39 @@ async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
         else:
             final = final + chunk
     return final
+
+
+class ConfigurableField(NamedTuple):
+    id: str
+    name: Optional[str] = None
+    description: Optional[str] = None
+    annotation: Optional[Any] = None
+
+
+class ConfigurableFieldSpec(NamedTuple):
+    id: str
+    name: Optional[str]
+    description: Optional[str]
+
+    default: Any
+    annotation: Any
+
+
+def get_unique_config_specs(
+    specs: Iterable[ConfigurableFieldSpec],
+) -> Sequence[ConfigurableFieldSpec]:
+    grouped = groupby(sorted(specs, key=lambda s: s.id), lambda s: s.id)
+    unique: List[ConfigurableFieldSpec] = []
+    for id, dupes in grouped:
+        first = next(dupes)
+        others = list(dupes)
+        if len(others) == 0:
+            unique.append(first)
+        elif all(o == first for o in others):
+            unique.append(first)
+        else:
+            raise ValueError(
+                "RunnableSequence contains conflicting config specs"
+                f"for {id}: {[first] + others}"
+            )
+    return unique

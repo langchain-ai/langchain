@@ -52,6 +52,7 @@ from langchain.retrievers.re_phraser import RePhraseQueryRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.svm import SVMRetriever
+from langchain.retrievers.tavily_search_api import TavilySearchAPIRetriever
 from langchain.retrievers.tfidf import TFIDFRetriever
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
@@ -86,6 +87,7 @@ __all__ = [
     "RemoteLangChainRetriever",
     "SVMRetriever",
     "SelfQueryRetriever",
+    "TavilySearchAPIRetriever",
     "TFIDFRetriever",
     "BM25Retriever",
     "TimeWeightedVectorStoreRetriever",
