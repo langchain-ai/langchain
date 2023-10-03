@@ -140,6 +140,7 @@ while(True):
 - [Асинхронная работа с LLM](docs/extras/modules/model_io/models/llms/async_llm.ipynb)
 - [Использование Elastic для поиска ответов по документам](docs/extras/integrations/retrievers/elastic_qna.ipynb)
 - [Генерация и выполнение кода с помощью PythonREPL](docs/extras/expression_language/cookbook/code_writing.ipynb)
+- [Работа с кэшем в GigaChain](docs/extras/integrations/llms/gigachain_caching.ipynb)
 
 ### Примеры работы с другими LLM
 
