@@ -78,7 +78,7 @@ def _get_search_client(
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
     from azure.identity import DefaultAzureCredential
-    from azure.search.documents import SearchClient
+    from azure.search.documents import SearchClient, InteractiveBrowserCredential
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
         HnswVectorSearchAlgorithmConfiguration,
@@ -93,6 +93,9 @@ def _get_search_client(
     default_fields = default_fields or []
     if key is None:
         credential = DefaultAzureCredential()
+    elif key.upper() == "INTERACTIVE":
+        credential = InteractiveBrowserCredential()
+        credential.get_token("https://search.azure.com/.default")
     else:
         credential = AzureKeyCredential(key)
     index_client: SearchIndexClient = SearchIndexClient(
