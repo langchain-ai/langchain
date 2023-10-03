@@ -136,6 +136,7 @@ class Runnable(Generic[Input, Output], ABC):
             arbitrary_types_allowed = True
 
         include = include or []
+        include = [i for i in include if i != "configurable"]
         config_specs = self.config_specs
         configurable = (
             create_model(  # type: ignore[call-overload]

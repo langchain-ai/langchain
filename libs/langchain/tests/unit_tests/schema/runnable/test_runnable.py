@@ -765,6 +765,12 @@ def test_configurable_fields_example() -> None:
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
         "definitions": {
+            "LLM": {
+                "title": "LLM",
+                "description": "An enumeration.",
+                "enum": ["chat", "default"],
+                "type": "string",
+            },
             "Configurable": {
                 "title": "Configurable",
                 "type": "object",
@@ -772,10 +778,7 @@ def test_configurable_fields_example() -> None:
                     "llm": {
                         "title": "LLM",
                         "default": "default",
-                        "anyOf": [
-                            {"enum": ["chat"], "type": "string"},
-                            {"enum": ["default"], "type": "string"},
-                        ],
+                        "allOf": [{"$ref": "#/definitions/LLM"}],
                     },
                     "llm_responses": {
                         "title": "LLM Responses",
@@ -791,7 +794,7 @@ def test_configurable_fields_example() -> None:
                         "type": "string",
                     },
                 },
-            }
+            },
         },
     }
 

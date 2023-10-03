@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 from abc import abstractmethod
 from typing import (
     Any,
@@ -7,7 +8,6 @@ from typing import (
     Dict,
     Iterator,
     List,
-    Literal,
     Optional,
     Sequence,
     Type,
@@ -239,16 +239,15 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
-        alt_keys = self.alternatives.keys()
-        which_keys = tuple(Literal[k] for k in alt_keys) + (  # type: ignore
-            Literal["default"],
+        which_enum = enum.StrEnum(
+            self.which.name, list(self.alternatives.keys()) + ["default"]
         )
         return [
             ConfigurableFieldSpec(
                 id=self.which.id,
                 name=self.which.name,
                 description=self.which.description,
-                annotation=Union[which_keys],  # type: ignore
+                annotation=which_enum,
                 default="default",
             ),
             *self.bound.config_specs,
