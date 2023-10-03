@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import warnings
 from typing import Any, Dict, List, Optional
+from langchain._api import warn_deprecated
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -89,6 +90,14 @@ class LLMBashChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
+        warn_deprecated(
+            since="0.0.306",
+            message=(
+                "On 2023-10-09 the LLMBashChain "
+                "will be moved to langchain-experimental"
+            ),
+            pending=True,
+        )
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         _run_manager.on_text(inputs[self.input_key], verbose=self.verbose)
 
