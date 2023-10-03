@@ -5,13 +5,10 @@ from typing import List
 import pytest
 
 from langchain.docstore.document import Document
-from langchain.text_splitter import (
-    CharacterTextSplitter,
-    Language,
-    MarkdownHeaderTextSplitter,
-    PythonCodeTextSplitter,
-    RecursiveCharacterTextSplitter,
-)
+from langchain.text_splitter import (CharacterTextSplitter, Language,
+                                     MarkdownHeaderTextSplitter,
+                                     PythonCodeTextSplitter,
+                                     RecursiveCharacterTextSplitter)
 
 FAKE_PYTHON_TEXT = """
 class Foo:
@@ -522,6 +519,39 @@ public class HelloWorld {
         'tln("Hello,',
         'World!");',
         "}\n}",
+    ]
+
+
+def test_kotlin_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.KOTLIN, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+class HelloWorld {
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            println("Hello, World!")
+        }
+    }
+}
+    """
+    chunks = splitter.split_text(code)
+    print(chunks)
+    assert chunks == [
+        "class",
+        "HelloWorld {",
+        "companion",
+        "object {",
+        "@JvmStatic",
+        "fun",
+        "main(args:",
+        "Array<String>)",
+        "{",
+        'println("Hello,',
+        'World!")',
+        "}\n    }",
+        "}",
     ]
 
 
