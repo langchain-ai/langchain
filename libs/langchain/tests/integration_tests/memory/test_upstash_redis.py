@@ -3,7 +3,7 @@ import json
 import pytest
 
 from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories import UpstashRedisChatMessageHistory
+from langchain.memory.chat_message_histories.upstash_redis import UpstashRedisChatMessageHistory
 from langchain.schema.messages import _message_to_dict
 
 URL = "<UPSTASH_REDIS_REST_URL>"
