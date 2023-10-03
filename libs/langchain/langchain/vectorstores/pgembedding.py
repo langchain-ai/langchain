@@ -8,6 +8,7 @@ import sqlalchemy
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Session, relationship
+
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:

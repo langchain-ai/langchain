@@ -24,6 +24,7 @@ import sqlalchemy
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Session
+
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
