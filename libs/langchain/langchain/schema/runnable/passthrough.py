@@ -11,16 +11,21 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     Union,
     cast,
 )
 
-from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import BaseModel, create_model
-from langchain.schema.runnable.base import Input, Runnable, RunnableMap
+from langchain.schema.runnable.base import (
+    Input,
+    Runnable,
+    RunnableMap,
+    RunnableSerializable,
+)
 from langchain.schema.runnable.config import RunnableConfig, get_executor_for_config
-from langchain.schema.runnable.utils import AddableDict
+from langchain.schema.runnable.utils import AddableDict, ConfigurableFieldSpec
 from langchain.utils.aiter import atee, py_anext
 from langchain.utils.iter import safetee
 
@@ -33,7 +38,7 @@ async def aidentity(x: Input) -> Input:
     return x
 
 
-class RunnablePassthrough(Serializable, Runnable[Input, Input]):
+class RunnablePassthrough(RunnableSerializable[Input, Input]):
     """
     A runnable that passes through the input.
     """
@@ -109,7 +114,7 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
             yield chunk
 
 
-class RunnableAssign(Serializable, Runnable[Dict[str, Any], Dict[str, Any]]):
+class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     """
     A runnable that assigns key-value pairs to Dict[str, Any] inputs.
     """
@@ -155,6 +160,10 @@ class RunnableAssign(Serializable, Runnable[Dict[str, Any], Dict[str, Any]]):
             )
 
         return super().output_schema
+
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return self.mapper.config_specs
 
     def invoke(
         self,
