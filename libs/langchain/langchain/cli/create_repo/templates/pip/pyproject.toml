@@ -7,7 +7,7 @@ readme = "README.md"
 requires-python = ">=3.8,<4.0"
 dependencies = [
   "langchain~=____langchain_version",
-  "langserve[server]>=0.0.5",
+  "langserve[server]>=0.0.6",
   "tiktoken~=0.4.0",
   "openai~=0.27.8",
   "fastapi~=0.96.0",
