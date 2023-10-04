@@ -28,7 +28,7 @@ class DeepSparse(LLM):
     """The path to a model file or directory or the name of a SparseZoo model stub."""
 
     model_config: Optional[Dict[str, Any]] = None
-    """Key word arguments passed to the pipeline construction.
+    """Keyword arguments passed to the pipeline construction.
     Common parameters are sequence_length, prompt_sequence_length"""
 
     generation_config: Union[None, str, Dict] = None
