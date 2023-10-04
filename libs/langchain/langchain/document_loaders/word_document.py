@@ -65,7 +65,7 @@ class Docx2txtLoader(BaseLoader, ABC):
 
 
 class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
-    """Load `Microsof Word` file using `Unstructured`.
+    """Load `Microsoft Word` file using `Unstructured`.
 
     Works with both .docx and .doc files.
     You can run the loader in one of two modes: "single" and "elements".
