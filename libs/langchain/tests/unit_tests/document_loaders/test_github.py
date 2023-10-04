@@ -15,6 +15,18 @@ def test_initialization() -> None:
     }
 
 
+def test_initialization_ghe() -> None:
+    loader = GitHubIssuesLoader(repo="repo", access_token="access_token",
+                                github_api_url="https://github.example.com/api/v3")
+    assert loader.repo == "repo"
+    assert loader.access_token == "access_token"
+    assert loader.github_api_url == "https://github.example.com/api/v3"
+    assert loader.headers == {
+        "Accept": "application/vnd.github+json",
+        "Authorization": "Bearer access_token",
+    }
+
+
 def test_invalid_initialization() -> None:
     # Invalid parameter
     with pytest.raises(ValueError):
@@ -89,7 +101,7 @@ def test_url() -> None:
         repo="repo", access_token="access_token", state="open", sort="created"
     )
     assert (
-        loader.url == "https://api.github.com/repos/repo/issues?state=open&sort=created"
+            loader.url == "https://api.github.com/repos/repo/issues?state=open&sort=created"
     )
 
     # parameters: milestone, state, assignee, creator, mentioned, labels, sort,
