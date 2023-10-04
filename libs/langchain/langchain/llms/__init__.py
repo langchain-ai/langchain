@@ -443,6 +443,11 @@ def _import_vertex_model_garden() -> Any:
 
     return VertexAIModelGarden
 
+def _import_bigframesllm() -> Any:
+    from langchain.llms.bigframesllm import BigFramesLLM
+
+    return BigFramesLLM
+
 
 def _import_vllm() -> Any:
     from langchain.llms.vllm import VLLM
@@ -611,6 +616,8 @@ def __getattr__(name: str) -> Any:
         return _import_vertex_model_garden()
     elif name == "VLLM":
         return _import_vllm()
+    elif name == "BigFramesLLM":
+        return _import_bigframesllm()
     elif name == "VLLMOpenAI":
         return _import_vllm_openai()
     elif name == "Writer":
@@ -634,6 +641,7 @@ __all__ = [
     "Baseten",
     "Beam",
     "Bedrock",
+    "BigFramesLLM",
     "CTransformers",
     "CTranslate2",
     "CerebriumAI",
@@ -764,6 +772,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "openllm": _import_openllm,
         "openllm_client": _import_openllm,
         "vllm": _import_vllm,
+        "bigframesllm": _import_bigframesllm,
         "vllm_openai": _import_vllm_openai,
         "writer": _import_writer,
         "xinference": _import_xinference,
