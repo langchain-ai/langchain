@@ -129,9 +129,7 @@ class Runnable(Generic[Input, Output], ABC):
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         return []
 
-    def config_schema(
-        self, *, include: Sequence[str]
-    ) -> Type[BaseModel]:
+    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
         class _Config:
             arbitrary_types_allowed = True
 
