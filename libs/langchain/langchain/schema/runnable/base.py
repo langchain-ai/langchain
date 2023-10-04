@@ -130,13 +130,12 @@ class Runnable(Generic[Input, Output], ABC):
         return []
 
     def config_schema(
-        self, *, include: Optional[Sequence[str]] = None
+        self, *, include: Sequence[str]
     ) -> Type[BaseModel]:
         class _Config:
             arbitrary_types_allowed = True
 
         include = include or []
-        include = [i for i in include if i != "configurable"]
         config_specs = self.config_specs
         configurable = (
             create_model(  # type: ignore[call-overload]
@@ -151,7 +150,7 @@ class Runnable(Generic[Input, Output], ABC):
                     for spec in config_specs
                 },
             )
-            if config_specs
+            if config_specs and "configurable" in include
             else None
         )
 
@@ -162,7 +161,7 @@ class Runnable(Generic[Input, Output], ABC):
             **{
                 field_name: (field_type, None)
                 for field_name, field_type in RunnableConfig.__annotations__.items()
-                if field_name in include
+                if field_name in [i for i in include if i != "configurable"]
             },
         )
 
