@@ -39,9 +39,10 @@ SCORING_TEMPLATE_WITH_REFERENCE = ChatPromptTemplate.from_messages(
         ("system", SYSTEM_MESSAGE),
         (
             "human",
-            '[Instruction]\nPlease act as an impartial judge \
+            "[Instruction]\nPlease act as an impartial judge \
 and evaluate the quality of the response provided by an AI \
-assistant to the user question displayed below. {criteria}{reference}Begin your evaluation \
+assistant to the user question displayed below. {criteria}"
+            '[Ground truth]\n{reference}\nBegin your evaluation \
 by providing a short explanation. Be as objective as possible. \
 After providing your explanation, you must rate the response on a scale of 1 to 10 \
 by strictly following this format: "[[rating]]", for example: "Rating: [[5]]".\n\n\
