@@ -151,7 +151,7 @@ class Rockset(VectorStore):
         This is intended as a quicker way to get started.
         """
 
-        # Sanitize imputs
+        # Sanitize inputs
         assert client is not None, "Rockset Client cannot be None"
         assert collection_name, "Collection name cannot be empty"
         assert text_key, "Text key name cannot be empty"
