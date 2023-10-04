@@ -18,6 +18,7 @@ an interface where "chat messages" are the inputs and outputs.
 """  # noqa: E501
 
 from langchain.chat_models.anthropic import ChatAnthropic
+from langchain.chat_models.cohere import ChatCohere
 from langchain.chat_models.anyscale import ChatAnyscale
 from langchain.chat_models.azure_openai import AzureChatOpenAI
 from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
@@ -45,6 +46,7 @@ __all__ = [
     "FakeListChatModel",
     "PromptLayerChatOpenAI",
     "ChatAnthropic",
+    "ChatCohere",
     "ChatGooglePalm",
     "ChatMLflowAIGateway",
     "ChatOllama",

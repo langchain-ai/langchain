@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
+from pydantic import Field
 from tenacity import (
     before_sleep_log,
     retry,
@@ -77,7 +78,7 @@ class Cohere(LLM):
 
     client: Any  #: :meta private:
     async_client: Any  #: :meta private:
-    model: Optional[str] = None
+    model: Optional[str] = Field(default=None)
     """Model name to use."""
 
     max_tokens: int = 256
@@ -109,6 +110,9 @@ class Cohere(LLM):
 
     stop: Optional[List[str]] = None
 
+    streaming: bool = Field(default=False)
+    """Whether to stream the results."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -133,7 +137,7 @@ class Cohere(LLM):
         return values
 
     @property
-    def _default_params(self) -> Dict[str, Any]:
+    def _default_generate_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Cohere API."""
         return {
             "max_tokens": self.max_tokens,
@@ -146,9 +150,16 @@ class Cohere(LLM):
         }
 
     @property
+    def _default_chat_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling Cohere API."""
+        return {
+            "temperature": self.temperature,
+        }
+
+    @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
+        return {**{"model": self.model}, **self._default_generate_params}
 
     @property
     def _llm_type(self) -> str:
@@ -156,7 +167,7 @@ class Cohere(LLM):
         return "cohere"
 
     def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
-        params = self._default_params
+        params = self._default_generate_params
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop is not None:
