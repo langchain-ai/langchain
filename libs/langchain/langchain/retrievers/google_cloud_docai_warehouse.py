@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Dict, List, Optional
+"""Retriever wrapper for Google Cloud DocAI Warehouse on Gen App Builder."""
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
@@ -9,13 +10,23 @@ from langchain.utils import get_from_dict_or_env
 if TYPE_CHECKING:
     from google.cloud.contentwarehouse_v1 import (
         DocumentServiceClient,
+        RequestMetadata,
         SearchDocumentsRequest,
-        SearchDocumentsResponse,
+    )
+    from google.cloud.contentwarehouse_v1.services.document_service.pagers import (
+        SearchDocumentsPager,
     )
 
 
 class GoogleDocaiWarehouseSearchRetriever(BaseRetriever):
-    """"""
+    """A retriever based on DocAI Warehouse.
+
+    Documents should be created and documents should be uploaded
+        in a separate flow, and this retriever uses only DocAI
+        schema_id provided to search for revelant documents.
+
+    More info: https://cloud.google.com/document-ai-warehouse.
+    """
 
     location: str = "us"
     "GCP location where DocAI Warehouse is placed."
@@ -55,21 +66,26 @@ class GoogleDocaiWarehouseSearchRetriever(BaseRetriever):
             return [f"{self._parent}/documentSchemas/{self.schema_id}"]
         return []
 
-    def _prepare_request_metadata(self, user_ldap: str):
+    def _prepare_request_metadata(self, user_ldap: str) -> "RequestMetadata":
         from google.cloud.contentwarehouse_v1 import RequestMetadata, UserInfo
 
         user_info = UserInfo(id=f"user:{user_ldap}")
         return RequestMetadata(user_info=user_info)
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
         request = self._prepare_search_request(query, **kwargs)
         response = self.client.search_documents(request=request)
         return self._parse_search_response(response=response)
 
-    def _prepare_search_request(self, query: str, **kwargs) -> "SearchDocumentsRequest":
-        from google.cloud.contentwarehouse_v1 import DocumentQuery
+    def _prepare_search_request(
+        self, query: str, **kwargs: Any
+    ) -> "SearchDocumentsRequest":
+        from google.cloud.contentwarehouse_v1 import (
+            DocumentQuery,
+            SearchDocumentsRequest,
+        )
 
         try:
             user_ldap = kwargs["user_ldap"]
@@ -88,7 +104,7 @@ class GoogleDocaiWarehouseSearchRetriever(BaseRetriever):
         )
 
     def _parse_search_response(
-        self, response: SearchDocumentsResponse
+        self, response: "SearchDocumentsPager"
     ) -> List[Document]:
         documents = []
         for doc in response.matching_documents:
