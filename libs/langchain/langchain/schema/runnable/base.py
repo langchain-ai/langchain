@@ -874,7 +874,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
                     "available keys are {self.__fields__.keys()}"
                 )
 
-        return RunnableConfigurableFields(bound=self, fields=kwargs)
+        return RunnableConfigurableFields(default=self, fields=kwargs)
 
     def configurable_alternatives(
         self,
@@ -886,7 +886,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         )
 
         return RunnableConfigurableAlternatives(
-            which=which, bound=self, alternatives=kwargs
+            which=which, default=self, alternatives=kwargs
         )
 
 
