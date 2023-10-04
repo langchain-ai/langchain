@@ -54,4 +54,4 @@ Don't forget to add any needed environment variables!
 
 ## Contributing
 
-For information on how to set up your dev environment and contribute, see [here](../poetry/.github/CONTRIBUTING.md).
+For information on how to set up your dev environment and contribute, see [here](.github/CONTRIBUTING.md).
