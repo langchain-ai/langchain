@@ -1,4 +1,3 @@
-import asyncio
 import sys
 from operator import itemgetter
 from typing import (
