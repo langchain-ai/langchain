@@ -12,6 +12,7 @@ from typing import (
     Mapping,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 
@@ -37,6 +38,8 @@ from langchain.schema.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
+    FunctionMessage,
+    FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
@@ -53,20 +56,6 @@ logger = logging.getLogger(__name__)
 class ChatLiteLLMException(Exception):
     """Error with the `LiteLLM I/O` library"""
 
-
-def _truncate_at_stop_tokens(
-    text: str,
-    stop: Optional[List[str]],
-) -> str:
-    """Truncates text at the earliest stop token found."""
-    if stop is None:
-        return text
-
-    for stop_token in stop:
-        stop_token_idx = text.find(stop_token)
-        if stop_token_idx != -1:
-            text = text[:stop_token_idx]
-    return text
 
 def _create_retry_decorator(
     llm: ChatLiteLLM,
@@ -127,7 +116,7 @@ async def acompletion_with_retry(
 
 
 def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""

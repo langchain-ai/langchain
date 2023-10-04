@@ -14,7 +14,7 @@ from langchain.schema.runnable import RunnableConfig
 class FakeListLLM(LLM):
     """Fake LLM for testing purposes."""
 
-    responses: List
+    responses: List[str]
     sleep: Optional[float] = None
     i: int = 0
 

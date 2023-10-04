@@ -614,7 +614,9 @@ class Language(str, Enum):
     CPP = "cpp"
     GO = "go"
     JAVA = "java"
+    KOTLIN = "kotlin"
     JS = "js"
+    TS = "ts"
     PHP = "php"
     PROTO = "proto"
     PYTHON = "python"
@@ -761,6 +763,32 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.KOTLIN:
+            return [
+                # Split along class definitions
+                "\nclass ",
+                # Split along method definitions
+                "\npublic ",
+                "\nprotected ",
+                "\nprivate ",
+                "\ninternal ",
+                "\ncompanion ",
+                "\nfun ",
+                "\nval ",
+                "\nvar ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nwhen ",
+                "\ncase ",
+                "\nelse ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         elif language == Language.JS:
             return [
                 # Split along function definitions
@@ -769,6 +797,32 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nlet ",
                 "\nvar ",
                 "\nclass ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                "\ncase ",
+                "\ndefault ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.TS:
+            return [
+                "\nenum ",
+                "\ninterface ",
+                "\nnamespace ",
+                "\ntype ",
+                # Split along class definitions
+                "\nclass ",
+                # Split along function definitions
+                "\nfunction ",
+                "\nconst ",
+                "\nlet ",
+                "\nvar ",
                 # Split along control flow statements
                 "\nif ",
                 "\nfor ",

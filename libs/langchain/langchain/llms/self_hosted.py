@@ -132,7 +132,7 @@ class SelfHostedPipeline(LLM):
     model_load_fn: Callable
     """Function to load the model remotely on the server."""
     load_fn_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model load function."""
+    """Keyword arguments to pass to the model load function."""
     model_reqs: List[str] = ["./", "torch"]
     """Requirements to install on hardware to inference the model."""
 
