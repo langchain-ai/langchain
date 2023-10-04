@@ -87,7 +87,7 @@ class RunLogPatch:
     def __repr__(self) -> str:
         from pprint import pformat
 
-        return f"RunLogPatch({pformat(self.ops)})"
+        return f"RunLogPatch({pformat(self.ops)[1:-1]})"
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, RunLogPatch) and self.ops == other.ops
