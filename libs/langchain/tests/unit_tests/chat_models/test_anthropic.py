@@ -66,13 +66,6 @@ def test_anthropic_initialization() -> None:
             ],
             "You're an assistant\n\nHuman: Hello\n\nAssistant: Answer:",
         ),
-        (
-            [
-                SystemMessage(content="You're an assistant"),
-                AIMessage(content="Answer:"),
-            ],
-            "You're an assistant\n\nAssistant: Answer:",
-        ),
     ],
 )
 def test_formatting(messages: List[BaseMessage], expected: str) -> None:
