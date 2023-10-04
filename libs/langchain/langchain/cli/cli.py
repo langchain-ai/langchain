@@ -1,7 +1,14 @@
 """A CLI for creating a new project with LangChain."""
 from pathlib import Path
 
-import typer
+try:
+    import typer
+except ImportError:
+    raise ImportError(
+        "Typer must be installed to use the CLI. "
+        "You can install it with `pip install typer`."
+    )
+
 from typing_extensions import Annotated
 
 from langchain.cli.create_repo.base import create, is_poetry_installed
