@@ -9,7 +9,7 @@ from langchain.chat_models.base import (
     _agenerate_from_stream,
     _generate_from_stream,
 )
-from langchain.llms.cohere import Cohere
+from langchain.llms.cohere import BaseCohere
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
@@ -32,7 +32,7 @@ def get_role(message: BaseMessage) -> str:
         raise ValueError(f"Got unknown type {message}")
 
 
-class ChatCohere(BaseChatModel, Cohere):
+class ChatCohere(BaseChatModel, BaseCohere):
     """`Cohere` chat large language models.
 
     To use, you should have the ``cohere`` python package installed, and the
@@ -41,6 +41,7 @@ class ChatCohere(BaseChatModel, Cohere):
 
     Example:
         .. code-block:: python
+
             from langchain.chat_models import ChatCohere
             from langchain.schema import HumanMessage
 
@@ -56,13 +57,21 @@ class ChatCohere(BaseChatModel, Cohere):
         arbitrary_types_allowed = True
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"cohere_api_key": "COHERE_API_KEY"}
-
-    @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "cohere-chat"
+
+    @property
+    def _default_chat_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling Cohere API."""
+        return {
+            "temperature": self.temperature,
+        }
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return {**{"model": self.model}, **self._default_chat_params}
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -70,7 +79,7 @@ class ChatCohere(BaseChatModel, Cohere):
         return True
 
     def get_cohere_chat_request(
-        self, messages: List[BaseMessage], **kwargs
+        self, messages: List[BaseMessage], **kwargs: Any
     ) -> Dict[str, Any]:
         return {
             "message": messages[0].content,
