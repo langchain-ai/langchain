@@ -150,8 +150,7 @@ class ChatCohere(BaseChatModel, Cohere):
         request = self.get_cohere_chat_request(messages, **kwargs)
         response = self.client.chat(**request, stream=False)
 
-        completion = response.completion
-        message = AIMessage(content=completion)
+        message = AIMessage(content=response.text)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     def get_num_tokens(self, text: str) -> int:
