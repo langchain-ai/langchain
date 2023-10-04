@@ -194,7 +194,7 @@ class HuggingFacePipeline(BaseLLM):
 
                         text = (
                             response["generated_text"]
-                            if self.pipeline._postprocess_params["return_type"]
+                            if self.pipeline._postprocess_params.get("return_type")
                             == ReturnType.NEW_TEXT
                             else response["generated_text"][len(batch_prompts[j]) :]
                         )
