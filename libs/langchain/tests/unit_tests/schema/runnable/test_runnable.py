@@ -35,6 +35,7 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     ChatPromptValue,
     HumanMessagePromptTemplate,
+    MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
 from langchain.schema.document import Document
@@ -241,12 +242,179 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     assert fake_chat.input_schema.schema() == snapshot
     assert fake_chat.output_schema.schema() == snapshot
 
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [
+            MessagesPlaceholder(variable_name="history"),
+            ("human", "Hello, how are you?"),
+        ]
+    )
+
+    assert chat_prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {
+            "history": {
+                "title": "History",
+                "type": "array",
+                "items": {
+                    "anyOf": [
+                        {"$ref": "#/definitions/AIMessage"},
+                        {"$ref": "#/definitions/HumanMessage"},
+                        {"$ref": "#/definitions/ChatMessage"},
+                        {"$ref": "#/definitions/SystemMessage"},
+                        {"$ref": "#/definitions/FunctionMessage"},
+                    ]
+                },
+            }
+        },
+        "definitions": {
+            "AIMessage": {
+                "title": "AIMessage",
+                "description": "A Message from an AI.",
+                "type": "object",
+                "properties": {
+                    "content": {"title": "Content", "type": "string"},
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "type": {
+                        "title": "Type",
+                        "default": "ai",
+                        "enum": ["ai"],
+                        "type": "string",
+                    },
+                    "example": {
+                        "title": "Example",
+                        "default": False,
+                        "type": "boolean",
+                    },
+                    "is_chunk": {
+                        "title": "Is Chunk",
+                        "default": False,
+                        "enum": [False],
+                        "type": "boolean",
+                    },
+                },
+                "required": ["content"],
+            },
+            "HumanMessage": {
+                "title": "HumanMessage",
+                "description": "A Message from a human.",
+                "type": "object",
+                "properties": {
+                    "content": {"title": "Content", "type": "string"},
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "type": {
+                        "title": "Type",
+                        "default": "human",
+                        "enum": ["human"],
+                        "type": "string",
+                    },
+                    "example": {
+                        "title": "Example",
+                        "default": False,
+                        "type": "boolean",
+                    },
+                    "is_chunk": {
+                        "title": "Is Chunk",
+                        "default": False,
+                        "enum": [False],
+                        "type": "boolean",
+                    },
+                },
+                "required": ["content"],
+            },
+            "ChatMessage": {
+                "title": "ChatMessage",
+                "description": "A Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "content": {"title": "Content", "type": "string"},
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "type": {
+                        "title": "Type",
+                        "default": "chat",
+                        "enum": ["chat"],
+                        "type": "string",
+                    },
+                    "role": {"title": "Role", "type": "string"},
+                    "is_chunk": {
+                        "title": "Is Chunk",
+                        "default": False,
+                        "enum": [False],
+                        "type": "boolean",
+                    },
+                },
+                "required": ["content", "role"],
+            },
+            "SystemMessage": {
+                "title": "SystemMessage",
+                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "content": {"title": "Content", "type": "string"},
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "type": {
+                        "title": "Type",
+                        "default": "system",
+                        "enum": ["system"],
+                        "type": "string",
+                    },
+                    "is_chunk": {
+                        "title": "Is Chunk",
+                        "default": False,
+                        "enum": [False],
+                        "type": "boolean",
+                    },
+                },
+                "required": ["content"],
+            },
+            "FunctionMessage": {
+                "title": "FunctionMessage",
+                "description": "A Message for passing the result of executing a function back to a model.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "content": {"title": "Content", "type": "string"},
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "type": {
+                        "title": "Type",
+                        "default": "function",
+                        "enum": ["function"],
+                        "type": "string",
+                    },
+                    "name": {"title": "Name", "type": "string"},
+                    "is_chunk": {
+                        "title": "Is Chunk",
+                        "default": False,
+                        "enum": [False],
+                        "type": "boolean",
+                    },
+                },
+                "required": ["content", "name"],
+            },
+        },
+    }
+    assert chat_prompt.output_schema.schema() == snapshot
+
     prompt = PromptTemplate.from_template("Hello, {name}!")
 
     assert prompt.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"name": {"title": "Name"}},
+        "properties": {"name": {"title": "Name", "type": "string"}},
     }
     assert prompt.output_schema.schema() == snapshot
 
@@ -255,7 +423,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     assert prompt_mapper.input_schema.schema() == {
         "definitions": {
             "PromptInput": {
-                "properties": {"name": {"title": "Name"}},
+                "properties": {"name": {"title": "Name", "type": "string"}},
                 "title": "PromptInput",
                 "type": "object",
             }
@@ -280,7 +448,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     assert seq.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"name": {"title": "Name"}},
+        "properties": {"name": {"title": "Name", "type": "string"}},
     }
     assert seq.output_schema.schema() == {
         "type": "array",
@@ -320,7 +488,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     assert seq_w_map.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"name": {"title": "Name"}},
+        "properties": {"name": {"title": "Name", "type": "string"}},
     }
     assert seq_w_map.output_schema.schema() == {
         "title": "RunnableMapOutput",
@@ -428,7 +596,7 @@ def test_schema_complex_seq() -> None:
         "title": "RunnableMapInput",
         "type": "object",
         "properties": {
-            "person": {"title": "Person"},
+            "person": {"title": "Person", "type": "string"},
             "language": {"title": "Language"},
         },
     }
@@ -2318,7 +2486,7 @@ def test_deep_stream_assign() -> None:
     assert chain_with_assign.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"question": {"title": "Question"}},
+        "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign.output_schema.schema() == {
         "title": "RunnableAssignOutput",
@@ -2368,7 +2536,7 @@ def test_deep_stream_assign() -> None:
     assert chain_with_assign_shadow.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"question": {"title": "Question"}},
+        "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
         "title": "RunnableAssignOutput",
@@ -2444,7 +2612,7 @@ async def test_deep_astream_assign() -> None:
     assert chain_with_assign.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"question": {"title": "Question"}},
+        "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign.output_schema.schema() == {
         "title": "RunnableAssignOutput",
@@ -2494,7 +2662,7 @@ async def test_deep_astream_assign() -> None:
     assert chain_with_assign_shadow.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"question": {"title": "Question"}},
+        "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
         "title": "RunnableAssignOutput",
@@ -3290,7 +3458,7 @@ async def test_tool_from_runnable() -> None:
     assert chain_tool.description.endswith(repr(chain))
     assert chain_tool.args_schema.schema() == chain.input_schema.schema()
     assert chain_tool.args_schema.schema() == {
-        "properties": {"question": {"title": "Question"}},
+        "properties": {"question": {"title": "Question", "type": "string"}},
         "title": "PromptInput",
         "type": "object",
     }
