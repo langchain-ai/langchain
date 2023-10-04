@@ -87,6 +87,7 @@ class RunLogPatch:
     def __repr__(self) -> str:
         from pprint import pformat
 
+        # 1:-1 to get rid of the [] around the list
         return f"RunLogPatch({pformat(self.ops)[1:-1]})"
 
     def __eq__(self, other: object) -> bool:
@@ -250,6 +251,7 @@ class LogStreamCallbackHandler(BaseTracer):
                     {
                         "op": "add",
                         "path": f"/logs/{index}/final_output",
+                        # to undo the dumpd done by some runnables / tracer / etc
                         "value": load(run.outputs),
                     },
                     {
