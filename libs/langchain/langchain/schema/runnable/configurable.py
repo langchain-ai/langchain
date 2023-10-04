@@ -232,6 +232,16 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
             return self.bound
 
 
+# Before Python 3.11 StrEnum is not available
+if not hasattr(enum, "StrEnum"):
+
+    class StrEnum(str, enum.Enum):
+        pass
+
+else:
+    StrEnum = enum.StrEnum
+
+
 class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     which: ConfigurableField
 
@@ -239,8 +249,9 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
-        which_enum = enum.StrEnum(  # type: ignore[misc]
-            self.which.name, list(self.alternatives.keys()) + ["default"]
+        which_enum = StrEnum(  # type: ignore[misc]
+            self.which.name,
+            ((v, v) for v in list(self.alternatives.keys()) + ["default"]),
         )
         return [
             ConfigurableFieldSpec(
