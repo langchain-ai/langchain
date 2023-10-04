@@ -1,6 +1,7 @@
 # flake8: noqa
 GET_ISSUES_PROMPT = """
-This tool will fetch a list of the repository's issues. It will return the title, and issue number of 5 issues. It takes no input."""
+This tool will fetch a list of the repository's issues. It will return the title, and issue number of 5 issues. It takes no input.
+"""
 
 GET_ISSUE_PROMPT = """
 This tool will fetch the title, body, and comment thread of a specific issue. **VERY IMPORTANT**: You must specify the issue number as an integer.
@@ -13,6 +14,7 @@ This tool is useful when you need to comment on a GitHub issue. Simply pass in t
 - Then you must place two newlines
 - Then you must specify your comment
 """
+
 CREATE_PULL_REQUEST_PROMPT = """
 This tool is useful when you need to create a new pull request in a GitHub repository. **VERY IMPORTANT**: Your input to this tool MUST strictly follow these rules:
 
@@ -27,6 +29,7 @@ README updates
 
 added contributors' names, closes issue #3
 """
+
 CREATE_FILE_PROMPT = """
 This tool is a wrapper for the GitHub API, useful when you need to create a file in a GitHub repository. **VERY IMPORTANT**: Your input to this tool MUST strictly follow these rules:
 
@@ -78,10 +81,6 @@ LIST_PULL_REQUEST_FILES="""
 This tool will fetch the full text of all files in a pull request (PR) given the PR number as an input. This is useful for understanding the code changes in a PR or contributing to it. **VERY IMPORTANT**: You must specify the PR number as an integer input parameter.
 """
 
-# GET_PR_DETAILS_PROMPT = """
-# This tool will fetch the file tree (or CTAGS) of the entire commit. **VERY IMPORTANT**: You must specify the commit hash as a string input parameter.
-# """
-
 OVERVIEW_EXISTING_FILES_IN_MAIN = """
 This tool will provide an overview of all existing files in the main branch of the repository. It will list the file names, their respective paths, and a brief summary of their contents. This can be useful for understanding the structure and content of the repository, especially when navigating through large codebases. No input parameters are required.
 """
@@ -117,9 +116,3 @@ This tool will create a new branch in the repository. **VERY IMPORTANT**: You mu
 GET_FILES_FROM_DIRECTORY_PROMPT = """
 This tool will fetch a list of all files in a specified directory. **VERY IMPORTANT**: You must specify the path of the directory as a string input parameter.
 """
-
-# TODOs:
-# get_reviews(), get_review_requests(), get_labels(), add_to_labels([labels])
-# improve get_files
-# for comments use get_issue_comments (even for PRs)
-# if bot is requested, do a review. Actually, Github won't allow you to request bots, use Labels instead (as a hacky workaround). 
