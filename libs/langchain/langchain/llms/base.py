@@ -248,12 +248,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> str:
-        if type(self)._agenerate == BaseLLM._agenerate:
-            # model doesn't implement async invoke, so use default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, stop=stop, **kwargs)
-            )
-
         config = config or {}
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
@@ -319,13 +313,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     ) -> List[str]:
         if not inputs:
             return []
-
-        if type(self)._agenerate == BaseLLM._agenerate:
-            # model doesn't implement async batch, so use default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.batch, **kwargs), inputs, config
-            )
-
         config = get_config_list(config, len(inputs))
         max_concurrency = config[0].get("max_concurrency")
 
@@ -478,7 +465,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
-        raise NotImplementedError()
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self._generate, **kwargs), prompts, stop, run_manager
+        )
 
     def _stream(
         self,
@@ -1035,7 +1024,9 @@ class LLM(BaseLLM):
         **kwargs: Any,
     ) -> str:
         """Run the LLM on the given prompt and input."""
-        raise NotImplementedError()
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self._call, **kwargs), prompt, stop, run_manager
+        )
 
     def _generate(
         self,
@@ -1064,12 +1055,6 @@ class LLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        if type(self)._acall == LLM._acall:
-            # model doesn't implement async call, so use default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self._generate, prompts, stop, run_manager, **kwargs)
-            )
-
         """Run the LLM on the given prompt and input."""
         generations = []
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")

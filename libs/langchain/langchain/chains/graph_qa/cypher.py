@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
+from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.graphs.neo4j_graph import Neo4jGraph
@@ -90,6 +91,8 @@ class GraphCypherQAChain(Chain):
     """Whether or not to return the intermediate steps along with the final answer."""
     return_direct: bool = False
     """Whether or not to return the result of querying the graph directly."""
+    cypher_query_corrector: Optional[CypherQueryCorrector] = None
+    """Optional cypher validation tool"""
 
     @property
     def input_keys(self) -> List[str]:
@@ -123,6 +126,7 @@ class GraphCypherQAChain(Chain):
         qa_llm: Optional[BaseLanguageModel] = None,
         exclude_types: List[str] = [],
         include_types: List[str] = [],
+        validate_cypher: bool = False,
         **kwargs: Any,
     ) -> GraphCypherQAChain:
         """Initialize from LLM."""
@@ -150,10 +154,19 @@ class GraphCypherQAChain(Chain):
             kwargs["graph"].structured_schema, include_types, exclude_types
         )
 
+        cypher_query_corrector = None
+        if validate_cypher:
+            corrector_schema = [
+                Schema(el["start"], el["type"], el["end"])
+                for el in kwargs["graph"].structured_schema.get("relationships")
+            ]
+            cypher_query_corrector = CypherQueryCorrector(corrector_schema)
+
         return cls(
             graph_schema=graph_schema,
             qa_chain=qa_chain,
             cypher_generation_chain=cypher_generation_chain,
+            cypher_query_corrector=cypher_query_corrector,
             **kwargs,
         )
 
@@ -176,6 +189,10 @@ class GraphCypherQAChain(Chain):
         # Extract Cypher code if it is wrapped in backticks
         generated_cypher = extract_cypher(generated_cypher)
 
+        # Correct Cypher query if enabled
+        if self.cypher_query_corrector:
+            generated_cypher = self.cypher_query_corrector(generated_cypher)
+
         _run_manager.on_text("Generated Cypher:", end="\n", verbose=self.verbose)
         _run_manager.on_text(
             generated_cypher, color="green", end="\n", verbose=self.verbose
@@ -184,7 +201,11 @@ class GraphCypherQAChain(Chain):
         intermediate_steps.append({"query": generated_cypher})
 
         # Retrieve and limit the number of results
-        context = self.graph.query(generated_cypher)[: self.top_k]
+        # Generated Cypher be null if query corrector identifies invalid schema
+        if generated_cypher:
+            context = self.graph.query(generated_cypher)[: self.top_k]
+        else:
+            context = []
 
         if self.return_direct:
             final_result = context
