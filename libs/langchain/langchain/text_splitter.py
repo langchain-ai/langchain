@@ -28,7 +28,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from io import StringIO, BytesIO
+from io import BytesIO, StringIO
 from typing import (
     AbstractSet,
     Any,
