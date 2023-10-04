@@ -144,7 +144,7 @@ class DocAIParser(BaseBlobParser):
 
         response = self._client.process_document(
             documentai.ProcessRequest(
-                name=self.processor_name,
+                name=self._processor_name,
                 gcs_document=documentai.GcsDocument(
                     gcs_uri=blob.path,
                     mime_type=blob.mimetype or "application/pdf",
