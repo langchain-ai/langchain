@@ -69,7 +69,9 @@ class ChatCohere(BaseChatModel, Cohere):
         """Return whether this model can be serialized by Langchain."""
         return True
 
-    def get_cohere_chat_request(self, messages: List[BaseMessage], **kwargs) -> Dict[str, Any]:
+    def get_cohere_chat_request(
+        self, messages: List[BaseMessage], **kwargs
+    ) -> Dict[str, Any]:
         return {
             "message": messages[0].content,
             "chat_history": [
@@ -80,45 +82,45 @@ class ChatCohere(BaseChatModel, Cohere):
         }
 
     def _stream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         request = self.get_cohere_chat_request(messages, **kwargs)
         stream = self.client.chat(**request, stream=True)
 
         for data in stream:
-            if data.event_type == 'text-generation':
+            if data.event_type == "text-generation":
                 delta = data.text
                 yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
                     run_manager.on_llm_new_token(delta)
 
     async def _astream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         request = self.get_cohere_chat_request(messages, **kwargs)
         stream = await self.async_client.chat(**request, stream=True)
 
         async for data in stream:
-            if data.event_type == 'text-generation':
+            if data.event_type == "text-generation":
                 delta = data.text
                 yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
                     await run_manager.on_llm_new_token(delta)
 
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
             stream_iter = self._stream(
@@ -133,11 +135,11 @@ class ChatCohere(BaseChatModel, Cohere):
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     async def _agenerate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
             stream_iter = self._astream(

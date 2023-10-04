@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
-from pydantic import Field
+from langchain.pydantic_v1 import Field
 from tenacity import (
     before_sleep_log,
     retry,
