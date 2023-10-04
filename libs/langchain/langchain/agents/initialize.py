@@ -30,9 +30,9 @@ def initialize_agent(
         callback_manager: CallbackManager to use. Global callback manager is used if
             not provided. Defaults to None.
         agent_path: Path to serialized agent to use.
-        agent_kwargs: Additional key word arguments to pass to the underlying agent
+        agent_kwargs: Additional keyword arguments to pass to the underlying agent
         tags: Tags to apply to the traced runs.
-        **kwargs: Additional key word arguments passed to the agent executor
+        **kwargs: Additional keyword arguments passed to the agent executor
 
     Returns:
         An agent executor
