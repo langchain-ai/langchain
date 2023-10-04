@@ -129,9 +129,7 @@ class Runnable(Generic[Input, Output], ABC):
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         return []
 
-    def config_schema(
-        self, *, include: Optional[Sequence[str]] = None
-    ) -> Type[BaseModel]:
+    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
         class _Config:
             arbitrary_types_allowed = True
 
@@ -150,7 +148,7 @@ class Runnable(Generic[Input, Output], ABC):
                     for spec in config_specs
                 },
             )
-            if config_specs
+            if config_specs and "configurable" in include
             else None
         )
 
@@ -161,7 +159,7 @@ class Runnable(Generic[Input, Output], ABC):
             **{
                 field_name: (field_type, None)
                 for field_name, field_type in RunnableConfig.__annotations__.items()
-                if field_name in include
+                if field_name in [i for i in include if i != "configurable"]
             },
         )
 
@@ -873,7 +871,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
                     "available keys are {self.__fields__.keys()}"
                 )
 
-        return RunnableConfigurableFields(bound=self, fields=kwargs)
+        return RunnableConfigurableFields(default=self, fields=kwargs)
 
     def configurable_alternatives(
         self,
@@ -885,7 +883,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         )
 
         return RunnableConfigurableAlternatives(
-            which=which, bound=self, alternatives=kwargs
+            which=which, default=self, alternatives=kwargs
         )
 
 
@@ -2051,9 +2049,7 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
-    def config_schema(
-        self, *, include: Optional[Sequence[str]] = None
-    ) -> Type[BaseModel]:
+    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
         return self.bound.config_schema(include=include)
 
     @classmethod
@@ -2132,9 +2128,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
-    def config_schema(
-        self, *, include: Optional[Sequence[str]] = None
-    ) -> Type[BaseModel]:
+    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
         return self.bound.config_schema(include=include)
 
     @classmethod

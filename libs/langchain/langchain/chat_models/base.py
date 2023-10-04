@@ -577,10 +577,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
     ) -> ChatResult:
         """Top Level call"""
         return await asyncio.get_running_loop().run_in_executor(
-            None,
-            partial(
-                self._generate, messages, stop=stop, run_manager=run_manager, **kwargs
-            ),
+            None, partial(self._generate, **kwargs), messages, stop, run_manager
         )
 
     def _stream(
