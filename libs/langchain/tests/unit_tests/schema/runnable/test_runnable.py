@@ -330,7 +330,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ChatMessage": {
                 "title": "ChatMessage",
-                "description": "A Message that can be assigned an arbitrary speaker (i.e. role).",
+                "description": "A Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {"title": "Content", "type": "string"},
@@ -356,7 +356,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "SystemMessage": {
                 "title": "SystemMessage",
-                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
+                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {"title": "Content", "type": "string"},
@@ -381,7 +381,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "FunctionMessage": {
                 "title": "FunctionMessage",
-                "description": "A Message for passing the result of executing a function back to a model.",
+                "description": "A Message for passing the result of executing a function back to a model.",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {"title": "Content", "type": "string"},
