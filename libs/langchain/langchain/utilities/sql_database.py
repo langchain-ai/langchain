@@ -387,7 +387,9 @@ class SQLDatabase:
         with self._engine.begin() as connection:
             if self._schema is not None:
                 if self.dialect == "snowflake":
-                    select_schema_statement = text("ALTER SESSION SET search_path = :schema")
+                    select_schema_statement = text(
+                        "ALTER SESSION SET search_path = :schema"
+                    )
                 elif self.dialect == "bigquery":
                     select_schema_statement = text("SET @@dataset_id=:schema")
                 elif self.dialect == "mssql":
