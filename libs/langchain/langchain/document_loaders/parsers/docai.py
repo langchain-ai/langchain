@@ -94,6 +94,82 @@ class DocAIParser(BaseBlobParser):
         """
         yield from self.batch_parse([blob], gcs_output_path=self._gcs_output_path)
 
+    def online_process(
+        self,
+        blob: Blob,
+        enable_native_pdf_parsing: bool = True,
+        field_mask: Optional[str] = "text,pages.pageNumber",
+        page_range: Optional[List[int]] = None,
+    ) -> Iterator[Document]:
+        """Parses a blob lazily using online processing.
+
+        Args:
+            blob: a blob to parse.
+            enable_native_pdf_parsing: enable pdf embedded text extraction
+            field_mask: a comma-separated list of which fields to include in the Document AI response.
+                https://protobuf.dev/reference/protobuf/google.protobuf/#google.protobuf.FieldMask
+                default: "text,pages.pageNumber"
+            page_range: list of page numbers to parse
+        """
+        try:
+            from google.cloud import documentai
+            from google.cloud.documentai_v1.types import (
+                IndividualPageSelector,
+                OcrConfig,
+                ProcessOptions,
+            )
+            from google.cloud.documentai_toolbox.wra
+        except ImportError as exc:
+            raise ImportError(
+                "documentai package not found, please install it with"
+                " `pip install google-cloud-documentai`"
+            ) from exc
+        try:
+            from google.cloud.documentai_toolbox.wrappers.document import (
+                Document as WrappedDocument,
+            )
+        except ImportError as exc:
+            raise ImportError(
+                "documentai_toolbox package not found, please install it with"
+                " `pip install google-cloud-documentai-toolbox`"
+            ) from exc
+        ocr_config = (
+            OcrConfig(enable_native_pdf_parsing=enable_native_pdf_parsing)
+            if enable_native_pdf_parsing
+            else None
+        )
+        individual_page_selector = (
+            IndividualPageSelector(pages=page_range) if page_range else None
+        )
+
+        response = self._client.process_document(
+            documentai.ProcessRequest(
+                name=self.processor_name,
+                gcs_document=documentai.GcsDocument(
+                    gcs_uri=blob.path,
+                    mime_type=blob.mimetype or "application/pdf",
+                ),
+                process_options=ProcessOptions(
+                    ocr_config=ocr_config,
+                    individual_page_selector=individual_page_selector,
+                ),
+                skip_human_review=True,
+                field_mask=field_mask,
+            )
+        )
+        wrapped_document = WrappedDocument.from_documentai_document(response.document)
+        yield from (
+                Document(
+                    page_content=page.text,
+                    metadata={
+                        "page": page.page_number,
+                        "source": wrapped_document.gcs_input_uri,
+                    },
+                )
+                for page in wrapped_document.pages
+            )
+
+
     def batch_parse(
         self,
         blobs: Sequence[Blob],
@@ -202,6 +278,7 @@ class DocAIParser(BaseBlobParser):
         processor_name: Optional[str] = None,
         batch_size: int = 1000,
         enable_native_pdf_parsing: bool = True,
+        field_mask: Optional[str] = "text,pages.pageNumber",
     ) -> List["Operation"]:
         """Runs Google Document AI PDF Batch Processing on a list of blobs.
 
@@ -211,6 +288,9 @@ class DocAIParser(BaseBlobParser):
             processor_name: name of a Document AI processor.
             batch_size: amount of documents per batch
             enable_native_pdf_parsing: a config option for the parser
+            field_mask: a comma-separated list of which fields to include in the Document AI response.
+                https://protobuf.dev/reference/protobuf/google.protobuf/#google.protobuf.FieldMask
+                default: "text,pages.pageNumber"
 
         Document AI has a 1000 file limit per batch, so batches larger than that need
         to be split into multiple requests.
@@ -251,7 +331,7 @@ class DocAIParser(BaseBlobParser):
 
             output_config = documentai.DocumentOutputConfig(
                 gcs_output_config=documentai.DocumentOutputConfig.GcsOutputConfig(
-                    gcs_uri=output_path, field_mask=None
+                    gcs_uri=output_path, field_mask=field_mask
                 )
             )
 
@@ -271,6 +351,7 @@ class DocAIParser(BaseBlobParser):
                         input_documents=input_config,
                         document_output_config=output_config,
                         process_options=process_options,
+                        skip_human_review=True,
                     )
                 )
             )
