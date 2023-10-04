@@ -57,7 +57,7 @@ class RunState(TypedDict):
     """Final output of the run, usually the result of aggregating streamed_output.
     Only available after the run has finished successfully."""
 
-    logs: list[LogEntry]
+    logs: Dict[str, LogEntry]
     """List of sub-runs contained in this run, if any, in the order they were started.
     If filters were supplied, this list will contain only the runs that matched the 
     filters."""
