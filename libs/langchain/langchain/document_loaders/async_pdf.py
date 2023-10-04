@@ -74,8 +74,7 @@ class AsyncPdfLoader(BaseLoader):
         # Resolve temp filename for the downloaded PDF.
         temp_dir = tempfile.TemporaryDirectory()
         self.temp_dirs.append(temp_dir)
-        _, suffix = os.path.splitext(url)
-        temp_pdf = os.path.join(temp_dir.name, f"tmp{suffix}")
+        temp_pdf = os.path.join(temp_dir.name, f"tmp.pdf")
 
         # Download the PDF.
         with requests.get(
