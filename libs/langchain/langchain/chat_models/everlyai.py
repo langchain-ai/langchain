@@ -2,11 +2,8 @@
 from __future__ import annotations
 
 import logging
-import os
 import sys
 from typing import TYPE_CHECKING, Dict, Optional, Set
-
-import requests
 
 from langchain.adapters.openai import convert_message_to_dict
 from langchain.chat_models.openai import (
