@@ -12,10 +12,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
     max_token_limit: int = 2000
     moving_summary_buffer: str = ""
     memory_key: str = "history"
-
-    @property
-    def buffer(self) -> List[BaseMessage]:
-        return self.chat_memory.messages
+    buffer: List[BaseMessage] = []
 
     @property
     def memory_variables(self) -> List[str]:
@@ -27,17 +24,19 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        buffer = self.buffer
+        if self.buffer == []:
+            self.buffer = self.chat_memory.messages
+            self.prune()
         if self.moving_summary_buffer != "":
             first_messages: List[BaseMessage] = [
                 self.summary_message_cls(content=self.moving_summary_buffer)
             ]
-            buffer = first_messages + buffer
+            self.buffer = first_messages + self.buffer
         if self.return_messages:
-            final_buffer: Any = buffer
+            final_buffer: Any = self.buffer
         else:
             final_buffer = get_buffer_string(
-                buffer, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
+                self.buffer, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
             )
         return {self.memory_key: final_buffer}
 
@@ -60,13 +59,12 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
 
     def prune(self) -> None:
         """Prune buffer if it exceeds max token limit"""
-        buffer = self.chat_memory.messages
-        curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
+        curr_buffer_length = self.llm.get_num_tokens_from_messages(self.buffer)
         if curr_buffer_length > self.max_token_limit:
             pruned_memory = []
             while curr_buffer_length > self.max_token_limit:
-                pruned_memory.append(buffer.pop(0))
-                curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
+                pruned_memory.append(self.buffer.pop(0))
+                curr_buffer_length = self.llm.get_num_tokens_from_messages(self.buffer)
             self.moving_summary_buffer = self.predict_new_summary(
                 pruned_memory, self.moving_summary_buffer
             )
