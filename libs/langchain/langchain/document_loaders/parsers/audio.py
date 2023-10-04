@@ -239,9 +239,8 @@ class YandexSTTParser(BaseBlobParser):
         """Lazily parse the blob."""
 
         try:
-            from speechkit import model_repository
+            from speechkit import configure_credentials, creds, model_repository
             from speechkit.stt import AudioProcessingType
-            from speechkit import configure_credentials, creds
         except ImportError:
             raise ImportError(
                 "yandex-speechkit package not found, please install it with "
