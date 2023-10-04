@@ -563,7 +563,7 @@ def test_configurable_fields() -> None:
 
     assert fake_llm_configurable.invoke("...") == "a"
 
-    assert fake_llm_configurable.config_schema().schema() == {
+    assert fake_llm_configurable.config_schema(include=["configurable"]).schema() == {
         "title": "RunnableConfigurableFieldsConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -606,7 +606,7 @@ def test_configurable_fields() -> None:
         text="Hello, John!"
     )
 
-    assert prompt_configurable.config_schema().schema() == {
+    assert prompt_configurable.config_schema(include=["configurable"]).schema() == {
         "title": "RunnableConfigurableFieldsConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -638,7 +638,7 @@ def test_configurable_fields() -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    assert chain_configurable.config_schema().schema() == {
+    assert chain_configurable.config_schema(include=["configurable"]).schema() == {
         "title": "RunnableSequenceConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -690,7 +690,9 @@ def test_configurable_fields() -> None:
         "llm3": "a",
     }
 
-    assert chain_with_map_configurable.config_schema().schema() == {
+    assert chain_with_map_configurable.config_schema(
+        include=["configurable"]
+    ).schema() == {
         "title": "RunnableSequenceConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -760,11 +762,17 @@ def test_configurable_fields_example() -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    assert chain_configurable.config_schema().schema() == {
+    assert chain_configurable.config_schema(include=["configurable"]).schema() == {
         "title": "RunnableSequenceConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
         "definitions": {
+            "LLM": {
+                "title": "LLM",
+                "description": "An enumeration.",
+                "enum": ["chat", "default"],
+                "type": "string",
+            },
             "Configurable": {
                 "title": "Configurable",
                 "type": "object",
@@ -772,10 +780,7 @@ def test_configurable_fields_example() -> None:
                     "llm": {
                         "title": "LLM",
                         "default": "default",
-                        "anyOf": [
-                            {"enum": ["chat"], "type": "string"},
-                            {"enum": ["default"], "type": "string"},
-                        ],
+                        "allOf": [{"$ref": "#/definitions/LLM"}],
                     },
                     "llm_responses": {
                         "title": "LLM Responses",
@@ -791,7 +796,7 @@ def test_configurable_fields_example() -> None:
                         "type": "string",
                     },
                 },
-            }
+            },
         },
     }
 
