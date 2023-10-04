@@ -22,7 +22,12 @@ from langchain.schema.runnable.config import (
     get_config_list,
     patch_config,
 )
-from langchain.schema.runnable.utils import Input, Output
+from langchain.schema.runnable.utils import (
+    ConfigurableFieldSpec,
+    Input,
+    Output,
+    get_unique_config_specs,
+)
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import AsyncCallbackManagerForChainRun
@@ -56,9 +61,15 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def output_schema(self) -> Type[BaseModel]:
         return self.runnable.output_schema
 
-    def config_schema(
-        self, *, include: Optional[Sequence[str]] = None
-    ) -> Type[BaseModel]:
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return get_unique_config_specs(
+            spec
+            for step in [self.runnable, *self.fallbacks]
+            for spec in step.config_specs
+        )
+
+    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
         return self.runnable.config_schema(include=include)
 
     @classmethod

@@ -948,7 +948,10 @@ def _collect_test_results(
     for c in configs:
         for callback in cast(list, c["callbacks"]):
             if isinstance(callback, EvaluatorCallbackHandler):
-                all_eval_results.update(callback.logged_eval_results)
+                eval_results = callback.logged_eval_results
+                all_eval_results.update(
+                    {example_id: v for (_, example_id), v in eval_results.items()}
+                )
     results = {}
     for example, output in zip(examples, batch_results):
         feedback = all_eval_results.get(str(example.id), [])

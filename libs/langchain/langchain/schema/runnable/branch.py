@@ -26,7 +26,12 @@ from langchain.schema.runnable.config import (
     get_callback_manager_for_config,
     patch_config,
 )
-from langchain.schema.runnable.utils import Input, Output
+from langchain.schema.runnable.utils import (
+    ConfigurableFieldSpec,
+    Input,
+    Output,
+    get_unique_config_specs,
+)
 
 
 class RunnableBranch(RunnableSerializable[Input, Output]):
@@ -138,6 +143,18 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 return runnable.input_schema
 
         return super().input_schema
+
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return get_unique_config_specs(
+            spec
+            for step in (
+                [self.default]
+                + [r for _, r in self.branches]
+                + [r for r, _ in self.branches]
+            )
+            for spec in step.config_specs
+        )
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
