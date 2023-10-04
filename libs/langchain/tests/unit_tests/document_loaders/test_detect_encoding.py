@@ -2,12 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from langchain.document_loaders import DirectoryLoader, TextLoader
+from langchain.document_loaders import DirectoryLoader, TextLoader, CSVLoader
 from langchain.document_loaders.helpers import detect_file_encodings
 
 
 @pytest.mark.requires("chardet")
-def test_loader_detect_encoding() -> None:
+def test_loader_detect_encoding_text() -> None:
     """Test text loader."""
     path = Path(__file__).parent.parent / "examples"
     files = path.glob("**/*.txt")
@@ -17,6 +17,26 @@ def test_loader_detect_encoding() -> None:
         glob="**/*.txt",
         loader_kwargs={"autodetect_encoding": True},
         loader_cls=TextLoader,
+    )
+
+    with pytest.raises((UnicodeDecodeError, RuntimeError)):
+        loader.load()
+
+    docs = loader_detect_encoding.load()
+    assert len(docs) == len(list(files))
+
+
+@pytest.mark.requires("chardet")
+def test_loader_detect_encoding_csv() -> None:
+    """Test text loader."""
+    path = Path(__file__).parent.parent / "examples"
+    files = path.glob("**/*.txt")
+    loader = DirectoryLoader(str(path), glob="**/*.txt", loader_cls=CSVLoader)
+    loader_detect_encoding = DirectoryLoader(
+        str(path),
+        glob="**/*.txt",
+        loader_kwargs={"autodetect_encoding": True},
+        loader_cls=CSVLoader,
     )
 
     with pytest.raises((UnicodeDecodeError, RuntimeError)):
