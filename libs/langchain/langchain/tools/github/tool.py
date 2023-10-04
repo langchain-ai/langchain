@@ -10,14 +10,9 @@ To use this tool, you must first set as environment variables:
 from typing import Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field, root_validator
+from langchain.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
 from langchain.utilities.github import GitHubAPIWrapper
-
-
-class GitHubToolInput(BaseModel):
-    """Goal: have no args{} field"""
-    url: str = Field(description='')
 
 
 class GitHubAction(BaseTool):
@@ -27,7 +22,6 @@ class GitHubAction(BaseTool):
     mode: str
     name: str = ""
     description: str = ""
-    # args_schema: Type[BaseModel] = GitHubToolInput
 
     def _run(
         self,
@@ -36,10 +30,3 @@ class GitHubAction(BaseTool):
     ) -> str:
         """Use the GitHub API to run an operation."""
         return self.api_wrapper.run(self.mode, instructions)
-
-    @property
-    def args(self) -> dict:
-        return None
-        # TODO: Somehow infer the schema from each inner function!
-        # schema = create_schema_from_function(self.name, self.self.api_wrapper.run(self.mode, self.instructions))
-        # return schema.schema()["properties"]

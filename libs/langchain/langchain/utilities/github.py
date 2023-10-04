@@ -115,13 +115,11 @@ class GitHubAPIWrapper(BaseModel):
         """
         parsed = []
         for pr in pull_requests:
-            title = pr.title
-            number = pr.number
-            commits = pr.commits
-            parsed.append({"title": title, "number": number, "commits": str(commits)})
-        
-        print("❤️❤️❤️❤️❤️❤️ PARSED PRS:")
-        print(parsed)
+            parsed.append({"title": pr.title, 
+                           "number": pr.number, 
+                           "commits": str(pr.commits),
+                           "comments": str(pr.comments)
+                           })
         return parsed
 
     def get_issues(self) -> str:
@@ -151,9 +149,7 @@ class GitHubAPIWrapper(BaseModel):
             and each PR's title and number.
         """
         # issues = self.github_repo_instance.get_issues(state="open")
-        print("⭐️⭐️⭐️⭐️⭐️⭐️ IN LIST OPEN PRS")
         pull_requests = self.github_repo_instance.get_pulls(state="open")
-        print(f"⭐️PRS: {pull_requests}")
         if pull_requests.totalCount > 0:
             parsed_prs = self.parse_pull_requests(pull_requests)
             parsed_prs_str = (
@@ -329,9 +325,7 @@ class GitHubAPIWrapper(BaseModel):
         pr = self.github_repo_instance.get_pull(number=int(pr_number))
         total_tokens = 0
         page=0
-        # print(f"Top of get files from PR")
-        
-        while True: # (total_tokens + tiktoken()) < MAX_TOKENS_FOR_FILES:
+        while True: # or while (total_tokens + tiktoken()) < MAX_TOKENS_FOR_FILES:
             files_page = pr.get_files().get_page(page)
             if len(files_page) == 0:
                 break
@@ -348,24 +342,20 @@ class GitHubAPIWrapper(BaseModel):
                     if file_content_response.status_code == 200:
                         # Save the content as a UTF-8 string
                         file_content = file_content_response.text
-                        # print("File content", file_content)
                     else:
                         print(f"failed downloading file content (Error {file_content_response.status_code}). Skipping")
                         continue
                     
                     file_tokens = len(tiktoken.get_encoding("cl100k_base").encode(file_content + file.filename + "file_name file_contents"))
-                    # print(f"Getting file contents from Github: {file_content}")
                     if (total_tokens + file_tokens) < MAX_TOKENS_FOR_FILES:
                         pr_files.append({"filename": file.filename, "contents": file_content,"additions": file.additions,"deletions": file.deletions})
                         total_tokens += file_tokens
                 except Exception as e:
                     print(f"Error when reading files from a PR on github. {e}")
-                    # pr_files.append({"file_name": f"Error reading file: {e}" ,"file_contents": "None"})
             page += 1
         return pr_files
     
     def get_pull_request(self, pr_number: int) -> Dict[str, Any]:
-        # THIS ISN"T WORKING...
         """
         Fetches a specific pull request and its first 10 comments, limited by max_tokens
         Parameters:
@@ -415,7 +405,7 @@ class GitHubAPIWrapper(BaseModel):
             if len(commits_page) == 0:
                 break
             for commit in commits_page:
-                commit_str = str({"message": commit.commit.message, "sha": commit.commit.sha})
+                commit_str = str({"message": commit.commit.message})
                 if total_tokens + get_tokens(commit_str) > max_tokens:
                     break
                 commits.append(commit_str)
@@ -494,7 +484,6 @@ class GitHubAPIWrapper(BaseModel):
                     return f"File already exists at `{file_path}` on branch `{self.active_branch}`. You must use `update_file` to modify it."
             except Exception as e:
                 # expected behavior, file shouldn't exist yet
-                # print(f"ERROR in `create_file` when getting contents of file {file_path}. Error: {e}")
                 pass
             
             self.github_repo_instance.create_file(
@@ -612,6 +601,7 @@ class GitHubAPIWrapper(BaseModel):
     def search_code(self, query: str) -> str:
         """
         Searches code in the repository.
+        # Todo: limit total tokens returned...
         
         Parameters:
             query(str): The search query
@@ -625,7 +615,6 @@ class GitHubAPIWrapper(BaseModel):
             # Get the file content using the PyGithub get_contents method
             file_content = self.github_repo_instance.get_contents(code.path, ref=self.active_branch).decoded_content
             results.append(f"Path: {code.path}, Content: {file_content}")
-            # Todo: limit total tokens returned...
         
         return "\n".join(results)
 
