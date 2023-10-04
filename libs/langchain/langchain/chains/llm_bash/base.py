@@ -93,7 +93,7 @@ class LLMBashChain(Chain):
         warn_deprecated(
             since="0.0.306",
             message=(
-                "On 2023-10-09 the LLMBashChain "
+                "On 2023-10-12 the LLMBashChain "
                 "will be moved to langchain-experimental"
             ),
             pending=True,
