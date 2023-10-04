@@ -750,7 +750,6 @@ class AgentExecutor(Chain):
     ] = False
     """How to handle errors raised by the agent's output parser.
     Defaults to `False`, which raises the error.
-s
     If `true`, the error will be sent back to the LLM as an observation.
     If a string, the string itself will be sent to the LLM as an observation.
     If a callable function, the function will be called with the exception
@@ -932,7 +931,12 @@ s
             else:
                 raise_error = False
             if raise_error:
-                raise e
+                raise ValueError(
+                    "An output parsing error occurred. "
+                    "In order to pass this error back to the agent and have it try "
+                    "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
+                    f"This is the error: {str(e)}"
+                )
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
                 if e.send_to_llm:
@@ -1028,7 +1032,12 @@ s
             else:
                 raise_error = False
             if raise_error:
-                raise e
+                raise ValueError(
+                    "An output parsing error occurred. "
+                    "In order to pass this error back to the agent and have it try "
+                    "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
+                    f"This is the error: {str(e)}"
+                )
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
                 if e.send_to_llm:
@@ -1220,11 +1229,14 @@ s
         """Check if the tool is a returning tool."""
         agent_action, observation = next_step_output
         name_to_tool_map = {tool.name: tool for tool in self.tools}
+        return_value_key = "output"
+        if len(self.agent.return_values) > 0:
+            return_value_key = self.agent.return_values[0]
         # Invalid tools won't be in the map, so we return False.
         if agent_action.tool in name_to_tool_map:
             if name_to_tool_map[agent_action.tool].return_direct:
                 return AgentFinish(
-                    {self.agent.return_values[0]: observation},
+                    {return_value_key: observation},
                     "",
                 )
         return None

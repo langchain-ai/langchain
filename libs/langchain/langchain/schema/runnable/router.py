@@ -8,19 +8,18 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Union,
     cast,
 )
 
 from typing_extensions import TypedDict
 
-from langchain.load.serializable import Serializable
 from langchain.schema.runnable.base import (
     Input,
-    Other,
     Output,
     Runnable,
-    RunnableSequence,
+    RunnableSerializable,
     coerce_to_runnable,
 )
 from langchain.schema.runnable.config import (
@@ -28,7 +27,11 @@ from langchain.schema.runnable.config import (
     get_config_list,
     get_executor_for_config,
 )
-from langchain.schema.runnable.utils import gather_with_concurrency
+from langchain.schema.runnable.utils import (
+    ConfigurableFieldSpec,
+    gather_with_concurrency,
+    get_unique_config_specs,
+)
 
 
 class RouterInput(TypedDict):
@@ -43,13 +46,19 @@ class RouterInput(TypedDict):
     input: Any
 
 
-class RouterRunnable(Serializable, Runnable[RouterInput, Output]):
+class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     """
     A runnable that routes to a set of runnables based on Input['key'].
     Returns the output of the selected runnable.
     """
 
     runnables: Mapping[str, Runnable[Any, Output]]
+
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return get_unique_config_specs(
+            spec for step in self.runnables.values() for spec in step.config_specs
+        )
 
     def __init__(
         self,
@@ -70,28 +79,6 @@ class RouterRunnable(Serializable, Runnable[RouterInput, Output]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         return cls.__module__.split(".")[:-1]
-
-    def __or__(
-        self,
-        other: Union[
-            Runnable[Any, Other],
-            Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
-            Mapping[str, Any],
-        ],
-    ) -> RunnableSequence[RouterInput, Other]:
-        return RunnableSequence(first=self, last=coerce_to_runnable(other))
-
-    def __ror__(
-        self,
-        other: Union[
-            Runnable[Other, Any],
-            Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
-            Mapping[str, Any],
-        ],
-    ) -> RunnableSequence[Other, Output]:
-        return RunnableSequence(first=coerce_to_runnable(other), last=self)
 
     def invoke(
         self, input: RouterInput, config: Optional[RunnableConfig] = None

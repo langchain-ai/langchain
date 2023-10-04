@@ -152,11 +152,11 @@ class BedrockBase(BaseModel, ABC):
     """
 
     model_id: str
-    """Id of the model to call, e.g., amazon.titan-tg1-large, this is
+    """Id of the model to call, e.g., amazon.titan-text-express-v1, this is
     equivalent to the modelId property in the list-foundation-models api"""
 
     model_kwargs: Optional[Dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     endpoint_url: Optional[str] = None
     """Needed if you don't want to default to us-east-1 endpoint"""
@@ -194,7 +194,7 @@ class BedrockBase(BaseModel, ABC):
             if values["endpoint_url"]:
                 client_params["endpoint_url"] = values["endpoint_url"]
 
-            values["client"] = session.client("bedrock", **client_params)
+            values["client"] = session.client("bedrock-runtime", **client_params)
 
         except ImportError:
             raise ModuleNotFoundError(
@@ -318,7 +318,7 @@ class Bedrock(LLM, BedrockBase):
 
             llm = BedrockLLM(
                 credentials_profile_name="default", 
-                model_id="amazon.titan-tg1-large",
+                model_id="amazon.titan-text-express-v1",
                 streaming=True
             )
 
