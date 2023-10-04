@@ -2361,16 +2361,16 @@
       "destination": "/docs/integrations/vectorstores/awadb"
     },
     {
-      "source": "/docs/integrations/platforms/aws#aws-dynamodb",
-      "destination": "/docs/integrations/providers/aws_dynamodb"
+      "source": "/docs/integrations/providers/aws_dynamodb",
+      "destination": "/docs/integrations/platforms/aws#aws-dynamodb",
     },
     {
-      "source": "/docs/integrations/platforms/google#google-document-ai",
-      "destination": "/docs/integrations/providers/google_document_ai"
+      "source": "/docs/integrations/providers/google_document_ai",
+      "destination": "/docs/integrations/platforms/google#google-document-ai",
     },
     {
-      "source": "/docs/integrations/platforms/google#google-scann",
-      "destination": "/docs/integrations/providers/scann"
+      "source": "/docs/integrations/providers/scann",
+      "destination": "/docs/integrations/platforms/google#google-scann",
     },
     {
       "source": "/docs/modules/data_connection/vectorstores/integrations/awadb",
