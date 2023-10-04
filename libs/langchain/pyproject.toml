@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.305"
+version = "0.0.308"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -68,7 +68,7 @@ gptcache = {version = ">=0.1.7", optional = true}
 atlassian-python-api = {version = "^3.36.0", optional=true}
 pytesseract = {version = "^0.3.10", optional=true}
 html2text = {version="^2020.1.16", optional=true}
-numexpr = "^2.8.4"
+numexpr = {version="^2.8.6", optional=true}
 duckduckgo-search = {version="^3.8.3", optional=true}
 azure-cosmos = {version="^4.4.0b1", optional=true}
 lark = {version="^1.1.5", optional=true}
@@ -113,7 +113,7 @@ cassio = {version = "^0.1.0", optional = true}
 rdflib = {version = "^6.3.2", optional = true}
 sympy = {version = "^1.12", optional = true}
 rapidfuzz = {version = "^3.1.1", optional = true}
-langsmith = "~0.0.38"
+langsmith = "~0.0.40"
 rank-bm25 = {version = "^0.2.2", optional = true}
 amadeus = {version = ">=8.1.0", optional = true}
 geopandas = {version = "^0.13.1", optional = true}
@@ -143,7 +143,7 @@ anthropic = {version = "^0.3.11", optional = true}
 pytest = "^7.3.0"
 pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
-duckdb-engine = "^0.7.0"
+duckdb-engine = "^0.9.2"
 pytest-watcher = "^0.2.6"
 freezegun = "^1.2.2"
 responses = "^0.22.0"
@@ -330,6 +330,7 @@ extended_testing = [
  "gql",
  "requests-toolbelt",
  "html2text",
+ "numexpr",
  "py-trello",
  "scikit-learn",
  "streamlit",
@@ -406,4 +407,4 @@ ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
 # aapply - async apply
 # unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd'
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia'
