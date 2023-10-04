@@ -38,6 +38,8 @@ from langchain.schema.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
+    FunctionMessage,
+    FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
@@ -51,39 +53,6 @@ logger = logging.getLogger(__name__)
 
 class ChatLiteLLMException(Exception):
     """Error with the `LiteLLM I/O` library"""
-
-
-def _truncate_at_stop_tokens(
-    text: str,
-    stop: Optional[List[str]],
-) -> str:
-    """Truncates text at the earliest stop token found."""
-    if stop is None:
-        return text
-
-    for stop_token in stop:
-        stop_token_idx = text.find(stop_token)
-        if stop_token_idx != -1:
-            text = text[:stop_token_idx]
-    return text
-
-
-class FunctionMessage(BaseMessage):
-    """Message for passing the result of executing a function back to a model."""
-
-    name: str
-    """The name of the function that was executed."""
-
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "function"
-
-
-class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
-    """Message Chunk for passing the result of executing a function back to a model."""
-
-    pass
 
 
 def _create_retry_decorator(

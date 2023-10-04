@@ -21,84 +21,8 @@ class LangChainDeprecationWarning(DeprecationWarning):
     """A class for issuing deprecation warnings for LangChain users."""
 
 
-def _warn_deprecated(
-    since: str,
-    *,
-    message: str = "",
-    name: str = "",
-    alternative: str = "",
-    pending: bool = False,
-    obj_type: str = "",
-    addendum: str = "",
-    removal: str = "",
-) -> None:
-    """Display a standardized deprecation.
-
-    Arguments:
-        since : str
-            The release at which this API became deprecated.
-        message : str, optional
-            Override the default deprecation message. The %(since)s,
-            %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
-            and %(removal)s format specifiers will be replaced by the
-            values of the respective arguments passed to this function.
-        name : str, optional
-            The name of the deprecated object.
-        alternative : str, optional
-            An alternative API that the user may use in place of the
-            deprecated API. The deprecation warning will tell the user
-            about this alternative if provided.
-        pending : bool, optional
-            If True, uses a PendingDeprecationWarning instead of a
-            DeprecationWarning. Cannot be used together with removal.
-        obj_type : str, optional
-            The object type being deprecated.
-        addendum : str, optional
-            Additional text appended directly to the final message.
-        removal : str, optional
-            The expected removal version. With the default (an empty
-            string), a removal version is automatically computed from
-            since. Set to other Falsy values to not schedule a removal
-            date. Cannot be used together with pending.
-    """
-    if pending and removal:
-        raise ValueError("A pending deprecation cannot have a scheduled removal")
-
-    if not pending:
-        if not removal:
-            removal = f"in {removal}" if removal else "within ?? minor releases"
-            raise NotImplementedError(
-                f"Need to determine which default deprecation schedule to use. "
-                f"{removal}"
-            )
-        else:
-            removal = f"in {removal}"
-
-    if not message:
-        message = ""
-
-        if obj_type:
-            message += f"The {obj_type} `{name}`"
-        else:
-            message += f"`{name}`"
-
-        if pending:
-            message += " will be deprecated in a future version"
-        else:
-            message += f" was deprecated in LangChain {since}"
-
-            if removal:
-                message += f" and will be removed {removal}"
-
-        if alternative:
-            message += f". Use {alternative} instead."
-
-        if addendum:
-            message += f" {addendum}"
-
-    warning_cls = PendingDeprecationWarning if pending else LangChainDeprecationWarning
-    warning = warning_cls(message)
-    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=2)
+class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
+    """A class for issuing deprecation warnings for LangChain users."""
 
 
 # PUBLIC API
@@ -262,7 +186,7 @@ def deprecated(
 
         def emit_warning() -> None:
             """Emit the warning."""
-            _warn_deprecated(
+            warn_deprecated(
                 since,
                 message=_message,
                 name=_name,
@@ -318,4 +242,100 @@ def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
     """Context manager to suppress LangChainDeprecationWarning."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", LangChainDeprecationWarning)
+        warnings.simplefilter("ignore", LangChainPendingDeprecationWarning)
         yield
+
+
+def warn_deprecated(
+    since: str,
+    *,
+    message: str = "",
+    name: str = "",
+    alternative: str = "",
+    pending: bool = False,
+    obj_type: str = "",
+    addendum: str = "",
+    removal: str = "",
+) -> None:
+    """Display a standardized deprecation.
+
+    Arguments:
+        since : str
+            The release at which this API became deprecated.
+        message : str, optional
+            Override the default deprecation message. The %(since)s,
+            %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
+            and %(removal)s format specifiers will be replaced by the
+            values of the respective arguments passed to this function.
+        name : str, optional
+            The name of the deprecated object.
+        alternative : str, optional
+            An alternative API that the user may use in place of the
+            deprecated API. The deprecation warning will tell the user
+            about this alternative if provided.
+        pending : bool, optional
+            If True, uses a PendingDeprecationWarning instead of a
+            DeprecationWarning. Cannot be used together with removal.
+        obj_type : str, optional
+            The object type being deprecated.
+        addendum : str, optional
+            Additional text appended directly to the final message.
+        removal : str, optional
+            The expected removal version. With the default (an empty
+            string), a removal version is automatically computed from
+            since. Set to other Falsy values to not schedule a removal
+            date. Cannot be used together with pending.
+    """
+    if pending and removal:
+        raise ValueError("A pending deprecation cannot have a scheduled removal")
+
+    if not pending:
+        if not removal:
+            removal = f"in {removal}" if removal else "within ?? minor releases"
+            raise NotImplementedError(
+                f"Need to determine which default deprecation schedule to use. "
+                f"{removal}"
+            )
+        else:
+            removal = f"in {removal}"
+
+    if not message:
+        message = ""
+
+        if obj_type:
+            message += f"The {obj_type} `{name}`"
+        else:
+            message += f"`{name}`"
+
+        if pending:
+            message += " will be deprecated in a future version"
+        else:
+            message += f" was deprecated in LangChain {since}"
+
+            if removal:
+                message += f" and will be removed {removal}"
+
+        if alternative:
+            message += f". Use {alternative} instead."
+
+        if addendum:
+            message += f" {addendum}"
+
+    warning_cls = (
+        LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
+    )
+    warning = warning_cls(message)
+    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=2)
+
+
+def surface_langchain_deprecation_warnings() -> None:
+    """Unmute LangChain deprecation warnings."""
+    warnings.filterwarnings(
+        "default",
+        category=LangChainPendingDeprecationWarning,
+    )
+
+    warnings.filterwarnings(
+        "default",
+        category=LangChainDeprecationWarning,
+    )

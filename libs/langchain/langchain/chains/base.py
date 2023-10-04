@@ -5,9 +5,8 @@ import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 
@@ -21,10 +20,15 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.load.dump import dumpd
-from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field, root_validator, validator
+from langchain.pydantic_v1 import (
+    BaseModel,
+    Field,
+    create_model,
+    root_validator,
+    validator,
+)
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +37,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
+class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     """Abstract base class for creating structured sequences of calls to components.
 
     Chains should be used to encode a sequence of calls to components like
@@ -55,6 +59,20 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             output as a string or object. This method can only be used for a subset of
             chains and cannot return as rich of an output as `__call__`.
     """
+
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainInput", **{k: (Any, None) for k in self.input_keys}
+        )
+
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainOutput", **{k: (Any, None) for k in self.output_keys}
+        )
 
     def invoke(
         self,
@@ -78,12 +96,6 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        if type(self)._acall == Chain._acall:
-            # If the chain does not implement async, fall back to default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, **kwargs)
-            )
-
         config = config or {}
         return await self.acall(
             input,
@@ -227,7 +239,9 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        raise NotImplementedError("Async call not supported for this chain type.")
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self._call, inputs, run_manager
+        )
 
     def __call__(
         self,

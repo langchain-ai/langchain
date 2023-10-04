@@ -7,19 +7,21 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
 
-from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain.schema.document import Document
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt import PromptValue
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 
-class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
+class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
+    input_types: Dict[str, Any] = Field(default_factory=dict)
+    """A dictionary of the types of the variables the prompt template expects.
+    If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
@@ -35,6 +37,21 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+
+    @property
+    def OutputType(self) -> Any:
+        from langchain.prompts.base import StringPromptValue
+        from langchain.prompts.chat import ChatPromptValueConcrete
+
+        return Union[StringPromptValue, ChatPromptValueConcrete]
+
+    @property
+    def input_schema(self) -> type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "PromptInput",
+            **{k: (self.input_types.get(k, str), None) for k in self.input_variables},
+        )
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:
         return self._call_with_config(
