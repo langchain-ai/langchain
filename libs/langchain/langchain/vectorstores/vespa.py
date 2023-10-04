@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
@@ -71,9 +71,6 @@ class VespaStore(VectorStore):
         self._input_field = input_field
         self._metadata_fields = metadata_fields
 
-    def vespa_app(self):
-        return self._vespa_app
-
     def add_texts(
         self,
         texts: Iterable[str],
@@ -96,19 +93,19 @@ class VespaStore(VectorStore):
 
         embeddings = None
         if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(texts)
+            embeddings = self._embedding_function.embed_documents(list(texts))
 
         if ids is None:
             ids = [str(f"{i+1}") for i, _ in enumerate(texts)]
 
         batch = []
         for i, text in enumerate(texts):
-            fields = {}
+            fields: Dict[str, Union[str, List[float]]] = {}
             if self._page_content_field is not None:
                 fields[self._page_content_field] = text
-            if self._embedding_field is not None:
+            if self._embedding_field is not None and embeddings is not None:
                 fields[self._embedding_field] = embeddings[i]
-            if metadatas is not None:
+            if metadatas is not None and self._metadata_fields is not None:
                 for metadata_field in self._metadata_fields:
                     if metadata_field in metadatas[i]:
                         fields[metadata_field] = metadatas[i][metadata_field]
@@ -125,6 +122,8 @@ class VespaStore(VectorStore):
         return ids
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        if ids is None:
+            return False
         batch = [{"id": id} for id in ids]
         result = self._vespa_app.delete_batch(batch)
         return sum([0 if r.status_code == 200 else 1 for r in result]) == 0
@@ -196,12 +195,17 @@ class VespaStore(VectorStore):
 
             raise RuntimeError(json.dumps(root["errors"]))
 
+        if response is None or response.hits is None:
+            return []
+
         docs = []
         for child in response.hits:
             page_content = child["fields"][self._page_content_field]
-            metadata = {mf: child["fields"].get(mf) for mf in self._metadata_fields}
-            metadata["id"] = child["id"]
             score = child["relevance"]
+            metadata = {"id": child["id"]}
+            if self._metadata_fields is not None:
+                for field in self._metadata_fields:
+                    metadata[field] = child["fields"].get(field)
             doc = Document(page_content=page_content, metadata=metadata)
             docs.append((doc, score))
         return docs
@@ -215,7 +219,9 @@ class VespaStore(VectorStore):
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        query_emb = self._embedding_function.embed_query(query)
+        query_emb = []
+        if self._embedding_function is not None:
+            query_emb = self._embedding_function.embed_query(query)
         return self.similarity_search_by_vector_with_score(query_emb, k, **kwargs)
 
     def similarity_search(
