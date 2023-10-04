@@ -222,11 +222,11 @@ class DocAIParser(BaseBlobParser):
         self, results: List[DocAIParsingResults]
     ) -> Iterator[Document]:
         try:
-            from google.cloud.documentai_toolbox.wrappers.document import (
-                Document as WrappedDocument,
-            )
             from google.cloud.documentai_toolbox.utilities.gcs_utilities import (
                 split_gcs_uri,
+            )
+            from google.cloud.documentai_toolbox.wrappers.document import (
+                Document as WrappedDocument,
             )
         except ImportError as exc:
             raise ImportError(
