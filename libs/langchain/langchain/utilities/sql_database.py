@@ -387,23 +387,19 @@ class SQLDatabase:
         with self._engine.begin() as connection:
             if self._schema is not None:
                 if self.dialect == "snowflake":
-                    connection.exec_driver_sql(
-                        "ALTER SESSION SET search_path = %s", (self._schema,)
-                    )
+                    select_schema_statement = text("ALTER SESSION SET search_path = :schema")
                 elif self.dialect == "bigquery":
-                    connection.exec_driver_sql("SET @@dataset_id=?", (self._schema,))
+                    select_schema_statement = text("SET @@dataset_id=:schema")
                 elif self.dialect == "mssql":
                     pass
                 elif self.dialect == "trino":
-                    connection.exec_driver_sql("USE ?", (self._schema,))
-                elif self.dialect == "duckdb":
-                    # Unclear which parameterized argument syntax duckdb supports.
-                    # The docs for the duckdb client say they support multiple,
-                    # but `duckdb_engine` seemed to struggle with all of them:
-                    # https://github.com/Mause/duckdb_engine/issues/796
-                    connection.exec_driver_sql(f"SET search_path TO {self._schema}")
-                else:  # postgresql and other compatible dialects
-                    connection.exec_driver_sql("SET search_path TO %s", (self._schema,))
+                    select_schema_statement = text("USE :schema")
+                else:  # postgresql, duckdb, and other compatible dialects
+                    select_schema_statement = text("SET search_path TO :schema")
+
+                schema_args = {"schema": self._schema}
+                connection.execute(select_schema_statement, schema_args)
+
             cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 if fetch == "all":
