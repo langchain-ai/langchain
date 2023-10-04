@@ -62,7 +62,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         return "cohere-chat"
 
     @property
-    def _default_chat_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Cohere API."""
         return {
             "temperature": self.temperature,
@@ -71,7 +71,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_chat_params}
+        return {**{"model": self.model}, **self._default_params}
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -86,7 +86,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             "chat_history": [
                 {"role": get_role(x), "message": x.content} for x in messages[1:]
             ],
-            **self._default_chat_params,
+            **self._default_params,
             **kwargs,
         }
 

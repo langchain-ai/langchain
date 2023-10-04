@@ -140,7 +140,7 @@ class Cohere(LLM, BaseCohere):
         extra = Extra.forbid
 
     @property
-    def _default_generate_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Cohere API."""
         return {
             "max_tokens": self.max_tokens,
@@ -159,7 +159,7 @@ class Cohere(LLM, BaseCohere):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_generate_params}
+        return {**{"model": self.model}, **self._default_params}
 
     @property
     def _llm_type(self) -> str:
@@ -167,7 +167,7 @@ class Cohere(LLM, BaseCohere):
         return "cohere"
 
     def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
-        params = self._default_generate_params
+        params = self._default_params
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop is not None:
