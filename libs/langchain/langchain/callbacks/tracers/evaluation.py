@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import logging
+import threading
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 from uuid import UUID
-import threading
 
 import langsmith
 from langsmith.evaluation.evaluator import EvaluationResult
@@ -86,7 +86,10 @@ class EvaluatorCallbackHandler(BaseTracer):
             self.executor: Optional[ThreadPoolExecutor] = _get_executor()
         elif max_concurrency > 0:
             self.executor = ThreadPoolExecutor(max_workers=max_concurrency)
-            weakref.finalize(self, lambda: self.executor.shutdown(wait=True))
+            weakref.finalize(
+                self,
+                lambda: cast(ThreadPoolExecutor, self.executor).shutdown(wait=True),
+            )
         else:
             self.executor = None
         self.futures: weakref.WeakSet[Future] = weakref.WeakSet()
