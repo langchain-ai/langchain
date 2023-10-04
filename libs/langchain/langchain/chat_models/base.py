@@ -170,12 +170,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> BaseMessageChunk:
-        if type(self)._agenerate == BaseChatModel._agenerate:
-            # model doesn't implement async generation, so use default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, stop=stop, **kwargs)
-            )
-
         config = config or {}
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
@@ -582,7 +576,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call"""
-        raise NotImplementedError()
+        return await asyncio.get_running_loop().run_in_executor(
+            None,
+            partial(
+                self._generate, messages, stop=stop, run_manager=run_manager, **kwargs
+            ),
+        )
 
     def _stream(
         self,

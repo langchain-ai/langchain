@@ -18,9 +18,7 @@ class BaseVectorStoreTool(BaseModel):
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
 
     class Config(BaseTool.Config):
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+        pass
 
 
 def _create_description_from_template(values: Dict[str, Any]) -> Dict[str, Any]:
