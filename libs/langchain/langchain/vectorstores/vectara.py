@@ -74,6 +74,7 @@ class Vectara(VectorStore):
             "x-api-key": self._vectara_api_key,
             "customer-id": self._vectara_customer_id,
             "Content-Type": "application/json",
+            "X-Source": "langchain",
         }
 
     def _delete_doc(self, doc_id: str) -> bool:
