@@ -54,6 +54,10 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
     args_only: bool = True
     """Whether to only return the arguments to the function call."""
 
+    @property
+    def _type(self) -> str:
+        return "json_functions"
+
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
@@ -127,7 +131,7 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         res = super().parse_result(result)
-        return res[self.key_name]
+        return res.get(self.key_name) if partial else res[self.key_name]
 
 
 class PydanticOutputFunctionsParser(OutputFunctionsParser):
