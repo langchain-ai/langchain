@@ -725,7 +725,7 @@ class TimescaleVector(VectorStore):
         **kwargs: Any,
     ) -> TimescaleVector:
         """
-        Get intsance of an existing TimescaleVector store.This method will
+        Get instance of an existing TimescaleVector store.This method will
         return the instance of the store without inserting any new
         embeddings
         """
