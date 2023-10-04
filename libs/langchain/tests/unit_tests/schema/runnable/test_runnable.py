@@ -1071,7 +1071,7 @@ async def test_prompt() -> None:
     assert len(stream_log[0].ops) == 1
     assert stream_log[0].ops[0]["op"] == "replace"
     assert stream_log[0].ops[0]["path"] == ""
-    assert stream_log[0].ops[0]["value"]["logs"] == []
+    assert stream_log[0].ops[0]["value"]["logs"] == {}
     assert stream_log[0].ops[0]["value"]["final_output"] is None
     assert stream_log[0].ops[0]["value"]["streamed_output"] == []
     assert isinstance(stream_log[0].ops[0]["value"]["id"], str)
@@ -1081,40 +1081,12 @@ async def test_prompt() -> None:
             {
                 "op": "replace",
                 "path": "/final_output",
-                "value": {
-                    "id": ["langchain", "prompts", "chat", "ChatPromptValue"],
-                    "kwargs": {
-                        "messages": [
-                            {
-                                "id": [
-                                    "langchain",
-                                    "schema",
-                                    "messages",
-                                    "SystemMessage",
-                                ],
-                                "kwargs": {"content": "You are a nice " "assistant."},
-                                "lc": 1,
-                                "type": "constructor",
-                            },
-                            {
-                                "id": [
-                                    "langchain",
-                                    "schema",
-                                    "messages",
-                                    "HumanMessage",
-                                ],
-                                "kwargs": {
-                                    "additional_kwargs": {},
-                                    "content": "What is your " "name?",
-                                },
-                                "lc": 1,
-                                "type": "constructor",
-                            },
-                        ]
-                    },
-                    "lc": 1,
-                    "type": "constructor",
-                },
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
             }
         ),
         RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
@@ -1357,7 +1329,7 @@ async def test_prompt_with_llm(
                 "op": "replace",
                 "path": "",
                 "value": {
-                    "logs": [],
+                    "logs": {},
                     "final_output": None,
                     "streamed_output": [],
                 },
@@ -1366,7 +1338,7 @@ async def test_prompt_with_llm(
         RunLogPatch(
             {
                 "op": "add",
-                "path": "/logs/0",
+                "path": "/logs/ChatPromptTemplate",
                 "value": {
                     "end_time": None,
                     "final_output": None,
@@ -1382,55 +1354,24 @@ async def test_prompt_with_llm(
         RunLogPatch(
             {
                 "op": "add",
-                "path": "/logs/0/final_output",
-                "value": {
-                    "id": ["langchain", "prompts", "chat", "ChatPromptValue"],
-                    "kwargs": {
-                        "messages": [
-                            {
-                                "id": [
-                                    "langchain",
-                                    "schema",
-                                    "messages",
-                                    "SystemMessage",
-                                ],
-                                "kwargs": {
-                                    "additional_kwargs": {},
-                                    "content": "You are a nice " "assistant.",
-                                },
-                                "lc": 1,
-                                "type": "constructor",
-                            },
-                            {
-                                "id": [
-                                    "langchain",
-                                    "schema",
-                                    "messages",
-                                    "HumanMessage",
-                                ],
-                                "kwargs": {
-                                    "additional_kwargs": {},
-                                    "content": "What is your " "name?",
-                                },
-                                "lc": 1,
-                                "type": "constructor",
-                            },
-                        ]
-                    },
-                    "lc": 1,
-                    "type": "constructor",
-                },
+                "path": "/logs/ChatPromptTemplate/final_output",
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
             },
             {
                 "op": "add",
-                "path": "/logs/0/end_time",
+                "path": "/logs/ChatPromptTemplate/end_time",
                 "value": "2023-01-01T00:00:00.000",
             },
         ),
         RunLogPatch(
             {
                 "op": "add",
-                "path": "/logs/1",
+                "path": "/logs/FakeListLLM",
                 "value": {
                     "end_time": None,
                     "final_output": None,
@@ -1446,7 +1387,7 @@ async def test_prompt_with_llm(
         RunLogPatch(
             {
                 "op": "add",
-                "path": "/logs/1/final_output",
+                "path": "/logs/FakeListLLM/final_output",
                 "value": {
                     "generations": [[{"generation_info": None, "text": "foo"}]],
                     "llm_output": None,
@@ -1455,13 +1396,294 @@ async def test_prompt_with_llm(
             },
             {
                 "op": "add",
-                "path": "/logs/1/end_time",
+                "path": "/logs/FakeListLLM/end_time",
                 "value": "2023-01-01T00:00:00.000",
             },
         ),
         RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": "foo"}),
         RunLogPatch(
             {"op": "replace", "path": "/final_output", "value": {"output": "foo"}}
+        ),
+    ]
+
+
+@pytest.mark.asyncio
+@freeze_time("2023-01-01")
+async def test_stream_log_retriever() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{documents}"
+        + "{question}"
+    )
+    llm = FakeListLLM(responses=["foo", "bar"])
+
+    chain = (
+        {"documents": FakeRetriever(), "question": itemgetter("question")}
+        | prompt
+        | {"one": llm, "two": llm}
+    )
+
+    stream_log = [
+        part async for part in chain.astream_log({"question": "What is your name?"})
+    ]
+
+    # remove ids from logs
+    for part in stream_log:
+        for op in part.ops:
+            if (
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
+            ):
+                del op["value"]["id"]
+
+    assert stream_log == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "",
+                "value": {
+                    "logs": {},
+                    "final_output": None,
+                    "streamed_output": [],
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/RunnableMap",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "RunnableMap",
+                    "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output_str": [],
+                    "tags": ["seq:step:1"],
+                    "type": "chain",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/RunnableLambda",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "RunnableLambda",
+                    "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output_str": [],
+                    "tags": ["map:key:question"],
+                    "type": "chain",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/RunnableLambda/final_output",
+                "value": {"output": "What is your name?"},
+            },
+            {
+                "op": "add",
+                "path": "/logs/RunnableLambda/end_time",
+                "value": "2023-01-01T00:00:00.000",
+            },
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/Retriever",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "Retriever",
+                    "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output_str": [],
+                    "tags": ["map:key:documents"],
+                    "type": "retriever",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/Retriever/final_output",
+                "value": {
+                    "documents": [
+                        Document(page_content="foo"),
+                        Document(page_content="bar"),
+                    ]
+                },
+            },
+            {
+                "op": "add",
+                "path": "/logs/Retriever/end_time",
+                "value": "2023-01-01T00:00:00.000",
+            },
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/RunnableMap/final_output",
+                "value": {
+                    "documents": [
+                        Document(page_content="foo"),
+                        Document(page_content="bar"),
+                    ],
+                    "question": "What is your name?",
+                },
+            },
+            {
+                "op": "add",
+                "path": "/logs/RunnableMap/end_time",
+                "value": "2023-01-01T00:00:00.000",
+            },
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/ChatPromptTemplate",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "ChatPromptTemplate",
+                    "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output_str": [],
+                    "tags": ["seq:step:2"],
+                    "type": "prompt",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/ChatPromptTemplate/final_output",
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(
+                            content="[Document(page_content='foo'), Document(page_content='bar')]"
+                        ),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
+            },
+            {
+                "op": "add",
+                "path": "/logs/ChatPromptTemplate/end_time",
+                "value": "2023-01-01T00:00:00.000",
+            },
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/RunnableMap:2",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "RunnableMap",
+                    "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output_str": [],
+                    "tags": ["seq:step:3"],
+                    "type": "chain",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/FakeListLLM",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "FakeListLLM",
+                    "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output_str": [],
+                    "tags": ["map:key:one"],
+                    "type": "llm",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/FakeListLLM:2",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "FakeListLLM",
+                    "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output_str": [],
+                    "tags": ["map:key:two"],
+                    "type": "llm",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/FakeListLLM/final_output",
+                "value": {
+                    "generations": [[{"generation_info": None, "text": "foo"}]],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            {
+                "op": "add",
+                "path": "/logs/FakeListLLM/end_time",
+                "value": "2023-01-01T00:00:00.000",
+            },
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/FakeListLLM:2/final_output",
+                "value": {
+                    "generations": [[{"generation_info": None, "text": "bar"}]],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            {
+                "op": "add",
+                "path": "/logs/FakeListLLM:2/end_time",
+                "value": "2023-01-01T00:00:00.000",
+            },
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"two": "bar"}}
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"one": "foo"}}
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/RunnableMap:2/final_output",
+                "value": {"one": "foo", "two": "bar"},
+            },
+            {
+                "op": "add",
+                "path": "/logs/RunnableMap:2/end_time",
+                "value": "2023-01-01T00:00:00.000",
+            },
+        ),
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "/final_output",
+                "value": {"one": "foo", "two": "bar"},
+            }
         ),
     ]
 
@@ -2123,14 +2345,18 @@ async def test_map_astream() -> None:
     assert isinstance(final_state.state["id"], str)
     assert len(final_state.ops) == len(streamed_ops)
     assert len(final_state.state["logs"]) == 5
-    assert final_state.state["logs"][0]["name"] == "ChatPromptTemplate"
-    assert final_state.state["logs"][0]["final_output"] == dumpd(
-        prompt.invoke({"question": "What is your name?"})
+    assert (
+        final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
     )
-    assert final_state.state["logs"][1]["name"] == "RunnableMap"
-    assert sorted(log["name"] for log in final_state.state["logs"][2:]) == [
+    assert final_state.state["logs"]["ChatPromptTemplate"][
+        "final_output"
+    ] == prompt.invoke({"question": "What is your name?"})
+    assert final_state.state["logs"]["RunnableMap"]["name"] == "RunnableMap"
+    assert sorted(final_state.state["logs"]) == [
+        "ChatPromptTemplate",
         "FakeListChatModel",
         "FakeStreamingListLLM",
+        "RunnableMap",
         "RunnablePassthrough",
     ]
 
@@ -2148,7 +2374,7 @@ async def test_map_astream() -> None:
     assert final_state.state["final_output"] == final_value
     assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
     assert len(final_state.state["logs"]) == 1
-    assert final_state.state["logs"][0]["name"] == "FakeListChatModel"
+    assert final_state.state["logs"]["FakeListChatModel"]["name"] == "FakeListChatModel"
 
     # Test astream_log with exclude filters
     final_state = None
@@ -2164,13 +2390,17 @@ async def test_map_astream() -> None:
     assert final_state.state["final_output"] == final_value
     assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
     assert len(final_state.state["logs"]) == 4
-    assert final_state.state["logs"][0]["name"] == "ChatPromptTemplate"
-    assert final_state.state["logs"][0]["final_output"] == dumpd(
+    assert (
+        final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
+    )
+    assert final_state.state["logs"]["ChatPromptTemplate"]["final_output"] == (
         prompt.invoke({"question": "What is your name?"})
     )
-    assert final_state.state["logs"][1]["name"] == "RunnableMap"
-    assert sorted(log["name"] for log in final_state.state["logs"][2:]) == [
+    assert final_state.state["logs"]["RunnableMap"]["name"] == "RunnableMap"
+    assert sorted(final_state.state["logs"]) == [
+        "ChatPromptTemplate",
         "FakeStreamingListLLM",
+        "RunnableMap",
         "RunnablePassthrough",
     ]
 
