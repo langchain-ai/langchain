@@ -1,5 +1,6 @@
 import csv
 from typing import Any, Dict, List, Optional
+from io import TextIOWrapper
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -60,27 +61,46 @@ class CSVLoader(BaseLoader):
         """Load data into document objects."""
 
         docs = []
-        if self.autodetect_encoding:
-            detected_encodings = detect_file_encodings(self.file_path)
-        with open(self.file_path, newline="", encoding=detected_encodings if self.autodetect_encoding else self.encoding) as csvfile:
-            csv_reader = csv.DictReader(csvfile, **self.csv_args)  # type: ignore
-            for i, row in enumerate(csv_reader):
-                content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
-                try:
-                    source = (
-                        row[self.source_column]
-                        if self.source_column is not None
-                        else self.file_path
-                    )
-                except KeyError:
-                    raise ValueError(
-                        f"Source column '{self.source_column}' not found in CSV file."
-                    )
-                metadata = {"source": source, "row": i}
-                doc = Document(page_content=content, metadata=metadata)
-                docs.append(doc)
+        try:
+            with open(self.file_path, newline="", encoding=self.encoding) as csvfile:
+                docs = self.__read_file(csvfile)
+        except UnicodeDecodeError as e:
+            if self.autodetect_encoding:
+                detected_encodings = detect_file_encodings(self.file_path)
+                for encoding in detected_encodings:
+                    try:
+                        with open(self.file_path, newline="", encoding=encoding.encoding) as csvfile:
+                            docs = self.__read_file(csvfile)
+                    except UnicodeDecodeError:
+                        continue
+            else:
+                raise RuntimeError(f"Error loading {self.file_path}") from e
+        except Exception as e:
+            raise RuntimeError(f"Error loading {self.file_path}") from e
 
         return docs
+
+    def __read_file(self, csvfile: TextIOWrapper) -> List[Document]:
+        docs = []
+        csv_reader = csv.DictReader(csvfile, **self.csv_args)  # type: ignore
+        for i, row in enumerate(csv_reader):
+            content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
+            try:
+                source = (
+                    row[self.source_column]
+                    if self.source_column is not None
+                    else self.file_path
+                )
+            except KeyError:
+                raise ValueError(
+                    f"Source column '{self.source_column}' not found in CSV file."
+                )
+            metadata = {"source": source, "row": i}
+            doc = Document(page_content=content, metadata=metadata)
+            docs.append(doc)
+
+        return docs
+            
 
 
 class UnstructuredCSVLoader(UnstructuredFileLoader):
