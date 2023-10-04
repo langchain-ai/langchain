@@ -53,7 +53,8 @@ class DocAIParser(BaseBlobParser):
             client: a DocumentProcessorServiceClient to use
             location: a Google Cloud location where a Document AI processor is located
             gcs_output_path: a path on Google Cloud Storage to store parsing results
-            processor_name: full resource name of a Document AI processor or processor version
+            processor_name: full resource name of a Document AI processor or processor
+                version
 
         You should provide either a client or location (and then a client
             would be instantiated).
@@ -106,8 +107,8 @@ class DocAIParser(BaseBlobParser):
         Args:
             blob: a blob to parse.
             enable_native_pdf_parsing: enable pdf embedded text extraction
-            field_mask: a comma-separated list of which fields to include in the Document AI response.
-                https://protobuf.dev/reference/protobuf/google.protobuf/#google.protobuf.FieldMask
+            field_mask: a comma-separated list of which fields to include in the
+                Document AI response.
                 default: "text,pages.pageNumber"
             page_range: list of page numbers to parse
         """
@@ -118,7 +119,6 @@ class DocAIParser(BaseBlobParser):
                 OcrConfig,
                 ProcessOptions,
             )
-            from google.cloud.documentai_toolbox.wra
         except ImportError as exc:
             raise ImportError(
                 "documentai package not found, please install it with"
@@ -159,16 +159,15 @@ class DocAIParser(BaseBlobParser):
         )
         wrapped_document = WrappedDocument.from_documentai_document(response.document)
         yield from (
-                Document(
-                    page_content=page.text,
-                    metadata={
-                        "page": page.page_number,
-                        "source": wrapped_document.gcs_input_uri,
-                    },
-                )
-                for page in wrapped_document.pages
+            Document(
+                page_content=page.text,
+                metadata={
+                    "page": page.page_number,
+                    "source": wrapped_document.gcs_input_uri,
+                },
             )
-
+            for page in wrapped_document.pages
+        )
 
     def batch_parse(
         self,
@@ -288,8 +287,8 @@ class DocAIParser(BaseBlobParser):
             processor_name: name of a Document AI processor.
             batch_size: amount of documents per batch
             enable_native_pdf_parsing: a config option for the parser
-            field_mask: a comma-separated list of which fields to include in the Document AI response.
-                https://protobuf.dev/reference/protobuf/google.protobuf/#google.protobuf.FieldMask
+            field_mask: a comma-separated list of which fields to include in the
+                Document AI response.
                 default: "text,pages.pageNumber"
 
         Document AI has a 1000 file limit per batch, so batches larger than that need
