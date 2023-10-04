@@ -219,3 +219,58 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
             page_content=prediction,
             metadata={"source": blob.source},
         )
+
+
+class YandexSTTParser(BaseBlobParser):
+    """Transcribe and parse audio files.
+    Audio transcription is with OpenAI Whisper model."""
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: str = "general",
+        language: str = "auto",
+    ):
+        self.api_key = api_key
+        self.model = model
+        self.language = language
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        """Lazily parse the blob."""
+
+        try:
+            from speechkit import model_repository
+            from speechkit.stt import AudioProcessingType
+            from speechkit import configure_credentials, creds
+        except ImportError:
+            raise ImportError(
+                "yandex-speechkit package not found, please install it with "
+                "`pip install yandex-speechkit`"
+            )
+        try:
+            from pydub import AudioSegment
+        except ImportError:
+            raise ImportError(
+                "pydub package not found, please install it with " "`pip install pydub`"
+            )
+
+        if self.api_key:
+            configure_credentials(
+                yandex_credentials=creds.YandexCredentials(api_key=self.api_key)
+            )
+
+        audio = AudioSegment.from_file(blob.path)
+
+        model = model_repository.recognition_model()
+
+        model.model = self.model
+        model.language = self.language
+        model.audio_processing_type = AudioProcessingType.Full
+
+        result = model.transcribe(audio)
+
+        for res in result:
+            yield Document(
+                page_content=res.normalized_text,
+                metadata={"source": blob.source},
+            )
