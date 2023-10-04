@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional, List, Any, Tuple, Type, Dict
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
@@ -139,7 +139,7 @@ class VespaStore(VectorStore):
         approximate = kwargs["approximate"] if "approximate" in kwargs else False
         approximate = "true" if approximate else "false"
 
-        yql = f"select * from sources * where "
+        yql = "select * from sources * where "
         yql += f"{{targetHits: {hits}, approximate: {approximate}}}"
         yql += f"nearestNeighbor({doc_embedding_field}, {input_embedding_field})"
         if filter is not None:
