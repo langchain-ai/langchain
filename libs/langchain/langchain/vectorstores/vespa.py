@@ -40,14 +40,15 @@ class VespaStore(VectorStore):
 
     """
 
-    def __init__(self,
-                 app: Any,
-                 embedding_function: Optional[Embeddings] = None,
-                 page_content_field: Optional[str] = None,
-                 embedding_field: Optional[str] = None,
-                 input_field: Optional[str] = None,
-                 metadata_fields: Optional[List[str]] = None,
-                 ) -> None:
+    def __init__(
+        self,
+        app: Any,
+        embedding_function: Optional[Embeddings] = None,
+        page_content_field: Optional[str] = None,
+        embedding_field: Optional[str] = None,
+        input_field: Optional[str] = None,
+        metadata_fields: Optional[List[str]] = None,
+    ) -> None:
         """
         Initialize with a PyVespa client.
         """
@@ -73,12 +74,13 @@ class VespaStore(VectorStore):
     def vespa_app(self):
         return self._vespa_app
 
-    def add_texts(self,
-                  texts: Iterable[str],
-                  metadatas: Optional[List[dict]] = None,
-                  ids: Optional[List[str]] = None,
-                  **kwargs: Any,
-                  ) -> List[str]:
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
         """
         Add texts to the vectorstore.
 
@@ -114,10 +116,12 @@ class VespaStore(VectorStore):
 
         results = self._vespa_app.feed_batch(batch)
         for result in results:
-            if not(str(result.status_code).startswith("2")):
-                raise RuntimeError(f"Could not add document to Vespa. "
-                                   f"Error code: {result.status_code}. "
-                                   f"Message: {result.json['message']}")
+            if not (str(result.status_code).startswith("2")):
+                raise RuntimeError(
+                    f"Could not add document to Vespa. "
+                    f"Error code: {result.status_code}. "
+                    f"Message: {result.json['message']}"
+                )
         return ids
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
@@ -125,11 +129,9 @@ class VespaStore(VectorStore):
         result = self._vespa_app.delete_batch(batch)
         return sum([0 if r.status_code == 200 else 1 for r in result]) == 0
 
-    def _create_query(self,
-                      query_embedding: List[float],
-                      k: int = 4,
-                      **kwargs: Any
-                      ) -> Dict:
+    def _create_query(
+        self, query_embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> Dict:
         hits = k
         doc_embedding_field = self._embedding_field
         input_embedding_field = self._input_field
@@ -149,15 +151,13 @@ class VespaStore(VectorStore):
             "yql": yql,
             f"input.query({input_embedding_field})": query_embedding,
             "ranking": ranking_function,
-            "hits": hits
+            "hits": hits,
         }
         return query
 
-    def similarity_search_by_vector_with_score(self,
-                                               query_embedding: List[float],
-                                               k: int = 4,
-                                               **kwargs: Any
-                                               ) -> List[Tuple[Document, float]]:
+    def similarity_search_by_vector_with_score(
+        self, query_embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
         """
         Performs similarity search from a embeddings vector.
 
@@ -178,17 +178,22 @@ class VespaStore(VectorStore):
         try:
             response = self._vespa_app.query(body=query)
         except Exception as e:
-            raise RuntimeError(f"Could not retrieve data from Vespa: "
-                               f"{e.args[0][0]['summary']}. "
-                               f"Error: {e.args[0][0]['message']}")
+            raise RuntimeError(
+                f"Could not retrieve data from Vespa: "
+                f"{e.args[0][0]['summary']}. "
+                f"Error: {e.args[0][0]['message']}"
+            )
         if not str(response.status_code).startswith("2"):
-            raise RuntimeError(f"Could not retrieve data from Vespa. "
-                               f"Error code: {response.status_code}. "
-                               f"Message: {response.json['message']}")
+            raise RuntimeError(
+                f"Could not retrieve data from Vespa. "
+                f"Error code: {response.status_code}. "
+                f"Message: {response.json['message']}"
+            )
 
         root = response.json["root"]
         if "errors" in root:
             import json
+
             raise RuntimeError(json.dumps(root["errors"]))
 
         docs = []
@@ -201,53 +206,53 @@ class VespaStore(VectorStore):
             docs.append((doc, score))
         return docs
 
-    def similarity_search_by_vector(self,
-                                    embedding: List[float],
-                                    k: int = 4,
-                                    **kwargs: Any) -> List[Document]:
+    def similarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         results = self.similarity_search_by_vector_with_score(embedding, k, **kwargs)
         return [r[0] for r in results]
 
-    def similarity_search_with_score(self,
-                                     query: str,
-                                     k: int = 4,
-                                     **kwargs: Any) -> List[Tuple[Document, float]]:
+    def similarity_search_with_score(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
         query_emb = self._embedding_function.embed_query(query)
         return self.similarity_search_by_vector_with_score(query_emb, k, **kwargs)
 
-    def similarity_search(self,
-                          query: str,
-                          k: int = 4,
-                          **kwargs: Any) -> List[Document]:
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         results = self.similarity_search_with_score(query, k, **kwargs)
         return [r[0] for r in results]
 
-    def max_marginal_relevance_search(self,
-                                      query: str,
-                                      k: int = 4,
-                                      fetch_k: int = 20,
-                                      lambda_mult: float = 0.5,
-                                      **kwargs: Any,
-                                      ) -> List[Document]:
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError("MMR search not implemented")
 
-    def max_marginal_relevance_search_by_vector(self,
-                                                embedding: List[float],
-                                                k: int = 4,
-                                                fetch_k: int = 20,
-                                                lambda_mult: float = 0.5,
-                                                **kwargs: Any,
-                                                ) -> List[Document]:
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError("MMR search by vector not implemented")
 
     @classmethod
-    def from_texts(cls: Type[VespaStore],
-                   texts: List[str],
-                   embedding: Embeddings,
-                   metadatas: Optional[List[dict]] = None,
-                   ids: Optional[List[str]] = None,
-                   **kwargs: Any,
-                   ) -> VespaStore:
+    def from_texts(
+        cls: Type[VespaStore],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> VespaStore:
         vespa = cls(embedding_function=embedding, **kwargs)
         vespa.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return vespa
