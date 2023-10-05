@@ -1,11 +1,24 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
+import re
 from typing import Dict, List
 
 from presidio_analyzer import RecognizerResult
 from presidio_anonymizer.entities import EngineResult
 
 MappingDataType = Dict[str, Dict[str, str]]
+
+
+def format_duplicated_operator(operator_name: str, count: int) -> str:
+    """Format the operator name with the count"""
+
+    clean_operator_name = re.sub(r"[<>]", "", operator_name)
+    clean_operator_name = re.sub(r"_\d+$", "", clean_operator_name)
+
+    if operator_name.startswith("<") and operator_name.endswith(">"):
+        return f"<{clean_operator_name}_{count}>"
+    else:
+        return f"{clean_operator_name}_{count}"
 
 
 @dataclass
@@ -22,6 +35,9 @@ class DeanonymizerMapping:
     def update(self, new_mapping: MappingDataType) -> None:
         """Update the deanonymizer mapping with new values
         Duplicated values will not be added
+        If there are multiple entities of the same type, the mapping will
+        include a count to differentiate them. For example, if there are
+        two names in the input text, the mapping will include NAME_1 and NAME_2.
         """
         seen_values = set()
 
@@ -34,10 +50,11 @@ class DeanonymizerMapping:
                     and value not in self.mapping[entity_type].values()
                 ):
                     new_key = (
-                        f"<{entity_type}_{count}>"
-                        if key.startswith("<") and key.endswith(">")
+                        format_duplicated_operator(key, count)
+                        if key in self.mapping[entity_type]
                         else key
                     )
+
                     self.mapping[entity_type][new_key] = value
                     seen_values.add(value)
                     count += 1
@@ -60,6 +77,10 @@ def create_anonymizer_mapping(
     If is_reversed is False, it constructs a mapping from each
     anonymized entity back to its original text value.
 
+    If there are multiple entities of the same type, the mapping will
+    include a count to differentiate them. For example, if there are
+    two names in the input text, the mapping will include NAME_1 and NAME_2.
+
     Example of mapping:
     {
         "PERSON": {
@@ -72,33 +93,47 @@ def create_anonymizer_mapping(
         ...
     }
     """
-
     # We are able to zip and loop through both lists because we expect
     # them to return corresponding entities for each identified piece
     # of analyzable data from our input.
 
     # We sort them by their 'start' attribute because it allows us to
     # match corresponding entities by their position in the input text.
-    analyzer_results = sorted(analyzer_results, key=lambda d: d.start)
-    anonymizer_results.items = sorted(anonymizer_results.items, key=lambda d: d.start)
+    analyzer_results.sort(key=lambda d: d.start)
+    anonymizer_results.items.sort(key=lambda d: d.start)
 
     mapping: MappingDataType = defaultdict(dict)
     count: dict = defaultdict(int)
 
     for analyzed, anonymized in zip(analyzer_results, anonymizer_results.items):
         original_value = original_text[analyzed.start : analyzed.end]
-        anonymized_value = (
-            anonymized.text
-            if not anonymized.text.startswith("<")
-            else f"<{anonymized.entity_type}_{count[anonymized.entity_type] + 1}>"
+        entity_type = anonymized.entity_type
+
+        if is_reversed:
+            cond = original_value in mapping[entity_type].values()
+        else:
+            cond = original_value in mapping[entity_type]
+
+        if cond:
+            continue
+
+        if (
+            anonymized.text in mapping[entity_type].values()
+            or anonymized.text in mapping[entity_type]
+        ):
+            anonymized_value = format_duplicated_operator(
+                anonymized.text, count[entity_type] + 2
+            )
+            count[entity_type] += 1
+        else:
+            anonymized_value = anonymized.text
+
+        mapping_key, mapping_value = (
+            (anonymized_value, original_value)
+            if is_reversed
+            else (original_value, anonymized_value)
         )
 
-        entity_type = anonymized.entity_type
-        mapping_key = anonymized_value if is_reversed else original_value
-        mapping_value = original_value if is_reversed else anonymized_value
-
-        if mapping_key not in mapping[entity_type]:
-            mapping[entity_type][mapping_key] = mapping_value
-            count[entity_type] += 1
+        mapping[entity_type][mapping_key] = mapping_value
 
     return mapping

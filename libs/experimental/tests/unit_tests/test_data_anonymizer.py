@@ -92,7 +92,7 @@ def test_add_recognizer_operator() -> None:
     # anonymizing with custom recognizer
     text = "Madam Jane Doe was here."
     anonymized_text = anonymizer.anonymize(text)
-    assert anonymized_text == "<TITLE_1> Jane Doe was here."
+    assert anonymized_text == "<TITLE> Jane Doe was here."
 
     # anonymizing with custom recognizer and operator
     custom_operator = {"TITLE": OperatorConfig("replace", {"new_value": "Dear"})}
@@ -111,9 +111,9 @@ def test_non_faker_values() -> None:
         "Our names are: John Smith, Adam Smith, Jane Smith."
     )
     expected_result = (
-        "My name is <PERSON_1>. Your name is <PERSON_2>. Her name is <PERSON_3>."
-        "Our names are: <PERSON_1>, <PERSON_2>, <PERSON_3>."
+        "My name is <PERSON>. Your name is <PERSON_2>. Her name is <PERSON_3>."
+        "Our names are: <PERSON>, <PERSON_2>, <PERSON_3>."
     )
-    anonymizer = PresidioAnonymizer(use_faker_operators=False)
+    anonymizer = PresidioAnonymizer(add_default_faker_operators=False)
     anonymized_text = anonymizer.anonymize(text)
     assert anonymized_text == expected_result
