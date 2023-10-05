@@ -271,6 +271,12 @@ def _import_rocksetdb() -> Any:
     return Rockset
 
 
+def _import_vespa() -> Any:
+    from langchain.vectorstores.vespa import VespaStore
+
+    return VespaStore
+
+
 def _import_scann() -> Any:
     from langchain.vectorstores.scann import ScaNN
 
@@ -498,6 +504,8 @@ def __getattr__(name: str) -> Any:
         return _import_zep()
     elif name == "Zilliz":
         return _import_zilliz()
+    elif name == "VespaStore":
+        return _import_vespa()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -565,6 +573,7 @@ __all__ = [
     "Vearch",
     "Vectara",
     "VectorStore",
+    "VespaStore",
     "Weaviate",
     "ZepVectorStore",
     "Zilliz",
