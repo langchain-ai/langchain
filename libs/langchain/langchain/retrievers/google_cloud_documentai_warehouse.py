@@ -1,4 +1,4 @@
-"""Retriever wrapper for Google Cloud DocAI Warehouse on Gen App Builder."""
+"""Retriever wrapper for Google Cloud Document AI Warehouse."""
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
@@ -18,11 +18,11 @@ if TYPE_CHECKING:
     )
 
 
-class GoogleDocaiWarehouseSearchRetriever(BaseRetriever):
-    """A retriever based on DocAI Warehouse.
+class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
+    """A retriever based on Document AI Warehouse.
 
     Documents should be created and documents should be uploaded
-        in a separate flow, and this retriever uses only DocAI
+        in a separate flow, and this retriever uses only Document AI
         schema_id provided to search for revelant documents.
 
     More info: https://cloud.google.com/document-ai-warehouse.
@@ -93,12 +93,20 @@ class GoogleDocaiWarehouseSearchRetriever(BaseRetriever):
             raise ValueError("Argument user_ldap should be provided!")
 
         request_metadata = self._prepare_request_metadata(user_ldap=user_ldap)
-
+        schemas = []
+        if self.schema_id:
+            schemas.append(
+                self.client.document_schema_path(
+                    project=self.project_id,
+                    location=self.location,
+                    document_schema=self.schema_id,
+                )
+            )
         return SearchDocumentsRequest(
             parent=self._parent,
             request_metadata=request_metadata,
             document_query=DocumentQuery(
-                query=query, is_nl_query=True, document_schema_names=self._schemas
+                query=query, is_nl_query=True, document_schema_names=schemas
             ),
             qa_size_limit=self.qa_size_limit,
         )
