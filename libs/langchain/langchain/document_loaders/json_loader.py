@@ -2,11 +2,6 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
-try:
-    import jq  # noqa:F401
-except ImportError:
-    raise ImportError("jq package not found, please install it with `pip install jq`")
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -55,6 +50,13 @@ class JSONLoader(BaseLoader):
                 JSON Lines format.
         """
 
+        try:
+            import jq  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "jq package not found, please install it with `pip install jq`"
+            )
+
         self.file_path = Path(file_path).resolve()
         self._jq_schema = jq.compile(jq_schema)
         self._is_content_key_jq_parsable = is_content_key_jq_parsable
@@ -97,6 +99,8 @@ class JSONLoader(BaseLoader):
 
     def _get_text(self, sample: Any) -> str:
         """Convert sample to string format"""
+        import jq
+
         if self._content_key is not None:
             if self._is_content_key_jq_parsable:
                 compiled_content_key = jq.compile(self._content_key)
@@ -137,6 +141,8 @@ class JSONLoader(BaseLoader):
 
     def _validate_content_key(self, data: Any) -> None:
         """Check if a content key is valid"""
+        import jq
+
         sample = data.first()
         if not isinstance(sample, dict):
             raise ValueError(
