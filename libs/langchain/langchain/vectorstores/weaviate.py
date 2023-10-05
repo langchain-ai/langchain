@@ -18,7 +18,7 @@ import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -150,7 +150,7 @@ class Weaviate(VectorStore):
                         data_properties[key] = _json_serializable(val)
 
                 # Allow for ids (consistent w/ other methods)
-                # # Or uuids (backwards compatble w/ existing arg)
+                # # Or uuids (backwards compatible w/ existing arg)
                 # If the UUID of one of the objects already exists
                 # then the existing object will be replaced by the new object.
                 _id = get_valid_uuid(uuid4())

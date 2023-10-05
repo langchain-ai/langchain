@@ -25,7 +25,7 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.indexes.base import NAMESPACE_UUID, RecordManager
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import Document
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.vectorstore import VectorStore
 
 T = TypeVar("T")
 
@@ -171,6 +171,7 @@ def index(
     batch_size: int = 100,
     cleanup: Literal["incremental", "full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
+    cleanup_batch_size: int = 1_000,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -208,6 +209,7 @@ def index(
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
             of the document.
+        cleanup_batch_size: Batch size to use when cleaning up documents.
 
     Returns:
         Indexing result which contains information about how many documents
@@ -282,14 +284,14 @@ def index(
         # Filter out documents that already exist in the record store.
         uids = []
         docs_to_index = []
-        for doc, hashed_doc, doc_exists in zip(doc_batch, hashed_docs, exists_batch):
+        for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
                 # Must be updated to refresh timestamp.
                 record_manager.update([hashed_doc.uid], time_at_least=index_start_dt)
                 num_skipped += 1
                 continue
             uids.append(hashed_doc.uid)
-            docs_to_index.append(doc)
+            docs_to_index.append(hashed_doc.to_document())
 
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
@@ -329,14 +331,14 @@ def index(
                 num_deleted += len(uids_to_delete)
 
     if cleanup == "full":
-        uids_to_delete = record_manager.list_keys(before=index_start_dt)
-
-        if uids_to_delete:
+        while uids_to_delete := record_manager.list_keys(
+            before=index_start_dt, limit=cleanup_batch_size
+        ):
             # First delete from record store.
             vector_store.delete(uids_to_delete)
             # Then delete from record manager.
             record_manager.delete_keys(uids_to_delete)
-            num_deleted = len(uids_to_delete)
+            num_deleted += len(uids_to_delete)
 
     return {
         "num_added": num_added,
