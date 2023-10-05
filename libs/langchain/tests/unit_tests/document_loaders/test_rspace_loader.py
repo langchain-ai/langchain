@@ -1,9 +1,12 @@
 import unittest
 
+import pytest
+
 from langchain.document_loaders.rspace import RSpaceLoader
 from pydantic.error_wrappers import ValidationError
 
 
+@pytest.mark.requires("rspace_client")
 class TestRSpaceLoader(unittest.TestCase):
     url = "https://community.researchspace.com"
     api_key = "myapikey"
@@ -28,7 +31,7 @@ class TestRSpaceLoader(unittest.TestCase):
         e = cm.exception
         self.assertRegex(str(e), r'Did not find url')
 
-    def test_missing_gloabid_raises_validation_error(self):
+    def test_missing_globalid_raises_validation_error(self):
         with self.assertRaises(ValidationError) as cm:
             RSpaceLoader(url=TestRSpaceLoader.url, api_key=TestRSpaceLoader.api_key);
         e = cm.exception
