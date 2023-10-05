@@ -944,35 +944,32 @@ class RecursiveCharacterTextSplitter(CharacterTextSplitter):
                 # "\nswitch ",
                 # "\ncase ",
                 # Split by the normal type of lines
-                # "\n\n",
                 "\n+",
                 " +",
             ]
         elif language == Language.KOTLIN:
             return [
-                # Split along class definitions
-                "\nclass ",
-                # Split along method definitions
-                "\npublic ",
-                "\nprotected ",
-                "\nprivate ",
-                "\ninternal ",
-                "\ncompanion ",
-                "\nfun ",
-                "\nval ",
-                "\nvar ",
-                # Split along control flow statements
-                "\nif ",
-                "\nfor ",
-                "\nwhile ",
-                "\nwhen ",
-                "\ncase ",
-                "\nelse ",
+                # # Split along class definitions
+                # "\nclass ",
+                # # Split along method definitions
+                # "\npublic ",
+                # "\nprotected ",
+                # "\nprivate ",
+                # "\ninternal ",
+                # "\ncompanion ",
+                # "\nfun ",
+                # "\nval ",
+                # "\nvar ",
+                # # Split along control flow statements
+                # "\nif ",
+                # "\nfor ",
+                # "\nwhile ",
+                # "\nwhen ",
+                # "\ncase ",
+                # "\nelse ",
                 # Split by the normal type of lines
-                "\n\n",
-                "\n",
-                " ",
-                "",
+                "\n+",
+                " +",
             ]
         elif language == Language.JS:
             return [
