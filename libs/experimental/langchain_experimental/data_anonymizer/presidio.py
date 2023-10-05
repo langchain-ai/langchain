@@ -68,7 +68,7 @@ class PresidioAnonymizerBase(AnonymizerBase):
         analyzed_fields: Optional[List[str]] = None,
         operators: Optional[Dict[str, OperatorConfig]] = None,
         languages_config: Dict = DEFAULT_LANGUAGES_CONFIG,
-        use_faker_operators: bool = True,
+        add_default_faker_operators: bool = True,
         faker_seed: Optional[int] = None,
     ):
         """
@@ -94,11 +94,20 @@ class PresidioAnonymizerBase(AnonymizerBase):
             else list(get_pseudoanonymizer_mapping().keys())
         )
 
-        self.operators = (
-            operators
-            if operators
-            else self._get_operator_config(use_faker_operators, faker_seed)
-        )
+        if add_default_faker_operators:
+            self.operators = {
+                field: OperatorConfig(
+                    operator_name="custom", params={"lambda": faker_function}
+                )
+                for field, faker_function in get_pseudoanonymizer_mapping(
+                    faker_seed
+                ).items()
+            }
+        else:
+            self.operators = {}
+
+        if operators:
+            self.add_operators(operators)
 
         provider = NlpEngineProvider(nlp_configuration=languages_config)
         nlp_engine = provider.create_engine()
@@ -126,21 +135,6 @@ class PresidioAnonymizerBase(AnonymizerBase):
             operators: Operators to add to the anonymizer.
         """
         self.operators.update(operators)
-
-    def _get_operator_config(
-        self, use_faker_operators: bool, faker_seed: Optional[int]
-    ) -> dict:
-        if use_faker_operators:
-            return {
-                field: OperatorConfig(
-                    operator_name="custom", params={"lambda": faker_function}
-                )
-                for field, faker_function in get_pseudoanonymizer_mapping(
-                    faker_seed
-                ).items()
-            }
-
-        return {}
 
 
 class PresidioAnonymizer(PresidioAnonymizerBase):
@@ -205,14 +199,14 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         analyzed_fields: Optional[List[str]] = None,
         operators: Optional[Dict[str, OperatorConfig]] = None,
         languages_config: Dict = DEFAULT_LANGUAGES_CONFIG,
-        use_faker_operators: bool = True,
+        add_default_faker_operators: bool = True,
         faker_seed: Optional[int] = None,
     ):
         super().__init__(
             analyzed_fields,
             operators,
             languages_config,
-            use_faker_operators,
+            add_default_faker_operators,
             faker_seed,
         )
         self._deanonymizer_mapping = DeanonymizerMapping()
