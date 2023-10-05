@@ -1,6 +1,7 @@
 from enum import Enum
 
 from langchain.pydantic_v1 import BaseModel, root_validator
+from langchain.schema.retriever import Document
 from typing import Any, Dict, TYPE_CHECKING, List, Mapping, Union, Optional, Literal
 import requests
 
@@ -44,7 +45,7 @@ class DALMFilter(BaseModel):
         return values
 
 
-class ArceeClient:
+class ArceeWrapper:
     def __init__(
         self,
         arcee_api_key: str,
@@ -60,8 +61,8 @@ class ArceeClient:
 
         try:
             route = ArceeRoute.model_training_status.value.format(id_or_name=model_name)
-            # response = self.make_request("get", route)
-            response = {"status": "training_complete", "model_id": "123"}
+            response = self._make_request("get", route)
+            # response = {"status": "training_complete", "model_id": "123"} # TODO: remove after testing
             self.model_id = response.get("model_id")
             self.model_training_status = response.get("status")
         except Exception as e:
@@ -75,7 +76,7 @@ class ArceeClient:
                 f"Model {self.model_id} is not ready. Please wait for training to complete."
             )
 
-    def make_request(
+    def _make_request(
         self,
         method: Literal["post", "get"],
         route: ArceeRoute,
@@ -113,14 +114,14 @@ class ArceeClient:
     def _make_request_url(self, route: ArceeRoute) -> str:
         return f"{self.arcee_api_url}/{self.arcee_api_version}/{route}"
 
-    def make_request_body_for_models(
+    def _make_request_body_for_models(
         self, prompt: str, **kwargs: Mapping[str, Any]
     ) -> Mapping[str, Any]:
         """Make the request body for generate/retrieve models endpoint"""
         _model_kwargs = self.model_kwargs or {}
         _params = {**_model_kwargs, **kwargs}
 
-        filters = [DALMFilter(**f) for f in _params.get("filters", [])]
+        filters = [DALMFilter(**f) for f in _params.get("filters", [])] # TODO: Get this validated
         return dict(
             model_id=self.model_id,
             query=prompt,
@@ -128,3 +129,50 @@ class ArceeClient:
             filters=filters,
             id=self.model_id,
         )
+
+    def generate(
+            self,
+            prompt: str,
+            **kwargs: Any,
+    ) -> str:
+        """Generate text from Arcee DALM.
+
+        Args:
+            prompt: Prompt to generate text from.
+            size: The max number of context results to retrieve. Defaults to 3. (Can be less if filters are provided).
+            filters: Filters to apply to the context dataset.
+        """
+
+
+        response = self._make_request(
+            method="post",
+            route=ArceeRoute.generate.value.format(id_or_name=self.model_id),
+            body=self._make_request_body_for_models(
+                prompt=prompt,
+                **kwargs,
+            ),
+        )
+        return response["text"] # TODO: confirm this transformation
+
+    def retrieve(
+            self,
+            query: str,
+            **kwargs: Any,
+    ) -> List[Document]:
+        """Retrieve {size} contexts with your retriever for a given query
+        
+        Args:
+            qeury: Query to submit to the model
+            size: The max number of context results to retrieve. Defaults to 3. (Can be less if filters are provided).
+            filters: Filters to apply to the context dataset.
+        """
+
+        response = self._make_request(
+            method="post",
+            route=ArceeRoute.retrieve.value.format(id_or_name=self.model_id),
+            body=self._make_request_body_for_models(
+                prompt=query,
+                **kwargs,
+            ),
+        )
+        return [Document(**doc) for doc in response["documents"]] # TODO: confirm this transformation

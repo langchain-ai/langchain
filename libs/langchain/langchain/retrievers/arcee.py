@@ -1,32 +1,18 @@
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.utilities.arcee import ArceeWrapper, DALMFilter
-from langchain.llms.base import LLM
+from typing import Any, Dict, Iterable, List, Optional
+
 from langchain.pydantic_v1 import Extra, root_validator
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.docstore.document import Document
+from langchain.schema import BaseRetriever
+from langchain.schema.retriever import BaseRetriever
+from langchain.utilities.arcee import ArceeWrapper, ArceeRoute, DALMFilter
 from langchain.utils import get_from_dict_or_env
 
 
-class Arcee(LLM):
-    """Arcee's Domain Adapted Language Models (DALMs).
-
-    To use, set the ``ARCEE_API_KEY`` environment variable with your Arcee API key,
-    or pass ``arcee_api_key`` as a named parameter.
-
-    Example:
-        .. code-block:: python
-
-            from langchain.llms import Arcee
-
-            arcee = Arcee(
-                model="DPT-PubMed-7b",
-                arcee_api_key="DUMMY-KEY"
-            )
-
-            response = arcee("Can?")
-    """
-
+class ArceeRetriever(BaseRetriever):
     _client: ArceeWrapper = None  #: :meta private:
-    """Arcee _client."""
+    """Arcee client."""
 
     arcee_api_key: str = ""
     """Arcee API Key"""
@@ -43,9 +29,6 @@ class Arcee(LLM):
     arcee_app_url: str = "https://app.arcee.ai"
     """Arcee App URL"""
 
-    model_id: str = ""
-    """Arcee Model ID"""
-
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model."""
 
@@ -54,11 +37,6 @@ class Arcee(LLM):
 
         extra = Extra.forbid
         underscore_attrs_are_private = True
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "arcee"
 
     def __init__(self, **data: Any) -> None:
         """Initializes private fields."""
@@ -111,33 +89,29 @@ class Arcee(LLM):
             # validate size
             if kw.get("size") is not None:
                 if not kw.get("size") >= 0:
-                    raise ValueError("`size` must be positive")
+                    raise ValueError("`size` must not be negative.")
 
             # validate filters
             if kw.get("filters") is not None:
                 if not isinstance(kw.get("filters"), List):
-                    raise ValueError("`filters` must be a list")
+                    raise ValueError("`filters` must be a list.")
                 for f in kw.get("filters"):
                     DALMFilter(**f)
 
         return values
 
-    def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
-        """Generate text from Arcee DALM.
+    def _get_relevant_documents(
+        self, query: str, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
+    ) -> List[Document]:
+        """Retrieve {size} contexts with your retriever for a given query
 
         Args:
-            prompt: Prompt to generate text from.
+            qeury: Query to submit to the model
             size: The max number of context results to retrieve. Defaults to 3. (Can be less if filters are provided).
             filters: Filters to apply to the context dataset.
         """
 
         try:
-            return self._client.generate(prompt=prompt, **kwargs)
+            return self._client.retrieve(query=query, **kwargs)
         except Exception as e:
-            raise Exception(f"Failed to generate text: {e}") from e
+            raise ValueError(f"Error while retrieving documents: {e}") from e
