@@ -12,6 +12,16 @@ build:
   jobs:
     pre_build:
       - python docs/api_reference/create_api_rst.py
+    post_create_environment:
+      # Install poetry
+      # https://python-poetry.org/docs/#installing-manually
+      - pip install poetry
+      # Tell poetry to not use a virtual environment
+      - poetry config virtualenvs.create false
+    post_install:
+      # Install dependencies with 'docs' dependency group
+      # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
+      - poetry install --with docs
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
@@ -25,5 +35,5 @@ sphinx:
 python:
    install:
    - requirements: docs/api_reference/requirements.txt
-   - method: pip
-     path: .
+  #  - method: pip
+  #    path: .
