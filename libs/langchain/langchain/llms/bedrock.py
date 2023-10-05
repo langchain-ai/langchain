@@ -1,4 +1,5 @@
 import json
+import warnings
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
@@ -42,12 +43,12 @@ def _human_assistant_format(input_text: str) -> str:
             if count % 2 == 0:
                 count += 1
             else:
-                raise ValueError(ALTERNATION_ERROR + f" Received {input_text}")
+                warnings.warn(ALTERNATION_ERROR + f" Received {input_text}")
         if input_text[i : i + len(ASSISTANT_PROMPT)] == ASSISTANT_PROMPT:
             if count % 2 == 1:
                 count += 1
             else:
-                raise ValueError(ALTERNATION_ERROR + f" Received {input_text}")
+                warnings.warn(ALTERNATION_ERROR + f" Received {input_text}")
 
     if count % 2 == 1:  # Only saw Human, no Assistant
         input_text = input_text + ASSISTANT_PROMPT  # SILENT CORRECTION
