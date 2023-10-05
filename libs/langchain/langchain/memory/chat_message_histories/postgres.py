@@ -63,7 +63,11 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
             sql.Identifier(self.table_name)
         )
         self.cursor.execute(
-            query, (self.session_id, json.dumps(_message_to_dict(message)))
+            query,
+            (
+                self.session_id,
+                json.dumps(_message_to_dict(message), ensure_ascii=False),
+            ),
         )
         self.connection.commit()
 

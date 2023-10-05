@@ -73,7 +73,9 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
             self.collection.insert_one(
                 {
                     "SessionId": self.session_id,
-                    "History": json.dumps(_message_to_dict(message)),
+                    "History": json.dumps(
+                        _message_to_dict(message), ensure_ascii=False
+                    ),
                 }
             )
         except errors.WriteError as err:

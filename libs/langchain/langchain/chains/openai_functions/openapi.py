@@ -174,7 +174,7 @@ def openapi_spec_to_openai_fn(
         path_params = fn_args.pop("path_params", {})
         url = _format_url(url, path_params)
         if "data" in fn_args and isinstance(fn_args["data"], dict):
-            fn_args["data"] = json.dumps(fn_args["data"])
+            fn_args["data"] = json.dumps(fn_args["data"], ensure_ascii=False)
         _kwargs = {**fn_args, **kwargs}
         if headers is not None:
             if "headers" in _kwargs:
@@ -219,7 +219,9 @@ class SimpleRequestChain(Chain):
         name = inputs[self.input_key].pop("name")
         args = inputs[self.input_key].pop("arguments")
         _pretty_name = get_colored_text(name, "green")
-        _pretty_args = get_colored_text(json.dumps(args, indent=2), "green")
+        _pretty_args = get_colored_text(
+            json.dumps(args, indent=2, ensure_ascii=False), "green"
+        )
         _text = f"Calling endpoint {_pretty_name} with arguments:\n" + _pretty_args
         _run_manager.on_text(_text)
         api_response: Response = self.request_method(name, args)

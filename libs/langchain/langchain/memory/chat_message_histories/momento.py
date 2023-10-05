@@ -152,7 +152,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         """
         from momento.responses import CacheListPushBack
 
-        item = json.dumps(_message_to_dict(message))
+        item = json.dumps(_message_to_dict(message), ensure_ascii=False)
         push_response = self.cache_client.list_push_back(
             self.cache_name, self.key, item, ttl=self.ttl
         )

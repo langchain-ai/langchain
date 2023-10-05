@@ -36,7 +36,7 @@ class FileChatMessageHistory(BaseChatMessageHistory):
         """Append the message to the record in the local file"""
         messages = messages_to_dict(self.messages)
         messages.append(messages_to_dict([message])[0])
-        self.file_path.write_text(json.dumps(messages))
+        self.file_path.write_text(json.dumps(messages, ensure_ascii=False))
 
     def clear(self) -> None:
         """Clear session memory from the local file"""

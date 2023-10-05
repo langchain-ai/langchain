@@ -72,7 +72,8 @@ class DefaultMessageConverter(BaseMessageConverter):
 
     def to_sql_model(self, message: BaseMessage, session_id: str) -> Any:
         return self.model_class(
-            session_id=session_id, message=json.dumps(_message_to_dict(message))
+            session_id=session_id,
+            message=json.dumps(_message_to_dict(message), ensure_ascii=False),
         )
 
     def get_sql_model_class(self) -> Any:

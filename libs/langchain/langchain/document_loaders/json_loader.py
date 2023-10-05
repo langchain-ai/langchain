@@ -104,7 +104,7 @@ class JSONLoader(BaseLoader):
         elif isinstance(content, str):
             return content
         elif isinstance(content, dict):
-            return json.dumps(content) if content else ""
+            return json.dumps(content, ensure_ascii=False) if content else ""
         else:
             return str(content) if content is not None else ""
 

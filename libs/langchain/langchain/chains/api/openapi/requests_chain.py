@@ -16,7 +16,9 @@ class APIRequesterOutputParser(BaseOutputParser):
 
     def _load_json_block(self, serialized_block: str) -> str:
         try:
-            return json.dumps(json.loads(serialized_block, strict=False))
+            return json.dumps(
+                json.loads(serialized_block, strict=False), ensure_ascii=False
+            )
         except json.JSONDecodeError:
             return "ERROR serializing request."
 

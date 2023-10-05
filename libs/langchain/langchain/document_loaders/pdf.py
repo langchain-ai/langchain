@@ -363,7 +363,7 @@ class MathpixPDFLoader(BasePDFLoader):
     @property
     def data(self) -> dict:
         options = {"conversion_formats": {self.processed_file_format: True}}
-        return {"options_json": json.dumps(options)}
+        return {"options_json": json.dumps(options, ensure_ascii=False)}
 
     def send_pdf(self) -> str:
         with open(self.file_path, "rb") as f:

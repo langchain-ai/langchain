@@ -16,9 +16,9 @@ def default(obj: Any) -> Any:
 def dumps(obj: Any, *, pretty: bool = False) -> str:
     """Return a json string representation of an object."""
     if pretty:
-        return json.dumps(obj, default=default, indent=2)
+        return json.dumps(obj, default=default, indent=2, ensure_ascii=False)
     else:
-        return json.dumps(obj, default=default)
+        return json.dumps(obj, default=default, ensure_ascii=False)
 
 
 def dumpd(obj: Any) -> Dict[str, Any]:

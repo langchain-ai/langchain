@@ -190,7 +190,9 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
             documents.append(
                 Document(
-                    page_content=json.dumps(document_dict.get("struct_data", {})),
+                    page_content=json.dumps(
+                        document_dict.get("struct_data", {}), ensure_ascii=False
+                    ),
                     metadata={"id": document_dict["id"], "name": document_dict["name"]},
                 )
             )
