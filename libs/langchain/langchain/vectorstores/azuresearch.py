@@ -315,6 +315,64 @@ class AzureSearch(VectorStore):
         else:
             raise Exception(response)
 
+    def add_or_modify_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add texts data to an existing index."""
+        keys = kwargs.get("keys")
+        ids = []
+        # Write data to index
+        data = []
+        for i, text in enumerate(texts):
+            # Use provided key otherwise use default key
+            key = keys[i] if keys else str(uuid.uuid4())
+            # Encoding key for Azure Search valid characters
+            key = base64.urlsafe_b64encode(bytes(key, "utf-8")).decode("ascii")
+            metadata = metadatas[i] if metadatas else {}
+            # Add data to index
+            # Additional metadata to fields mapping
+            doc = {
+                "@search.action": "mergeOrUpload",
+                FIELDS_ID: key,
+                FIELDS_CONTENT: text,
+                FIELDS_CONTENT_VECTOR: np.array(
+                    self.embedding_function(text), dtype=np.float32
+                ).tolist(),
+                FIELDS_METADATA: json.dumps(metadata),
+            }
+            if metadata:
+                additional_fields = {
+                    k: v
+                    for k, v in metadata.items()
+                    if k in [x.name for x in self.fields]
+                }
+                doc.update(additional_fields)
+            data.append(doc)
+            ids.append(key)
+            # Upload data in batches
+            if len(data) == MAX_UPLOAD_BATCH_SIZE:
+                response = self.client.merge_or_upload_documents(documents=data)
+                # Check if all documents were successfully uploaded
+                if not all([r.succeeded for r in response]):
+                    raise Exception(response)
+                # Reset data
+                data = []
+
+        # Considering case where data is an exact multiple of batch-size entries
+        if len(data) == 0:
+            return ids
+
+        # Upload data to index
+        response = self.client.merge_or_upload_documents(documents=data)
+        # Check if all documents were successfully uploaded
+        if all([r.succeeded for r in response]):
+            return ids
+        else:
+            raise Exception(response)
+
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:

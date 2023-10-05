@@ -48,6 +48,24 @@ class MockVectorStore(VectorStore):
         """
         return list(texts)
 
+    def add_or_modify_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            kwargs: vectorstore specific parameters
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        return list(texts)
+
     async def aadd_texts(
         self,
         texts: Iterable[str],

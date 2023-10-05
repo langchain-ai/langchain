@@ -58,6 +58,24 @@ class VectorStore(ABC):
             List of ids from adding the texts into the vectorstore.
         """
 
+    @abstractmethod
+    def add_or_modify_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            kwargs: vectorstore specific parameters
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+
     @property
     def embeddings(self) -> Optional[Embeddings]:
         """Access the query embedding object if available."""
@@ -104,6 +122,22 @@ class VectorStore(ABC):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return self.add_texts(texts, metadatas, **kwargs)
+
+    def add_or_modify_documents(
+        self, documents: List[Document], **kwargs: Any
+    ) -> List[str]:
+        """Run more documents through the embeddings and add to the vectorstore.
+
+        Args:
+            documents (List[Document]: Documents to add to the vectorstore.
+
+        Returns:
+            List[str]: List of IDs of the added texts.
+        """
+        # TODO: Handle the case where the user doesn't provide ids on the Collection
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return self.add_or_modify_texts(texts, metadatas, **kwargs)
 
     async def aadd_documents(
         self, documents: List[Document], **kwargs: Any

@@ -65,7 +65,39 @@ class InMemoryVectorStore(VectorStore):
                 )
             self.store[_id] = document
 
+    def add_or_modify_documents(  # type: ignore
+        self,
+        documents: Sequence[Document],
+        *,
+        ids: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Add the given documents to the store (insert behavior)."""
+        if ids and len(ids) != len(documents):
+            raise ValueError(
+                f"Expected {len(ids)} ids, got {len(documents)} documents."
+            )
+
+        if not ids:
+            raise NotImplementedError("This is not implemented yet.")
+
+        for _id, document in zip(ids, documents):
+            if _id in self.store:
+                raise ValueError(
+                    f"Document with uid {_id} already exists in the store."
+                )
+            self.store[_id] = document
+
     def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add the given texts to the store (insert behavior)."""
+        raise NotImplementedError()
+
+    def add_or_modify_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
