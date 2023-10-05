@@ -76,6 +76,7 @@ from langchain.vectorstores.usearch import USearch
 from langchain.vectorstores.vald import Vald
 from langchain.vectorstores.vearch import Vearch
 from langchain.vectorstores.vectara import Vectara
+from langchain.vectorstores.vespa import VespaStore
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zep import ZepVectorStore
 from langchain.vectorstores.zilliz import Zilliz
@@ -143,6 +144,7 @@ __all__ = [
     "Vearch",
     "Vectara",
     "VectorStore",
+    "VespaStore",
     "Weaviate",
     "ZepVectorStore",
     "Zilliz",
