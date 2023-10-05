@@ -186,11 +186,13 @@ class ZapierNLAWrapper(BaseModel):
                     raise requests.HTTPError(
                         f"An unauthorized response occurred. Check that your "
                         f"access token is correct and doesn't need to be "
-                        f"refreshed. Err: {http_err}"
+                        f"refreshed. Err: {http_err}",
+                        response=response,
                     )
                 raise requests.HTTPError(
                     f"An unauthorized response occurred. Check that your api "
-                    f"key is correct. Err: {http_err}"
+                    f"key is correct. Err: {http_err}",
+                    response=response,
                 )
             raise http_err
         return response.json()["results"]

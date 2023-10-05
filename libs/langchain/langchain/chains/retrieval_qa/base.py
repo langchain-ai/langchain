@@ -21,7 +21,7 @@ from langchain.prompts import PromptTemplate
 from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.vectorstore import VectorStore
 
 
 class BaseRetrievalQA(Chain):
@@ -197,8 +197,8 @@ class RetrievalQA(BaseRetrievalQA):
 
             from langchain.llms import OpenAI
             from langchain.chains import RetrievalQA
-            from langchain.faiss import FAISS
-            from langchain.vectorstores.base import VectorStoreRetriever
+            from langchain.vectorstores import FAISS
+            from langchain.schema.vectorstore import VectorStoreRetriever
             retriever = VectorStoreRetriever(vectorstore=FAISS(...))
             retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)
 

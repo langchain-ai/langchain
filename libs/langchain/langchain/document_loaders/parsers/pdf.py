@@ -67,7 +67,7 @@ def extract_from_images_with_rapidocr(
 
 
 class PyPDFParser(BaseBlobParser):
-    """Load `PDF` using `pypdf` and chunk at character level."""
+    """Load `PDF` using `pypdf`"""
 
     def __init__(
         self, password: Optional[Union[str, bytes]] = None, extract_images: bool = False

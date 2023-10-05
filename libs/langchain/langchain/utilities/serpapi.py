@@ -147,7 +147,7 @@ class SerpAPIWrapper(BaseModel):
                 answer = {}
                 for key, value in answer_box.items():
                     if not isinstance(value, (list, dict)) and not (
-                        type(value) == str and value.startswith("http")
+                        isinstance(value, str) and value.startswith("http")
                     ):
                         answer[key] = value
                 return str(answer)
@@ -189,8 +189,8 @@ class SerpAPIWrapper(BaseModel):
                 snippets.append(knowledge_graph["description"])
             for key, value in knowledge_graph.items():
                 if (
-                    type(key) == str
-                    and type(value) == str
+                    isinstance(key, str)
+                    and isinstance(value, str)
                     and key not in ["title", "description"]
                     and not key.endswith("_stick")
                     and not key.endswith("_link")

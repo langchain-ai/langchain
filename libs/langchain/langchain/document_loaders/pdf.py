@@ -135,9 +135,9 @@ class OnlinePDFLoader(BasePDFLoader):
 
 
 class PyPDFLoader(BasePDFLoader):
-    """Load `PDF using `pypdf` and chunks at character level.
+    """Load PDF using pypdf into list of documents.
 
-    Loader also stores page numbers in metadata.
+    Loader chunks by page and stores page numbers in metadata.
     """
 
     def __init__(
@@ -319,6 +319,7 @@ class PyMuPDFLoader(BasePDFLoader):
         *,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
+        **kwargs: Any,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -328,13 +329,22 @@ class PyMuPDFLoader(BasePDFLoader):
                 "`PyMuPDF` package not found, please install it with "
                 "`pip install pymupdf`"
             )
-
         super().__init__(file_path, headers=headers)
         self.extract_images = extract_images
+        self.text_kwargs = kwargs
 
-    def load(self, **kwargs: Optional[Any]) -> List[Document]:
+    def load(self, **kwargs: Any) -> List[Document]:
         """Load file."""
-        parser = PyMuPDFParser(text_kwargs=kwargs, extract_images=self.extract_images)
+        if kwargs:
+            logger.warning(
+                f"Received runtime arguments {kwargs}. Passing runtime args to `load`"
+                f" is deprecated. Please pass arguments during initialization instead."
+            )
+
+        text_kwargs = {**self.text_kwargs, **kwargs}
+        parser = PyMuPDFParser(
+            text_kwargs=text_kwargs, extract_images=self.extract_images
+        )
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
@@ -347,7 +357,7 @@ class MathpixPDFLoader(BasePDFLoader):
     def __init__(
         self,
         file_path: str,
-        processed_file_format: str = "mmd",
+        processed_file_format: str = "md",
         max_wait_time_seconds: int = 500,
         should_clean_pdf: bool = False,
         **kwargs: Any,
@@ -356,7 +366,7 @@ class MathpixPDFLoader(BasePDFLoader):
 
         Args:
             file_path: a file for loading.
-            processed_file_format: a format of the processed file. Default is "mmd".
+            processed_file_format: a format of the processed file. Default is "md".
             max_wait_time_seconds: a maximum time to wait for the response from
              the server. Default is 500.
             should_clean_pdf: a flag to clean the PDF file. Default is False.

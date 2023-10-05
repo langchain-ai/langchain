@@ -8,10 +8,10 @@ from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import Field
 from langchain.schema import Document
-from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,7 @@ class Vectara(VectorStore):
             "x-api-key": self._vectara_api_key,
             "customer-id": self._vectara_customer_id,
             "Content-Type": "application/json",
+            "X-Source": "langchain",
         }
 
     def _delete_doc(self, doc_id: str) -> bool:

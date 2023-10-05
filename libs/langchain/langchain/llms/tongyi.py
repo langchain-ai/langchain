@@ -52,7 +52,8 @@ def generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
         else:
             raise HTTPError(
                 f"HTTP error occurred: status_code: {resp.status_code} \n "
-                f"code: {resp.code} \n message: {resp.message}"
+                f"code: {resp.code} \n message: {resp.message}",
+                response=resp,
             )
 
     return _generate_with_retry(**kwargs)
@@ -77,7 +78,8 @@ def stream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
             else:
                 raise HTTPError(
                     f"HTTP error occurred: status_code: {resp.status_code} \n "
-                    f"code: {resp.code} \n message: {resp.message}"
+                    f"code: {resp.code} \n message: {resp.message}",
+                    response=resp,
                 )
         return stream_resps
 
@@ -102,8 +104,8 @@ class Tongyi(LLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"dashscope_api_key": "DASHSCOPE_API_KEY"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     client: Any  #: :meta private:
