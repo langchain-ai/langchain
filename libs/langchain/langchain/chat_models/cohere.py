@@ -73,11 +73,6 @@ class ChatCohere(BaseChatModel, BaseCohere):
         """Get the identifying parameters."""
         return {**{"model": self.model}, **self._default_params}
 
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
-        return True
-
     def get_cohere_chat_request(
         self, messages: List[BaseMessage], **kwargs: Any
     ) -> Dict[str, Any]:
