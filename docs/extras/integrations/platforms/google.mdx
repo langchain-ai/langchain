@@ -34,7 +34,7 @@ from langchain.chat_models import ChatVertexAI
 ## Document Loader
 ### Google BigQuery
 
-> [Google BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data.
+>[Google BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data.
 `BigQuery` is a part of the `Google Cloud Platform`.
 
 First, we need to install `google-cloud-bigquery` python package.
@@ -134,23 +134,6 @@ See a [usage example](/docs/integrations/vectorstores/scann).
 from langchain.vectorstores import ScaNN
 ```
 
-## Retrievers
-### Vertex AI Search
-
-> [Google Cloud Vertex AI Search](https://cloud.google.com/generative-ai-app-builder/docs/introduction)
-> allows developers to quickly build generative AI powered search engines for customers and employees.
-
-First, you need to install the `google-cloud-discoveryengine` Python package.
-
-```bash
-pip install google-cloud-discoveryengine
-```
-
-See a [usage example](/docs/integrations/retrievers/google_vertex_ai_search).
-
-```python
-from langchain.retrievers import GoogleVertexAISearchRetriever
-```
 
 ## Tools
 ### Google Search
@@ -159,7 +142,7 @@ from langchain.retrievers import GoogleVertexAISearchRetriever
 - Set up a Custom Search Engine, following [these instructions](https://stackoverflow.com/questions/37083058/programmatically-searching-google-in-python-using-custom-search)
 - Get an API Key and Custom Search Engine ID from the previous step, and set them as environment variables `GOOGLE_API_KEY` and `GOOGLE_CSE_ID` respectively
 
-There exists a `GoogleSearchAPIWrapper` utility which wraps this API. To import this utility:
+There exists a GoogleSearchAPIWrapper utility which wraps this API. To import this utility:
 
 ```python
 from langchain.utilities import GoogleSearchAPIWrapper
