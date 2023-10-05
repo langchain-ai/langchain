@@ -1,16 +1,18 @@
 [tool.poetry]
-name = "langchain-experimental"
+name = "gigachain-experimental"
 version = "0.0.24"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/ai-forever/gigachain"
-
+packages = [
+    {include = "langchain_experimental"}
+]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.239"
+gigachain = ">=0.0.239"
 presidio-anonymizer = {version = "^2.2.33", optional = true}
 presidio-analyzer = {version = "^2.2.33", optional = true}
 faker = {version = "^19.3.1", optional = true}

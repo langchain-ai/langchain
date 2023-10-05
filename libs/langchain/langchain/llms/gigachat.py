@@ -98,6 +98,8 @@ class GigaChat(BaseLLM):
             payload["temperature"] = self.temperature
         if self.max_tokens > 0:
             payload["max_tokens"] = self.max_tokens
+        if self.model:
+            payload["model"] = self.model
 
         if self.verbose:
             logger.warning("Giga request: %s", payload)

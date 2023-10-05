@@ -25,14 +25,14 @@ class PromptGenerator:
         self.resources: List[str] = []
         self.performance_evaluation: List[str] = []
         self.response_format = {
-            "мысли": {
+            "рассуждения": {
                 "text": "мысль",
                 "reasoning": "рассуждение",
-                "plan": "- короткий пунктирный\n- список, который передает\n- долгосрочный план",
+                "plan": "- тезисный план\n- список, который определяет\n- долгосрочный план",
                 "criticism": "конструктивная самокритика",
-                "speak": "сумма мыслей для передачи пользователю",
+                "speak": "итоговые мысли для передачи пользователю",
             },
-            "комманда": {"name": "имя команды", "args": {"arg name": "значение"}},
+            "команда": {"name": "имя команды", "args": {"arg name": "значение"}},
         }
 
     def add_constraint(self, constraint: str) -> None:
@@ -49,7 +49,7 @@ class PromptGenerator:
 
     def _generate_command_string(self, tool: BaseTool) -> str:
         output = f"{tool.name}: {tool.description}"
-        output += f", args json schema: {json.dumps(tool.args)}"
+        output += f", args json schema: {json.dumps(tool.args, ensure_ascii=False)}"
         return output
 
     def add_resource(self, resource: str) -> None:
@@ -87,10 +87,12 @@ class PromptGenerator:
                 f"{i + 1}. {self._generate_command_string(item)}"
                 for i, item in enumerate(items)
             ]
-            finish_description = "используйте это, чтобы сигнализировать, что вы выполнили все свои задачи"
+            finish_description = (
+                "используй это, чтобы сигнализировать, что вы выполнил все свои задачи"
+            )
             finish_args = (
                 '"response": "окончательный ответ, чтобы '
-                'люди знали, что вы выполнили свои задачи"'
+                'пользователь узнал, что ты выполнил свои задачи"'
             )
             finish_string = (
                 f"{len(items) + 1}. {FINISH_NAME}: "
@@ -106,7 +108,9 @@ class PromptGenerator:
         Returns:
             str: The generated prompt string.
         """
-        formatted_response_format = json.dumps(self.response_format, indent=4)
+        formatted_response_format = json.dumps(
+            self.response_format, indent=4, ensure_ascii=False
+        )
         prompt_string = (
             f"Ограничения:\n{self._generate_numbered_list(self.constraints)}\n\n"
             f"Команды:\n"
@@ -114,9 +118,9 @@ class PromptGenerator:
             f"Ресурсы:\n{self._generate_numbered_list(self.resources)}\n\n"
             f"Оценка производительности:\n"
             f"{self._generate_numbered_list(self.performance_evaluation)}\n\n"
-            f"Вы должны отвечать только в формате JSON, как описано ниже "
+            f"Ты должен отвечать только в формате JSON, как описано ниже "
             f"\nФормат ответа: \n{formatted_response_format} "
-            f"\nУбедитесь, что ответ можно разобрать с помощью Python json.loads"
+            f"\nУбедись, что ответ можно разобрать с помощью Python json.loads"
         )
 
         return prompt_string
@@ -137,17 +141,17 @@ def get_prompt(tools: List[BaseTool]) -> str:
     # Add constraints to the PromptGenerator object
     prompt_generator.add_constraint(
         "Лимит в ~4000 слов для краткосрочной памяти. "
-        "Ваша краткосрочная память коротка, "
-        "поэтому немедленно сохраняйте важную информацию в файлах."
+        "Твоя краткосрочная память короткосрочная, "
+        "поэтому немедленно сохраняй важную информацию в файлах."
     )
     prompt_generator.add_constraint(
-        "Если вы не уверены, как вы что-то делали ранее "
-        "или хотите вспомнить прошлые события, "
-        "мысли о похожих событиях помогут вам вспомнить."
+        "Если ты не уверен, как ты что-то делал ранее "
+        "или хочешь вспомнить прошлые события, "
+        "мысли о похожих событиях помогут тебе вспомнить."
     )
     prompt_generator.add_constraint("Без помощи пользователя")
     prompt_generator.add_constraint(
-        'Используйте исключительно команды, перечисленные в двойных кавычках, например, "имя команды"'
+        'Используй исключительно команды, перечисленные в двойных кавычках, например, "имя команды"'
     )
 
     # Add commands to the PromptGenerator object
@@ -164,18 +168,18 @@ def get_prompt(tools: List[BaseTool]) -> str:
 
     # Add performance evaluations to the PromptGenerator object
     prompt_generator.add_performance_evaluation(
-        "Постоянно пересматривайте и анализируйте свои действия "
-        "чтобы убедиться, что вы работаете на пределе своих возможностей."
+        "Постоянно пересматривай и анализируй свои действия "
+        "чтобы убедиться, что вы работаешь на пределе своих возможностей."
     )
     prompt_generator.add_performance_evaluation(
-        "Постоянно конструктивно самокритикуйте свое поведение в большом масштабе."
+        "Постоянно конструктивно самокритикуй свое поведение в большом масштабе."
     )
     prompt_generator.add_performance_evaluation(
-        "Размышляйте о прошлых решениях и стратегиях, чтобы усовершенствовать свой подход."
+        "Размышляй о прошлых решениях и стратегиях, чтобы усовершенствовать свой подход."
     )
     prompt_generator.add_performance_evaluation(
-        "Каждая команда имеет свою цену, поэтому будьте умны и эффективны. "
-        "Стремитесь выполнить задачи за минимальное количество шагов."
+        "Каждая команда имеет свою цену, поэтому будь умен и эффективен. "
+        "Стремись выполнить задачи за минимальное количество шагов."
     )
 
     # Generate the prompt string

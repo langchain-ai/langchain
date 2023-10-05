@@ -37,7 +37,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         content = _dict.get("content") or ""
         if _dict.get("function_call"):
             _dict["function_call"]["arguments"] = json.dumps(
-                _dict["function_call"]["arguments"]
+                _dict["function_call"]["arguments"], ensure_ascii=False
             )
             additional_kwargs = {"function_call": dict(_dict["function_call"])}
         else:

@@ -141,6 +141,7 @@ while(True):
 - [Использование Elastic для поиска ответов по документам](docs/extras/integrations/retrievers/elastic_qna.ipynb)
 - [Генерация и выполнение кода с помощью PythonREPL](docs/extras/expression_language/cookbook/code_writing.ipynb)
 - [Работа с кэшем в GigaChain](docs/extras/integrations/llms/gigachain_caching.ipynb)
+- [Автономный агент AutoGPT с использованием GigaChat](docs/extras/use_cases/more/agents/autonomous_agents/autogpt.ipynb)
 
 ### Примеры работы с другими LLM
 

@@ -250,7 +250,7 @@ class CPALChain(_BaseStoryElementChain):
         )
 
         def pretty_print_dict(title: str, d: dict) -> str:
-            return title + "\n" + json.dumps(d, indent=4)
+            return title + "\n" + json.dumps(d, indent=4, ensure_ascii=False)
 
         _run_manager.on_text(
             pretty_print_dict("query data", story.query.dict()),
