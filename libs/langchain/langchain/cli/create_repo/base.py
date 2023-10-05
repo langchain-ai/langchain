@@ -9,7 +9,7 @@ from typing import List, Sequence
 import typer
 
 import langchain
-from langchain.cli.create_repo.pypi_name import is_name_taken, lint_name
+from langchain.cli.cli import _select_project_name
 
 
 class UnderscoreTemplate(string.Template):
@@ -155,53 +155,6 @@ def _init_git(project_directory_path: Path) -> None:
         ["git", "commit", "-m", "Initial commit"],
         cwd=project_directory_path,
     )
-
-
-def _select_project_name(suggested_project_name: str) -> str:
-    """Help the user select a valid project name."""
-    while True:
-        project_name = typer.prompt(
-            "Please choose a project name: ", default=suggested_project_name
-        )
-
-        project_name_diagnostics = lint_name(project_name)
-        if project_name_diagnostics:
-            typer.echo(
-                f"{typer.style('Error:', fg=typer.colors.RED)}"
-                f" The project name"
-                f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
-                f" is not valid:",
-                err=True,
-            )
-
-            for diagnostic in project_name_diagnostics:
-                typer.echo(f"  - {diagnostic}")
-
-            if typer.confirm(
-                "Would you like to choose another name? "
-                "Choose NO to proceed with existing name.",
-                default=True,
-            ):
-                continue
-
-        if is_name_taken(project_name):
-            typer.echo(
-                f"{typer.style('Error:', fg=typer.colors.RED)}"
-                f" The project name"
-                f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
-                f" is already taken on pypi",
-                err=True,
-            )
-
-            if typer.confirm(
-                "Would you like to choose another name? "
-                "Choose NO to proceed with existing name.",
-                default=True,
-            ):
-                continue
-
-        # If we got here then the project name is valid and not taken
-        return project_name
 
 
 # PUBLIC API
