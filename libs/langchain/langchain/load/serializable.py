@@ -31,7 +31,7 @@ class SerializedNotImplemented(BaseSerialized):
     repr: Optional[str]
 
 
-def try_neq_default(value: Any, key: str, model: BaseModel):
+def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
     try:
         return model.__fields__[key].get_default() != value
     except Exception:
