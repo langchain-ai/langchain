@@ -91,7 +91,7 @@ class LLMBashChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         warn_deprecated(
-            since="0.0.306",
+            since="0.0.308",
             message=(
                 "On 2023-10-12 the LLMBashChain "
                 "will be moved to langchain-experimental"
