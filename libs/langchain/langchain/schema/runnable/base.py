@@ -1459,7 +1459,7 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
         return Any
 
     @property
-    def input_schema(self) -> type[BaseModel]:
+    def input_schema(self) -> Type[BaseModel]:
         if all(
             s.input_schema.schema().get("type", "object") == "object"
             for s in self.steps.values()
@@ -1478,7 +1478,7 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
         return super().input_schema
 
     @property
-    def output_schema(self) -> type[BaseModel]:
+    def output_schema(self) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "RunnableMapOutput",
@@ -2065,7 +2065,7 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
         return List[self.bound.InputType]  # type: ignore[name-defined]
 
     @property
-    def input_schema(self) -> type[BaseModel]:
+    def input_schema(self) -> Type[BaseModel]:
         return create_model(
             "RunnableEachInput",
             __root__=(
@@ -2075,11 +2075,11 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
         )
 
     @property
-    def OutputType(self) -> type[List[Output]]:
+    def OutputType(self) -> Type[List[Output]]:
         return List[self.bound.OutputType]  # type: ignore[name-defined]
 
     @property
-    def output_schema(self) -> type[BaseModel]:
+    def output_schema(self) -> Type[BaseModel]:
         return create_model(
             "RunnableEachOutput",
             __root__=(
@@ -2152,11 +2152,11 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         arbitrary_types_allowed = True
 
     @property
-    def InputType(self) -> type[Input]:
+    def InputType(self) -> Type[Input]:
         return self.bound.InputType
 
     @property
-    def OutputType(self) -> type[Output]:
+    def OutputType(self) -> Type[Output]:
         return self.bound.OutputType
 
     @property
