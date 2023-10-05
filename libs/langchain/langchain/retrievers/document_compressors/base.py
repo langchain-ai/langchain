@@ -1,6 +1,5 @@
 import asyncio
 from abc import ABC, abstractmethod
-from functools import partial
 from inspect import signature
 from typing import List, Optional, Sequence, Union
 
@@ -29,7 +28,7 @@ class BaseDocumentCompressor(BaseModel, ABC):
     ) -> Sequence[Document]:
         """Compress retrieved documents given the query context."""
         return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.compress_documents), documents, query, callbacks
+            None, self.compress_documents, documents, query, callbacks
         )
 
 
