@@ -171,7 +171,9 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        assert isinstance(input, dict)
+        assert isinstance(
+            input, dict
+        ), "The input to RunnablePassthrough.assign() must be a dict."
         return {
             **input,
             **self.mapper.invoke(input, config, **kwargs),
@@ -183,7 +185,9 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        assert isinstance(input, dict)
+        assert isinstance(
+            input, dict
+        ), "The input to RunnablePassthrough.assign() must be a dict."
         return {
             **input,
             **await self.mapper.ainvoke(input, config, **kwargs),
@@ -204,10 +208,12 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         # get executor to start map output stream in background
         with get_executor_for_config(config or {}) as executor:
             # start map output stream
-            first_map_chunk_future = executor.submit(next, map_output)  # type: ignore
+            first_map_chunk_future = executor.submit(next, map_output, None)  # type: ignore
             # consume passthrough stream
             for chunk in for_passthrough:
-                assert isinstance(chunk, dict)
+                assert isinstance(
+                    chunk, dict
+                ), "The input to RunnablePassthrough.assign() must be a dict."
                 # remove mapper keys from passthrough chunk, to be overwritten by map
                 filtered = AddableDict(
                     {k: v for k, v in chunk.items() if k not in mapper_keys}
@@ -233,11 +239,13 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         map_output = self.mapper.atransform(for_map, config, **kwargs)
         # start map output stream
         first_map_chunk_task: asyncio.Task = asyncio.create_task(
-            py_anext(map_output),  # type: ignore[arg-type]
+            py_anext(map_output, None),  # type: ignore[arg-type]
         )
         # consume passthrough stream
         async for chunk in for_passthrough:
-            assert isinstance(chunk, dict)
+            assert isinstance(
+                chunk, dict
+            ), "The input to RunnablePassthrough.assign() must be a dict."
             # remove mapper keys from passthrough chunk, to be overwritten by map output
             filtered = AddableDict(
                 {k: v for k, v in chunk.items() if k not in mapper_keys}
