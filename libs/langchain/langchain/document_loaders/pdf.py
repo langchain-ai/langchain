@@ -299,11 +299,7 @@ class PyMuPDFLoader(BasePDFLoader):
     """Load `PDF` files using `PyMuPDF`."""
 
     def __init__(
-        self,
-        file_path: str,
-        *,
-        headers: Optional[Dict] = None,
-        **kwargs: Optional[Any]
+        self, file_path: str, *, headers: Optional[Dict] = None, **kwargs: Optional[Any]
     ) -> None:
         """
         Initialize with a file path and optional keyword arguments.
@@ -315,7 +311,6 @@ class PyMuPDFLoader(BasePDFLoader):
                 "`PyMuPDF` package not found, please install it with "
                 "`pip install pymupdf`"
             )
-
         super().__init__(file_path, headers=headers)
         self.kwargs = kwargs  # Assign kwargs to self.kwargs
 
