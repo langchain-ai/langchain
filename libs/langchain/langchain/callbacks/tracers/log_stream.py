@@ -25,6 +25,8 @@ from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
 
 class LogEntry(TypedDict):
+    """A single entry in the run log."""
+
     id: str
     """ID of the sub-run."""
     name: str
@@ -49,6 +51,8 @@ class LogEntry(TypedDict):
 
 
 class RunState(TypedDict):
+    """State of the run."""
+
     id: str
     """ID of the run."""
     streamed_output: List[Any]
@@ -63,6 +67,8 @@ class RunState(TypedDict):
 
 
 class RunLogPatch:
+    """A patch to the run log."""
+
     ops: List[Dict[str, Any]]
     """List of jsonpatch operations, which describe how to create the run state
     from an empty dict. This is the minimal representation of the log, designed to
@@ -94,6 +100,8 @@ class RunLogPatch:
 
 
 class RunLog(RunLogPatch):
+    """A run log."""
+
     state: RunState
     """Current state of the log, obtained from applying all ops in sequence."""
 
@@ -118,6 +126,8 @@ class RunLog(RunLogPatch):
 
 
 class LogStreamCallbackHandler(BaseTracer):
+    """A tracer that streams run logs to a stream."""
+
     def __init__(
         self,
         *,
