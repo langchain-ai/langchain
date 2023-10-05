@@ -22,7 +22,7 @@ Observation: Результат выполнения функции
 Thought: Теперь я знаю окончательный ответ
 Final answer: окончательный ответ на исходный вопрос
 -----
-""" # noqa: E501
+"""  # noqa: E501
 SUFFIX = """
 Question: {input}{agent_scratchpad}
 """
