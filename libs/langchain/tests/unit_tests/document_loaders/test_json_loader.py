@@ -162,7 +162,7 @@ def test_load_jsonlines(mocker: MockerFixture) -> None:
     )
 
     loader = JSONLoader(
-        file_path=file_path, jq_schema=".", content_key=".text", json_lines=True
+        file_path=file_path, jq_schema=".", content_key="text", json_lines=True
     )
     result = loader.load()
 
@@ -173,7 +173,7 @@ def test_load_jsonlines(mocker: MockerFixture) -> None:
     "params",
     (
         {"jq_schema": ".[].text"},
-        {"jq_schema": ".[]", "content_key": ".text"},
+        {"jq_schema": ".[]", "content_key": "text"},
     ),
 )
 def test_load_jsonlines_list(params: Dict, mocker: MockerFixture) -> None:
@@ -229,7 +229,7 @@ def test_load_empty_jsonlines(mocker: MockerFixture) -> None:
         (
             "pathlib.Path.read_text",
             '[{"text": "value1"}, {"text": "value2"}]',
-            {"jq_schema": ".[]", "content_key": ".text"},
+            {"jq_schema": ".[]", "content_key": "text"},
         ),
         # JSON Lines content.
         (
@@ -240,7 +240,7 @@ def test_load_empty_jsonlines(mocker: MockerFixture) -> None:
                 {"text": "value2"}
                 """
             ),
-            {"jq_schema": ".", "content_key": ".text", "json_lines": True},
+            {"jq_schema": ".", "content_key": "text", "json_lines": True},
         ),
     ),
 )
@@ -279,7 +279,7 @@ def test_json_meta_01(
         (
             "pathlib.Path.read_text",
             '[{"text": "value1"}, {"text": "value2"}]',
-            {"jq_schema": ".[]", "content_key": ".text"},
+            {"jq_schema": ".[]", "content_key": "text"},
         ),
         # JSON Lines content.
         (
@@ -290,7 +290,7 @@ def test_json_meta_01(
                         {"text": "value2"}
                         """
             ),
-            {"jq_schema": ".", "content_key": ".text", "json_lines": True},
+            {"jq_schema": ".", "content_key": "text", "json_lines": True},
         ),
     ),
 )
@@ -316,6 +316,126 @@ def test_json_meta_02(
         return {**metadata, "x": f"{record['text']}-meta"}
 
     loader = JSONLoader(file_path=file_path, metadata_func=metadata_func, **kwargs)
+    result = loader.load()
+
+    assert result == expected_docs
+
+
+@pytest.mark.parametrize(
+    "params",
+    (
+        {"jq_schema": ".[].text"},
+        {"jq_schema": ".[]", "content_key": "text"},
+        {
+            "jq_schema": ".[]",
+            "content_key": ".text",
+            "is_content_key_jq_parsable": True,
+        },
+    ),
+)
+def test_load_json_with_jq_parsable_content_key(
+    params: Dict, mocker: MockerFixture
+) -> None:
+    file_path = "/workspaces/langchain/test.json"
+    expected_docs = [
+        Document(
+            page_content="value1",
+            metadata={"source": file_path, "seq_num": 1},
+        ),
+        Document(
+            page_content="value2",
+            metadata={"source": file_path, "seq_num": 2},
+        ),
+    ]
+
+    mocker.patch(
+        "pathlib.Path.open",
+        return_value=io.StringIO(
+            """
+            [{"text": "value1"}, {"text": "value2"}]
+            """
+        ),
+    )
+
+    loader = JSONLoader(file_path=file_path, json_lines=True, **params)
+    result = loader.load()
+
+    assert result == expected_docs
+
+
+def test_load_json_with_nested_jq_parsable_content_key(mocker: MockerFixture) -> None:
+    file_path = "/workspaces/langchain/test.json"
+    expected_docs = [
+        Document(
+            page_content="message1",
+            metadata={"source": file_path, "seq_num": 1},
+        ),
+        Document(
+            page_content="message2",
+            metadata={"source": file_path, "seq_num": 2},
+        ),
+    ]
+
+    mocker.patch(
+        "pathlib.Path.open",
+        return_value=io.StringIO(
+            """
+            {"data": [
+                    {"attributes": {"message": "message1","tags": ["tag1"]},"id": "1"},
+                    {"attributes": {"message": "message2","tags": ["tag2"]},"id": "2"}]}
+            """
+        ),
+    )
+
+    loader = JSONLoader(
+        file_path=file_path,
+        jq_schema=".data[]",
+        content_key=".attributes.message",
+        is_content_key_jq_parsable=True,
+    )
+    result = loader.load()
+
+    assert result == expected_docs
+
+
+def test_load_json_with_nested_jq_parsable_content_key_with_metadata(
+    mocker: MockerFixture,
+) -> None:
+    file_path = "/workspaces/langchain/test.json"
+    expected_docs = [
+        Document(
+            page_content="message1",
+            metadata={"source": file_path, "seq_num": 1, "id": "1", "tags": ["tag1"]},
+        ),
+        Document(
+            page_content="message2",
+            metadata={"source": file_path, "seq_num": 2, "id": "2", "tags": ["tag2"]},
+        ),
+    ]
+
+    mocker.patch(
+        "pathlib.Path.open",
+        return_value=io.StringIO(
+            """
+            {"data": [
+                    {"attributes": {"message": "message1","tags": ["tag1"]},"id": "1"},
+                    {"attributes": {"message": "message2","tags": ["tag2"]},"id": "2"}]}
+            """
+        ),
+    )
+
+    def _metadata_func(record: dict, metadata: dict) -> dict:
+        metadata["id"] = record.get("id")
+        metadata["tags"] = record["attributes"].get("tags")
+        return metadata
+
+    loader = JSONLoader(
+        file_path=file_path,
+        jq_schema=".data[]",
+        content_key=".attributes.message",
+        is_content_key_jq_parsable=True,
+        metadata_func=_metadata_func,
+    )
     result = loader.load()
 
     assert result == expected_docs

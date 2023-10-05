@@ -173,7 +173,7 @@ Another option is set `jq_schema='.'` and provide `content_key`:
 loader = JSONLoader(
     file_path='./example_data/facebook_chat_messages.jsonl',
     jq_schema='.',
-    content_key='.sender_name',
+    content_key='sender_name',
     json_lines=True)
 
 data = loader.load()
@@ -189,6 +189,59 @@ pprint(data)
     [Document(page_content='User 2', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 1}),
      Document(page_content='User 1', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 2}),
      Document(page_content='User 2', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 3})]
+```
+
+</CodeOutputBlock>
+
+### JSON file with jq schema `content_key`
+
+If you want to load documents from a JSON file using content_key in the jq schema,
+pass is_content_key_jq_parsable=True and ensure content_key is parsable with the jq schema.
+
+```python
+file_path = './sample.json'
+pprint(Path(file_path).read_text())
+```
+
+<CodeOutputBlock lang="python">
+
+```json
+    {"data": [
+        {"attributes": {
+            "message": "message1",
+            "tags": [
+            "tag1"]},
+        "id": "1"},
+        {"attributes": {
+            "message": "message2",
+            "tags": [
+            "tag2"]},
+        "id": "2"}]}
+```
+
+</CodeOutputBlock>
+
+
+```python
+loader = JSONLoader(
+    file_path=file_path,
+    jq_schema=".data[]",
+    content_key=".attributes.message",
+    is_content_key_jq_parsable=True,
+)
+
+data = loader.load()
+```
+
+```python
+pprint(data)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='message1', metadata={'source': '/path/to/sample.json', 'seq_num': 1}),
+     Document(page_content='message2', metadata={'source': '/path/to/sample.json', 'seq_num': 2})]
 ```
 
 </CodeOutputBlock>
@@ -216,8 +269,6 @@ This allows us to pass the records (dict) into the `metadata_func` that has to b
 
 Additionally, we now have to explicitly specify in the loader, via the `content_key` argument, the key from the record where the value for the `page_content` needs to be extracted from.
 
-The `content_key` also needs to be described according to the [jq schema](https://en.wikipedia.org/wiki/Jq_(programming_language)), just like `jq_schema`.
-
 ```python
 # Define the metadata extraction function.
 def metadata_func(record: dict, metadata: dict) -> dict:
@@ -231,7 +282,7 @@ def metadata_func(record: dict, metadata: dict) -> dict:
 loader = JSONLoader(
     file_path='./example_data/facebook_chat.json',
     jq_schema='.messages[]',
-    content_key=".content",
+    content_key="content",
     metadata_func=metadata_func
 )
 
@@ -290,7 +341,7 @@ def metadata_func(record: dict, metadata: dict) -> dict:
 loader = JSONLoader(
     file_path='./example_data/facebook_chat.json',
     jq_schema='.messages[]',
-    content_key=".content",
+    content_key="content",
     metadata_func=metadata_func
 )
 
@@ -319,6 +370,8 @@ pprint(data)
 ```
 
 </CodeOutputBlock>
+
+### with jq schema `content_key`
 
 ## Common JSON structures with jq schema
 
