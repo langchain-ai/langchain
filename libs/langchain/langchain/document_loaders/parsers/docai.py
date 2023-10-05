@@ -99,7 +99,7 @@ class DocAIParser(BaseBlobParser):
         self,
         blob: Blob,
         enable_native_pdf_parsing: bool = True,
-        field_mask: Optional[str] = "text,pages.pageNumber",
+        field_mask: Optional[str] = None,
         page_range: Optional[List[int]] = None,
     ) -> Iterator[Document]:
         """Parses a blob lazily using online processing.
@@ -109,8 +109,9 @@ class DocAIParser(BaseBlobParser):
             enable_native_pdf_parsing: enable pdf embedded text extraction
             field_mask: a comma-separated list of which fields to include in the
                 Document AI response.
-                default: "text,pages.pageNumber"
-            page_range: list of page numbers to parse
+                suggested: "text,pages.pageNumber,pages.layout"
+            page_range: list of page numbers to parse. If `None`,
+                entire document will be parsed.
         """
         try:
             from google.cloud import documentai
@@ -277,7 +278,7 @@ class DocAIParser(BaseBlobParser):
         processor_name: Optional[str] = None,
         batch_size: int = 1000,
         enable_native_pdf_parsing: bool = True,
-        field_mask: Optional[str] = "text,pages.pageNumber",
+        field_mask: Optional[str] = None,
     ) -> List["Operation"]:
         """Runs Google Document AI PDF Batch Processing on a list of blobs.
 
@@ -289,7 +290,7 @@ class DocAIParser(BaseBlobParser):
             enable_native_pdf_parsing: a config option for the parser
             field_mask: a comma-separated list of which fields to include in the
                 Document AI response.
-                default: "text,pages.pageNumber"
+                suggested: "text,pages.pageNumber,pages.layout"
 
         Document AI has a 1000 file limit per batch, so batches larger than that need
         to be split into multiple requests.
