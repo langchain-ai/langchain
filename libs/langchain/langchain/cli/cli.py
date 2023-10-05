@@ -5,7 +5,7 @@ from typing import Optional
 from typing_extensions import Annotated
 
 from langchain.cli.create_repo.base import create, is_poetry_installed
-from langchain.cli.create_repo.pypi_name import lint_name, is_name_taken
+from langchain.cli.create_repo.pypi_name import is_name_taken, lint_name
 from langchain.cli.create_repo.user_info import get_git_user_email, get_git_user_name
 
 try:
@@ -96,6 +96,12 @@ def new(
             typer.echo("ℹ️ Could not find Poetry installed.")
             use_pip = typer.confirm("Use Pip? (no to use poetry)", default=True)
             use_poetry = not use_pip
+
+    if author_name is None:
+        raise typer.BadParameter("Author name is required")
+
+    if author_email is None:
+        raise typer.BadParameter("Author email is required")
 
     create(project_directory, project_name, author_name, author_email, use_poetry)
 
