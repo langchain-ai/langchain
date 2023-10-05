@@ -26,7 +26,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  POETRY_VERSION: "1.5.1"
+  POETRY_VERSION: "1.6.1"
   WORKDIR: "libs/langchain"
 
 jobs:

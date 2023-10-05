@@ -18,6 +18,7 @@ and retrieve the data that are 'most similar' to the embedded query.
 
     Embeddings, Document
 """  # noqa: E501
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.alibabacloud_opensearch import (
     AlibabaCloudOpenSearch,
     AlibabaCloudOpenSearchSettings,
@@ -28,7 +29,6 @@ from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.awadb import AwaDB
 from langchain.vectorstores.azuresearch import AzureSearch
 from langchain.vectorstores.bageldb import Bagel
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.clarifai import Clarifai
@@ -76,6 +76,7 @@ from langchain.vectorstores.usearch import USearch
 from langchain.vectorstores.vald import Vald
 from langchain.vectorstores.vearch import Vearch
 from langchain.vectorstores.vectara import Vectara
+from langchain.vectorstores.vespa import VespaStore
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zep import ZepVectorStore
 from langchain.vectorstores.zilliz import Zilliz
@@ -143,6 +144,7 @@ __all__ = [
     "Vearch",
     "Vectara",
     "VectorStore",
+    "VespaStore",
     "Weaviate",
     "ZepVectorStore",
     "Zilliz",
