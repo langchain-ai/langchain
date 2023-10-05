@@ -73,7 +73,7 @@ class RunLogPatch:
     def __init__(self, *ops: Dict[str, Any]) -> None:
         self.ops = list(ops)
 
-    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLogPatch:
+    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
         if type(other) == RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(None, ops)
@@ -101,7 +101,7 @@ class RunLog(RunLogPatch):
         super().__init__(*ops)
         self.state = state
 
-    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLogPatch:
+    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
         if type(other) == RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(self.state, other.ops)
