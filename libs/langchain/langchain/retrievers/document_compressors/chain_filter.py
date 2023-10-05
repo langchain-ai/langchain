@@ -53,7 +53,6 @@ class LLMChainFilter(BaseDocumentCompressor):
                 filtered_docs.append(doc)
         return filtered_docs
 
-
     @classmethod
     def from_llm(
         cls,
