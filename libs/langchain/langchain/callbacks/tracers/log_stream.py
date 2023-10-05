@@ -54,13 +54,12 @@ class RunState(TypedDict):
     streamed_output: List[Any]
     """List of output chunks streamed by Runnable.stream()"""
     final_output: Optional[Any]
-    """Final output of the run, usually the result of aggregating streamed_output.
+    """Final output of the run, usually the result of aggregating (`+`) streamed_output.
     Only available after the run has finished successfully."""
 
     logs: Dict[str, LogEntry]
-    """List of sub-runs contained in this run, if any, in the order they were started.
-    If filters were supplied, this list will contain only the runs that matched the 
-    filters."""
+    """Map of run names to sub-runs. If filters were supplied, this list will
+    contain only the runs that matched the filters."""
 
 
 class RunLogPatch:
@@ -74,7 +73,7 @@ class RunLogPatch:
     def __init__(self, *ops: Dict[str, Any]) -> None:
         self.ops = list(ops)
 
-    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLogPatch:
+    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
         if type(other) == RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(None, ops)
@@ -102,7 +101,7 @@ class RunLog(RunLogPatch):
         super().__init__(*ops)
         self.state = state
 
-    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLogPatch:
+    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
         if type(other) == RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(self.state, other.ops)
