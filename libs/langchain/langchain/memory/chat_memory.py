@@ -16,18 +16,21 @@ class BaseChatMemory(BaseMemory, ABC):
     return_messages: bool = False
 
     def _get_input_output(
-        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+        self, inputs: Dict[str, Any], outputs: Dict[str, Any]
     ) -> Tuple[str, str]:
         if self.input_key is None:
             prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
         else:
             prompt_input_key = self.input_key
+
         if self.output_key is None:
-            if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
+            if 'answer' in outputs:
+                output_key = 'answer'
+            else:
+                raise ValueError("Output key 'answer' not found.")
         else:
             output_key = self.output_key
+
         return inputs[prompt_input_key], outputs[output_key]
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
