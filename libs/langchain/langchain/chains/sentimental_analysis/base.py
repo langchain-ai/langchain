@@ -166,3 +166,4 @@ class SentimentAnalysis(Chain):
             batch_processing=batch_processing,
             **kwargs
         )
+
