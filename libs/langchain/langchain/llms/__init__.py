@@ -617,6 +617,12 @@ def __getattr__(name: str) -> Any:
         return _import_writer()
     elif name == "Xinference":
         return _import_xinference()
+    elif name == "type_to_cls_dict":
+        # for backwards compatibility
+        type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
+            k: v() for k, v in get_type_to_cls_dict().items()
+        }
+        return type_to_cls_dict
     else:
         raise AttributeError(f"Could not find: {name}")
 
