@@ -1260,6 +1260,42 @@ async def test_prompt() -> None:
         RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
     ]
 
+    stream_log_state = [
+        part
+        async for part in prompt.astream_log(
+            {"question": "What is your name?"}, diff=False
+        )
+    ]
+
+    # remove random id
+    stream_log[0].ops[0]["value"]["id"] = "00000000-0000-0000-0000-000000000000"
+    stream_log_state[-1].ops[0]["value"]["id"] = "00000000-0000-0000-0000-000000000000"
+    stream_log_state[-1].state["id"] = "00000000-0000-0000-0000-000000000000"
+
+    # assert output with diff=False matches output with diff=True
+    assert stream_log_state[-1].ops == [op for chunk in stream_log for op in chunk.ops]
+    assert stream_log_state[-1] == RunLog(
+        *[op for chunk in stream_log for op in chunk.ops],
+        state={
+            "final_output": ChatPromptValue(
+                messages=[
+                    SystemMessage(content="You are a nice assistant."),
+                    HumanMessage(content="What is your name?"),
+                ]
+            ),
+            "id": "00000000-0000-0000-0000-000000000000",
+            "logs": {},
+            "streamed_output": [
+                ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                )
+            ],
+        },
+    )
+
 
 def test_prompt_template_params() -> None:
     prompt = ChatPromptTemplate.from_template(

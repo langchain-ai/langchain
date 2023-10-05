@@ -173,6 +173,10 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     output_parser: BaseOutputParser = Field(
         default_factory=ScoreStringResultOutputParser
     )
+    normalize_by: Optional[float] = None
+    """The value to normalize the score by, if specified."""
+    criterion_name: str
+    """The name of the criterion being evaluated."""
 
     class Config:
         """Configuration for the ScoreStringEvalChain."""
@@ -200,6 +204,17 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         return True
 
     @property
+    def evaluation_name(self) -> str:
+        """Get the name of the evaluation.
+
+        Returns
+        -------
+        str
+            The name of the evaluation.
+        """
+        return f"score_string:{self.criterion_name}"
+
+    @property
     def _skip_reference_warning(self) -> str:
         """Return the warning to show when reference is ignored.
 
@@ -220,6 +235,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         *,
         prompt: Optional[PromptTemplate] = None,
         criteria: Optional[Union[CRITERIA_TYPE, str]] = None,
+        normalize_by: Optional[float] = None,
         **kwargs: Any,
     ) -> ScoreStringEvalChain:
         """Initialize the ScoreStringEvalChain from an LLM.
@@ -230,7 +246,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
-            PairwiseStringEvalChain: The initialized PairwiseStringEvalChain.
+            ScoreStringEvalChain: The initialized ScoreStringEvalChain.
 
         Raises:
             ValueError: If the input variables are not as expected.
@@ -253,11 +269,21 @@ Performance may be significantly worse with other models."
                 f"but got {prompt_.input_variables}"
             )
         criteria_ = resolve_criteria(criteria)
-        criteria_str = "\n".join(f"{k}: {v}" if v else k for k, v in criteria_.items())
+        criteria_str = "\n".join(
+            f"{k}: {v}" if v else k for k, v in criteria_.items()
+        ).strip()
         criteria_str = (
-            CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else DEFAULT_CRITERIA
+            CRITERIA_INSTRUCTIONS + f"{criteria_str}\n"
+            if criteria_str
+            else DEFAULT_CRITERIA
         )
-        return cls(llm=llm, prompt=prompt_.partial(criteria=criteria_str), **kwargs)
+        return cls(
+            llm=llm,
+            prompt=prompt_.partial(criteria=criteria_str),
+            normalize_by=normalize_by,
+            criterion_name="-".join(criteria_),
+            **kwargs,
+        )
 
     def _prepare_input(
         self,
@@ -290,6 +316,8 @@ Performance may be significantly worse with other models."
         parsed = result[self.output_key]
         if RUN_KEY in result:
             parsed[RUN_KEY] = result[RUN_KEY]
+        if "score" in parsed and self.normalize_by is not None:
+            parsed["score"] = parsed["score"] / self.normalize_by
         return parsed
 
     def _evaluate_strings(
@@ -392,6 +420,7 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
         *,
         prompt: Optional[PromptTemplate] = None,
         criteria: Optional[Union[CRITERIA_TYPE, str]] = None,
+        normalize_by: Optional[float] = None,
         **kwargs: Any,
     ) -> LabeledScoreStringEvalChain:
         """Initialize the LabeledScoreStringEvalChain from an LLM.
@@ -400,6 +429,7 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
             llm (BaseLanguageModel): The LLM to use.
             prompt (PromptTemplate, optional): The prompt to use.
             criteria (Union[CRITERIA_TYPE, str], optional): The criteria to use.
+            normalize_by (float, optional): The value to normalize the score by.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
@@ -422,6 +452,16 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
                 f"but got {prompt_.input_variables}"
             )
         criteria_ = resolve_criteria(criteria)
-        criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items())
-        criteria_str = CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else ""
-        return cls(llm=llm, prompt=prompt_.partial(criteria=criteria_str), **kwargs)
+        criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items()).strip()
+        criteria_str = (
+            CRITERIA_INSTRUCTIONS + f"{criteria_str}\n"
+            if criteria_str
+            else DEFAULT_CRITERIA
+        )
+        return cls(
+            llm=llm,
+            prompt=prompt_.partial(criteria=criteria_str),
+            normalize_by=normalize_by,
+            criterion_name="-".join(criteria_),
+            **kwargs,
+        )
