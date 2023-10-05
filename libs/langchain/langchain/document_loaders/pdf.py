@@ -299,10 +299,7 @@ class PyMuPDFLoader(BasePDFLoader):
     """Load `PDF` files using `PyMuPDF`."""
 
     def __init__(
-        self, file_path: str,
-        *, 
-        headers: Optional[Dict] = None,
-        **kwargs: Optional[Any]
+        self, file_path: str, *, headers: Optional[Dict] = None, **kwargs: Any
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -313,12 +310,18 @@ class PyMuPDFLoader(BasePDFLoader):
                 "`pip install pymupdf`"
             )
         super().__init__(file_path, headers=headers)
-        self.kwargs = kwargs
+        self.text_kwargs = kwargs
 
-    def load(self) -> List[Document]:
+    def load(self, **kwargs: Any) -> List[Document]:
         """Load file."""
+        if kwargs:
+            logger.warning(
+                f"Received runtime arguments {kwargs}. Passing runtime args to `load`"
+                f" is deprecated. Please pass arguments during initialization instead."
+            )
 
-        parser = PyMuPDFParser(text_kwargs=self.kwargs)
+        text_kwargs = {**self.text_kwargs, **kwargs}
+        parser = PyMuPDFParser(text_kwargs=text_kwargs)
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
