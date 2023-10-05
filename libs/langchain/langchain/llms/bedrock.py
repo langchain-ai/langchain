@@ -1,4 +1,5 @@
 import json
+import warnings
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
@@ -42,12 +43,12 @@ def _human_assistant_format(input_text: str) -> str:
             if count % 2 == 0:
                 count += 1
             else:
-                raise ValueError(ALTERNATION_ERROR)
+                warnings.warn(ALTERNATION_ERROR + f" Received {input_text}")
         if input_text[i : i + len(ASSISTANT_PROMPT)] == ASSISTANT_PROMPT:
             if count % 2 == 1:
                 count += 1
             else:
-                raise ValueError(ALTERNATION_ERROR)
+                warnings.warn(ALTERNATION_ERROR + f" Received {input_text}")
 
     if count % 2 == 1:  # Only saw Human, no Assistant
         input_text = input_text + ASSISTANT_PROMPT  # SILENT CORRECTION
@@ -65,6 +66,7 @@ class LLMInputOutputAdapter:
     provider_to_output_key_map = {
         "anthropic": "completion",
         "amazon": "outputText",
+        "cohere": "text",
     }
 
     @classmethod
@@ -74,7 +76,7 @@ class LLMInputOutputAdapter:
         input_body = {**model_kwargs}
         if provider == "anthropic":
             input_body["prompt"] = _human_assistant_format(prompt)
-        elif provider == "ai21":
+        elif provider == "ai21" or provider == "cohere":
             input_body["prompt"] = prompt
         elif provider == "amazon":
             input_body = dict()
@@ -98,6 +100,8 @@ class LLMInputOutputAdapter:
 
         if provider == "ai21":
             return response_body.get("completions")[0].get("data").get("text")
+        elif provider == "cohere":
+            return response_body.get("generations")[0].get("text")
         else:
             return response_body.get("results")[0].get("outputText")
 
@@ -119,6 +123,12 @@ class LLMInputOutputAdapter:
             chunk = event.get("chunk")
             if chunk:
                 chunk_obj = json.loads(chunk.get("bytes").decode())
+                if provider == "cohere" and (
+                    chunk_obj["is_finished"]
+                    or chunk_obj[cls.provider_to_output_key_map[provider]]
+                    == "<EOS_TOKEN>"
+                ):
+                    return
 
                 # chunk obj format varies with provider
                 yield GenerationChunk(
@@ -147,7 +157,7 @@ class BedrockBase(BaseModel, ABC):
     equivalent to the modelId property in the list-foundation-models api"""
 
     model_kwargs: Optional[Dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     endpoint_url: Optional[str] = None
     """Needed if you don't want to default to us-east-1 endpoint"""
@@ -159,6 +169,7 @@ class BedrockBase(BaseModel, ABC):
         "anthropic": "stop_sequences",
         "amazon": "stopSequences",
         "ai21": "stop_sequences",
+        "cohere": "stop_sequences",
     }
 
     @root_validator()
@@ -259,9 +270,10 @@ class BedrockBase(BaseModel, ABC):
 
             # stop sequence from _generate() overrides
             # stop sequences in the class attribute
-            _model_kwargs[
-                self.provider_stop_sequence_key_name_map.get(provider),
-            ] = stop
+            _model_kwargs[self.provider_stop_sequence_key_name_map.get(provider)] = stop
+
+        if provider == "cohere":
+            _model_kwargs["stream"] = True
 
         params = {**_model_kwargs, **kwargs}
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)

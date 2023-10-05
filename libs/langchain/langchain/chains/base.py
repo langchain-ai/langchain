@@ -5,7 +5,6 @@ import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union
 
@@ -97,12 +96,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        if type(self)._acall == Chain._acall:
-            # If the chain does not implement async, fall back to default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, **kwargs)
-            )
-
         config = config or {}
         return await self.acall(
             input,
@@ -246,7 +239,9 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        raise NotImplementedError("Async call not supported for this chain type.")
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self._call, inputs, run_manager
+        )
 
     def __call__(
         self,
@@ -616,7 +611,10 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         if self.memory is not None:
             raise ValueError("Saving of memory is not yet supported.")
         _dict = super().dict(**kwargs)
-        _dict["_type"] = self._chain_type
+        try:
+            _dict["_type"] = self._chain_type
+        except NotImplementedError:
+            pass
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -644,6 +642,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
         # Fetch dictionary to save
         chain_dict = self.dict()
+        if "_type" not in chain_dict:
+            raise NotImplementedError(f"Chain {self} does not support saving.")
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:

@@ -23,7 +23,12 @@ import numpy as np
 import sqlalchemy
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.orm import Session
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
