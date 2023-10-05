@@ -29,7 +29,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
 from langchain.utilities.redis import (
     _array_to_buffer,
     _buffer_to_array,
@@ -37,7 +38,6 @@ from langchain.utilities.redis import (
     get_client,
 )
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 from langchain.vectorstores.redis.constants import (
     REDIS_REQUIRED_MODULES,
     REDIS_TAG_SEPARATOR,

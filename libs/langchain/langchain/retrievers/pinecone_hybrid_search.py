@@ -4,9 +4,9 @@ import hashlib
 from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.embeddings import Embeddings
 
 
 def hash_text(text: str) -> str:
@@ -28,6 +28,7 @@ def create_index(
     sparse_encoder: Any,
     ids: Optional[List[str]] = None,
     metadatas: Optional[List[dict]] = None,
+    namespace: Optional[str] = None,
 ) -> None:
     """Create an index from a list of contexts.
 
@@ -91,7 +92,7 @@ def create_index(
             )
 
         # upload the documents to the new hybrid index
-        index.upsert(vectors)
+        index.upsert(vectors, namespace=namespace)
 
 
 class PineconeHybridSearchRetriever(BaseRetriever):
@@ -108,6 +109,8 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     """Number of documents to return."""
     alpha: float = 0.5
     """Alpha value for hybrid search."""
+    namespace: Optional[str] = None
+    """Namespace value for index partition."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -120,6 +123,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
         texts: List[str],
         ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
+        namespace: Optional[str] = None,
     ) -> None:
         create_index(
             texts,
@@ -128,6 +132,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
             self.sparse_encoder,
             ids=ids,
             metadatas=metadatas,
+            namespace=namespace,
         )
 
     @root_validator()
@@ -139,7 +144,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
                 BaseSparseEncoder,  # noqa:F401
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import pinecone_text python package. "
                 "Please install it with `pip install pinecone_text`."
             )
@@ -162,6 +167,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
             sparse_vector=sparse_vec,
             top_k=self.top_k,
             include_metadata=True,
+            namespace=self.namespace,
         )
         final_result = []
         for res in result["matches"]:

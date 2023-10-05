@@ -26,7 +26,7 @@ class SQLDatabaseChain(Chain):
         .. code-block:: python
 
             from langchain_experimental.sql import SQLDatabaseChain
-            from langchain import OpenAI, SQLDatabase
+            from langchain.llms import OpenAI, SQLDatabase
             db = SQLDatabase(...)
             db_chain = SQLDatabaseChain.from_llm(OpenAI(), db)
 
@@ -122,6 +122,9 @@ class SQLDatabaseChain(Chain):
             "table_info": table_info,
             "stop": ["\nSQLResult:"],
         }
+        if self.memory is not None:
+            for k in self.memory.memory_variables:
+                llm_inputs[k] = inputs[k]
         intermediate_steps: List = []
         try:
             intermediate_steps.append(llm_inputs)  # input: sql generation
@@ -242,15 +245,13 @@ class SQLDatabaseSequentialChain(Chain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        database: SQLDatabase,
+        db: SQLDatabase,
         query_prompt: BasePromptTemplate = PROMPT,
         decider_prompt: BasePromptTemplate = DECIDER_PROMPT,
         **kwargs: Any,
     ) -> SQLDatabaseSequentialChain:
         """Load the necessary chains."""
-        sql_chain = SQLDatabaseChain.from_llm(
-            llm, database, prompt=query_prompt, **kwargs
-        )
+        sql_chain = SQLDatabaseChain.from_llm(llm, db, prompt=query_prompt, **kwargs)
         decider_chain = LLMChain(
             llm=llm, prompt=decider_prompt, output_key="table_names"
         )

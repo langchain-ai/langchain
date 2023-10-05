@@ -93,7 +93,7 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
     the endpoint"""
 
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     @validator("http_client", always=True, allow_reuse=True)
     @classmethod
