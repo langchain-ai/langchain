@@ -1268,7 +1268,7 @@ async def test_prompt() -> None:
     ]
 
     stream_log[0].ops[0]["value"].pop("id")  # remove random id
-    stream_log_state[-1].ops[0]['value'].pop("id")  # remove random id
+    stream_log_state[-1].ops[0]["value"].pop("id")  # remove random id
     stream_log_state[-1].state.pop("id")  # remove random id
     assert stream_log_state[-1].ops == [op for chunk in stream_log for op in chunk.ops]
     assert stream_log_state[-1] == RunLog(
