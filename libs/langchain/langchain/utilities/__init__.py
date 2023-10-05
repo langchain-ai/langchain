@@ -5,6 +5,7 @@ and packages.
 """
 from langchain.utilities.alpha_vantage import AlphaVantageAPIWrapper
 from langchain.utilities.apify import ApifyWrapper
+from langchain.utilities.arcee import ArceeClient, ArceeRoute, DALMFilter
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.bash import BashProcess

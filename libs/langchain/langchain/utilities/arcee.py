@@ -8,7 +8,7 @@ import requests
 class ArceeRoute(str, Enum):
     generate = "models/generate"
     retrieve = "models/retrieve"
-    model_training_status = "models/status/{model_id}"
+    model_training_status = "models/status/{id_or_name}"
 
 
 class DALMFilterType(str, Enum):
@@ -37,86 +37,90 @@ class DALMFilter(BaseModel):
     value: str
     _is_metadata: bool = False
 
-    @root_validator
-    def set_meta(self) -> "DALMFilter":
-        """document and name are reserved arcee keys. Anything else is metadata"""
-        self._is_metadata = self.field_name not in ["document", "name"]
-        return self
-
-
-class ArceeWrapper(BaseModel):
-    """Wrapper for Arcee APIs"""
-
-    arcee_api_url: str = "https://api.arcee.ai"
-    """Arcee API URL"""
-
-    arcee_api_version: str = "v2"
-    """Arcee API Version"""
-
-    arcee_app_url: str = "https://app.arcee.ai"
-    """Arcee App URL"""
-
-    model_id: str
-    """Arcee Model ID"""
-
-    model_kwargs: Mapping[str, Any] = None
-    """Keyword arguments to pass to the model."""
-
     @root_validator()
-    def validate_model_kwargs(cls, values: Dict) -> Dict:
-        """Validate that model kwargs are valid."""
+    def set_meta(cls, values: Dict) -> Dict:
+        """document and name are reserved arcee keys. Anything else is metadata"""
+        values["_is_meta"] = values.get("field_name") not in ["document", "name"]
+        return values
 
-        print("validating kwargs: ", values.get("model_kwargs"))
 
-        if values.get("model_kwargs") is not None:
-            kw = values.get("model_kwargs")
+class ArceeClient:
+    def __init__(
+        self,
+        arcee_api_key: str,
+        arcee_api_url: str,
+        arcee_api_version: str,
+        model_kwargs: Dict[str, Any],
+        model_name: str,
+    ):
+        self.arcee_api_key = arcee_api_key
+        self.model_kwargs = model_kwargs
+        self.arcee_api_url = arcee_api_url
+        self.arcee_api_version = arcee_api_version
 
-            # validate size
-            if kw.get("size") is not None:
-                if not kw.get("size") >= 0:
-                    raise ValueError("`size` must be positive")
+        try:
+            route = ArceeRoute.model_training_status.value.format(id_or_name=model_name)
+            # response = self.make_request("get", route)
+            response = {"status": "training_complete", "model_id": "123"}
+            self.model_id = response.get("model_id")
+            self.model_training_status = response.get("status")
+        except Exception as e:
+            raise ValueError(
+                f"Error while validating model training status for '{model_name}': {e}"
+            ) from e
 
-            # validate filters
-            if kw.get("filters") is not None:
-                if not isinstance(kw.get("filters"), List):
-                    raise ValueError("`filters` must be a list")
-                for f in kw.get("filters"):
-                    DALMFilter.validate(f)
+    def validate_model_training_status(self):
+        if self.model_training_status != "training_complete":
+            raise Exception(
+                f"Model {self.model_id} is not ready. Please wait for training to complete."
+            )
 
-    @classmethod
-    def _make_request_headers(cls, headers: Optional[Dict] = None) -> Dict:
-        """Make the request headers"""
+    def make_request(
+        self,
+        method: Literal["post", "get"],
+        route: ArceeRoute,
+        body: Optional[dict] = None,
+        params: Optional[dict] = None,
+        headers: Optional[dict] = None,
+    ) -> dict:
+        """Make a request to the Arcee API
+        Args:
+            method: The HTTP method to use
+            route: The route to call
+            body: The body of the request
+            params: The query params of the request
+            headers: The headers of the request
+        """
+        headers = self._make_request_headers(headers=headers)
+        url = self._make_request_url(route=route)
+
+        req_type = getattr(requests, method)
+
+        response = req_type(url, json=body, params=params, headers=headers)
+        if response.status_code not in (200, 201):
+            raise Exception(f"Failed to make request. Response: {response.text}")
+        return response.json()
+
+    def _make_request_headers(self, headers: Optional[Dict] = None) -> Dict:
         headers = headers or {}
         internal_headers = {
-            "X-Token": f"{cls.arcee_api_key}",
+            "X-Token": self.arcee_api_key,
             "Content-Type": "application/json",
         }
-        headers.update(**internal_headers)
+        headers.update(internal_headers)
         return headers
 
-    @classmethod
-    def _make_request_url(cls, route: ArceeRoute) -> str:
-        """Make the request url"""
-        return f"{cls.arcee_api_url}/{cls.arcee_api_version}/{route}"
+    def _make_request_url(self, route: ArceeRoute) -> str:
+        return f"{self.arcee_api_url}/{self.arcee_api_version}/{route}"
 
-    def _make_request_body_for_models(
+    def make_request_body_for_models(
         self, prompt: str, **kwargs: Mapping[str, Any]
     ) -> Mapping[str, Any]:
-        """Build the kwargs for the Post request, used by sync
-
-        Args:
-            prompt (str): prompt used in query
-            kwargs (dict): model kwargs in payload
-
-        Returns:
-            Dict[str, Union[str,dict]]: _description_
-        """
+        """Make the request body for generate/retrieve models endpoint"""
         _model_kwargs = self.model_kwargs or {}
         _params = {**_model_kwargs, **kwargs}
 
-        # validate filters
-        filters = [DALMFilter.validate(f) for f in _params.get("filters", [])]
-
+        filters = [DALMFilter(**f) for f in _params.get("filters", [])]
         return dict(
             model_id=self.model_id,
             query=prompt,
@@ -124,23 +128,3 @@ class ArceeWrapper(BaseModel):
             filters=filters,
             id=self.model_id,
         )
-
-    @classmethod
-    def make_request(
-        cls,
-        request: Literal["post", "get"],
-        route: ArceeRoute,
-        body: Optional[dict[str, Any]] = None,
-        params: Optional[dict[str, Any]] = None,
-        headers: Optional[dict[str, Any]] = None,
-    ) -> dict[str, str]:
-        """Makes the request"""
-        headers = cls._make_request_headers(headers)
-        url = cls.make_request_url(route)
-
-        req_type = getattr(requests, request)
-
-        response = req_type(url, json=body, params=params, headers=headers)
-        if response.status_code not in (200, 201):
-            raise Exception(f"Failed to make request. Response: {response.text}")
-        return response.json()
