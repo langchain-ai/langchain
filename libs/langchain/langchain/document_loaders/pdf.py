@@ -135,9 +135,9 @@ class OnlinePDFLoader(BasePDFLoader):
 
 
 class PyPDFLoader(BasePDFLoader):
-    """Load `PDF using `pypdf` and chunks at character level.
+    """Load PDF using pypdf into list of documents.
 
-    Loader also stores page numbers in metadata.
+    Loader chunks by page and stores page numbers in metadata.
     """
 
     def __init__(
@@ -298,7 +298,9 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 class PyMuPDFLoader(BasePDFLoader):
     """Load `PDF` files using `PyMuPDF`."""
 
-    def __init__(self, file_path: str, *, headers: Optional[Dict] = None) -> None:
+    def __init__(
+        self, file_path: str, *, headers: Optional[Dict] = None, **kwargs: Any
+    ) -> None:
         """Initialize with a file path."""
         try:
             import fitz  # noqa:F401
@@ -307,13 +309,19 @@ class PyMuPDFLoader(BasePDFLoader):
                 "`PyMuPDF` package not found, please install it with "
                 "`pip install pymupdf`"
             )
-
         super().__init__(file_path, headers=headers)
+        self.text_kwargs = kwargs
 
-    def load(self, **kwargs: Optional[Any]) -> List[Document]:
+    def load(self, **kwargs: Any) -> List[Document]:
         """Load file."""
+        if kwargs:
+            logger.warning(
+                f"Received runtime arguments {kwargs}. Passing runtime args to `load`"
+                f" is deprecated. Please pass arguments during initialization instead."
+            )
 
-        parser = PyMuPDFParser(text_kwargs=kwargs)
+        text_kwargs = {**self.text_kwargs, **kwargs}
+        parser = PyMuPDFParser(text_kwargs=text_kwargs)
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 

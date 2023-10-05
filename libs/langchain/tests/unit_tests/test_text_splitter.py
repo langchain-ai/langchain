@@ -525,6 +525,38 @@ public class HelloWorld {
     ]
 
 
+def test_kotlin_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.KOTLIN, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+class HelloWorld {
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            println("Hello, World!")
+        }
+    }
+}
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "class",
+        "HelloWorld {",
+        "companion",
+        "object {",
+        "@JvmStatic",
+        "fun",
+        "main(args:",
+        "Array<String>)",
+        "{",
+        'println("Hello,',
+        'World!")',
+        "}\n    }",
+        "}",
+    ]
+
+
 def test_csharp_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.CSHARP, chunk_size=CHUNK_SIZE, chunk_overlap=0
