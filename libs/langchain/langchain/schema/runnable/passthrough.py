@@ -208,7 +208,11 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         # get executor to start map output stream in background
         with get_executor_for_config(config or {}) as executor:
             # start map output stream
-            first_map_chunk_future = executor.submit(next, map_output, None)  # type: ignore
+            first_map_chunk_future = executor.submit(
+                next,
+                map_output,  # type: ignore
+                None,
+            )
             # consume passthrough stream
             for chunk in for_passthrough:
                 assert isinstance(
