@@ -26,16 +26,17 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 
-from typing_extensions import get_args
+from typing_extensions import Literal, get_args
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
-    from langchain.callbacks.tracers.log_stream import RunLogPatch
+    from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
@@ -290,11 +291,13 @@ class Runnable(Generic[Input, Output], ABC):
         """
         yield await self.ainvoke(input, config, **kwargs)
 
-    async def astream_log(
+    @overload
+    def astream_log(
         self,
         input: Any,
         config: Optional[RunnableConfig] = None,
         *,
+        diff: Literal[True] = True,
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -303,6 +306,39 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[RunLogPatch]:
+        ...
+
+    @overload
+    def astream_log(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        *,
+        diff: Literal[False],
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[RunLog]:
+        ...
+
+    async def astream_log(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        *,
+        diff: bool = True,
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Optional[Any],
+    ) -> Union[AsyncIterator[RunLogPatch], AsyncIterator[RunLog]]:
         """
         Stream all output from a runnable, as reported to the callback system.
         This includes all inner runs of LLMs, Retrievers, Tools, etc.
@@ -317,6 +353,7 @@ class Runnable(Generic[Input, Output], ABC):
         from langchain.callbacks.base import BaseCallbackManager
         from langchain.callbacks.tracers.log_stream import (
             LogStreamCallbackHandler,
+            RunLog,
             RunLogPatch,
         )
 
@@ -370,8 +407,14 @@ class Runnable(Generic[Input, Output], ABC):
 
         try:
             # Yield each chunk from the output stream
-            async for log in stream:
-                yield log
+            if diff:
+                async for log in stream:
+                    yield log
+            else:
+                state = RunLog(state=None)  # type: ignore[arg-type]
+                async for log in stream:
+                    state = state + log
+                    yield state
         finally:
             # Wait for the runnable to finish, if not cancelled (eg. by break)
             try:
