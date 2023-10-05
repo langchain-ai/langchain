@@ -298,8 +298,16 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 class PyMuPDFLoader(BasePDFLoader):
     """Load `PDF` files using `PyMuPDF`."""
 
-    def __init__(self, file_path: str, *, headers: Optional[Dict] = None) -> None:
-        """Initialize with a file path."""
+    def __init__(
+        self,
+        file_path: str,
+        *,
+        headers: Optional[Dict] = None,
+        **kwargs: Optional[Any]
+    ) -> None:
+        """
+        Initialize with a file path and optional keyword arguments.
+        """
         try:
             import fitz  # noqa:F401
         except ImportError:
@@ -309,14 +317,14 @@ class PyMuPDFLoader(BasePDFLoader):
             )
 
         super().__init__(file_path, headers=headers)
+        self.kwargs = kwargs  # Assign kwargs to self.kwargs
 
-    def load(self, **kwargs: Optional[Any]) -> List[Document]:
+    def load(self) -> List[Document]:
         """Load file."""
 
-        parser = PyMuPDFParser(text_kwargs=kwargs)
+        parser = PyMuPDFParser(text_kwargs=self.kwargs)
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
-
 
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:
 # https://gist.github.com/danielgross/3ab4104e14faccc12b49200843adab21
