@@ -1,5 +1,5 @@
 """Multi strategy parser that implements AgentOutputParser."""
-from typing import Any, Sequence, Union
+from typing import Sequence, Union
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.conversational_chat.prompt import FORMAT_INSTRUCTIONS

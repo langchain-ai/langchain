@@ -2,7 +2,6 @@
 import json
 
 from langchain.output_parsers.json import (
-    REGEXES,
     fix_json_with_embedded_code_block,
     parse_json_markdown,
 )
@@ -19,11 +18,6 @@ def json_markdown(text: str) -> dict:
     return parse_json_markdown(text)
 
 
-def json_nested_md_code_block(text: str) -> dict:
-    """Extract the outermost code block. Can accomodate nested code blocks."""
-    return parse_json_markdown(text, regex=REGEXES["nested_json_md_code_block"])
-
-
 def fallback(text: str) -> dict:
     """Example fallback strategy."""
     return {"action": "Final Answer", "action_input": text}
@@ -34,11 +28,6 @@ def fallback(text: str) -> dict:
 json_react_strategies = (
     ParseStrategy(is_bare_json, lambda text: text.startswith("{"), name="bare_json"),
     ParseStrategy(json_markdown, lambda text: text.find("```") != -1),
-    ParseStrategy(
-        json_nested_md_code_block,
-        lambda text: text.find("```") != -1,
-        name="nested_code_block",
-    ),
     ParseStrategy(
         fix_json_with_embedded_code_block,
         lambda text: text.find("```") != -1,

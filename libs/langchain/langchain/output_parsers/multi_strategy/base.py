@@ -1,7 +1,7 @@
 """Multi strategy output parser."""
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generic, Iterator, Sequence, TypeVar, Union, Optional
+from typing import Any, Callable, Generic, Iterator, Optional, Sequence, TypeVar, Union
 
 from langchain.schema import (
     BaseOutputParser,
@@ -41,7 +41,6 @@ class ParseStrategy(Generic[S]):
         )
 
     def __getitem__(self, index: int) -> Union[TParser[S], TPredicate]:
-        """Behaves like a tuple."""
         if index == 0:
             return self.parser
         elif index == 1:
@@ -55,12 +54,12 @@ class ParseStrategy(Generic[S]):
         yield self.predicate
 
 
-class MultiStrategyParser(BaseOutputParser[T], ABC, Generic[T, S]):
+class MultiStrategyParser(BaseOutputParser[T], Generic[T, S], ABC):
     """Try multiple strategies to parse the output.
 
-    A strategy is a tuple of (parser, predicate). The parser takes the some
-    text as input and returns some type S. The parser is only called if the
-    predicate returns True.
+    A strategy is a tuple of (parser, predicate). The parser takes text as input
+    and returns some type S. The parser is only called if the predicate returns
+    True.
 
     When the `parse` method is called, all registered strategies are tried
     in order and the first one that succeeds returns its result.

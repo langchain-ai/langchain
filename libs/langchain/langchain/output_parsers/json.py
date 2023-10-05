@@ -12,6 +12,7 @@ from langchain.schema.output_parser import (
     OutputParserException,
 )
 
+
 def _replace_new_line(match: re.Match[str]) -> str:
     value = match.group(2)
     value = re.sub(r"\n", r"\\n", value)
@@ -161,6 +162,7 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
             )
     return json_obj
 
+
 def fix_code_in_json(text: str) -> str:
     """Fixes nested code block in json markdown"""
     # Extract the code block and replace it with a placeholder
@@ -170,7 +172,7 @@ def fix_code_in_json(text: str) -> str:
         code_block = match.group(1)
         text = re.sub(pattern, "CODE_BLOCK_PLACEHOLDER", text, count=1)
 
-        # Escape the special characters in the code block
+        # escape the special characters in the code block
         escaped_code_block = (
             code_block.replace("\n", "\\n").replace("\t", "\\t").replace('"', '\\"')
         )
@@ -209,6 +211,7 @@ def fix_json_with_embedded_code_block(text: str, max_loop: int = 20) -> dict:
             loop += 1
     final_text = text.replace("[END_CODE]", "```")
     return json.loads(final_text)
+
 
 class SimpleJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     """Parse the output of an LLM call to a JSON object.

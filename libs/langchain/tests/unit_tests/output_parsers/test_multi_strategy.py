@@ -1,11 +1,11 @@
-from typing import List, Tuple, Any
 from pathlib import Path
+from typing import Any, List, Tuple
 
 import pytest
 
-from langchain.output_parsers.multi_strategy.base import MultiStrategyParser
-from langchain.output_parsers.multi_strategy.agent import ConvMultiStrategyParser
 from langchain.output_parsers.multi_strategy import strategies
+from langchain.output_parsers.multi_strategy.agent import ConvMultiStrategyParser
+from langchain.output_parsers.multi_strategy.base import MultiStrategyParser
 
 # How the test works:
 # it loads all llm output files from the ../data/llm_outputs directory
@@ -37,7 +37,7 @@ def _test_json_react_strategy(
 ) -> None:
     try:
         parser.parse(output)
-    except Exception as e:
+    except Exception:
         pytest.fail(f"Error parsing output entry: {name}.")
 
 
