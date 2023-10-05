@@ -8,14 +8,13 @@ import re
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.prompts.prompt import SENTIMENT_PROMPT  # Import the updated prompt template
+from langchain.chains.sentimental_analysis.prompt import SENTIMENT_PROMPT
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.chains import SentimentAnalyzer
-from langchain.pydantic_v1 import  Field, root_validator , Extra 
+from langchain.pydantic_v1 import Field,root_validator,Extra 
 
 logger = logging.getLogger(__name__)
 
-class SentimentAnalysis(Chain):
+class SentimentAnalysisChain(Chain):
     """Chain that performs sentiment analysis on text.
 
     Example:
@@ -25,28 +24,23 @@ class SentimentAnalysis(Chain):
             from langchain.llms import OpenAI
             sentiment_chain = SentimentAnalysis.from_llm(OpenAI())
     """
-
     llm_chain: LLMChain
     llm: Optional[BaseLanguageModel] = None
     """[Deprecated] LLM wrapper to use."""
     input_key: str = "text"  #: :meta private:
     output_key: str = "sentiment"  #: :meta private:
     custom_prompt_template: Optional[str] = SENTIMENT_PROMPT.template  # Use the updated prompt template
-    sentiment_analyzer: SentimentAnalyzer = SentimentAnalyzer()  #: :meta private:
-    
     include_score: bool = True  #: Option to include sentiment score in output
     output_format: str = "json"  #: Output format for sentiment analysis results (default is JSON)
-    sentiment_label_mapping: Dict[str, str] = Field(default_factory=dict)  #: Custom sentiment label mapping
+    sentiment_label_mapping: Optional[Dict[str,str]] = Field(default_factory=dict)  #: Custom sentiment label mapping
     batch_processing: bool = False  #: Enable batch processing of multiple text inputs
 
     class Config:
         """Configuration for this pydantic object."""
-
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @root_validator(pre=True)
-    
     def raise_deprecation(cls, values: Dict) -> Dict:
         if "llm" in values:
             warnings.warn(
@@ -61,7 +55,6 @@ class SentimentAnalysis(Chain):
     @property
     def input_keys(self) -> List[str]:
         """Expect input key.
-
         :meta private:
         """
         return [self.input_key]
@@ -69,7 +62,6 @@ class SentimentAnalysis(Chain):
     @property
     def output_keys(self) -> List[str]:
         """Expect output key.
-
         :meta private:
         """
         return [self.output_key]
@@ -83,15 +75,10 @@ class SentimentAnalysis(Chain):
         _run_manager.on_text(inputs[self.input_key], verbose=self.verbose)
 
         # Check if batch processing is enabled and input is a list
-        if self.batch_processing and isinstance(inputs[self.input_key], list):
-            results = []
-            for text_input in inputs[self.input_key]:
-                # Process each input individually
-                result = self._process_single_input(text_input, _run_manager)
-                results.append(result)
+        if self.batch_processing and isinstance(inputs[self.input_key], List):
+            results = [self._process_single_input(text_input,_run_manager) for text_input in inputs[self.input_key]]
             return results
         else:
-            # Process a single input
             return self._process_single_input(inputs[self.input_key], _run_manager)
 
     def _process_single_input(
@@ -143,7 +130,7 @@ class SentimentAnalysis(Chain):
 
     @property
     def _chain_type(self) -> str:
-        return "sentiment_analysis_chain"
+        return "SentimentAnalysisChain"
 
     @classmethod
     def from_llm(
@@ -152,11 +139,13 @@ class SentimentAnalysis(Chain):
         custom_prompt_template: Optional[str] = None,
         include_score: bool = True,
         output_format: str = "json",
-        sentiment_label_mapping: Dict[str, str] = Field(default_factory=dict),
+        sentiment_label_mapping: Optional[Dict] = Field(default_factory=dict),
         batch_processing: bool = False,
         **kwargs: Any,
-    ) -> SentimentAnalysis:
-        llm_chain = LLMChain(llm=llm, prompt=custom_prompt_template if custom_prompt_template is not None else SENTIMENT_PROMPT)
+    ) -> SentimentAnalysisChain:
+        
+        sentiment_prompt = custom_prompt_template if custom_prompt_template is not None else SENTIMENT_PROMPT
+        llm_chain = LLMChain(llm=llm, prompt=sentiment_prompt)
         return cls(
             llm_chain=llm_chain,
             custom_prompt_template=custom_prompt_template,

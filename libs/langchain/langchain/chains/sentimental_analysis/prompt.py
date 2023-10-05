@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import re
-from typing import List
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser, OutputParserException
 
 # Simplified prompt template
-_PROMPT_TEMPLATE = """Analyze the sentiment of the given text.
+_PROMPT_TEMPLATE = """Classify the given sentiment of the given text into positive, negative or neutral classes and provide a relevant score
 
 Input: {text}
 Output: Sentiment: {sentiment_label} (Score: {sentiment_score})
@@ -30,7 +29,6 @@ class SentimentOutputParser(BaseOutputParser):
     @property
     def _type(self) -> str:
         return "sentiment"
-
 
 SENTIMENT_PROMPT = PromptTemplate(
     input_variables=["text"],
