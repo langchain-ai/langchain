@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )

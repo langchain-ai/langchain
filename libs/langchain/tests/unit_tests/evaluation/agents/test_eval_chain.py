@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.evaluation.agents.trajectory_eval_chain import (
     TrajectoryEval,
     TrajectoryEvalChain,
@@ -12,6 +11,7 @@ from langchain.evaluation.agents.trajectory_eval_chain import (
 )
 from langchain.pydantic_v1 import Field
 from langchain.schema import AgentAction, BaseMessage, OutputParserException
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.tools.base import tool
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 

@@ -3,8 +3,8 @@ import json
 import ssl
 from typing import Any, List, Mapping, Optional
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 
 
 class NIBittensorLLM(LLM):

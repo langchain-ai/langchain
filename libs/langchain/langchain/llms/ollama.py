@@ -3,10 +3,10 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import requests
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
 from langchain.pydantic_v1 import Extra
 from langchain.schema import LLMResult
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output import GenerationChunk
 

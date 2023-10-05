@@ -18,11 +18,6 @@ from typing import (
     cast,
 )
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.evaluation.agents.trajectory_eval_prompt import (
@@ -32,6 +27,11 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
 from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 

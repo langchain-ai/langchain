@@ -3,9 +3,9 @@ from typing import Iterable, Optional
 from requests.exceptions import HTTPError, ReadTimeout
 from urllib3.exceptions import ConnectionError
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.schema import Document
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 
 

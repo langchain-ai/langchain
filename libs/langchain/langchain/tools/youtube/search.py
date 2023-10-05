@@ -11,7 +11,7 @@ Input to this tool should be a comma separated list,
 import json
 from typing import Optional
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools import BaseTool
 
 

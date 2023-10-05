@@ -6,8 +6,8 @@ from typing import Any, Dict, Optional, Union
 
 import requests
 
-from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import (
+from langchain.schema.callbacks.tracers.base import BaseTracer
+from langchain.schema.callbacks.tracers.schemas import (
     ChainRun,
     LLMRun,
     Run,

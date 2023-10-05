@@ -3,11 +3,11 @@ import os
 from typing import Any, Dict, List
 from uuid import UUID
 
-from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import (
     BaseMessage,
     LLMResult,
 )
+from langchain.schema.callbacks.base import BaseCallbackHandler
 
 
 def import_context() -> Any:

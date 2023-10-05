@@ -1,7 +1,7 @@
 """Vector SQL Database Chain Retriever"""
 from typing import Any, Dict, List
 
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )

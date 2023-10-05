@@ -3,11 +3,11 @@ from asyncio import sleep as asleep
 from time import sleep
 from typing import Optional, Type
 
-from langchain.callbacks.manager import (
+from langchain.pydantic_v1 import BaseModel, Field
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
 
 

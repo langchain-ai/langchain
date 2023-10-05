@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Any
 
-from langchain.callbacks.manager import Callbacks
+from langchain.schema.callbacks.manager import Callbacks
 from langchain.chains.base import Chain
 
 from langchain_experimental.plan_and_execute.schema import StepResponse

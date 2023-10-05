@@ -18,9 +18,9 @@ from uuid import UUID
 import jsonpatch
 from anyio import create_memory_object_stream
 
-from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run
 from langchain.load.load import load
+from langchain.schema.callbacks.tracers.base import BaseTracer
+from langchain.schema.callbacks.tracers.schemas import Run
 from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
 

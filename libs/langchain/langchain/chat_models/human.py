@@ -6,13 +6,13 @@ from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import yaml
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Field
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.schema.messages import (
     BaseMessage,
     HumanMessage,

@@ -10,12 +10,12 @@ from typing import (
     Optional,
 )
 
-from langchain.callbacks.manager import (
+from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env
 

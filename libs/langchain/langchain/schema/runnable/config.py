@@ -25,8 +25,8 @@ from langchain.schema.runnable.utils import (
 )
 
 if TYPE_CHECKING:
-    from langchain.callbacks.base import BaseCallbackManager, Callbacks
-    from langchain.callbacks.manager import (
+    from langchain.schema.callbacks.base import BaseCallbackManager, Callbacks
+    from langchain.schema.callbacks.manager import (
         AsyncCallbackManager,
         AsyncCallbackManagerForChainRun,
         CallbackManager,
@@ -196,7 +196,7 @@ async def acall_func_with_variable_args(
 
 
 def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
-    from langchain.callbacks.manager import CallbackManager
+    from langchain.schema.callbacks.manager import CallbackManager
 
     return CallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),
@@ -208,7 +208,7 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
 def get_async_callback_manager_for_config(
     config: RunnableConfig,
 ) -> AsyncCallbackManager:
-    from langchain.callbacks.manager import AsyncCallbackManager
+    from langchain.schema.callbacks.manager import AsyncCallbackManager
 
     return AsyncCallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),

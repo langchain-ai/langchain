@@ -18,10 +18,10 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
-from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run
 from langchain.env import get_runtime_environment
 from langchain.load.dump import dumpd
+from langchain.schema.callbacks.tracers.base import BaseTracer
+from langchain.schema.callbacks.tracers.schemas import Run
 from langchain.schema.messages import BaseMessage
 
 logger = logging.getLogger(__name__)

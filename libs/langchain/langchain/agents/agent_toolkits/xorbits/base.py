@@ -9,9 +9,9 @@ from langchain.agents.agent_toolkits.xorbits.prompt import (
     PD_SUFFIX,
 )
 from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
+from langchain.schema.callbacks.base import BaseCallbackManager
 from langchain.tools.python.tool import PythonAstREPLTool
 
 

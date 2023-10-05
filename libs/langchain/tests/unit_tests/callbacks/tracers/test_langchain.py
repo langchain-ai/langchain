@@ -5,8 +5,8 @@ from uuid import UUID
 
 from langsmith import Client
 
-from langchain.callbacks.tracers.langchain import LangChainTracer
-from langchain.callbacks.tracers.schemas import Run
+from langchain.schema.callbacks.tracers.langchain import LangChainTracer
+from langchain.schema.callbacks.tracers.schemas import Run
 from langchain.schema.output import LLMResult
 
 

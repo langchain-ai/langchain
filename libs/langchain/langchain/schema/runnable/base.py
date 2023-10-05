@@ -32,11 +32,11 @@ from typing import (
 from typing_extensions import Literal, get_args
 
 if TYPE_CHECKING:
-    from langchain.callbacks.manager import (
+    from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
+    from langchain.schema.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
-    from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
@@ -350,12 +350,12 @@ class Runnable(Generic[Input, Output], ABC):
         The jsonpatch ops can be applied in order to construct state.
         """
 
-        from langchain.callbacks.base import BaseCallbackManager
         from langchain.callbacks.tracers.log_stream import (
             LogStreamCallbackHandler,
             RunLog,
             RunLogPatch,
         )
+        from langchain.schema.callbacks.base import BaseCallbackManager
 
         # Create a stream handler that will emit Log objects
         stream = LogStreamCallbackHandler(
@@ -1093,7 +1093,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain.callbacks.manager import CallbackManager
+        from langchain.schema.callbacks.manager import CallbackManager
 
         if not inputs:
             return []
@@ -1212,7 +1212,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain.callbacks.manager import (
+        from langchain.schema.callbacks.manager import (
             AsyncCallbackManager,
         )
 
@@ -1501,7 +1501,7 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None
     ) -> Dict[str, Any]:
-        from langchain.callbacks.manager import CallbackManager
+        from langchain.schema.callbacks.manager import CallbackManager
 
         # setup callbacks
         config = ensure_config(config)

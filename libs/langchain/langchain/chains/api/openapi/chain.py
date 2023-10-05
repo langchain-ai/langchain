@@ -6,12 +6,12 @@ from typing import Any, Dict, List, NamedTuple, Optional, cast
 
 from requests import Response
 
-from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain.chains.api.openapi.requests_chain import APIRequesterChain
 from langchain.chains.api.openapi.response_chain import APIResponderChain
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.pydantic_v1 import BaseModel, Field
+from langchain.schema.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.utilities.requests import Requests

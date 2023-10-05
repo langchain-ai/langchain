@@ -3,9 +3,9 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import List, Optional, Sequence, Union
 
-from langchain.callbacks.manager import Callbacks
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema import BaseDocumentTransformer, Document
+from langchain.schema.callbacks.manager import Callbacks
 
 
 class BaseDocumentCompressor(BaseModel, ABC):

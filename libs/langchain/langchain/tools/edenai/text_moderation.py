@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)

@@ -1,12 +1,12 @@
 import datetime
 from typing import Any, List, Optional
 
-from langchain.callbacks.manager import (
+from langchain.llms.openai import OpenAI, OpenAIChat
+from langchain.schema import LLMResult
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.openai import OpenAI, OpenAIChat
-from langchain.schema import LLMResult
 
 
 class PromptLayerOpenAI(OpenAI):

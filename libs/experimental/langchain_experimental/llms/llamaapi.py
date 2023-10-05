@@ -9,7 +9,7 @@ from typing import (
     Tuple,
 )
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     ChatGeneration,

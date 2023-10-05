@@ -11,10 +11,10 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms import BaseLLM
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import Generation, LLMResult
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)

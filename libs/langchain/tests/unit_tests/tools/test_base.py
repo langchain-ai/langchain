@@ -8,11 +8,11 @@ from typing import Any, List, Optional, Type, Union
 import pytest
 
 from langchain.agents.tools import Tool, tool
-from langchain.callbacks.manager import (
+from langchain.pydantic_v1 import BaseModel
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.pydantic_v1 import BaseModel
 from langchain.tools.base import (
     BaseTool,
     SchemaAnnotationError,

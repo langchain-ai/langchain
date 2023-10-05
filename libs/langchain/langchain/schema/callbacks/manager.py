@@ -28,7 +28,13 @@ from uuid import UUID
 from tenacity import RetryCallState
 
 import langchain
-from langchain.callbacks.base import (
+from langchain.schema import (
+    AgentAction,
+    AgentFinish,
+    Document,
+    LLMResult,
+)
+from langchain.schema.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
     Callbacks,
@@ -38,21 +44,16 @@ from langchain.callbacks.base import (
     RunManagerMixin,
     ToolManagerMixin,
 )
-from langchain.callbacks.openai_info import OpenAICallbackHandler
-from langchain.callbacks.stdout import StdOutCallbackHandler
-from langchain.callbacks.tracers import run_collector
-from langchain.callbacks.tracers.langchain import (
+from langchain.schema.callbacks.stdout import StdOutCallbackHandler
+from langchain.schema.callbacks.tracers import run_collector
+from langchain.schema.callbacks.tracers.langchain import (
     LangChainTracer,
 )
-from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
-from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
-from langchain.callbacks.tracers.wandb import WandbTracer
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    Document,
-    LLMResult,
+from langchain.schema.callbacks.tracers.langchain_v1 import (
+    LangChainTracerV1,
+    TracerSessionV1,
 )
+from langchain.schema.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
@@ -61,17 +62,13 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
-    "openai_callback", default=None
-)
+openai_callback_var: ContextVar[Any] = ContextVar("openai_callback", default=None)
 tracing_callback_var: ContextVar[
     Optional[LangChainTracerV1]
 ] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
-wandb_tracing_callback_var: ContextVar[
-    Optional[WandbTracer]
-] = ContextVar(  # noqa: E501
+wandb_tracing_callback_var: ContextVar[Optional[Any]] = ContextVar(  # noqa: E501
     "tracing_wandb_callback", default=None
 )
 
@@ -92,7 +89,7 @@ def _get_debug() -> bool:
 
 
 @contextmanager
-def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
+def get_openai_callback() -> Generator[Any, None, None]:
     """Get the OpenAI callback handler in a context manager.
     which conveniently exposes token and cost information.
 
@@ -103,6 +100,9 @@ def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
         >>> with get_openai_callback() as cb:
         ...     # Use the OpenAI callback handler
     """
+
+    from langchain.callbacks.openai_info import OpenAICallbackHandler
+
     cb = OpenAICallbackHandler()
     openai_callback_var.set(cb)
     yield cb
@@ -150,6 +150,9 @@ def wandb_tracing_enabled(
         >>> with wandb_tracing_enabled() as session:
         ...     # Use the WandbTracer session
     """
+
+    from langchain.callbacks.tracers.wandb import WandbTracer
+
     cb = WandbTracer()
     wandb_tracing_callback_var.set(cb)
     yield None
@@ -1961,14 +1964,18 @@ def _configure(
                 handler = LangChainTracerV1()
                 handler.load_session(tracer_project)
                 callback_manager.add_handler(handler, True)
-        if wandb_tracing_enabled_ and not any(
-            isinstance(handler, WandbTracer) for handler in callback_manager.handlers
-        ):
-            if wandb_tracer:
-                callback_manager.add_handler(wandb_tracer, True)
-            else:
-                handler = WandbTracer()
-                callback_manager.add_handler(handler, True)
+        if wandb_tracing_enabled_:
+            from langchain.callbacks.tracers.wandb import WandbTracer
+
+            if not any(
+                isinstance(handler, WandbTracer)
+                for handler in callback_manager.handlers
+            ):
+                if wandb_tracer:
+                    callback_manager.add_handler(wandb_tracer, True)
+                else:
+                    handler = WandbTracer()
+                    callback_manager.add_handler(handler, True)
         if tracing_v2_enabled_ and not any(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
@@ -1986,11 +1993,14 @@ def _configure(
                         " unset the  LANGCHAIN_TRACING_V2 environment variables.",
                         e,
                     )
-        if open_ai is not None and not any(
-            isinstance(handler, OpenAICallbackHandler)
-            for handler in callback_manager.handlers
-        ):
-            callback_manager.add_handler(open_ai, True)
+        if open_ai is not None:
+            from langchain.callbacks.openai_info import OpenAICallbackHandler
+
+            if not any(
+                isinstance(handler, OpenAICallbackHandler)
+                for handler in callback_manager.handlers
+            ):
+                callback_manager.add_handler(open_ai, True)
     if run_collector_ is not None and not any(
         handler is run_collector_  # direct pointer comparison
         for handler in callback_manager.handlers

@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, List, Optional, Type, cast
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.chains import LLMChain
 from langchain.chains.query_constructor.base import load_query_constructor_chain
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
@@ -23,6 +22,7 @@ from langchain.retrievers.self_query.timescalevector import TimescaleVectorTrans
 from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores import (
     Chroma,

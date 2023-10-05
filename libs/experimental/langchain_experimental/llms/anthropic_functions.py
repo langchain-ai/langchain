@@ -3,7 +3,7 @@ from collections import defaultdict
 from html.parser import HTMLParser
 from typing import Any, DefaultDict, Dict, List, Optional
 
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )

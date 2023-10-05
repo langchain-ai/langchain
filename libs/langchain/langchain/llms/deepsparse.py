@@ -1,7 +1,7 @@
 # flake8: noqa
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 from langchain.pydantic_v1 import root_validator
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )

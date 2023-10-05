@@ -22,7 +22,7 @@ from langchain.schema.runnable import RunnableSerializable
 from langchain.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
-    from langchain.callbacks.manager import Callbacks
+    from langchain.schema.callbacks.manager import Callbacks
 
 
 @lru_cache(maxsize=None)  # Cache the tokenizer

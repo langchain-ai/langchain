@@ -30,8 +30,8 @@ agent = initialize_agent(
 """
 from typing import Optional
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import Field
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.jira import JiraAPIWrapper
 

@@ -1,7 +1,7 @@
 """Test Replicate API wrapper."""
 
-from langchain.callbacks.manager import CallbackManager
 from langchain.llms.replicate import Replicate
+from langchain.schema.callbacks.manager import CallbackManager
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 TEST_MODEL = "replicate/dolly-v2-12b:ef0e1aefc61f8e096ebe4db6b2bacc297daf2ef6899f0f7e001ec445893500e5"  # noqa: E501

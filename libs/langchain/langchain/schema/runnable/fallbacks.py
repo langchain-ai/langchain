@@ -30,7 +30,7 @@ from langchain.schema.runnable.utils import (
 )
 
 if TYPE_CHECKING:
-    from langchain.callbacks.manager import AsyncCallbackManagerForChainRun
+    from langchain.schema.callbacks.manager import AsyncCallbackManagerForChainRun
 
 
 class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
@@ -161,7 +161,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain.callbacks.manager import CallbackManager
+        from langchain.schema.callbacks.manager import CallbackManager
 
         if return_exceptions:
             raise NotImplementedError()
@@ -231,7 +231,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain.callbacks.manager import AsyncCallbackManager
+        from langchain.schema.callbacks.manager import AsyncCallbackManager
 
         if return_exceptions:
             raise NotImplementedError()

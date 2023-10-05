@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import langchain
-from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     BaseMetadataCallbackHandler,
     flatten_dict,
@@ -13,6 +12,7 @@ from langchain.callbacks.utils import (
     import_textstat,
 )
 from langchain.schema import AgentAction, AgentFinish, Generation, LLMResult
+from langchain.schema.callbacks.base import BaseCallbackHandler
 
 LANGCHAIN_MODEL_NAME = "langchain-model"
 

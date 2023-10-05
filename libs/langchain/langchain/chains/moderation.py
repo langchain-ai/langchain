@@ -1,9 +1,9 @@
 """Pass input through a moderation endpoint."""
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.pydantic_v1 import root_validator
+from langchain.schema.callbacks.manager import CallbackManagerForChainRun
 from langchain.utils import get_from_dict_or_env
 
 

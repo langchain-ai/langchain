@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Literal, Optional, Sequence, Union
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import CallbackManagerForRetrieverRun
 
 
 class VespaRetriever(BaseRetriever):

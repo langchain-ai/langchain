@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional, Union
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
 from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.schema.output import Generation, LLMResult
 
 

@@ -8,8 +8,6 @@ from langchain.agents.format_scratchpad.openai_functions import (
 from langchain.agents.output_parsers.openai_functions import (
     OpenAIFunctionsAgentOutputParser,
 )
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.prompts.chat import (
     BaseMessagePromptTemplate,
@@ -23,6 +21,8 @@ from langchain.schema import (
     AgentFinish,
     BasePromptTemplate,
 )
+from langchain.schema.callbacks.base import BaseCallbackManager
+from langchain.schema.callbacks.manager import Callbacks
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     BaseMessage,

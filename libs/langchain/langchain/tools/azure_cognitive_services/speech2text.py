@@ -4,8 +4,8 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.azure_cognitive_services.utils import (
     detect_file_src_type,
     download_audio_from_url,

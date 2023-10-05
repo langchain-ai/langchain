@@ -6,12 +6,12 @@ import warnings
 from typing import Any, Dict, List, Optional
 
 from langchain._api import warn_deprecated
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
 from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema import BasePromptTemplate, OutputParserException
+from langchain.schema.callbacks.manager import CallbackManagerForChainRun
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities.bash import BashProcess
 

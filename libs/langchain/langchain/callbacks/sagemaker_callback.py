@@ -5,11 +5,11 @@ import tempfile
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     flatten_dict,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema.callbacks.base import BaseCallbackHandler
 
 
 def save_json(data: dict, file_path: str) -> None:

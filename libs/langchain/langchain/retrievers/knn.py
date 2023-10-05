@@ -9,8 +9,8 @@ from typing import Any, List, Optional
 
 import numpy as np
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema.embeddings import Embeddings
 
 

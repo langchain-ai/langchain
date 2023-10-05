@@ -1,5 +1,5 @@
-import langchain.callbacks.tracers.schemas as schemas
-from langchain.callbacks.tracers.schemas import __all__ as schemas_all
+import langchain.schema.callbacks.tracers.schemas as schemas
+from langchain.schema.callbacks.tracers.schemas import __all__ as schemas_all
 
 
 def test_public_api() -> None:

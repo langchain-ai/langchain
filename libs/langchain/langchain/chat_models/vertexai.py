@@ -5,16 +5,16 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import BaseChatModel, _generate_from_stream
 from langchain.llms.vertexai import _VertexAICommon, is_codey_model
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
+)
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
 )
 from langchain.schema.messages import (
     AIMessage,

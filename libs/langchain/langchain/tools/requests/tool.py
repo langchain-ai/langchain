@@ -4,7 +4,7 @@ import json
 from typing import Any, Dict, Optional
 
 from langchain.pydantic_v1 import BaseModel
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

@@ -2,9 +2,9 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chains.natbot.base import NatBotChain
 from langchain.llms.base import LLM
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 
 
 class FakeLLM(LLM):

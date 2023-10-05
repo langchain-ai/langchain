@@ -1,10 +1,10 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
 from langchain.llms.azureml_endpoint import AzureMLEndpointClient, ContentFormatterBase
 from langchain.pydantic_v1 import validator
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,

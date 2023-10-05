@@ -1,9 +1,9 @@
 # flake8: noqa
 import os
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain.schema.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
@@ -102,7 +102,6 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
         """Log records to deepeval when an LLM ends."""
         from deepeval.metrics.answer_relevancy import AnswerRelevancy
         from deepeval.metrics.bias_classifier import UnBiasedMetric
-        from deepeval.metrics.metric import Metric
         from deepeval.metrics.toxic_classifier import NonToxicMetric
 
         for metric in self.metrics:

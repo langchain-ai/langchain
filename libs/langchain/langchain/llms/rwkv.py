@@ -5,10 +5,10 @@ Based on https://github.com/saharNooby/rwkv.cpp/blob/master/rwkv/chat_with_bot.p
 """
 from typing import Any, Dict, List, Mapping, Optional, Set
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 
 
 class RWKV(LLM, BaseModel):

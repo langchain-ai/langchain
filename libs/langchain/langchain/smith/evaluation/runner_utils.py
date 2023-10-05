@@ -23,12 +23,10 @@ from typing import (
 from langsmith import Client, RunEvaluator
 from langsmith.schemas import Dataset, DataType, Example
 
-from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.evaluation import (
     EvaluatorCallbackHandler,
     wait_for_all_evaluators,
 )
-from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
 from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.schema import (
@@ -37,6 +35,8 @@ from langchain.evaluation.schema import (
     StringEvaluator,
 )
 from langchain.schema import ChatResult, LLMResult
+from langchain.schema.callbacks.manager import Callbacks
+from langchain.schema.callbacks.tracers.langchain import LangChainTracer
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, messages_from_dict
 from langchain.schema.runnable import Runnable, RunnableConfig, RunnableLambda

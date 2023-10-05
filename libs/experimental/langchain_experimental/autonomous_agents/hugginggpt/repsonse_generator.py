@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import Callbacks
+from langchain.schema.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 

@@ -7,8 +7,8 @@ from typing import List, Optional
 
 import requests
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import validator
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)

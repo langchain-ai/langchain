@@ -1,6 +1,5 @@
 """Test Baidu Qianfan Chat Endpoint."""
 
-from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from langchain.schema import (
     AIMessage,
@@ -9,6 +8,7 @@ from langchain.schema import (
     HumanMessage,
     LLMResult,
 )
+from langchain.schema.callbacks.manager import CallbackManager
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

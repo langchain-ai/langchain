@@ -7,17 +7,17 @@ from aiohttp import ClientSession
 
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import tracing_enabled
-from langchain.callbacks.manager import (
-    atrace_as_chain_group,
-    trace_as_chain_group,
-    tracing_v2_enabled,
-)
 from langchain.chains import LLMChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
+from langchain.schema.callbacks.manager import (
+    atrace_as_chain_group,
+    trace_as_chain_group,
+    tracing_v2_enabled,
+)
 
 questions = [
     (

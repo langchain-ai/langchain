@@ -5,7 +5,6 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, Union
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.azure_openai import AzureChatOpenAI
@@ -23,6 +22,7 @@ from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.prompts.prompt import PromptTemplate
 from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import RUN_KEY, BaseOutputParser
+from langchain.schema.callbacks.manager import Callbacks
 from langchain.schema.language_model import BaseLanguageModel
 
 logger = logging.getLogger(__name__)

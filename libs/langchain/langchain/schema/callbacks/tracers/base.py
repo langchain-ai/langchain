@@ -9,9 +9,9 @@ from uuid import UUID
 
 from tenacity import RetryCallState
 
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.tracers.schemas import Run
 from langchain.load.dump import dumpd
+from langchain.schema.callbacks.base import BaseCallbackHandler
+from langchain.schema.callbacks.tracers.schemas import Run
 from langchain.schema.document import Document
 from langchain.schema.output import (
     ChatGeneration,

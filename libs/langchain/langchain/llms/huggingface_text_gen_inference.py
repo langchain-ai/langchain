@@ -1,12 +1,12 @@
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from langchain.callbacks.manager import (
+from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Extra, Field, root_validator
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema.output import GenerationChunk
 from langchain.utils import get_pydantic_field_names
 

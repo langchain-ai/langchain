@@ -1,8 +1,8 @@
 import json
 from typing import Any, Callable, List
 
-from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run
+from langchain.schema.callbacks.tracers.base import BaseTracer
+from langchain.schema.callbacks.tracers.schemas import Run
 from langchain.utils.input import get_bolded_text, get_colored_text
 
 
