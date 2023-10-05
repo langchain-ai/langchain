@@ -1,6 +1,6 @@
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-import re
 from typing import Dict, List
 
 from presidio_analyzer import RecognizerResult
