@@ -1,7 +1,7 @@
 """Vector SQL Database Chain Retriever"""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.llm import LLMChain
@@ -179,8 +179,9 @@ class VectorSQLDatabaseChain(SQLDatabaseChain):
             _run_manager.on_text("\nSQLResult: ", verbose=self.verbose)
             _run_manager.on_text(str(result), color="yellow", verbose=self.verbose)
             # If return direct, we just set the final result equal to
-            # the result of the sql query result, otherwise try to get a human readable
-            # final answer
+            # the result of the sql query result (`Sequence[Dict[str, Any]]`),
+            # otherwise try to get a human readable final answer (`str`).
+            final_result: Union[str, Sequence[Dict[str, Any]]]
             if self.return_direct:
                 final_result = result
             else:
