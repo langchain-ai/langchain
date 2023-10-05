@@ -59,7 +59,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
     equivalent to the modelId property in the list-foundation-models api"""
 
     model_kwargs: Optional[Dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     endpoint_url: Optional[str] = None
     """Needed if you don't want to default to us-east-1 endpoint"""

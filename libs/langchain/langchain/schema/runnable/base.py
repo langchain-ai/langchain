@@ -26,16 +26,17 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 
-from typing_extensions import get_args
+from typing_extensions import Literal, get_args
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
-    from langchain.callbacks.tracers.log_stream import RunLogPatch
+    from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
@@ -129,9 +130,7 @@ class Runnable(Generic[Input, Output], ABC):
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         return []
 
-    def config_schema(
-        self, *, include: Optional[Sequence[str]] = None
-    ) -> Type[BaseModel]:
+    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
         class _Config:
             arbitrary_types_allowed = True
 
@@ -150,7 +149,7 @@ class Runnable(Generic[Input, Output], ABC):
                     for spec in config_specs
                 },
             )
-            if config_specs
+            if config_specs and "configurable" in include
             else None
         )
 
@@ -161,7 +160,7 @@ class Runnable(Generic[Input, Output], ABC):
             **{
                 field_name: (field_type, None)
                 for field_name, field_type in RunnableConfig.__annotations__.items()
-                if field_name in include
+                if field_name in [i for i in include if i != "configurable"]
             },
         )
 
@@ -292,11 +291,13 @@ class Runnable(Generic[Input, Output], ABC):
         """
         yield await self.ainvoke(input, config, **kwargs)
 
-    async def astream_log(
+    @overload
+    def astream_log(
         self,
         input: Any,
         config: Optional[RunnableConfig] = None,
         *,
+        diff: Literal[True] = True,
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -305,6 +306,39 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[RunLogPatch]:
+        ...
+
+    @overload
+    def astream_log(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        *,
+        diff: Literal[False],
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[RunLog]:
+        ...
+
+    async def astream_log(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        *,
+        diff: bool = True,
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Optional[Any],
+    ) -> Union[AsyncIterator[RunLogPatch], AsyncIterator[RunLog]]:
         """
         Stream all output from a runnable, as reported to the callback system.
         This includes all inner runs of LLMs, Retrievers, Tools, etc.
@@ -319,6 +353,7 @@ class Runnable(Generic[Input, Output], ABC):
         from langchain.callbacks.base import BaseCallbackManager
         from langchain.callbacks.tracers.log_stream import (
             LogStreamCallbackHandler,
+            RunLog,
             RunLogPatch,
         )
 
@@ -372,8 +407,14 @@ class Runnable(Generic[Input, Output], ABC):
 
         try:
             # Yield each chunk from the output stream
-            async for log in stream:
-                yield log
+            if diff:
+                async for log in stream:
+                    yield log
+            else:
+                state = RunLog(state=None)  # type: ignore[arg-type]
+                async for log in stream:
+                    state = state + log
+                    yield state
         finally:
             # Wait for the runnable to finish, if not cancelled (eg. by break)
             try:
@@ -873,7 +914,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
                     "available keys are {self.__fields__.keys()}"
                 )
 
-        return RunnableConfigurableFields(bound=self, fields=kwargs)
+        return RunnableConfigurableFields(default=self, fields=kwargs)
 
     def configurable_alternatives(
         self,
@@ -885,7 +926,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         )
 
         return RunnableConfigurableAlternatives(
-            which=which, bound=self, alternatives=kwargs
+            which=which, default=self, alternatives=kwargs
         )
 
 
@@ -2051,9 +2092,7 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
-    def config_schema(
-        self, *, include: Optional[Sequence[str]] = None
-    ) -> Type[BaseModel]:
+    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
         return self.bound.config_schema(include=include)
 
     @classmethod
@@ -2132,9 +2171,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
-    def config_schema(
-        self, *, include: Optional[Sequence[str]] = None
-    ) -> Type[BaseModel]:
+    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
         return self.bound.config_schema(include=include)
 
     @classmethod

@@ -19,6 +19,9 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
+    input_types: Dict[str, Any] = Field(default_factory=dict)
+    """A dictionary of the types of the variables the prompt template expects.
+    If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
@@ -46,7 +49,8 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     def input_schema(self) -> type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
-            "PromptInput", **{k: (Any, None) for k in self.input_variables}
+            "PromptInput",
+            **{k: (self.input_types.get(k, str), None) for k in self.input_variables},
         )
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:

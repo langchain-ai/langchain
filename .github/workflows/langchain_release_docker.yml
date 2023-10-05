@@ -3,6 +3,7 @@ name: docker/langchain/langchain Release
 
 on:
   workflow_dispatch: # Allows to trigger the workflow manually in GitHub UI
+  workflow_call: # Allows triggering from another workflow
 
 jobs:
   release:

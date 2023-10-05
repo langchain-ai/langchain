@@ -53,7 +53,7 @@ Dates are also represented as str.
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
 class Highlight(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
-    """Information that highlights the key words in the excerpt."""
+    """Information that highlights the keywords in the excerpt."""
 
     BeginOffset: int
     """The zero-based location in the excerpt where the highlight starts."""
