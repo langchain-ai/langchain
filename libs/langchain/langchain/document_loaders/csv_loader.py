@@ -1,14 +1,14 @@
 import csv
-from typing import Any, Dict, List, Optional
 from io import TextIOWrapper
+from typing import Any, Dict, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.helpers import detect_file_encodings
 from langchain.document_loaders.unstructured import (
     UnstructuredFileLoader,
     validate_unstructured_version,
 )
-from langchain.document_loaders.helpers import detect_file_encodings
 
 
 class CSVLoader(BaseLoader):
@@ -69,7 +69,9 @@ class CSVLoader(BaseLoader):
                 detected_encodings = detect_file_encodings(self.file_path)
                 for encoding in detected_encodings:
                     try:
-                        with open(self.file_path, newline="", encoding=encoding.encoding) as csvfile:
+                        with open(
+                            self.file_path, newline="", encoding=encoding.encoding
+                        ) as csvfile:
                             docs = self.__read_file(csvfile)
                     except UnicodeDecodeError:
                         continue
@@ -100,7 +102,6 @@ class CSVLoader(BaseLoader):
             docs.append(doc)
 
         return docs
-            
 
 
 class UnstructuredCSVLoader(UnstructuredFileLoader):

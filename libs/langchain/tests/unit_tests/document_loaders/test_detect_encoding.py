@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from langchain.document_loaders import DirectoryLoader, TextLoader, CSVLoader
+from langchain.document_loaders import CSVLoader, DirectoryLoader, TextLoader
 from langchain.document_loaders.helpers import detect_file_encodings
 
 
