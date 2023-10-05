@@ -227,7 +227,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         }
 
         if configurable:
-            return self.default.__class__(**{**self.default.dict(), **configurable})
+            return self.default.__class__(**{**self.default.__dict__, **configurable})
         else:
             return self.default
 
