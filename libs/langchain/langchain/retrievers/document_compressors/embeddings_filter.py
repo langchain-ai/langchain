@@ -7,12 +7,12 @@ from langchain.document_transformers.embeddings_redundant_filter import (
     _get_embeddings_from_stateful_docs,
     get_stateful_documents,
 )
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import root_validator
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
 from langchain.schema import Document
+from langchain.schema.embeddings import Embeddings
 from langchain.utils.math import cosine_similarity
 
 
@@ -68,12 +68,3 @@ class EmbeddingsFilter(BaseDocumentCompressor):
             )
             included_idxs = included_idxs[similar_enough]
         return [stateful_documents[i] for i in included_idxs]
-
-    async def acompress_documents(
-        self,
-        documents: Sequence[Document],
-        query: str,
-        callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
-        """Filter down documents."""
-        raise NotImplementedError()

@@ -58,6 +58,14 @@ class BigQueryLoader(BaseLoader):
             ) from ex
 
         bq_client = bigquery.Client(credentials=self.credentials, project=self.project)
+        if not bq_client.project:
+            error_desc = (
+                "GCP project for Big Query is not set! Either provide a "
+                "`project` argument during BigQueryLoader instantiation, "
+                "or set a default project with `gcloud config set project` "
+                "command."
+            )
+            raise ValueError(error_desc)
         query_result = bq_client.query(self.query).result()
         docs: List[Document] = []
 
