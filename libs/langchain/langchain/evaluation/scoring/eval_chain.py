@@ -130,7 +130,7 @@ class ScoreStringResultOutputParser(BaseOutputParser[dict]):
         if match:
             verdict = match.group(1)
 
-        if not match or verdict not in list("123456789") + ["10"]:
+        if not match:# or verdict not in list("123456789") + ["10"]:
             raise ValueError(
                 f"Invalid output: {text}. "
                 "Output must contain a double bracketed string\
@@ -139,7 +139,7 @@ class ScoreStringResultOutputParser(BaseOutputParser[dict]):
 
         return {
             "reasoning": text,
-            "score": int(verdict),
+            "score": int(float(verdict)),
         }
 
 

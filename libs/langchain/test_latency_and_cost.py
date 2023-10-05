@@ -9,9 +9,12 @@ from langchain.chains import LLMChain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.pydantic_v1 import BaseModel
 from langchain.output_parsers.json import SimpleJsonOutputParser
-from langchain.evaluation.comparison import PairwiseStringEvalChain
+from langchain.evaluation.scoring import ScoreStringEvalChain
 from langchain.callbacks.manager import get_openai_callback
+from time import perf_counter
     
+langchain.llm_cache = SQLiteCache(database_path=".langchain.db")
+
 class SummaryParser(SimpleJsonOutputParser):
 
     def parse(self, text: str) -> str:
@@ -74,66 +77,60 @@ Guidelines:
 Remember, use the exact same number of words for each summary.
 Answer in JSON. The JSON should be a list (length 5) of dictionaries whose keys are "Missing_Entities" and "Denser_Summary"."""  # noqa: E501
 
-BASE_PROMPT = ChatPromptTemplate.from_template("""Article: {article}
-
-Write a summary of the above article. Guidelines:
-
-- The summary should be long (4-5 sentences, ~80 words) yet highly non-specific, containing little information beyond the entities marked as missing. Use overly verbose language and fillers (e.g., "this article discusses") to reach ~80 words.
-- Make space with fusion, compression, and removal of uninformative phrases like "the article discusses".
-- The summaries should become highly dense and concise yet self-contained, i.e., easily understood without the article.
-
-Just give your summary and NOTHING else.""")
+BASE_PROMPT = ChatPromptTemplate.from_template("""Write a VERY short summary of the Article. Do not exceed 70 words.
+                                               
+Article: {article}""")
 
 cod_summarization_prompt = ChatPromptTemplate.from_messages(
     ("human", PROMPT)
 )
 
+FT_PROMPT = ChatPromptTemplate.from_template("""Give a summary of the following article:\n\n{article}""")
+
 cod_summarize_chain = LLMChain(llm=llm, prompt=cod_summarization_prompt, output_parser=SummaryParser())
 
 ft_summarize_chain = FT_PROMPT | ft_llm
 
-evaluator = PairwiseStringEvalChain.from_llm(llm=llm)
+base_summarize_chain = BASE_PROMPT | llm
+
+evaluator = ScoreStringEvalChain.from_llm(llm=llm)
 
 def _reverse_verdict(verdict: str) -> str:
     return "Win" if verdict == "Loss" else "Loss" if verdict == "Win" else "Tie"
 
-async def evaluate(sample: Sample) -> bool:
-    base_summary = (await base_summarize_chaim.ainvoke({"article": sample.article})).content
-    ft_summary = (await ft_summarize_chain.ainvoke({"article": sample.article})).content
-    print("Base summary:", base_summary)
-    print("FT summary:", ft_summary)
-    reverse = (len(base_summary) + len(ft_summary)) % 2 == 0
-    result = await evaluator.aevaluate_string_pairs(
+async def evaluate(sample: Sample) -> float:
+    #base_summary = (await base_summarize_chain.ainvoke({"article": sample.article})).content
+    #ft_summary = (await ft_summarize_chain.ainvoke({"article": sample.article})).content
+    cot_summary = (await cod_summarize_chain.arun(article=sample.article))
+    result = await evaluator.aevaluate_strings(
         input=f"Give a summary of the following article:\n\n{sample.article}",
-        prediction=sample.final_summary if not reverse else sample.starting_summary,
-        prediction_b=sample.starting_summary if not reverse else sample.final_summary,
+        prediction=cot_summary,
     )
-    print(result)
-    if reverse:
-        return _reverse_verdict(result["verdict"])
-    return result["verdict"]
+    return result["score"]
 
 async def main() -> None:
     pbar = tqdm(total=len(samples[:100]))
     sempahore = asyncio.Semaphore(10)
-
-    async def boxed_evaluate(sample: Sample) -> str:
-        with get_openai_callback() as cb:
+    times = []
+    with get_openai_callback() as cb:
+        async def boxed_evaluate(sample: Sample) -> str:
             async with sempahore:
+                t = perf_counter()
                 results = await evaluate(sample)
+                times.append(perf_counter() - t)
                 pbar.update(1)
                 print("Total cost:", cb.total_cost)
                 return results
 
-    results = await asyncio.gather(
-        *[boxed_evaluate(sample) for sample in samples[:100]]
-    )
+        results = await asyncio.gather(
+            *[boxed_evaluate(sample) for sample in samples[:100]]
+        )
 
-    results_excluding_ties = [result for result in results if result != "Tie"]
-    print(
-        "Win rate:",
-        sum([result == "Win" for result in results]) / len(results_excluding_ties),
-    )
+        print("Average latency:", sum(times) / len(times))
+        print(
+            "Score:",
+            sum(results) / len(results),
+        )
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -141,3 +138,16 @@ if __name__ == "__main__":
 
 # N=100 With first and last summary
 # Win rate: 80%
+
+# Avg latency for base summary: 16.027634234300102s
+# Avg cost for base summary: $0.0295785
+# Avg score: 6.54
+
+# Avg latency for ft summary: 1.405s
+# Avg cost for ft summary: $0.01105
+# Avg score: 7.65
+
+# Avg latency for GPT-4 CoD summary: 46.401s
+# Avg cost for GPT-4 CoD summary: $0.0693
+# Avg score: 8.03
+
