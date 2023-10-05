@@ -18,7 +18,6 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
-from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.summarize import load_summarize_chain
 from langchain.chat_models.fake import FakeListChatModel
@@ -36,6 +35,7 @@ from langchain.prompts.chat import (
 )
 from langchain.schema.callbacks.manager import Callbacks, collect_runs
 from langchain.schema.callbacks.tracers.base import BaseTracer
+from langchain.schema.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.schema.callbacks.tracers.schemas import Run
 from langchain.schema.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.schema.document import Document

@@ -32,11 +32,11 @@ from typing import (
 from typing_extensions import Literal, get_args
 
 if TYPE_CHECKING:
-    from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
     from langchain.schema.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
+    from langchain.schema.callbacks.tracers.log_stream import RunLog, RunLogPatch
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
@@ -350,12 +350,12 @@ class Runnable(Generic[Input, Output], ABC):
         The jsonpatch ops can be applied in order to construct state.
         """
 
-        from langchain.callbacks.tracers.log_stream import (
+        from langchain.schema.callbacks.base import BaseCallbackManager
+        from langchain.schema.callbacks.tracers.log_stream import (
             LogStreamCallbackHandler,
             RunLog,
             RunLogPatch,
         )
-        from langchain.schema.callbacks.base import BaseCallbackManager
 
         # Create a stream handler that will emit Log objects
         stream = LogStreamCallbackHandler(
