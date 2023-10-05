@@ -61,7 +61,7 @@ class Vectara(VectorStore):
         else:
             logger.debug(f"Using corpus id {self._vectara_corpus_id}")
         self._source = source
-        
+
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("http://", adapter)
