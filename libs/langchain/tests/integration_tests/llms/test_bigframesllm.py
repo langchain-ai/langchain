@@ -4,40 +4,121 @@ In order to run this test, you need to have an account on Google Cloud.
 pip install bigframes
 """
 
-from langchain.llms.bigframesllm import BigFramesLLM
-from langchain import LLMChain,PromptTemplate
 import bigframes.pandas as bf
-import pytest
+
+from langchain import LLMChain, PromptTemplate
+from langchain.llms.bigframesllm import BigFramesLLM
 
 TEST_CONNECTION = "bigframes-dev.us.bigframes-ml"
 
-@pytest.fixture
+
+# We don't make this a pytest fixture since bigframes session will expire.
 def bigframes_session():
+    bf.reset_session()
     bf.options.bigquery.project = "bigframes-dev"
     bf.options.bigquery.location = "US"
     session = bf.get_global_session()
-    yield session
-    session.close()
+    return session
 
 
-def test_bigframesllm_initialization(bigframes_session) -> None:
-    llm = BigFramesLLM(session=bigframes_session, connection=TEST_CONNECTION)
+def test_bigframesllm_initialization_str() -> None:
+    session = bigframes_session()
+    llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
     assert llm._llm_type == "bigframesllm"
     assert llm.model_name == "PaLM2TextGenerator"
-    output = llm(
-        "What is the capital of France ?"
+    # output is a Bigframes DataFrame
+    output = llm("What is the capital of France ?")
+    assert "ml_generate_text_llm_result" in output.columns
+    assert output["ml_generate_text_llm_result"][0] == " The capital of France is Paris."
+
+
+def test_bigframesllm_initialization_df() -> None:
+    session = bigframes_session()
+    llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
+    assert llm._llm_type == "bigframesllm"
+    assert llm.model_name == "PaLM2TextGenerator"
+    df = bf.DataFrame(
+        {
+            "prompt": [
+                "What is BigQuery?",
+                "What is BQML?",
+                "What is BigQuery DataFrame?",
+            ],
+        }
     )
-    assert output == " The capital of France is Paris."
+    # output is a Bigframes DataFrame
+    output = llm(df)
+    assert "ml_generate_text_llm_result" in output.columns
+    series = output["ml_generate_text_llm_result"]
+    assert series[0].startswith(
+        " BigQuery is Google's fully managed, petabyte-scale analytics "
+        + "data warehouse")
 
 
-def test_bigframesllm_chained(bigframes_session) -> None:
+def test_bigframesllm_chained_run() -> None:
     """Test valid call to bigframesllm."""
-    llm = BigFramesLLM(session=bigframes_session, connection=TEST_CONNECTION)
+    session = bigframes_session()
+    llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
+    template = """Question: {question}
+    Answer: Let's think step by step."""
+
+    prompt = PromptTemplate(template=template, input_variables=["question"])
+    llm_chain = LLMChain(prompt=prompt, llm=llm)
+    answer = llm_chain.run("What is BigFrames?")
+    print(answer)
+    assert answer.startswith(
+        " BigFrames is a distributed computing framework"
+        + " for processing massive data sets."
+    )
+
+def test_bigframesllm_chained_df_run() -> None:
+    """Test valid call to bigframesllm."""
+    session = bigframes_session()
+    llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
+    template = """Question: {question}
+    Answer: Let's think step by step."""
+
+    prompt = PromptTemplate(template=template, input_variables=["question"])
+    llm_chain = LLMChain(prompt=prompt, llm=llm)
+    # answer is a string
+    answer = llm_chain.run("What is BigFrames?")
+    print(answer)
+    assert answer.startswith(
+        " BigFrames is a distributed computing framework"
+        + " for processing massive data sets."
+    )
+
+
+def test_bigframesllm_chained_invoke() -> None:
+    """Test valid call to bigframesllm."""
+    session = bigframes_session()
+    llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
+    template = """Question: {question}
+    Answer: Let's think step by step."""
+
+    prompt = PromptTemplate(template=template, input_variables=["question"])
+    llm_chain = LLMChain(prompt=prompt, llm=llm)
+    # answer is a string
+    answer = llm_chain.invoke({"question":"What is BigFrames?"})
+    assert answer["question"] == "What is BigFrames?"
+    assert answer["text"].startswith(
+        " BigFrames is a distributed computing framework"
+        + " for processing massive data sets."
+    )
+
+
+def test_bigframesllm_chained_batch() -> None:
+    """Test valid call to bigframesllm."""
+    session = bigframes_session()
+    llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
     template = """Question: {question}
     Answer: Let's think step by step."""
 
     prompt = PromptTemplate(template=template, input_variables=["question"])
     llm_chain = LLMChain(prompt=prompt, llm=llm)
     # answer is a bigframes dataframe
-    answer = llm_chain.run("What is BigFrames?")
-    assert answer.startswith(" BigFrames is a distributed computing framework for processing massive data sets.")
+    # answer = llm_chain.batch([{"question":"What is BigFrames?"},
+    #                           {"question":"What is BigQuery?"}])
+    # print(answer)
+    
+    
