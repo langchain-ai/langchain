@@ -1267,9 +1267,12 @@ async def test_prompt() -> None:
         )
     ]
 
-    stream_log[0].ops[0]["value"].pop("id")  # remove random id
-    stream_log_state[-1].ops[0]["value"].pop("id")  # remove random id
-    stream_log_state[-1].state.pop("id")  # remove random id
+    # remove random id
+    stream_log[0].ops[0]["value"]["id"] = "00000000-0000-0000-0000-000000000000"
+    stream_log_state[-1].ops[0]["value"]["id"] = "00000000-0000-0000-0000-000000000000"
+    stream_log_state[-1].state["id"] = "00000000-0000-0000-0000-000000000000"
+
+    # assert output with diff=False matches output with diff=True
     assert stream_log_state[-1].ops == [op for chunk in stream_log for op in chunk.ops]
     assert stream_log_state[-1] == RunLog(
         *[op for chunk in stream_log for op in chunk.ops],
@@ -1280,6 +1283,7 @@ async def test_prompt() -> None:
                     HumanMessage(content="What is your name?"),
                 ]
             ),
+            "id": "00000000-0000-0000-0000-000000000000",
             "logs": {},
             "streamed_output": [
                 ChatPromptValue(
