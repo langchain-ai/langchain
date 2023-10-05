@@ -133,7 +133,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         return cls.__module__.split(".")[:-1]
 
     @property
-    def input_schema(self) -> type[BaseModel]:
+    def input_schema(self) -> Type[BaseModel]:
         map_input_schema = self.mapper.input_schema
         if not map_input_schema.__custom_root_type__:
             # ie. it's a dict
@@ -142,7 +142,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         return super().input_schema
 
     @property
-    def output_schema(self) -> type[BaseModel]:
+    def output_schema(self) -> Type[BaseModel]:
         map_input_schema = self.mapper.input_schema
         map_output_schema = self.mapper.output_schema
         if (
