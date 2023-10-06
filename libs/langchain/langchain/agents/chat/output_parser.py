@@ -37,9 +37,11 @@ class ChatOutputParser(AgentOutputParser):
                 response["action"], response.get("action_input", {}), text
             )
 
-        except Exception:
+        except Exception as exc:
             if not includes_answer:
-                raise OutputParserException(f"Could not parse LLM output: {text}")
+                raise OutputParserException(
+                    f"Could not parse LLM output: {text}"
+                ) from exc
             output = text.split(FINAL_ANSWER_ACTION)[-1].strip()
             return AgentFinish({"output": output}, text)
 
