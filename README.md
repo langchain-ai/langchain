@@ -142,6 +142,7 @@ while(True):
 - [Генерация и выполнение кода с помощью PythonREPL](docs/extras/expression_language/cookbook/code_writing.ipynb)
 - [Работа с кэшем в GigaChain](docs/extras/integrations/llms/gigachain_caching.ipynb)
 - [Автономный агент AutoGPT с использованием GigaChat](docs/extras/use_cases/more/agents/autonomous_agents/autogpt.ipynb)
+- [Генерация плейлистов с помощью GigaChain и Spotify](docs/extras/modules/agents/how_to/playlists.ipynb)
 
 ### Примеры работы с другими LLM
 
