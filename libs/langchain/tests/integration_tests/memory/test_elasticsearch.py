@@ -1,10 +1,9 @@
 import json
 import os
 import uuid
-from typing import Generator
+from typing import Generator, Union
 
 import pytest
-from elasticsearch import Elasticsearch
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import ElasticsearchChatMessageHistory
@@ -21,22 +20,33 @@ To run against Elastic Cloud, set the following environment variables:
 - ES_PASSWORD
 """
 
-
 class TestElasticsearch:
     @pytest.fixture(scope="class", autouse=True)
-    def elasticsearch_connection(self) -> Generator[Elasticsearch, None, None]:
-        """Return the Elasticsearch client."""
+    def elasticsearch_connection(self) -> Union[dict, Generator[dict, None, None]]:
         # Run this integration test against Elasticsearch on localhost,
         # or an Elastic Cloud instance
+        from elasticsearch import Elasticsearch
+
         es_url = os.environ.get("ES_URL", "http://localhost:9200")
-        cloud_id = os.environ.get("ES_CLOUD_ID")
+        es_cloud_id = os.environ.get("ES_CLOUD_ID")
         es_username = os.environ.get("ES_USERNAME", "elastic")
         es_password = os.environ.get("ES_PASSWORD", "changeme")
 
-        if cloud_id:
-            es = Elasticsearch(cloud_id=cloud_id, basic_auth=(es_username, es_password))
+        if es_cloud_id:
+            es = Elasticsearch(
+                cloud_id=es_cloud_id,
+                basic_auth=(es_username, es_password),
+            )
+            yield {
+                "es_cloud_id": es_cloud_id,
+                "es_user": es_username,
+                "es_password": es_password,
+            }
+
         else:
+            # Running this integration test with local docker instance
             es = Elasticsearch(hosts=es_url)
+            yield {"es_url": es_url}
 
         # Clear all indexes
         index_names = es.indices.get(index="_all").keys()
@@ -45,20 +55,18 @@ class TestElasticsearch:
                 es.indices.delete(index=index_name)
         es.indices.refresh(index="_all")
 
-        yield es
-
     @pytest.fixture(scope="function")
     def index_name(self) -> str:
         """Return the index name."""
         return f"test_{uuid.uuid4().hex}"
 
     def test_memory_with_message_store(
-        self, elasticsearch_connection: Elasticsearch, index_name: str
+        self, elasticsearch_connection: dict, index_name: str
     ) -> None:
         """Test the memory with a message store."""
         # setup Elasticsearch as a message store
         message_history = ElasticsearchChatMessageHistory(
-            client=elasticsearch_connection, index=index_name, session_id="test-session"
+            **elasticsearch_connection, index=index_name, session_id="test-session"
         )
 
         memory = ConversationBufferMemory(

@@ -1,7 +1,7 @@
 import json
 import logging
 from time import time
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.schema import BaseChatMessageHistory
 from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
@@ -16,38 +16,58 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in Elasticsearch.
 
     Args:
-        client: Elasticsearch client.
-        index: name of the index to use.
-        session_id: arbitrary key that is used to store the messages
+        es_url: URL of the Elasticsearch instance to connect to.
+        es_cloud_id: Cloud ID of the Elasticsearch instance to connect to.
+        es_user: Username to use when connecting to Elasticsearch.
+        es_password: Password to use when connecting to Elasticsearch.
+        es_api_key: API key to use when connecting to Elasticsearch.
+        es_connection: Optional pre-existing Elasticsearch connection.
+        index: Name of the index to use.
+        session_id: Arbitrary key that is used to store the messages
             of a single chat session.
     """
 
     def __init__(
         self,
-        client: Elasticsearch,
         index: str,
         session_id: str,
+        es_connection: Optional["Elasticsearch"] = None,
+        es_url: Optional[str] = None,
+        es_cloud_id: Optional[str] = None,
+        es_user: Optional[str] = None,
+        es_api_key: Optional[str] = None,
+        es_password: Optional[str] = None,
     ):
-        try:
-            from elasticsearch import Elasticsearch
-        except ImportError:
-            raise ImportError(
-                "Could not import elasticsearch python package. "
-                "Please install it with `pip install elasticsearch`."
-            )
-
-        self.client: Elasticsearch = client
         self.index: str = index
         self.session_id: str = session_id
 
-        if client.indices.exists(index=index):
+        # Initialize Elasticsearch client from passed client arg or connection info
+        if es_connection is not None:
+            self.client = es_connection.options(
+                headers={"user-agent": self.get_user_agent()}
+            )
+        elif es_url is not None or es_cloud_id is not None:
+            self.client = ElasticsearchChatMessageHistory.connect_to_elasticsearch(
+                es_url=es_url,
+                username=es_user,
+                password=es_password,
+                cloud_id=es_cloud_id,
+                api_key=es_api_key,
+            )
+        else:
+            raise ValueError(
+                """Either provide a pre-existing Elasticsearch connection, \
+                or valid credentials for creating a new connection."""
+            )
+
+        if self.client.indices.exists(index=index):
             logger.debug(
                 f"Chat history index {index} already exists, skipping creation."
             )
         else:
             logger.debug(f"Creating index {index} for storing chat history.")
 
-            client.indices.create(
+            self.client.indices.create(
                 index=index,
                 mappings={
                     "properties": {
@@ -57,6 +77,60 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
                     }
                 },
             )
+
+    @staticmethod
+    def get_user_agent() -> str:
+        from langchain import __version__
+
+        return f"langchain-py-cmh/{__version__}"
+
+    @staticmethod
+    def connect_to_elasticsearch(
+        *,
+        es_url: Optional[str] = None,
+        cloud_id: Optional[str] = None,
+        api_key: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+    ) -> "Elasticsearch":
+        try:
+            import elasticsearch
+        except ImportError:
+            raise ImportError(
+                "Could not import elasticsearch python package. "
+                "Please install it with `pip install elasticsearch`."
+            )
+
+        if es_url and cloud_id:
+            raise ValueError(
+                "Both es_url and cloud_id are defined. Please provide only one."
+            )
+
+        connection_params: Dict[str, Any] = {}
+
+        if es_url:
+            connection_params["hosts"] = [es_url]
+        elif cloud_id:
+            connection_params["cloud_id"] = cloud_id
+        else:
+            raise ValueError("Please provide either elasticsearch_url or cloud_id.")
+
+        if api_key:
+            connection_params["api_key"] = api_key
+        elif username and password:
+            connection_params["basic_auth"] = (username, password)
+
+        es_client = elasticsearch.Elasticsearch(
+            **connection_params,
+            headers={"user-agent": ElasticsearchChatMessageHistory.get_user_agent()},
+        )
+        try:
+            es_client.info()
+        except Exception as e:
+            logger.error(f"Error connecting to Elasticsearch: {e}")
+            raise e
+
+        return es_client
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore[override]
