@@ -22,8 +22,10 @@ from langchain.chat_models.anyscale import ChatAnyscale
 from langchain.chat_models.azure_openai import AzureChatOpenAI
 from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from langchain.chat_models.bedrock import BedrockChat
+from langchain.chat_models.cohere import ChatCohere
 from langchain.chat_models.ernie import ErnieBotChat
 from langchain.chat_models.fake import FakeListChatModel
+from langchain.chat_models.fireworks import ChatFireworks
 from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.human import HumanInputChatModel
 from langchain.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
@@ -45,6 +47,7 @@ __all__ = [
     "FakeListChatModel",
     "PromptLayerChatOpenAI",
     "ChatAnthropic",
+    "ChatCohere",
     "ChatGooglePalm",
     "ChatMLflowAIGateway",
     "ChatOllama",
@@ -59,4 +62,5 @@ __all__ = [
     "ChatJavelinAIGateway",
     "ChatKonko",
     "QianfanChatEndpoint",
+    "ChatFireworks",
 ]

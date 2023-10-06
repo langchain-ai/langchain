@@ -9,7 +9,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.output_parsers.regex import RegexParser
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain.pydantic_v1 import BaseModel, Extra, create_model, root_validator
 
 
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):
@@ -76,6 +76,18 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @property
+    def output_schema(self) -> type[BaseModel]:
+        schema: Dict[str, Any] = {
+            self.output_key: (str, None),
+        }
+        if self.return_intermediate_steps:
+            schema["intermediate_steps"] = (List[str], None)
+        if self.metadata_keys:
+            schema.update({key: (Any, None) for key in self.metadata_keys})
+
+        return create_model("MapRerankOutput", **schema)
 
     @property
     def output_keys(self) -> List[str]:
