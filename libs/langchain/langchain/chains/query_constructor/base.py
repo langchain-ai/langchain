@@ -160,4 +160,6 @@ def load_query_constructor_chain(
         allowed_operators=allowed_operators,
         enable_limit=enable_limit,
     )
-    return LLMChain(llm=llm, prompt=prompt, **kwargs)
+    return LLMChain(
+        llm=llm, prompt=prompt, output_parser=prompt.output_parser, **kwargs
+    )
