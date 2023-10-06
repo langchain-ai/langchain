@@ -31,7 +31,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     repo_id: str = DEFAULT_REPO_ID
     """Model name to use."""
-    task: Optional[str] = "feature-extraction"
+    task: str = "feature-extraction"
     """Task to call the model with."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model."""
