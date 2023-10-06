@@ -44,7 +44,7 @@ class OctoAIEndpoint(LLM):
                         {
                             "role": "system",
                             "content": "Below is an instruction that describes a task.
-                                Write a response that appropriately completes the request."
+                                Write a response that completes the request."
                         }
                     ],
                     "stream": False,
