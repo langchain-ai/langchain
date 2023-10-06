@@ -28,13 +28,13 @@ def test_loader_detect_encoding_text() -> None:
 
 @pytest.mark.requires("chardet")
 def test_loader_detect_encoding_csv() -> None:
-    """Test text loader."""
+    """Test csv loader."""
     path = Path(__file__).parent.parent / "examples"
-    files = path.glob("**/*.txt")
-    loader = DirectoryLoader(str(path), glob="**/*.txt", loader_cls=CSVLoader)
+    files = path.glob("**/*.csv")
+    loader = DirectoryLoader(str(path), glob="**/*.csv", loader_cls=CSVLoader)
     loader_detect_encoding = DirectoryLoader(
         str(path),
-        glob="**/*.txt",
+        glob="**/*.csv",
         loader_kwargs={"autodetect_encoding": True},
         loader_cls=CSVLoader,
     )

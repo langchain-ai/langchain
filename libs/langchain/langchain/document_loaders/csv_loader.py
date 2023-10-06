@@ -73,6 +73,7 @@ class CSVLoader(BaseLoader):
                             self.file_path, newline="", encoding=encoding.encoding
                         ) as csvfile:
                             docs = self.__read_file(csvfile)
+                            break
                     except UnicodeDecodeError:
                         continue
             else:
@@ -85,8 +86,9 @@ class CSVLoader(BaseLoader):
     def __read_file(self, csvfile: TextIOWrapper) -> List[Document]:
         docs = []
         csv_reader = csv.DictReader(csvfile, **self.csv_args)  # type: ignore
+        content = ""
         for i, row in enumerate(csv_reader):
-            content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
+            content += "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
             try:
                 source = (
                     row[self.source_column]
@@ -98,8 +100,8 @@ class CSVLoader(BaseLoader):
                     f"Source column '{self.source_column}' not found in CSV file."
                 )
             metadata = {"source": source, "row": i}
-            doc = Document(page_content=content, metadata=metadata)
-            docs.append(doc)
+        doc = Document(page_content=content, metadata=metadata)
+        docs.append(doc)
 
         return docs
 
