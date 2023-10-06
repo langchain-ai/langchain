@@ -1,0 +1,52 @@
+[project]
+name = "____project_name"
+version = "0.0.1"
+description = ""
+authors = [{name = "____author_name", email = "____author_email"}]
+readme = "README.md"
+requires-python = ">=3.8,<4.0"
+dependencies = [
+  "langchain~=____langchain_version",
+  "langserve[server]>=0.0.6",
+  "tiktoken~=0.4.0",
+  "openai~=0.27.8",
+  "fastapi~=0.96.0",
+  "uvicorn[standard]~=0.22.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+dev = [
+  "pytest~=7.4.0",
+  "pytest-asyncio~=0.21.1",
+  "mypy~=1.4.1",
+  "ruff~=0.0.278",
+  "black~=23.7.0",
+  "syrupy~=4.0.2",
+]
+
+[tool.ruff]
+select = [
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+]
+
+[tool.mypy]
+ignore_missing_imports = "True"
+disallow_untyped_defs = "True"
+
+[tool.pytest.ini_options]
+# --strict-markers will raise errors on unknown marks.
+# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
+#
+# https://docs.pytest.org/en/7.1.x/reference/reference.html
+# --strict-config       any warnings encountered while parsing the `pytest`
+#                       section of the configuration file raise errors.
+#
+# https://github.com/tophat/syrupy
+# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused"

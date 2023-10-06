@@ -5,7 +5,23 @@ import asyncio
 import inspect
 import textwrap
 from inspect import signature
-from typing import Any, Callable, Coroutine, List, Optional, Set, TypeVar, Union
+from itertools import groupby
+from typing import (
+    Any,
+    AsyncIterable,
+    Callable,
+    Coroutine,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Protocol,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
 Input = TypeVar("Input")
 # Output type should implement __concat__, as eg str, list, dict do
@@ -142,3 +158,95 @@ def indent_lines_after_first(text: str, prefix: str) -> str:
     spaces = " " * n_spaces
     lines = text.splitlines()
     return "\n".join([lines[0]] + [spaces + line for line in lines[1:]])
+
+
+class AddableDict(Dict[str, Any]):
+    """
+    Dictionary that can be added to another dictionary.
+    """
+
+    def __add__(self, other: AddableDict) -> AddableDict:
+        chunk = AddableDict(self)
+        for key in other:
+            if key not in chunk or chunk[key] is None:
+                chunk[key] = other[key]
+            elif other[key] is not None:
+                chunk[key] = chunk[key] + other[key]
+        return chunk
+
+    def __radd__(self, other: AddableDict) -> AddableDict:
+        chunk = AddableDict(other)
+        for key in self:
+            if key not in chunk or chunk[key] is None:
+                chunk[key] = self[key]
+            elif self[key] is not None:
+                chunk[key] = chunk[key] + self[key]
+        return chunk
+
+
+_T_co = TypeVar("_T_co", covariant=True)
+_T_contra = TypeVar("_T_contra", contravariant=True)
+
+
+class SupportsAdd(Protocol[_T_contra, _T_co]):
+    def __add__(self, __x: _T_contra) -> _T_co:
+        ...
+
+
+Addable = TypeVar("Addable", bound=SupportsAdd[Any, Any])
+
+
+def add(addables: Iterable[Addable]) -> Optional[Addable]:
+    final = None
+    for chunk in addables:
+        if final is None:
+            final = chunk
+        else:
+            final = final + chunk
+    return final
+
+
+async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
+    final = None
+    async for chunk in addables:
+        if final is None:
+            final = chunk
+        else:
+            final = final + chunk
+    return final
+
+
+class ConfigurableField(NamedTuple):
+    id: str
+    name: Optional[str] = None
+    description: Optional[str] = None
+    annotation: Optional[Any] = None
+
+
+class ConfigurableFieldSpec(NamedTuple):
+    id: str
+    name: Optional[str]
+    description: Optional[str]
+
+    default: Any
+    annotation: Any
+
+
+def get_unique_config_specs(
+    specs: Iterable[ConfigurableFieldSpec],
+) -> Sequence[ConfigurableFieldSpec]:
+    grouped = groupby(sorted(specs, key=lambda s: s.id), lambda s: s.id)
+    unique: List[ConfigurableFieldSpec] = []
+    for id, dupes in grouped:
+        first = next(dupes)
+        others = list(dupes)
+        if len(others) == 0:
+            unique.append(first)
+        elif all(o == first for o in others):
+            unique.append(first)
+        else:
+            raise ValueError(
+                "RunnableSequence contains conflicting config specs"
+                f"for {id}: {[first] + others}"
+            )
+    return unique

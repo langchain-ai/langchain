@@ -20,7 +20,7 @@ def test_does_not_allow_args() -> None:
 
 
 def test_does_not_allow_extra_kwargs() -> None:
-    """Test formatting does not allow extra key word arguments."""
+    """Test formatting does not allow extra keyword arguments."""
     template = "This is a {foo} test."
     with pytest.raises(KeyError):
         formatter.format(template, foo="good", bar="oops")
