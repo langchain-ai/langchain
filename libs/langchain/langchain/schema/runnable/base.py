@@ -1428,8 +1428,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
 
     def __init__(
         self,
-        /,
-        steps: Optional[
+        __steps: Optional[
             Mapping[
                 str,
                 Union[
@@ -1445,7 +1444,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
         ],
     ) -> None:
-        merged = {**steps} if steps is not None else {}
+        merged = {**__steps} if __steps is not None else {}
         merged.update(kwargs)
         super().__init__(
             steps={key: coerce_to_runnable(r) for key, r in merged.items()}
@@ -2381,7 +2380,7 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
         runnables: Mapping[str, Runnable[Any, Any]] = {
             key: coerce_to_runnable(r) for key, r in thing.items()
         }
-        return cast(Runnable[Input, Output], RunnableParallel(steps=runnables))
+        return cast(Runnable[Input, Output], RunnableParallel(__steps=runnables))
     else:
         raise TypeError(
             f"Expected a Runnable, callable or dict."
