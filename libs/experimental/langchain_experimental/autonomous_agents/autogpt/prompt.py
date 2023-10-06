@@ -42,7 +42,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
         system_content = self.construct_full_prompt(kwargs["goals"])
         system_content += f"\n\nТекущее время и дата {time.strftime('%c')}"
 
-        # base_prompt = 
+        # base_prompt =
         #   SystemMessage(content=self.construct_full_prompt(kwargs["goals"]))
         # time_prompt = SystemMessage(
         #     content=f"Текущее время и дата {time.strftime('%c')}"
