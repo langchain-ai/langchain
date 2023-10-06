@@ -1,14 +1,18 @@
 # Momento
 
->[Momento Cache](https://docs.momentohq.com/) is the world's first truly serverless caching service. It provides instant elasticity, scale-to-zero 
+> [Momento Cache](https://docs.momentohq.com/) is the world's first truly serverless caching service. It provides instant elasticity, scale-to-zero 
 > capability, and blazing-fast performance.  
 > With Momento Cache, you grab the SDK, you get an end point, input a few lines into your code, and you're off and running.
+>
+> [Momento Vector Index](https://docs.momentohq.com) is the most productive, easiest to use, fully serverless vector index.
+>
+> With both of these capabilities, you have an all around solution for your LLM data needs.
 
 This page covers how to use the [Momento](https://gomomento.com) ecosystem within LangChain.
 
 ## Installation and Setup
 
-- Sign up for a free account [here](https://docs.momentohq.com/getting-started) and get an auth token
+- Sign up for a free account [here](https://console.momentohq.com) to get an API key
 - Install the Momento Python SDK with `pip install momento`
 
 
@@ -35,7 +39,7 @@ import langchain
 # Instantiate the Momento client
 cache_client = CacheClient(
     Configurations.Laptop.v1(),
-    CredentialProvider.from_environment_variable("MOMENTO_AUTH_TOKEN"),
+    CredentialProvider.from_environment_variable("MOMENTO_API_KEY"),
     default_ttl=timedelta(days=1))
 
 # Choose a Momento cache name of your choice
@@ -52,3 +56,9 @@ Momento can be used as a distributed memory store for LLMs.
 ### Chat Message History Memory
 
 See [this notebook](/docs/integrations/memory/momento_chat_message_history.html) for a walkthrough of how to use Momento as a memory store for chat message history.
+
+## Vector Store
+
+Momento Vector Index can be used as a vector store.
+
+See [this notebook](/docs/integrations/vectorstores/momento_vector_index.html) for a walkthrough of how to use Momento as a vector store.
