@@ -611,7 +611,10 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         if self.memory is not None:
             raise ValueError("Saving of memory is not yet supported.")
         _dict = super().dict(**kwargs)
-        _dict["_type"] = self._chain_type
+        try:
+            _dict["_type"] = self._chain_type
+        except NotImplementedError:
+            pass
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -639,6 +642,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
         # Fetch dictionary to save
         chain_dict = self.dict()
+        if "_type" not in chain_dict:
+            raise NotImplementedError(f"Chain {self} does not support saving.")
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
