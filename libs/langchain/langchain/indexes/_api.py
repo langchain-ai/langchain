@@ -454,10 +454,11 @@ async def aindex(
             "Not supported yet. Please pass an async iterator of documents."
         )
     async_doc_iterator: AsyncIterator[Document]
+
     if hasattr(docs_source, "__aiter__"):
         async_doc_iterator = docs_source  # type: ignore[assignment]
     else:
-        async_doc_iterator: AsyncIterator[Document] = _to_async_iterator(docs_source)
+        async_doc_iterator = _to_async_iterator(docs_source)
 
     source_id_assigner = _get_source_id_assigner(source_id_key)
 
