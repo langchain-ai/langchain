@@ -82,7 +82,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
     def get_user_agent() -> str:
         from langchain import __version__
 
-        return f"langchain-py-cmh/{__version__}"
+        return f"langchain-py-ms/{__version__}"
 
     @staticmethod
     def connect_to_elasticsearch(
