@@ -74,13 +74,32 @@ class ChatCohere(BaseChatModel, BaseCohere):
         return {**{"model": self.model}, **self._default_params}
 
     def get_cohere_chat_request(
-        self, messages: List[BaseMessage], **kwargs: Any
+        self,
+        messages: List[BaseMessage],
+        connectors: List[Dict[str, str]],
+        **kwargs: Any,
     ) -> Dict[str, Any]:
+        documents = (
+            None
+            if "source_documents" not in kwargs
+            else [
+                {
+                    "snippet": doc.page_content,
+                    "id": doc.metadata.get("id") or f"doc-{str(i)}",
+                }
+                for i, doc in enumerate(kwargs["source_documents"])
+            ]
+        )
+        kwargs.pop("source_documents", None)
+        connectors = connectors if documents is None else None
+
         return {
             "message": messages[0].content,
             "chat_history": [
                 {"role": get_role(x), "message": x.content} for x in messages[1:]
             ],
+            "documents": documents,
+            "connectors": connectors,
             **self._default_params,
             **kwargs,
         }
