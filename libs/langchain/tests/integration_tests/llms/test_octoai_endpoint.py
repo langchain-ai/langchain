@@ -12,7 +12,7 @@ from tests.integration_tests.llms.utils import assert_llm_equality
 def test_octoai_endpoint_text_generation() -> None:
     """Test valid call to OctoAI text generation model."""
     llm = OctoAIEndpoint(
-        endpoint_url="https://mpt-7b-demo-kk0powt97tmb.octoai.cloud/generate",
+        endpoint_url="https://mpt-7b-demo-f1kzsig6xes9.octoai.run/generate",
         octoai_api_token="<octoai_api_token>",
         model_kwargs={
             "max_new_tokens": 200,
@@ -32,7 +32,7 @@ def test_octoai_endpoint_text_generation() -> None:
 def test_octoai_endpoint_call_error() -> None:
     """Test valid call to OctoAI that errors."""
     llm = OctoAIEndpoint(
-        endpoint_url="https://mpt-7b-demo-kk0powt97tmb.octoai.cloud/generate",
+        endpoint_url="https://mpt-7b-demo-f1kzsig6xes9.octoai.run/generate",
         model_kwargs={"max_new_tokens": -1},
     )
     with pytest.raises(ValueError):
@@ -42,7 +42,7 @@ def test_octoai_endpoint_call_error() -> None:
 def test_saving_loading_endpoint_llm(tmp_path: Path) -> None:
     """Test saving/loading an OctoAIHub LLM."""
     llm = OctoAIEndpoint(
-        endpoint_url="https://mpt-7b-demo-kk0powt97tmb.octoai.cloud/generate",
+        endpoint_url="https://mpt-7b-demo-f1kzsig6xes9.octoai.run/generate",
         octoai_api_token="<octoai_api_token>",
         model_kwargs={
             "max_new_tokens": 200,
