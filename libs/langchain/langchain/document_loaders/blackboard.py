@@ -32,13 +32,6 @@ class BlackboardLoader(WebBaseLoader):
 
     """  # noqa: E501
 
-    base_url: str
-    """Base url of the blackboard course."""
-    folder_path: str
-    """Path to the folder containing the documents."""
-    load_all_recursively: bool
-    """If True, load all documents recursively."""
-
     def __init__(
         self,
         blackboard_course_url: str,
@@ -46,7 +39,7 @@ class BlackboardLoader(WebBaseLoader):
         load_all_recursively: bool = True,
         basic_auth: Optional[Tuple[str, str]] = None,
         cookies: Optional[dict] = None,
-        continue_on_failure: Optional[bool] = False,
+        continue_on_failure: bool = False,
     ):
         """Initialize with blackboard course url.
 
@@ -66,7 +59,9 @@ class BlackboardLoader(WebBaseLoader):
         Raises:
             ValueError: If blackboard course url is invalid.
         """
-        super().__init__(blackboard_course_url)
+        super().__init__(
+            web_paths=(blackboard_course_url), continue_on_failure=continue_on_failure
+        )
         # Get base url
         try:
             self.base_url = blackboard_course_url.split("/webapps/blackboard")[0]
@@ -84,7 +79,6 @@ class BlackboardLoader(WebBaseLoader):
         cookies.update({"BbRouter": bbrouter})
         self.session.cookies.update(cookies)
         self.load_all_recursively = load_all_recursively
-        self.continue_on_failure = continue_on_failure
         self.check_bs4()
 
     def check_bs4(self) -> None:

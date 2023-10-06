@@ -5,12 +5,14 @@ import functools
 import logging
 import os
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
+    Coroutine,
     Dict,
     Generator,
     List,
@@ -39,7 +41,9 @@ from langchain.callbacks.base import (
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import run_collector
-from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.tracers.langchain import (
+    LangChainTracer,
+)
 from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.callbacks.tracers.wandb import WandbTracer
@@ -159,7 +163,7 @@ def tracing_v2_enabled(
     example_id: Optional[Union[str, UUID]] = None,
     tags: Optional[List[str]] = None,
     client: Optional[LangSmithClient] = None,
-) -> Generator[None, None, None]:
+) -> Generator[LangChainTracer, None, None]:
     """Instruct LangChain to log all runs in context to LangSmith.
 
     Args:
@@ -176,6 +180,12 @@ def tracing_v2_enabled(
     Example:
         >>> with tracing_v2_enabled():
         ...     # LangChain code will automatically be traced
+
+        You can use this to fetch the LangSmith run URL:
+
+        >>> with tracing_v2_enabled() as cb:
+        ...     chain.invoke("foo")
+        ...     run_url = cb.get_run_url()
     """
     if isinstance(example_id, str):
         example_id = UUID(example_id)
@@ -186,7 +196,7 @@ def tracing_v2_enabled(
         client=client,
     )
     tracing_v2_callback_var.set(cb)
-    yield
+    yield cb
     tracing_v2_callback_var.set(None)
 
 
@@ -370,37 +380,84 @@ def _handle_event(
     **kwargs: Any,
 ) -> None:
     """Generic event handler for CallbackManager."""
-    message_strings: Optional[List[str]] = None
-    for handler in handlers:
-        try:
-            if ignore_condition_name is None or not getattr(
-                handler, ignore_condition_name
-            ):
-                getattr(handler, event_name)(*args, **kwargs)
-        except NotImplementedError as e:
-            if event_name == "on_chat_model_start":
-                if message_strings is None:
-                    message_strings = [get_buffer_string(m) for m in args[1]]
-                _handle_event(
-                    [handler],
-                    "on_llm_start",
-                    "ignore_llm",
-                    args[0],
-                    message_strings,
-                    *args[2:],
-                    **kwargs,
-                )
-            else:
+    coros: List[Coroutine[Any, Any, Any]] = []
+
+    try:
+        message_strings: Optional[List[str]] = None
+        for handler in handlers:
+            try:
+                if ignore_condition_name is None or not getattr(
+                    handler, ignore_condition_name
+                ):
+                    event = getattr(handler, event_name)(*args, **kwargs)
+                    if asyncio.iscoroutine(event):
+                        coros.append(event)
+            except NotImplementedError as e:
+                if event_name == "on_chat_model_start":
+                    if message_strings is None:
+                        message_strings = [get_buffer_string(m) for m in args[1]]
+                    _handle_event(
+                        [handler],
+                        "on_llm_start",
+                        "ignore_llm",
+                        args[0],
+                        message_strings,
+                        *args[2:],
+                        **kwargs,
+                    )
+                else:
+                    handler_name = handler.__class__.__name__
+                    logger.warning(
+                        f"NotImplementedError in {handler_name}.{event_name}"
+                        f" callback: {e}"
+                    )
+            except Exception as e:
                 logger.warning(
-                    f"NotImplementedError in {handler.__class__.__name__}.{event_name}"
-                    f" callback: {e}"
+                    f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
                 )
-        except Exception as e:
-            logger.warning(
-                f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
-            )
-            if handler.raise_error:
-                raise e
+                if handler.raise_error:
+                    raise e
+    finally:
+        if coros:
+            try:
+                # Raises RuntimeError if there is no current event loop.
+                asyncio.get_running_loop()
+                loop_running = True
+            except RuntimeError:
+                loop_running = False
+
+            if loop_running:
+                # If we try to submit this coroutine to the running loop
+                # we end up in a deadlock, as we'd have gotten here from a
+                # running coroutine, which we cannot interrupt to run this one.
+                # The solution is to create a new loop in a new thread.
+                with ThreadPoolExecutor(1) as executor:
+                    executor.submit(_run_coros, coros).result()
+            else:
+                _run_coros(coros)
+
+
+def _run_coros(coros: List[Coroutine[Any, Any, Any]]) -> None:
+    if hasattr(asyncio, "Runner"):
+        # Python 3.11+
+        # Run the coroutines in a new event loop, taking care to
+        # - install signal handlers
+        # - run pending tasks scheduled by `coros`
+        # - close asyncgens and executors
+        # - close the loop
+        with asyncio.Runner() as runner:
+            # Run the coroutine, get the result
+            for coro in coros:
+                runner.run(coro)
+
+            # Run pending tasks scheduled by coros until they are all done
+            while pending := asyncio.all_tasks(runner.get_loop()):
+                runner.run(asyncio.wait(pending))
+    else:
+        # Before Python 3.11 we need to run each coroutine in a new event loop
+        # as the Runner api is not available.
+        for coro in coros:
+            asyncio.run(coro)
 
 
 async def _ahandle_event_for_handler(
@@ -1125,7 +1182,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
 
 class CallbackManager(BaseCallbackManager):
-    """Callback manager that handles callbacks from langchain."""
+    """Callback manager that handles callbacks from LangChain."""
 
     def on_llm_start(
         self,
@@ -1393,6 +1450,8 @@ class CallbackManager(BaseCallbackManager):
 
 
 class CallbackManagerForChainGroup(CallbackManager):
+    """Callback manager for the chain group."""
+
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
@@ -1727,6 +1786,8 @@ class AsyncCallbackManager(BaseCallbackManager):
 
 
 class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
+    """Async callback manager for the chain group."""
+
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
