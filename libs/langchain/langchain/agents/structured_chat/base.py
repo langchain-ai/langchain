@@ -17,6 +17,7 @@ from langchain.pydantic_v1 import Field
 from langchain.schema import AgentAction, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
+import json
 
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 
@@ -84,7 +85,7 @@ class StructuredChatAgent(Agent):
             args_schema = re.sub("}", "}}}}", re.sub("{", "{{{{", str(tool.args)))
             tool_strings.append(f"{tool.name}: {tool.description}, args: {args_schema}")
         formatted_tools = "\n".join(tool_strings)
-        tool_names = ", ".join([tool.name for tool in tools])
+        tool_names = ", ".join([json.dumps(tool.name) for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
         template = "\n\n".join([prefix, formatted_tools, format_instructions, suffix])
         if input_variables is None:

@@ -257,7 +257,7 @@ def _create_api_controller_agent(
         partial_variables={
             "api_url": api_url,
             "api_docs": api_docs,
-            "tool_names": ", ".join([tool.name for tool in tools]),
+            "tool_names": ", ".join([json.dumps(tool.name) for tool in tools]),
             "tool_descriptions": "\n".join(
                 [f"{tool.name}: {tool.description}" for tool in tools]
             ),
@@ -335,7 +335,7 @@ def create_openapi_agent(
         template=API_ORCHESTRATOR_PROMPT,
         input_variables=["input", "agent_scratchpad"],
         partial_variables={
-            "tool_names": ", ".join([tool.name for tool in tools]),
+            "tool_names": ", ".join([json.dumps(tool.name) for tool in tools]),
             "tool_descriptions": "\n".join(
                 [f"{tool.name}: {tool.description}" for tool in tools]
             ),

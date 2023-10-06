@@ -20,6 +20,7 @@ from langchain.pydantic_v1 import Field
 from langchain.schema import AgentAction, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
+import json
 
 
 class ChatAgent(Agent):
@@ -77,7 +78,8 @@ class ChatAgent(Agent):
         input_variables: Optional[List[str]] = None,
     ) -> BasePromptTemplate:
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
-        tool_names = ", ".join([tool.name for tool in tools])
+        
+        tool_names = ", ".join([json.dumps(tool.name) for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
         template = "\n\n".join(
             [

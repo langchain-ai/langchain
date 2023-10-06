@@ -14,6 +14,7 @@ from langchain.prompts import PromptTemplate
 from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
+import json
 
 
 class ConversationalAgent(Agent):
@@ -73,7 +74,7 @@ class ConversationalAgent(Agent):
         tool_strings = "\n".join(
             [f"> {tool.name}: {tool.description}" for tool in tools]
         )
-        tool_names = ", ".join([tool.name for tool in tools])
+        tool_names = ", ".join([json.dumps(tool.name) for tool in tools])
         format_instructions = format_instructions.format(
             tool_names=tool_names, ai_prefix=ai_prefix, human_prefix=human_prefix
         )

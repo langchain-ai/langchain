@@ -24,6 +24,7 @@ from langchain.schema import AgentAction, BaseOutputParser, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 from langchain.tools.base import BaseTool
+import json
 
 
 class ConversationalChatAgent(Agent):
@@ -67,7 +68,7 @@ class ConversationalChatAgent(Agent):
         tool_strings = "\n".join(
             [f"> {tool.name}: {tool.description}" for tool in tools]
         )
-        tool_names = ", ".join([tool.name for tool in tools])
+        tool_names = ", ".join([json.dumps(tool.name) for tool in tools])
         _output_parser = output_parser or cls._get_default_output_parser()
         format_instructions = human_message.format(
             format_instructions=_output_parser.get_format_instructions()
