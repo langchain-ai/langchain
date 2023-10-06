@@ -374,7 +374,7 @@ async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
 
 
 async def aindex(
-    docs_source: Union[BaseLoader, Iterable[Document], AsyncIterator[Document]],
+    docs_source: Union[Iterable[Document], AsyncIterator[Document]],
     record_manager: RecordManager,
     vector_store: VectorStore,
     *,
@@ -453,11 +453,11 @@ async def aindex(
         raise NotImplementedError(
             "Not supported yet. Please pass an async iterator of documents."
         )
+    async_doc_iterator: AsyncIterator[Document]
+    if hasattr(docs_source, "__aiter__"):
+        async_doc_iterator = docs_source  # type: ignore[assignment]
     else:
-        if hasattr(docs_source, "__aiter__"):
-            async_doc_iterator = docs_source  # type: ignore[assignment]
-        else:
-            async_doc_iterator = _to_async_iterator(docs_source)
+        async_doc_iterator: AsyncIterator[Document] = _to_async_iterator(docs_source)
 
     source_id_assigner = _get_source_id_assigner(source_id_key)
 
