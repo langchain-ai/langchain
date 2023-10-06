@@ -159,7 +159,6 @@ class _VertexAIBase(BaseModel):
 
 class _VertexAICommon(_VertexAIBase):
     client: "_LanguageModel" = None  #: :meta private:
-    prediction_client: "PredictionServiceClient" = None  #: :meta private:
     model_name: str
     "Underlying model name."
     temperature: float = 0.0
@@ -255,20 +254,6 @@ class VertexAI(_VertexAICommon, BaseLLM):
                     )
                 else:
                     values["client"] = CodeGenerationModel.from_pretrained(model_name)
-            from google.cloud.aiplatform_v1beta1 import PredictionServiceClient
-
-            if values["project"] is None:
-                import google.auth
-
-                _, project_id = google.auth.default()
-                values["project"] = project_id
-            client_options = {
-                "api_endpoint": f"{values['location']}-aiplatform.googleapis.com"
-            }
-            values["prediction_client"] = PredictionServiceClient(
-                credentials=values["credentials"], client_options=client_options
-            )
-
         except ImportError:
             raise_vertex_import_error()
         return values
@@ -284,9 +269,14 @@ class VertexAI(_VertexAICommon, BaseLLM):
         Returns:
             The integer number of tokens in the text.
         """
-        result = self.prediction_client.count_tokens(
-            endpoint=self.client._model_resource_name, instances=[{"content": text}]
-        )
+        try:
+            result = self.client.count_tokens(text)
+        except AttributeError:
+            raise NotImplementedError(
+                "Your google-cloud-aiplatform version didn't implement count_tokens."
+                "Please, install it with pip install google-cloud-aiplatform>=1.34.0"
+            )
+
         return result.total_tokens
 
     def _generate(

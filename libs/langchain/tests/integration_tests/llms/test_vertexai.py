@@ -10,7 +10,7 @@ Your end-user credentials would be used to make the calls (make sure you've run
 import os
 
 import pytest
-from google.cloud.aiplatform_v1beta1.types import prediction_service
+from vertexai.language_models._language_models import CountTokensResponse
 
 from langchain.chains.summarize import load_summarize_chain
 from langchain.docstore.document import Document
@@ -104,9 +104,11 @@ async def test_model_garden_agenerate() -> None:
 
 def test_vertex_call_trigger_count_tokens(mocker) -> None:
     m1 = mocker.patch(
-        "google.cloud.aiplatform_v1beta1.services.prediction_service.client.PredictionServiceClient.count_tokens",
-        return_value=prediction_service.CountTokensResponse(
-            total_tokens=1, total_billable_characters=2
+        "vertexai.preview.language_models._PreviewTextGenerationModel.count_tokens",
+        return_value=CountTokensResponse(
+            total_tokens=2,
+            total_billable_characters=2,
+            _count_tokens_response={"total_tokens": 2, "total_billable_characters": 2},
         ),
     )
     llm = VertexAI()
