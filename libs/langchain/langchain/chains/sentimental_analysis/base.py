@@ -8,9 +8,13 @@ import re
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.chains.sentimental_analysis.prompt import SENTIMENT_PROMPT
 from langchain.schema.language_model import BaseLanguageModel
+
+
 from langchain.pydantic_v1 import Field, root_validator, Extra
+from langchain.chains.sentimental_analysis.prompt import (
+    SENTIMENT_PROMPT,
+)  # Import SENTIMENT_PROMPT here
 
 logger = logging.getLogger(__name__)
 
@@ -100,25 +104,49 @@ class SentimentAnalysisChain(Chain):
     ) -> Union[Dict[str, Any], str]:
         run_manager.on_text(text, verbose=self.verbose)
 
-        t = self.llm_chain.predict(question=text, callbacks=run_manager.get_child())
-        run_manager.on_text(t, color="green", verbose=self.verbose)
-        t = t.strip()
+        # Get the LLM result
+        llm_output = self.llm_chain.predict(
+            question=text, callbacks=run_manager.get_child()
+        )
+        run_manager.on_text(llm_output, color="green", verbose=self.verbose)
 
-        # Process LLM results and extract sentiment using regular expressions
-        sentiment = self.process_llm_results(t)
+        print("LLM Output:")
+        print(llm_output)  # Add this line to print the LLM output
 
-        if self.verbose:
-            run_manager.on_text("\nSentiment: ", verbose=self.verbose)
-            run_manager.on_text(str(sentiment), color="yellow", verbose=self.verbose)
+        # Updated regular expression to match sentiment output
+        sentiment_pattern = re.compile(r"Sentiment: (\w+) \(Score: ([\d.]+)\)")
+        match = sentiment_pattern.search(llm_output)
 
-        if self.output_format.lower() == "json":
-            # Return the sentiment analysis results as a JSON dictionary
-            return {self.output_key: sentiment}
-        elif self.output_format.lower() == "text":
-            # Return the sentiment analysis results as plain text
-            return f"Sentiment Label: {sentiment['sentiment_label']}\nSentiment Score: {sentiment['sentiment_score']}"
-        else:
-            raise ValueError(f"Unsupported output format: {self.output_format}")
+        if match:
+            sentiment_label = match.group(1).strip()
+            sentiment_score = float(match.group(2).strip())
+
+            # Apply custom sentiment label mapping if needed
+            sentiment_label = self.sentiment_label_mapping.get(
+                sentiment_label, sentiment_label
+            )
+
+            sentiment = {
+                "sentiment_label": sentiment_label,
+                "sentiment_score": sentiment_score,
+            }
+
+            if self.verbose:
+                run_manager.on_text("\nSentiment: ", verbose=self.verbose)
+                run_manager.on_text(
+                    str(sentiment), color="yellow", verbose=self.verbose
+                )
+
+            if self.output_format.lower() == "json":
+                return {self.output_key: sentiment}
+            elif self.output_format.lower() == "text":
+                return f"Sentiment Label: {sentiment['sentiment_label']}\nSentiment Score: {sentiment['sentiment_score']}"
+            else:
+                raise ValueError(f"Unsupported output format: {self.output_format}")
+
+        return {
+            self.output_key: {}
+        }  # Return a dictionary with 'sentiment' key even if sentiment extraction fails
 
     def process_llm_results(self, text: str) -> dict:
         sentiment_pattern = re.compile(r"Sentiment: (.+?) \(Score: ([\d.]+)\)")
@@ -152,7 +180,7 @@ class SentimentAnalysisChain(Chain):
         custom_prompt_template: Optional[str] = None,
         include_score: bool = False,
         output_format: str = "json",
-        sentiment_label_mapping: Optional[Dict]=None,
+        sentiment_label_mapping: Optional[Dict] = None,
         batch_processing: bool = False,
         **kwargs: Any,
     ) -> SentimentAnalysisChain:

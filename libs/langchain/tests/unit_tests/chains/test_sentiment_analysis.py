@@ -13,3 +13,5 @@ def test_custom_chain_behavior() -> None:
     expected_output = "positive"
     output = chain.run(data)
     assert output == expected_output
+    
+    

@@ -99,8 +99,15 @@ def __getattr__(name: str) -> Any:
         from langchain.chains import QAWithSourcesChain
 
         _warn_on_import(name)
-
+        
         return QAWithSourcesChain
+    elif name == "SentimentAnalysisChain":
+        from langchain.chains import SentimentAnalysisChain
+        
+        _warn_on_import(name)
+    
+
+        return SentimentAnalysisChain
     elif name == "VectorDBQA":
         from langchain.chains import VectorDBQA
 
