@@ -716,6 +716,10 @@ ____________
 #### Code blocks
 ```
 This is a code block
+
+# sample code
+a = 1
+b = 2
 ```
     """
     expected = [
@@ -734,7 +738,8 @@ This is a code block
         "#### Code",
         "blocks\n```\nThis",
         "is a code block",
-        "```",
+        "# sample code",
+        "a = 1\nb = 2\n```",
     ]
     __test_language_splitter(Language.MARKDOWN, code, expected)
 
