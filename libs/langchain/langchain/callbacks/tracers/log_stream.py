@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import threading
+from collections import defaultdict
 from typing import (
     Any,
     AsyncIterator,
@@ -19,10 +20,13 @@ from anyio import create_memory_object_stream
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
+from langchain.load.load import load
 from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
 
 class LogEntry(TypedDict):
+    """A single entry in the run log."""
+
     id: str
     """ID of the sub-run."""
     name: str
@@ -47,21 +51,24 @@ class LogEntry(TypedDict):
 
 
 class RunState(TypedDict):
+    """State of the run."""
+
     id: str
     """ID of the run."""
     streamed_output: List[Any]
     """List of output chunks streamed by Runnable.stream()"""
     final_output: Optional[Any]
-    """Final output of the run, usually the result of aggregating streamed_output.
+    """Final output of the run, usually the result of aggregating (`+`) streamed_output.
     Only available after the run has finished successfully."""
 
-    logs: list[LogEntry]
-    """List of sub-runs contained in this run, if any, in the order they were started.
-    If filters were supplied, this list will contain only the runs that matched the 
-    filters."""
+    logs: Dict[str, LogEntry]
+    """Map of run names to sub-runs. If filters were supplied, this list will
+    contain only the runs that matched the filters."""
 
 
 class RunLogPatch:
+    """A patch to the run log."""
+
     ops: List[Dict[str, Any]]
     """List of jsonpatch operations, which describe how to create the run state
     from an empty dict. This is the minimal representation of the log, designed to
@@ -72,7 +79,7 @@ class RunLogPatch:
     def __init__(self, *ops: Dict[str, Any]) -> None:
         self.ops = list(ops)
 
-    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLogPatch:
+    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
         if type(other) == RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(None, ops)
@@ -85,13 +92,16 @@ class RunLogPatch:
     def __repr__(self) -> str:
         from pprint import pformat
 
-        return f"RunLogPatch(ops={pformat(self.ops)})"
+        # 1:-1 to get rid of the [] around the list
+        return f"RunLogPatch({pformat(self.ops)[1:-1]})"
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, RunLogPatch) and self.ops == other.ops
 
 
 class RunLog(RunLogPatch):
+    """A run log."""
+
     state: RunState
     """Current state of the log, obtained from applying all ops in sequence."""
 
@@ -99,7 +109,7 @@ class RunLog(RunLogPatch):
         super().__init__(*ops)
         self.state = state
 
-    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLogPatch:
+    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
         if type(other) == RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(self.state, other.ops)
@@ -112,10 +122,12 @@ class RunLog(RunLogPatch):
     def __repr__(self) -> str:
         from pprint import pformat
 
-        return f"RunLog(state={pformat(self.state)})"
+        return f"RunLog({pformat(self.state)})"
 
 
 class LogStreamCallbackHandler(BaseTracer):
+    """A tracer that streams run logs to a stream."""
+
     def __init__(
         self,
         *,
@@ -143,7 +155,8 @@ class LogStreamCallbackHandler(BaseTracer):
         self.lock = threading.Lock()
         self.send_stream = send_stream
         self.receive_stream = receive_stream
-        self._index_map: Dict[UUID, int] = {}
+        self._key_map_by_run_id: Dict[UUID, str] = {}
+        self._counter_map_by_name: Dict[str, int] = defaultdict(int)
 
     def __aiter__(self) -> AsyncIterator[RunLogPatch]:
         return self.receive_stream.__aiter__()
@@ -196,7 +209,7 @@ class LogStreamCallbackHandler(BaseTracer):
                             id=str(run.id),
                             streamed_output=[],
                             final_output=None,
-                            logs=[],
+                            logs={},
                         ),
                     }
                 )
@@ -207,14 +220,18 @@ class LogStreamCallbackHandler(BaseTracer):
 
         # Determine previous index, increment by 1
         with self.lock:
-            self._index_map[run.id] = max(self._index_map.values(), default=-1) + 1
+            self._counter_map_by_name[run.name] += 1
+            count = self._counter_map_by_name[run.name]
+            self._key_map_by_run_id[run.id] = (
+                run.name if count == 1 else f"{run.name}:{count}"
+            )
 
         # Add the run to the stream
         self.send_stream.send_nowait(
             RunLogPatch(
                 {
                     "op": "add",
-                    "path": f"/logs/{self._index_map[run.id]}",
+                    "path": f"/logs/{self._key_map_by_run_id[run.id]}",
                     "value": LogEntry(
                         id=str(run.id),
                         name=run.name,
@@ -233,7 +250,7 @@ class LogStreamCallbackHandler(BaseTracer):
     def _on_run_update(self, run: Run) -> None:
         """Finish a run."""
         try:
-            index = self._index_map.get(run.id)
+            index = self._key_map_by_run_id.get(run.id)
 
             if index is None:
                 return
@@ -243,7 +260,8 @@ class LogStreamCallbackHandler(BaseTracer):
                     {
                         "op": "add",
                         "path": f"/logs/{index}/final_output",
-                        "value": run.outputs,
+                        # to undo the dumpd done by some runnables / tracer / etc
+                        "value": load(run.outputs),
                     },
                     {
                         "op": "add",
@@ -259,7 +277,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         {
                             "op": "replace",
                             "path": "/final_output",
-                            "value": run.outputs,
+                            "value": load(run.outputs),
                         }
                     )
                 )
@@ -273,7 +291,7 @@ class LogStreamCallbackHandler(BaseTracer):
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
     ) -> None:
         """Process new LLM token."""
-        index = self._index_map.get(run.id)
+        index = self._key_map_by_run_id.get(run.id)
 
         if index is None:
             return
