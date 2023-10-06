@@ -37,8 +37,6 @@ class DocAIParser(BaseBlobParser):
     https://cloud.google.com/document-ai/docs/overview
     """
 
-    _client: "DocumentProcessorServiceClient"
-
     def __init__(
         self,
         *,
