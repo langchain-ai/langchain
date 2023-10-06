@@ -41,7 +41,9 @@ from langchain.callbacks.base import (
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import run_collector
-from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.tracers.langchain import (
+    LangChainTracer,
+)
 from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.callbacks.tracers.wandb import WandbTracer
@@ -161,7 +163,7 @@ def tracing_v2_enabled(
     example_id: Optional[Union[str, UUID]] = None,
     tags: Optional[List[str]] = None,
     client: Optional[LangSmithClient] = None,
-) -> Generator[None, None, None]:
+) -> Generator[LangChainTracer, None, None]:
     """Instruct LangChain to log all runs in context to LangSmith.
 
     Args:
@@ -178,6 +180,12 @@ def tracing_v2_enabled(
     Example:
         >>> with tracing_v2_enabled():
         ...     # LangChain code will automatically be traced
+
+        You can use this to fetch the LangSmith run URL:
+
+        >>> with tracing_v2_enabled() as cb:
+        ...     chain.invoke("foo")
+        ...     run_url = cb.get_run_url()
     """
     if isinstance(example_id, str):
         example_id = UUID(example_id)
@@ -188,7 +196,7 @@ def tracing_v2_enabled(
         client=client,
     )
     tracing_v2_callback_var.set(cb)
-    yield
+    yield cb
     tracing_v2_callback_var.set(None)
 
 
@@ -1174,7 +1182,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
 
 class CallbackManager(BaseCallbackManager):
-    """Callback manager that handles callbacks from langchain."""
+    """Callback manager that handles callbacks from LangChain."""
 
     def on_llm_start(
         self,
@@ -1443,6 +1451,8 @@ class CallbackManager(BaseCallbackManager):
 
 
 class CallbackManagerForChainGroup(CallbackManager):
+    """Callback manager for the chain group."""
+
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
@@ -1777,6 +1787,8 @@ class AsyncCallbackManager(BaseCallbackManager):
 
 
 class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
+    """Async callback manager for the chain group."""
+
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],

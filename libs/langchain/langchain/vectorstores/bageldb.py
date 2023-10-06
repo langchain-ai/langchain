@@ -108,7 +108,7 @@ class Bagel(VectorStore):
         try:
             import bagel  # noqa: F401
         except ImportError:
-            raise ValueError("Please install bagel `pip install betabageldb`.")
+            raise ImportError("Please install bagel `pip install betabageldb`.")
         return self._cluster.find(
             query_texts=query_texts,
             query_embeddings=query_embeddings,

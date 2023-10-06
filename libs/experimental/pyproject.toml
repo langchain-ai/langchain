@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-experimental"
-version = "0.0.24"
+version = "0.0.26"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,10 +12,12 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain = ">=0.0.239"
+gigachain = ">=0.0.308"
 presidio-anonymizer = {version = "^2.2.33", optional = true}
 presidio-analyzer = {version = "^2.2.33", optional = true}
 faker = {version = "^19.3.1", optional = true}
+vowpal-wabbit-next = {version = "0.6.0", optional = true}
+sentence-transformers = {version = "^2", optional = true}
 
 
 [tool.poetry.group.lint.dependencies]
@@ -45,6 +47,8 @@ extended_testing = [
  "presidio-anonymizer",
  "presidio-analyzer",
  "faker",
+ "vowpal-wabbit-next",
+ "sentence-transformers",
 ]
 
 [tool.ruff]
