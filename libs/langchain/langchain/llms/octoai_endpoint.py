@@ -43,7 +43,8 @@ class OctoAIEndpoint(LLM):
                     "messages": [
                         {
                             "role": "system",
-                            "content": "Below is an instruction that describes a task. Write a response that appropriately completes the request."
+                            "content": "Below is an instruction that describes a task.
+                                Write a response that appropriately completes the request."
                         }
                     ],
                     "stream": False,
@@ -121,7 +122,7 @@ class OctoAIEndpoint(LLM):
 
             octoai_client = client.Client(token=self.octoai_api_token)
 
-            if 'model' in _model_kwargs and _model_kwargs['model'].startswith('llama-2'):
+            if 'model' in _model_kwargs and 'llama-2' in _model_kwargs['model']:
                 parameter_payload = _model_kwargs
                 parameter_payload['messages'].append(
                     {
