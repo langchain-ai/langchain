@@ -14,14 +14,14 @@ from uuid import uuid4
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
+from langchain.utils import get_from_env
+
 
 VST = TypeVar("VST", bound="VectorStore")
 
 
 if TYPE_CHECKING:
     from momento import PreviewVectorIndexClient
-    from momento.auth import CredentialProvider
-    from momento.config import VectorIndexConfiguration
 
 
 class MomentoVectorIndex(VectorStore):
@@ -39,8 +39,7 @@ class MomentoVectorIndex(VectorStore):
     def __init__(
         self,
         embedding: Embeddings,
-        configuration: "VectorIndexConfiguration",
-        credential_provider: "CredentialProvider",
+        client: "PreviewVectorIndexClient",
         index_name: str = "default",
         text_field: str = "text",
         **kwargs: Any,
@@ -66,10 +65,7 @@ class MomentoVectorIndex(VectorStore):
                 "Please install it with `pip install momento`."
             )
 
-        self._client = PreviewVectorIndexClient(
-            configuration=configuration,
-            credential_provider=credential_provider,
-        )
+        self._client: PreviewVectorIndexClient = client
         self._embedding = embedding
         self.index_name = index_name
         self.text_field = text_field
@@ -279,19 +275,35 @@ class MomentoVectorIndex(VectorStore):
                 the texts. Defaults to None.
             kwargs (Any): Vector Store specific parameters. The following are forwarded
                 to the Vector Store constructor and required:
-            - configuration (VectorIndexConfiguration): The configuration to initialize
-                the Vector Index with.
-            - credential_provider (CredentialProvider): The credential provider to
-                authenticate the Vector Index with.
             - index_name (str, optional): The name of the index to store the documents
                 in. Defaults to "default".
             - text_field (str, optional): The name of the metadata field to store the
                 original text in. Defaults to "text".
+            Additionally you can either pass in a client or an API key
+            - client (PreviewVectorIndexClient): The Momento Vector Index client to use.
+            - api_key (Optional[str]): The configuration to use to initialize
+                the Vector Index with. Defaults to None. If None, the configuration
+                is initialized from the environment variable `MOMENTO_API_KEY`.
 
         Returns:
             VST: Momento Vector Index vector store initialized from texts and
                 embeddings.
         """
-        vector_db = cls(embedding=embedding, **kwargs)  # type: ignore
+        from momento import (
+            CredentialProvider,
+            PreviewVectorIndexClient,
+            VectorIndexConfigurations,
+        )
+
+        if "client" in kwargs:
+            client = kwargs.pop("client")
+        else:
+            supplied_api_key = kwargs.pop("api_key", None)
+            api_key = supplied_api_key or get_from_env("api_key", "MOMENTO_API_KEY")
+            client = PreviewVectorIndexClient(
+                configuration=VectorIndexConfigurations.Default.latest(),
+                credential_provider=CredentialProvider.from_string(api_key),
+            )
+        vector_db = cls(embedding=embedding, client=client, **kwargs)  # type: ignore
         vector_db.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         return vector_db

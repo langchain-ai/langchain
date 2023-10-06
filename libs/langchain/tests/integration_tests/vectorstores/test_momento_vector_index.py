@@ -30,17 +30,21 @@ def vector_store(
 ) -> Iterator[MomentoVectorIndex]:
     from momento import (
         CredentialProvider,
+        PreviewVectorIndexClient,
         VectorIndexConfigurations,
     )
 
     vector_store = None
     try:
-        vector_store = MomentoVectorIndex(
-            embedding=embedding_openai,
-            configuration=VectorIndexConfigurations.Default.latest(),
+        client = PreviewVectorIndexClient(
+            VectorIndexConfigurations.Default.latest(),
             credential_provider=CredentialProvider.from_environment_variable(
                 API_KEY_ENV_VAR
             ),
+        )
+        vector_store = MomentoVectorIndex(
+            embedding=embedding_openai,
+            client=client,
             index_name=random_index_name,
         )
         yield vector_store
