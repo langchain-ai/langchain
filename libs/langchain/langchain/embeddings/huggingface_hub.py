@@ -49,7 +49,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
             values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
         )
         try:
-            from huggingface_hub.inference_api import InferenceApi
+            from huggingface_hub import InferenceClient
 
             repo_id = values["repo_id"]
             if not repo_id.startswith("sentence-transformers"):
@@ -57,14 +57,14 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
                     "Currently only 'sentence-transformers' embedding models "
                     f"are supported. Got invalid 'repo_id' {repo_id}."
                 )
-            client = InferenceApi(
-                repo_id=repo_id,
+            client = InferenceClient(
+                model=repo_id,
                 token=huggingfacehub_api_token,
-                task=values.get("task"),
             )
-            if client.task not in VALID_TASKS:
+
+            if values["task"] not in VALID_TASKS:
                 raise ValueError(
-                    f"Got invalid task {client.task}, "
+                    f"Got invalid task {values['task']}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
             values["client"] = client
