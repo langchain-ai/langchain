@@ -9,6 +9,12 @@ from langchain.schema import BaseOutputParser, OutputParserException
 T = TypeVar("T", bound=BaseModel)
 
 
+def correct_trailing_commas(json_str: str) -> str:
+    """Corrects trailing commas in a JSON string."""
+    regex = r',(\s*[\}\]])'  # Matches trailing commas before } or ]
+    return re.sub(regex, r'\1', json_str)
+
+
 class PydanticOutputParser(BaseOutputParser[T]):
     """Parse an output using a pydantic model."""
 
@@ -24,7 +30,9 @@ class PydanticOutputParser(BaseOutputParser[T]):
             json_str = ""
             if match:
                 json_str = match.group()
-            json_object = json.loads(json_str, strict=False)
+            # Correct trailing commas
+            corrected_json_str = correct_trailing_commas(json_str)
+            json_object = json.loads(corrected_json_str, strict=False)
             return self.pydantic_object.parse_obj(json_object)
 
         except (json.JSONDecodeError, ValidationError) as e:
