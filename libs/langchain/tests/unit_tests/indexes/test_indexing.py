@@ -224,7 +224,7 @@ async def test_aindexing_same_content(
         ]
     )
 
-    assert await aindex(loader, arecord_manager, vector_store) == {
+    assert await aindex(await loader.alazy_load(), arecord_manager, vector_store) == {
         "num_added": 2,
         "num_deleted": 0,
         "num_skipped": 0,
@@ -235,7 +235,9 @@ async def test_aindexing_same_content(
 
     for _ in range(2):
         # Run the indexing again
-        assert await aindex(loader, arecord_manager, vector_store) == {
+        assert await aindex(
+            await loader.alazy_load(), arecord_manager, vector_store
+        ) == {
             "num_added": 0,
             "num_deleted": 0,
             "num_skipped": 2,
@@ -338,7 +340,9 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
-        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
+        assert await aindex(
+            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
+        ) == {
             "num_added": 2,
             "num_deleted": 0,
             "num_skipped": 0,
@@ -348,7 +352,9 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
-        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
+        assert await aindex(
+            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
+        ) == {
             "num_added": 0,
             "num_deleted": 0,
             "num_skipped": 2,
@@ -369,7 +375,9 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
-        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
+        assert await aindex(
+            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
+        ) == {
             "num_added": 1,
             "num_deleted": 1,
             "num_skipped": 1,
@@ -387,7 +395,9 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
-        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
+        assert await aindex(
+            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
+        ) == {
             "num_added": 0,
             "num_deleted": 0,
             "num_skipped": 2,
@@ -456,12 +466,17 @@ async def test_aincremental_fails_with_bad_source_ids(
 
     with pytest.raises(ValueError):
         # Should raise an error because no source id function was specified
-        await aindex(loader, arecord_manager, vector_store, cleanup="incremental")
+        await aindex(
+            await loader.alazy_load(),
+            arecord_manager,
+            vector_store,
+            cleanup="incremental",
+        )
 
     with pytest.raises(ValueError):
         # Should raise an error because no source id function was specified
         await aindex(
-            loader,
+            await loader.alazy_load(),
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -573,7 +588,7 @@ async def test_ano_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            loader,
+            await loader.alazy_load(),
             arecord_manager,
             vector_store,
             cleanup=None,
@@ -590,7 +605,7 @@ async def test_ano_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            loader,
+            await loader.alazy_load(),
             arecord_manager,
             vector_store,
             cleanup=None,
@@ -620,7 +635,7 @@ async def test_ano_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            loader,
+            await loader.alazy_load(),
             arecord_manager,
             vector_store,
             cleanup=None,
@@ -760,7 +775,7 @@ async def test_aincremental_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            loader,
+            await loader.alazy_load(),
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -784,7 +799,7 @@ async def test_aincremental_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            loader,
+            await loader.alazy_load(),
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -819,7 +834,7 @@ async def test_aincremental_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 3).timestamp()
     ):
         assert await aindex(
-            loader,
+            await loader.alazy_load(),
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -865,7 +880,9 @@ async def test_aindexing_with_no_docs(
     """Check edge case when loader returns no new docs."""
     loader = ToyLoader(documents=[])
 
-    assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
+    assert await aindex(
+        await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
+    ) == {
         "num_added": 0,
         "num_deleted": 0,
         "num_skipped": 0,

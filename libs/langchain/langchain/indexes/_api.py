@@ -450,12 +450,9 @@ async def aindex(
         raise ValueError("Vectorstore has not implemented the delete method")
 
     if isinstance(docs_source, BaseLoader):
-        try:
-            doc_iterator = docs_source.lazy_load()
-        except NotImplementedError:
-            doc_iterator = iter(docs_source.load())
-
-        async_doc_iterator = _to_async_iterator(doc_iterator)
+        raise NotImplementedError(
+            "Not supported yet. Please pass an async iterator of documents."
+        )
     else:
         if hasattr(docs_source, "__aiter__"):
             async_doc_iterator = docs_source  # type: ignore[assignment]
