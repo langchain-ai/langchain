@@ -18,10 +18,10 @@ from typing import (
     Union,
 )
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.document import Document
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy
 
 if TYPE_CHECKING:
@@ -725,7 +725,7 @@ class TimescaleVector(VectorStore):
         **kwargs: Any,
     ) -> TimescaleVector:
         """
-        Get intsance of an existing TimescaleVector store.This method will
+        Get instance of an existing TimescaleVector store.This method will
         return the instance of the store without inserting any new
         embeddings
         """

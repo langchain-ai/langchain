@@ -13,7 +13,7 @@ import requests
 from langchain.pydantic_v1 import Field
 from langchain.schema import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
+from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
 
 
 class ModelChoices(str, Enum):

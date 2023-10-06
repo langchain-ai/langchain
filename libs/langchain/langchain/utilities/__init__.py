@@ -27,6 +27,7 @@ from langchain.utilities.pubmed import PubMedAPIWrapper
 from langchain.utilities.python import PythonREPL
 from langchain.utilities.requests import Requests, RequestsWrapper, TextRequestsWrapper
 from langchain.utilities.scenexplain import SceneXplainAPIWrapper
+from langchain.utilities.searchapi import SearchApiAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.spark_sql import SparkSQL
@@ -64,6 +65,7 @@ __all__ = [
     "RequestsWrapper",
     "SQLDatabase",
     "SceneXplainAPIWrapper",
+    "SearchApiAPIWrapper",
     "SearxSearchWrapper",
     "SerpAPIWrapper",
     "SparkSQL",

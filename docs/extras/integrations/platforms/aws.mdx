@@ -1,6 +1,6 @@
 # AWS
 
-All functionality related to AWS platform
+All functionality related to [Amazon AWS](https://aws.amazon.com/) platform
 
 ## LLMs
 
@@ -70,7 +70,7 @@ from langchain.llms.sagemaker_endpoint import ContentHandlerBase
 
 ## Document loaders
 
-### AWS S3 Directory
+### AWS S3 Directory and File
 >[Amazon Simple Storage Service (Amazon S3)](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-folders.html) is an object storage service.
 >[AWS S3 Directory](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-folders.html)
 >[AWS S3 Buckets](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket.html)
@@ -81,4 +81,25 @@ See a [usage example for S3FileLoader](/docs/integrations/document_loaders/aws_s
 
 ```python
 from langchain.document_loaders import S3DirectoryLoader, S3FileLoader
+```
+
+## Memory
+
+### AWS DynamoDB
+
+>[AWS DynamoDB](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/dynamodb/index.html) 
+> is a fully managed `NoSQL` database service that provides fast and predictable performance with seamless scalability.
+ 
+We have to configure the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html). 
+
+We need to install the `boto3` library.
+
+```bash
+pip install boto3
+```
+
+See a [usage example](/docs/integrations/memory/aws_dynamodb).
+
+```python
+from langchain.memory import DynamoDBChatMessageHistory
 ```
