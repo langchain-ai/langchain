@@ -1,16 +1,21 @@
 import json
 import os
 from typing import Any, Mapping, cast
+from unittest import mock
 
 import pytest
 
 from langchain.chat_models.azure_openai import AzureChatOpenAI
 
-os.environ["OPENAI_API_KEY"] = "test"
-os.environ["OPENAI_API_BASE"] = "https://oai.azure.com/"
-os.environ["OPENAI_API_VERSION"] = "2023-05-01"
 
-
+@mock.patch.dict(
+    os.environ,
+    {
+        "OPENAI_API_KEY": "test",
+        "OPENAI_API_BASE": "https://oai.azure.com/",
+        "OPENAI_API_VERSION": "2023-05-01",
+    },
+)
 @pytest.mark.requires("openai")
 @pytest.mark.parametrize(
     "model_name", ["gpt-4", "gpt-4-32k", "gpt-35-turbo", "gpt-35-turbo-16k"]
