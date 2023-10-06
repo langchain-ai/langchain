@@ -33,7 +33,7 @@ class OctoAIEndpoint(LLM):
                     "stop": [],
                 },
             )
-            
+
             from langchain.llms.octoai_endpoint  import OctoAIEndpoint
             OctoAIEndpoint(
                 octoai_api_token="octoai-api-key",
@@ -65,6 +65,7 @@ class OctoAIEndpoint(LLM):
 
     streaming: bool = False
     """Whether to generate a stream of tokens asynchronously"""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -115,24 +116,21 @@ class OctoAIEndpoint(LLM):
 
         """
         _model_kwargs = self.model_kwargs or {}
-    
+
         try:
             # Initialize the OctoAI client
             from octoai import client
 
             octoai_client = client.Client(token=self.octoai_api_token)
 
-            if 'model' in _model_kwargs and 'llama-2' in _model_kwargs['model']:
+            if "model" in _model_kwargs and "llama-2" in _model_kwargs["model"]:
                 parameter_payload = _model_kwargs
-                parameter_payload['messages'].append(
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
+                parameter_payload["messages"].append(
+                    {"role": "user", "content": prompt}
                 )
                 # Send the request using the OctoAI client
                 output = octoai_client.infer(self.endpoint_url, parameter_payload)
-                text = output.get('choices')[0].get("message").get('content')
+                text = output.get("choices")[0].get("message").get("content")
             else:
                 # Prepare the payload JSON
                 parameter_payload = {"inputs": prompt, "parameters": _model_kwargs}
