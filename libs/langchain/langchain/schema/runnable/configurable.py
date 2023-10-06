@@ -227,7 +227,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         }
 
         if configurable:
-            return self.default.__class__(**{**self.default.dict(), **configurable})
+            return self.default.__class__(**{**self.default.__dict__, **configurable})
         else:
             return self.default
 
@@ -274,7 +274,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         self, config: Optional[RunnableConfig] = None
     ) -> Runnable[Input, Output]:
         config = config or {}
-        which = str(config.get("configurable", {}).get(self.which.id, self.default_key))
+        which = config.get("configurable", {}).get(self.which.id, self.default_key)
         if which == self.default_key:
             return self.default
         elif which in self.alternatives:

@@ -35,6 +35,12 @@ make start
 
 This will launch a webserver on port 8001.
 
+Or via docker compose (does not use hot reload by default):
+
+```
+docker compose up
+```
+
 ## Deploy
 
 To deploy the project, first build the docker image:

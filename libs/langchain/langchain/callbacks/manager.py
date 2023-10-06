@@ -1182,7 +1182,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
 
 class CallbackManager(BaseCallbackManager):
-    """Callback manager that handles callbacks from langchain."""
+    """Callback manager that handles callbacks from LangChain."""
 
     def on_llm_start(
         self,
@@ -1450,6 +1450,8 @@ class CallbackManager(BaseCallbackManager):
 
 
 class CallbackManagerForChainGroup(CallbackManager):
+    """Callback manager for the chain group."""
+
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
@@ -1784,6 +1786,8 @@ class AsyncCallbackManager(BaseCallbackManager):
 
 
 class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
+    """Async callback manager for the chain group."""
+
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
