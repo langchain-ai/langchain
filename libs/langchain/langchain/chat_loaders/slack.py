@@ -5,13 +5,16 @@ import zipfile
 from pathlib import Path
 from typing import Dict, Iterator, List, Union
 
-from langchain import schema
-from langchain.chat_loaders import base as chat_loaders
+from langchain.chat_loaders.base import BaseChatLoader
+from langchain.schema import AIMessage, HumanMessage
+from langchain.schema.chat import ChatSession
 
 logger = logging.getLogger(__name__)
 
 
-class SlackChatLoader(chat_loaders.BaseChatLoader):
+class SlackChatLoader(BaseChatLoader):
+    """Load `Slack` conversations from a dump zip file."""
+
     def __init__(
         self,
         path: Union[str, Path],
@@ -25,10 +28,8 @@ class SlackChatLoader(chat_loaders.BaseChatLoader):
         if not self.zip_path.exists():
             raise FileNotFoundError(f"File {self.zip_path} not found")
 
-    def _load_single_chat_session(
-        self, messages: List[Dict]
-    ) -> chat_loaders.ChatSession:
-        results: List[Union[schema.AIMessage, schema.HumanMessage]] = []
+    def _load_single_chat_session(self, messages: List[Dict]) -> ChatSession:
+        results: List[Union[AIMessage, HumanMessage]] = []
         previous_sender = None
         for message in messages:
             if not isinstance(message, dict):
@@ -50,7 +51,7 @@ class SlackChatLoader(chat_loaders.BaseChatLoader):
                 )
             else:
                 results.append(
-                    schema.HumanMessage(
+                    HumanMessage(
                         role=sender,
                         content=text,
                         additional_kwargs={
@@ -60,7 +61,7 @@ class SlackChatLoader(chat_loaders.BaseChatLoader):
                     )
                 )
             previous_sender = sender
-        return chat_loaders.ChatSession(messages=results)
+        return ChatSession(messages=results)
 
     def _read_json(self, zip_file: zipfile.ZipFile, file_path: str) -> List[dict]:
         """Read JSON data from a zip subfile."""
@@ -70,7 +71,7 @@ class SlackChatLoader(chat_loaders.BaseChatLoader):
             raise ValueError(f"Expected list of dictionaries, got {type(data)}")
         return data
 
-    def lazy_load(self) -> Iterator[chat_loaders.ChatSession]:
+    def lazy_load(self) -> Iterator[ChatSession]:
         """
         Lazy load the chat sessions from the Slack dump file and yield them
         in the required format.

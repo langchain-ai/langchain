@@ -25,5 +25,3 @@ sphinx:
 python:
    install:
    - requirements: docs/api_reference/requirements.txt
-   - method: pip
-     path: .

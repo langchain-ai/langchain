@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterable, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
 
 import sqlalchemy
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
+from sqlalchemy.types import NullType
 
 from langchain.utils import get_from_env
 
@@ -314,6 +315,11 @@ class SQLDatabase:
                 tables.append(self._custom_table_info[table.name])
                 continue
 
+            # Ignore JSON datatyped columns
+            for k, v in table.columns.items():
+                if type(v.type) is NullType:
+                    table._columns.remove(v)
+
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
             table_info = f"{create_table.rstrip()}"
@@ -368,7 +374,11 @@ class SQLDatabase:
             f"{sample_rows_str}"
         )
 
-    def _execute(self, command: str, fetch: Optional[str] = "all") -> Sequence:
+    def _execute(
+        self,
+        command: str,
+        fetch: Union[Literal["all"], Literal["one"]] = "all",
+    ) -> Sequence[Dict[str, Any]]:
         """
         Executes SQL command through underlying engine.
 
@@ -378,26 +388,39 @@ class SQLDatabase:
             if self._schema is not None:
                 if self.dialect == "snowflake":
                     connection.exec_driver_sql(
-                        f"ALTER SESSION SET search_path='{self._schema}'"
+                        "ALTER SESSION SET search_path = %s", (self._schema,)
                     )
                 elif self.dialect == "bigquery":
-                    connection.exec_driver_sql(f"SET @@dataset_id='{self._schema}'")
+                    connection.exec_driver_sql("SET @@dataset_id=?", (self._schema,))
                 elif self.dialect == "mssql":
                     pass
-                else:  # postgresql and compatible dialects
+                elif self.dialect == "trino":
+                    connection.exec_driver_sql("USE ?", (self._schema,))
+                elif self.dialect == "duckdb":
+                    # Unclear which parameterized argument syntax duckdb supports.
+                    # The docs for the duckdb client say they support multiple,
+                    # but `duckdb_engine` seemed to struggle with all of them:
+                    # https://github.com/Mause/duckdb_engine/issues/796
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
+                else:  # postgresql and other compatible dialects
+                    connection.exec_driver_sql("SET search_path TO %s", (self._schema,))
             cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 if fetch == "all":
-                    result = cursor.fetchall()
+                    result = [x._asdict() for x in cursor.fetchall()]
                 elif fetch == "one":
-                    result = cursor.fetchone()  # type: ignore
+                    first_result = cursor.fetchone()
+                    result = [] if first_result is None else [first_result._asdict()]
                 else:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
                 return result
         return []
 
-    def run(self, command: str, fetch: str = "all") -> str:
+    def run(
+        self,
+        command: str,
+        fetch: Union[Literal["all"], Literal["one"]] = "all",
+    ) -> str:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
@@ -406,18 +429,14 @@ class SQLDatabase:
         result = self._execute(command, fetch)
         # Convert columns values to string to avoid issues with sqlalchemy
         # truncating text
-        if not result:
+        res = [
+            tuple(truncate_word(c, length=self._max_string_length) for c in r.values())
+            for r in result
+        ]
+        if not res:
             return ""
-        elif isinstance(result, list):
-            res: Sequence = [
-                tuple(truncate_word(c, length=self._max_string_length) for c in r)
-                for r in result
-            ]
         else:
-            res = tuple(
-                truncate_word(c, length=self._max_string_length) for c in result
-            )
-        return str(res)
+            return str(res)
 
     def get_table_info_no_throw(self, table_names: Optional[List[str]] = None) -> str:
         """Get information about specified tables.
@@ -435,7 +454,11 @@ class SQLDatabase:
             """Format the error message"""
             return f"Error: {e}"
 
-    def run_no_throw(self, command: str, fetch: str = "all") -> str:
+    def run_no_throw(
+        self,
+        command: str,
+        fetch: Union[Literal["all"], Literal["one"]] = "all",
+    ) -> str:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
