@@ -6,8 +6,8 @@ from typing import Dict, List, Optional
 
 import requests
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, root_validator
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ class ErnieEmbeddings(BaseModel, Embeddings):
     def _refresh_access_token_with_lock(self) -> None:
         with self._lock:
             logger.debug("Refreshing access token")
-            base_url: str = "https://aip.baidubce.com/oauth/2.0/token"
+            base_url: str = f"{self.ernie_api_base}/oauth/2.0/token"
             resp = requests.post(
                 base_url,
                 headers={

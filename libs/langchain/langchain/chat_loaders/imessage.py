@@ -3,8 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
-from langchain import schema
-from langchain.chat_loaders.base import BaseChatLoader, ChatSession
+from langchain.chat_loaders.base import BaseChatLoader
+from langchain.schema import HumanMessage
+from langchain.schema.chat import ChatSession
 
 if TYPE_CHECKING:
     import sqlite3
@@ -57,7 +58,7 @@ class IMessageChatLoader(BaseChatLoader):
         Returns:
             ChatSession: Loaded chat session.
         """
-        results: List[schema.HumanMessage] = []
+        results: List[HumanMessage] = []
 
         query = """
         SELECT message.date, handle.id, message.text
@@ -73,7 +74,7 @@ class IMessageChatLoader(BaseChatLoader):
         for date, sender, text in messages:
             if text:  # Skip empty messages
                 results.append(
-                    schema.HumanMessage(
+                    HumanMessage(
                         role=sender,
                         content=text,
                         additional_kwargs={

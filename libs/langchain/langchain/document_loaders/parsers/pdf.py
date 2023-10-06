@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class PyPDFParser(BaseBlobParser):
-    """Load `PDF` using `pypdf` and chunk at character level."""
+    """Load `PDF` using `pypdf`"""
 
     def __init__(self, password: Optional[Union[str, bytes]] = None):
         self.password = password

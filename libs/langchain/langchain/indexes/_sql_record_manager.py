@@ -259,6 +259,7 @@ class SQLRecordManager(RecordManager):
         before: Optional[float] = None,
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
+        limit: Optional[int] = None,
     ) -> List[str]:
         """List records in the SQLite database based on the provided date range."""
         with self._make_session() as session:
@@ -279,6 +280,9 @@ class SQLRecordManager(RecordManager):
                 query = query.filter(  # type: ignore[attr-defined]
                     UpsertionRecord.group_id.in_(group_ids)
                 )
+
+            if limit:
+                query = query.limit(limit)  # type: ignore[attr-defined]
             records = query.all()  # type: ignore[attr-defined]
         return [r.key for r in records]
 
