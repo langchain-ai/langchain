@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Dict, Iterable, Iterator, Optional, Union
+from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Union
 
 from langchain.chat_loaders.base import BaseChatLoader
 from langchain.load import load
@@ -12,9 +14,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class LangSmithLLMChatLoader(BaseChatLoader):
+class LangSmithRunChatLoader(BaseChatLoader):
     """
-    Load chat sessions from a list of LangSmith LLM run IDs.
+    Load chat sessions from a list of LangSmith "llm" runs.
 
     Attributes:
         runs (Iterable[Union[str, Run]]): The list of LLM run IDs or run objects.
@@ -22,18 +24,18 @@ class LangSmithLLMChatLoader(BaseChatLoader):
     """
 
     def __init__(
-        self, run_ids: Iterable[Union[str, Run]], client: Optional["Client"] = None
+        self, runs: Iterable[Union[str, Run]], client: Optional["Client"] = None
     ):
         """
-        Initialize a new LangSmithLLMChatLoader instance.
+        Initialize a new LangSmithRunChatLoader instance.
 
-        :param run_ids: List of LLM run IDs or run objects.
+        :param runs: List of LLM run IDs or run objects.
         :param client: An instance of LangSmith client, if not provided,
             a new client instance will be created.
         """
         from langsmith.client import Client
 
-        self.runs = run_ids
+        self.runs = runs
         self.client = client or Client()
 
     def _load_single_chat_session(self, llm_run: "Run") -> ChatSession:
@@ -43,8 +45,8 @@ class LangSmithLLMChatLoader(BaseChatLoader):
         :param llm_run: The LLM run object.
         :return: A chat session representing the run's data.
         """
-        chat_session = LangSmithLLMChatLoader._get_messages_from_llm_run(llm_run)
-        functions = LangSmithLLMChatLoader._get_functions_from_llm_run(llm_run)
+        chat_session = LangSmithRunChatLoader._get_messages_from_llm_run(llm_run)
+        functions = LangSmithRunChatLoader._get_functions_from_llm_run(llm_run)
         if functions:
             chat_session["functions"] = functions
         return chat_session
@@ -68,7 +70,7 @@ class LangSmithLLMChatLoader(BaseChatLoader):
         return ChatSession(messages=messages + [message_chunk])
 
     @staticmethod
-    def _get_functions_from_llm_run(llm_run: "Run") -> Optional[Dict]:
+    def _get_functions_from_llm_run(llm_run: "Run") -> Optional[List[Dict]]:
         """
         Extract functions from a LangSmith LLM run if they exist.
 
@@ -99,3 +101,51 @@ class LangSmithLLMChatLoader(BaseChatLoader):
             except ValueError as e:
                 logger.warning(f"Could not load run {run_obj}: {repr(e)}")
                 continue
+
+
+class LangSmithDatasetChatLoader(BaseChatLoader):
+    """
+    Load chat sessions from a LangSmith dataset with the "chat" data type.
+
+    Attributes:
+        dataset_name (str): The name of the LangSmith dataset.
+        client (Client): Instance of LangSmith client for fetching data.
+    """
+
+    def __init__(self, *, dataset_name: str, client: Optional["Client"] = None):
+        """
+        Initialize a new LangSmithChatDatasetLoader instance.
+
+        :param dataset_name: The name of the LangSmith dataset.
+        :param client: An instance of LangSmith client; if not provided,
+            a new client instance will be created.
+        """
+        try:
+            from langsmith.client import Client
+        except ImportError as e:
+            raise ImportError(
+                "The LangSmith client is required to load LangSmith datasets.\n"
+                "Please install it with `pip install langsmith`"
+            ) from e
+
+        self.dataset_name = dataset_name
+        self.client = client or Client()
+
+    def lazy_load(self) -> Iterator[ChatSession]:
+        """
+        Lazy load the chat sessions from the specified LangSmith dataset.
+
+        This method fetches the chat data from the dataset and
+        converts each data point to chat sessions on-the-fly,
+        yielding one session at a time.
+
+        :return: Iterator of chat sessions containing messages.
+        """
+        data = self.client.read_dataset_openai_finetuning(
+            dataset_name=self.dataset_name
+        )
+        for data_point in data:
+            yield ChatSession(
+                messages=data_point.get("messages"),
+                functions=data_point.get("functions"),
+            )
