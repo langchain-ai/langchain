@@ -45,7 +45,13 @@ class ModelRepository:
             shutil.copyfile(self.model_path, self.folder / f"model-{self.get_tag()}.vw")
 
     def load(self, commandline: List[str]) -> "vw.Workspace":
-        import vowpal_wabbit_next as vw
+        try:
+            import vowpal_wabbit_next as vw
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import vowpal_wabbit_next, please install with "
+                "`pip install vowpal_wabbit_next`."
+            ) from e
 
         model_data = None
         if self.model_path.exists():
