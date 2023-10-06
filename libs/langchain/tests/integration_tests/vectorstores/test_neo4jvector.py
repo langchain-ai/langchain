@@ -3,7 +3,7 @@ import os
 from typing import List
 
 from langchain.docstore.document import Document
-from langchain.vectorstores import Neo4jVector
+from langchain.vectorstores.neo4j_vector import Neo4jVector, SearchType
 from langchain.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
@@ -26,7 +26,7 @@ def drop_vector_indexes(store: Neo4jVector) -> None:
     all_indexes = store.query(
         """
             SHOW INDEXES YIELD name, type
-            WHERE type = "VECTOR"
+            WHERE type IN ["VECTOR", "FULLTEXT"]
             RETURN name
                               """
     )
@@ -331,3 +331,286 @@ def test_neo4jvector_prefer_indexname_insert() -> None:
         Document(page_content="foo", metadata={}),
     ]
     drop_vector_indexes(existing_index)
+
+
+def test_neo4jvector_hybrid() -> None:
+    """Test end to end construction with hybrid search."""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+        search_type=SearchType.HYBRID,
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_hybrid_deduplicate() -> None:
+    """Test result deduplication with hybrid search."""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+        search_type=SearchType.HYBRID,
+    )
+    output = docsearch.similarity_search("foo", k=3)
+    assert output == [
+        Document(page_content="foo"),
+        Document(page_content="bar"),
+        Document(page_content="baz"),
+    ]
+
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_hybrid_retrieval_query() -> None:
+    """Test custom retrieval_query with hybrid search."""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+        search_type=SearchType.HYBRID,
+        retrieval_query="RETURN 'moo' AS text, score, {test: 'test'} AS metadata",
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="moo", metadata={"test": "test"})]
+
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_hybrid_retrieval_query2() -> None:
+    """Test custom retrieval_query with hybrid search."""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+        search_type=SearchType.HYBRID,
+        retrieval_query="RETURN node.text AS text, score, {test: 'test'} AS metadata",
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo", metadata={"test": "test"})]
+
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_missing_keyword() -> None:
+    """Test hybrid search with missing keyword_index_search."""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+    )
+    try:
+        Neo4jVector.from_existing_index(
+            embedding=FakeEmbeddingsWithOsDimension(),
+            url=url,
+            username=username,
+            password=password,
+            index_name="vector",
+            search_type=SearchType.HYBRID,
+        )
+    except ValueError as e:
+        assert str(e) == (
+            "keyword_index name has to be specified when " "using hybrid search option"
+        )
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_hybrid_from_existing() -> None:
+    """Test hybrid search with missing keyword_index_search."""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+        search_type=SearchType.HYBRID,
+    )
+    existing = Neo4jVector.from_existing_index(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="vector",
+        keyword_index_name="keyword",
+        search_type=SearchType.HYBRID,
+    )
+
+    output = existing.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+    drop_vector_indexes(existing)
+
+
+def test_neo4jvector_from_existing_graph() -> None:
+    """Test from_existing_graph with a single property."""
+    graph = Neo4jVector.from_texts(
+        texts=["test"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        node_label="Foo",
+        embedding_node_property="vector",
+        text_node_property="info",
+        pre_delete_collection=True,
+    )
+
+    graph.query("MATCH (n) DETACH DELETE n")
+
+    graph.query("CREATE (:Test {name:'Foo'})," "(:Test {name:'Bar'})")
+
+    existing = Neo4jVector.from_existing_graph(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="vector",
+        node_label="Test",
+        text_node_properties=["name"],
+        embedding_node_property="embedding",
+    )
+
+    output = existing.similarity_search("foo", k=1)
+    assert output == [Document(page_content="\nname: Foo")]
+
+    drop_vector_indexes(existing)
+
+
+def test_neo4jvector_from_existing_graph_hybrid() -> None:
+    """Test from_existing_graph hybrid with a single property."""
+    graph = Neo4jVector.from_texts(
+        texts=["test"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        node_label="Foo",
+        embedding_node_property="vector",
+        text_node_property="info",
+        pre_delete_collection=True,
+    )
+
+    graph.query("MATCH (n) DETACH DELETE n")
+
+    graph.query("CREATE (:Test {name:'foo'})," "(:Test {name:'Bar'})")
+
+    existing = Neo4jVector.from_existing_graph(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="vector",
+        node_label="Test",
+        text_node_properties=["name"],
+        embedding_node_property="embedding",
+        search_type=SearchType.HYBRID,
+    )
+
+    output = existing.similarity_search("foo", k=1)
+    assert output == [Document(page_content="\nname: foo")]
+
+    drop_vector_indexes(existing)
+
+
+def test_neo4jvector_from_existing_graph_multiple_properties() -> None:
+    """Test from_existing_graph with a two property."""
+    graph = Neo4jVector.from_texts(
+        texts=["test"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        node_label="Foo",
+        embedding_node_property="vector",
+        text_node_property="info",
+        pre_delete_collection=True,
+    )
+    graph.query("MATCH (n) DETACH DELETE n")
+
+    graph.query("CREATE (:Test {name:'Foo', name2: 'Fooz'})," "(:Test {name:'Bar'})")
+
+    existing = Neo4jVector.from_existing_graph(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="vector",
+        node_label="Test",
+        text_node_properties=["name", "name2"],
+        embedding_node_property="embedding",
+    )
+
+    output = existing.similarity_search("foo", k=1)
+    assert output == [Document(page_content="\nname: Foo\nname2: Fooz")]
+
+    drop_vector_indexes(existing)
+
+
+def test_neo4jvector_from_existing_graph_multiple_properties_hybrid() -> None:
+    """Test from_existing_graph with a two property."""
+    graph = Neo4jVector.from_texts(
+        texts=["test"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        node_label="Foo",
+        embedding_node_property="vector",
+        text_node_property="info",
+        pre_delete_collection=True,
+    )
+    graph.query("MATCH (n) DETACH DELETE n")
+
+    graph.query("CREATE (:Test {name:'Foo', name2: 'Fooz'})," "(:Test {name:'Bar'})")
+
+    existing = Neo4jVector.from_existing_graph(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="vector",
+        node_label="Test",
+        text_node_properties=["name", "name2"],
+        embedding_node_property="embedding",
+        search_type=SearchType.HYBRID,
+    )
+
+    output = existing.similarity_search("foo", k=1)
+    assert output == [Document(page_content="\nname: Foo\nname2: Fooz")]
+
+    drop_vector_indexes(existing)

@@ -1,12 +1,52 @@
-# Readme tests(draft)
+# Langchain Tests
 
-## Integrations Tests
+## Unit Tests
+
+Unit tests cover modular logic that does not require calls to outside APIs.
+If you add new logic, please add a unit test.
+
+To run unit tests:
+
+```bash
+make test
+```
+
+To run unit tests in Docker:
+
+```bash
+make docker_tests
+```
+
+## Integration Tests
+
+Integration tests cover logic that requires making calls to outside APIs (often integration with other services).
+If you add support for a new external API, please add a new integration test.
+
+**warning** Almost no tests should be integration tests.
+
+  Tests that require making network connections make it difficult for other
+  developers to test the code.
+
+  Instead favor relying on `responses` library and/or mock.patch to mock
+  requests using small fixtures.
+
+To install dependencies for integration tests:
+
+```bash
+poetry install --with test_integration
+```
+
+To run integration tests:
+
+```bash
+make integration_tests
+```
 
 ### Prepare
 
-This repository contains functional tests for several search engines and databases. The
-tests aim to verify the correct behavior of the engines and databases according to their
-specifications and requirements.
+The integration tests exercise several search engines and databases. The tests
+aim to verify the correct behavior of the engines and databases according to
+their specifications and requirements.
 
 To run some integration tests, such as tests located in
 `tests/integration_tests/vectorstores/`, you will need to install the following
@@ -14,14 +54,6 @@ software:
 
 - Docker
 - Python 3.8.1 or later
-
-We have optional group `test_integration` in the `pyproject.toml` file. This group
-should contain dependencies for the integration tests and can be installed using the
-command:
-
-```bash
-poetry install --with test_integration
-```
 
 Any new dependencies should be added by running:
 
@@ -38,6 +70,10 @@ for `test_elasticsearch.py`:
 cd tests/integration_tests/vectorstores/docker-compose
 docker-compose -f elasticsearch.yml up
 ```
+
+For environments that requires more involving preparation, look for `*.sh`. For instance,
+`opensearch.sh` builds a required docker image and then launch opensearch.
+
 
 ### Prepare environment variables for local testing:
 
@@ -70,4 +106,20 @@ pytest tests/integration_tests/vectorstores/test_elasticsearch.py --vcr-record=n
 pytest tests/integration_tests/vectorstores/test_elasticsearch.py --cov=langchain --cov-report=html
 start "" htmlcov/index.html || open htmlcov/index.html
 
+```
+
+## Coverage
+
+Code coverage (i.e. the amount of code that is covered by unit tests) helps identify areas of the code that are potentially more or less brittle.
+
+Coverage requires the dependencies for integration tests:
+
+```bash
+poetry install --with test_integration
+```
+
+To get a report of current coverage, run the following:
+
+```bash
+make coverage
 ```

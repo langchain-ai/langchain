@@ -24,7 +24,7 @@ class GooglePlacesAPIWrapper(BaseModel):
         .. code-block:: python
 
 
-            from langchain import GooglePlacesAPIWrapper
+            from langchain.utilities import GooglePlacesAPIWrapper
             gplaceapi = GooglePlacesAPIWrapper()
     """
 
