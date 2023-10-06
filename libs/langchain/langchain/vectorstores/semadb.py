@@ -6,6 +6,7 @@ import requests
 
 from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
+from langchain.utils import get_from_env
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy
 
@@ -20,7 +21,7 @@ class SemaDB(VectorStore):
 
             from langchain.vectorstores import SemaDB
 
-            db = SemaDB('mycollection', 768, KEY, embeddings, DistanceStrategy.COSINE)
+            db = SemaDB('mycollection', 768, embeddings, DistanceStrategy.COSINE)
 
     """
 
@@ -31,14 +32,14 @@ class SemaDB(VectorStore):
         self,
         collection_name: str,
         vector_size: int,
-        api_key: str,
         embedding: Embeddings,
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
+        api_key: str = "",
     ):
         """Initialise the SemaDB vector store."""
         self.collection_name = collection_name
         self.vector_size = vector_size
-        self.api_key = api_key
+        self.api_key = api_key or get_from_env("api_key", "SEMADB_API_KEY")
         self._embedding = embedding
         self.distance_strategy = distance_strategy
 
@@ -122,7 +123,7 @@ class SemaDB(VectorStore):
                     {
                         "id": new_id,
                         "vector": embedding,
-                        "metadata": metadata | {"text": text},
+                        "metadata": {**metadata, **{"text": text}},
                     }
                 )
         else:
@@ -259,7 +260,11 @@ class SemaDB(VectorStore):
         if not api_key:
             raise ValueError("API key must be provided")
         semadb = cls(
-            collection_name, vector_size, api_key, embedding, distance_strategy
+            collection_name,
+            vector_size,
+            embedding,
+            distance_strategy=distance_strategy,
+            api_key=api_key,
         )
         if not semadb.create_collection():
             raise ValueError("Error creating collection")
