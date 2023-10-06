@@ -80,6 +80,22 @@ class VectorStore(ABC):
 
         raise NotImplementedError("delete method must be implemented by subclass.")
 
+    async def adelete(
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+
+        raise NotImplementedError("delete method must be implemented by subclass.")
+
     async def aadd_texts(
         self,
         texts: Iterable[str],
