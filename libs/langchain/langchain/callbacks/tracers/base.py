@@ -49,7 +49,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def _start_trace(self, run: Run) -> None:
         """Start a trace for a run."""
         if run.parent_run_id:
-            parent_run = self.run_map[str(run.parent_run_id)]
+            parent_run = self.run_map.get(str(run.parent_run_id))
             if parent_run:
                 self._add_child_run(parent_run, run)
                 parent_run.child_execution_order = max(
@@ -58,6 +58,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             else:
                 logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
         self.run_map[str(run.id)] = run
+        self._on_run_create(run)
 
     def _end_trace(self, run: Run) -> None:
         """End a trace for a run."""
@@ -74,6 +75,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             ):
                 parent_run.child_execution_order = run.child_execution_order
         self.run_map.pop(str(run.id))
+        self._on_run_update(run)
 
     def _get_execution_order(self, parent_run_id: Optional[str] = None) -> int:
         """Get the execution order for a run."""
@@ -100,8 +102,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """Start a trace for an LLM run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
@@ -120,9 +123,11 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             run_type="llm",
             tags=tags or [],
+            name=name,
         )
         self._start_trace(llm_run)
         self._on_llm_start(llm_run)
+        return llm_run
 
     def on_llm_new_token(
         self,
@@ -132,7 +137,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """Run on new LLM token. Only available when streaming is enabled."""
         if not run_id:
             raise TracerException("No run_id provided for on_llm_new_token callback.")
@@ -151,6 +156,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 "kwargs": event_kwargs,
             },
         )
+        self._on_llm_new_token(llm_run, token, chunk)
+        return llm_run
 
     def on_retry(
         self,
@@ -158,7 +165,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         *,
         run_id: UUID,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         if not run_id:
             raise TracerException("No run_id provided for on_retry callback.")
         run_id_ = str(run_id)
@@ -186,8 +193,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 "kwargs": retry_d,
             },
         )
+        return llm_run
 
-    def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> None:
+    def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for an LLM run."""
         if not run_id:
             raise TracerException("No run_id provided for on_llm_end callback.")
@@ -208,14 +216,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
         self._end_trace(llm_run)
         self._on_llm_end(llm_run)
+        return llm_run
 
     def on_llm_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """Handle an error for an LLM run."""
         if not run_id:
             raise TracerException("No run_id provided for on_llm_error callback.")
@@ -229,6 +238,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
         self._end_trace(llm_run)
         self._on_chain_error(llm_run)
+        return llm_run
 
     def on_chain_start(
         self,
@@ -242,7 +252,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_type: Optional[str] = None,
         name: Optional[str] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """Start a trace for a chain run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
@@ -266,6 +276,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(chain_run)
         self._on_chain_start(chain_run)
+        return chain_run
 
     def on_chain_end(
         self,
@@ -274,7 +285,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id: UUID,
         inputs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """End a trace for a chain run."""
         if not run_id:
             raise TracerException("No run_id provided for on_chain_end callback.")
@@ -291,15 +302,16 @@ class BaseTracer(BaseCallbackHandler, ABC):
             chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
         self._end_trace(chain_run)
         self._on_chain_end(chain_run)
+        return chain_run
 
     def on_chain_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         inputs: Optional[Dict[str, Any]] = None,
         run_id: UUID,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """Handle an error for a chain run."""
         if not run_id:
             raise TracerException("No run_id provided for on_chain_error callback.")
@@ -314,6 +326,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
         self._end_trace(chain_run)
         self._on_chain_error(chain_run)
+        return chain_run
 
     def on_tool_start(
         self,
@@ -324,8 +337,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """Start a trace for a tool run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
@@ -345,11 +359,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_runs=[],
             run_type="tool",
             tags=tags or [],
+            name=name,
         )
         self._start_trace(tool_run)
         self._on_tool_start(tool_run)
+        return tool_run
 
-    def on_tool_end(self, output: str, *, run_id: UUID, **kwargs: Any) -> None:
+    def on_tool_end(self, output: str, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for a tool run."""
         if not run_id:
             raise TracerException("No run_id provided for on_tool_end callback.")
@@ -362,14 +378,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tool_run.events.append({"name": "end", "time": tool_run.end_time})
         self._end_trace(tool_run)
         self._on_tool_end(tool_run)
+        return tool_run
 
     def on_tool_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """Handle an error for a tool run."""
         if not run_id:
             raise TracerException("No run_id provided for on_tool_error callback.")
@@ -382,6 +399,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tool_run.events.append({"name": "error", "time": tool_run.end_time})
         self._end_trace(tool_run)
         self._on_tool_error(tool_run)
+        return tool_run
 
     def on_retriever_start(
         self,
@@ -392,8 +410,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """Run when Retriever starts running."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
@@ -402,7 +421,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             kwargs.update({"metadata": metadata})
         retrieval_run = Run(
             id=run_id,
-            name="Retriever",
+            name=name or "Retriever",
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"query": query},
@@ -417,14 +436,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(retrieval_run)
         self._on_retriever_start(retrieval_run)
+        return retrieval_run
 
     def on_retriever_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         *,
         run_id: UUID,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """Run when Retriever errors."""
         if not run_id:
             raise TracerException("No run_id provided for on_retriever_error callback.")
@@ -437,10 +457,11 @@ class BaseTracer(BaseCallbackHandler, ABC):
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
         self._end_trace(retrieval_run)
         self._on_retriever_error(retrieval_run)
+        return retrieval_run
 
     def on_retriever_end(
         self, documents: Sequence[Document], *, run_id: UUID, **kwargs: Any
-    ) -> None:
+    ) -> Run:
         """Run when Retriever ends running."""
         if not run_id:
             raise TracerException("No run_id provided for on_retriever_end callback.")
@@ -452,6 +473,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         retrieval_run.events.append({"name": "end", "time": retrieval_run.end_time})
         self._end_trace(retrieval_run)
         self._on_retriever_end(retrieval_run)
+        return retrieval_run
 
     def __deepcopy__(self, memo: dict) -> BaseTracer:
         """Deepcopy the tracer."""
@@ -461,8 +483,22 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Copy the tracer."""
         return self
 
+    def _on_run_create(self, run: Run) -> None:
+        """Process a run upon creation."""
+
+    def _on_run_update(self, run: Run) -> None:
+        """Process a run upon update."""
+
     def _on_llm_start(self, run: Run) -> None:
         """Process the LLM Run upon start."""
+
+    def _on_llm_new_token(
+        self,
+        run: Run,
+        token: str,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
+    ) -> None:
+        """Process new LLM token."""
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""
