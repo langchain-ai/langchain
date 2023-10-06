@@ -7,6 +7,7 @@ pip install bigframes
 import bigframes.pandas as bf
 
 from langchain import LLMChain, PromptTemplate
+from langchain.chains import BigFramesChain
 from langchain.llms.bigframesllm import BigFramesLLM
 
 TEST_CONNECTION = "bigframes-dev.us.bigframes-ml"
@@ -65,24 +66,6 @@ def test_bigframesllm_chained_run() -> None:
     prompt = PromptTemplate(template=template, input_variables=["question"])
     llm_chain = LLMChain(prompt=prompt, llm=llm)
     answer = llm_chain.run("What is BigFrames?")
-    print(answer)
-    assert answer.startswith(
-        " BigFrames is a distributed computing framework"
-        + " for processing massive data sets."
-    )
-
-def test_bigframesllm_chained_df_run() -> None:
-    """Test valid call to bigframesllm."""
-    session = bigframes_session()
-    llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
-    template = """Question: {question}
-    Answer: Let's think step by step."""
-
-    prompt = PromptTemplate(template=template, input_variables=["question"])
-    llm_chain = LLMChain(prompt=prompt, llm=llm)
-    # answer is a string
-    answer = llm_chain.run("What is BigFrames?")
-    print(answer)
     assert answer.startswith(
         " BigFrames is a distributed computing framework"
         + " for processing massive data sets."
@@ -98,8 +81,10 @@ def test_bigframesllm_chained_invoke() -> None:
 
     prompt = PromptTemplate(template=template, input_variables=["question"])
     llm_chain = LLMChain(prompt=prompt, llm=llm)
+
     # answer is a string
     answer = llm_chain.invoke({"question":"What is BigFrames?"})
+    print(answer)
     assert answer["question"] == "What is BigFrames?"
     assert answer["text"].startswith(
         " BigFrames is a distributed computing framework"
@@ -107,7 +92,7 @@ def test_bigframesllm_chained_invoke() -> None:
     )
 
 
-def test_bigframesllm_chained_batch() -> None:
+def test_bigframeschain_chained_call() -> None:
     """Test valid call to bigframesllm."""
     session = bigframes_session()
     llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
@@ -115,10 +100,74 @@ def test_bigframesllm_chained_batch() -> None:
     Answer: Let's think step by step."""
 
     prompt = PromptTemplate(template=template, input_variables=["question"])
+    llm_chain = BigFramesChain(prompt=prompt, llm=llm)
+
+    # answer is a BigFrames DataFrame
+    answer = llm_chain("What is BigFrames?")
+    print(answer)
+    assert "ml_generate_text_llm_result" in answer.columns
+    series = answer["ml_generate_text_llm_result"]
+    assert series[0].startswith(
+        " BigFrames is a distributed computing framework"
+        + " for processing massive data sets.")
+
+
+def test_bigframeschain_chained_run() -> None:
+    """Test valid call to bigframesllm."""
+    session = bigframes_session()
+    llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
+    template = """Question: {question}
+    Answer: Let's think step by step."""
+
+    prompt = PromptTemplate(template=template, input_variables=["question"])
+    llm_chain = BigFramesChain(prompt=prompt, llm=llm)
+
+    # answer is a BigFrames DataFrame
+    answer = llm_chain.run("What is BigFrames?")
+
+    print(answer)
+    assert "ml_generate_text_llm_result" in answer.columns
+    series = answer["ml_generate_text_llm_result"]
+    assert series[0].startswith(
+        " BigFrames is a distributed computing framework"
+        + " for processing massive data sets.")
+
+
+def test_bigframesllmchained_df_input_chained_run() -> None:
+    """Test valid call to bigframesllm."""
+    session = bigframes_session()
+    llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
+    template = """Generate Pandas sample code for DataFrame.{api_name}"""
+
+    prompt = PromptTemplate(template=template, input_variables=["api_name"])
     llm_chain = LLMChain(prompt=prompt, llm=llm)
+
+    ## read input from GCS
+    df_api = bf.read_csv("gs://cloud-samples-data/vertex-ai/bigframe/df.csv")
+
+    # answer is a BigFrames DataFrame
+    answer = llm_chain(df_api["API"])
+    # assert "ml_generate_text_llm_result" in answer['text'].columns
+    series = answer['text']
+    print(type(series))
+    print(series)
+
+
+# def test_bigframesllm_chained_batch() -> None:
+#     """Test valid call to bigframesllm."""
+#     session = bigframes_session()
+#     llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
+#     template = """Question: {question}
+#     Answer: Let's think step by step."""
+
+#     prompt = PromptTemplate(template=template, input_variables=["question"])
+#     llm_chain = LLMChain(prompt=prompt, llm=llm)
     # answer is a bigframes dataframe
     # answer = llm_chain.batch([{"question":"What is BigFrames?"},
     #                           {"question":"What is BigQuery?"}])
     # print(answer)
+
+
+
     
     
