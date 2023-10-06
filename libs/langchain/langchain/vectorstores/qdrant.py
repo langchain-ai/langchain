@@ -25,7 +25,7 @@ from typing import (
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -75,7 +75,7 @@ class Qdrant(VectorStore):
         .. code-block:: python
 
             from qdrant_client import QdrantClient
-            from langchain import Qdrant
+            from langchain.vectorstores import Qdrant
 
             client = QdrantClient()
             collection_name = "MyCollection"
@@ -1293,7 +1293,7 @@ class Qdrant(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Qdrant
+                from langchain.vectorstores import Qdrant
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
@@ -1469,7 +1469,7 @@ class Qdrant(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Qdrant
+                from langchain.vectorstores import Qdrant
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")

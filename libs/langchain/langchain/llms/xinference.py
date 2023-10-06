@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Generator, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Mapping, Optional, Union
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -11,55 +11,65 @@ if TYPE_CHECKING:
 class Xinference(LLM):
     """Wrapper for accessing Xinference's large-scale model inference service.
     To use, you should have the xinference library installed:
+
     .. code-block:: bash
 
-        pip install "xinference[all]"
+       pip install "xinference[all]"
 
     Check out: https://github.com/xorbitsai/inference
     To run, you need to start a Xinference supervisor on one server and Xinference workers on the other servers
+
     Example:
         To start a local instance of Xinference, run
-         .. code-block:: bash
 
-            $ xinference
+        .. code-block:: bash
+
+           $ xinference
 
         You can also deploy Xinference in a distributed cluster. Here are the steps:
+
         Starting the supervisor:
+
         .. code-block:: bash
 
-            $ xinference-supervisor
+           $ xinference-supervisor
 
         Starting the worker:
+
         .. code-block:: bash
 
-            $ xinference-worker
+           $ xinference-worker
 
     Then, launch a model using command line interface (CLI).
 
     Example:
+
     .. code-block:: bash
 
-            $ xinference launch -n orca -s 3 -q q4_0
+       $ xinference launch -n orca -s 3 -q q4_0
 
     It will return a model UID. Then, you can use Xinference with LangChain.
 
     Example:
-        .. code-block:: python
 
-            from langchain.llms import Xinference
+    .. code-block:: python
 
-            llm = Xinference(
-                server_url="http://0.0.0.0:9997",
-                model_uid = {model_uid} # replace model_uid with the model UID return from launching the model
-            )
+        from langchain.llms import Xinference
 
-            llm(
-                prompt="Q: where can we visit in the capital of France? A:",
-                generate_config={"max_tokens": 1024, "stream": True},
-            )
+        llm = Xinference(
+            server_url="http://0.0.0.0:9997",
+            model_uid = {model_uid} # replace model_uid with the model UID return from launching the model
+        )
+
+        llm(
+            prompt="Q: where can we visit in the capital of France? A:",
+            generate_config={"max_tokens": 1024, "stream": True},
+        )
 
     To view all the supported builtin models, run:
+
     .. code-block:: bash
+
         $ xinference list --all
 
     """  # noqa: E501
@@ -69,9 +79,14 @@ class Xinference(LLM):
     """URL of the xinference server"""
     model_uid: Optional[str]
     """UID of the launched model"""
+    model_kwargs: Dict[str, Any]
+    """Keyword arguments to be passed to xinference.LLM"""
 
     def __init__(
-        self, server_url: Optional[str] = None, model_uid: Optional[str] = None
+        self,
+        server_url: Optional[str] = None,
+        model_uid: Optional[str] = None,
+        **model_kwargs: Any,
     ):
         try:
             from xinference.client import RESTfulClient
@@ -81,10 +96,13 @@ class Xinference(LLM):
                 " with `pip install xinference`."
             ) from e
 
+        model_kwargs = model_kwargs or {}
+
         super().__init__(
             **{
                 "server_url": server_url,
                 "model_uid": model_uid,
+                "model_kwargs": model_kwargs,
             }
         )
 
@@ -107,6 +125,7 @@ class Xinference(LLM):
         return {
             **{"server_url": self.server_url},
             **{"model_uid": self.model_uid},
+            **{"model_kwargs": self.model_kwargs},
         }
 
     def _call(
@@ -130,6 +149,8 @@ class Xinference(LLM):
         model = self.client.get_model(self.model_uid)
 
         generate_config: "LlamaCppGenerateConfig" = kwargs.get("generate_config", {})
+
+        generate_config = {**self.model_kwargs, **generate_config}
 
         if stop:
             generate_config["stop"] = stop

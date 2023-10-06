@@ -2,9 +2,8 @@
 from copy import deepcopy
 from typing import Iterable, Iterator, List
 
-from langchain import schema
-from langchain.chat_loaders.base import ChatSession
-from langchain.schema.messages import BaseMessage
+from langchain.schema.chat import ChatSession
+from langchain.schema.messages import AIMessage, BaseMessage
 
 
 def merge_chat_runs_in_session(
@@ -65,7 +64,7 @@ def map_ai_messages_in_session(chat_sessions: ChatSession, sender: str) -> ChatS
     num_converted = 0
     for message in chat_sessions["messages"]:
         if message.additional_kwargs.get("sender") == sender:
-            message = schema.AIMessage(
+            message = AIMessage(
                 content=message.content,
                 additional_kwargs=message.additional_kwargs.copy(),
                 example=getattr(message, "example", None),

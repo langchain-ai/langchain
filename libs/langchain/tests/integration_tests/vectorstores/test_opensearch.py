@@ -8,7 +8,10 @@ from langchain.vectorstores.opensearch_vector_search import (
     SCRIPT_SCORING_SEARCH,
     OpenSearchVectorSearch,
 )
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from tests.integration_tests.vectorstores.fake_embeddings import (
+    ConsistentFakeEmbeddings,
+    FakeEmbeddings,
+)
 
 DEFAULT_OPENSEARCH_URL = "http://localhost:9200"
 texts = ["foo", "bar", "baz"]
@@ -85,6 +88,31 @@ def test_add_text() -> None:
     )
     docids = OpenSearchVectorSearch.add_texts(docsearch, text_input, metadatas)
     assert len(docids) == len(text_input)
+
+
+def test_add_embeddings() -> None:
+    """
+    Test add_embeddings, which accepts pre-built embeddings instead of
+     using inference for the texts.
+    This allows you to separate the embeddings text and the page_content
+     for better proximity between user's question and embedded text.
+    For example, your embedding text can be a question, whereas page_content
+     is the answer.
+    """
+    embeddings = ConsistentFakeEmbeddings()
+    text_input = ["foo1", "foo2", "foo3"]
+    metadatas = [{"page": i} for i in range(len(text_input))]
+
+    """In real use case, embedding_input can be questions for each text"""
+    embedding_input = ["foo2", "foo3", "foo1"]
+    embedding_vectors = embeddings.embed_documents(embedding_input)
+
+    docsearch = OpenSearchVectorSearch.from_texts(
+        ["filler"], embeddings, opensearch_url=DEFAULT_OPENSEARCH_URL
+    )
+    docsearch.add_embeddings(list(zip(text_input, embedding_vectors)), metadatas)
+    output = docsearch.similarity_search("foo1", k=1)
+    assert output == [Document(page_content="foo3", metadata={"page": 2})]
 
 
 def test_opensearch_script_scoring() -> None:
