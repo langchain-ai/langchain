@@ -902,7 +902,7 @@ class FAISS(VectorStore):
         metadatas: List[dict] | None = None,
         ids: List[str] | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> FAISS:
         """Construct FAISS wrapper from raw documents asynchronously.
 
         This is a user friendly interface that:
