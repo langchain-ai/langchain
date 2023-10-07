@@ -266,6 +266,8 @@ def get_openapi_chain(
             try:
                 spec = conversion(spec)  # type: ignore[arg-type]
                 break
+            except ImportError as e:
+                raise e
             except Exception:  # noqa: E722
                 pass
         if isinstance(spec, str):

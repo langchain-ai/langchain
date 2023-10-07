@@ -39,7 +39,7 @@ class Vectara(VectorStore):
         vectara_corpus_id: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
         vectara_api_timeout: int = 60,
-        source: Optional[str] = "langchain",
+        source: str = "langchain",
     ):
         """Initialize with Vectara API."""
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
