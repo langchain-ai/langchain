@@ -24,10 +24,10 @@ def _milvus_from_texts(
         drop_old=drop,
     )
 
-def _get_pks(
-        expr: str, docsearch: Milvus
-) -> List[Any]:
+
+def _get_pks(expr: str, docsearch: Milvus) -> List[Any]:
     return docsearch.get_ids(expr)
+
 
 def test_milvus() -> None:
     """Test end to end construction and search."""
@@ -112,6 +112,7 @@ def test_milvus_no_drop() -> None:
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6
 
+
 def test_milvus_get_pks() -> None:
     """Test end to end construction and get pks with expr"""
     texts = ["foo", "bar", "baz"]
@@ -120,6 +121,7 @@ def test_milvus_get_pks() -> None:
     expr = "id in [1,2]"
     output = _get_pks(expr, docsearch)
     assert len(output) == 2
+
 
 def test_milvus_delete_entities() -> None:
     """Test end to end construction and delete entities"""
@@ -130,6 +132,7 @@ def test_milvus_delete_entities() -> None:
     pks = _get_pks(expr, docsearch)
     result = docsearch.delete(pks)
     assert result is True
+
 
 def test_milvus_upsert_entities() -> None:
     """Test end to end construction and upsert entities"""
@@ -144,6 +147,7 @@ def test_milvus_upsert_entities() -> None:
     ]
     ids = docsearch.upsert(pks, documents)
     assert len(ids) == 2
+
 
 # if __name__ == "__main__":
 #     test_milvus()
