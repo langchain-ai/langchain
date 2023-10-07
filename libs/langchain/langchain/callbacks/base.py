@@ -1,7 +1,7 @@
 """Base callback handler that can be used to handle callbacks in langchain."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypeVar, Union
 from uuid import UUID
 
 from tenacity import RetryCallState
@@ -250,7 +250,7 @@ class BaseCallbackHandler(
     CallbackManagerMixin,
     RunManagerMixin,
 ):
-    """Base callback handler that can be used to handle callbacks from langchain."""
+    """Base callback handler that handles callbacks from LangChain."""
 
     raise_error: bool = False
 
@@ -288,7 +288,7 @@ class BaseCallbackHandler(
 
 
 class AsyncCallbackHandler(BaseCallbackHandler):
-    """Async callback handler that can be used to handle callbacks from langchain."""
+    """Async callback handler that handles callbacks from LangChain."""
 
     async def on_llm_start(
         self,
@@ -502,6 +502,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run on retriever error."""
 
 
+T = TypeVar("T", bound="BaseCallbackManager")
+
+
 class BaseCallbackManager(CallbackManagerMixin):
     """Base callback manager that handles callbacks from LangChain."""
 
@@ -526,6 +529,18 @@ class BaseCallbackManager(CallbackManagerMixin):
         self.inheritable_tags = inheritable_tags or []
         self.metadata = metadata or {}
         self.inheritable_metadata = inheritable_metadata or {}
+
+    def copy(self: T) -> T:
+        """Copy the callback manager."""
+        return self.__class__(
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
+        )
 
     @property
     def is_async(self) -> bool:

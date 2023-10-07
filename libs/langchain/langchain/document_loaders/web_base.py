@@ -2,7 +2,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Union
 
 import aiohttp
 import requests
@@ -39,68 +39,82 @@ def _build_metadata(soup: Any, url: str) -> dict:
 class WebBaseLoader(BaseLoader):
     """Load HTML pages using `urllib` and parse them with `BeautifulSoup'."""
 
-    web_paths: List[str]
-
-    requests_per_second: int = 2
-    """Max number of concurrent requests to make."""
-
-    default_parser: str = "html.parser"
-    """Default parser to use for BeautifulSoup."""
-
-    requests_kwargs: Dict[str, Any] = {}
-    """kwargs for requests"""
-
-    raise_for_status: bool = False
-    """Raise an exception if http status code denotes an error."""
-
-    bs_get_text_kwargs: Dict[str, Any] = {}
-    """kwargs for beatifulsoup4 get_text"""
-
     def __init__(
         self,
-        web_path: Union[str, List[str]],
+        web_path: Union[str, Sequence[str]] = "",
         header_template: Optional[dict] = None,
-        verify_ssl: Optional[bool] = True,
+        verify_ssl: bool = True,
         proxies: Optional[dict] = None,
-        continue_on_failure: Optional[bool] = False,
-    ):
-        """Initialize with webpage path."""
+        continue_on_failure: bool = False,
+        autoset_encoding: bool = True,
+        encoding: Optional[str] = None,
+        web_paths: Sequence[str] = (),
+        requests_per_second: int = 2,
+        default_parser: str = "html.parser",
+        requests_kwargs: Optional[Dict[str, Any]] = None,
+        raise_for_status: bool = False,
+        bs_get_text_kwargs: Optional[Dict[str, Any]] = None,
+        bs_kwargs: Optional[Dict[str, Any]] = None,
+        session: Any = None,
+    ) -> None:
+        """Initialize loader.
 
-        # TODO: Deprecate web_path in favor of web_paths, and remove this
-        # left like this because there are a number of loaders that expect single
-        # urls
-        if isinstance(web_path, str):
-            self.web_paths = [web_path]
-        elif isinstance(web_path, List):
-            self.web_paths = web_path
-
-        try:
-            import bs4  # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "bs4 package not found, please install it with " "`pip install bs4`"
+        Args:
+            web_paths: Web paths to load from.
+            requests_per_second: Max number of concurrent requests to make.
+            default_parser: Default parser to use for BeautifulSoup.
+            requests_kwargs: kwargs for requests
+            raise_for_status: Raise an exception if http status code denotes an error.
+            bs_get_text_kwargs: kwargs for beatifulsoup4 get_text
+            bs_kwargs: kwargs for beatifulsoup4 web page parsing
+        """
+        # web_path kept for backwards-compatibility.
+        if web_path and web_paths:
+            raise ValueError(
+                "Received web_path and web_paths. Only one can be specified. "
+                "web_path is deprecated, web_paths should be used."
             )
+        if web_paths:
+            self.web_paths = list(web_paths)
+        elif isinstance(web_path, str):
+            self.web_paths = [web_path]
+        elif isinstance(web_path, Sequence):
+            self.web_paths = list(web_path)
+        else:
+            raise TypeError(
+                f"web_path must be str or Sequence[str] got ({type(web_path)}) or"
+                f" web_paths must be Sequence[str] got ({type(web_paths)})"
+            )
+        self.requests_per_second = requests_per_second
+        self.default_parser = default_parser
+        self.requests_kwargs = requests_kwargs or {}
+        self.raise_for_status = raise_for_status
+        self.bs_get_text_kwargs = bs_get_text_kwargs or {}
+        self.bs_kwargs = bs_kwargs or {}
+        if session:
+            self.session = session
+        else:
+            session = requests.Session()
+            header_template = header_template or default_header_template.copy()
+            if not header_template.get("User-Agent"):
+                try:
+                    from fake_useragent import UserAgent
 
-        headers = header_template or default_header_template
-        if not headers.get("User-Agent"):
-            try:
-                from fake_useragent import UserAgent
-
-                headers["User-Agent"] = UserAgent().random
-            except ImportError:
-                logger.info(
-                    "fake_useragent not found, using default user agent."
-                    "To get a realistic header for requests, "
-                    "`pip install fake_useragent`."
-                )
-
-        self.session = requests.Session()
-        self.session.headers = dict(headers)
-        self.session.verify = verify_ssl
+                    header_template["User-Agent"] = UserAgent().random
+                except ImportError:
+                    logger.info(
+                        "fake_useragent not found, using default user agent."
+                        "To get a realistic header for requests, "
+                        "`pip install fake_useragent`."
+                    )
+            session.headers = dict(header_template)
+            session.verify = verify_ssl
+            if proxies:
+                session.proxies.update(proxies)
+            self.session = session
         self.continue_on_failure = continue_on_failure
-
-        if proxies:
-            self.session.proxies.update(proxies)
+        self.autoset_encoding = autoset_encoding
+        self.encoding = encoding
 
     @property
     def web_path(self) -> str:
@@ -190,11 +204,16 @@ class WebBaseLoader(BaseLoader):
                 else:
                     parser = self.default_parser
                 self._check_parser(parser)
-            final_results.append(BeautifulSoup(result, parser))
+            final_results.append(BeautifulSoup(result, parser, **self.bs_kwargs))
 
         return final_results
 
-    def _scrape(self, url: str, parser: Union[str, None] = None) -> Any:
+    def _scrape(
+        self,
+        url: str,
+        parser: Union[str, None] = None,
+        bs_kwargs: Optional[dict] = None,
+    ) -> Any:
         from bs4 import BeautifulSoup
 
         if parser is None:
@@ -208,8 +227,12 @@ class WebBaseLoader(BaseLoader):
         html_doc = self.session.get(url, **self.requests_kwargs)
         if self.raise_for_status:
             html_doc.raise_for_status()
-        html_doc.encoding = html_doc.apparent_encoding
-        return BeautifulSoup(html_doc.text, parser)
+
+        if self.encoding is not None:
+            html_doc.encoding = self.encoding
+        elif self.autoset_encoding:
+            html_doc.encoding = html_doc.apparent_encoding
+        return BeautifulSoup(html_doc.text, parser, **(bs_kwargs or {}))
 
     def scrape(self, parser: Union[str, None] = None) -> Any:
         """Scrape data from webpage and return it in BeautifulSoup format."""
@@ -217,7 +240,7 @@ class WebBaseLoader(BaseLoader):
         if parser is None:
             parser = self.default_parser
 
-        return self._scrape(self.web_path, parser)
+        return self._scrape(self.web_path, parser=parser, bs_kwargs=self.bs_kwargs)
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load text from the url(s) in web_path."""
@@ -236,10 +259,9 @@ class WebBaseLoader(BaseLoader):
 
         results = self.scrape_all(self.web_paths)
         docs = []
-        for i in range(len(results)):
-            soup = results[i]
+        for path, soup in zip(self.web_paths, results):
             text = soup.get_text(**self.bs_get_text_kwargs)
-            metadata = _build_metadata(soup, self.web_paths[i])
+            metadata = _build_metadata(soup, path)
             docs.append(Document(page_content=text, metadata=metadata))
 
         return docs

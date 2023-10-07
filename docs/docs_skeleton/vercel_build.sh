@@ -47,7 +47,7 @@ python3.11 -m venv .venv
 source .venv/bin/activate
 python3.11 -m pip install --upgrade pip
 python3.11 -m pip install -r vercel_requirements.txt
-cp -r extras/* docs_skeleton/docs
+python3.11 scripts/model_feat_table.py
 cd docs_skeleton
 nbdoc_build
-python3.11 generate_api_reference_links.py
+python3.11 ../scripts/generate_api_reference_links.py
