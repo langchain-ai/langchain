@@ -212,7 +212,7 @@ class SmartLLMChain(Chain):
                     HumanMessagePromptTemplate,
                     "You are a researcher tasked with investigating the "
                     f"{self.n_ideas} response options provided. List the flaws and "
-                    "faulty logic of each answer options. Let'w work this out in a step"
+                    "faulty logic of each answer option. Let's work this out in a step"
                     " by step way to be sure we have all the errors:",
                 ),
             ]
@@ -224,9 +224,9 @@ class SmartLLMChain(Chain):
                 (AIMessagePromptTemplate, "Critique: {critique}"),
                 (
                     HumanMessagePromptTemplate,
-                    "You are a resolved tasked with 1) finding which of "
+                    "You are a resolver tasked with 1) finding which of "
                     f"the {self.n_ideas} answer options the researcher thought was  "
-                    "best,2) improving that answer and 3) printing the answer in full. "
+                    "best, 2) improving that answer and 3) printing the answer in full. "
                     "Don't output anything for step 1 or 2, only the full answer in 3. "
                     "Let's work this out in a step by step way to be sure we have "
                     "the right answer:",
