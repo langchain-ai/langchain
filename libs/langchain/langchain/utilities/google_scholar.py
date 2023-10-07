@@ -84,7 +84,7 @@ class GoogleScholarAPIWrapper(BaseModel):
         if (
             self.top_k_results % 10 != 0
         ):  # from the last page we would only need k%10 results
-            # if k is not divisble by 10,
+            # if k is not divisible by 10,
             results = self.google_scholar_engine(  # type: ignore
                 {
                     "q": query,
