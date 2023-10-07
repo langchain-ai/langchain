@@ -90,7 +90,7 @@ class LLMRails(VectorStore):
         files_list: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> bool:
         """
         LLMRails provides a way to add documents directly via our API where
         pre-processing and chunking occurs internally in an optimal way
