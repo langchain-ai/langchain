@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union, cast
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.query_constructor.ir import (
     Comparator,
+    Comparison,
+    FilterDirective,
+    Operation,
     Operator,
     StructuredQuery,
 )
@@ -64,6 +67,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
         allowed_attributes: Optional[Sequence[str]] = None,
+        fix_invalid: bool = False,
     ) -> StructuredQueryOutputParser:
         """
         Create a structured query output parser from components.
@@ -75,12 +79,70 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         Returns:
             a structured query output parser
         """
-        ast_parser = get_parser(
-            allowed_comparators=allowed_comparators,
-            allowed_operators=allowed_operators,
-            allowed_attributes=allowed_attributes,
-        )
-        return cls(ast_parse=ast_parser.parse)
+        ast_parse: Callable
+        if fix_invalid:
+
+            def ast_parse(raw_filter: str) -> Optional[FilterDirective]:
+                filter = cast(Optional[FilterDirective], get_parser().parse(raw_filter))
+                fixed = fix_filter_directive(
+                    filter,
+                    allowed_comparators=allowed_comparators,
+                    allowed_operators=allowed_operators,
+                    allowed_attributes=allowed_attributes,
+                )
+                return fixed
+
+        else:
+            ast_parse = get_parser(
+                allowed_comparators=allowed_comparators,
+                allowed_operators=allowed_operators,
+                allowed_attributes=allowed_attributes,
+            ).parse
+        return cls(ast_parse=ast_parse)
+
+
+def fix_filter_directive(
+    filter: Optional[FilterDirective],
+    *,
+    allowed_comparators: Optional[Sequence[Comparator]] = None,
+    allowed_operators: Optional[Sequence[Operator]] = None,
+    allowed_attributes: Optional[Sequence[str]] = None,
+) -> Optional[FilterDirective]:
+    if (
+        not (allowed_comparators or allowed_operators or allowed_attributes)
+    ) or not filter:
+        return filter
+
+    elif isinstance(filter, Comparison):
+        if allowed_comparators and filter.comparator not in allowed_comparators:
+            return None
+        if allowed_attributes and filter.attribute not in allowed_attributes:
+            return None
+        return filter
+    elif isinstance(filter, Operation):
+        if allowed_operators and filter.operator not in allowed_operators:
+            return None
+        args = [
+            fix_filter_directive(
+                arg,
+                allowed_comparators=allowed_comparators,
+                allowed_operators=allowed_operators,
+                allowed_attributes=allowed_attributes,
+            )
+            for arg in filter.arguments
+        ]
+        args = [arg for arg in args if arg is not None]
+        if not args:
+            return None
+        elif len(args) == 1:
+            return args[0]
+        else:
+            return Operation(
+                operator=filter.operator,
+                arguments=args,
+            )
+    else:
+        return filter
 
 
 def _format_attribute_info(info: Sequence[Union[AttributeInfo, dict]]) -> str:
@@ -218,6 +280,8 @@ def load_query_constructor_chain(
         allowed_operators=allowed_operators,
         allowed_attributes=allowed_attributes,
     )
+    # For backwards compatibility.
+    prompt.output_parser = output_parser
     return LLMChain(llm=llm, prompt=prompt, output_parser=output_parser, **kwargs)
 
 
@@ -231,6 +295,7 @@ def load_query_constructor_runnable(
     allowed_operators: Sequence[Operator] = tuple(Operator),
     enable_limit: bool = False,
     schema_prompt: Optional[BasePromptTemplate] = None,
+    fix_invalid: bool = False,
     **kwargs: Any,
 ) -> Runnable:
     """Load a query constructor runnable chain.
@@ -246,6 +311,8 @@ def load_query_constructor_runnable(
         enable_limit: Whether to enable the limit operator. Defaults to False.
         schema_prompt: Prompt for describing query schema. Should have string input
             variables allowed_comparators and allowed_operators.
+        fix_invalid: Whether to fix invalid filter directives by ignoring invalid
+            operators, comparators and attributes.
         **kwargs: Additional named params to pass to FewShotPromptTemplate init.
 
     Returns:
@@ -270,5 +337,6 @@ def load_query_constructor_runnable(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,
         allowed_attributes=allowed_attributes,
+        fix_invalid=fix_invalid,
     )
     return prompt | llm | output_parser
