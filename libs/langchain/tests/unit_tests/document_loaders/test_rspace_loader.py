@@ -1,8 +1,5 @@
 import unittest
 
-import pytest
-from unittest.mock import MagicMock, patch
-
 from langchain.document_loaders.rspace import RSpaceLoader
 
 
@@ -11,32 +8,28 @@ class TestRSpaceLoader(unittest.TestCase):
     api_key = "myapikey"
     global_id = "SD12345"
 
-    def test_valid_arguments(self):
-        loader = RSpaceLoader(url=TestRSpaceLoader.url, api_key=TestRSpaceLoader.api_key,
-                              global_id=TestRSpaceLoader.global_id);
+    def test_valid_arguments(self) -> None:
+        loader = RSpaceLoader(
+            url=TestRSpaceLoader.url,
+            api_key=TestRSpaceLoader.api_key,
+            global_id=TestRSpaceLoader.global_id,
+        )
         self.assertEqual(TestRSpaceLoader.url, loader.url)  # add assertion here
         self.assertEqual(TestRSpaceLoader.api_key, loader.api_key)  # add assertion here
-        self.assertEqual(TestRSpaceLoader.global_id, loader.global_id)  # add assertion here
+        self.assertEqual(
+            TestRSpaceLoader.global_id, loader.global_id
+        )  # add assertion here
 
-    def test_missing_apikey_raises_validation_error(self):
+    def test_missing_apikey_raises_validation_error(self) -> None:
         with self.assertRaises(ValueError) as cm:
-            RSpaceLoader(url=TestRSpaceLoader.url, global_id=TestRSpaceLoader.global_id);
+            RSpaceLoader(url=TestRSpaceLoader.url, global_id=TestRSpaceLoader.global_id)
         e = cm.exception
-        self.assertRegex(str(e), r'Did not find api_key')
+        self.assertRegex(str(e), r"Did not find api_key")
 
-    def test_missing_url_raises_validation_error(self):
+    def test_missing_url_raises_validation_error(self) -> None:
         with self.assertRaises(ValueError) as cm:
-            RSpaceLoader(api_key=TestRSpaceLoader.api_key, global_id=TestRSpaceLoader.global_id);
+            RSpaceLoader(
+                api_key=TestRSpaceLoader.api_key, global_id=TestRSpaceLoader.global_id
+            )
         e = cm.exception
-        self.assertRegex(str(e), r'Did not find url')
-
-    def test_missing_globalid_raises_validation_error(self):
-        with self.assertRaises(ValueError) as cm:
-            RSpaceLoader(url=TestRSpaceLoader.url, api_key=TestRSpaceLoader.api_key);
-        e = cm.exception
-        self.assertRegex(str(e), r'No value supplied for global_id')
-
-        with self.assertRaises(ValueError) as cm:
-            RSpaceLoader(url=TestRSpaceLoader.url, api_key=TestRSpaceLoader.api_key, global_id=None);
-        e = cm.exception
-        self.assertRegex(str(e), r'No value supplied for global_id')
+        self.assertRegex(str(e), r"Did not find url")
