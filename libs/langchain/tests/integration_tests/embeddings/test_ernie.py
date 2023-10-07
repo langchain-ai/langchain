@@ -1,28 +1,28 @@
-"""Test ERNIE Bot embeddings."""
+"""Test ERNIE embeddings."""
 
 import pytest
 
-from langchain.embeddings.erniebot import ERNIEBotEmbeddings
+from langchain.embeddings.ernie import ErnieEmbeddings
 
 
-def test_erniebot_embed_query() -> None:
+def test_ernie_embed_query() -> None:
     query = "foo"
-    embedding = ERNIEBotEmbeddings()
+    embedding = ErnieEmbeddings()
     output = embedding.embed_query(query)
     assert len(output) == 384
 
 
 @pytest.mark.asyncio
-async def test_erniebot_aquery() -> None:
+async def test_ernie_aquery() -> None:
     query = "foo"
-    embedding = ERNIEBotEmbeddings()
+    embedding = ErnieEmbeddings()
     output = await embedding.aembed_query(query)
     assert len(output) == 384
 
 
-def test_erniebot_embed_documents() -> None:
+def test_ernie_embed_documents() -> None:
     documents = ["foo", "bar"]
-    embedding = ERNIEBotEmbeddings()
+    embedding = ErnieEmbeddings()
     output = embedding.embed_documents(documents)
     assert len(output) == 2
     assert len(output[0]) == 384
@@ -30,9 +30,9 @@ def test_erniebot_embed_documents() -> None:
 
 
 @pytest.mark.asyncio
-async def test_erniebot_aembed_documents() -> None:
+async def test_ernie_aembed_documents() -> None:
     documents = ["foo", "bar"]
-    embedding = ERNIEBotEmbeddings()
+    embedding = ErnieEmbeddings()
     output = await embedding.aembed_documents(documents)
     assert len(output) == 2
     assert len(output[0]) == 384

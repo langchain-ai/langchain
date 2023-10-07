@@ -22,7 +22,7 @@ from langchain.chat_models.anyscale import ChatAnyscale
 from langchain.chat_models.azure_openai import AzureChatOpenAI
 from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from langchain.chat_models.bedrock import BedrockChat
-from langchain.chat_models.erniebot import ChatERNIEBot
+from langchain.chat_models.erniebot import ErnieBotChat
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.chat_models.fireworks import ChatFireworks
 from langchain.chat_models.google_palm import ChatGooglePalm
@@ -58,5 +58,5 @@ __all__ = [
     "ChatKonko",
     "QianfanChatEndpoint",
     "ChatFireworks",
-    "ChatERNIEBot",
+    "ErnieBotChat",
 ]

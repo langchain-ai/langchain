@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 _MessageDict = Dict[str, Any]
 
 
-class ChatERNIEBot(BaseChatModel):
+class ErnieBotChat(BaseChatModel):
     """ERNIE Bot Chat large language models API.
 
     To use, you should have the ``erniebot`` python package installed, and the
@@ -48,8 +48,8 @@ class ChatERNIEBot(BaseChatModel):
 
     Example:
         .. code-block:: python
-            from langchain.chat_models import ChatERNIEBot
-            erniebot_chat = ChatERNIEBot(model="ernie-bot")
+            from langchain.chat_models import ErnieBotChat
+            erniebot_chat = ErnieBotChat(model="ernie-bot")
     """
 
     client: Any = None
@@ -317,7 +317,7 @@ class ChatERNIEBot(BaseChatModel):
 
 
 def _create_completion_with_retry(
-    llm: ChatERNIEBot,
+    llm: ErnieBotChat,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
@@ -331,7 +331,7 @@ def _create_completion_with_retry(
 
 
 async def _acreate_completion_with_retry(
-    llm: ChatERNIEBot,
+    llm: ErnieBotChat,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
@@ -345,7 +345,7 @@ async def _acreate_completion_with_retry(
 
 
 def _create_retry_decorator(
-    llm: ChatERNIEBot,
+    llm: ErnieBotChat,
     run_manager: Optional[
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,

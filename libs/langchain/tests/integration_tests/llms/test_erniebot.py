@@ -4,20 +4,20 @@ from typing import Generator
 
 import pytest
 
-from langchain.llms.erniebot import ERNIEBot
+from langchain.llms.erniebot import ErnieBot
 from langchain.schema import LLMResult
 
 
 def test_erniebot_call() -> None:
     """Test valid call."""
-    llm = ERNIEBot()
+    llm = ErnieBot()
     output = llm("Hi, erniebot.")
     assert isinstance(output, str)
 
 
 def test_erniebot_generate() -> None:
     """Test generation."""
-    llm = ERNIEBot()
+    llm = ErnieBot()
     output = llm.generate(["Hi, erniebot."])
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations, list)
@@ -26,7 +26,7 @@ def test_erniebot_generate() -> None:
 @pytest.mark.asyncio
 async def test_erniebot_agenerate() -> None:
     """Test asynchronous generation."""
-    llm = ERNIEBot()
+    llm = ErnieBot()
     output = await llm.agenerate(["Hi, erniebot."])
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations, list)
@@ -34,7 +34,7 @@ async def test_erniebot_agenerate() -> None:
 
 def test_erniebot_streaming_generate() -> None:
     """Test generation with streaming enabled."""
-    llm = ERNIEBot(streaming=True)
+    llm = ErnieBot(streaming=True)
     output = llm.generate(["Write a joke."])
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations, list)
@@ -42,7 +42,7 @@ def test_erniebot_streaming_generate() -> None:
 
 def test_erniebot_stream() -> None:
     """Test streaming."""
-    llm = ERNIEBot()
+    llm = ErnieBot()
     output = llm.stream("Write a joke.")
     assert isinstance(output, Generator)
     for res in output:
@@ -52,7 +52,7 @@ def test_erniebot_stream() -> None:
 @pytest.mark.asyncio
 async def test_erniebot_astream() -> None:
     """Test asynchronous streaming."""
-    llm = ERNIEBot()
+    llm = ErnieBot()
     output = llm.astream("Write a joke.")
     async for res in output:
         assert isinstance(res, str)

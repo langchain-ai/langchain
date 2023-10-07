@@ -2,7 +2,7 @@
 
 import pytest
 
-from langchain.chat_models.erniebot import ChatERNIEBot
+from langchain.chat_models.erniebot import ErnieBotChat
 from langchain.schema import (
     ChatGeneration,
     LLMResult,
@@ -16,7 +16,7 @@ from langchain.schema.messages import (
 
 def test_erniebot_call() -> None:
     """Test valid call."""
-    chat = ChatERNIEBot()
+    chat = ErnieBotChat()
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, BaseMessage)
@@ -25,7 +25,7 @@ def test_erniebot_call() -> None:
 
 def test_erniebot_generate() -> None:
     """Test generation."""
-    chat = ChatERNIEBot()
+    chat = ErnieBotChat()
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -41,7 +41,7 @@ def test_erniebot_generate() -> None:
 @pytest.mark.asyncio
 async def test_erniebot_agenerate() -> None:
     """Test asynchronous generation."""
-    chat = ChatERNIEBot()
+    chat = ErnieBotChat()
     message = HumanMessage(content="Hello")
     response = await chat.agenerate([[message]])
     assert isinstance(response, LLMResult)
@@ -56,7 +56,7 @@ async def test_erniebot_agenerate() -> None:
 
 def test_erniebot_stream() -> None:
     """Test streaming."""
-    chat = ChatERNIEBot()
+    chat = ErnieBotChat()
     for chunk in chat.stream("Write a joke."):
         assert isinstance(chunk.content, str)
 
@@ -64,14 +64,14 @@ def test_erniebot_stream() -> None:
 @pytest.mark.asyncio
 async def test_erniebot_astream() -> None:
     """Test asynchronous streaming."""
-    chat = ChatERNIEBot()
+    chat = ErnieBotChat()
     async for chunk in chat.astream("Write a joke."):
         assert isinstance(chunk.content, str)
 
 
 def test_erniebot_params() -> None:
     """Test setting parameters."""
-    chat = ChatERNIEBot(model="ernie-bot-turbo", temperature=0.7)
+    chat = ErnieBotChat(model="ernie-bot-turbo", temperature=0.7)
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, BaseMessage)
@@ -80,7 +80,7 @@ def test_erniebot_params() -> None:
 
 def test_erniebot_chat_history() -> None:
     """Test that multiple messages works."""
-    chat = ChatERNIEBot()
+    chat = ErnieBotChat()
     response = chat(
         messages=[
             HumanMessage(content="Hello."),

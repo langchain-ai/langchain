@@ -27,7 +27,7 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-class ERNIEBot(LLM):
+class ErnieBot(LLM):
     """ERNIE Bot large language models.
 
     To use, you should have the ``erniebot`` python package installed, and the
@@ -37,8 +37,8 @@ class ERNIEBot(LLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms import ERNIEBot
-            erniebot = ERNIEBot(model="ernie-bot")
+            from langchain.llms import ErnieBot
+            erniebot = ErnieBot(model="ernie-bot")
     """
 
     client: Any = None
@@ -215,7 +215,7 @@ class ERNIEBot(LLM):
 
 
 def _create_completion_with_retry(
-    llm: ERNIEBot,
+    llm: ErnieBot,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
@@ -229,7 +229,7 @@ def _create_completion_with_retry(
 
 
 async def _acreate_completion_with_retry(
-    llm: ERNIEBot,
+    llm: ErnieBot,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
@@ -243,7 +243,7 @@ async def _acreate_completion_with_retry(
 
 
 def _create_retry_decorator(
-    llm: ERNIEBot,
+    llm: ErnieBot,
     run_manager: Optional[
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,

@@ -10,8 +10,8 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-class ERNIEBotEmbeddings(BaseModel, Embeddings):
-    """ERNIE Bot embedding models.
+class ErnieEmbeddings(BaseModel, Embeddings):
+    """ERNIE embedding models.
 
     To use, you should have the ``erniebot`` python package installed, and the
     environment variable ``EB_ACCESS_TOKEN`` set with your AI Studio access
@@ -19,8 +19,8 @@ class ERNIEBotEmbeddings(BaseModel, Embeddings):
 
     Example:
         .. code-block:: python
-            from langchain.embeddings import ERNIEBotEmbeddings
-            erniebot_embeddings = ERNIEBotEmbeddings(model="ernie-bot")
+            from langchain.embeddings import ErnieEmbeddings
+            ernie_embeddings = ErnieEmbeddings()
     """
 
     client: Any = None
