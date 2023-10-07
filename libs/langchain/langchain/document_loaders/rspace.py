@@ -22,7 +22,7 @@ class RSpaceLoader(BaseLoader):
     def __init__(
         self, global_id: str, api_key: Optional[str] = None, url: Optional[str] = None
     ):
-        """api_key: RSpace API key - can also e supplied as environment variable
+        """api_key: RSpace API key - can also be supplied as environment variable
         'RSPACE_API_KEY'
         url: str
         The URL of your RSpace instance - can also be supplied as environment
@@ -104,7 +104,6 @@ class RSpaceLoader(BaseLoader):
     def _load_pdf(self) -> Iterator[Document]:
         cli, field_content = self._create_rspace_client()
         file_info = cli.get_file_info(self.global_id)
-        print(file_info)
         _, ext = os.path.splitext(file_info["name"])
         if ext.lower() == ".pdf":
             outfile = f"{self.global_id}.pdf"
