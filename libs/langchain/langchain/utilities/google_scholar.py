@@ -73,29 +73,51 @@ class GoogleScholarAPIWrapper(BaseModel):
     def run(self, query: str) -> str:
         """Run query through GoogleSearchScholar and parse result"""
         total_results = []
-        p = 0
-        for p in range(1, self.top_k_results // 10 + 1):
-            # by default every page returns 10 results, therefore to get top_k results
-            # we need to get results from first k/10 pages
-            results = self.google_scholar_engine(  # type: ignore
-                {"q": query, "start": p, "hl": self.hl, "lr": self.lr}
-            ).get_dict()
-            total_results.extend(results.get("organic_results"))
+        page = 0
+        while page < max((self.top_k_results - 20), 1):
+            # We are getting 20 results from every page
+            # which is the max in order to reduce the number of API CALLS.
+            # 0 is the first page of results, 20 is the 2nd page of results,
+            # 40 is the 3rd page of results, etc.
+            results = (
+                self.google_scholar_engine(  # type: ignore
+                    {
+                        "q": query,
+                        "start": page,
+                        "hl": self.hl,
+                        "num": min(
+                            self.top_k_results, 20
+                        ),  # if top_k_result is less than 20.
+                        "lr": self.lr,
+                    }
+                )
+                .get_dict()
+                .get("organic_results", [])
+            )
+            total_results.extend(results)
+            if not results:  # No need to search for more pages if current page
+                # has returned no results
+                break
+            page += 20
         if (
-            self.top_k_results % 10 != 0
-        ):  # from the last page we would only need k%10 results
-            # if k is not divisible by 10,
-            results = self.google_scholar_engine(  # type: ignore
-                {
-                    "q": query,
-                    "start": p + 1,
-                    "num": self.top_k_results % 10,
-                    "hl": self.hl,
-                    "lr": self.lr,
-                }
-            ).get_dict()
-            total_results.extend(results.get("organic_results"))
-        if not results:
+            self.top_k_results % 20 != 0 and page > 20 and total_results
+        ):  # From the last page we would only need top_k_results%20 results
+            # if k is not divisible by 20.
+            results = (
+                self.google_scholar_engine(  # type: ignore
+                    {
+                        "q": query,
+                        "start": page,
+                        "num": self.top_k_results % 20,
+                        "hl": self.hl,
+                        "lr": self.lr,
+                    }
+                )
+                .get_dict()
+                .get("organic_results", [])
+            )
+            total_results.extend(results)
+        if not total_results:
             return "No good Google Scholar Result was found"
         docs = [
             f"Title: {result.get('title','')}\n"
