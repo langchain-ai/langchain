@@ -250,7 +250,7 @@ class BaseCallbackHandler(
     CallbackManagerMixin,
     RunManagerMixin,
 ):
-    """Base callback handler that can be used to handle callbacks from langchain."""
+    """Base callback handler that handles callbacks from LangChain."""
 
     raise_error: bool = False
 
@@ -288,7 +288,7 @@ class BaseCallbackHandler(
 
 
 class AsyncCallbackHandler(BaseCallbackHandler):
-    """Async callback handler that can be used to handle callbacks from langchain."""
+    """Async callback handler that handles callbacks from LangChain."""
 
     async def on_llm_start(
         self,
