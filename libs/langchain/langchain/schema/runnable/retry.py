@@ -89,12 +89,14 @@ class RunnableRetry(RunnableBinding[Input, Output]):
         input: Input,
         run_manager: "CallbackManagerForChainRun",
         config: RunnableConfig,
+        **kwargs: Any
     ) -> Output:
         for attempt in self._sync_retrying(reraise=True):
             with attempt:
                 result = super().invoke(
                     input,
                     self._patch_config(config, run_manager, attempt.retry_state),
+                    **kwargs,
                 )
             if attempt.retry_state.outcome and not attempt.retry_state.outcome.failed:
                 attempt.retry_state.set_result(result)
@@ -110,12 +112,14 @@ class RunnableRetry(RunnableBinding[Input, Output]):
         input: Input,
         run_manager: "AsyncCallbackManagerForChainRun",
         config: RunnableConfig,
+        **kwargs: Any
     ) -> Output:
         async for attempt in self._async_retrying(reraise=True):
             with attempt:
                 result = await super().ainvoke(
                     input,
                     self._patch_config(config, run_manager, attempt.retry_state),
+                    **kwargs,
                 )
             if attempt.retry_state.outcome and not attempt.retry_state.outcome.failed:
                 attempt.retry_state.set_result(result)
@@ -131,6 +135,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
         inputs: List[Input],
         run_manager: List["CallbackManagerForChainRun"],
         config: List[RunnableConfig],
+        **kwargs: Any
     ) -> List[Union[Output, Exception]]:
         results_map: Dict[int, Output] = {}
 
@@ -147,6 +152,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
                             pending(config), pending(run_manager), attempt.retry_state
                         ),
                         return_exceptions=True,
+                        **kwargs,
                     )
                     # Register the results of the inputs that have succeeded.
                     first_exception = None
@@ -195,6 +201,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
         inputs: List[Input],
         run_manager: List["AsyncCallbackManagerForChainRun"],
         config: List[RunnableConfig],
+        **kwargs: Any
     ) -> List[Union[Output, Exception]]:
         results_map: Dict[int, Output] = {}
 
@@ -211,6 +218,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
                             pending(config), pending(run_manager), attempt.retry_state
                         ),
                         return_exceptions=True,
+                        **kwargs,
                     )
                     # Register the results of the inputs that have succeeded.
                     first_exception = None

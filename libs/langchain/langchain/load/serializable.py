@@ -31,6 +31,13 @@ class SerializedNotImplemented(BaseSerialized):
     repr: Optional[str]
 
 
+def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
+    try:
+        return model.__fields__[key].get_default() != value
+    except Exception:
+        return True
+
+
 class Serializable(BaseModel, ABC):
     """Serializable base class."""
 
@@ -76,6 +83,13 @@ class Serializable(BaseModel, ABC):
 
     class Config:
         extra = "ignore"
+
+    def __repr_args__(self) -> Any:
+        return [
+            (k, v)
+            for k, v in super().__repr_args__()
+            if (k not in self.__fields__ or try_neq_default(v, k, self))
+        ]
 
     _lc_kwargs = PrivateAttr(default_factory=dict)
 

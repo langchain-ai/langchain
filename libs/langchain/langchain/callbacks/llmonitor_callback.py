@@ -19,6 +19,8 @@ user_props_ctx = ContextVar[Union[str, None]]("user_props_ctx", default=None)
 
 
 class UserContextManager:
+    """Context manager for LLMonitor user context."""
+
     def __init__(self, user_id: str, user_props: Any = None) -> None:
         user_ctx.set(user_id)
         user_props_ctx.set(user_props)
@@ -32,6 +34,15 @@ class UserContextManager:
 
 
 def identify(user_id: str, user_props: Any = None) -> UserContextManager:
+    """Builds an LLMonitor UserContextManager
+
+    Parameters:
+        - `user_id`: The user id.
+        - `user_props`: The user properties.
+
+    Returns:
+        A context manager that sets the user context.
+    """
     return UserContextManager(user_id, user_props)
 
 
@@ -149,7 +160,8 @@ def _parse_lc_messages(messages: Union[List[BaseMessage], Any]) -> List[Dict[str
 
 
 class LLMonitorCallbackHandler(BaseCallbackHandler):
-    """Initializes the `LLMonitorCallbackHandler`.
+    """Callback Handler for LLMonitor`.
+
     #### Parameters:
         - `app_id`: The app id of the app you want to report to. Defaults to
         `None`, which means that `LLMONITOR_APP_ID` will be used.

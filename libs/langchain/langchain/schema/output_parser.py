@@ -10,26 +10,31 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Type,
     TypeVar,
     Union,
 )
 
 from typing_extensions import get_args
 
-from langchain.load.serializable import Serializable
-from langchain.schema.messages import AnyMessage, BaseMessage
-from langchain.schema.output import ChatGeneration, Generation
+from langchain.schema.messages import AnyMessage, BaseMessage, BaseMessageChunk
+from langchain.schema.output import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    Generation,
+    GenerationChunk,
+)
 from langchain.schema.prompt import PromptValue
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 T = TypeVar("T")
 
 
-class BaseLLMOutputParser(Serializable, Generic[T], ABC):
+class BaseLLMOutputParser(Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
-    def parse_result(self, result: List[Generation]) -> T:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -40,7 +45,9 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
             Structured output.
         """
 
-    async def aparse_result(self, result: List[Generation]) -> T:
+    async def aparse_result(
+        self, result: List[Generation], *, partial: bool = False
+    ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -56,7 +63,7 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
 
 
 class BaseGenerationOutputParser(
-    BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
+    BaseLLMOutputParser, RunnableSerializable[Union[str, BaseMessage], T]
 ):
     """Base class to parse the output of an LLM call."""
 
@@ -65,7 +72,7 @@ class BaseGenerationOutputParser(
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> type[T]:
+    def OutputType(self) -> Type[T]:
         # even though mypy complains this isn't valid,
         # it is good enough for pydantic to build the schema from
         return T  # type: ignore[misc]
@@ -114,7 +121,9 @@ class BaseGenerationOutputParser(
             )
 
 
-class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]):
+class BaseOutputParser(
+    BaseLLMOutputParser, RunnableSerializable[Union[str, BaseMessage], T]
+):
     """Base class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
@@ -146,7 +155,7 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> type[T]:
+    def OutputType(self) -> Type[T]:
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == 1:
@@ -200,7 +209,7 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
                 run_type="parser",
             )
 
-    def parse_result(self, result: List[Generation]) -> T:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -226,7 +235,9 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
             Structured output.
         """
 
-    async def aparse_result(self, result: List[Generation]) -> T:
+    async def aparse_result(
+        self, result: List[Generation], *, partial: bool = False
+    ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -327,6 +338,74 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
             input, self._atransform, config, run_type="parser"
         ):
             yield chunk
+
+
+class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
+    """Base class for an output parser that can handle streaming input."""
+
+    diff: bool = False
+    """In streaming mode, whether to yield diffs between the previous and current
+    parsed output, or just the current parsed output.
+    """
+
+    def _diff(self, prev: Optional[T], next: T) -> T:
+        """Convert parsed outputs into a diff format. The semantics of this are
+        up to the output parser."""
+        raise NotImplementedError()
+
+    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[Any]:
+        prev_parsed = None
+        acc_gen = None
+        for chunk in input:
+            if isinstance(chunk, BaseMessageChunk):
+                chunk_gen: Generation = ChatGenerationChunk(message=chunk)
+            elif isinstance(chunk, BaseMessage):
+                chunk_gen = ChatGenerationChunk(
+                    message=BaseMessageChunk(**chunk.dict())
+                )
+            else:
+                chunk_gen = GenerationChunk(text=chunk)
+
+            if acc_gen is None:
+                acc_gen = chunk_gen
+            else:
+                acc_gen += chunk_gen
+
+            parsed = self.parse_result([acc_gen], partial=True)
+            if parsed is not None and parsed != prev_parsed:
+                if self.diff:
+                    yield self._diff(prev_parsed, parsed)
+                else:
+                    yield parsed
+                prev_parsed = parsed
+
+    async def _atransform(
+        self, input: AsyncIterator[Union[str, BaseMessage]]
+    ) -> AsyncIterator[T]:
+        prev_parsed = None
+        acc_gen = None
+        async for chunk in input:
+            if isinstance(chunk, BaseMessageChunk):
+                chunk_gen: Generation = ChatGenerationChunk(message=chunk)
+            elif isinstance(chunk, BaseMessage):
+                chunk_gen = ChatGenerationChunk(
+                    message=BaseMessageChunk(**chunk.dict())
+                )
+            else:
+                chunk_gen = GenerationChunk(text=chunk)
+
+            if acc_gen is None:
+                acc_gen = chunk_gen
+            else:
+                acc_gen += chunk_gen
+
+            parsed = self.parse_result([acc_gen], partial=True)
+            if parsed is not None and parsed != prev_parsed:
+                if self.diff:
+                    yield self._diff(prev_parsed, parsed)
+                else:
+                    yield parsed
+                prev_parsed = parsed
 
 
 class StrOutputParser(BaseTransformOutputParser[str]):

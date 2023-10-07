@@ -68,12 +68,3 @@ class EmbeddingsFilter(BaseDocumentCompressor):
             )
             included_idxs = included_idxs[similar_enough]
         return [stateful_documents[i] for i in included_idxs]
-
-    async def acompress_documents(
-        self,
-        documents: Sequence[Document],
-        query: str,
-        callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
-        """Filter down documents."""
-        raise NotImplementedError()
