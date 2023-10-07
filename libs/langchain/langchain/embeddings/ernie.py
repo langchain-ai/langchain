@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
 from langchain.pydantic_v1 import BaseModel, root_validator
@@ -35,13 +36,40 @@ class ErnieEmbeddings(BaseModel, Embeddings):
     request_timeout: Optional[int] = 60
     """How many seconds to wait for the server to send data before giving up."""
 
+    ernie_client_id: Optional[str] = None
+    ernie_client_secret: Optional[str] = None
+    """For raising deprecation warnings."""
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        values["aistudio_access_token"] = get_from_dict_or_env(
-            values,
-            "aistudio_access_token",
-            "EB_ACCESS_TOKEN",
-        )
+        try:
+            aistudio_access_token = get_from_dict_or_env(
+                values,
+                "aistudio_access_token",
+                "EB_ACCESS_TOKEN",
+            )
+        except ValueError as e:
+            if (
+                "ernie_client_id" in values
+                and values["ernie_client_id"]
+                or "ernie_client_secret" in values
+                and values["ernie_client_secret"]
+                or "ERNIE_CLIENT_ID" in os.environ
+                or "ERNIE_CLIENT_SECRET" in os.environ
+            ):
+                raise RuntimeError(
+                    "The authentication parameters "
+                    "`ernie_client_id` and `ernie_client_secret` are deprecated. "
+                    "For AI Studio users, please set "
+                    "`aistudio_access_token` to your AI Studio access token. "
+                    "For Qianfan users, please use "
+                    "`langchain.embeddings.QianfanEmbeddingsEndpoint` instead."
+                ) from e
+            else:
+                raise
+        else:
+            values["aistudio_access_token"] = aistudio_access_token
+
         try:
             import erniebot
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import (
     Any,
     AsyncIterator,
@@ -72,6 +73,10 @@ class ErnieBotChat(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
+    ernie_client_id: Optional[str] = None
+    ernie_client_secret: Optional[str] = None
+    """For raising deprecation warnings."""
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling ERNIE Bot API."""
@@ -104,11 +109,34 @@ class ErnieBotChat(BaseChatModel):
 
     @root_validator()
     def validate_enviroment(cls, values: Dict) -> Dict:
-        values["aistudio_access_token"] = get_from_dict_or_env(
-            values,
-            "aistudio_access_token",
-            "EB_ACCESS_TOKEN",
-        )
+        try:
+            aistudio_access_token = get_from_dict_or_env(
+                values,
+                "aistudio_access_token",
+                "EB_ACCESS_TOKEN",
+            )
+        except ValueError as e:
+            if (
+                "ernie_client_id" in values
+                and values["ernie_client_id"]
+                or "ernie_client_secret" in values
+                and values["ernie_client_secret"]
+                or "ERNIE_CLIENT_ID" in os.environ
+                or "ERNIE_CLIENT_SECRET" in os.environ
+            ):
+                raise RuntimeError(
+                    "The authentication parameters "
+                    "`ernie_client_id` and `ernie_client_secret` are deprecated. "
+                    "For AI Studio users, please set "
+                    "`aistudio_access_token` to your AI Studio access token. "
+                    "For Qianfan users, please use "
+                    "`langchain.chat_models.QianfanChatEndpoint` instead."
+                ) from e
+            else:
+                raise
+        else:
+            values["aistudio_access_token"] = aistudio_access_token
+
         try:
             import erniebot
 
