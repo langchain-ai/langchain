@@ -101,6 +101,18 @@ Structured Request:
 
 EXAMPLE_PROMPT = PromptTemplate.from_template(EXAMPLE_PROMPT_TEMPLATE)
 
+USER_SPECIFIED_EXAMPLE_PROMPT = PromptTemplate.from_template(
+    """\
+<< Example {i}. >>
+User Query:
+{user_query}
+
+Structured Request:
+```json
+{structured_request}
+```
+"""
+)
 
 DEFAULT_SCHEMA = """\
 << Structured Request Schema >>
@@ -176,6 +188,20 @@ Your goal is to structure the user's query to match the request schema provided 
 {schema}\
 """
 
+PREFIX_WITH_DATA_SOURCE = (
+    DEFAULT_PREFIX
+    + """
+
+<< Data Source >>
+```json
+{{{{
+    "content": "{content}",
+    "attributes": {attributes}
+}}}}
+```
+"""
+)
+
 DEFAULT_SUFFIX = """\
 << Example {i}. >>
 Data Source:
@@ -186,6 +212,14 @@ Data Source:
 }}}}
 ```
 
+User Query:
+{{query}}
+
+Structured Request:
+"""
+
+SUFFIX_WITHOUT_DATA_SOURCE = """\
+<< Example {i}. >>
 User Query:
 {{query}}
 

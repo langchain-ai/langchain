@@ -61,11 +61,13 @@ class QueryTransformer(Transformer):
         *args: Any,
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
+        allowed_attributes: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
         self.allowed_comparators = allowed_comparators
         self.allowed_operators = allowed_operators
+        self.allowed_attributes = allowed_attributes
 
     def program(self, *items: Any) -> tuple:
         return items
@@ -73,6 +75,11 @@ class QueryTransformer(Transformer):
     def func_call(self, func_name: Any, args: list) -> FilterDirective:
         func = self._match_func_name(str(func_name))
         if isinstance(func, Comparator):
+            if self.allowed_attributes and args[0] not in self.allowed_attributes:
+                raise ValueError(
+                    f"Received invalid attributes {args[0]}. Allowed attributes are "
+                    f"{self.allowed_attributes}"
+                )
             return Comparison(comparator=func, attribute=args[0], value=args[1])
         elif len(args) == 1 and func in (Operator.AND, Operator.OR):
             return args[0]
@@ -134,6 +141,7 @@ class QueryTransformer(Transformer):
 def get_parser(
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
+    allowed_attributes: Optional[Sequence[str]] = None,
 ) -> Lark:
     """
     Returns a parser for the query language.
@@ -151,6 +159,8 @@ def get_parser(
             "Cannot import lark, please install it with 'pip install lark'."
         )
     transformer = QueryTransformer(
-        allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
+        allowed_comparators=allowed_comparators,
+        allowed_operators=allowed_operators,
+        allowed_attributes=allowed_attributes,
     )
     return Lark(GRAMMAR, parser="lalr", transformer=transformer, start="program")

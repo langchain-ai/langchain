@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Callable, List, Optional, Sequence, Union
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.query_constructor.ir import (
@@ -18,7 +18,10 @@ from langchain.chains.query_constructor.prompt import (
     DEFAULT_SUFFIX,
     EXAMPLE_PROMPT,
     EXAMPLES_WITH_LIMIT,
+    PREFIX_WITH_DATA_SOURCE,
     SCHEMA_WITH_LIMIT_PROMPT,
+    SUFFIX_WITHOUT_DATA_SOURCE,
+    USER_SPECIFIED_EXAMPLE_PROMPT,
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.output_parsers.json import parse_and_check_json_markdown
@@ -60,6 +63,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         cls,
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
+        allowed_attributes: Optional[Sequence[str]] = None,
     ) -> StructuredQueryOutputParser:
         """
         Create a structured query output parser from components.
@@ -72,7 +76,9 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
             a structured query output parser
         """
         ast_parser = get_parser(
-            allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
+            allowed_comparators=allowed_comparators,
+            allowed_operators=allowed_operators,
+            allowed_attributes=allowed_attributes,
         )
         return cls(ast_parse=ast_parser.parse)
 
@@ -83,6 +89,24 @@ def _format_attribute_info(info: Sequence[Union[AttributeInfo, dict]]) -> str:
         i_dict = dict(i)
         info_dicts[i_dict.pop("name")] = i_dict
     return json.dumps(info_dicts, indent=4).replace("{", "{{").replace("}", "}}")
+
+
+def construct_examples(input_output_pairs: Sequence[Tuple[str, dict]]) -> List[dict]:
+    examples = []
+    for i, (_input, output) in enumerate(input_output_pairs):
+        structured_request = (
+            json.dumps(output, indent=4)
+            .replace("{", "{{")
+            .replace("}", "}}")
+            .replace('"', '"')
+        )
+        example = {
+            "i": i + 1,
+            "user_query": _input,
+            "structured_request": structured_request,
+        }
+        examples.append(example)
+    return examples
 
 
 def get_query_constructor_prompt(
@@ -114,20 +138,30 @@ def get_query_constructor_prompt(
         SCHEMA_WITH_LIMIT_PROMPT if enable_limit else DEFAULT_SCHEMA_PROMPT
     )
     schema_prompt = schema_prompt or default_schema_prompt
-    default_examples = EXAMPLES_WITH_LIMIT if enable_limit else DEFAULT_EXAMPLES
-    examples = examples or default_examples
+    attribute_str = _format_attribute_info(attribute_info)
     schema = schema_prompt.format(
         allowed_comparators=" | ".join(allowed_comparators),
         allowed_operators=" | ".join(allowed_operators),
     )
-    prefix = DEFAULT_PREFIX.format(schema=schema)
-    attribute_str = _format_attribute_info(attribute_info)
-    suffix = DEFAULT_SUFFIX.format(
-        i=len(examples) + 1, content=document_contents, attributes=attribute_str
-    )
+    if examples and isinstance(examples[0], tuple):
+        examples = construct_examples(examples)
+        example_prompt = USER_SPECIFIED_EXAMPLE_PROMPT
+        prefix = PREFIX_WITH_DATA_SOURCE.format(
+            schema=schema, content=document_contents, attributes=attribute_str
+        )
+        suffix = SUFFIX_WITHOUT_DATA_SOURCE.format(i=len(examples) + 1)
+    else:
+        examples = examples or (
+            EXAMPLES_WITH_LIMIT if enable_limit else DEFAULT_EXAMPLES
+        )
+        example_prompt = EXAMPLE_PROMPT
+        prefix = DEFAULT_PREFIX.format(schema=schema)
+        suffix = DEFAULT_SUFFIX.format(
+            i=len(examples) + 1, content=document_contents, attributes=attribute_str
+        )
     return FewShotPromptTemplate(
         examples=list(examples),
-        example_prompt=EXAMPLE_PROMPT,
+        example_prompt=example_prompt,
         input_variables=["query"],
         suffix=suffix,
         prefix=prefix,
@@ -174,8 +208,15 @@ def load_query_constructor_chain(
         enable_limit=enable_limit,
         schema_prompt=schema_prompt,
     )
+    allowed_attributes = []
+    for ainfo in attribute_info:
+        allowed_attributes.append(
+            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+        )
     output_parser = StructuredQueryOutputParser.from_components(
-        allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
+        allowed_comparators=allowed_comparators,
+        allowed_operators=allowed_operators,
+        allowed_attributes=allowed_attributes,
     )
     return LLMChain(llm=llm, prompt=prompt, output_parser=output_parser, **kwargs)
 
@@ -220,7 +261,14 @@ def load_query_constructor_runnable(
         schema_prompt=schema_prompt,
         **kwargs,
     )
+    allowed_attributes = []
+    for ainfo in attribute_info:
+        allowed_attributes.append(
+            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+        )
     output_parser = StructuredQueryOutputParser.from_components(
-        allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
+        allowed_comparators=allowed_comparators,
+        allowed_operators=allowed_operators,
+        allowed_attributes=allowed_attributes,
     )
     return prompt | llm | output_parser
