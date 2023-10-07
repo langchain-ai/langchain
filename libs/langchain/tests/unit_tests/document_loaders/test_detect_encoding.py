@@ -31,6 +31,20 @@ def test_loader_detect_encoding_csv() -> None:
     """Test csv loader."""
     path = Path(__file__).parent.parent / "examples"
     files = path.glob("**/*.csv")
+
+    # Count the number of lines.
+    row_count = 0
+    for file in files:
+        encodings = detect_file_encodings(file)
+        for encoding in encodings:
+            try:
+                row_count += sum(1 for line in open(file, encoding=encoding.encoding))
+                break
+            except UnicodeDecodeError:
+                continue
+        # CSVLoader uses DictReader, and one line per file is a header, so subtract the number of files.
+        row_count -= 1
+
     loader = DirectoryLoader(str(path), glob="**/*.csv", loader_cls=CSVLoader)
     loader_detect_encoding = DirectoryLoader(
         str(path),
@@ -43,7 +57,7 @@ def test_loader_detect_encoding_csv() -> None:
         loader.load()
 
     docs = loader_detect_encoding.load()
-    assert len(docs) == len(list(files))
+    assert len(docs) == row_count
 
 
 @pytest.mark.skip(reason="slow test")
