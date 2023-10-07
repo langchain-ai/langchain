@@ -4,42 +4,43 @@ from pydantic import root_validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.pydantic_v1 import BaseModel
 from typing import Any, Dict, List, Optional, Iterator, Union
-from dotenv import load_dotenv
 from langchain.document_loaders import PyPDFLoader
 from langchain.utils import get_from_dict_or_env
 
-load_dotenv()
 
+class RSpaceLoader(BaseLoader):
+    """
+    Loads  content from RSpace notebooks, folders, documents or PDF Gallery files into
+    Langchain documents.
 
-class RSpaceLoader(BaseLoader, BaseModel):
-    """ Load files, notebooks, folders or documents from RSpace.
+    Maps  RSpace document <-> Langchain Document in 1-1. PDFs are imported using PyPDF.
 
-    Requires an RSpace API key which is obtainable from user's profile page
-    Also, needs RSpace Python SDK (`pip install rspace_client`)
-
-    RSpace documents map 1-1 to Langchain documents.
-
-    PDF attachments in the Gallery are parsed by PyPDFLoader (requires pypdf)
-
-    For more details of RSpace Electronic Lab Notebook please see https://www.researchspace.com
+    Requirements are rspace_client (`pip install rspace_client`) and PyPDF if importing PDF docs
+    (`pip install pypdf`).
 
     """
 
-    api_key: str
-    """RSpace API key - can be supplied as environment variable 'RSPACE_API_KEY' """
+    def __init__(self,  global_id:str =None,api_key:str =None, url:str = None):
+        """api_key: RSpace API key - can also e supplied as environment variable 'RSPACE_API_KEY'
+        url: str
+        The URL of your RSpace instance - can also be supplied as environment variable 'RSPACE_URL'
+        global_id: str
+         The global ID of the resource to load,
+        e.g. 'SD12344' (a single document); 'GL12345'(A PDF file in the gallery); 'NB4567' (a notebook);
+        'FL12244' (a folder)
+        """
+        args = {
+            'api_key':api_key,
+            'url':url,
+            'global_id':global_id
+        }
+        args = RSpaceLoader.validate_environment(args)
+        self.api_key = args['api_key']
+        self.url = args['url']
+        self.global_id = args['global_id']
 
-    url: str
-    """ The URL of your RSpace instance - can be supplied as environment variable 'RSPACE_URL'"""
-
-    global_id: str
-    """ The global ID of the resource to load, 
-    e.g. 'SD12344' (a single document); 'GL12345'(A PDF file in the gallery); 'NB4567' (a notebook);
-     'FL12244' (a folder)
-    """
-
-    @root_validator(pre=True)
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that API key and URL exists in environment."""
         values["api_key"] = get_from_dict_or_env(
@@ -112,7 +113,7 @@ class RSpaceLoader(BaseLoader, BaseModel):
         elif 'SD' in self.global_id:
             for d in self._load_structured_doc():
                 yield d
-        elif self.global_id[0:2] in ['FL, NB']:
+        elif self.global_id[0:2] in ['FL', 'NB']:
             for d in self._load_folder_tree():
                 yield d
         else:
