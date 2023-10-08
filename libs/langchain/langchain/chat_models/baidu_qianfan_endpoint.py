@@ -67,7 +67,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
             additional_kwargs["function_call"].pop("thoughts")
     else:
         additional_kwargs = {}
-    return AIMessage(content=content, additional_kwargs=additional_kwargs)
+    return AIMessage(
+        content=content,
+        additional_kwargs={**_dict.get("body", {}), **additional_kwargs},
+    )
 
 
 class QianfanChatEndpoint(BaseChatModel):
@@ -250,7 +253,10 @@ class QianfanChatEndpoint(BaseChatModel):
         lc_msg = _convert_dict_to_message(response_payload)
         gen = ChatGeneration(
             message=lc_msg,
-            generation_info=dict(finish_reason="stop"),
+            generation_info={
+                "finish_reason": "stop",
+                **response_payload.get("body", {}),
+            },
         )
         token_usage = response_payload.get("usage", {})
         llm_output = {"token_usage": token_usage, "model_name": self.model}
@@ -284,7 +290,10 @@ class QianfanChatEndpoint(BaseChatModel):
         generations = []
         gen = ChatGeneration(
             message=lc_msg,
-            generation_info=dict(finish_reason="stop"),
+            generation_info={
+                "finish_reason": "stop",
+                **response_payload.get("body", {}),
+            },
         )
         generations.append(gen)
         token_usage = response_payload.get("usage", {})
