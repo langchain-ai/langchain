@@ -96,7 +96,7 @@ class Runnable(Generic[Input, Output], ABC):
     execution, add tags and metadata for tracing and debugging etc.
 
     Runnables expose schematic information about their input, output and config via
-    the input_schema, output_schema and config_schema properties.
+    the input_schema property, the output_schema property and config_schema method.
 
     The LangChain Expression Language (LCEL) is a declarative way to compose Runnables
     into chains. Any chain constructed this way will automatically have sync, async,
@@ -184,11 +184,14 @@ class Runnable(Generic[Input, Output], ABC):
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
-        """Defines a list of configurable fields for this runnable."""
+        """List configurable fields for this runnable."""
         return []
 
     def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
         """The type of config this runnable accepts specified as a pydantic model.
+
+        To mark a field as configurable, see the `configurable_fields`
+        and `configurable_alternatives` methods.
 
         Args:
             include: A list of fields to include in the config schema.
