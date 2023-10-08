@@ -1,12 +1,13 @@
-import os
 import logging
+import os
 import tempfile
-from typing import Any, Iterator, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from typing import Any, Iterator, List
 
+logger = logging.getLogger(__name__)
 
 class BaiduBOSFileLoader(BaseLoader):
     """Load from `Baidu Cloud BOS` file."""
@@ -27,13 +28,11 @@ class BaiduBOSFileLoader(BaseLoader):
     def lazy_load(self) -> Iterator[Document]:
         """Load documents."""
         try:
-            from baidubce import exception
-            from baidubce.services import bos
-            from baidubce.services.bos import canned_acl
             from baidubce.services.bos.bos_client import BosClient
         except ImportError:
             raise ImportError(
-                "Please using `pip install bce-python-sdk` before import bos related package."
+                "Please using `pip install bce-python-sdk`" + 
+                " before import bos related package."
             )
 
         # Initialize BOS Client
@@ -51,5 +50,5 @@ class BaiduBOSFileLoader(BaseLoader):
                 documents = loader.load()
                 return iter(documents)
             except Exception as ex:
-                logger.error(f"load doucment error = {ex}")
+                logger.error(f"load document error = {ex}")
                 return iter([Document(page_content="")])

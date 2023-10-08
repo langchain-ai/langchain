@@ -1,9 +1,6 @@
-from typing import Any, Iterator, List
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.tencent_cos_file import TencentCOSFileLoader
-
+from typing import Any, Iterator, List
 
 class BaiduBOSDirectoryLoader(BaseLoader):
     """Load from `Baidu BOS directory`."""
@@ -24,9 +21,6 @@ class BaiduBOSDirectoryLoader(BaseLoader):
     def lazy_load(self) -> Iterator[Document]:
         """Load documents."""
         try:
-            from baidubce import exception
-            from baidubce.services import bos
-            from baidubce.services.bos import canned_acl
             from baidubce.services.bos.bos_client import BosClient
         except ImportError:
             raise ImportError(
@@ -37,7 +31,10 @@ class BaiduBOSDirectoryLoader(BaseLoader):
         marker = ""
         while True:
             response = client.list_objects(
-                bucket_name=self.bucket, prefix=self.prefix, marker=marker, max_keys=1000
+                bucket_name=self.bucket, 
+                prefix=self.prefix, 
+                marker=marker, 
+                max_keys=1000
             )
             contents_len = len(response.contents)
             contents.extend(response.contents)
