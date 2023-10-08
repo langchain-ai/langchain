@@ -13,7 +13,7 @@
         "_type": "regex_parser"
     },
     "partial_variables": {},
-    "template": "Given the following question and student answer, provide a correct answer and score the student answer.\nQuestion: {question}\nStudent Answer: {student_answer}\nCorrect Answer:",
+    "template": "Given the following question and student answer, provide a correct answer and score the student answer. Question: {question} Student Answer: {student_answer} Correct Answer:",
     "template_format": "f-string",
     "validate_template": true,
     "_type": "prompt"
