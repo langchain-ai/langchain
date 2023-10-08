@@ -65,6 +65,8 @@ def test_bigframesllm_chained_run() -> None:
 
     prompt = PromptTemplate(template=template, input_variables=["question"])
     llm_chain = LLMChain(prompt=prompt, llm=llm)
+
+    # answer is a string
     answer = llm_chain.run("What is BigFrames?")
     assert answer.startswith(
         " BigFrames is a distributed computing framework"
@@ -159,7 +161,7 @@ def test_bigframesllmchained_df_input_chained_run() -> None:
     prompt = PromptTemplate(template=template, input_variables=["question"])
     llm_chain = BigFramesChain(prompt=prompt, llm=llm)
 
-    ## read input from GCS
+    ## read input from BigFrames DataFrames
     df = bf.DataFrame(
         {
             "prompt": [
@@ -175,8 +177,3 @@ def test_bigframesllmchained_df_input_chained_run() -> None:
     assert "ml_generate_text_llm_result" in answer['text'].columns
     print(answer)
 
-
-
-
-    
-    
