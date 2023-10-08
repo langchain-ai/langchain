@@ -9,7 +9,7 @@ from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
 
 from langchain.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import List
 ```
 
@@ -28,11 +28,11 @@ class Joke(BaseModel):
     punchline: str = Field(description="answer to resolve the joke")
     
     # You can add custom validation logic easily with Pydantic.
-    @validator('setup')
-    def question_ends_with_question_mark(cls, field):
-        if field[-1] != '?':
+    @field_validator('setup')
+    def question_ends_with_question_mark(cls, value):
+        if value[-1] != '?':
             raise ValueError("Badly formed question!")
-        return field
+        return value
 ```
 
 
