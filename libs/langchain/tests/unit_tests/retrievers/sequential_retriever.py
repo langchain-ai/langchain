@@ -13,7 +13,6 @@ class SequentialRetriever(BaseRetriever):
         self,
         query: str,
     ) -> List[Document]:
-        print("HMMM")
         if self.response_index >= len(self.sequential_responses):
             return []
         else:
