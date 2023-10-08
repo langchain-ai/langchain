@@ -1976,7 +1976,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
     @property
     def OutputType(self) -> Any:
-        """The type of the output of this runnable as a type annotation."""""
+        """The type of the output of this runnable as a type annotation."""
         func = getattr(self, "func", None) or getattr(self, "afunc")
         try:
             sig = inspect.signature(func)
