@@ -112,7 +112,7 @@ class BigFramesLLM(BaseLLM):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Union[bf.DataFrame, bf.Series]:
+    ) -> bf.DataFrame:
         if isinstance(prompt, str):
             prompts_df = bigframes.pandas.Series([prompt])
             response = self.client.predict(
@@ -122,7 +122,6 @@ class BigFramesLLM(BaseLLM):
                 top_k=self.top_k,
                 top_p=self.top_p,
             )
-            # text = response[_TEXT_GENERATE_RESULT_COLUMN].to_pandas()[0]
             return response
         else:
             response = self.client.predict(
@@ -165,7 +164,7 @@ class BigFramesLLM(BaseLLM):
         **kwargs: Any,
     ) -> bf.DataFrame:
         """Run the LLM on the given prompt and input."""
-        if isinstance(prompts, List):
+        if not isinstance(prompts, (bf.DataFrame, bf.Series)):
             prompts_df = bigframes.pandas.DataFrame({"index": prompts})
         else:
             prompts_df = prompts
@@ -189,7 +188,8 @@ class BigFramesLLM(BaseLLM):
         if not isinstance(prompts, (bf.DataFrame, bf.Series)):
             prompt_strings = [p.to_string() for p in prompts]
             return self.generate_df(prompt_strings, stop=stop, callbacks=callbacks, **kwargs)
-        return self._generate_df(prompts=prompts)
+        else:
+            return self._generate_df(prompts=prompts)
     
 
     def _generate_df_helper(

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import warnings
+import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import bigframes
@@ -26,6 +27,9 @@ from langchain.schema import (
 )
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.utils.input import get_colored_text
+
+
+logger = logging.getLogger(__name__)
 
 class BigFramesChain(Chain):
     @classmethod
@@ -125,16 +129,18 @@ class BigFramesChain(Chain):
             )
         else:
             inputs = inputs
+            return self._call(inputs)
         try:
             outputs = (
                 self._call(inputs, run_manager=run_manager)
                 if new_arg_supported
                 else self._call(inputs)
             )
-            return outputs
         except BaseException as e:
             run_manager.on_chain_error(e)
             raise e
+        run_manager.on_chain_end(outputs)
+        return outputs
     
 
     def run(
@@ -181,13 +187,14 @@ class BigFramesChain(Chain):
                 chain.run(question=question, context=context)
                 # -> "The temperature in Boise is..."
         """
-
         if args and not kwargs:
             if len(args) != 1:
                 raise ValueError("`run` supports only one positional argument.")
+            logger.error("hello 1")
             return self(args[0], callbacks=callbacks, tags=tags, metadata=metadata)
 
         if kwargs and not args:
+            logger.error("hello 2")
             return self(kwargs, callbacks=callbacks, tags=tags, metadata=metadata)
 
         if not kwargs and not args:
@@ -204,7 +211,7 @@ class BigFramesChain(Chain):
 
     def _call(
         self,
-        inputs: List[Dict[str, Any], bf.DataFrame, bf.Series],
+        inputs: Union[Dict[str, Any], bf.DataFrame, bf.Series],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> bf.DataFrame:
         if not isinstance(inputs, (bf.DataFrame, bf.Series)):
@@ -242,7 +249,7 @@ class BigFramesChain(Chain):
         formatted2 = prompt_template[prompt_template.find("{"):]
         df_prompt = (formatted1 + input + formatted2)
         return df_prompt
-        
+    
     
     def prep_prompts(
         self,
@@ -271,31 +278,22 @@ class BigFramesChain(Chain):
         return prompts, stop
     
 
-    def prep_df_prompts(
-        self,
-        input_list: List[Dict[str, Any]],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Tuple[List[PromptValue], Optional[List[str]]]:
-        """Prepare prompts from inputs."""
-        stop = None
-        if len(input_list) == 0:
-            return [], stop
-        if "stop" in input_list[0]:
-            stop = input_list[0]["stop"]
-        prompts = []
-        for inputs in input_list:
-            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
-            prompt = self.prompt.format_prompt(**selected_inputs)
-            _colored_text = get_colored_text(prompt.to_string(), "green")
-            _text = "Prompt after formatting:\n" + _colored_text
-            if run_manager:
-                run_manager.on_text(_text, end="\n", verbose=self.verbose)
-            if "stop" in inputs and inputs["stop"] != stop:
-                raise ValueError(
-                    "If `stop` is present in any inputs, should be present in all."
-                )
-            prompts.append(prompt)
-        return prompts, stop
+    def predict(self, callbacks: Callbacks = None, **kwargs: Any) -> bf.DataFrame:
+        """Format prompt with kwargs and pass to LLM.
+
+        Args:
+            callbacks: Callbacks to pass to LLMChain
+            **kwargs: Keys to pass to prompt template.
+
+        Returns:
+            Completion from LLM.
+
+        Example:
+            .. code-block:: python
+
+                completion = llm.predict(adjective="funny")
+        """
+        return self(kwargs, callbacks=callbacks)
     
     @property
     def _chain_type(self) -> str:

@@ -140,32 +140,41 @@ def test_bigframesllmchained_df_input_chained_run() -> None:
     template = """Generate Pandas sample code for DataFrame.{api_name}"""
 
     prompt = PromptTemplate(template=template, input_variables=["api_name"])
-    llm_chain = LLMChain(prompt=prompt, llm=llm)
+    llm_chain = BigFramesChain(prompt=prompt, llm=llm)
 
     ## read input from GCS
     df_api = bf.read_csv("gs://cloud-samples-data/vertex-ai/bigframe/df.csv")
 
     # answer is a BigFrames DataFrame
-    answer = llm_chain(df_api["API"])
-    # assert "ml_generate_text_llm_result" in answer['text'].columns
-    series = answer['text']
-    print(type(series))
-    print(series)
+    answer = llm_chain.run(df_api["API"])
+    assert "ml_generate_text_llm_result" in answer.columns
+    print(answer)
 
 
-# def test_bigframesllm_chained_batch() -> None:
-#     """Test valid call to bigframesllm."""
-#     session = bigframes_session()
-#     llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
-#     template = """Question: {question}
-#     Answer: Let's think step by step."""
+def test_bigframesllmchained_df_input_chained_run() -> None:
+    session = bigframes_session()
+    llm = BigFramesLLM(session=session, connection=TEST_CONNECTION)
+    template = """Question: {question} Answer: Let's think step by step."""
+    
+    prompt = PromptTemplate(template=template, input_variables=["question"])
+    llm_chain = BigFramesChain(prompt=prompt, llm=llm)
 
-#     prompt = PromptTemplate(template=template, input_variables=["question"])
-#     llm_chain = LLMChain(prompt=prompt, llm=llm)
-    # answer is a bigframes dataframe
-    # answer = llm_chain.batch([{"question":"What is BigFrames?"},
-    #                           {"question":"What is BigQuery?"}])
-    # print(answer)
+    ## read input from GCS
+    df = bf.DataFrame(
+        {
+            "prompt": [
+                "What is BigQuery?",
+                "What is BQML?",
+                "What is BigQuery DataFrame?",
+            ],
+        }
+    )
+
+    # answer is a BigFrames DataFrame
+    answer = llm_chain.run(df["prompt"])
+    assert "ml_generate_text_llm_result" in answer['text'].columns
+    print(answer)
+
 
 
 
