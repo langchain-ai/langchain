@@ -2195,7 +2195,9 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
 
 
 class RunnableBinding(RunnableSerializable[Input, Output]):
-    """A runnable that delegates calls to another runnable with a set of kwargs."""
+    """
+    A runnable that delegates calls to another runnable with a set of kwargs.
+    """
 
     bound: Runnable[Input, Output]
 
