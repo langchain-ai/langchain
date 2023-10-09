@@ -53,7 +53,7 @@ from langchain.schema.runnable import (
     RunnableBranch,
     RunnableConfig,
     RunnableLambda,
-    RunnableMap,
+    RunnableParallel,
     RunnablePassthrough,
     RunnableSequence,
     RunnableWithFallbacks,
@@ -491,7 +491,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "properties": {"name": {"title": "Name", "type": "string"}},
     }
     assert seq_w_map.output_schema.schema() == {
-        "title": "RunnableMapOutput",
+        "title": "RunnableParallelOutput",
         "type": "object",
         "properties": {
             "original": {"title": "Original", "type": "string"},
@@ -593,7 +593,7 @@ def test_schema_complex_seq() -> None:
     )
 
     assert chain2.input_schema.schema() == {
-        "title": "RunnableMapInput",
+        "title": "RunnableParallelInput",
         "type": "object",
         "properties": {
             "person": {"title": "Person", "type": "string"},
@@ -1656,12 +1656,12 @@ async def test_stream_log_retriever() -> None:
         RunLogPatch(
             {
                 "op": "add",
-                "path": "/logs/RunnableMap",
+                "path": "/logs/RunnableParallel",
                 "value": {
                     "end_time": None,
                     "final_output": None,
                     "metadata": {},
-                    "name": "RunnableMap",
+                    "name": "RunnableParallel",
                     "start_time": "2023-01-01T00:00:00.000",
                     "streamed_output_str": [],
                     "tags": ["seq:step:1"],
@@ -1733,7 +1733,7 @@ async def test_stream_log_retriever() -> None:
         RunLogPatch(
             {
                 "op": "add",
-                "path": "/logs/RunnableMap/final_output",
+                "path": "/logs/RunnableParallel/final_output",
                 "value": {
                     "documents": [
                         Document(page_content="foo"),
@@ -1744,7 +1744,7 @@ async def test_stream_log_retriever() -> None:
             },
             {
                 "op": "add",
-                "path": "/logs/RunnableMap/end_time",
+                "path": "/logs/RunnableParallel/end_time",
                 "value": "2023-01-01T00:00:00.000",
             },
         ),
@@ -1792,8 +1792,8 @@ async def test_stream_log_retriever() -> None:
         "FakeListLLM:2",
         "Retriever",
         "RunnableLambda",
-        "RunnableMap",
-        "RunnableMap:2",
+        "RunnableParallel",
+        "RunnableParallel:2",
     ]
 
 
@@ -1977,7 +1977,7 @@ Question:
 
     assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
-    assert isinstance(chain.first, RunnableMap)
+    assert isinstance(chain.first, RunnableParallel)
     assert chain.middle == [prompt, chat]
     assert chain.last == parser
     assert dumps(chain, pretty=True) == snapshot
@@ -2013,7 +2013,7 @@ What is your name?"""
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 4
     map_run = parent_run.child_runs[0]
-    assert map_run.name == "RunnableMap"
+    assert map_run.name == "RunnableParallel"
     assert len(map_run.child_runs) == 3
 
 
@@ -2043,7 +2043,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]
-    assert isinstance(chain.last, RunnableMap)
+    assert isinstance(chain.last, RunnableParallel)
     assert dumps(chain, pretty=True) == snapshot
 
     # Test invoke
@@ -2074,7 +2074,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 3
     map_run = parent_run.child_runs[2]
-    assert map_run.name == "RunnableMap"
+    assert map_run.name == "RunnableParallel"
     assert len(map_run.child_runs) == 2
 
 
@@ -2142,11 +2142,9 @@ async def test_higher_order_lambda_runnable(
     english_chain = ChatPromptTemplate.from_template(
         "You are an english major. Answer the question: {question}"
     ) | FakeListLLM(responses=["2"])
-    input_map: Runnable = RunnableMap(
-        {  # type: ignore[arg-type]
-            "key": lambda x: x["key"],
-            "input": {"question": lambda x: x["question"]},
-        }
+    input_map: Runnable = RunnableParallel(
+        key=lambda x: x["key"],
+        input={"question": lambda x: x["question"]},
     )
 
     def router(input: Dict[str, Any]) -> Runnable:
@@ -2158,7 +2156,8 @@ async def test_higher_order_lambda_runnable(
             raise ValueError(f"Unknown key: {input['key']}")
 
     chain: Runnable = input_map | router
-    assert dumps(chain, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(chain, pretty=True) == snapshot
 
     result = chain.invoke({"key": "math", "question": "2 + 2"})
     assert result == "4"
@@ -2256,7 +2255,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]
-    assert isinstance(chain.last, RunnableMap)
+    assert isinstance(chain.last, RunnableParallel)
     assert dumps(chain, pretty=True) == snapshot
 
     # Test invoke
@@ -2293,7 +2292,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 3
     map_run = parent_run.child_runs[2]
-    assert map_run.name == "RunnableMap"
+    assert map_run.name == "RunnableParallel"
     assert len(map_run.child_runs) == 3
 
 
@@ -2460,12 +2459,12 @@ async def test_map_astream() -> None:
     assert final_state.state["logs"]["ChatPromptTemplate"][
         "final_output"
     ] == prompt.invoke({"question": "What is your name?"})
-    assert final_state.state["logs"]["RunnableMap"]["name"] == "RunnableMap"
+    assert final_state.state["logs"]["RunnableParallel"]["name"] == "RunnableParallel"
     assert sorted(final_state.state["logs"]) == [
         "ChatPromptTemplate",
         "FakeListChatModel",
         "FakeStreamingListLLM",
-        "RunnableMap",
+        "RunnableParallel",
         "RunnablePassthrough",
     ]
 
@@ -2505,11 +2504,11 @@ async def test_map_astream() -> None:
     assert final_state.state["logs"]["ChatPromptTemplate"]["final_output"] == (
         prompt.invoke({"question": "What is your name?"})
     )
-    assert final_state.state["logs"]["RunnableMap"]["name"] == "RunnableMap"
+    assert final_state.state["logs"]["RunnableParallel"]["name"] == "RunnableParallel"
     assert sorted(final_state.state["logs"]) == [
         "ChatPromptTemplate",
         "FakeStreamingListLLM",
-        "RunnableMap",
+        "RunnableParallel",
         "RunnablePassthrough",
     ]
 
@@ -2910,7 +2909,7 @@ def llm_chain_with_fallbacks() -> RunnableSequence:
     pass_llm = FakeListLLM(responses=["bar"])
 
     prompt = PromptTemplate.from_template("what did baz say to {buz}")
-    return RunnableMap({"buz": lambda x: x}) | (prompt | error_llm).with_fallbacks(
+    return RunnableParallel({"buz": lambda x: x}) | (prompt | error_llm).with_fallbacks(
         [prompt | pass_llm]
     )
 
