@@ -205,6 +205,12 @@ def _import_milvus() -> Any:
     return Milvus
 
 
+def _import_momento_vector_index() -> Any:
+    from langchain.vectorstores.momento_vector_index import MomentoVectorIndex
+
+    return MomentoVectorIndex
+
+
 def _import_mongodb_atlas() -> Any:
     from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 
@@ -446,6 +452,8 @@ def __getattr__(name: str) -> Any:
         return _import_meilisearch()
     elif name == "Milvus":
         return _import_milvus()
+    elif name == "MomentoVectorIndex":
+        return _import_momento_vector_index()
     elif name == "MongoDBAtlasVectorSearch":
         return _import_mongodb_atlas()
     elif name == "MyScaleSettings":
@@ -545,6 +553,7 @@ __all__ = [
     "MatchingEngine",
     "Meilisearch",
     "Milvus",
+    "MomentoVectorIndex",
     "MongoDBAtlasVectorSearch",
     "MyScale",
     "MyScaleSettings",
