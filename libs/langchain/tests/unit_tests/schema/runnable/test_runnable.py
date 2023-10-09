@@ -59,7 +59,7 @@ from langchain.schema.runnable import (
     RunnableWithFallbacks,
 )
 from langchain.schema.runnable.base import ConfigurableField, RunnableGenerator
-from langchain.schema.runnable.utils import add
+from langchain.schema.runnable.utils import RunnableStreamResetMarker, add
 from langchain.tools.base import BaseTool, tool
 from langchain.tools.json.tool import JsonListKeysTool, JsonSpec
 
@@ -2333,9 +2333,15 @@ def test_map_stream() -> None:
         {"chat": AIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
-    assert all(len(c.keys()) == 1 for c in streamed_chunks)
+    assert all(
+        len(c.keys()) == 1
+        for c in streamed_chunks
+        if not isinstance(c, RunnableStreamResetMarker)
+    )
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
+    assert isinstance(final_value, dict)
+    assert isinstance(final_value.get("chat"), AIMessageChunk)
+    assert final_value["chat"].content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == prompt.invoke(
         {"question": "What is your name?"}
@@ -2383,9 +2389,15 @@ def test_map_stream_iterator_input() -> None:
         {"chat": AIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
-    assert all(len(c.keys()) == 1 for c in streamed_chunks)
+    assert all(
+        len(c.keys()) == 1
+        for c in streamed_chunks
+        if not isinstance(c, RunnableStreamResetMarker)
+    )
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
+    assert isinstance(final_value, dict)
+    assert isinstance(final_value.get("chat"), AIMessageChunk)
+    assert final_value["chat"].content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == "i'm a textbot"
 
@@ -2428,9 +2440,15 @@ async def test_map_astream() -> None:
         {"chat": AIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
-    assert all(len(c.keys()) == 1 for c in streamed_chunks)
+    assert all(
+        len(c.keys()) == 1
+        for c in streamed_chunks
+        if not isinstance(c, RunnableStreamResetMarker)
+    )
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
+    assert isinstance(final_value, dict)
+    assert isinstance(final_value.get("chat"), AIMessageChunk)
+    assert final_value["chat"].content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == prompt.invoke(
         {"question": "What is your name?"}
@@ -2555,9 +2573,15 @@ async def test_map_astream_iterator_input() -> None:
         {"chat": AIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
-    assert all(len(c.keys()) == 1 for c in streamed_chunks)
+    assert all(
+        len(c.keys()) == 1
+        for c in streamed_chunks
+        if not isinstance(c, RunnableStreamResetMarker)
+    )
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
+    assert isinstance(final_value, dict)
+    assert isinstance(final_value.get("chat"), AIMessageChunk)
+    assert final_value["chat"].content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == llm_res
 
@@ -2621,14 +2645,16 @@ def test_deep_stream() -> None:
         chunks.append(chunk)
 
     assert len(chunks) == len("foo-lish")
-    assert "".join(chunks) == "foo-lish"
+    assert all(isinstance(c, str) for c in chunks)
+    assert "".join(cast(List[str], chunks)) == "foo-lish"
 
     chunks = []
     for chunk in (chain | RunnablePassthrough()).stream({"question": "What up"}):
         chunks.append(chunk)
 
     assert len(chunks) == len("foo-lish")
-    assert "".join(chunks) == "foo-lish"
+    assert all(isinstance(c, str) for c in chunks)
+    assert "".join(cast(List[str], chunks)) == "foo-lish"
 
 
 def test_deep_stream_assign() -> None:
@@ -2746,14 +2772,16 @@ async def test_deep_astream() -> None:
         chunks.append(chunk)
 
     assert len(chunks) == len("foo-lish")
-    assert "".join(chunks) == "foo-lish"
+    assert all(isinstance(c, str) for c in chunks)
+    assert "".join(cast(List[str], chunks)) == "foo-lish"
 
     chunks = []
     async for chunk in (chain | RunnablePassthrough()).astream({"question": "What up"}):
         chunks.append(chunk)
 
     assert len(chunks) == len("foo-lish")
-    assert "".join(chunks) == "foo-lish"
+    assert all(isinstance(c, str) for c in chunks)
+    assert "".join(cast(List[str], chunks)) == "foo-lish"
 
 
 @pytest.mark.asyncio
@@ -2867,7 +2895,8 @@ def test_runnable_sequence_transform() -> None:
         chunks.append(chunk)
 
     assert len(chunks) == len("foo-lish")
-    assert "".join(chunks) == "foo-lish"
+    assert all(isinstance(c, str) for c in chunks)
+    assert "".join(cast(List[str], chunks)) == "foo-lish"
 
 
 @pytest.mark.asyncio
@@ -2883,7 +2912,8 @@ async def test_runnable_sequence_atransform() -> None:
         chunks.append(chunk)
 
     assert len(chunks) == len("foo-lish")
-    assert "".join(chunks) == "foo-lish"
+    assert all(isinstance(c, str) for c in chunks)
+    assert "".join(cast(List[str], chunks)) == "foo-lish"
 
 
 @pytest.fixture()
@@ -2996,134 +3026,6 @@ def test_recursive_lambda() -> None:
 
     with pytest.raises(RecursionError):
         runnable.invoke(0, {"recursion_limit": 9})
-
-
-def test_retrying(mocker: MockerFixture) -> None:
-    def _lambda(x: int) -> Union[int, Runnable]:
-        if x == 1:
-            raise ValueError("x is 1")
-        elif x == 2:
-            raise RuntimeError("x is 2")
-        else:
-            return x
-
-    _lambda_mock = mocker.Mock(side_effect=_lambda)
-    runnable = RunnableLambda(_lambda_mock)
-
-    with pytest.raises(ValueError):
-        runnable.invoke(1)
-
-    assert _lambda_mock.call_count == 1
-    _lambda_mock.reset_mock()
-
-    with pytest.raises(ValueError):
-        runnable.with_retry(
-            stop_after_attempt=2,
-            retry_if_exception_type=(ValueError,),
-        ).invoke(1)
-
-    assert _lambda_mock.call_count == 2  # retried
-    _lambda_mock.reset_mock()
-
-    with pytest.raises(RuntimeError):
-        runnable.with_retry(
-            stop_after_attempt=2,
-            wait_exponential_jitter=False,
-            retry_if_exception_type=(ValueError,),
-        ).invoke(2)
-
-    assert _lambda_mock.call_count == 1  # did not retry
-    _lambda_mock.reset_mock()
-
-    with pytest.raises(ValueError):
-        runnable.with_retry(
-            stop_after_attempt=2,
-            wait_exponential_jitter=False,
-            retry_if_exception_type=(ValueError,),
-        ).batch([1, 2, 0])
-
-    # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
-    _lambda_mock.reset_mock()
-
-    output = runnable.with_retry(
-        stop_after_attempt=2,
-        wait_exponential_jitter=False,
-        retry_if_exception_type=(ValueError,),
-    ).batch([1, 2, 0], return_exceptions=True)
-
-    # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
-    assert len(output) == 3
-    assert isinstance(output[0], ValueError)
-    assert isinstance(output[1], RuntimeError)
-    assert output[2] == 0
-    _lambda_mock.reset_mock()
-
-
-@pytest.mark.asyncio
-async def test_async_retrying(mocker: MockerFixture) -> None:
-    def _lambda(x: int) -> Union[int, Runnable]:
-        if x == 1:
-            raise ValueError("x is 1")
-        elif x == 2:
-            raise RuntimeError("x is 2")
-        else:
-            return x
-
-    _lambda_mock = mocker.Mock(side_effect=_lambda)
-    runnable = RunnableLambda(_lambda_mock)
-
-    with pytest.raises(ValueError):
-        await runnable.ainvoke(1)
-
-    assert _lambda_mock.call_count == 1
-    _lambda_mock.reset_mock()
-
-    with pytest.raises(ValueError):
-        await runnable.with_retry(
-            stop_after_attempt=2,
-            wait_exponential_jitter=False,
-            retry_if_exception_type=(ValueError, KeyError),
-        ).ainvoke(1)
-
-    assert _lambda_mock.call_count == 2  # retried
-    _lambda_mock.reset_mock()
-
-    with pytest.raises(RuntimeError):
-        await runnable.with_retry(
-            stop_after_attempt=2,
-            wait_exponential_jitter=False,
-            retry_if_exception_type=(ValueError,),
-        ).ainvoke(2)
-
-    assert _lambda_mock.call_count == 1  # did not retry
-    _lambda_mock.reset_mock()
-
-    with pytest.raises(ValueError):
-        await runnable.with_retry(
-            stop_after_attempt=2,
-            wait_exponential_jitter=False,
-            retry_if_exception_type=(ValueError,),
-        ).abatch([1, 2, 0])
-
-    # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
-    _lambda_mock.reset_mock()
-
-    output = await runnable.with_retry(
-        stop_after_attempt=2,
-        wait_exponential_jitter=False,
-        retry_if_exception_type=(ValueError,),
-    ).abatch([1, 2, 0], return_exceptions=True)
-
-    # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
-    assert len(output) == 3
-    assert isinstance(output[0], ValueError)
-    assert isinstance(output[1], RuntimeError)
-    assert output[2] == 0
-    _lambda_mock.reset_mock()
 
 
 @freeze_time("2023-01-01")

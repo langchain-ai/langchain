@@ -89,7 +89,7 @@ class PromptTemplate(StringPromptTemplate):
             prompt = PromptTemplate.from_template(other)
             return self + prompt
         else:
-            raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
+            return NotImplemented
 
     @property
     def _prompt_type(self) -> str:

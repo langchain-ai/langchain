@@ -62,6 +62,7 @@ from langchain.schema.runnable.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
+    RunnableStreamResetMarker,
     accepts_config,
     accepts_run_manager,
     gather_with_concurrency,
@@ -344,7 +345,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Iterator[Output]:
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
         """
         Default implementation of stream, which calls invoke.
         Subclasses should override this method if they support streaming output.
@@ -356,7 +357,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Output]:
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
         """
         Default implementation of astream, which calls ainvoke.
         Subclasses should override this method if they support streaming output.
@@ -499,7 +500,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Iterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Iterator[Output]:
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
         """
         Default implementation of transform, which buffers input and then calls stream.
         Subclasses should override this method if they can start producing output while
@@ -525,7 +526,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: AsyncIterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Output]:
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
         """
         Default implementation of atransform, which buffers input and calls astream.
         Subclasses should override this method if they can start producing output while
@@ -819,12 +820,16 @@ class Runnable(Generic[Input, Output], ABC):
             else:
                 raise first_exception
 
+    @overload
     def _transform_stream_with_config(
         self,
         input: Iterator[Input],
         transformer: Union[
             Callable[[Iterator[Input]], Iterator[Output]],
-            Callable[[Iterator[Input], CallbackManagerForChainRun], Iterator[Output]],
+            Callable[
+                [Iterator[Input], CallbackManagerForChainRun],
+                Iterator[Output],
+            ],
             Callable[
                 [
                     Iterator[Input],
@@ -838,6 +843,59 @@ class Runnable(Generic[Input, Output], ABC):
         run_type: Optional[str] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
+        ...
+
+    @overload
+    def _transform_stream_with_config(
+        self,
+        input: Iterator[Input],
+        transformer: Union[
+            Callable[
+                [Iterator[Input]], Iterator[Union[Output, RunnableStreamResetMarker]]
+            ],
+            Callable[
+                [Iterator[Input], CallbackManagerForChainRun],
+                Iterator[Union[Output, RunnableStreamResetMarker]],
+            ],
+            Callable[
+                [
+                    Iterator[Input],
+                    CallbackManagerForChainRun,
+                    RunnableConfig,
+                ],
+                Iterator[Union[Output, RunnableStreamResetMarker]],
+            ],
+        ],
+        config: Optional[RunnableConfig],
+        run_type: Optional[str] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
+        ...
+
+    def _transform_stream_with_config(
+        self,
+        input: Iterator[Input],
+        transformer: Union[
+            Callable[
+                [Iterator[Input]], Iterator[Union[Output, RunnableStreamResetMarker]]
+            ],
+            Callable[
+                [Iterator[Input], CallbackManagerForChainRun],
+                Iterator[Union[Output, RunnableStreamResetMarker]],
+            ],
+            Callable[
+                [
+                    Iterator[Input],
+                    CallbackManagerForChainRun,
+                    RunnableConfig,
+                ],
+                Iterator[Union[Output, RunnableStreamResetMarker]],
+            ],
+        ],
+        config: Optional[RunnableConfig],
+        run_type: Optional[str] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
         """Helper method to transform an Iterator of Input values into an Iterator of
         Output values, with callbacks.
         Use this to implement `stream()` or `transform()` in Runnable subclasses."""
@@ -846,7 +904,7 @@ class Runnable(Generic[Input, Output], ABC):
         # Start the input iterator to ensure the input runnable starts before this one
         final_input: Optional[Input] = next(input_for_tracing, None)
         final_input_supported = True
-        final_output: Optional[Output] = None
+        final_output: Optional[Union[Output, RunnableStreamResetMarker]] = None
         final_output_supported = True
 
         config = ensure_config(config)
@@ -894,11 +952,15 @@ class Runnable(Generic[Input, Output], ABC):
         else:
             run_manager.on_chain_end(final_output, inputs=final_input)
 
-    async def _atransform_stream_with_config(
+    @overload
+    def _atransform_stream_with_config(
         self,
         input: AsyncIterator[Input],
         transformer: Union[
-            Callable[[AsyncIterator[Input]], AsyncIterator[Output]],
+            Callable[
+                [AsyncIterator[Input]],
+                AsyncIterator[Output],
+            ],
             Callable[
                 [AsyncIterator[Input], AsyncCallbackManagerForChainRun],
                 AsyncIterator[Output],
@@ -916,6 +978,61 @@ class Runnable(Generic[Input, Output], ABC):
         run_type: Optional[str] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
+        ...
+
+    @overload
+    def _atransform_stream_with_config(
+        self,
+        input: AsyncIterator[Input],
+        transformer: Union[
+            Callable[
+                [AsyncIterator[Input]],
+                AsyncIterator[Union[Output, RunnableStreamResetMarker]],
+            ],
+            Callable[
+                [AsyncIterator[Input], AsyncCallbackManagerForChainRun],
+                AsyncIterator[Union[Output, RunnableStreamResetMarker]],
+            ],
+            Callable[
+                [
+                    AsyncIterator[Input],
+                    AsyncCallbackManagerForChainRun,
+                    RunnableConfig,
+                ],
+                AsyncIterator[Union[Output, RunnableStreamResetMarker]],
+            ],
+        ],
+        config: Optional[RunnableConfig],
+        run_type: Optional[str] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
+        ...
+
+    async def _atransform_stream_with_config(
+        self,
+        input: AsyncIterator[Input],
+        transformer: Union[
+            Callable[
+                [AsyncIterator[Input]],
+                AsyncIterator[Union[Output, RunnableStreamResetMarker]],
+            ],
+            Callable[
+                [AsyncIterator[Input], AsyncCallbackManagerForChainRun],
+                AsyncIterator[Union[Output, RunnableStreamResetMarker]],
+            ],
+            Callable[
+                [
+                    AsyncIterator[Input],
+                    AsyncCallbackManagerForChainRun,
+                    RunnableConfig,
+                ],
+                AsyncIterator[Union[Output, RunnableStreamResetMarker]],
+            ],
+        ],
+        config: Optional[RunnableConfig],
+        run_type: Optional[str] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
         """Helper method to transform an Async Iterator of Input values into an Async
         Iterator of Output values, with callbacks.
         Use this to implement `astream()` or `atransform()` in Runnable subclasses."""
@@ -924,7 +1041,7 @@ class Runnable(Generic[Input, Output], ABC):
         # Start the input iterator to ensure the input runnable starts before this one
         final_input: Optional[Input] = await py_anext(input_for_tracing, None)
         final_input_supported = True
-        final_output: Optional[Output] = None
+        final_output: Optional[Union[Output, RunnableStreamResetMarker]] = None
         final_output_supported = True
 
         config = ensure_config(config)
@@ -1405,7 +1522,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         input: Iterator[Input],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
-    ) -> Iterator[Output]:
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
         steps = [self.first] + self.middle + [self.last]
 
         # transform the input stream of each step with the next
@@ -1429,7 +1546,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         input: AsyncIterator[Input],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
-    ) -> AsyncIterator[Output]:
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
         steps = [self.first] + self.middle + [self.last]
 
         # stream the last steps
@@ -1453,7 +1570,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         input: Iterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Iterator[Output]:
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
         yield from self._transform_stream_with_config(
             input, self._transform, config, **kwargs
         )
@@ -1463,7 +1580,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Iterator[Output]:
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
         yield from self.transform(iter([input]), config, **kwargs)
 
     async def atransform(
@@ -1471,7 +1588,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         input: AsyncIterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Output]:
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
         async for chunk in self._atransform_stream_with_config(
             input, self._atransform, config, **kwargs
         ):
@@ -1482,7 +1599,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Output]:
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
         async def input_aiter() -> AsyncIterator[Input]:
             yield input
 
@@ -1695,7 +1812,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             ]
             # Start the first iteration of each generator
             futures = {
-                executor.submit(next, generator): (step_name, generator)
+                executor.submit(next, generator): (  # type: ignore[arg-type]
+                    step_name,
+                    generator,
+                )
                 for step_name, generator in named_generators
             }
             # Yield chunks from each as they become available,
@@ -1708,10 +1828,12 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                     try:
                         chunk = AddableDict({step_name: future.result()})
                         yield chunk
-                        futures[executor.submit(next, generator)] = (
-                            step_name,
-                            generator,
-                        )
+                        futures[
+                            executor.submit(
+                                next,
+                                generator,  # type: ignore[arg-type]
+                            )
+                        ] = (step_name, generator)
                     except StopIteration:
                         pass
 
@@ -1731,7 +1853,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Dict[str, Any]]:
-        yield from self.transform(iter([input]), config)
+        yield from self.transform(iter([input]), config, **kwargs)
 
     async def _atransform(
         self,
@@ -1804,7 +1926,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         async def input_aiter() -> AsyncIterator[Input]:
             yield input
 
-        async for chunk in self.atransform(input_aiter(), config):
+        async for chunk in self.atransform(input_aiter(), config, **kwargs):
             yield chunk
 
 
@@ -2384,7 +2506,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Iterator[Output]:
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
         yield from self.bound.stream(
             input,
             self._merge_config(config),
@@ -2396,7 +2518,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Output]:
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
         async for item in self.bound.astream(
             input,
             self._merge_config(config),
@@ -2409,7 +2531,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         input: Iterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Iterator[Output]:
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
         yield from self.bound.transform(
             input,
             self._merge_config(config),
@@ -2421,7 +2543,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         input: AsyncIterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Output]:
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
         async for item in self.bound.atransform(
             input,
             self._merge_config(config),

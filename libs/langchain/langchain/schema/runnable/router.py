@@ -29,6 +29,7 @@ from langchain.schema.runnable.config import (
 )
 from langchain.schema.runnable.utils import (
     ConfigurableFieldSpec,
+    RunnableStreamResetMarker,
     gather_with_concurrency,
     get_unique_config_specs,
 )
@@ -182,7 +183,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         input: RouterInput,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Iterator[Output]:
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
         key = input["key"]
         actual_input = input["input"]
         if key not in self.runnables:
@@ -196,7 +197,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         input: RouterInput,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Output]:
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
         key = input["key"]
         actual_input = input["input"]
         if key not in self.runnables:

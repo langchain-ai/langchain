@@ -27,6 +27,7 @@ from langchain.schema.runnable.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
+    RunnableStreamResetMarker,
     gather_with_concurrency,
 )
 
@@ -162,7 +163,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Iterator[Output]:
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
         return self._prepare(config).stream(input, config, **kwargs)
 
     async def astream(
@@ -170,7 +171,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Output]:
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
         async for chunk in self._prepare(config).astream(input, config, **kwargs):
             yield chunk
 
@@ -179,7 +180,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         input: Iterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Iterator[Output]:
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
         return self._prepare(config).transform(input, config, **kwargs)
 
     async def atransform(
@@ -187,7 +188,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         input: AsyncIterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Output]:
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
         async for chunk in self._prepare(config).atransform(input, config, **kwargs):
             yield chunk
 

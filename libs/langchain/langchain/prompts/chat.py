@@ -403,7 +403,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             prompt = HumanMessagePromptTemplate.from_template(other)
             return ChatPromptTemplate(messages=self.messages + [prompt])
         else:
-            raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
+            return NotImplemented
 
     @root_validator(pre=True)
     def validate_input_variables(cls, values: dict) -> dict:

@@ -1,5 +1,6 @@
 from langchain.schema.messages import HumanMessageChunk
 from langchain.schema.output import ChatGenerationChunk, GenerationChunk
+from langchain.schema.runnable.utils import RunnableStreamResetMarker
 
 
 def test_generation_chunk() -> None:
@@ -50,3 +51,24 @@ def test_chat_generation_chunk() -> None:
         message=HumanMessageChunk(content="Hello, world!!"),
         generation_info={"foo": "bar", "baz": "foo"},
     ), "GenerationChunk + GenerationChunk should be a GenerationChunk with merged generation_info"  # noqa: E501
+
+    final = None
+    for chunk in [
+        ChatGenerationChunk(message=HumanMessageChunk(content="Hello, ")),
+        RunnableStreamResetMarker(),
+        ChatGenerationChunk(
+            message=HumanMessageChunk(content="world!"),
+            generation_info={"foo": "bar"},
+        ),
+        ChatGenerationChunk(
+            message=HumanMessageChunk(content="!"), generation_info={"baz": "foo"}
+        ),
+    ]:
+        if final is None:
+            final = chunk
+        else:
+            final = final + chunk
+    assert final == ChatGenerationChunk(
+        message=HumanMessageChunk(content="world!!"),
+        generation_info={"foo": "bar", "baz": "foo"},
+    ), "RunnableStreamResetMarker should reset accumulation"

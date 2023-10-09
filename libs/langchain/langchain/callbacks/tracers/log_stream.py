@@ -85,9 +85,7 @@ class RunLogPatch:
             state = jsonpatch.apply_patch(None, ops)
             return RunLog(*ops, state=state)
 
-        raise TypeError(
-            f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
-        )
+        return NotImplemented
 
     def __repr__(self) -> str:
         from pprint import pformat
@@ -115,9 +113,7 @@ class RunLog(RunLogPatch):
             state = jsonpatch.apply_patch(self.state, other.ops)
             return RunLog(*ops, state=state)
 
-        raise TypeError(
-            f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
-        )
+        return NotImplemented
 
     def __repr__(self) -> str:
         from pprint import pformat

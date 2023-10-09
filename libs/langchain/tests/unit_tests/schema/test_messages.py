@@ -6,6 +6,7 @@ from langchain.schema.messages import (
     FunctionMessageChunk,
     HumanMessageChunk,
 )
+from langchain.schema.runnable.utils import RunnableStreamResetMarker
 
 
 def test_message_chunks() -> None:
@@ -43,6 +44,35 @@ def test_message_chunks() -> None:
             }
         },
     ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"  # noqa: E501
+
+    final = None
+    for chunk in [
+        AIMessageChunk(
+            content="", additional_kwargs={"function_call": {"name": "web_search"}}
+        ),
+        RunnableStreamResetMarker(),
+        AIMessageChunk(
+            content="", additional_kwargs={"function_call": {"arguments": "{\n"}}
+        ),
+        AIMessageChunk(
+            content="",
+            additional_kwargs={
+                "function_call": {"arguments": '  "query": "turtles"\n}'}
+            },
+        ),
+    ]:
+        if final is None:
+            final = chunk
+        else:
+            final += chunk
+    assert final == AIMessageChunk(
+        content="",
+        additional_kwargs={
+            "function_call": {
+                "arguments": '{\n  "query": "turtles"\n}',
+            }
+        },
+    ), "StreamResetMarker should reset accumulation"
 
 
 def test_chat_message_chunks() -> None:

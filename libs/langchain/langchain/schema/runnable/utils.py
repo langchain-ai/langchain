@@ -23,6 +23,10 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Literal
+
+from langchain.load.serializable import Serializable
+
 Input = TypeVar("Input")
 # Output type should implement __concat__, as eg str, list, dict do
 Output = TypeVar("Output")
@@ -166,22 +170,28 @@ class AddableDict(Dict[str, Any]):
     """
 
     def __add__(self, other: AddableDict) -> AddableDict:
-        chunk = AddableDict(self)
-        for key in other:
-            if key not in chunk or chunk[key] is None:
-                chunk[key] = other[key]
-            elif other[key] is not None:
-                chunk[key] = chunk[key] + other[key]
-        return chunk
+        if isinstance(other, dict):
+            chunk = AddableDict(self)
+            for key in other:
+                if key not in chunk or chunk[key] is None:
+                    chunk[key] = other[key]
+                elif other[key] is not None:
+                    chunk[key] = chunk[key] + other[key]
+            return chunk
+        else:
+            return NotImplemented
 
     def __radd__(self, other: AddableDict) -> AddableDict:
-        chunk = AddableDict(other)
-        for key in self:
-            if key not in chunk or chunk[key] is None:
-                chunk[key] = self[key]
-            elif self[key] is not None:
-                chunk[key] = chunk[key] + self[key]
-        return chunk
+        if isinstance(other, dict):
+            chunk = AddableDict(other)
+            for key in self:
+                if key not in chunk or chunk[key] is None:
+                    chunk[key] = self[key]
+                elif self[key] is not None:
+                    chunk[key] = chunk[key] + self[key]
+            return chunk
+        else:
+            return NotImplemented
 
 
 _T_co = TypeVar("_T_co", covariant=True)
@@ -250,3 +260,15 @@ def get_unique_config_specs(
                 f"for {id}: {[first] + others}"
             )
     return unique
+
+
+class RunnableStreamResetMarker(Serializable):
+    marker: Literal["runnable_stream_reset"] = "runnable_stream_reset"
+
+    reason: Optional[str] = None
+
+    def __add__(self, other: Any) -> Any:
+        return other
+
+    def __radd__(self, other: Any) -> None:
+        return None

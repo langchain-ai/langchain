@@ -1,9 +1,15 @@
+import itertools
 import sys
-from typing import Callable
+from typing import Any, Callable, Iterable, Iterator
 
 import pytest
 
+from langchain.schema.messages import AIMessageChunk, HumanMessageChunk
+from langchain.schema.output import ChatGenerationChunk
 from langchain.schema.runnable.utils import (
+    AddableDict,
+    RunnableStreamResetMarker,
+    add,
     get_lambda_source,
     indent_lines_after_first,
 )
@@ -37,3 +43,91 @@ def test_indent_lines_after_first(text: str, prefix: str, expected_output: str) 
     """Test indent_lines_after_first function"""
     indented_text = indent_lines_after_first(text, prefix)
     assert indented_text == expected_output
+
+
+def roundrobin(*iterables: Iterable[Any]) -> Iterator[Any]:
+    "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
+    # Recipe credited to George Sakkis
+    num_active = len(iterables)
+    nexts = itertools.cycle(iter(it).__next__ for it in iterables)
+    while num_active:
+        try:
+            for next in nexts:
+                yield next()
+        except StopIteration:
+            # Remove the iterator we just exhausted from the cycle.
+            num_active -= 1
+            nexts = itertools.cycle(itertools.islice(nexts, num_active))
+
+
+def test_addable_dict() -> None:
+    gen_chunks = [
+        AddableDict({"gen": chunk})
+        for chunk in [
+            ChatGenerationChunk(message=HumanMessageChunk(content="Hello, ")),
+            RunnableStreamResetMarker(),
+            ChatGenerationChunk(
+                message=HumanMessageChunk(content="world!"),
+                generation_info={"foo": "bar"},
+            ),
+            ChatGenerationChunk(
+                message=HumanMessageChunk(content="!"), generation_info={"baz": "foo"}
+            ),
+        ]
+    ]
+    message_chunks = [
+        AddableDict({"msg": chunk})
+        for chunk in [
+            AIMessageChunk(
+                content="", additional_kwargs={"function_call": {"name": "web_search"}}
+            ),
+            RunnableStreamResetMarker(),
+            AIMessageChunk(
+                content="", additional_kwargs={"function_call": {"arguments": "{\n"}}
+            ),
+            AIMessageChunk(
+                content="",
+                additional_kwargs={
+                    "function_call": {"arguments": '  "query": "turtles"\n}'}
+                },
+            ),
+        ]
+    ]
+
+    final = add(roundrobin(gen_chunks, message_chunks))
+
+    assert final == AddableDict(
+        {
+            "gen": ChatGenerationChunk(
+                message=HumanMessageChunk(content="world!!"),
+                generation_info={"foo": "bar", "baz": "foo"},
+            ),
+            "msg": AIMessageChunk(
+                content="",
+                additional_kwargs={
+                    "function_call": {
+                        "arguments": '{\n  "query": "turtles"\n}',
+                    }
+                },
+            ),
+        }
+    )
+
+    final = add(itertools.chain(gen_chunks, message_chunks))
+
+    assert final == AddableDict(
+        {
+            "gen": ChatGenerationChunk(
+                message=HumanMessageChunk(content="world!!"),
+                generation_info={"foo": "bar", "baz": "foo"},
+            ),
+            "msg": AIMessageChunk(
+                content="",
+                additional_kwargs={
+                    "function_call": {
+                        "arguments": '{\n  "query": "turtles"\n}',
+                    }
+                },
+            ),
+        }
+    )

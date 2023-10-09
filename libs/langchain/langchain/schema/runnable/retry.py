@@ -1,7 +1,11 @@
+import asyncio
+import threading
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Dict,
+    Iterator,
     List,
     Optional,
     Tuple,
@@ -10,6 +14,7 @@ from typing import (
     Union,
     cast,
 )
+from langchain.schema.runnable.utils import RunnableStreamResetMarker
 
 from tenacity import (
     AsyncRetrying,
@@ -23,6 +28,8 @@ from tenacity import (
 
 from langchain.schema.runnable.base import Input, Output, RunnableBinding
 from langchain.schema.runnable.config import RunnableConfig, patch_config
+from langchain.utils.iter import safetee
+from langchain.utils.aiter import atee
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
@@ -262,5 +269,90 @@ class RunnableRetry(RunnableBinding[Input, Output]):
             self._abatch, inputs, config, return_exceptions=return_exceptions, **kwargs
         )
 
-    # stream() and transform() are not retried because retrying a stream
-    # is not very intuitive.
+    def _transform(
+        self,
+        input: Iterator[Input],
+        run_manager: "CallbackManagerForChainRun",
+        config: RunnableConfig,
+        **kwargs: Any
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
+        # Create copies of input iterators for each attempt
+        with safetee(
+            input, self.max_attempt_number, lock=threading.Lock()
+        ) as inputs_per_attempt:
+            for attempt in self._sync_retrying(reraise=True):
+                with attempt:
+                    # Reset the stream if this is not the first attempt
+                    if attempt.retry_state.attempt_number > 1:
+                        yield RunnableStreamResetMarker()
+
+                    # Yield all from this attempt
+                    yield from super().transform(
+                        inputs_per_attempt[attempt.retry_state.attempt_number - 1],
+                        self._patch_config(config, run_manager, attempt.retry_state),
+                        **kwargs,
+                    )
+
+    def transform(
+        self,
+        input: Iterator[Input],
+        config: RunnableConfig | None = None,
+        **kwargs: Any
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
+        yield from self._transform_stream_with_config(
+            input, self._transform, config, **kwargs
+        )
+
+    def stream(
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
+    ) -> Iterator[Union[Output, RunnableStreamResetMarker]]:
+        yield from self._transform_stream_with_config(
+            iter([input]), self._transform, config, **kwargs
+        )
+
+    async def _atransform(
+        self,
+        input: AsyncIterator[Input],
+        run_manager: "AsyncCallbackManagerForChainRun",
+        config: RunnableConfig,
+        **kwargs: Any
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
+        # Create copies of input iterators for each attempt
+        async with atee(
+            input, self.max_attempt_number, lock=asyncio.Lock()
+        ) as inputs_per_attempt:
+            async for attempt in self._async_retrying(reraise=True):
+                with attempt:
+                    # Reset the stream if this is not the first attempt
+                    if attempt.retry_state.attempt_number > 1:
+                        yield RunnableStreamResetMarker()
+
+                    # Yield all from this attempt
+                    async for chunk in super().atransform(
+                        inputs_per_attempt[attempt.retry_state.attempt_number - 1],
+                        self._patch_config(config, run_manager, attempt.retry_state),
+                        **kwargs,
+                    ):
+                        yield chunk
+
+    async def atransform(
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
+        async for chunk in self._atransform_stream_with_config(
+            input, self._atransform, config, **kwargs
+        ):
+            yield chunk
+
+    async def astream(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> AsyncIterator[Union[Output, RunnableStreamResetMarker]]:
+        async def input_aiter() -> AsyncIterator[Input]:
+            yield input
+
+        async for chunk in self._atransform_stream_with_config(
+            input_aiter(), self._atransform, config, **kwargs
+        ):
+            yield chunk

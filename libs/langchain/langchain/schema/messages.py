@@ -133,11 +133,7 @@ class BaseMessageChunk(BaseMessage):
                 ),
             )
         else:
-            raise TypeError(
-                'unsupported operand type(s) for +: "'
-                f"{self.__class__.__name__}"
-                f'" and "{other.__class__.__name__}"'
-            )
+            return NotImplemented
 
 
 class HumanMessage(BaseMessage):
