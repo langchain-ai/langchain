@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 
-import langchain
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
