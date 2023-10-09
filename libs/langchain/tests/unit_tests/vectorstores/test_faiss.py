@@ -29,6 +29,7 @@ def test_faiss() -> None:
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
+
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
 async def test_faiss_afrom_texts() -> None:
@@ -46,6 +47,7 @@ async def test_faiss_afrom_texts() -> None:
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = await docsearch.asimilarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
+
 
 @pytest.mark.requires("faiss")
 def test_faiss_vector_sim() -> None:
@@ -65,9 +67,10 @@ def test_faiss_vector_sim() -> None:
     output = docsearch.similarity_search_by_vector(query_vec, k=1)
     assert output == [Document(page_content="foo")]
 
+
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
-async def test_faiss_vector_sim() -> None:
+async def test_faiss_async_vector_sim() -> None:
     """Test vector similarity."""
     texts = ["foo", "bar", "baz"]
     docsearch = await FAISS.afrom_texts(texts, FakeEmbeddings())
@@ -83,6 +86,7 @@ async def test_faiss_vector_sim() -> None:
     query_vec = await FakeEmbeddings().aembed_query(text="foo")
     output = await docsearch.asimilarity_search_by_vector(query_vec, k=1)
     assert output == [Document(page_content="foo")]
+
 
 @pytest.mark.requires("faiss")
 def test_faiss_vector_sim_with_score_threshold() -> None:
@@ -102,6 +106,7 @@ def test_faiss_vector_sim_with_score_threshold() -> None:
     output = docsearch.similarity_search_by_vector(query_vec, k=2, score_threshold=0.2)
     assert output == [Document(page_content="foo")]
 
+
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
 async def test_faiss_vector_async_sim_with_score_threshold() -> None:
@@ -118,8 +123,11 @@ async def test_faiss_vector_async_sim_with_score_threshold() -> None:
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     query_vec = await FakeEmbeddings().aembed_query(text="foo")
-    output = await docsearch.asimilarity_search_by_vector(query_vec, k=2, score_threshold=0.2)
+    output = await docsearch.asimilarity_search_by_vector(
+        query_vec, k=2, score_threshold=0.2
+    )
     assert output == [Document(page_content="foo")]
+
 
 @pytest.mark.requires("faiss")
 def test_similarity_search_with_score_by_vector() -> None:
@@ -140,6 +148,7 @@ def test_similarity_search_with_score_by_vector() -> None:
     assert len(output) == 1
     assert output[0][0] == Document(page_content="foo")
 
+
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
 async def test_similarity_async_search_with_score_by_vector() -> None:
@@ -159,6 +168,7 @@ async def test_similarity_async_search_with_score_by_vector() -> None:
     output = await docsearch.asimilarity_search_with_score_by_vector(query_vec, k=1)
     assert len(output) == 1
     assert output[0][0] == Document(page_content="foo")
+
 
 @pytest.mark.requires("faiss")
 def test_similarity_search_with_score_by_vector_with_score_threshold() -> None:
@@ -184,9 +194,10 @@ def test_similarity_search_with_score_by_vector_with_score_threshold() -> None:
     assert output[0][0] == Document(page_content="foo")
     assert output[0][1] < 0.2
 
+
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
-async def test_similarity_async_search_with_score_by_vector_with_score_threshold() -> None:
+async def test_sim_asearch_with_score_by_vector_with_score_threshold() -> None:
     """Test vector similarity with score by vector."""
     texts = ["foo", "bar", "baz"]
     docsearch = await FAISS.afrom_texts(texts, FakeEmbeddings())
@@ -209,6 +220,7 @@ async def test_similarity_async_search_with_score_by_vector_with_score_threshold
     assert output[0][0] == Document(page_content="foo")
     assert output[0][1] < 0.2
 
+
 @pytest.mark.requires("faiss")
 def test_faiss_mmr() -> None:
     texts = ["foo", "foo", "fou", "foy"]
@@ -222,6 +234,7 @@ def test_faiss_mmr() -> None:
     assert output[0][0] == Document(page_content="foo")
     assert output[0][1] == 0.0
     assert output[1][0] != Document(page_content="foo")
+
 
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
@@ -238,6 +251,7 @@ async def test_faiss_async_mmr() -> None:
     assert output[0][1] == 0.0
     assert output[1][0] != Document(page_content="foo")
 
+
 @pytest.mark.requires("faiss")
 def test_faiss_mmr_with_metadatas() -> None:
     texts = ["foo", "foo", "fou", "foy"]
@@ -251,6 +265,7 @@ def test_faiss_mmr_with_metadatas() -> None:
     assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
     assert output[0][1] == 0.0
     assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
+
 
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
@@ -267,6 +282,7 @@ async def test_faiss_async_mmr_with_metadatas() -> None:
     assert output[0][1] == 0.0
     assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
 
+
 @pytest.mark.requires("faiss")
 def test_faiss_mmr_with_metadatas_and_filter() -> None:
     texts = ["foo", "foo", "fou", "foy"]
@@ -279,6 +295,7 @@ def test_faiss_mmr_with_metadatas_and_filter() -> None:
     assert len(output) == 1
     assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
     assert output[0][1] == 0.0
+
 
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
@@ -294,6 +311,7 @@ async def test_faiss_async_mmr_with_metadatas_and_filter() -> None:
     assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
     assert output[0][1] == 0.0
 
+
 @pytest.mark.requires("faiss")
 def test_faiss_mmr_with_metadatas_and_list_filter() -> None:
     texts = ["foo", "foo", "fou", "foy"]
@@ -307,6 +325,7 @@ def test_faiss_mmr_with_metadatas_and_list_filter() -> None:
     assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
     assert output[0][1] == 0.0
     assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
+
 
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
@@ -322,6 +341,7 @@ async def test_faiss_async_mmr_with_metadatas_and_list_filter() -> None:
     assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
     assert output[0][1] == 0.0
     assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
+
 
 @pytest.mark.requires("faiss")
 def test_faiss_with_metadatas() -> None:
@@ -345,6 +365,7 @@ def test_faiss_with_metadatas() -> None:
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": 0})]
+
 
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
@@ -370,6 +391,7 @@ async def test_faiss_async_with_metadatas() -> None:
     output = await docsearch.asimilarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": 0})]
 
+
 @pytest.mark.requires("faiss")
 def test_faiss_with_metadatas_and_filter() -> None:
     texts = ["foo", "bar", "baz"]
@@ -391,6 +413,7 @@ def test_faiss_with_metadatas_and_filter() -> None:
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1, filter={"page": 1})
     assert output == [Document(page_content="bar", metadata={"page": 1})]
+
 
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
@@ -414,6 +437,7 @@ async def test_faiss_async_with_metadatas_and_filter() -> None:
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = await docsearch.asimilarity_search("foo", k=1, filter={"page": 1})
     assert output == [Document(page_content="bar", metadata={"page": 1})]
+
 
 @pytest.mark.requires("faiss")
 def test_faiss_with_metadatas_and_list_filter() -> None:
@@ -442,6 +466,7 @@ def test_faiss_with_metadatas_and_list_filter() -> None:
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foor", k=1, filter={"page": [0, 1, 2]})
     assert output == [Document(page_content="foo", metadata={"page": 0})]
+
 
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
@@ -482,7 +507,8 @@ def test_faiss_search_not_found() -> None:
     docsearch.docstore = InMemoryDocstore({})
     with pytest.raises(ValueError):
         docsearch.similarity_search("foo")
-    
+
+
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
 async def test_faiss_async_search_not_found() -> None:
@@ -494,6 +520,7 @@ async def test_faiss_async_search_not_found() -> None:
     with pytest.raises(ValueError):
         await docsearch.asimilarity_search("foo")
 
+
 @pytest.mark.requires("faiss")
 def test_faiss_add_texts() -> None:
     """Test end to end adding of texts."""
@@ -504,6 +531,7 @@ def test_faiss_add_texts() -> None:
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)
     assert output == [Document(page_content="foo"), Document(page_content="foo")]
+
 
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
@@ -517,12 +545,14 @@ async def test_faiss_async_add_texts() -> None:
     output = await docsearch.asimilarity_search("foo", k=2)
     assert output == [Document(page_content="foo"), Document(page_content="foo")]
 
+
 @pytest.mark.requires("faiss")
 def test_faiss_add_texts_not_supported() -> None:
     """Test adding of texts to a docstore that doesn't support it."""
     docsearch = FAISS(FakeEmbeddings().embed_query, None, FakeDocstore(), {})
     with pytest.raises(ValueError):
         docsearch.add_texts(["foo"])
+
 
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
@@ -531,6 +561,7 @@ async def test_faiss_async_add_texts_not_supported() -> None:
     docsearch = FAISS(FakeEmbeddings().aembed_query, None, FakeDocstore(), {})
     with pytest.raises(ValueError):
         await docsearch.aadd_texts(["foo"])
+
 
 @pytest.mark.requires("faiss")
 def test_faiss_local_save_load() -> None:
@@ -543,6 +574,7 @@ def test_faiss_local_save_load() -> None:
         new_docsearch = FAISS.load_local(temp_folder, FakeEmbeddings())
     assert new_docsearch.index is not None
 
+
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
 async def test_faiss_async_local_save_load() -> None:
@@ -552,8 +584,11 @@ async def test_faiss_async_local_save_load() -> None:
     temp_timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     with tempfile.TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
         docsearch.save_local(temp_folder)
-        new_docsearch = FAISS.load_local(temp_folder, FakeEmbeddings(), asynchronous=True)
+        new_docsearch = FAISS.load_local(
+            temp_folder, FakeEmbeddings(), asynchronous=True
+        )
     assert new_docsearch.index is not None
+
 
 @pytest.mark.requires("faiss")
 def test_faiss_similarity_search_with_relevance_scores() -> None:
@@ -569,6 +604,7 @@ def test_faiss_similarity_search_with_relevance_scores() -> None:
     assert output == Document(page_content="foo")
     assert score == 1.0
 
+
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
 async def test_faiss_async_similarity_search_with_relevance_scores() -> None:
@@ -583,6 +619,7 @@ async def test_faiss_async_similarity_search_with_relevance_scores() -> None:
     output, score = outputs[0]
     assert output == Document(page_content="foo")
     assert score == 1.0
+
 
 @pytest.mark.requires("faiss")
 def test_faiss_similarity_search_with_relevance_scores_with_threshold() -> None:
@@ -601,9 +638,10 @@ def test_faiss_similarity_search_with_relevance_scores_with_threshold() -> None:
     assert output == Document(page_content="foo")
     assert score == 1.0
 
+
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
-async def test_faiss_async_similarity_search_with_relevance_scores_with_threshold() -> None:
+async def test_faiss_asimilarity_search_with_relevance_scores_with_threshold() -> None:
     """Test the similarity search with normalized similarities with score threshold."""
     texts = ["foo", "bar", "baz"]
     docsearch = await FAISS.afrom_texts(
@@ -619,6 +657,7 @@ async def test_faiss_async_similarity_search_with_relevance_scores_with_threshol
     assert output == Document(page_content="foo")
     assert score == 1.0
 
+
 @pytest.mark.requires("faiss")
 def test_faiss_invalid_normalize_fn() -> None:
     """Test the similarity search with normalized similarities."""
@@ -628,6 +667,7 @@ def test_faiss_invalid_normalize_fn() -> None:
     )
     with pytest.warns(Warning, match="scores must be between"):
         docsearch.similarity_search_with_relevance_scores("foo", k=1)
+
 
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
@@ -640,6 +680,7 @@ async def test_faiss_async_invalid_normalize_fn() -> None:
     with pytest.warns(Warning, match="scores must be between"):
         await docsearch.asimilarity_search_with_relevance_scores("foo", k=1)
 
+
 @pytest.mark.requires("faiss")
 def test_missing_normalize_score_fn() -> None:
     """Test doesn't perform similarity search without a valid distance strategy."""
@@ -648,14 +689,18 @@ def test_missing_normalize_score_fn() -> None:
     with pytest.raises(ValueError):
         faiss_instance.similarity_search_with_relevance_scores("foo", k=2)
 
+
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
 async def test_async_missing_normalize_score_fn() -> None:
     """Test doesn't perform similarity search without a valid distance strategy."""
     texts = ["foo", "bar", "baz"]
-    faiss_instance = await FAISS.afrom_texts(texts, FakeEmbeddings(), distance_strategy="fake")
+    faiss_instance = await FAISS.afrom_texts(
+        texts, FakeEmbeddings(), distance_strategy="fake"
+    )
     with pytest.raises(ValueError):
         await faiss_instance.asimilarity_search_with_relevance_scores("foo", k=2)
+
 
 @pytest.mark.requires("faiss")
 def test_delete() -> None:
@@ -668,12 +713,15 @@ def test_delete() -> None:
     assert sorted([d.page_content for d in result]) == ["baz", "foo"]
     assert docsearch.index_to_docstore_id == {0: ids[0], 1: ids[2]}
 
+
 @pytest.mark.requires("faiss")
 @pytest.mark.asyncio
 async def test_async_delete() -> None:
     """Test the similarity search with normalized similarities."""
     ids = ["a", "b", "c"]
-    docsearch = await FAISS.afrom_texts(["foo", "bar", "baz"], FakeEmbeddings(), ids=ids)
+    docsearch = await FAISS.afrom_texts(
+        ["foo", "bar", "baz"], FakeEmbeddings(), ids=ids
+    )
     docsearch.delete(ids[1:2])
 
     result = await docsearch.asimilarity_search("bar", k=2)
