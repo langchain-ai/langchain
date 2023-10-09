@@ -34,7 +34,8 @@ def get_role(message: BaseMessage) -> str:
 
 def get_cohere_chat_request(
     messages: List[BaseMessage],
-    connectors: List[Dict[str, str]],
+    *,
+    connectors: Optional[List[Dict[str, str]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     documents = (
@@ -154,7 +155,14 @@ class ChatCohere(BaseChatModel, BaseCohere):
         response = self.client.chat(**request)
 
         message = AIMessage(content=response.text)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        generation_info = None
+        if hasattr(response, "documents"):
+            generation_info = {"documents": response.documents}
+        return ChatResult(
+            generations=[
+                ChatGeneration(message=message, generation_info=generation_info)
+            ]
+        )
 
     async def _agenerate(
         self,
@@ -173,7 +181,14 @@ class ChatCohere(BaseChatModel, BaseCohere):
         response = self.client.chat(**request, stream=False)
 
         message = AIMessage(content=response.text)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        generation_info = None
+        if hasattr(response, "documents"):
+            generation_info = {"documents": response.documents}
+        return ChatResult(
+            generations=[
+                ChatGeneration(message=message, generation_info=generation_info)
+            ]
+        )
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
