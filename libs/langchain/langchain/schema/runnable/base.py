@@ -1736,6 +1736,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             yield chunk
 
 
+# We support both names
 RunnableMap = RunnableParallel
 
 
