@@ -56,7 +56,7 @@ class LLMRequestsChain(Chain):
             from bs4 import BeautifulSoup  # noqa: F401
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import bs4 python package. "
                 "Please install it with `pip install bs4`."
             )

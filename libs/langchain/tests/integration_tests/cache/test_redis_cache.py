@@ -6,8 +6,11 @@ import pytest
 
 import langchain
 from langchain.cache import RedisCache, RedisSemanticCache
+from langchain.load.dump import dumps
 from langchain.schema import Generation, LLMResult
 from langchain.schema.embeddings import Embeddings
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain.schema.output import ChatGeneration
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
@@ -56,9 +59,17 @@ def test_redis_cache_chat() -> None:
     llm = FakeChatModel()
     params = llm.dict()
     params["stop"] = None
-    with pytest.warns():
-        llm.predict("foo")
-    llm.predict("foo")
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    prompt: List[BaseMessage] = [HumanMessage(content="foo")]
+    langchain.llm_cache.update(
+        dumps(prompt), llm_string, [ChatGeneration(message=AIMessage(content="fizz"))]
+    )
+    output = llm.generate([prompt])
+    expected_output = LLMResult(
+        generations=[[ChatGeneration(message=AIMessage(content="fizz"))]],
+        llm_output={},
+    )
+    assert output == expected_output
     langchain.llm_cache.redis.flushall()
 
 
@@ -120,9 +131,16 @@ def test_redis_semantic_cache_chat() -> None:
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    with pytest.warns():
-        llm.predict("foo")
-    llm.predict("foo")
+    prompt: List[BaseMessage] = [HumanMessage(content="foo")]
+    langchain.llm_cache.update(
+        dumps(prompt), llm_string, [ChatGeneration(message=AIMessage(content="fizz"))]
+    )
+    output = llm.generate([prompt])
+    expected_output = LLMResult(
+        generations=[[ChatGeneration(message=AIMessage(content="fizz"))]],
+        llm_output={},
+    )
+    assert output == expected_output
     langchain.llm_cache.clear(llm_string=llm_string)
 
 

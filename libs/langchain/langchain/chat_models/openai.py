@@ -141,6 +141,21 @@ class ChatOpenAI(BaseChatModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
 
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        if self.openai_organization != "":
+            attributes["openai_organization"] = self.openai_organization
+
+        if self.openai_api_base != "":
+            attributes["openai_api_base"] = self.openai_api_base
+
+        if self.openai_proxy != "":
+            attributes["openai_proxy"] = self.openai_proxy
+
+        return attributes
+
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""

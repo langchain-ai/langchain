@@ -51,11 +51,11 @@ a>=20
   <tr>
     <td height=3D"45" valign=3D"top" width=3D"50%">
       <ul>
-        <li><a href=3D"https://github.com/hwchase17/langchain">Python Repo<=
+        <li><a href=3D"https://github.com/langchain-ai/langchain">Python Repo<=
 /a></li></ul></td>
     <td height=3D"45" valign=3D"top" width=3D"50%">
 		  <ul>
-        <li><a href=3D"https://github.com/hwchase17/langchainjs">JavaScript=
+        <li><a href=3D"https://github.com/langchain-ai/langchainjs">JavaScript=
  Repo</a></li></ul></td></tr>
  =20
 =09
@@ -72,7 +72,7 @@ ation</a>
   <tr>
     <td height=3D"45" valign=3D"top" width=3D"50%">
       <ul>
-        <li><a href=3D"https://github.com/hwchase17/chat-langchain">Python =
+        <li><a href=3D"https://github.com/langchain-ai/chat-langchain">Python =
 ChatLangChain</a> </li></ul></td>
     <td height=3D"45" valign=3D"top" width=3D"50%">
       <ul>
