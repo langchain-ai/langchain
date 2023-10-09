@@ -37,7 +37,8 @@ import os
 
 import predictionguard as pg
 from langchain.llms import PredictionGuard
-from langchain.prompts import PromptTemplate\nfrom langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 
 # Your Prediction Guard API key. Get one at predictionguard.com
 os.environ["PREDICTIONGUARD_TOKEN"] = "<your Prediction Guard access token>"
@@ -76,7 +77,8 @@ Basic LLM Chaining with the Prediction Guard wrapper:
 ```python
 import os
 
-from langchain.prompts import PromptTemplate\nfrom langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 from langchain.llms import PredictionGuard
 
 # Optional, add your OpenAI API Key. This is optional, as Prediction Guard allows
