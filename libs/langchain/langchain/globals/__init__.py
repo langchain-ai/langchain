@@ -146,7 +146,7 @@ def set_llm_cache(value: "BaseCache") -> None:
     _llm_cache = value
 
 
-def get_llm_cache() -> bool:
+def get_llm_cache() -> "BaseCache":
     """Get the value of the `llm_cache` global setting."""
     import langchain
 
