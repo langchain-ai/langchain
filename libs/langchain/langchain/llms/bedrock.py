@@ -56,6 +56,28 @@ def _human_assistant_format(input_text: str) -> str:
     return input_text
 
 
+def _get_anthropic_client() -> Any:
+    try:
+        import anthropic
+    except ImportError:
+        raise ImportError(
+            "Could not import anthropic python package. "
+            "This is needed in order to accurately tokenize the text "
+            "for anthropic models. Please install it with `pip install anthropic`."
+        )
+    return anthropic.Anthropic()
+
+def _get_num_tokens_anthropic(text: str) -> int:
+    client = _get_anthropic_client()
+    return client.count_tokens(text=text)
+
+def _get_token_ids_anthropic(text: str) -> List[int]:
+    client = _get_anthropic_client()
+    tokenizer = client.get_tokenizer()
+    encoded_text = tokenizer.encode(text)  # type: ignore
+    return encoded_text.ids  # type: ignore
+
+
 class LLMInputOutputAdapter:
     """Adapter class to prepare the inputs from Langchain to a format
     that LLM model expects.
@@ -318,7 +340,7 @@ class Bedrock(LLM, BedrockBase):
             from bedrock_langchain.bedrock_llm import BedrockLLM
 
             llm = BedrockLLM(
-                credentials_profile_name="default", 
+                credentials_profile_name="default",
                 model_id="amazon.titan-text-express-v1",
                 streaming=True
             )
@@ -329,6 +351,10 @@ class Bedrock(LLM, BedrockBase):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "amazon_bedrock"
+
+    @property
+    def _model_is_anthropic(self) -> bool:
+        return self.model_id.split(".")[0] == "anthropic"
 
     class Config:
         """Configuration for this pydantic object."""
@@ -393,3 +419,15 @@ class Bedrock(LLM, BedrockBase):
             return completion
 
         return self._prepare_input_and_invoke(prompt=prompt, stop=stop, **kwargs)
+
+    def get_num_tokens(self, text: str) -> int:
+        if self._model_is_anthropic:
+            return _get_num_tokens_anthropic(text=text)
+        else:
+            return super().get_num_tokens(text=text)
+
+    def get_token_ids(self, text: str) -> List[int]:
+        if self._model_is_anthropic:
+            return _get_token_ids_anthropic(text=text)
+        else:
+            return super().get_token_ids(text)
