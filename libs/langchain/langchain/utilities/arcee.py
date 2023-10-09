@@ -1,3 +1,6 @@
+# This module contains utility classes and functions for interacting with Arcee API.
+# For more information and updates, refer to the Arcee utils page: [https://github.com/arcee-ai/arcee-python/blob/main/arcee/dalm.py]
+
 from enum import Enum
 
 from langchain.pydantic_v1 import BaseModel, root_validator
@@ -62,7 +65,6 @@ class ArceeWrapper:
         try:
             route = ArceeRoute.model_training_status.value.format(id_or_name=model_name)
             response = self._make_request("get", route)
-            # response = {"status": "training_complete", "model_id": "123"} # TODO: remove after testing
             self.model_id = response.get("model_id")
             self.model_training_status = response.get("status")
         except Exception as e:
@@ -121,7 +123,7 @@ class ArceeWrapper:
         _model_kwargs = self.model_kwargs or {}
         _params = {**_model_kwargs, **kwargs}
 
-        filters = [DALMFilter(**f) for f in _params.get("filters", [])] # TODO: Get this validated
+        filters = [DALMFilter(**f) for f in _params.get("filters", [])]
         return dict(
             model_id=self.model_id,
             query=prompt,
@@ -152,7 +154,7 @@ class ArceeWrapper:
                 **kwargs,
             ),
         )
-        return response["text"] # TODO: confirm this transformation
+        return response["text"]
 
     def retrieve(
             self,
@@ -175,4 +177,4 @@ class ArceeWrapper:
                 **kwargs,
             ),
         )
-        return [Document(**doc) for doc in response["documents"]] # TODO: confirm this transformation
+        return [Document(**doc) for doc in response["documents"]]
