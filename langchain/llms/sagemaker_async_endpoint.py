@@ -65,7 +65,7 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
         input_prefix: str = "",
         max_request_timeout: int = 90,
         **kwargs
-    ) -> Any:
+    ) -> None:
         """
         Initialize a Sagemaker asynchronous endpoint connector in Langchain.
         Args:
