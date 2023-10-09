@@ -194,6 +194,7 @@ from langchain.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
+from langchain.document_loaders.dbt_semantic import DbtSemanticLayerLoader
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
@@ -244,6 +245,7 @@ __all__ = [
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
+    "DbtSemanticLayerLoader",
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
