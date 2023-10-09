@@ -22,14 +22,14 @@ def test_cosine_similarity_zero() -> None:
     Y = np.random.random((3, 3))
     expected = np.zeros((3, 3))
     actual = cosine_similarity(X, Y)
-    assert np.allclose(expected, actual, atol=1e-2)
+    assert np.allclose(expected, actual)
 
 
 def test_cosine_similarity_identity() -> None:
     X = np.random.random((4, 4))
     expected = np.ones(4)
     actual = np.diag(cosine_similarity(X, X))
-    assert np.allclose(expected, actual, atol=1e-2)
+    assert np.allclose(expected, actual)
 
 
 def test_cosine_similarity_empty() -> None:
@@ -45,7 +45,7 @@ def test_cosine_similarity(X: List[List[float]], Y: List[List[float]]) -> None:
         [0.5976143, 0.4472136, 0.93419873, 0.0],
     ]
     actual = cosine_similarity(X, Y)
-    assert np.allclose(expected, actual, atol=1e-2)
+    assert np.allclose(expected, actual)
 
 
 def test_cosine_similarity_top_k(X: List[List[float]], Y: List[List[float]]) -> None:
@@ -53,7 +53,7 @@ def test_cosine_similarity_top_k(X: List[List[float]], Y: List[List[float]]) -> 
     expected_scores = [1.0, 0.93419873, 0.87038828, 0.83743579, 0.5976143]
     actual_idxs, actual_scores = cosine_similarity_top_k(X, Y)
     assert actual_idxs == expected_idxs
-    assert np.allclose(expected_scores, actual_scores, atol=1e-2)
+    assert np.allclose(expected_scores, actual_scores)
 
 
 def test_cosine_similarity_score_threshold(
@@ -65,7 +65,7 @@ def test_cosine_similarity_score_threshold(
         X, Y, top_k=None, score_threshold=0.9
     )
     assert actual_idxs == expected_idxs
-    assert np.allclose(expected_scores, actual_scores, atol=1e-2)
+    assert np.allclose(expected_scores, actual_scores)
 
 
 def test_cosine_similarity_top_k_and_score_threshold(
@@ -75,4 +75,4 @@ def test_cosine_similarity_top_k_and_score_threshold(
     expected_scores = [1.0, 0.93419873, 0.87038828, 0.83743579]
     actual_idxs, actual_scores = cosine_similarity_top_k(X, Y, score_threshold=0.8)
     assert actual_idxs == expected_idxs
-    assert np.allclose(expected_scores, actual_scores, atol=1e-2)
+    assert np.allclose(expected_scores, actual_scores)
