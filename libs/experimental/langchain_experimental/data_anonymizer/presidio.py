@@ -312,6 +312,10 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
 
         return text_to_deanonymize
 
+    def reset_deanonymizer_mapping(self) -> None:
+        """Reset the deanonymizer mapping"""
+        self._deanonymizer_mapping = DeanonymizerMapping()
+
     def save_deanonymizer_mapping(self, file_path: Union[Path, str]) -> None:
         """Save the deanonymizer mapping to a JSON or YAML file.
 
