@@ -4,8 +4,8 @@ import os
 from functools import partial
 from typing import Any, Dict, List, Optional
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.schema.embeddings import Embeddings
 
 
 class BedrockEmbeddings(BaseModel, Embeddings):
@@ -30,7 +30,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             
             region_name ="us-east-1"
             credentials_profile_name = "default"
-            model_id = "amazon.titan-e1t-medium"
+            model_id = "amazon.titan-embed-text-v1"
 
             be = BedrockEmbeddings(
                 credentials_profile_name=credentials_profile_name,
@@ -54,12 +54,12 @@ class BedrockEmbeddings(BaseModel, Embeddings):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    model_id: str = "amazon.titan-e1t-medium"
-    """Id of the model to call, e.g., amazon.titan-e1t-medium, this is
+    model_id: str = "amazon.titan-embed-text-v1"
+    """Id of the model to call, e.g., amazon.titan-embed-text-v1, this is
     equivalent to the modelId property in the list-foundation-models api"""
 
     model_kwargs: Optional[Dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     endpoint_url: Optional[str] = None
     """Needed if you don't want to default to us-east-1 endpoint"""
@@ -92,7 +92,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             if values["endpoint_url"]:
                 client_params["endpoint_url"] = values["endpoint_url"]
 
-            values["client"] = session.client("bedrock", **client_params)
+            values["client"] = session.client("bedrock-runtime", **client_params)
 
         except ImportError:
             raise ModuleNotFoundError(

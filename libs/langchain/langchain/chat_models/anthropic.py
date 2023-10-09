@@ -4,7 +4,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _agenerate_from_stream,
+    _generate_from_stream,
+)
 from langchain.llms.anthropic import _AnthropicCommon
 from langchain.schema.messages import (
     AIMessage,
@@ -15,6 +19,7 @@ from langchain.schema.messages import (
     SystemMessage,
 )
 from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain.schema.prompt import PromptValue
 
 
 def _convert_one_message_to_text(
@@ -29,7 +34,7 @@ def _convert_one_message_to_text(
     elif isinstance(message, AIMessage):
         message_text = f"{ai_prompt} {message.content}"
     elif isinstance(message, SystemMessage):
-        message_text = f"{human_prompt} <admin>{message.content}</admin>"
+        message_text = message.content
     else:
         raise ValueError(f"Got unknown type {message}")
     return message_text
@@ -51,7 +56,6 @@ def convert_messages_to_prompt_anthropic(
     """
 
     messages = messages.copy()  # don't mutate the original list
-
     if not isinstance(messages[-1], AIMessage):
         messages.append(AIMessage(content=""))
 
@@ -94,8 +98,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         """Return type of chat model."""
         return "anthropic-chat"
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     def _convert_messages_to_prompt(self, messages: List[BaseMessage]) -> str:
@@ -111,6 +116,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         if self.AI_PROMPT:
             prompt_params["ai_prompt"] = self.AI_PROMPT
         return convert_messages_to_prompt_anthropic(messages=messages, **prompt_params)
+
+    def convert_prompt(self, prompt: PromptValue) -> str:
+        return self._convert_messages_to_prompt(prompt.to_messages())
 
     def _stream(
         self,
@@ -158,22 +166,22 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            completion = ""
-            for chunk in self._stream(messages, stop, run_manager, **kwargs):
-                completion += chunk.text
-        else:
-            prompt = self._convert_messages_to_prompt(
-                messages,
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            params: Dict[str, Any] = {
-                "prompt": prompt,
-                **self._default_params,
-                **kwargs,
-            }
-            if stop:
-                params["stop_sequences"] = stop
-            response = self.client.completions.create(**params)
-            completion = response.completion
+            return _generate_from_stream(stream_iter)
+        prompt = self._convert_messages_to_prompt(
+            messages,
+        )
+        params: Dict[str, Any] = {
+            "prompt": prompt,
+            **self._default_params,
+            **kwargs,
+        }
+        if stop:
+            params["stop_sequences"] = stop
+        response = self.client.completions.create(**params)
+        completion = response.completion
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
@@ -185,22 +193,22 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            completion = ""
-            async for chunk in self._astream(messages, stop, run_manager, **kwargs):
-                completion += chunk.text
-        else:
-            prompt = self._convert_messages_to_prompt(
-                messages,
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            params: Dict[str, Any] = {
-                "prompt": prompt,
-                **self._default_params,
-                **kwargs,
-            }
-            if stop:
-                params["stop_sequences"] = stop
-            response = await self.async_client.completions.create(**params)
-            completion = response.completion
+            return await _agenerate_from_stream(stream_iter)
+        prompt = self._convert_messages_to_prompt(
+            messages,
+        )
+        params: Dict[str, Any] = {
+            "prompt": prompt,
+            **self._default_params,
+            **kwargs,
+        }
+        if stop:
+            params["stop_sequences"] = stop
+        response = await self.async_client.completions.create(**params)
+        completion = response.completion
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
 

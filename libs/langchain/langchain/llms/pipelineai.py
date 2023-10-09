@@ -22,7 +22,7 @@ class PipelineAI(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import PipelineAI
+            from langchain.llms import PipelineAI
             pipeline = PipelineAI(pipeline_key="")
     """
 

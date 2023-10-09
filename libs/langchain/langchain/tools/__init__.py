@@ -32,7 +32,6 @@ from langchain.tools.azure_cognitive_services import (
 from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
 from langchain.tools.bing_search.tool import BingSearchResults, BingSearchRun
 from langchain.tools.brave_search.tool import BraveSearch
-from langchain.tools.convert_to_openai import format_tool_to_openai_function
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchResults, DuckDuckGoSearchRun
 from langchain.tools.edenai import (
     EdenAiExplicitImageTool,
@@ -44,6 +43,7 @@ from langchain.tools.edenai import (
     EdenAiTextToSpeechTool,
     EdenaiTool,
 )
+from langchain.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
 from langchain.tools.file_management import (
     CopyFileTool,
     DeleteFileTool,
@@ -96,6 +96,7 @@ from langchain.tools.powerbi.tool import (
 )
 from langchain.tools.pubmed.tool import PubmedQueryRun
 from langchain.tools.python.tool import PythonAstREPLTool, PythonREPLTool
+from langchain.tools.render import format_tool_to_openai_function
 from langchain.tools.requests.tool import (
     BaseRequestsTool,
     RequestsDeleteTool,
@@ -167,6 +168,7 @@ __all__ = [
     "EdenAiSpeechToTextTool",
     "EdenAiTextModerationTool",
     "EdenaiTool",
+    "ElevenLabsText2SpeechTool",
     "ExtractHyperlinksTool",
     "ExtractTextTool",
     "FileSearchTool",
@@ -236,6 +238,6 @@ __all__ = [
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "format_tool_to_openai_function",
     "tool",
+    "format_tool_to_openai_function",
 ]
