@@ -4,7 +4,7 @@ from langchain.document_loaders.github import GitHubIssuesLoader
 def test_issues_load() -> None:
     title = "DocumentLoader for GitHub"
     loader = GitHubIssuesLoader(
-        repo="hwchase17/langchain", creator="UmerHA", state="all"
+        repo="langchain-ai/langchain", creator="UmerHA", state="all"
     )
     docs = loader.load()
     titles = [d.metadata["title"] for d in docs]

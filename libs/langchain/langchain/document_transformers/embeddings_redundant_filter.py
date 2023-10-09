@@ -3,9 +3,9 @@ from typing import Any, Callable, List, Sequence
 
 import numpy as np
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseDocumentTransformer, Document
+from langchain.schema.embeddings import Embeddings
 from langchain.utils.math import cosine_similarity
 
 
@@ -152,11 +152,6 @@ class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
         )
         return [stateful_documents[i] for i in sorted(included_idxs)]
 
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        raise NotImplementedError
-
 
 class EmbeddingsClusteringFilter(BaseDocumentTransformer, BaseModel):
     """Perform K-means clustering on document vectors.
@@ -211,8 +206,3 @@ class EmbeddingsClusteringFilter(BaseDocumentTransformer, BaseModel):
         )
         results = sorted(included_idxs) if self.sorted else included_idxs
         return [stateful_documents[i] for i in results]
-
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        raise NotImplementedError

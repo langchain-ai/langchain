@@ -60,7 +60,7 @@ class BaseBlobParser(ABC):
     A blob parser provides a way to parse raw data stored in a blob into one
     or more documents.
 
-    The parser can be composed with blob loaders, making it easy to re-use
+    The parser can be composed with blob loaders, making it easy to reuse
     a parser independent of how the blob was originally loaded.
     """
 

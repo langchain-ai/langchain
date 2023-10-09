@@ -20,6 +20,7 @@ from langchain.output_parsers.fix import OutputFixingParser
 from langchain.output_parsers.list import (
     CommaSeparatedListOutputParser,
     ListOutputParser,
+    MarkdownListOutputParser,
     NumberedListOutputParser,
 )
 from langchain.output_parsers.pydantic import PydanticOutputParser
@@ -28,6 +29,7 @@ from langchain.output_parsers.regex import RegexParser
 from langchain.output_parsers.regex_dict import RegexDictParser
 from langchain.output_parsers.retry import RetryOutputParser, RetryWithErrorOutputParser
 from langchain.output_parsers.structured import ResponseSchema, StructuredOutputParser
+from langchain.output_parsers.xml import XMLOutputParser
 
 __all__ = [
     "BooleanOutputParser",
@@ -37,6 +39,7 @@ __all__ = [
     "EnumOutputParser",
     "GuardrailsOutputParser",
     "ListOutputParser",
+    "MarkdownListOutputParser",
     "NumberedListOutputParser",
     "OutputFixingParser",
     "PydanticOutputParser",
@@ -46,4 +49,5 @@ __all__ = [
     "RetryOutputParser",
     "RetryWithErrorOutputParser",
     "StructuredOutputParser",
+    "XMLOutputParser",
 ]
