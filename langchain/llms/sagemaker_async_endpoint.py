@@ -9,8 +9,6 @@ import os
 import uuid
 import datetime
 import logging
-import random
-import string
 from botocore.exceptions import WaiterError, ClientError
 
 
@@ -89,7 +87,24 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
         self.sm_client = boto3.client("sagemaker")
 
     # Private method to invoke endpoint
-    def _invoke_endpoint(self, input_key, content_type, accepts, **kwargs):
+    def _invoke_endpoint(
+        self, 
+        input_key: str,
+        content_type: str,
+        accepts: str,
+        **kwargs
+    ) -> Any:
+        """Invoke SageMaker endpoint asynchronously.
+
+        Args:
+            input_key: S3 key for input data 
+            content_type: MIME type for input data
+            accepts: Expected response MIME type
+            **kwargs: Additional parameters for client.invoke_endpoint_async()
+
+        Returns:
+            Response dictionary containing InferenceId
+        """
         response = self.client.invoke_endpoint_async(
             EndpointName=self.endpoint_name, 
             InputLocation=f"s3://{self.input_bucket}/{input_key}",
