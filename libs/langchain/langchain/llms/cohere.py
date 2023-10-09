@@ -78,13 +78,6 @@ class BaseCohere(Serializable):
     streaming: bool = Field(default=False)
     """Whether to stream the results."""
 
-    @property
-    def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Cohere API."""
-        return {
-            "temperature": self.temperature,
-        }
-
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
