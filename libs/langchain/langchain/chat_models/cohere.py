@@ -32,6 +32,36 @@ def get_role(message: BaseMessage) -> str:
         raise ValueError(f"Got unknown type {message}")
 
 
+def get_cohere_chat_request(
+    messages: List[BaseMessage],
+    connectors: List[Dict[str, str]],
+    **kwargs: Any,
+) -> Dict[str, Any]:
+    documents = (
+        None
+        if "source_documents" not in kwargs
+        else [
+            {
+                "snippet": doc.page_content,
+                "id": doc.metadata.get("id") or f"doc-{str(i)}",
+            }
+            for i, doc in enumerate(kwargs["source_documents"])
+        ]
+    )
+    kwargs.pop("source_documents", None)
+    maybe_connectors = connectors if documents is None else None
+
+    return {
+        "message": messages[0].content,
+        "chat_history": [
+            {"role": get_role(x), "message": x.content} for x in messages[1:]
+        ],
+        "documents": documents,
+        "connectors": maybe_connectors,
+        **kwargs,
+    }
+
+
 class ChatCohere(BaseChatModel, BaseCohere):
     """`Cohere` chat large language models.
 
@@ -73,37 +103,6 @@ class ChatCohere(BaseChatModel, BaseCohere):
         """Get the identifying parameters."""
         return {**{"model": self.model}, **self._default_params}
 
-    def get_cohere_chat_request(
-        self,
-        messages: List[BaseMessage],
-        connectors: List[Dict[str, str]],
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        documents = (
-            None
-            if "source_documents" not in kwargs
-            else [
-                {
-                    "snippet": doc.page_content,
-                    "id": doc.metadata.get("id") or f"doc-{str(i)}",
-                }
-                for i, doc in enumerate(kwargs["source_documents"])
-            ]
-        )
-        kwargs.pop("source_documents", None)
-        connectors = connectors if documents is None else None
-
-        return {
-            "message": messages[0].content,
-            "chat_history": [
-                {"role": get_role(x), "message": x.content} for x in messages[1:]
-            ],
-            "documents": documents,
-            "connectors": connectors,
-            **self._default_params,
-            **kwargs,
-        }
-
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -111,7 +110,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        request = self.get_cohere_chat_request(messages, **kwargs)
+        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         stream = self.client.chat(**request, stream=True)
 
         for data in stream:
@@ -128,7 +127,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        request = self.get_cohere_chat_request(messages, **kwargs)
+        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         stream = await self.async_client.chat(**request, stream=True)
 
         async for data in stream:
@@ -151,7 +150,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return _generate_from_stream(stream_iter)
 
-        request = self.get_cohere_chat_request(messages, **kwargs)
+        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         response = self.client.chat(**request)
 
         message = AIMessage(content=response.text)
@@ -170,7 +169,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return await _agenerate_from_stream(stream_iter)
 
-        request = self.get_cohere_chat_request(messages, **kwargs)
+        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         response = self.client.chat(**request, stream=False)
 
         message = AIMessage(content=response.text)
