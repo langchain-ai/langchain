@@ -2,7 +2,7 @@
 """Main entrypoint into package."""
 import warnings
 from importlib import metadata
-from typing import Any
+from typing import Any, Optional
 
 from langchain._api.deprecation import surface_langchain_deprecation_warnings
 
@@ -21,7 +21,7 @@ def _is_interactive_env() -> bool:
     return hasattr(sys, "ps2")
 
 
-def _warn_on_import(name: str, replacement: str = None) -> None:
+def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
     """Warn on import of deprecated module."""
     if _is_interactive_env():
         # No warnings for interactive environments.
