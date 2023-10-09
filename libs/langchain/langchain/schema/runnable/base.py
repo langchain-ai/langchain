@@ -1909,9 +1909,6 @@ class RunnableLambda(Runnable[Input, Output]):
         Args:
             func: Either sync or async callable
             afunc: An async callable that takes an input and returns an output.
-
-        Raises:
-            TypeError: If neither func nor afunc are provided, or if both are provided.
         """
         if afunc is not None:
             self.afunc = afunc
