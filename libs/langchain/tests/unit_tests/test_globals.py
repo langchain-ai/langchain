@@ -1,4 +1,4 @@
-from langchain.utils.globals import set_debug, set_verbose
+from langchain.utils.globals import get_debug, get_verbose, set_debug, set_verbose
 
 
 def test_debug_is_settable_directly() -> None:
@@ -22,6 +22,9 @@ def test_debug_is_settable_directly() -> None:
         # If we access `debug` via a function used elsewhere in langchain,
         # it also sees the same new value.
         assert new_value == new_fn_reading
+
+        # If we access `debug` via `get_debug()` we also get the same value.
+        assert new_value == get_debug()
     finally:
         # Make sure we don't alter global state, even if the test fails.
         # Always reset `debug` to the value it had before.
@@ -49,6 +52,9 @@ def test_debug_is_settable_via_setter() -> None:
         # If we access `debug` via a function used elsewhere in langchain,
         # it also sees the same new value.
         assert new_value == new_fn_reading
+
+        # If we access `debug` via `get_debug()` we also get the same value.
+        assert new_value == get_debug()
     finally:
         # Make sure we don't alter global state, even if the test fails.
         # Always reset `debug` to the value it had before.
@@ -76,6 +82,9 @@ def test_verbose_is_settable_directly() -> None:
         # If we access `verbose` via a function used elsewhere in langchain,
         # it also sees the same new value.
         assert new_value == new_fn_reading
+
+        # If we access `verbose` via `get_verbose()` we also get the same value.
+        assert new_value == get_verbose()
     finally:
         # Make sure we don't alter global state, even if the test fails.
         # Always reset `verbose` to the value it had before.
@@ -103,6 +112,9 @@ def test_verbose_is_settable_via_setter() -> None:
         # If we access `verbose` via a function used elsewhere in langchain,
         # it also sees the same new value.
         assert new_value == new_fn_reading
+
+        # If we access `verbose` via `get_verbose()` we also get the same value.
+        assert new_value == get_verbose()
     finally:
         # Make sure we don't alter global state, even if the test fails.
         # Always reset `verbose` to the value it had before.

@@ -29,7 +29,7 @@ def _is_interactive_env() -> bool:
     return hasattr(sys, "ps2")
 
 
-def _warn_on_import(name: str) -> None:
+def _warn_on_import(name: str, replacement: str = None) -> None:
     """Warn on import of deprecated module."""
     if _is_interactive_env():
         # No warnings for interactive environments.
@@ -37,9 +37,16 @@ def _warn_on_import(name: str) -> None:
         # where users rely on auto-complete and may trigger this warning
         # even if they are not using any deprecated modules
         return
-    warnings.warn(
-        f"Importing {name} from langchain root module is no longer supported."
-    )
+
+    if replacement:
+        warnings.warn(
+            f"Importing {name} from langchain root module is no longer supported. "
+            f"Please use {replacement} instead."
+        )
+    else:
+        warnings.warn(
+            f"Importing {name} from langchain root module is no longer supported."
+        )
 
 
 # Surfaces Deprecation and Pending Deprecation warnings from langchain.
@@ -327,19 +334,37 @@ def __getattr__(name: str) -> Any:
     elif name == "verbose":
         from langchain.utils.globals import verbose
 
-        _warn_on_import(name)
+        _warn_on_import(
+            name,
+            replacement=(
+                "langchain.utils.globals.set_verbose() / "
+                "langchain.utils.globals.get_verbose()",
+            ),
+        )
 
         return verbose
     elif name == "debug":
         from langchain.utils.globals import debug
 
-        _warn_on_import(name)
+        _warn_on_import(
+            name,
+            replacement=(
+                "langchain.utils.globals.set_debug() / "
+                "langchain.utils.globals.get_debug()",
+            ),
+        )
 
         return debug
     elif name == "llm_cache":
         from langchain.utils.globals import llm_cache
 
-        _warn_on_import(name)
+        _warn_on_import(
+            name,
+            replacement=(
+                "langchain.utils.globals.set_llm_cache() / "
+                "langchain.utils.globals.get_llm_cache()",
+            ),
+        )
 
         return llm_cache
     else:
