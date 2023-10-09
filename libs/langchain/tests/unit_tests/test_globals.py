@@ -1,4 +1,4 @@
-from langchain.utils.globals import get_debug, get_verbose, set_debug, set_verbose
+from langchain.globals import get_debug, get_verbose, set_debug, set_verbose
 
 
 def test_debug_is_settable_directly() -> None:

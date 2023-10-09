@@ -57,7 +57,7 @@ def create_extraction_chain(
         prompt: The prompt to use for extraction.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
             logs will be printed to the console. Defaults to the global `verbose` value,
-            accessible via `langchain.utils.globals.get_verbose()`.
+            accessible via `langchain.globals.get_verbose()`.
 
     Returns:
         Chain that can be used to extract information from a passage.
@@ -90,7 +90,7 @@ def create_extraction_chain_pydantic(
         prompt: The prompt to use for extraction.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
             logs will be printed to the console. Defaults to the global `verbose` value,
-            accessible via `langchain.utils.globals.get_verbose()`
+            accessible via `langchain.globals.get_verbose()`
 
     Returns:
         Chain that can be used to extract information from a passage.

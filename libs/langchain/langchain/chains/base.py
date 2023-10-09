@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_verbosity() -> bool:
-    from langchain.utils.globals import get_verbose
+    from langchain.globals import get_verbose
 
     return get_verbose()
 
@@ -132,7 +132,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether or not run in verbose mode. In verbose mode, some intermediate logs
     will be printed to the console. Defaults to the global `verbose` value,
-    accessible via `langchain.utils.globals.get_verbose()`."""
+    accessible via `langchain.globals.get_verbose()`."""
     tags: Optional[List[str]] = None
     """Optional list of tags associated with the chain. Defaults to None.
     These tags will be associated with each call to this chain,

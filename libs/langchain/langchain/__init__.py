@@ -324,37 +324,34 @@ def __getattr__(name: str) -> Any:
 
         return SerpAPIWrapper
     elif name == "verbose":
-        from langchain.utils.globals import _verbose
+        from langchain.globals import _verbose
 
         _warn_on_import(
             name,
             replacement=(
-                "langchain.utils.globals.set_verbose() / "
-                "langchain.utils.globals.get_verbose()",
+                "langchain.globals.set_verbose() / langchain.globals.get_verbose()"
             ),
         )
 
         return _verbose
     elif name == "debug":
-        from langchain.utils.globals import _debug
+        from langchain.globals import _debug
 
         _warn_on_import(
             name,
             replacement=(
-                "langchain.utils.globals.set_debug() / "
-                "langchain.utils.globals.get_debug()",
+                "langchain.globals.set_debug() / langchain.globals.get_debug()"
             ),
         )
 
         return _debug
     elif name == "llm_cache":
-        from langchain.utils.globals import _llm_cache
+        from langchain.globals import _llm_cache
 
         _warn_on_import(
             name,
             replacement=(
-                "langchain.utils.globals.set_llm_cache() / "
-                "langchain.utils.globals.get_llm_cache()",
+                "langchain.globals.set_llm_cache() / langchain.globals.get_llm_cache()"
             ),
         )
 
