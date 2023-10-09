@@ -2450,10 +2450,7 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
     elif callable(thing):
         return RunnableLambda(cast(Callable[[Input], Output], thing))
     elif isinstance(thing, dict):
-        runnables: Mapping[str, Runnable[Any, Any]] = {
-            key: coerce_to_runnable(r) for key, r in thing.items()
-        }
-        return cast(Runnable[Input, Output], RunnableParallel(__steps=runnables))
+        return cast(Runnable[Input, Output], RunnableParallel(thing))
     else:
         raise TypeError(
             f"Expected a Runnable, callable or dict."
