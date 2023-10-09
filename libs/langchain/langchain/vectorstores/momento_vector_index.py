@@ -53,12 +53,6 @@ class MomentoVectorIndex(VectorStore):
             )
     """
 
-    _client: "PreviewVectorIndexClient"
-    index_name: str
-    distance_strategy: DistanceStrategy
-    text_field: str
-    _ensure_index_exists: bool
-
     def __init__(
         self,
         embedding: Embeddings,
