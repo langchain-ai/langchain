@@ -53,6 +53,7 @@ from langchain.schema.runnable import RunnableConfig
 
 def _get_verbosity() -> bool:
     from langchain.utils.globals import get_verbose
+
     return get_verbose()
 
 

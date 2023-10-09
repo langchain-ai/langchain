@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 def _get_verbosity() -> bool:
     from langchain.utils.globals import get_verbose
+
     return get_verbose()
 
 
