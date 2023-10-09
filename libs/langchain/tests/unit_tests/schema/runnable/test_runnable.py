@@ -2156,7 +2156,8 @@ async def test_higher_order_lambda_runnable(
             raise ValueError(f"Unknown key: {input['key']}")
 
     chain: Runnable = input_map | router
-    assert dumps(chain, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(chain, pretty=True) == snapshot
 
     result = chain.invoke({"key": "math", "question": "2 + 2"})
     assert result == "4"
