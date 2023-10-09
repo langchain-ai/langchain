@@ -40,7 +40,6 @@ class CSVLoader(BaseLoader):
         csv_args: Optional[Dict] = None,
         encoding: Optional[str] = None,
         autodetect_encoding: bool = False,
-        continue_on_failure: bool = False,
     ):
         """
 
@@ -53,7 +52,6 @@ class CSVLoader(BaseLoader):
               Optional. Defaults to None.
             encoding: The encoding of the CSV file. Optional. Defaults to None.
             autodetect_encoding: Whether to try to autodetect the file encoding.
-            continue_on_failure: Whether to continue if loading a single row errors.
         """
         self.file_path = file_path
         self.source_column = source_column
@@ -61,7 +59,6 @@ class CSVLoader(BaseLoader):
         self.encoding = encoding
         self.csv_args = csv_args or {}
         self.autodetect_encoding = autodetect_encoding
-        self.continue_on_failure = continue_on_failure
 
     def load(self) -> List[Document]:
         """Load data into document objects."""
@@ -95,36 +92,30 @@ class CSVLoader(BaseLoader):
         csv_reader = csv.DictReader(csvfile, **self.csv_args)  # type: ignore
         for i, row in enumerate(csv_reader):
             try:
-                docs.append(self.__read_row(row, i))
-            except Exception as e:
-                if not self.continue_on_failure:
-                    raise e
+                source = (
+                    row[self.source_column]
+                    if self.source_column is not None
+                    else self.file_path
+                )
+            except KeyError:
+                raise ValueError(
+                    f"Source column '{self.source_column}' not found in CSV file."
+                )
+            content = "\n".join(
+                f"{k.strip()}: {v.strip()}"
+                for k, v in row.items()
+                if k not in self.metadata_columns
+            )
+            metadata = {"source": source, "row": i}
+            for col in self.metadata_columns:
+                try:
+                    metadata[col] = row[col]
+                except KeyError:
+                    raise ValueError(f"Metadata column '{col}' not found in CSV file.")
+            doc = Document(page_content=content, metadata=metadata)
+            docs.append(doc)
 
         return docs
-
-    def __read_row(self, row: dict, idx: int) -> Document:
-        try:
-            source = (
-                row[self.source_column]
-                if self.source_column is not None
-                else self.file_path
-            )
-        except KeyError:
-            raise ValueError(
-                f"Source column '{self.source_column}' not found in CSV file."
-            )
-        content = "\n".join(
-            f"{k.strip()}: {v.strip()}"
-            for k, v in row.items()
-            if k not in self.metadata_columns
-        )
-        metadata = {"source": source, "row": idx}
-        for col in self.metadata_columns:
-            try:
-                metadata[col] = row[col]
-            except KeyError:
-                raise ValueError(f"Metadata column '{col}' not found in CSV file.")
-        return Document(page_content=content, metadata=metadata)
 
 
 class UnstructuredCSVLoader(UnstructuredFileLoader):
