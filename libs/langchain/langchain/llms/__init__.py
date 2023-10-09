@@ -466,9 +466,13 @@ def _import_xinference() -> Any:
     from langchain.llms.xinference import Xinference
 
     return Xinference
-def _import_portkey() -> Any: 
+
+
+def _import_portkey() -> Any:
     from langchain.llms.portkey import Portkey
+
     return Portkey
+
 
 def __getattr__(name: str) -> Any:
     if name == "AI21":
