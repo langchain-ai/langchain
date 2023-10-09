@@ -325,7 +325,7 @@ def __getattr__(name: str) -> Any:
 
         return SerpAPIWrapper
     elif name == "verbose":
-        from langchain.utils.globals import verbose
+        from langchain.utils.globals import _verbose
 
         _warn_on_import(
             name,
@@ -335,9 +335,9 @@ def __getattr__(name: str) -> Any:
             ),
         )
 
-        return verbose
+        return _verbose
     elif name == "debug":
-        from langchain.utils.globals import debug
+        from langchain.utils.globals import _debug
 
         _warn_on_import(
             name,
@@ -347,9 +347,9 @@ def __getattr__(name: str) -> Any:
             ),
         )
 
-        return debug
+        return _debug
     elif name == "llm_cache":
-        from langchain.utils.globals import llm_cache
+        from langchain.utils.globals import _llm_cache
 
         _warn_on_import(
             name,
@@ -359,7 +359,7 @@ def __getattr__(name: str) -> Any:
             ),
         )
 
-        return llm_cache
+        return _llm_cache
     else:
         raise AttributeError(f"Could not find: {name}")
 
