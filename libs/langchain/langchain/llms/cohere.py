@@ -93,7 +93,9 @@ class BaseCohere(Serializable):
                 values, "cohere_api_key", "COHERE_API_KEY"
             )
             values["client"] = cohere.Client(cohere_api_key, client_name="langchain")
-            values["async_client"] = cohere.AsyncClient(cohere_api_key, client_name="langchain")
+            values["async_client"] = cohere.AsyncClient(
+                cohere_api_key, client_name="langchain"
+            )
         return values
 
 

@@ -48,7 +48,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
             import cohere
 
             values["client"] = cohere.Client(cohere_api_key, client_name="langchain")
-            values["async_client"] = cohere.AsyncClient(cohere_api_key, client_name="langchain")
+            values["async_client"] = cohere.AsyncClient(
+                cohere_api_key, client_name="langchain"
+            )
         except ImportError:
             raise ValueError(
                 "Could not import cohere python package. "
