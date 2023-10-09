@@ -1,8 +1,9 @@
+from typing import Any, Dict, List, Optional
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.utilities.arcee import ArceeWrapper, DALMFilter
 from langchain.llms.base import LLM
 from langchain.pydantic_v1 import Extra, root_validator
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from langchain.utilities.arcee import ArceeWrapper, DALMFilter
 from langchain.utils import get_from_dict_or_env
 
 
@@ -18,14 +19,14 @@ class Arcee(LLM):
             from langchain.llms import Arcee
 
             arcee = Arcee(
-                model="DPT-PubMed-7b",
-                arcee_api_key="DUMMY-KEY"
+                model="DALM-PubMed",
+                arcee_api_key="ARCEE-API-KEY"
             )
 
-            response = arcee("Can?")
+            response = arcee("AI-driven music therapy")
     """
 
-    _client: ArceeWrapper = None  #: :meta private:
+    _client: Optional[ArceeWrapper] = None  #: :meta private:
     """Arcee _client."""
 
     arcee_api_key: str = ""
@@ -46,7 +47,7 @@ class Arcee(LLM):
     model_id: str = ""
     """Arcee Model ID"""
 
-    model_kwargs: Optional[Dict] = None
+    model_kwargs: Optional[Dict[str, Any]] = None
     """Keyword arguments to pass to the model."""
 
     class Config:
@@ -64,7 +65,7 @@ class Arcee(LLM):
         """Initializes private fields."""
 
         super().__init__(**data)
-
+        self._client = None
         self._client = ArceeWrapper(
             arcee_api_key=self.arcee_api_key,
             arcee_api_url=self.arcee_api_url,
@@ -105,8 +106,8 @@ class Arcee(LLM):
         )
 
         # validate model kwargs
-        if values.get("model_kwargs") is not None:
-            kw = values.get("model_kwargs")
+        if values["model_kwargs"]:
+            kw = values["model_kwargs"]
 
             # validate size
             if kw.get("size") is not None:
@@ -133,11 +134,14 @@ class Arcee(LLM):
 
         Args:
             prompt: Prompt to generate text from.
-            size: The max number of context results to retrieve. Defaults to 3. (Can be less if filters are provided).
+            size: The max number of context results to retrieve.
+            Defaults to 3. (Can be less if filters are provided).
             filters: Filters to apply to the context dataset.
         """
 
         try:
+            if not self._client:
+                raise ValueError("Client is not initialized.")
             return self._client.generate(prompt=prompt, **kwargs)
         except Exception as e:
             raise Exception(f"Failed to generate text: {e}") from e

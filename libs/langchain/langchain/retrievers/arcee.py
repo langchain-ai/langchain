@@ -1,17 +1,33 @@
-from typing import Any, Dict, Iterable, List, Optional
-
-from langchain.pydantic_v1 import Extra, root_validator
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BaseRetriever
-from langchain.schema.retriever import BaseRetriever
-from langchain.utilities.arcee import ArceeWrapper, ArceeRoute, DALMFilter
+from langchain.utilities.arcee import ArceeWrapper, DALMFilter
 from langchain.utils import get_from_dict_or_env
 
 
 class ArceeRetriever(BaseRetriever):
-    _client: ArceeWrapper = None  #: :meta private:
+    """Document retriever for Arcee's Domain Adapted Language Models (DALMs).
+
+    To use, set the ``ARCEE_API_KEY`` environment variable with your Arcee API key,
+    or pass ``arcee_api_key`` as a named parameter.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.retrievers import ArceeRetriever
+
+            retriever = ArceeRetriever(
+                model="DALM-PubMed",
+                arcee_api_key="ARCEE-API-KEY"
+            )
+
+            documents = retriever.get_relevant_documents("AI-driven music therapy")
+    """
+
+    _client: Optional[ArceeWrapper] = None  #: :meta private:
     """Arcee client."""
 
     arcee_api_key: str = ""
@@ -29,7 +45,7 @@ class ArceeRetriever(BaseRetriever):
     arcee_app_url: str = "https://app.arcee.ai"
     """Arcee App URL"""
 
-    model_kwargs: Optional[Dict] = None
+    model_kwargs: Optional[Dict[str, Any]] = None
     """Keyword arguments to pass to the model."""
 
     class Config:
@@ -83,8 +99,8 @@ class ArceeRetriever(BaseRetriever):
         )
 
         # validate model kwargs
-        if values.get("model_kwargs") is not None:
-            kw = values.get("model_kwargs")
+        if values["model_kwargs"]:
+            kw = values["model_kwargs"]
 
             # validate size
             if kw.get("size") is not None:
@@ -106,12 +122,15 @@ class ArceeRetriever(BaseRetriever):
         """Retrieve {size} contexts with your retriever for a given query
 
         Args:
-            qeury: Query to submit to the model
-            size: The max number of context results to retrieve. Defaults to 3. (Can be less if filters are provided).
+            query: Query to submit to the model
+            size: The max number of context results to retrieve.
+            Defaults to 3. (Can be less if filters are provided).
             filters: Filters to apply to the context dataset.
         """
 
         try:
+            if not self._client:
+                raise ValueError("Client is not initialized.")
             return self._client.retrieve(query=query, **kwargs)
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
