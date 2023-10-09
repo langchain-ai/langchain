@@ -32,7 +32,13 @@ class CohereRagRetriever(BaseRetriever, BaseCohere):
     """Number of documents to return."""
 
     connectors: List[Dict] = Field(default=[{"id": "web-search"}])
-    """Connectors to use for the search."""
+    """
+    When specified, the model's reply will be enriched with information found by
+    querying each of the connectors (RAG). These will be returned as langchain
+    documents.
+
+    Currently only accepts {"id": "web-search"}.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
