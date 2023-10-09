@@ -30,3 +30,7 @@ class ReversibleAnonymizerBase(AnonymizerBase):
     @abstractmethod
     def _deanonymize(self, text: str) -> str:
         """Abstract method to deanonymize text"""
+
+    @abstractmethod
+    def reset_deanonymizer_mapping(self) -> None:
+        """Abstract method to reset deanonymizer mapping"""
