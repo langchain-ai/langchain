@@ -98,6 +98,10 @@ def _copy_template_files(
     """
     for template_directory_path in template_directories:
         for template_file_path in template_directory_path.glob("**/*"):
+            # Ignore __pycache__ directories and their contents
+            if "__pycache__" in template_file_path.parts:
+                continue
+
             relative_template_file_path = UnderscoreTemplate(
                 str(template_file_path.relative_to(template_directory_path))
             ).substitute(project_name_identifier=project_name_identifier)
@@ -105,8 +109,16 @@ def _copy_template_files(
             if template_file_path.is_dir():
                 project_file_path.mkdir(parents=True, exist_ok=True)
             else:
+                try:
+                    content = template_file_path.read_text(encoding="utf-8")
+                except UnicodeDecodeError as e:
+                    raise RuntimeError(
+                        "Encountered an error while reading a "
+                        f"template file {template_file_path}"
+                    ) from e
+
                 project_file_path.write_text(
-                    UnderscoreTemplate(template_file_path.read_text()).substitute(
+                    UnderscoreTemplate(content).substitute(
                         project_name=project_name,
                         project_name_identifier=project_name_identifier,
                         author_name=author_name,
@@ -146,7 +158,11 @@ def _init_git(project_directory_path: Path) -> None:
     typer.echo(
         f"\n{typer.style('Initializing git...', bold=True, fg=typer.colors.GREEN)}"
     )
-    subprocess.run(["git", "init"], cwd=project_directory_path)
+    try:
+        subprocess.run(["git", "init"], cwd=project_directory_path)
+    except FileNotFoundError:
+        typer.echo("Git not found. Skipping git initialization.")
+        return
 
     # 7. Create initial commit
     subprocess.run(["git", "add", "."], cwd=project_directory_path)
@@ -243,4 +259,8 @@ def create(
 
 def is_poetry_installed() -> bool:
     """Check if Poetry is installed."""
-    return subprocess.run(["poetry", "--version"], capture_output=True).returncode == 0
+    try:
+        result = subprocess.run(["poetry", "--version"], capture_output=True)
+        return result.returncode == 0
+    except FileNotFoundError:
+        return False
