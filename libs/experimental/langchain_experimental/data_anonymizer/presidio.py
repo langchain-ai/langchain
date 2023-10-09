@@ -16,6 +16,9 @@ from langchain_experimental.data_anonymizer.deanonymizer_mapping import (
     MappingDataType,
     create_anonymizer_mapping,
 )
+from langchain_experimental.data_anonymizer.deanonymizer_matching_strategies import (
+    exact_matching_strategy,
+)
 from langchain_experimental.data_anonymizer.faker_presidio_mapping import (
     get_pseudoanonymizer_mapping,
 )
@@ -188,7 +191,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
             filtered_analyzer_results,
             anonymizer_results,
         )
-        return default_matching_strategy(text, anonymizer_mapping)
+        return exact_matching_strategy(text, anonymizer_mapping)
 
 
 class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerBase):
@@ -280,7 +283,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         )
         self._deanonymizer_mapping.update(new_deanonymizer_mapping)
 
-        return default_matching_strategy(text, self.anonymizer_mapping)
+        return exact_matching_strategy(text, self.anonymizer_mapping)
 
     def _deanonymize(
         self,
