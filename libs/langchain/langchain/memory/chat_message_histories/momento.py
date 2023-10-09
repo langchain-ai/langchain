@@ -98,7 +98,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         *,
         configuration: Optional[momento.config.Configuration] = None,
         api_key: Optional[str] = None,
-        auth_token: Optional[str] = None,  # for backwards compatiblity
+        auth_token: Optional[str] = None,  # for backwards compatibility
         **kwargs: Any,
     ) -> MomentoChatMessageHistory:
         """Construct cache from CacheClient parameters."""

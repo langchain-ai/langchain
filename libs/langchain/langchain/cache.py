@@ -685,7 +685,7 @@ class MomentoCache(BaseCache):
         *,
         configuration: Optional[momento.config.Configuration] = None,
         api_key: Optional[str] = None,
-        auth_token: Optional[str] = None,  # for backwards compatiblity
+        auth_token: Optional[str] = None,  # for backwards compatibility
         **kwargs: Any,
     ) -> MomentoCache:
         """Construct cache from CacheClient parameters."""
