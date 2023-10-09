@@ -41,7 +41,7 @@ class LLMRails(VectorStore):
 
         self._session = requests.Session()  # to reuse connections
         self.datastore_id = datastore_id
-        self.base_url = "http://20.117.166.10:7000/v1"
+        self.base_url = "https://api.llmrails.com/v1"
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
