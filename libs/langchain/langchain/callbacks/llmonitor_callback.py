@@ -1,3 +1,4 @@
+import logging
 import os
 import traceback
 from contextvars import ContextVar
@@ -242,24 +243,27 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> None:
-        user_id = _get_user_id(metadata)
-        user_props = _get_user_props(metadata)
+        try:
+            user_id = _get_user_id(metadata)
+            user_props = _get_user_props(metadata)
 
-        event = {
-            "event": "start",
-            "type": "llm",
-            "userId": user_id,
-            "runId": str(run_id),
-            "parentRunId": str(parent_run_id) if parent_run_id else None,
-            "input": _parse_input(prompts),
-            "name": kwargs.get("invocation_params", {}).get("model_name"),
-            "tags": tags,
-            "metadata": metadata,
-        }
-        if user_props:
-            event["userProps"] = user_props
+            event = {
+                "event": "start",
+                "type": "llm",
+                "userId": user_id,
+                "runId": str(run_id),
+                "parentRunId": str(parent_run_id) if parent_run_id else None,
+                "input": _parse_input(prompts),
+                "name": kwargs.get("invocation_params", {}).get("model_name"),
+                "tags": tags,
+                "metadata": metadata,
+            }
+            if user_props:
+                event["userProps"] = user_props
 
-        self.__send_event(event)
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_llm_start: {e}")
 
     def on_chat_model_start(
         self,
@@ -272,24 +276,29 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> Any:
-        user_id = _get_user_id(metadata)
-        user_props = _get_user_props(metadata)
+        try:
+            user_id = _get_user_id(metadata)
+            user_props = _get_user_props(metadata)
 
-        event = {
-            "event": "start",
-            "type": "llm",
-            "userId": user_id,
-            "runId": str(run_id),
-            "parentRunId": str(parent_run_id) if parent_run_id else None,
-            "input": _parse_lc_messages(messages[0]),
-            "name": kwargs.get("invocation_params", {}).get("model_name"),
-            "tags": tags,
-            "metadata": metadata,
-        }
-        if user_props:
-            event["userProps"] = user_props
+            event = {
+                "event": "start",
+                "type": "llm",
+                "userId": user_id,
+                "runId": str(run_id),
+                "parentRunId": str(parent_run_id) if parent_run_id else None,
+                "input": _parse_lc_messages(messages[0]),
+                "name": kwargs.get("invocation_params", {}).get("model_name"),
+                "tags": tags,
+                "metadata": metadata,
+            }
+            if user_props:
+                event["userProps"] = user_props
 
-        self.__send_event(event)
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(
+                f"[LLMonitor] An error occurred in on_chat_model_start: " f"{e}"
+            )
 
     def on_llm_end(
         self,
@@ -299,39 +308,42 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> None:
-        token_usage = (response.llm_output or {}).get("token_usage", {})
+        try:
+            token_usage = (response.llm_output or {}).get("token_usage", {})
 
-        parsed_output = [
-            {
-                "text": generation.text,
-                "role": "ai",
-                **(
-                    {
-                        "functionCall": generation.message.additional_kwargs[
-                            "function_call"
-                        ]
-                    }
-                    if hasattr(generation, "message")
-                    and hasattr(generation.message, "additional_kwargs")
-                    and "function_call" in generation.message.additional_kwargs
-                    else {}
-                ),
+            parsed_output = [
+                {
+                    "text": generation.text,
+                    "role": "ai",
+                    **(
+                        {
+                            "functionCall": generation.message.additional_kwargs[
+                                "function_call"
+                            ]
+                        }
+                        if hasattr(generation, "message")
+                        and hasattr(generation.message, "additional_kwargs")
+                        and "function_call" in generation.message.additional_kwargs
+                        else {}
+                    ),
+                }
+                for generation in response.generations[0]
+            ]
+
+            event = {
+                "event": "end",
+                "type": "llm",
+                "runId": str(run_id),
+                "parent_run_id": str(parent_run_id) if parent_run_id else None,
+                "output": parsed_output,
+                "tokensUsage": {
+                    "prompt": token_usage.get("prompt_tokens"),
+                    "completion": token_usage.get("completion_tokens"),
+                },
             }
-            for generation in response.generations[0]
-        ]
-
-        event = {
-            "event": "end",
-            "type": "llm",
-            "runId": str(run_id),
-            "parent_run_id": str(parent_run_id) if parent_run_id else None,
-            "output": parsed_output,
-            "tokensUsage": {
-                "prompt": token_usage.get("prompt_tokens"),
-                "completion": token_usage.get("completion_tokens"),
-            },
-        }
-        self.__send_event(event)
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_llm_end: {e}")
 
     def on_tool_start(
         self,
@@ -344,24 +356,27 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> None:
-        user_id = _get_user_id(metadata)
-        user_props = _get_user_props(metadata)
+        try:
+            user_id = _get_user_id(metadata)
+            user_props = _get_user_props(metadata)
 
-        event = {
-            "event": "start",
-            "type": "tool",
-            "userId": user_id,
-            "runId": str(run_id),
-            "parentRunId": str(parent_run_id) if parent_run_id else None,
-            "name": serialized.get("name"),
-            "input": input_str,
-            "tags": tags,
-            "metadata": metadata,
-        }
-        if user_props:
-            event["userProps"] = user_props
+            event = {
+                "event": "start",
+                "type": "tool",
+                "userId": user_id,
+                "runId": str(run_id),
+                "parentRunId": str(parent_run_id) if parent_run_id else None,
+                "name": serialized.get("name"),
+                "input": input_str,
+                "tags": tags,
+                "metadata": metadata,
+            }
+            if user_props:
+                event["userProps"] = user_props
 
-        self.__send_event(event)
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_tool_start: {e}")
 
     def on_tool_end(
         self,
@@ -372,14 +387,17 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         tags: Union[List[str], None] = None,
         **kwargs: Any,
     ) -> None:
-        event = {
-            "event": "end",
-            "type": "tool",
-            "runId": str(run_id),
-            "parent_run_id": str(parent_run_id) if parent_run_id else None,
-            "output": output,
-        }
-        self.__send_event(event)
+        try:
+            event = {
+                "event": "end",
+                "type": "tool",
+                "runId": str(run_id),
+                "parent_run_id": str(parent_run_id) if parent_run_id else None,
+                "output": output,
+            }
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_tool_end: {e}")
 
     def on_chain_start(
         self,
@@ -392,41 +410,44 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> Any:
-        name = serialized.get("id", [None, None, None, None])[3]
-        type = "chain"
-        metadata = metadata or {}
-
-        agentName = metadata.get("agent_name")
-        if agentName is None:
-            agentName = metadata.get("agentName")
-
-        if agentName is not None:
-            type = "agent"
-            name = agentName
-        if name == "AgentExecutor" or name == "PlanAndExecute":
-            type = "agent"
-
-        if parent_run_id is not None:
+        try:
+            name = serialized.get("id", [None, None, None, None])[3]
             type = "chain"
+            metadata = metadata or {}
 
-        user_id = _get_user_id(metadata)
-        user_props = _get_user_props(metadata)
+            agentName = metadata.get("agent_name")
+            if agentName is None:
+                agentName = metadata.get("agentName")
 
-        event = {
-            "event": "start",
-            "type": type,
-            "userId": user_id,
-            "runId": str(run_id),
-            "parentRunId": str(parent_run_id) if parent_run_id else None,
-            "input": _parse_input(inputs),
-            "tags": tags,
-            "metadata": metadata,
-            "name": name,
-        }
-        if user_props:
-            event["userProps"] = user_props
+            if agentName is not None:
+                type = "agent"
+                name = agentName
+            if name == "AgentExecutor" or name == "PlanAndExecute":
+                type = "agent"
 
-        self.__send_event(event)
+            if parent_run_id is not None:
+                type = "chain"
+
+            user_id = _get_user_id(metadata)
+            user_props = _get_user_props(metadata)
+
+            event = {
+                "event": "start",
+                "type": type,
+                "userId": user_id,
+                "runId": str(run_id),
+                "parentRunId": str(parent_run_id) if parent_run_id else None,
+                "input": _parse_input(inputs),
+                "tags": tags,
+                "metadata": metadata,
+                "name": name,
+            }
+            if user_props:
+                event["userProps"] = user_props
+
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_chain_start: {e}")
 
     def on_chain_end(
         self,
@@ -436,13 +457,16 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
-        event = {
-            "event": "end",
-            "type": "chain",
-            "runId": str(run_id),
-            "output": _parse_output(outputs),
-        }
-        self.__send_event(event)
+        try:
+            event = {
+                "event": "end",
+                "type": "chain",
+                "runId": str(run_id),
+                "output": _parse_output(outputs),
+            }
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_chain_end: {e}")
 
     def on_agent_action(
         self,
@@ -452,15 +476,18 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
-        event = {
-            "event": "start",
-            "type": "tool",
-            "runId": str(run_id),
-            "parentRunId": str(parent_run_id) if parent_run_id else None,
-            "name": action.tool,
-            "input": _parse_input(action.tool_input),
-        }
-        self.__send_event(event)
+        try:
+            event = {
+                "event": "start",
+                "type": "tool",
+                "runId": str(run_id),
+                "parentRunId": str(parent_run_id) if parent_run_id else None,
+                "name": action.tool,
+                "input": _parse_input(action.tool_input),
+            }
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_agent_action: {e}")
 
     def on_agent_finish(
         self,
@@ -470,14 +497,17 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
-        event = {
-            "event": "end",
-            "type": "agent",
-            "runId": str(run_id),
-            "parentRunId": str(parent_run_id) if parent_run_id else None,
-            "output": _parse_output(finish.return_values),
-        }
-        self.__send_event(event)
+        try:
+            event = {
+                "event": "end",
+                "type": "agent",
+                "runId": str(run_id),
+                "parentRunId": str(parent_run_id) if parent_run_id else None,
+                "output": _parse_output(finish.return_values),
+            }
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_agent_finish: {e}")
 
     def on_chain_error(
         self,
@@ -487,14 +517,17 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
-        event = {
-            "event": "error",
-            "type": "chain",
-            "runId": str(run_id),
-            "parent_run_id": str(parent_run_id) if parent_run_id else None,
-            "error": {"message": str(error), "stack": traceback.format_exc()},
-        }
-        self.__send_event(event)
+        try:
+            event = {
+                "event": "error",
+                "type": "chain",
+                "runId": str(run_id),
+                "parent_run_id": str(parent_run_id) if parent_run_id else None,
+                "error": {"message": str(error), "stack": traceback.format_exc()},
+            }
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_chain_error: {e}")
 
     def on_tool_error(
         self,
@@ -504,14 +537,17 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
-        event = {
-            "event": "error",
-            "type": "tool",
-            "runId": str(run_id),
-            "parent_run_id": str(parent_run_id) if parent_run_id else None,
-            "error": {"message": str(error), "stack": traceback.format_exc()},
-        }
-        self.__send_event(event)
+        try:
+            event = {
+                "event": "error",
+                "type": "tool",
+                "runId": str(run_id),
+                "parent_run_id": str(parent_run_id) if parent_run_id else None,
+                "error": {"message": str(error), "stack": traceback.format_exc()},
+            }
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_tool_error: {e}")
 
     def on_llm_error(
         self,
@@ -521,14 +557,17 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
-        event = {
-            "event": "error",
-            "type": "llm",
-            "runId": str(run_id),
-            "parent_run_id": str(parent_run_id) if parent_run_id else None,
-            "error": {"message": str(error), "stack": traceback.format_exc()},
-        }
-        self.__send_event(event)
+        try:
+            event = {
+                "event": "error",
+                "type": "llm",
+                "runId": str(run_id),
+                "parent_run_id": str(parent_run_id) if parent_run_id else None,
+                "error": {"message": str(error), "stack": traceback.format_exc()},
+            }
+            self.__send_event(event)
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_llm_error: {e}")
 
 
 __all__ = ["LLMonitorCallbackHandler", "identify"]
