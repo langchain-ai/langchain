@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from cohere.client import Chat
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -18,7 +16,7 @@ from langchain.schema import (
 )
 
 
-def _get_docs(response: Chat) -> List[Document]:
+def _get_docs(response: Any) -> List[Document]:
     return [
         Document(page_content=doc["snippet"], metadata=doc)
         for doc in response.documents
