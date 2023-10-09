@@ -134,7 +134,7 @@ def fix_filter_directive(
         args = [arg for arg in args if arg is not None]
         if not args:
             return None
-        elif len(args) == 1:
+        elif len(args) == 1 and filter.operator in (Operator.AND, Operator.OR):
             return args[0]
         else:
             return Operation(
@@ -157,10 +157,7 @@ def construct_examples(input_output_pairs: Sequence[Tuple[str, dict]]) -> List[d
     examples = []
     for i, (_input, output) in enumerate(input_output_pairs):
         structured_request = (
-            json.dumps(output, indent=4)
-            .replace("{", "{{")
-            .replace("}", "}}")
-            .replace('"', '"')
+            json.dumps(output, indent=4).replace("{", "{{").replace("}", "}}")
         )
         example = {
             "i": i + 1,
@@ -235,7 +232,6 @@ def load_query_constructor_chain(
     llm: BaseLanguageModel,
     document_contents: str,
     attribute_info: Sequence[Union[AttributeInfo, dict]],
-    *,
     examples: Optional[List] = None,
     allowed_comparators: Sequence[Comparator] = tuple(Comparator),
     allowed_operators: Sequence[Operator] = tuple(Operator),
