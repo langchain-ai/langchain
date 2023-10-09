@@ -67,9 +67,11 @@ def _get_anthropic_client() -> Any:
         )
     return anthropic.Anthropic()
 
+
 def _get_num_tokens_anthropic(text: str) -> int:
     client = _get_anthropic_client()
     return client.count_tokens(text=text)
+
 
 def _get_token_ids_anthropic(text: str) -> List[int]:
     client = _get_anthropic_client()
