@@ -5,6 +5,7 @@ from langchain.schema.runnable.base import (
     RunnableGenerator,
     RunnableLambda,
     RunnableMap,
+    RunnableParallel,
     RunnableSequence,
     RunnableSerializable,
 )
@@ -30,6 +31,7 @@ __all__ = [
     "RunnableGenerator",
     "RunnableLambda",
     "RunnableMap",
+    "RunnableParallel",
     "RunnablePassthrough",
     "RunnableSequence",
     "RunnableWithFallbacks",
