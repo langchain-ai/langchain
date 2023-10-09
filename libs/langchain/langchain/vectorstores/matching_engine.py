@@ -116,20 +116,24 @@ class MatchingEngine(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        if len(texts) != len(metadatas):
+        texts = list(texts)
+        if metadatas is not None and len(texts) != len(metadatas):
             raise ValueError(
-                f'texts and metadatas does not have the same length ({len(texts)} != {len(metadatas)})')
+                "texts and metadatas do not have the same length. Received "
+                f"{len(texts)} texts and {len(metadatas)} metadatas."
+            )
         logger.debug("Embedding documents.")
-        embeddings = self.embedding.embed_documents(list(texts))
+        embeddings = self.embedding.embed_documents(texts)
         jsons = []
         ids = []
         # Could be improved with async.
         for idx, (embedding, text) in enumerate(zip(embeddings, texts)):
             id = str(uuid.uuid4())
             ids.append(id)
-            jsons.append({"id": id, "embedding": embedding})
+            json_: dict = {"id": id, "embedding": embedding}
             if metadatas is not None:
-                jsons[idx]["metadata"] = metadatas[idx]
+                json_["metadata"] = metadatas[idx]
+            jsons.append(json)
             self._upload_to_gcs(text, f"documents/{id}")
 
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")
