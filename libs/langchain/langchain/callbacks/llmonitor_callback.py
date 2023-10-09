@@ -262,8 +262,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 event["userProps"] = user_props
 
             self.__send_event(event)
-        except Exception as e: 
-            logging.warning(f"[LLMonitor] An error occurred in on_llm_start: {e}") 
+        except Exception as e:
+            logging.warning(f"[LLMonitor] An error occurred in on_llm_start: {e}")
 
     def on_chat_model_start(
         self,
@@ -296,8 +296,9 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
             self.__send_event(event)
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_chat_model_start: "
-                f"{e}")
+            logging.warning(
+                f"[LLMonitor] An error occurred in on_chat_model_start: " f"{e}"
+            )
 
     def on_llm_end(
         self,
