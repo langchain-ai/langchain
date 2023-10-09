@@ -88,7 +88,8 @@ run_collector_var: ContextVar[
 
 
 def _get_debug() -> bool:
-    return langchain.debug
+    from langchain.utils.globals import get_debug
+    return get_debug()
 
 
 @contextmanager
