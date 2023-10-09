@@ -1,14 +1,12 @@
 from typing import Any, Dict, List, Mapping, Optional
 
-from aiohttp import ClientSession
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
 from langchain.pydantic_v1 import Extra, root_validator
-from langchain.requests import Requests
+from langchain.utilities.requests import Requests
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_MODEL_ID = "google/flan-t5-xl"
@@ -129,10 +127,10 @@ class DeepInfra(LLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        async with ClientSession() as session:
-            async with session.post(
-                self._url(), json=self._body(prompt, kwargs), headers=self._headers()
-            ) as response:
-                self._handle_status(response.status, response.text)
-                data = await response.json()
-                return data["results"][0]["generated_text"]
+        request = Requests(headers=self._headers())
+        async with request.apost(
+            url=self._url(), data=self._body(prompt, kwargs)
+        ) as response:
+            self._handle_status(response.status, response.text)
+            data = await response.json()
+            return data["results"][0]["generated_text"]
