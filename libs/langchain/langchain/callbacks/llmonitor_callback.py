@@ -1,6 +1,6 @@
+import logging
 import os
 import traceback
-import logging
 from contextvars import ContextVar
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Union
@@ -296,7 +296,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
             self.__send_event(event)
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_chat_model_start: {e}")
+            logging.warning(f"[LLMonitor] An error occurred in on_chat_model_start: "
+                f"{e}")
 
     def on_llm_end(
         self,
