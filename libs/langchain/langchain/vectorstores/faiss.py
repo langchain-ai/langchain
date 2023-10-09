@@ -1147,3 +1147,32 @@ class FAISS(VectorStore):
             (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
         ]
         return docs_and_rel_scores
+
+    async def _asimilarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and their similarity scores on a scale from 0 to 1."""
+        # Pop score threshold so that only relevancy scores, not raw scores, are
+        # filtered.
+        relevance_score_fn = self._select_relevance_score_fn()
+        if relevance_score_fn is None:
+            raise ValueError(
+                "normalize_score_fn must be provided to"
+                " FAISS constructor to normalize scores"
+            )
+        docs_and_scores = await self.asimilarity_search_with_score(
+            query,
+            k=k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        docs_and_rel_scores = [
+            (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
+        ]
+        return docs_and_rel_scores
