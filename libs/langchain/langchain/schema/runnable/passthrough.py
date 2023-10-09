@@ -21,7 +21,7 @@ from langchain.pydantic_v1 import BaseModel, create_model
 from langchain.schema.runnable.base import (
     Input,
     Runnable,
-    RunnableMap,
+    RunnableParallel,
     RunnableSerializable,
 )
 from langchain.schema.runnable.config import RunnableConfig, get_executor_for_config
@@ -83,7 +83,7 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
             A runnable that merges the Dict input with the output produced by the
             mapping argument.
         """
-        return RunnableAssign(RunnableMap(kwargs))
+        return RunnableAssign(RunnableParallel(kwargs))
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
         return self._call_with_config(identity, input, config)
@@ -119,9 +119,9 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     A runnable that assigns key-value pairs to Dict[str, Any] inputs.
     """
 
-    mapper: RunnableMap[Dict[str, Any]]
+    mapper: RunnableParallel[Dict[str, Any]]
 
-    def __init__(self, mapper: RunnableMap[Dict[str, Any]], **kwargs: Any) -> None:
+    def __init__(self, mapper: RunnableParallel[Dict[str, Any]], **kwargs: Any) -> None:
         super().__init__(mapper=mapper, **kwargs)
 
     @classmethod

@@ -1490,7 +1490,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             yield chunk
 
 
-class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
+class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     """
     A runnable that runs a mapping of runnables in parallel,
     and returns a mapping of their outputs.
@@ -1500,16 +1500,27 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
 
     def __init__(
         self,
-        steps: Mapping[
-            str,
-            Union[
-                Runnable[Input, Any],
-                Callable[[Input], Any],
-                Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
-            ],
+        __steps: Optional[
+            Mapping[
+                str,
+                Union[
+                    Runnable[Input, Any],
+                    Callable[[Input], Any],
+                    Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
+                ],
+            ]
+        ] = None,
+        **kwargs: Union[
+            Runnable[Input, Any],
+            Callable[[Input], Any],
+            Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
         ],
     ) -> None:
-        super().__init__(steps={key: coerce_to_runnable(r) for key, r in steps.items()})
+        merged = {**__steps} if __steps is not None else {}
+        merged.update(kwargs)
+        super().__init__(
+            steps={key: coerce_to_runnable(r) for key, r in merged.items()}
+        )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -1538,7 +1549,7 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
         ):
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model(  # type: ignore[call-overload]
-                "RunnableMapInput",
+                "RunnableParallelInput",
                 **{
                     k: (v.annotation, v.default)
                     for step in self.steps.values()
@@ -1553,7 +1564,7 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
     def output_schema(self) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
-            "RunnableMapOutput",
+            "RunnableParallelOutput",
             **{k: (v.OutputType, None) for k, v in self.steps.items()},
         )
 
@@ -1795,6 +1806,10 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
 
         async for chunk in self.atransform(input_aiter(), config):
             yield chunk
+
+
+# We support both names
+RunnableMap = RunnableParallel
 
 
 class RunnableGenerator(Runnable[Input, Output]):
@@ -2435,10 +2450,7 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
     elif callable(thing):
         return RunnableLambda(cast(Callable[[Input], Output], thing))
     elif isinstance(thing, dict):
-        runnables: Mapping[str, Runnable[Any, Any]] = {
-            key: coerce_to_runnable(r) for key, r in thing.items()
-        }
-        return cast(Runnable[Input, Output], RunnableMap(steps=runnables))
+        return cast(Runnable[Input, Output], RunnableParallel(thing))
     else:
         raise TypeError(
             f"Expected a Runnable, callable or dict."
