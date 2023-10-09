@@ -35,14 +35,14 @@ def test_debug_is_settable_via_setter() -> None:
     from langchain.callbacks.manager import _get_debug
     from langchain import globals
 
-    previous_value = globals.debug
+    previous_value = globals._debug
     previous_fn_reading = _get_debug()
     assert previous_value == previous_fn_reading
 
     # Flip the value of the flag.
     set_debug(not previous_value)
 
-    new_value = globals.debug
+    new_value = globals._debug
     new_fn_reading = _get_debug()
 
     try:
@@ -95,14 +95,14 @@ def test_verbose_is_settable_via_setter() -> None:
     from langchain.chains.base import _get_verbosity
     from langchain import globals
 
-    previous_value = globals.verbose
+    previous_value = globals._verbose
     previous_fn_reading = _get_verbosity()
     assert previous_value == previous_fn_reading
 
     # Flip the value of the flag.
     set_verbose(not previous_value)
 
-    new_value = globals.verbose
+    new_value = globals._verbose
     new_fn_reading = _get_verbosity()
 
     try:
