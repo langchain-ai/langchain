@@ -9,10 +9,6 @@ from langchain._api.deprecation import surface_langchain_deprecation_warnings
 if TYPE_CHECKING:
     from langchain.schema import BaseCache
 
-    verbose: bool
-    debug: bool
-    llm_cache: Optional[BaseCache]
-
 
 try:
     __version__ = metadata.version(__package__)
