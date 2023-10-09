@@ -202,7 +202,12 @@ class VectorStore(ABC):
         self, *args: Any, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with distance asynchronously."""
-        raise NotImplementedError
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self.similarity_search_with_score, *args, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def _similarity_search_with_relevance_scores(
         self,
