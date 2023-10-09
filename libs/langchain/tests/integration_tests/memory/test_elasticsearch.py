@@ -20,6 +20,7 @@ To run against Elastic Cloud, set the following environment variables:
 - ES_PASSWORD
 """
 
+
 class TestElasticsearch:
     @pytest.fixture(scope="class", autouse=True)
     def elasticsearch_connection(self) -> Union[dict, Generator[dict, None, None]]:

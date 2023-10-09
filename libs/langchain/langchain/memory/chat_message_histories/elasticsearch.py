@@ -31,6 +31,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
         self,
         index: str,
         session_id: str,
+        *,
         es_connection: Optional["Elasticsearch"] = None,
         es_url: Optional[str] = None,
         es_cloud_id: Optional[str] = None,
