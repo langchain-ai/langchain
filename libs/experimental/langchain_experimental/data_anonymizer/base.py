@@ -47,3 +47,7 @@ class ReversibleAnonymizerBase(AnonymizerBase):
         deanonymizer_matching_strategy: Callable[[str, MappingDataType], str],
     ) -> str:
         """Abstract method to deanonymize text"""
+
+    @abstractmethod
+    def reset_deanonymizer_mapping(self) -> None:
+        """Abstract method to reset deanonymizer mapping"""
