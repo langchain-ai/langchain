@@ -8842,6 +8842,42 @@ docs = ["matplotlib", "numpydoc (==1.1.*)", "sphinx", "sphinx-book-theme", "sphi
 test = ["pytest", "pytest-cov"]
 
 [[package]]
+name = "simsimd"
+version = "2.3.7"
+description = "Vector Similarity Functions 3x-200x Faster than SciPy and NumPy"
+optional = false
+python-versions = "*"
+files = [
+    {file = "simsimd-2.3.7-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:fe60c4e4f3517cfe31a5e14c1a61f726561b15152d882342043d67620e714134"},
+    {file = "simsimd-2.3.7-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:427221264f15648411e4ce152373f230ea3780ca7b875560de822f534fa547e6"},
+    {file = "simsimd-2.3.7-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:feb83ff7b74879a4edbd3bfcdac51c34d0f53a58d29d20edf2b7c61b9732deaa"},
+    {file = "simsimd-2.3.7-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:a944661e36c79438994747ae1ed04cbcda5078008ca9a6bef7fe5d8074cfd326"},
+    {file = "simsimd-2.3.7-cp310-cp310-win_amd64.whl", hash = "sha256:5135caee3fa20fe417598ca879c617ce4970ebe8bb13abc36673df88e65904b8"},
+    {file = "simsimd-2.3.7-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:76261be9397c1820983cfb6ea7df2f5a03c6a6faf98cfee20662f7b0eebcbf59"},
+    {file = "simsimd-2.3.7-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:589eb54e8fd46f44937de63586f643b20e4f9fec1bdd9e3f8cfff67ac778c517"},
+    {file = "simsimd-2.3.7-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:dea21e3afb4b3be6d8a7b10177149b2ea8c3b9a700739f470ecc9dbb8bbcda9a"},
+    {file = "simsimd-2.3.7-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:0976efe3744965b7d6fd5d0462e75a4f072b37a220923fb8a4c4f34d97f3c86f"},
+    {file = "simsimd-2.3.7-cp311-cp311-win_amd64.whl", hash = "sha256:114c721e85e3f857273fb514a63ac2c3a34fdc3dded5da69678547e09405fcc0"},
+    {file = "simsimd-2.3.7-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:144140922aeb025bca3bd8cab0407dd237fd564e14364474d691d10c40e552ff"},
+    {file = "simsimd-2.3.7-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:275010ef68f9d45eb9ad90351874067bd74112e5c4ae2d18fbddb0e6932eced9"},
+    {file = "simsimd-2.3.7-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:bdb4a8285c70190bc27f7e853bd44d91c10fbf89a2dc3a62cf67a706d2be39ae"},
+    {file = "simsimd-2.3.7-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:4c2feef1bfd316da88fed6a83002a0f2dc2bf585bd68fba35487270e949338bf"},
+    {file = "simsimd-2.3.7-cp312-cp312-win_amd64.whl", hash = "sha256:659d9a0bcc05db129fa46aac4700fea1b1eadf4e466f4c90b7eef2dc9619291d"},
+    {file = "simsimd-2.3.7-cp36-cp36m-win_amd64.whl", hash = "sha256:280893aacbab0b92538b67aaba467ed5f12cd4a4457aee362085ad8fe1f4afe3"},
+    {file = "simsimd-2.3.7-cp37-cp37m-win_amd64.whl", hash = "sha256:b18cb8ef38b357d0241a62eb0beb74ba968c3b824d444fcb12a3363fac467a8b"},
+    {file = "simsimd-2.3.7-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:12434401431067ff80960ed89134c897894f2a1e910771ceb9542d50d30c4500"},
+    {file = "simsimd-2.3.7-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:b29843cd0cec68ceca8a459bbf3cc46b72cd1debb9616d3b52b3143608b167ff"},
+    {file = "simsimd-2.3.7-cp38-cp38-manylinux_2_28_aarch64.whl", hash = "sha256:316109c4265449b75cce3e9d1dee92796295c50b6984e350fc19bf778b737ca1"},
+    {file = "simsimd-2.3.7-cp38-cp38-manylinux_2_28_x86_64.whl", hash = "sha256:169421e6c094d20d851ac4c4ba389828507ff02ce720d87082c2fc8e8adb0ede"},
+    {file = "simsimd-2.3.7-cp38-cp38-win_amd64.whl", hash = "sha256:ffe4fa56264c15ea3eed894120403974f044269f14485ac269a55fd30bea503f"},
+    {file = "simsimd-2.3.7-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:d45e33baf9440e45dec4351e42232c4325dbf4f057a2b2eed12a8a03f7f3a413"},
+    {file = "simsimd-2.3.7-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:e5b608dcdaf1e9766f209eb69144f60f327ca4b3540d1b05abe23a70a7aebdb4"},
+    {file = "simsimd-2.3.7-cp39-cp39-manylinux_2_28_aarch64.whl", hash = "sha256:396b8f55d55310b4407c3db67cfbc365726132b5b633e81f75b2e9afd7a53ed4"},
+    {file = "simsimd-2.3.7-cp39-cp39-manylinux_2_28_x86_64.whl", hash = "sha256:3e8ebd77b689f3e2894af6a079ab70cada943e97262e547b69fe18cd2ed02925"},
+    {file = "simsimd-2.3.7-cp39-cp39-win_amd64.whl", hash = "sha256:758fa5c4dfcd1ef96ee993e57cdba103eaa574d33710d0d4e46df4adf8c013d7"},
+]
+
+[[package]]
 name = "singlestoredb"
 version = "0.7.1"
 description = "Interface to the SingleStore database and cluster management APIs"
@@ -10886,4 +10922,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e25dfb2dbe4090086ccaa9f483d75bed50fa65bb196dd5e63fd9f819d71d03f6"
+content-hash = "3d369a422dfbc5acf11d2e3d5506545fd312829a525e6897a00162d55f72fe1f"
