@@ -1,17 +1,19 @@
-from typing import Any, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra, root_validator
+from langchain.utils import get_from_dict_or_env
 
 
 class YandexGPT(LLM):
     """Yandex large language models.
 
-    To use, you should have the ``yandexcloud`` python package installed.
-
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
+    To use, you should have the ``yandexcloud`` python package installed, and the
+    environment variable ``YC_IAM_TOKEN`` set with IAM token
+    for the service account with the ``ai.languageModels.user`` role, or pass
+    it as a named parameter ``iam_token`` to the constructor.
 
     Example:
         .. code-block:: python
@@ -47,6 +49,19 @@ class YandexGPT(LLM):
             "max_tokens": self.max_tokens,
             "stop": self.stop,
         }
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that iam token exists in environment."""
+
+        iam_token = get_from_dict_or_env(values, "iam_token", "YC_IAM_TOKEN")
+        values["iam_token"] = iam_token
+        return values
 
     def _call(
         self,
