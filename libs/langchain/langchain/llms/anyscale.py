@@ -1,31 +1,30 @@
 """Wrapper around Anyscale Endpoint"""
 from typing import (
-    AbstractSet,
     Any,
     AsyncIterator,
-    Callable,
-    Collection,
     Dict,
     Iterator,
     List,
-    Literal,
     Mapping,
     Optional,
     Set,
     Tuple,
-    Union,
 )
-import warnings
-from langchain.pydantic_v1 import Extra, Field, root_validator
+
+from langchain.pydantic_v1 import Field, root_validator
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     AsyncCallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
+
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
-from langchain.llms.openai import BaseOpenAI, completion_with_retry, acompletion_with_retry
+from langchain.llms.openai import (
+    BaseOpenAI, 
+    completion_with_retry, 
+    acompletion_with_retry,
+)
 
 from langchain.utils import get_from_dict_or_env
 
@@ -64,7 +63,8 @@ def create_llm_result(
             
 class Anyscale(BaseOpenAI):
     """Wrapper around Anyscale Endpoint.
-    To use, you should have the environment variable ``ANYSCALE_API_BASE`` and ``ANYSCALE_API_KEY`` and  set with your Anyscale Endpoint, or pass it as a named parameter to the constructor.
+    To use, you should have the environment variable ``ANYSCALE_API_BASE`` and ``ANYSCALE_API_KEY``.
+    set with your Anyscale Endpoint, or pass it as a named parameter to the constructor.
     
     Example:
         .. code-block:: python
@@ -73,7 +73,7 @@ class Anyscale(BaseOpenAI):
                                    anyscale_api_key="ANYSCALE_API_KEY",
                                    model_name="meta-llama/Llama-2-7b-chat-hf")
             # To leverage Ray for parallel processing
-            @ray.remote(num_cpus=0.1)
+            @ray.remote(num_cpus=1)
             def send_query(llm, text):
                 resp = llm(text)
                 return resp
@@ -266,7 +266,8 @@ class Anyscale(BaseOpenAI):
             messages = self.prefix_messages + [{"role": "user", "content": prompt}]
             if self.streaming:
                 generation: Optional[GenerationChunk] = None
-                async for chunk in self._astream(messages, params, run_manager, **kwargs):
+                async for chunk in self._astream(messages, params, 
+                                                 run_manager, **kwargs):
                     if generation is None:
                         generation = chunk
                     else:
