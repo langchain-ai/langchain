@@ -42,8 +42,6 @@ class TreeSitterSegmenter(CodeSegmenter):
         except:
             raise
 
-    # TODO: Actually implement these abstract methods
-
     def extract_functions_classes(self) -> List[str]:
         language = self.get_language()
         query = language.query(self.get_chunk_query())
@@ -52,28 +50,29 @@ class TreeSitterSegmenter(CodeSegmenter):
         tree = parser.parse(bytes(self.code, encoding='UTF-8'))
 
         captures = query.captures(tree.root_node)
-        return [node.text for (node, name) in captures]
+
+        return [node.text.decode('UTF-8') for (node, name) in captures]
 
     def simplify_code(self) -> str:
-        # TODO
-        pass
-    #     import esprima
+        language = self.get_language()
+        query = language.query(self.get_chunk_query())
 
-    #     tree = esprima.parseScript(self.code, loc=True)
-    #     simplified_lines = self.source_lines[:]
+        parser = self.get_parser()
+        tree = parser.parse(bytes(self.code, encoding='UTF-8'))
 
-    #     for node in tree.body:
-    #         if isinstance(
-    #             node,
-    #             (esprima.nodes.FunctionDeclaration, esprima.nodes.ClassDeclaration),
-    #         ):
-    #             start = node.loc.start.line - 1
-    #             simplified_lines[start] = f"// Code for: {simplified_lines[start]}"
+        # TODO: Track which lines already marked & blanked,
+        #       to keep from processing chunks inside other chunks
+        simplified_lines = self.source_lines[:]
+        for (node, name) in query.captures(tree.root_node):
+            start_line = node.start_point[0]
+            end_line = node.end_point[0]
 
-    #             for line_num in range(start + 1, node.loc.end.line):
-    #                 simplified_lines[line_num] = None  # type: ignore
+            simplified_lines[start_line] = self.make_line_comment(f"Code for: {self.source_lines[start_line]}")
 
-    #     return "\n".join(line for line in simplified_lines if line is not None)
+            for line_num in range(start_line + 1, end_line + 1):
+                simplified_lines[line_num] = None  # type: ignore
+
+        return "\n".join(line for line in simplified_lines if line is not None)
 
     def get_language(self):
         from tree_sitter import Language
@@ -87,4 +86,8 @@ class TreeSitterSegmenter(CodeSegmenter):
 
     @abstractmethod
     def get_chunk_query(self) -> str:
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
+    def make_line_comment(self, text: str) -> str:
         raise NotImplementedError()  # pragma: no cover
