@@ -3,25 +3,12 @@ from typing import Any, Dict, List, Mapping, Optional
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import root_validator
 from langchain.utils import get_from_dict_or_env
 
 
-class YandexGPT(LLM):
-    """Yandex large language models.
-
-    To use, you should have the ``yandexcloud`` python package installed, and the
-    environment variable ``YC_IAM_TOKEN`` set with IAM token
-    for the service account with the ``ai.languageModels.user`` role, or pass
-    it as a named parameter ``iam_token`` to the constructor.
-
-    Example:
-        .. code-block:: python
-
-            from langchain.llms import YandexGPT
-            yandex_gpt = YandexGPT(iam_token="t1.9eu...")
-    """
-
+class BaseYandexGPT(Serializable):
     iam_token: str = ""
     """Yandex Cloud IAM token for service account 
     with the `ai.languageModels.user` role"""
@@ -40,6 +27,30 @@ class YandexGPT(LLM):
     def _llm_type(self) -> str:
         return "yandex_gpt"
 
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that iam token exists in environment."""
+
+        iam_token = get_from_dict_or_env(values, "iam_token", "YC_IAM_TOKEN")
+        values["iam_token"] = iam_token
+        return values
+
+
+class YandexGPT(BaseYandexGPT, LLM):
+    """Yandex large language models.
+
+    To use, you should have the ``yandexcloud`` python package installed, and the
+    environment variable ``YC_IAM_TOKEN`` set with IAM token
+    for the service account with the ``ai.languageModels.user`` role, or pass
+    it as a named parameter ``iam_token`` to the constructor.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import YandexGPT
+            yandex_gpt = YandexGPT(iam_token="t1.9eu...")
+    """
+
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
@@ -49,19 +60,6 @@ class YandexGPT(LLM):
             "max_tokens": self.max_tokens,
             "stop": self.stop,
         }
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that iam token exists in environment."""
-
-        iam_token = get_from_dict_or_env(values, "iam_token", "YC_IAM_TOKEN")
-        values["iam_token"] = iam_token
-        return values
 
     def _call(
         self,
