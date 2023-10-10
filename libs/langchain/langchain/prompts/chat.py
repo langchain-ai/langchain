@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Sequence,
     Set,
     Tuple,
@@ -15,7 +16,6 @@ from typing import (
     TypeVar,
     Union,
     overload,
-    Literal,
 )
 
 from langchain._api import deprecated

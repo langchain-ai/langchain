@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Sequence, Literal
+from typing import Any, Literal, Sequence
 
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
