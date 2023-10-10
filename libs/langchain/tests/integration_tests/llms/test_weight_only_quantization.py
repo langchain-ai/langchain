@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from langchain.llms.weight_only_quantization import WrightOnlyQuantPipeline
+from langchain.llms.weight_only_quantization import WeightOnlyQuantPipeline
 from langchain.llms.loading import load_llm
 from tests.integration_tests.llms.utils import assert_llm_equality
 
@@ -13,7 +13,7 @@ def test_weight_only_quantization_with_config() -> None:
     """Test valid call to HuggingFace text2text model."""
     from intel_extension_for_transformers.transformers import WeightOnlyQuantConfig
     conf = WeightOnlyQuantConfig(weight_dtype="nf4")
-    llm = WrightOnlyQuantPipeline.from_model_id(
+    llm = WeightOnlyQuantPipeline.from_model_id(
         model_id=model_id, task="text2text-generation",
         quantization_config=conf
     )
@@ -23,7 +23,7 @@ def test_weight_only_quantization_with_config() -> None:
 
 def test_weight_only_quantization_4bit() -> None:
     """Test valid call to HuggingFace text2text model."""
-    llm = WrightOnlyQuantPipeline.from_model_id(
+    llm = WeightOnlyQuantPipeline.from_model_id(
         model_id=model_id, task="text2text-generation",
         load_in_4bit=True
     )
@@ -33,7 +33,7 @@ def test_weight_only_quantization_4bit() -> None:
 
 def test_weight_only_quantization_8bit() -> None:
     """Test valid call to HuggingFace text2text model."""
-    llm = WrightOnlyQuantPipeline.from_model_id(
+    llm = WeightOnlyQuantPipeline.from_model_id(
         model_id=model_id, task="text2text-generation",
         load_in_8bit=True
     )
@@ -51,7 +51,7 @@ def test_init_with_pipeline() -> None:
     pipe = pipeline(
         "text2text-generation", model=model, tokenizer=tokenizer
     )
-    llm = WrightOnlyQuantPipeline(pipeline=pipe)
+    llm = WeightOnlyQuantPipeline(pipeline=pipe)
     output = llm("Say foo:")
     assert isinstance(output, str)
 
@@ -60,7 +60,7 @@ def text_weight_only_pipeline_summarization() -> None:
     """Test valid call to HuggingFace summarization model."""
     from intel_extension_for_transformers.transformers import WeightOnlyQuantConfig
     conf = WeightOnlyQuantConfig()
-    llm = WrightOnlyQuantPipeline.from_model_id(
+    llm = WeightOnlyQuantPipeline.from_model_id(
         model_id=model_id, task="summarization",
         quantization_config=conf
     )

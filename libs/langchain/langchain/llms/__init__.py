@@ -662,7 +662,7 @@ __all__ = [
     "HuggingFacePipeline",
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
-    "WrightOnlyQuantPipeline",
+    "WeightOnlyQuantPipeline",
     "KoboldApiLLM",
     "LlamaCpp",
     "TextGen",

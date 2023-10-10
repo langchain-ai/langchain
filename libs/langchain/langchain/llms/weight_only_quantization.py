@@ -11,7 +11,7 @@ DEFAULT_TASK = "text2text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 
-class WrightOnlyQuantPipeline(LLM):
+class WeightOnlyQuantPipeline(LLM):
     """Weight only quantized model.
 
     To use, you should have the `intel-extension-for-transformers` packabge and `transformers` package installed.
@@ -20,10 +20,10 @@ class WrightOnlyQuantPipeline(LLM):
     Example using from_model_id:
         .. code-block:: python
 
-            from langchain.llms import WrightOnlyQuantPipeline
+            from langchain.llms import WeightOnlyQuantPipeline
             from intel_extension_for_transformers.transformers import WeightOnlyQuantConfig
             config = WeightOnlyQuantConfig
-            hf = WrightOnlyQuantPipeline.from_model_id(
+            hf = WeightOnlyQuantPipeline.from_model_id(
                 model_id="google/flan-t5-large",
                 task="text2text-generation"
                 pipeline_kwargs={"max_new_tokens": 10},
@@ -32,7 +32,7 @@ class WrightOnlyQuantPipeline(LLM):
     Example passing pipeline in directly:
         .. code-block:: python
 
-            from langchain.llms import WrightOnlyQuantPipeline
+            from langchain.llms import WeightOnlyQuantPipeline
             from intel_extension_for_transformers.transformers import AutoModelForSeq2SeqLM
             from intel_extension_for_transformers.transformers import WeightOnlyQuantConfig
             from transformers import AutoTokenizer, pipeline
@@ -44,7 +44,7 @@ class WrightOnlyQuantPipeline(LLM):
             pipe = pipeline(
                 "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
             )
-            hf = WrightOnlyQuantPipeline(pipeline=pipe)
+            hf = WeightOnlyQuantPipeline(pipeline=pipe)
     """
 
     pipeline: Any  #: :meta private:
@@ -98,12 +98,14 @@ class WrightOnlyQuantPipeline(LLM):
                                                              load_in_4bit=load_in_4bit,
                                                              load_in_8bit=load_in_8bit,
                                                              quantization_config=quantization_config,
+                                                             use_llm_runtime=False,
                                                              **_model_kwargs)
             elif task in ("text2text-generation", "summarization"):
                 model = AutoModelForSeq2SeqLM.from_pretrained(model_id,
                                                               load_in_4bit=load_in_4bit,
                                                               load_in_8bit=load_in_8bit,
                                                               quantization_config=quantization_config,
+                                                              use_llm_runtime=False,
                                                               **_model_kwargs)
             else:
                 raise ValueError(
@@ -174,8 +176,8 @@ class WrightOnlyQuantPipeline(LLM):
         Example:
             .. code-block:: python
 
-                from langchain.llms import WrightOnlyQuantPipeline
-                llm = WrightOnlyQuantPipeline.from_model_id(model_id="google/flan-t5-large",
+                from langchain.llms import WeightOnlyQuantPipeline
+                llm = WeightOnlyQuantPipeline.from_model_id(model_id="google/flan-t5-large",
                                                          task="text2text-generation")
                 llm("This is a prompt.")
         """
