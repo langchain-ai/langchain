@@ -7,7 +7,9 @@ import boto3
 import time
 import os
 import uuid
-from botocore.exceptions import ClientError
+import datetime
+import logging
+from botocore.exceptions import WaiterError, ClientError
 
 
 class SagemakerAsyncEndpoint(SagemakerEndpoint):
@@ -16,7 +18,7 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
     max_request_timeout: int = 90
     s3_client: Any
     sm_client: Any
-
+        
     def wait_inference_file(
         self,
         output_url: str,
@@ -25,44 +27,37 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
         max_retries: int = 25,
         retry_delay: int = 5
     ) -> Any:
-        """
-        Wait for the inference file to be generated in S3.
+        """Wait for an inference output file to become available on S3.
         Args:
-            output_url: The S3 URL of the output file.
-            failure_url: The S3 URL of the failure file.
-            s3_client: The S3 client to use. If None, a new client will be created.
-            max_retries: The maximum number of retries to wait for the file.
-            retry_delay: The delay in seconds between retries.
+            output_url (str): S3 URL of the expected output file
+            failure_url (str): S3 URL to check for inference failure file
+            s3_client (boto3.Client): S3 client to use 
+            max_retries (int): Maximum retries to check for output file
+            retry_delay (int): Seconds to wait between retries           
         Raises:
-            Exception: If the file is not generated within the maximum retries.
+            Exception: If failure file exists    
         """
         s3_client = boto3.client("s3") if s3_client is None else s3_client
         bucket = output_url.split("/")[2]
         output_prefix = "/".join(output_url.split("/")[3:])
         failure_prefix = "/".join(failure_url.split("/")[3:])
-
-        for retry in range(max_retries):
+        
+        tries = 0
+        while tries < max_retries:
             try:
-                # Check if output_url exists
-                response = s3_client.get_object(Bucket=bucket, Key=output_prefix)
-                print(response)
-                return response
-            except ClientError as ex:
-                if ex.response['Error']['Code'] == 'NoSuchKey':
-                    try:
-                        response = s3_client.get_object(Bucket=bucket, Key=failure_prefix)
-                        raise Exception(response['Body'].read().decode('utf-8'))
-                    except ClientError as ex:
-                        if ex.response['Error']['Code'] == 'NoSuchKey':
-                            # Wait for file to be generated
-                            print("Waiting for file to be generated...")
-                            time.sleep(retry_delay)
-                        else:
-                            raise
-                else:
-                    raise
-        else:
-            raise Exception("Exceeded maximum retries while waiting for file to be generated.")
+                waiter = s3_client.get_waiter('object_exists')
+                waiter.wait(Bucket=bucket, Key=output_prefix)
+                return
+            except WaiterError:
+                tries += 1
+                print(f"Output file not found yet, waiting {retry_delay} seconds...")
+                time.sleep(retry_delay)
+
+        # Output file still not available, check failure file
+        waiter = s3_client.get_waiter('object_exists') 
+        waiter.wait(Bucket=bucket, Key=failure_prefix)
+        
+        raise Exception("Inference failed while waiting for file to be generated.")
 
     def __init__(
         self,
@@ -70,7 +65,7 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
         input_prefix: str = "",
         max_request_timeout: int = 90,
         **kwargs
-    ) -> Any:
+    ) -> None:
         """
         Initialize a Sagemaker asynchronous endpoint connector in Langchain.
         Args:
@@ -82,20 +77,6 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
             ValueError: If the input_bucket or input_prefix arguments are not of type str,
                 or if the max_request_timeout is not a positive integer.
         """
-        # Validate input_bucket argument
-        if not isinstance(input_bucket, str):
-            raise ValueError("input_bucket must be a string.")
-
-        # Validate input_prefix argument
-        if not isinstance(input_prefix, str):
-            raise ValueError("input_prefix must be a string.")
-
-        # Validate max_request_timeout argument
-        if not isinstance(max_request_timeout, int):
-            raise ValueError("max_request_timeout must be an integer.")
-        if max_request_timeout <= 0:
-            raise ValueError("max_request_timeout must be a positive integer.")
-
         super().__init__(**kwargs)
         region = self.region_name
         account = boto3.client("sts").get_caller_identity()["Account"]
@@ -105,6 +86,35 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
         self.s3_client = boto3.client("s3")
         self.sm_client = boto3.client("sagemaker")
 
+    # Private method to invoke endpoint
+    def _invoke_endpoint(
+        self, 
+        input_key: str,
+        content_type: str,
+        accepts: str,
+        **kwargs
+    ) -> Any:
+        """Invoke SageMaker endpoint asynchronously.
+
+        Args:
+            input_key: S3 key for input data 
+            content_type: MIME type for input data
+            accepts: Expected response MIME type
+            **kwargs: Additional parameters for client.invoke_endpoint_async()
+
+        Returns:
+            Response dictionary containing InferenceId
+        """
+        response = self.client.invoke_endpoint_async(
+            EndpointName=self.endpoint_name, 
+            InputLocation=f"s3://{self.input_bucket}/{input_key}",
+            ContentType=content_type,
+            Accept=accepts,
+            InvocationTimeoutSeconds=self.max_request_timeout,
+            **kwargs
+        )
+        return response
+        
     def _call(
         self,
         prompt: str,
@@ -133,6 +143,7 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
         accepts = self.content_handler.accepts
 
         # Verify if the endpoint is running
+        logger = logging.getLogger(__name__)
         response = self.sm_client.describe_endpoint(EndpointName=self.endpoint_name)
         endpoint_is_running = response["ProductionVariants"][0]["CurrentInstanceCount"] > 0
 
@@ -141,29 +152,33 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
         test_key = os.path.join(self.input_prefix, "test")
         self.s3_client.put_object(Body=test_data, Bucket=self.input_bucket, Key=test_key)
         if not endpoint_is_running:
-            self.client.invoke_endpoint_async(
-                EndpointName=self.endpoint_name,
-                InputLocation=f"s3://{self.input_bucket}/{test_key}",
-                ContentType=content_type,
-                Accept=accepts,
-                InvocationTimeoutSeconds=self.max_request_timeout,  # timeout of 60 seconds to detect if it's not running yet
-                **_endpoint_kwargs,
-            )
+            response = self._invoke_endpoint(
+                self.endpoint_name, 
+                test_key, 
+                content_type, 
+                accepts, 
+                self.max_request_timeout,
+                **_endpoint_kwargs)
+            logger.error("The endpoint is not running. Please check back in approximately 10 minutes.")
             raise Exception("The endpoint is not running. Please check back in approximately 10 minutes.")
         else:
-            print("Endpoint is running! Proceeding to inference.")
+            logger.info("Endpoint is running! Proceeding to inference.")
 
         # Send request to the async endpoint
-        request_key = os.path.join(self.input_prefix, f"request-{str(uuid.uuid4())}")
-        self.s3_client.put_object(Body=body, Bucket=self.input_bucket, Key=request_key)
-        response = self.client.invoke_endpoint_async(
-            EndpointName=self.endpoint_name,
-            InputLocation=f"s3://{self.input_bucket}/{request_key}",
-            ContentType=content_type,
-            Accept=accepts,
-            InvocationTimeoutSeconds=self.max_request_timeout,
-            **_endpoint_kwargs,
+        now = datetime.datetime.now()
+        timestamp = now.strftime("%Y%m%d%H%M%S")    # including timestamp to avoid collision in a multi-user scenario
+        request_key = os.path.join(
+            self.input_prefix, 
+            f"request-{timestamp}-{str(uuid.uuid4())}"
         )
+        self.s3_client.put_object(Body=body, Bucket=self.input_bucket, Key=request_key)
+        response = self._invoke_endpoint(
+            self.endpoint_name, 
+            request_key, 
+            content_type, 
+            accepts, 
+            self.max_request_timeout,
+            **_endpoint_kwargs)
 
         # Read the bytes of the file from S3 in output_url with Boto3
         output_url = response["OutputLocation"]
