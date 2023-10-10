@@ -51,4 +51,3 @@ Here’s where our team hangs out, talks shop, spotlights cool work, and shares 
 - **[Discord](https://discord.gg/6adMQxSpJS):** connect with >30k developers who are building with LangChain
 - **[GitHub](https://github.com/langchain-ai/langchain):** Open pull requests, contribute to a discussion, and/or contribute
 - **[Subscribe to our bi-weekly Release Notes](https://6w1pwbss0py.typeform.com/to/KjZB1auB):** a twice/month email roundup of the coolest things going on in our orbit
-- **Slack:** If you’re building an application in production at your company, we’d love to get into a Slack channel together. Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) and we’ll get in touch about setting one up.
