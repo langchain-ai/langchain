@@ -14,6 +14,7 @@ from typing import (
     Union, Mapping,
 )
 
+from bson.objectid import ObjectId
 import numpy as np
 
 from langchain.docstore.document import Document
@@ -25,9 +26,8 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 
 class CosmosDBSimilarityType(StrEnum):  # Before Python 3.11 native StrEnum is not available
     COS = 'COS'  # CosineSimilarity
-    L2 = 'L2'  # Euclidean distance
     IP = 'IP'  # inner - product
-
+    L2 = 'L2'  # Euclidean distance
 
 if TYPE_CHECKING:
     from pymongo.collection import Collection
@@ -40,12 +40,11 @@ DEFAULT_INSERT_BATCH_SIZE = 128
 
 
 class AzureCosmosDBVectorSearch(VectorStore):
-    """`Cosmos DB for MongoDB vCore` vector store.
+    """`Azure Cosmos DB for MongoDB vCore` vector store.
 
        To use, you should have both:
        - the ``pymongo`` python package installed
-       - a connection string associated with a MongoDB VCore Cluster having deployed an
-           Atlas Search index
+       - a connection string associated with a MongoDB VCore Cluster
 
        Example:
            . code-block:: python
@@ -69,15 +68,14 @@ class AzureCosmosDBVectorSearch(VectorStore):
             text_key: str = "textContent",
             embedding_key: str = "vectorContent",
     ):
-        """
+        """Constructor for AzureCosmosDBVectorSearch
+
         Args:
             collection: MongoDB collection to add the texts to.
             embedding: Text embedding model to use.
-            text_key: MongoDB field that will contain the text for each
-                document.
-            embedding_key: MongoDB field that will contain the embedding for
-                each document.
             index_name: Name of the Atlas Search index.
+            text_key: MongoDB field that will contain the text for each document.
+            embedding_key: MongoDB field that will contain the embedding for each document.
         """
         self._collection = collection
         self._embedding = embedding
@@ -89,6 +87,15 @@ class AzureCosmosDBVectorSearch(VectorStore):
     def embeddings(self) -> Embeddings:
         return self._embedding
 
+    def get_index_name(self) -> str:
+        """Returns the index name
+
+        Returns:
+            Returns the index name
+
+        """
+        return self._index_name
+
     @classmethod
     def from_connection_string(
             cls,
@@ -97,15 +104,16 @@ class AzureCosmosDBVectorSearch(VectorStore):
             embedding: Embeddings,
             **kwargs: Any,
     ) -> AzureCosmosDBVectorSearch:
-        """
+        """Creates an Instance of AzureCosmosDBVectorSearch from a Connection String
 
         Args:
-            connection_string: The MongoDB vCore connection string
-            namespace: The namespace
-            embedding: The Embedding utilty
-            **kwargs: Dynamic arguments
+            connection_string: The MongoDB vCore instance connection string
+            namespace: The namespace (database.collection)
+            embedding: The embedding utility
+            **kwargs: Dynamic keyword arguments
 
         Returns:
+            an instance of the vector store
 
         """
         try:
@@ -120,9 +128,14 @@ class AzureCosmosDBVectorSearch(VectorStore):
         collection = client[db_name][collection_name]
         return cls(collection, embedding, **kwargs)
 
-    def index_exists(self, index_name):
+    def index_exists(self):
+        """Verifies if the specified index name during instance construction exists on the collection
 
+        Returns:
+          Returns True on success and False if no such index exists on the collection
+        """
         cursor = self._collection.list_indexes()
+        index_name = self._index_name
 
         for res in cursor:
             current_index_name = res.pop("name")
@@ -131,15 +144,50 @@ class AzureCosmosDBVectorSearch(VectorStore):
 
         return False
 
-    def delete_index(self) -> object:
-        if self.index_exists(self._index_name):
+    def delete_index(self):
+        """Deletes the index specified during instance construction if it exists
+
+        """
+        if self.index_exists():
             self._collection.drop_index(self._index_name)
             # Raises OperationFailure on an error (e.g. trying to drop
             # an index that does not exist)
 
     def create_index(self, num_lists: int = 100, dimensions: int = 1536,
                      similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS):
+        """Creates an index using the index name specified at instance construction
 
+        Setting the numLists parameter correctly is important for acheiving good accuracy and performance.
+            Since the vector store uses IVF as the indexing strategy, you should create the index only after you
+            have loaded a large enough sample documents to ensure that the centroids for the respective buckets are
+            faily distributed.
+
+        We recommend that numLists is set to documentCount/1000 for up to 1 million documents
+            and to sqrt(documentCount) for more than 1 million documents.
+            As the number of items in your database grows, you should tune numLists to be larger
+            in order to achieve good latency performance for vector search.
+            If you're experimenting with a new scenario or creating a small demo, you can start with numLists
+            set to 1 to perform a brute-force search across all vectors. This should provide you with the most
+            accurate results from the vector search, however be aware that the search speed and latency will be slow.
+            After your initial setup, you should go ahead and tune the numLists parameter using the above guidance.
+
+        Args:
+            num_lists: This integer is the number of clusters that the inverted file (IVF) index
+                uses to group the vector data. We recommend that numLists is set to documentCount/1000
+                for up to 1 million documents and to sqrt(documentCount) for more than 1 million documents.
+                Using a numLists value of 1 is akin to performing brute-force search, which has limited performance
+            dimensions: Number of dimensions for vector similarity. The maximum number of supported dimensions is 2000
+            similarity: Similarity metric to use with the IVF index.
+
+                Possible options are:
+                    - CosmosDBSimilarityType.COS (cosine distance),
+                    - CosmosDBSimilarityType.L2 (Euclidean distance), and
+                    - CosmosDBSimilarityType.IP (inner product).
+
+        Returns:
+            An object describing the created index
+
+        """
         # prepare the command
         create_index_commands = {
             "createIndexes": self._collection.name,
@@ -173,15 +221,6 @@ class AzureCosmosDBVectorSearch(VectorStore):
             metadatas: Optional[List[Dict[str, Any]]] = None,
             **kwargs: Any,
     ) -> List:
-        """Let's Run more text content through the embeddings and add to the vectorstore.
-
-        Args:
-            texts: Iterable of strings to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
-
-        Returns:
-            List of ids from adding the texts into the vectorstore.
-        """
         batch_size = kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE)
         _metadatas: Union[List, Generator] = metadatas or ({} for _ in texts)
         texts_batch = []
@@ -199,15 +238,26 @@ class AzureCosmosDBVectorSearch(VectorStore):
         return result_ids
 
     def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
+        """Used to Load Documents into the collection
+
+        Args:
+            texts: The list of documents strings to load
+            metadatas: The list of metadata objects associated with each document
+
+        Returns:
+
+        """
+        # If the text is empty, then exit early
         if not texts:
             return []
+
         # Embed and create the documents
         embeddings = self._embedding.embed_documents(texts)
         to_insert = [
             {self._text_key: t, self._embedding_key: embedding, **m}
             for t, m, embedding in zip(texts, metadatas, embeddings)
         ]
-        # insert the documents in MongoDB Atlas
+        # insert the documents in Cosmos DB
         insert_result = self._collection.insert_many(to_insert)  # type: ignore
         return insert_result.inserted_ids
 
@@ -228,19 +278,35 @@ class AzureCosmosDBVectorSearch(VectorStore):
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         if ids is None:
-            raise ValueError("No ids provided to delete.")
+            raise ValueError("No document ids provided to delete.")
 
         for document_id in ids:
-            self.delete_by_document_id(document_id)
+            self.delete_document_by_id(document_id)
         return True
 
-    def delete_document_by_id(self, document_id: str):
-        self._collection.delete_one({"_id": document_id})
+    def delete_document_by_id(self, document_id: str = None):
+        """Removes a Specific Document by Id
+
+        Args:
+            document_id: The document identifier
+        """
+        if document_id is None:
+            raise ValueError("No document id provided to delete.")
+
+        self._collection.delete_one({"_id": ObjectId(document_id)})
 
     def _similarity_search_with_score(
             self, embeddings: List[float], k: int = 4
     ) -> List[Tuple[Document, float]]:
+        """Returns a list of documents with their scores
 
+        Args:
+            embeddings: The query vector
+            k: the number of documents to return
+
+        Returns:
+            A list of documents closest to the query vector
+        """
         pipeline = [
             {
                 "$search": {
@@ -270,7 +336,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             score = res.pop("similarityScore")
             document_object_field: Mapping[str, Any] = res.pop("document")
             text = document_object_field.pop(self._text_key)
-            docs.append((Document(page_content=text, metadata=res), score))
+            docs.append((Document(page_content=text, metadata=document_object_field), score))
 
         return docs
 
@@ -314,8 +380,9 @@ class AzureCosmosDBVectorSearch(VectorStore):
             **kwargs: Any,
     ) -> List[Document]:
 
+        # compute the embeddings vector from the query string
         embeddings = self._embedding.embed_query(query)
 
-        docs = self.max_marginal_relevance_search_by_vector(query, embeddings, k=k, fetch_k=fetch_k,
+        docs = self.max_marginal_relevance_search_by_vector(embeddings, k=k, fetch_k=fetch_k,
                                                             lambda_mult=lambda_mult)
         return docs
