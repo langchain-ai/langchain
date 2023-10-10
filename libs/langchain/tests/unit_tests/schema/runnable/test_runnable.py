@@ -1000,7 +1000,7 @@ def test_configurable_fields_example() -> None:
                         "title": "Prompt Template",
                         "description": "The prompt template for this chain",
                         "default": "hello",
-                        'allOf': [{'$ref': '#/definitions/Prompt_Template'}],
+                        "allOf": [{"$ref": "#/definitions/Prompt_Template"}],
                     },
                 },
             },
