@@ -1,11 +1,20 @@
 """Test formatting functionality."""
 
 import unittest
+from typing import Union
 
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.messages import (
     AIMessage,
+    AIMessageChunk,
+    ChatMessage,
+    ChatMessageChunk,
+    FunctionMessage,
+    FunctionMessageChunk,
     HumanMessage,
+    HumanMessageChunk,
     SystemMessage,
+    SystemMessageChunk,
     get_buffer_string,
     messages_from_dict,
     messages_to_dict,
@@ -70,3 +79,50 @@ def test_multiple_msg() -> None:
         sys_msg,
     ]
     assert messages_from_dict(messages_to_dict(msgs)) == msgs
+
+
+def test_distinguish_messages() -> None:
+    """Test that pydantic is able to discriminate between similar looking messages."""
+
+    class WellKnownTypes(BaseModel):
+        __root__: Union[
+            HumanMessage,
+            AIMessage,
+            SystemMessage,
+            FunctionMessage,
+            HumanMessageChunk,
+            AIMessageChunk,
+            SystemMessageChunk,
+            FunctionMessageChunk,
+            ChatMessageChunk,
+            ChatMessage,
+        ]
+
+    messages = [
+        HumanMessage(content="human"),
+        HumanMessageChunk(content="human"),
+        AIMessage(content="ai"),
+        AIMessageChunk(content="ai"),
+        SystemMessage(content="sys"),
+        SystemMessageChunk(content="sys"),
+        FunctionMessage(
+            name="func",
+            content="func",
+        ),
+        FunctionMessageChunk(
+            name="func",
+            content="func",
+        ),
+        ChatMessage(
+            role="human",
+            content="human",
+        ),
+        ChatMessageChunk(
+            role="human",
+            content="human",
+        ),
+    ]
+
+    for msg in messages:
+        obj1 = WellKnownTypes.parse_obj(msg.dict())
+        assert type(obj1.__root__) == type(msg), f"failed for {type(msg)}"

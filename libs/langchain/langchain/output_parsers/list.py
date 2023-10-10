@@ -22,8 +22,8 @@ class ListOutputParser(BaseOutputParser[List[str]]):
 class CommaSeparatedListOutputParser(ListOutputParser):
     """Parse the output of an LLM call to a comma-separated list."""
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     def get_format_instructions(self) -> str:
@@ -61,3 +61,19 @@ class NumberedListOutputParser(ListOutputParser):
     @property
     def _type(self) -> str:
         return "numbered-list"
+
+
+class MarkdownListOutputParser(ListOutputParser):
+    """Parse a markdown list."""
+
+    def get_format_instructions(self) -> str:
+        return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"
+
+    def parse(self, text: str) -> List[str]:
+        """Parse the output of an LLM call."""
+        pattern = r"-\s([^\n]+)"
+        return re.findall(pattern, text)
+
+    @property
+    def _type(self) -> str:
+        return "markdown-list"

@@ -41,7 +41,7 @@ class ZepRetriever(BaseRetriever):
         try:
             from zep_python import ZepClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import zep-python package. "
                 "Please install it with `pip install zep-python`."
             )
