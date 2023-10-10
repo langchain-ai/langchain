@@ -1,15 +1,6 @@
 """Wrapper around Anyscale Endpoint"""
-from typing import (
-    Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Tuple,
-)
+from typing import Any, AsyncIterator, Dict, Iterator,
+     List, Mapping, Optional, Set, Tuple
 
 from langchain.pydantic_v1 import Field, root_validator
 
@@ -20,11 +11,8 @@ from langchain.callbacks.manager import (
 
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
-from langchain.llms.openai import (
-    BaseOpenAI, 
-    completion_with_retry, 
-    acompletion_with_retry,
-)
+from langchain.llms.openai import BaseOpenAI, completion_with_retry, 
+     acompletion_with_retry
 
 from langchain.utils import get_from_dict_or_env
 
@@ -63,8 +51,9 @@ def create_llm_result(
             
 class Anyscale(BaseOpenAI):
     """Wrapper around Anyscale Endpoint.
-    To use, you should have the environment variable ``ANYSCALE_API_BASE`` and ``ANYSCALE_API_KEY``.
-    set with your Anyscale Endpoint, or pass it as a named parameter to the constructor.
+    To use, you should have the environment variable ``ANYSCALE_API_BASE`` and
+    ``ANYSCALE_API_KEY``set with your Anyscale Endpoint, or pass it as a named 
+    parameter to the constructor.
     
     Example:
         .. code-block:: python
