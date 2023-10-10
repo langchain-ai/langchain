@@ -28,6 +28,7 @@ from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.awadb import AwaDB
 from langchain.vectorstores.azuresearch import AzureSearch
 from langchain.vectorstores.bageldb import Bagel
+from langchain.vectorstores.baiducloud_vector_search import BESVerctorStore
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
@@ -87,6 +88,7 @@ __all__ = [
     "AwaDB",
     "AzureSearch",
     "Bagel",
+    "BESVerctorStore",
     "Cassandra",
     "Chroma",
     "Chroma",
