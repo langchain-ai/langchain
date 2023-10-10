@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 from langchain.schema.messages import BaseMessage
-from langchain.chat_models.openai import ChatOpenAI
 
 
 def import_infino() -> Any:
@@ -18,6 +17,32 @@ def import_infino() -> Any:
             "Please install it with `pip install infinopy`"
         )
     return InfinoClient()
+
+
+def import_tiktoken() -> Any:
+    """Import the infino client."""
+    try:
+        import tiktoken
+    except ImportError:
+        raise ImportError(
+            "To use the ChatOpenAI model with Infino callback manager, you need to "
+            "have the `tiktoken` python package installed."
+            "Please install it with `pip install tiktoken`"
+        )
+    return tiktoken
+
+
+def get_num_tokens(string: str, openai_model_name: str) -> int:
+    """Calculate num tokens for OpenAI with tiktoken package.
+
+    Official documentation: https://github.com/openai/openai-cookbook/blob/main
+                            /examples/How_to_count_tokens_with_tiktoken.ipynb
+    """
+    tiktoken = import_tiktoken()
+
+    encoding = tiktoken.encoding_for_model(openai_model_name)
+    num_tokens = len(encoding.encode(string))
+    return num_tokens
 
 
 class InfinoCallbackHandler(BaseCallbackHandler):
@@ -35,7 +60,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         self.model_version = model_version
         self.verbose = verbose
         self.is_chat_openai_model = False
-        self.chat_openai_model_name = None
+        self.chat_openai_model_name = "gpt-3.5-turbo"
 
     def _send_to_infino(
         self,
@@ -119,11 +144,14 @@ class InfinoCallbackHandler(BaseCallbackHandler):
 
         # Track completion token usage (for openai chat models).
         if self.is_chat_openai_model:
-            messages = [generation.message for generation in generations]
-            model = ChatOpenAI(model_name=self.chat_openai_model_name)
-            completion_tokens = model.get_num_tokens_from_messages(messages)
+            messages = " ".join(
+                generation.message.content  # type: ignore[attr-defined]
+                for generation in generations
+            )
+            completion_tokens = get_num_tokens(
+                messages, openai_model_name=self.chat_openai_model_name
+            )
             self._send_to_infino("completion_tokens", completion_tokens)
-
 
     def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Set the error flag."""
@@ -148,7 +176,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         serialized: Dict[str, Any],
         input_str: str,
         **kwargs: Any,
-    ) -> None: 
+    ) -> None:
         """Do nothing when tool starts."""
         pass
 
@@ -182,16 +210,18 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         self,
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run when LLM starts running."""
-        # Currently, for chat models, we only support input prompts for ChatOpenAI. Check if this model is a ChatOpenAI model.
-        values = serialized.get("id")
-        for value in values:
-            if value == "ChatOpenAI":
-                self.is_chat_openai_model = True
-                break
 
+        # Currently, for chat models, we only support input prompts for ChatOpenAI.
+        # Check if this model is a ChatOpenAI model.
+        values = serialized.get("id")
+        if values:
+            for value in values:
+                if value == "ChatOpenAI":
+                    self.is_chat_openai_model = True
+                    break
 
         # Track prompt tokens for ChatOpenAI model.
         if self.is_chat_openai_model:
@@ -200,16 +230,23 @@ class InfinoCallbackHandler(BaseCallbackHandler):
                 model_name = invocation_params.get("model_name")
                 if model_name:
                     self.chat_openai_model_name = model_name
-                    model = ChatOpenAI(model_name=model_name)
                     prompt_tokens = 0
                     for message_list in messages:
-                        num_tokens = model.get_num_tokens_from_messages(message_list)
+                        message_string = " ".join(msg.content for msg in message_list)
+                        num_tokens = get_num_tokens(
+                            message_string,
+                            openai_model_name=self.chat_openai_model_name,
+                        )
                         prompt_tokens += num_tokens
 
                     self._send_to_infino("prompt_tokens", prompt_tokens)
 
         if self.verbose:
-            print(f"on_chat_model_start: is_chat_openai_model={self.is_chat_openai_model}, chat_openai_model_name={self.chat_openai_model_name}")
+            print(
+                f"on_chat_model_start: is_chat_openai_model= \
+                  {self.is_chat_openai_model}, \
+                  chat_openai_model_name={self.chat_openai_model_name}"
+            )
 
         # Send the prompt to infino
         prompt = " ".join(msg.content for sublist in messages for msg in sublist)
