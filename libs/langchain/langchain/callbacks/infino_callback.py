@@ -20,7 +20,7 @@ def import_infino() -> Any:
 
 
 def import_tiktoken() -> Any:
-    """Import the infino client."""
+    """Import tiktoken for counting tokens for OpenAI models."""
     try:
         import tiktoken
     except ImportError:
