@@ -16,7 +16,7 @@ from typing import (
     Union,
 )
 import warnings
-from pydantic import Extra, Field, root_validator
+from langchain.pydantic_v1 import Extra, Field, root_validator
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
