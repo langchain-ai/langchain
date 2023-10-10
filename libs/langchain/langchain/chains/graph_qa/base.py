@@ -69,6 +69,8 @@ class GraphQAChain(Chain):
         entity_string = self.entity_extraction_chain.run(question)
 
         _run_manager.on_text("Entities Extracted:", end="\n", verbose=self.verbose)
+        _run_manager.on_text(
+            entity_string, color="green", end="\n", verbose=self.verbose
         )
         entities = get_entities(entity_string)
         context = ""
