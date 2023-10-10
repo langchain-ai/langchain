@@ -38,6 +38,21 @@ def test_anonymize(analyzed_fields: List[str], should_contain: bool) -> None:
 
 
 @pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
+@pytest.mark.parametrize(
+    "analyzed_fields,should_contain",
+    [(["PERSON"], True), (["PHONE_NUMBER"], True), (None, True)],
+)
+def test_anonymize_allow_list(analyzed_fields: List[str], should_contain: bool) -> None:
+    """Test anonymizing a name in a simple sentence"""
+    from langchain_experimental.data_anonymizer import PresidioReversibleAnonymizer
+
+    text = "Hello, my name is John Doe."
+    anonymizer = PresidioReversibleAnonymizer(analyzed_fields=analyzed_fields)
+    anonymized_text = anonymizer.anonymize(text, allow_list=["John Doe"])
+    assert ("John Doe" in anonymized_text) == should_contain
+
+
+@pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
 def test_anonymize_multiple() -> None:
     """Test anonymizing multiple items in a sentence"""
     from langchain_experimental.data_anonymizer import PresidioReversibleAnonymizer
