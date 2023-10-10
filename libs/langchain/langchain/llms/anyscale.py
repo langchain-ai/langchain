@@ -140,20 +140,28 @@ class Anyscale(BaseOpenAI):
     ) -> Tuple:
         if len(prompts) > 1:
             raise ValueError(
-                f"AnyscaleChat currently only supports single prompt, got {prompts}"
+                f"Anyscale currently only supports single prompt, got {prompts}"
             )
         messages = self.prefix_messages + [{"role": "user", "content": prompts[0]}]
         params: Dict[str, Any] = self._invocation_params
-
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
+        if params.get("max_tokens") == -1:
+            # for Chat api, omitting max_tokens is equivalent to having no limit
+            del params["max_tokens"]
         return messages, params
 
     def _stream(
         self,
-        messages: List[Dict],
-        params: Dict,
+        prompt: str,
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
+        messages, params = self._get_chat_messages([prompt], stop)
+        params = {**params, **kwargs, "stream": True}
         for stream_resp in completion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
@@ -165,11 +173,13 @@ class Anyscale(BaseOpenAI):
 
     async def _astream(
         self,
-        messages: List[Dict],
-        params: Dict,
+        prompt: str,
+        stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
+        messages, params = self._get_chat_messages([prompt], stop)
+        params = {**params, **kwargs, "stream": True}
         async for stream_resp in await acompletion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
@@ -186,28 +196,13 @@ class Anyscale(BaseOpenAI):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        params = self._invocation_params
-        if self.streaming:
-            params = {**params, **kwargs, "stream": True}
-        else:
-            params = {**params, **kwargs}
-        if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
-        if params.get("max_tokens") == -1:
-            # for Chat api, omitting max_tokens is equivalent to having no limit
-            del params["max_tokens"]
-
         choices = []
         token_usage: Dict[str, int] = {}
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
-
         for prompt in prompts:
-            messages = self.prefix_messages + [{"role": "user", "content": prompt}]
             if self.streaming:
                 generation: Optional[GenerationChunk] = None
-                for chunk in self._stream(messages, params, run_manager, **kwargs):
+                for chunk in self._stream(prompt, stop, run_manager, **kwargs):
                     if generation is None:
                         generation = chunk
                     else:
@@ -226,6 +221,8 @@ class Anyscale(BaseOpenAI):
                 )
 
             else:
+                messages, params = self._get_chat_messages([prompt], stop)
+                params = {**params, **kwargs}
                 response = completion_with_retry(
                     self, messages=messages, run_manager=run_manager, **params
                 )
@@ -240,20 +237,6 @@ class Anyscale(BaseOpenAI):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Call out to OpenAI's endpoint async with k unique prompts."""
-        params = self._invocation_params
-        if self.streaming:
-            params = {**params, **kwargs, "stream": True}
-        else:
-            params = {**params, **kwargs}
-        if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
-        if params.get("max_tokens") == -1:
-            # for Chat api, omitting max_tokens is equivalent to having no limit
-            del params["max_tokens"]
-
         choices = []
         token_usage: Dict[str, int] = {}
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
@@ -261,9 +244,7 @@ class Anyscale(BaseOpenAI):
             messages = self.prefix_messages + [{"role": "user", "content": prompt}]
             if self.streaming:
                 generation: Optional[GenerationChunk] = None
-                async for chunk in self._astream(
-                    messages, params, run_manager, **kwargs
-                ):
+                async for chunk in self._astream(prompt, stop, run_manager, **kwargs):
                     if generation is None:
                         generation = chunk
                     else:
@@ -281,6 +262,8 @@ class Anyscale(BaseOpenAI):
                     }
                 )
             else:
+                messages, params = self._get_chat_messages([prompt], stop)
+                params = {**params, **kwargs}
                 response = await acompletion_with_retry(
                     self, messages=messages, run_manager=run_manager, **params
                 )
