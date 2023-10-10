@@ -42,7 +42,6 @@ if ! version_compare $openssl_version $required_openssl_version && ! version_com
     cd ..
 fi
 
-cd ..
 python3.11 -m venv .venv
 source .venv/bin/activate
 python3.11 -m pip install --upgrade pip
