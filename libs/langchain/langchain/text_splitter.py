@@ -24,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import logging
+import multiprocessing
 import pathlib
 import re
 from abc import ABC, abstractmethod
@@ -107,6 +108,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         keep_separator: bool = False,
         add_start_index: bool = False,
         strip_whitespace: bool = True,
+        use_multiprocessing: bool = False,
     ) -> None:
         """Create a new TextSplitter.
 
@@ -118,6 +120,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             add_start_index: If `True`, includes chunk's start index in metadata
             strip_whitespace: If `True`, strips whitespace from the start and end of
                               every document
+            use_multiprocessing: If `True`, uses multiprocessing to split text 
+                                 on a document level
         """
         if chunk_overlap > chunk_size:
             raise ValueError(
@@ -130,27 +134,40 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
         self._strip_whitespace = strip_whitespace
+        self._use_multiprocessing = use_multiprocessing
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
         """Split text into multiple components."""
 
+    def _create_document(self, args: Tuple[List[str], Optional[List[dict]]]) -> List[Document]:
+        text, metadata = args
+        documents = []
+        index = -1
+        for chunk in self.split_text(text):
+            _metadata = copy.deepcopy(metadata)
+            if self._add_start_index:
+                index = text.find(chunk, index + 1)
+                _metadata["start_index"] = index
+            new_doc = Document(page_content=chunk, metadata=_metadata)
+            documents.append(new_doc)
+        return documents
+    
     def create_documents(
-        self, texts: List[str], metadatas: Optional[List[dict]] = None
+            self, texts: List[str], metadatas: Optional[List[dict]] = None
     ) -> List[Document]:
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
-        documents = []
-        for i, text in enumerate(texts):
-            index = -1
-            for chunk in self.split_text(text):
-                metadata = copy.deepcopy(_metadatas[i])
-                if self._add_start_index:
-                    index = text.find(chunk, index + 1)
-                    metadata["start_index"] = index
-                new_doc = Document(page_content=chunk, metadata=metadata)
-                documents.append(new_doc)
-        return documents
+
+        if self._use_multiprocessing:
+            with multiprocessing.Pool() as pool:
+                documents = pool.map(self._create_document, zip(texts, _metadatas))
+            return [doc for sublist in documents for doc in sublist]  # Flatten the list
+        else:
+            documents = []
+            for args in zip(texts, _metadatas):
+                documents.extend(self._create_document(args))
+            return documents
 
     def split_documents(self, documents: Iterable[Document]) -> List[Document]:
         """Split documents."""
