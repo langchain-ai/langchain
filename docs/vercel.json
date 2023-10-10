@@ -13,7 +13,7 @@
       "destination": "/docs/integrations/providers/"
     },
     {
-      "source": "/docs/integrations/platforms(/?)",
+      "source": "/docs/integrations/platforms",
       "destination": "/docs/integrations/providers/"
     },
     {
@@ -3723,8 +3723,7 @@
     {
       "source": "/docs/use_cases/self_check(/?)",
       "destination": "/docs/use_cases/more/self_check/"
-    },
-    {
+    }, {
       "source": "/docs/modules/chains/additional/elasticsearch_database",
       "destination": "/docs/use_cases/qa_structured/integrations/elasticsearch"
     },
