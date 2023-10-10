@@ -8,7 +8,6 @@ from langchain.utilities.apify import ApifyWrapper
 from langchain.utilities.arcee import ArceeWrapper
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
-from langchain.utilities.bash import BashProcess
 from langchain.utilities.bibtex import BibtexparserWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.brave_search import BraveSearchWrapper
@@ -44,7 +43,6 @@ __all__ = [
     "ApifyWrapper",
     "ArceeWrapper",
     "ArxivAPIWrapper",
-    "BashProcess",
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
