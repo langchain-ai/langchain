@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import uuid
-from enum import Enum
 from typing import Any, Iterable, List, Optional, Tuple
 
 import requests
@@ -13,12 +12,7 @@ import requests
 from langchain.pydantic_v1 import Field
 from langchain.schema import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
-
-
-class ModelChoices(str, Enum):
-    embedding_english_v1 = "embedding-english-v1"
-    embedding_multi_v1 = "embedding-multi-v1"
+from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 
 class LLMRails(VectorStore):
@@ -51,10 +45,7 @@ class LLMRails(VectorStore):
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
-        return {
-            "X-API-KEY": self._api_key,
-            "Content-Type": "application/json",
-        }
+        return {"X-API-KEY": self._api_key}
 
     def add_texts(
         self,
@@ -93,6 +84,52 @@ class LLMRails(VectorStore):
             names.append(doc_name)
 
         return names
+
+    def add_files(
+        self,
+        files_list: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> bool:
+        """
+        LLMRails provides a way to add documents directly via our API where
+        pre-processing and chunking occurs internally in an optimal way
+        This method provides a way to use that API in LangChain
+
+        Args:
+            files_list: Iterable of strings, each representing a local file path.
+                    Files could be text, HTML, PDF, markdown, doc/docx, ppt/pptx, etc.
+                    see API docs for full list
+
+        Returns:
+            List of ids associated with each of the files indexed
+        """
+        files = []
+
+        for file in files_list:
+            if not os.path.exists(file):
+                logging.error(f"File {file} does not exist, skipping")
+                continue
+
+            files.append(("file", (os.path.basename(file), open(file, "rb"))))
+
+        response = self._session.post(
+            f"{self.base_url}/datastores/{self._datastore_id}/file",
+            files=files,
+            verify=True,
+            headers=self._get_post_headers(),
+        )
+
+        if response.status_code != 200:
+            logging.error(
+                f"Create request failed for datastore = {self._datastore_id} "
+                f"with status code {response.status_code}, reason {response.reason}, "
+                f"text {response.text}"
+            )
+
+            return False
+
+        return True
 
     def similarity_search_with_score(
         self, query: str, k: int = 5
