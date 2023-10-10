@@ -57,13 +57,6 @@ class ChatHuggingFacePipeline(BaseChatModel):
         ):
             raise ValueError("The pipeline task should be 'text-generation'.")
 
-        if not hasattr(values["pipeline"], "apply_chat_template"):
-            raise ValueError(
-                "Your transformers module might be outdated. "
-                "Please update it to ensure that tokenizer has the "
-                "'apply_chat_template' method."
-            )
-
         return values
 
     def _generate(
