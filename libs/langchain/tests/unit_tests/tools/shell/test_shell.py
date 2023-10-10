@@ -35,7 +35,7 @@ class PlaceholderProcess:
     def run(self, commands: Union[str, List[str]]) -> str:
         return self._run(commands)
 
-    async def arun(self, commands: Union[str, List[str]]) -> str:
+    async def arun(self, commands: List[str]) -> str:
         return self._run(commands)
 
 
