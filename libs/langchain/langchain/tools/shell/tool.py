@@ -1,7 +1,7 @@
 import asyncio
 import platform
 import warnings
-from typing import List, Optional, Type, Union, Any
+from typing import Any, List, Optional, Type, Union
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -9,7 +9,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.tools.base import BaseTool
-from langchain_experimental.llm_bash.bash import BashProcess
 
 
 class ShellInput(BaseModel):
