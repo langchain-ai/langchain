@@ -104,7 +104,7 @@ class StringPromptValue(PromptValue):
 
     text: str
     """Prompt text."""
-    type: Literal["StringPromptValue"] = "StringPromptValue"
+    typename: Literal["StringPromptValue"] = "StringPromptValue"
 
 
     def to_string(self) -> str:

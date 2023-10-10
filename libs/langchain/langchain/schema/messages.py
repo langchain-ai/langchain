@@ -71,7 +71,6 @@ class BaseMessage(Serializable):
     """Any additional information."""
 
     type: str
-    """The type of the message."""
 
     class Config:
         extra = Extra.allow
@@ -150,7 +149,7 @@ class HumanMessage(BaseMessage):
     """
 
     type: Literal["human"] = "human"
-    is_chunk: Literal[False] = False
+    typename: Literal["HumanMessage"] = "HumanMessage"
 
 
 HumanMessage.update_forward_refs()
@@ -162,8 +161,7 @@ class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["HumanMessageChunk"] = "HumanMessageChunk"
-
+    typename: Literal["HumanMessageChunk"] = "HumanMessageChunk"
 
 
 class AIMessage(BaseMessage):
@@ -175,6 +173,7 @@ class AIMessage(BaseMessage):
     """
 
     type: Literal["ai"] = "ai"
+    typename: Literal["AIMessage"] = "AIMessage"
 
 
 AIMessage.update_forward_refs()
@@ -186,7 +185,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["AIMessageChunk"] = "AIMessageChunk"
+    typename: Literal["AIMessageChunk"] = "AIMessageChunk"
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
@@ -212,6 +211,7 @@ class SystemMessage(BaseMessage):
     """
 
     type: Literal["system"] = "system"
+    typename: Literal["SystemMessage"] = "SystemMessage"
 
 
 SystemMessage.update_forward_refs()
@@ -223,7 +223,7 @@ class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["SystemMessageChunk"] = "SystemMessageChunk"
+    typename: Literal["SystemMessageChunk"] = "SystemMessageChunk"
 
 
 class FunctionMessage(BaseMessage):
@@ -233,6 +233,7 @@ class FunctionMessage(BaseMessage):
     """The name of the function that was executed."""
 
     type: Literal["function"] = "function"
+    typename: Literal["FunctionMessage"] = "FunctionMessage"
 
 
 FunctionMessage.update_forward_refs()
@@ -244,7 +245,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["FunctionMessageChunk"] = "FunctionMessageChunk"
+    typename: Literal["FunctionMessageChunk"] = "FunctionMessageChunk"
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):
@@ -271,6 +272,7 @@ class ChatMessage(BaseMessage):
     """The speaker / role of the Message."""
 
     type: Literal["chat"] = "chat"
+    typename: Literal["ChatMessage"] = "ChatMessage"
 
 
 ChatMessage.update_forward_refs()
@@ -282,7 +284,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["ChatMessageChunk"] = "ChatMessageChunk"
+    typename: Literal["ChatMessageChunk"] = "ChatMessageChunk"
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ChatMessageChunk):
