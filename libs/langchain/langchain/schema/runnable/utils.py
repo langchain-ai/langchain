@@ -14,6 +14,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Protocol,
@@ -218,9 +219,33 @@ async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
 
 class ConfigurableField(NamedTuple):
     id: str
+
     name: Optional[str] = None
     description: Optional[str] = None
     annotation: Optional[Any] = None
+
+
+class ConfigurableFieldSingleOption(NamedTuple):
+    id: str
+    options: Mapping[str, Any]
+    default: str
+
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
+class ConfigurableFieldMultiOption(NamedTuple):
+    id: str
+    options: Mapping[str, Any]
+    default: Sequence[str]
+
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
+AnyConfigurableField = Union[
+    ConfigurableField, ConfigurableFieldSingleOption, ConfigurableFieldMultiOption
+]
 
 
 class ConfigurableFieldSpec(NamedTuple):
