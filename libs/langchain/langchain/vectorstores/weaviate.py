@@ -499,7 +499,6 @@ class Weaviate(VectorStore):
             attributes=attributes,
             relevance_score_fn=relevance_score_fn,
             by_text=by_text,
-            **kwargs,
         )
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
