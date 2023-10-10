@@ -1,6 +1,7 @@
 """Attempt to implement MRKL systems as described in arxiv.org/pdf/2205.00445.pdf."""
 from __future__ import annotations
 
+import json
 from typing import Any, Callable, List, NamedTuple, Optional, Sequence
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
@@ -15,7 +16,6 @@ from langchain.prompts import PromptTemplate
 from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
-import json
 
 
 class ChainConfig(NamedTuple):

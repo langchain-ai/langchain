@@ -1,3 +1,4 @@
+import json
 import re
 from typing import Any, List, Optional, Sequence, Tuple
 
@@ -17,7 +18,6 @@ from langchain.pydantic_v1 import Field
 from langchain.schema import AgentAction, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
-import json
 
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 

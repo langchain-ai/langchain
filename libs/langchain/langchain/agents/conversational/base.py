@@ -1,6 +1,7 @@
 """An agent designed to hold a conversation in addition to using tools."""
 from __future__ import annotations
 
+import json
 from typing import Any, List, Optional, Sequence
 
 from langchain.agents.agent import Agent, AgentOutputParser
@@ -14,7 +15,6 @@ from langchain.prompts import PromptTemplate
 from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
-import json
 
 
 class ConversationalAgent(Agent):

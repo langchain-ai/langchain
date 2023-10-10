@@ -1,4 +1,5 @@
 """Interface for tools."""
+import json
 from typing import List, Optional
 
 from langchain.callbacks.manager import (
@@ -6,7 +7,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 from langchain.tools.base import BaseTool, Tool, tool
-import json
+
 
 class InvalidTool(BaseTool):
     """Tool that is run when invalid tool name is encountered by agent."""
@@ -21,7 +22,9 @@ class InvalidTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        available_tool_names_str = ", ".join([json.dumps(tool) for tool in available_tool_names])
+        available_tool_names_str = ", ".join(
+            [json.dumps(tool) for tool in available_tool_names]
+        )
         return (
             f"{requested_tool_name} is not a valid tool, "
             f"try one of [{available_tool_names_str}]."
@@ -34,7 +37,9 @@ class InvalidTool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        available_tool_names_str = ", ".join([json.dumps(tool) for tool in available_tool_names])
+        available_tool_names_str = ", ".join(
+            [json.dumps(tool) for tool in available_tool_names]
+        )
         return (
             f"{requested_tool_name} is not a valid tool, "
             f"try one of [{available_tool_names_str}]."
