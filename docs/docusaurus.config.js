@@ -6,8 +6,7 @@
 const { ProvidePlugin } = require("webpack");
 const path = require("path");
 
-const examplesPath = path.resolve(__dirname, "..", "examples", "src");
-const snippetsPath = path.resolve(__dirname, "..", "snippets");
+const snippetsPath = path.resolve(__dirname, "snippets");
 
 const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
 const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
@@ -44,16 +43,11 @@ const config = {
             url: false,
           },
           alias: {
-            "@examples": examplesPath,
             "@snippets": snippetsPath,
           },
         },
         module: {
           rules: [
-            {
-              test: examplesPath,
-              use: ["json-loader", "./code-block-loader.js"],
-            },
             {
               test: /\.m?js/,
               resolve: {
