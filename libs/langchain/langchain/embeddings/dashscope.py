@@ -18,8 +18,8 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,8 @@ def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
         else:
             raise HTTPError(
                 f"HTTP error occurred: status_code: {resp.status_code} \n "
-                f"code: {resp.code} \n message: {resp.message}"
+                f"code: {resp.code} \n message: {resp.message}",
+                response=resp,
             )
 
     return _embed_with_retry(**kwargs)

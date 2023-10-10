@@ -139,7 +139,21 @@ class BaseOpenAI(BaseLLM):
         return {"openai_api_key": "OPENAI_API_KEY"}
 
     @property
-    def lc_serializable(self) -> bool:
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+        if self.openai_api_base != "":
+            attributes["openai_api_base"] = self.openai_api_base
+
+        if self.openai_organization != "":
+            attributes["openai_organization"] = self.openai_organization
+
+        if self.openai_proxy != "":
+            attributes["openai_proxy"] = self.openai_proxy
+
+        return attributes
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     client: Any = None  #: :meta private:
@@ -196,7 +210,9 @@ class BaseOpenAI(BaseLLM):
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
         model_name = data.get("model_name", "")
-        if model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4"):
+        if (
+            model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4")
+        ) and "-instruct" not in model_name:
             warnings.warn(
                 "You are trying to use a chat model. This way of initializing it is "
                 "no longer supported. Instead, please use: "
@@ -562,6 +578,7 @@ class BaseOpenAI(BaseLLM):
             "gpt-3.5-turbo-0613": 4096,
             "gpt-3.5-turbo-16k": 16385,
             "gpt-3.5-turbo-16k-0613": 16385,
+            "gpt-3.5-turbo-instruct": 4096,
             "text-ada-001": 2049,
             "ada": 2049,
             "text-babbage-001": 2040,
@@ -688,6 +705,13 @@ class AzureOpenAI(BaseOpenAI):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "azure"
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        return {
+            "openai_api_type": self.openai_api_type,
+            "openai_api_version": self.openai_api_version,
+        }
 
 
 class OpenAIChat(BaseLLM):

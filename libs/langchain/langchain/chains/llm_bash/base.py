@@ -5,6 +5,7 @@ import logging
 import warnings
 from typing import Any, Dict, List, Optional
 
+from langchain._api import warn_deprecated
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -20,7 +21,12 @@ logger = logging.getLogger(__name__)
 class LLMBashChain(Chain):
     """Chain that interprets a prompt and executes bash operations.
 
+    Warning:
+        This chain can execute arbitrary code using bash.
+        This can be dangerous if not properly sandboxed.
+
     Example:
+
         .. code-block:: python
 
             from langchain.chains import LLMBashChain
@@ -84,6 +90,14 @@ class LLMBashChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
+        warn_deprecated(
+            since="0.0.308",
+            message=(
+                "On 2023-10-12 the LLMBashChain "
+                "will be moved to langchain-experimental"
+            ),
+            pending=True,
+        )
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         _run_manager.on_text(inputs[self.input_key], verbose=self.verbose)
 
