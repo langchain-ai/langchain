@@ -58,6 +58,7 @@ from langchain.schema.runnable.config import (
 )
 from langchain.schema.runnable.utils import (
     AddableDict,
+    AnyConfigurableField,
     ConfigurableField,
     ConfigurableFieldSpec,
     Input,
@@ -975,7 +976,7 @@ class Runnable(Generic[Input, Output], ABC):
 
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_fields(
-        self, **kwargs: ConfigurableField
+        self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
         from langchain.schema.runnable.configurable import RunnableConfigurableFields
 
