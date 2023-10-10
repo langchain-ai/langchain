@@ -15,6 +15,7 @@ from typing import (
     TypeVar,
     Union,
     overload,
+    Literal,
 )
 
 from langchain._api import deprecated
@@ -298,6 +299,8 @@ class ChatPromptValueConcrete(ChatPromptValue):
     For use in external schemas."""
 
     messages: Sequence[AnyMessage]
+
+    type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
 
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):

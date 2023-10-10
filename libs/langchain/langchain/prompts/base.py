@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
-from typing import Any, Callable, Dict, List, Set
+from typing import Any, Callable, Dict, List, Set, Literal
 
 from langchain.schema.messages import BaseMessage, HumanMessage
 from langchain.schema.prompt import PromptValue
@@ -99,6 +99,8 @@ class StringPromptValue(PromptValue):
 
     text: str
     """Prompt text."""
+    type: Literal["StringPromptValue"] = "StringPromptValue"
+
 
     def to_string(self) -> str:
         """Return prompt as string."""
