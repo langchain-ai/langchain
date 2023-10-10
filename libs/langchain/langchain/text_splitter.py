@@ -27,6 +27,7 @@ import logging
 import pathlib
 import re
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
@@ -107,7 +108,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         keep_separator: bool = False,
         add_start_index: bool = False,
         strip_whitespace: bool = True,
-        use_multiprocessing: bool = False,
+        use_multithreading: bool = False,
     ) -> None:
         """Create a new TextSplitter.
 
@@ -119,8 +120,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             add_start_index: If `True`, includes chunk's start index in metadata
             strip_whitespace: If `True`, strips whitespace from the start and end of
                               every document
-            use_multiprocessing: If `True`, uses multiprocessing to split text 
-                                 on a document level
+            use_multithreading: If `True`, uses multithreading to split text 
+                                on a document level
         """
         if chunk_overlap > chunk_size:
             raise ValueError(
@@ -133,7 +134,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
         self._strip_whitespace = strip_whitespace
-        self._use_multiprocessing = use_multiprocessing
+        self._use_multithreading = use_multithreading
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
@@ -158,20 +159,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
 
-        if self._use_multiprocessing:
-            try:
-                # we use pathos instead of standard lib multiprocessing
-                # to be able to serialze non-top level defined and/or nested methods
-                # which may apply for length_function which is used in split_text
-                from pathos.multiprocessing import ProcessingPool as Pool
-            except ImportError:
-                raise ImportError(
-                    "Could not import pathos python package. "
-                    "This is needed to run TextSplitter with multiprocessing enabled. "
-                    "Please install it with `pip install pathos`."
-                )
-            with Pool() as pool:
-                documents = pool.map(self._create_document, zip(texts, _metadatas))
+        if self._use_multithreading:
+            with ThreadPoolExecutor() as executor:
+                documents = list(executor.map(self._create_document, zip(texts, _metadatas)))
             return [doc for sublist in documents for doc in sublist]  # Flatten the list
         else:
             documents = []
