@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import json
 import os
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple,
+                    Type)
 
 import numpy as np
-
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore
@@ -97,13 +98,13 @@ class Vearch(VectorStore):
         metadatas = [d.metadata for d in documents]
 
         return cls.from_texts(
-            texts=texts,
-            embedding=embedding,
-            metadatas=metadatas,
-            path_or_url=path_or_url,
-            table_name=table_name,
-            db_name=db_name,
-            flag=flag,
+            texts = texts,
+            embedding = embedding,
+            metadatas = metadatas,
+            path_or_url = path_or_url,
+            table_name = table_name,
+            db_name = db_name,
+            flag = flag,
             **kwargs,
         )
 
@@ -122,23 +123,39 @@ class Vearch(VectorStore):
         """Return Vearch VectorStore"""
 
         vearch_db = cls(
-            embedding_function=embedding,
-            embedding=embedding,
-            path_or_url=path_or_url,
-            db_name=db_name,
-            table_name=table_name,
-            flag=flag,
+            embedding_function = embedding,
+            embedding = embedding,
+            path_or_url = path_or_url,
+            db_name = db_name,
+            table_name = table_name,
+            flag = flag,
         )
-        vearch_db.add_texts(texts=texts, metadatas=metadatas)
+        vearch_db.add_texts(texts = texts, metadatas = metadatas)
         return vearch_db
+
+    def _get_matadata_field(
+        self,
+        metadatas: Optional[List[dict]] = None
+    ):
+        field_list = []
+        if metadatas:
+            for key, value in metadatas[0].items():
+                if isinstance(value, int):
+                    field_list.append({"field": key, "type": "int"})
+                    continue
+                if isinstance(value, str):
+                    field_list.append({"field": key, "type": "str"})
+                    continue
+                if isinstance(value, float):
+                    field_list.append({"field": key, "type": "float"})
+                    continue
+                else:
+                    raise ValueError("Please check data type,support int, string, float")
+        self.field_list = field_list
 
     def _create_table(
         self,
         dim: int = 1024,
-        field_list: List[dict] = [
-            {"field": "text", "type": "str"},
-            {"field": "metadata", "type": "str"},
-        ],
     ) -> int:
         """
         Create VectorStore Table
@@ -149,31 +166,34 @@ class Vearch(VectorStore):
             code,0 for success,1 for failed
         """
 
-        type_dict = {"int": vearch.dataType.INT, "str": vearch.dataType.STRING}
+        type_dict = {"int": vearch.dataType.INT, "str": vearch.dataType.STRING,
+                        "float": vearch.dataType.FLOAT}
         engine_info = {
-            "index_size": 10000,
-            "retrieval_type": "IVFPQ",
-            "retrieval_param": {"ncentroids": 2048, "nsubvector": 32},
+            "index_size": 1,
+            "retrieval_type": "HNSW",
+            "retrieval_param": {"metric_type": "InnerProduct","nlinks":-1,
+                                        "efConstruction": -1 },
         }
+        filed_list_add=self.field_list + [{"field": "text", "type": "str"}]
         fields = [
             vearch.GammaFieldInfo(fi["field"], type_dict[fi["type"]])
-            for fi in field_list
+            for fi in filed_list_add
         ]
         vector_field = vearch.GammaVectorInfo(
-            name="text_embedding",
-            type=vearch.dataType.VECTOR,
-            is_index=True,
-            dimension=dim,
-            model_id="",
-            store_type="MemoryOnly",
-            store_param={"cache_size": 10000},
-            has_source=False,
+            name = "text_embedding",
+            type = vearch.dataType.VECTOR,
+            is_index = True,
+            dimension = dim,
+            model_id = "",
+            store_type = "MemoryOnly",
+            store_param = {"cache_size": 10000},
+            has_source = False,
         )
         response_code = self.vearch.create_table(
             engine_info,
-            name=self.using_table_name,
-            fields=fields,
-            vector_field=vector_field,
+            name = self.using_table_name,
+            fields = fields,
+            vector_field = vector_field,
         )
         return response_code
 
@@ -188,33 +208,33 @@ class Vearch(VectorStore):
         Return:
             code,0 failed for ,1 for success
         """
+        type_dict = {"int": "integer", "str": "string", "float": "float"}
         space_config = {
             "name": self.using_table_name,
             "partition_num": 1,
             "replica_num": 1,
             "engine": {
-                "name": "gamma",
                 "index_size": 1,
-                "retrieval_type": "FLAT",
+                "retrieval_type": "HNSW",
                 "retrieval_param": {
-                    "metric_type": "L2",
+                    "metric_type": "InnerProduct",
+                    "nlinks":-1,
+                    "efConstruction": -1
                 },
             },
-            "properties": {
-                "text": {
-                    "type": "string",
-                },
-                "metadata": {
-                    "type": "string",
-                },
+        }
+        tmp_proer = {
+                "text": {"type": "string"},
                 "text_embedding": {
                     "type": "vector",
                     "index": True,
                     "dimension": dim,
                     "store_type": "MemoryOnly",
                 },
-            },
-        }
+            }
+        for item in self.field_list:
+             tmp_proer[item["field"]] = {"type":type_dict[item["type"]]}
+        space_config["properties"] = tmp_proer
         response_code = self.vearch.create_space(self.using_db_name, space_config)
 
         return response_code
@@ -234,6 +254,7 @@ class Vearch(VectorStore):
             embeddings = self.embedding_func.embed_documents(list(texts))
         if embeddings is None:
             raise ValueError("embeddings is None")
+        self._get_matadata_field(metadatas)
         if self.flag:
             dbs_list = self.vearch.list_dbs()
             if self.using_db_name not in dbs_list:
@@ -247,10 +268,12 @@ class Vearch(VectorStore):
                     raise ValueError("create space failed!!!")
             docid = []
             if embeddings is not None and metadatas is not None:
+                meta_field_list = [i["field"] for i in self.field_list]
                 for text, metadata, embed in zip(texts, metadatas, embeddings):
                     profiles: dict[str, Any] = {}
                     profiles["text"] = text
-                    profiles["metadata"] = metadata["source"]
+                    for f in meta_field_list:
+                         profiles[f] = metadata[f]
                     embed_np = np.array(embed)
                     profiles["text_embedding"] = {
                         "feature": (embed_np / np.linalg.norm(embed_np)).tolist()
@@ -278,10 +301,12 @@ class Vearch(VectorStore):
                     raise ValueError("create table failed!!!")
             if embeddings is not None and metadatas is not None:
                 doc_items = []
+                meta_field_list = [i["field"] for i in self.field_list]
                 for text, metadata, embed in zip(texts, metadatas, embeddings):
                     profiles_v: dict[str, Any] = {}
                     profiles_v["text"] = text
-                    profiles_v["metadata"] = metadata["source"]
+                    for f in meta_field_list:
+                         profiles_v[f] = metadata[f]
                     embed_np = np.array(embed)
                     profiles_v["text_embedding"] = embed_np / np.linalg.norm(embed_np)
                     doc_items.append(profiles_v)
@@ -325,11 +350,11 @@ class Vearch(VectorStore):
             raise ValueError("vearch vectorbase table not exist!!!")
 
         vearch_db = cls(
-            embedding_function=embedding,
-            path_or_url=path_or_url,
-            table_name=table_name,
-            db_name=db_name,
-            flag=flag,
+            embedding_function = embedding,
+            path_or_url = path_or_url,
+            table_name = table_name,
+            db_name = db_name,
+            flag = flag,
         )
         vearch_db._load()
         return vearch_db
@@ -366,6 +391,8 @@ class Vearch(VectorStore):
             0 is dissimilar, 1 is the most similar.
         """
         embed = np.array(embedding)
+        meta_field_list = [i["field"] for i in self.field_list]
+        query_fields = meta_field_list+["text"]
         if self.flag:
             query_data = {
                 "query": {
@@ -376,8 +403,10 @@ class Vearch(VectorStore):
                         }
                     ],
                 },
+                "retrieval_param": {"metric_type": "InnerProduct", "efSearch": 64},
                 "size": k,
-                "fields": ["text", "metadata"],
+                "fields": query_fields,
+                
             }
             query_result = self.vearch.search(
                 self.using_db_name, self.using_table_name, query_data
@@ -392,8 +421,7 @@ class Vearch(VectorStore):
                     }
                 ],
                 "fields": [],
-                "is_brute_search": 1,
-                "retrieval_param": {"metric_type": "InnerProduct", "nprobe": 20},
+                "retrieval_param": {"metric_type": "InnerProduct", "efSearch": 64},
                 "topn": k,
             }
             query_result = self.vearch.search(query_data)
@@ -401,15 +429,16 @@ class Vearch(VectorStore):
         docs = []
         for item in res:
             content = ""
-            meta_data = {}
+            meta_data={}
             if self.flag:
                 item = item["_source"]
             for item_key in item:
                 if item_key == "text":
                     content = item[item_key]
                     continue
-                if item_key == "metadata":
-                    meta_data["source"] = item[item_key]
+                if item_key in meta_field_list:
+                    meta_data[item_key] = item[item_key]
+                    meta_field_list.remove(item_key)
                     continue
             docs.append(Document(page_content=content, metadata=meta_data))
         return docs
@@ -433,6 +462,8 @@ class Vearch(VectorStore):
             raise ValueError("embedding_func is None!!!")
         embeddings = self.embedding_func.embed_query(query)
         embed = np.array(embeddings)
+        meta_field_list = [i["field"] for i in self.field_list]
+        query_fields = meta_field_list + ["text"]
         if self.flag:
             query_data = {
                 "query": {
@@ -444,7 +475,9 @@ class Vearch(VectorStore):
                     ],
                 },
                 "size": k,
-                "fields": ["text_embedding", "text", "metadata"],
+                "fields":  query_fields,
+                "retrieval_param": {"metric_type": "InnerProduct", "efSearch": 64},
+
             }
             query_result = self.vearch.search(
                 self.using_db_name, self.using_table_name, query_data
@@ -459,8 +492,7 @@ class Vearch(VectorStore):
                     }
                 ],
                 "fields": [],
-                "is_brute_search": 1,
-                "retrieval_param": {"metric_type": "InnerProduct", "nprobe": 20},
+                "retrieval_param": {"metric_type": "InnerProduct", "efSearch": 64},
                 "topn": k,
             }
             query_result = self.vearch.search(query_data)
@@ -476,8 +508,9 @@ class Vearch(VectorStore):
                 if item_key == "text":
                     content = item[item_key]
                     continue
-                if item_key == "metadata":
-                    meta_data["source"] = item[item_key]
+                if item_key in meta_field_list:
+                    meta_data[item_key] = item[item_key]
+                    meta_field_list.remove(item_key)
                     continue
                 if self.flag != 1 and item_key == "score":
                     score = item[item_key]
@@ -536,6 +569,7 @@ class Vearch(VectorStore):
         """
 
         results: Dict[str, Document] = {}
+        meta_field_list = [i["field"] for i in self.field_list]
         if ids is None or ids.__len__() == 0:
             return results
         if self.flag:
@@ -552,8 +586,9 @@ class Vearch(VectorStore):
                     if field == "text":
                         content = record["_source"][field]
                         continue
-                    elif field == "metadata":
-                        meta_info["source"] = record["_source"][field]
+                    elif field in meta_field_list:
+                        meta_info[field] = record["_source"][field]
+                        meta_field_list.remove(field)
                         continue
                 results[record["_id"]] = Document(
                     page_content=content, metadata=meta_info
@@ -569,8 +604,9 @@ class Vearch(VectorStore):
                     if field == "text":
                         content = docs_detail[field]
                         continue
-                    elif field == "metadata":
-                        meta_info["source"] = docs_detail[field]
+                    elif field in meta_field_list:
+                        meta_info[field] = docs_detail[field]
+                        meta_field_list.remove(field)
                         continue
                 results[docs_detail["_id"]] = Document(
                     page_content=content, metadata=meta_info
