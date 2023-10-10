@@ -1,4 +1,4 @@
-# 🦜️🔗 LangChain
+# 🦜️🔗 LangChain - Much Wow
 
 ⚡ Building applications with LLMs through composability ⚡
 
