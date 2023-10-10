@@ -115,7 +115,7 @@ class SeleniumURLLoader(BaseLoader):
         else:
             raise ValueError("Invalid browser specified. Use 'chrome' or 'firefox'.")
 
-    def _build_metadata(self, url, driver) -> dict:
+    def _build_metadata(self, url: str, driver: Union["Chrome", "Firefox"]) -> dict:
         from selenium.common.exceptions import NoSuchElementException
         from selenium.webdriver.common.by import By
 
