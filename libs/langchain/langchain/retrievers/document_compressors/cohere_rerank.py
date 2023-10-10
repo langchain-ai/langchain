@@ -29,6 +29,8 @@ class CohereRerank(BaseDocumentCompressor):
     model: str = "rerank-english-v2.0"
     """Model to use for reranking."""
 
+    cohere_api_key: Optional[str] = None
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -82,11 +84,3 @@ class CohereRerank(BaseDocumentCompressor):
             doc.metadata["relevance_score"] = r.relevance_score
             final_results.append(doc)
         return final_results
-
-    async def acompress_documents(
-        self,
-        documents: Sequence[Document],
-        query: str,
-        callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
-        raise NotImplementedError()

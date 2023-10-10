@@ -2361,6 +2361,18 @@
       "destination": "/docs/integrations/vectorstores/awadb"
     },
     {
+      "source": "/docs/integrations/providers/aws_dynamodb",
+      "destination": "/docs/integrations/platforms/aws#aws-dynamodb"
+    },
+    {
+      "source": "/docs/integrations/providers/google_document_ai",
+      "destination": "/docs/integrations/platforms/google#google-document-ai"
+    },
+    {
+      "source": "/docs/integrations/providers/scann",
+      "destination": "/docs/integrations/platforms/google#google-scann"
+    },
+    {
       "source": "/docs/modules/data_connection/vectorstores/integrations/awadb",
       "destination": "/docs/integrations/vectorstores/awadb"
     },
@@ -3739,6 +3751,10 @@
     {
       "source": "/docs/ecosystem/dependents",
       "destination": "/docs/additional_resources/dependents"
+    },
+    {
+      "source": "docs/integrations/retrievers/google_cloud_enterprise_search",
+      "destination": "docs/integrations/retrievers/google_vertex_ai_search"
     }
   ]
 }

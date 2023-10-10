@@ -30,6 +30,9 @@ from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.retrievers.google_cloud_enterprise_search import (
     GoogleCloudEnterpriseSearchRetriever,
 )
+from langchain.retrievers.google_vertex_ai_search import (
+    GoogleVertexAISearchRetriever,
+)
 from langchain.retrievers.kay import KayAiRetriever
 from langchain.retrievers.kendra import AmazonKendraRetriever
 from langchain.retrievers.knn import KNNRetriever
@@ -49,6 +52,7 @@ from langchain.retrievers.re_phraser import RePhraseQueryRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.svm import SVMRetriever
+from langchain.retrievers.tavily_search_api import TavilySearchAPIRetriever
 from langchain.retrievers.tfidf import TFIDFRetriever
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
@@ -69,6 +73,7 @@ __all__ = [
     "ChaindeskRetriever",
     "ElasticSearchBM25Retriever",
     "GoogleCloudEnterpriseSearchRetriever",
+    "GoogleVertexAISearchRetriever",
     "KayAiRetriever",
     "KNNRetriever",
     "LlamaIndexGraphRetriever",
@@ -82,6 +87,7 @@ __all__ = [
     "RemoteLangChainRetriever",
     "SVMRetriever",
     "SelfQueryRetriever",
+    "TavilySearchAPIRetriever",
     "TFIDFRetriever",
     "BM25Retriever",
     "TimeWeightedVectorStoreRetriever",

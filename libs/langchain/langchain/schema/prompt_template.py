@@ -3,23 +3,25 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Type, Union
 
 import yaml
 
-from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain.schema.document import Document
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt import PromptValue
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 
-class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
+class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
+    input_types: Dict[str, Any] = Field(default_factory=dict)
+    """A dictionary of the types of the variables the prompt template expects.
+    If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
@@ -44,10 +46,11 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
         return Union[StringPromptValue, ChatPromptValueConcrete]
 
     @property
-    def input_schema(self) -> type[BaseModel]:
+    def input_schema(self) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
-            "PromptInput", **{k: (Any, None) for k in self.input_variables}
+            "PromptInput",
+            **{k: (self.input_types.get(k, str), None) for k in self.input_variables},
         )
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:

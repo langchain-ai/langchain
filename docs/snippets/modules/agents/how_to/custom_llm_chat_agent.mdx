@@ -51,7 +51,7 @@ SERPAPI_API_KEY = getpass()
 search = SerpAPIWrapper(serpapi_api_key=SERPAPI_API_KEY)
 tools = [
     Tool(
-        name = "Search",
+        name="Search",
         func=search.run,
         description="useful for when you need to answer questions about current events"
     )

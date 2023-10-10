@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -15,8 +16,12 @@ class Embeddings(ABC):
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Asynchronous Embed search docs."""
-        raise NotImplementedError
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self.embed_documents, texts
+        )
 
     async def aembed_query(self, text: str) -> List[float]:
         """Asynchronous Embed query text."""
-        raise NotImplementedError
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self.embed_query, text
+        )
