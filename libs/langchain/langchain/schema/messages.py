@@ -161,7 +161,7 @@ class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    typename: Literal["HumanMessageChunk"] = "HumanMessageChunk"
+    typename: Literal["HumanMessageChunk"] = "HumanMessageChunk"  # type: ignore[assignment] # noqa: E501
 
 
 class AIMessage(BaseMessage):
@@ -185,7 +185,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    typename: Literal["AIMessageChunk"] = "AIMessageChunk"
+    typename: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment] # noqa: E501
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
@@ -223,7 +223,7 @@ class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    typename: Literal["SystemMessageChunk"] = "SystemMessageChunk"
+    typename: Literal["SystemMessageChunk"] = "SystemMessageChunk"  # type: ignore[assignment] # noqa: E501
 
 
 class FunctionMessage(BaseMessage):
@@ -245,7 +245,9 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    typename: Literal["FunctionMessageChunk"] = "FunctionMessageChunk"
+    typename: Literal[
+        "FunctionMessageChunk"
+    ] = "FunctionMessageChunk" # type: ignore[assignment]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):
@@ -284,7 +286,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    typename: Literal["ChatMessageChunk"] = "ChatMessageChunk"
+    typename: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ChatMessageChunk):
