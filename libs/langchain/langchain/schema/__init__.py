@@ -35,6 +35,7 @@ from langchain.schema.prompt import PromptValue
 from langchain.schema.prompt_template import BasePromptTemplate, format_document
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.storage import BaseStore
+from langchain.schema.train import TrainResult
 
 RUN_KEY = "__run"
 Memory = BaseMemory
@@ -75,4 +76,5 @@ __all__ = [
     "BaseLLMOutputParser",
     "BasePromptTemplate",
     "format_document",
+"TrainResult",
 ]
