@@ -24,7 +24,6 @@ from __future__ import annotations
 import asyncio
 import copy
 import logging
-import multiprocessing
 import pathlib
 import re
 from abc import ABC, abstractmethod
@@ -160,7 +159,18 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         _metadatas = metadatas or [{}] * len(texts)
 
         if self._use_multiprocessing:
-            with multiprocessing.Pool() as pool:
+            try:
+                # we use pathos instead of standard lib multiprocessing
+                # to be able to serialze non-top level defined and/or nested methods
+                # which may apply for length_function which is used in split_text
+                from pathos.multiprocessing import ProcessingPool as Pool
+            except ImportError:
+                raise ImportError(
+                    "Could not import pathos python package. "
+                    "This is needed to run TextSplitter with multiprocessing enabled. "
+                    "Please install it with `pip install pathos`."
+                )
+            with Pool() as pool:
                 documents = pool.map(self._create_document, zip(texts, _metadatas))
             return [doc for sublist in documents for doc in sublist]  # Flatten the list
         else:
