@@ -1,6 +1,4 @@
 import importlib.util
-from abc import ABC, abstractmethod
-from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.manager import (
@@ -18,7 +16,7 @@ from langchain.schema.messages import (
 from langchain.schema.output import ChatGeneration
 
 
-class ChatHuggingFacePipeline(BaseChatModel, ABC):
+class ChatHuggingFacePipeline(BaseChatModel):
     pipeline: Any
 
     @property
@@ -26,10 +24,30 @@ class ChatHuggingFacePipeline(BaseChatModel, ABC):
         """Return type of chat model."""
         return "huggingface_pipeline_chat"
 
-    @abstractmethod
-    def format_messages_as_text(self, messages: List[BaseMessage]) -> str:
-        """Method for parsing the list of LangChain Messages into string"""
-        ...
+    @staticmethod
+    def convert_lc_messages_to_hf_messages(
+        messages: List[BaseMessage],
+    ) -> List[Dict[str, str]]:
+        """
+        Method for converting the list of LangChain Messages into
+        format required by Hugging Face.
+        """
+        output = []
+
+        for message in messages:
+            if isinstance(message, SystemMessage):
+                output.append({"role": "system", "content": message.content})
+            elif isinstance(message, HumanMessage):
+                output.append({"role": "user", "content": message.content})
+            elif isinstance(message, AIMessage):
+                output.append({"role": "assistant", "content": message.content})
+            else:
+                raise ValueError(
+                    f"Unexpected message type: {type(message)}. "
+                    "Expected one of [SystemMessage, HumanMessage, AIMessage]."
+                )
+
+        return output
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -38,6 +56,13 @@ class ChatHuggingFacePipeline(BaseChatModel, ABC):
             or values["pipeline"].task != "text-generation"
         ):
             raise ValueError("The pipeline task should be 'text-generation'.")
+
+        if not hasattr(values["pipeline"], "apply_chat_template"):
+            raise ValueError(
+                "Your transformers module might be outdated. "
+                "Please update it to ensure that tokenizer has the "
+                "'apply_chat_template' method."
+            )
 
         return values
 
@@ -48,7 +73,8 @@ class ChatHuggingFacePipeline(BaseChatModel, ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        prompt = self.format_messages_as_text(messages)
+        chat = self.convert_lc_messages_to_hf_messages(messages)
+        prompt = self.pipeline.tokenizer.apply_chat_template(chat, tokenize=False)
 
         # make sure that `return_full_text` is set to False
         # otherwise, pipeline will return prompt + generation
@@ -134,66 +160,3 @@ class ChatHuggingFacePipeline(BaseChatModel, ABC):
             message=AIMessage(content=response),
         )
         return ChatResult(generations=[chat_generation])
-
-
-class ChatHFLlama2Pipeline(ChatHuggingFacePipeline):
-    class InstructionTokens(Enum):
-        def __str__(self) -> str:
-            return self.value
-
-        B_INST = "[INST]"
-        E_INST = "[/INST]"
-
-    class SystemTokens(Enum):
-        def __str__(self) -> str:
-            return self.value
-
-        B_SYS = "<<SYS>>"
-        E_SYS = "<</SYS>>"
-
-    def format_messages_as_text(self, messages: List[BaseMessage]) -> str:
-        """
-        Transform List of Chat Messages to text following Meta's prompt guidelines.
-
-        Prompt template with System Message:
-        ```
-        <s>[INST] <<SYS>>
-        {{ system_prompt }}
-        <</SYS>>
-
-        {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
-        ```
-
-        Prompt template without System Message:
-        ```
-        <s>[INST] {{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s>
-        ```
-        Source:
-        https://github.com/facebookresearch/llama-recipes/blob/df77625e48c3994aef19702fb331215f7fb83494/docs/inference.md?plain=1#L124
-        """
-        prompt = ""
-
-        for i, message in enumerate(messages):
-            if isinstance(message, SystemMessage) and i != 0:
-                raise ValueError(
-                    "SystemMessage can only appear as the first message in the list."
-                )
-            elif isinstance(message, SystemMessage) and i == 0:
-                prompt += (
-                    f"<s>{self.InstructionTokens.B_INST} "
-                    f"{self.SystemTokens.B_SYS}\n{message.content}\n"
-                    f"{self.SystemTokens.E_SYS}\n\n"
-                )
-            elif isinstance(message, HumanMessage) and i > 0:
-                prompt += f"{message.content} {self.InstructionTokens.E_INST} "
-            elif isinstance(message, HumanMessage) and i == 0:
-                prompt += (
-                    f"<s>{self.InstructionTokens.B_INST} "
-                    f"{message.content} {self.InstructionTokens.E_INST} "
-                )
-            elif isinstance(message, AIMessage):
-                prompt += f"{message.content} </s><s>{self.InstructionTokens.B_INST} "
-            else:
-                raise ValueError(f"Unsupported Message type: {type(message)}")
-
-        return prompt
