@@ -10,11 +10,13 @@ def test_google_documentai_warehoure_retriever() -> None:
 
     Example:
     export USER_LDAP=...
-    export PROJECT=...
+    export PROJECT_NUMBER=...
     """
-    project_id = os.environ["PROJECT_ID"]
+    project_number = os.environ["PROJECT_NUMBER"]
     user_ldap = os.environ["USER_LDAP"]
-    docai_wh_retriever = GoogleDocumentAIWarehouseRetriever(project_id=project_id)
+    docai_wh_retriever = GoogleDocumentAIWarehouseRetriever(
+        project_number=project_number
+    )
     documents = docai_wh_retriever.get_relevant_documents(
         "What are Alphabet's Other Bets?", user_ldap=user_ldap
     )

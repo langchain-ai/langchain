@@ -30,7 +30,7 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
 
     location: str = "us"
     "GCP location where DocAI Warehouse is placed."
-    project_id: str
+    project_number: str
     "GCP project number, should contain digits only."
     schema_id: Optional[str] = None
     "DocAI Warehouse schema to queary against. If nothing is provided, all documents "
@@ -52,19 +52,11 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
                 "Please install it with pip install google-cloud-contentwarehouse"
             ) from exc
 
-        values["project_id"] = get_from_dict_or_env(values, "project_id", "PROJECT_ID")
+        values["project_number"] = get_from_dict_or_env(
+            values, "project_number", "PROJECT_NUMBER"
+        )
         values["client"] = DocumentServiceClient()
         return values
-
-    @property
-    def _parent(self) -> str:
-        return f"projects/{self.project_id}/locations/{self.location}"
-
-    @property
-    def _schemas(self) -> List[str]:
-        if self.schema_id:
-            return [f"{self._parent}/documentSchemas/{self.schema_id}"]
-        return []
 
     def _prepare_request_metadata(self, user_ldap: str) -> "RequestMetadata":
         from google.cloud.contentwarehouse_v1 import RequestMetadata, UserInfo
@@ -97,13 +89,13 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
         if self.schema_id:
             schemas.append(
                 self.client.document_schema_path(
-                    project=self.project_id,
+                    project=self.project_number,
                     location=self.location,
                     document_schema=self.schema_id,
                 )
             )
         return SearchDocumentsRequest(
-            parent=self._parent,
+            parent=self.client.common_location_path(self.project_number, self.location),
             request_metadata=request_metadata,
             document_query=DocumentQuery(
                 query=query, is_nl_query=True, document_schema_names=schemas
