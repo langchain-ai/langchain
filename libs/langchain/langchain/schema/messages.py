@@ -247,7 +247,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     # non-chunk variant.
     typename: Literal[
         "FunctionMessageChunk"
-    ] = "FunctionMessageChunk" # type: ignore[assignment]
+    ] = "FunctionMessageChunk"  # type: ignore[assignment]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):
