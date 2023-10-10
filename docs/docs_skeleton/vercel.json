@@ -2361,6 +2361,18 @@
       "destination": "/docs/integrations/vectorstores/awadb"
     },
     {
+      "source": "/docs/integrations/providers/aws_dynamodb",
+      "destination": "/docs/integrations/platforms/aws#aws-dynamodb"
+    },
+    {
+      "source": "/docs/integrations/providers/google_document_ai",
+      "destination": "/docs/integrations/platforms/google#google-document-ai"
+    },
+    {
+      "source": "/docs/integrations/providers/scann",
+      "destination": "/docs/integrations/platforms/google#google-scann"
+    },
+    {
       "source": "/docs/modules/data_connection/vectorstores/integrations/awadb",
       "destination": "/docs/integrations/vectorstores/awadb"
     },
