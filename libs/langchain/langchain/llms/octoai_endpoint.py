@@ -40,7 +40,7 @@ class OctoAIEndpoint(LLM):
     """Endpoint URL to use."""
 
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     octoai_api_token: Optional[str] = None
     """OCTOAI API Token"""

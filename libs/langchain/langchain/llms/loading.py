@@ -5,7 +5,7 @@ from typing import Union
 
 import yaml
 
-from langchain.llms import type_to_cls_dict
+from langchain.llms import get_type_to_cls_dict
 from langchain.llms.base import BaseLLM
 
 
@@ -15,10 +15,12 @@ def load_llm_from_config(config: dict) -> BaseLLM:
         raise ValueError("Must specify an LLM Type in config")
     config_type = config.pop("_type")
 
+    type_to_cls_dict = get_type_to_cls_dict()
+
     if config_type not in type_to_cls_dict:
         raise ValueError(f"Loading {config_type} LLM not supported")
 
-    llm_cls = type_to_cls_dict[config_type]
+    llm_cls = type_to_cls_dict[config_type]()
     return llm_cls(**config)
 
 

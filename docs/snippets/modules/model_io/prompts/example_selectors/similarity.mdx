@@ -73,7 +73,7 @@ print(similar_prompt.format(adjective="worried"))
 
 ```python
 # Input is a measurement, so should select the tall/short example
-print(similar_prompt.format(adjective="fat"))
+print(similar_prompt.format(adjective="large"))
 ```
 
 <CodeOutputBlock lang="python">
@@ -81,10 +81,10 @@ print(similar_prompt.format(adjective="fat"))
 ```
     Give the antonym of every input
     
-    Input: happy
-    Output: sad
+    Input: tall
+    Output: short
     
-    Input: fat
+    Input: large
     Output:
 ```
 
@@ -94,7 +94,7 @@ print(similar_prompt.format(adjective="fat"))
 ```python
 # You can add new examples to the SemanticSimilarityExampleSelector as well
 similar_prompt.example_selector.add_example({"input": "enthusiastic", "output": "apathetic"})
-print(similar_prompt.format(adjective="joyful"))
+print(similar_prompt.format(adjective="passionate"))
 ```
 
 <CodeOutputBlock lang="python">
@@ -102,10 +102,10 @@ print(similar_prompt.format(adjective="joyful"))
 ```
     Give the antonym of every input
     
-    Input: happy
-    Output: sad
+    Input: enthusiastic
+    Output: apathetic
     
-    Input: joyful
+    Input: passionate
     Output:
 ```
 
