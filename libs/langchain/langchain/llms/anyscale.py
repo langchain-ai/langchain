@@ -39,32 +39,33 @@ def update_token_usage(
 
 
 def create_llm_result(
-        choices: Any, prompts: List[str], token_usage: Dict[str, int], model_name: str
-    ) -> LLMResult:
-        """Create the LLMResult from the choices and prompts."""
-        generations = []
-        for i, _ in enumerate(prompts):
-            choice = choices[i]
-            generations.append(
-                [
-                    Generation(
-                        text=choice["message"]["content"],
-                        generation_info=dict(
-                            finish_reason=choice.get("finish_reason"),
-                            logprobs=choice.get("logprobs"),
-                        ),
-                    )
-                ]
-            )
-        llm_output = {"token_usage": token_usage, "model_name": model_name}
-        return LLMResult(generations=generations, llm_output=llm_output)
-            
+    choices: Any, prompts: List[str], token_usage: Dict[str, int], model_name: str
+) -> LLMResult:
+    """Create the LLMResult from the choices and prompts."""
+    generations = []
+    for i, _ in enumerate(prompts):
+        choice = choices[i]
+        generations.append(
+            [
+                Generation(
+                    text=choice["message"]["content"],
+                    generation_info=dict(
+                        finish_reason=choice.get("finish_reason"),
+                        logprobs=choice.get("logprobs"),
+                    ),
+                )
+            ]
+        )
+    llm_output = {"token_usage": token_usage, "model_name": model_name}
+    return LLMResult(generations=generations, llm_output=llm_output)
+
+
 class Anyscale(BaseOpenAI):
     """Wrapper around Anyscale Endpoint.
     To use, you should have the environment variable ``ANYSCALE_API_BASE`` and
-    ``ANYSCALE_API_KEY``set with your Anyscale Endpoint, or pass it as a named 
+    ``ANYSCALE_API_KEY``set with your Anyscale Endpoint, or pass it as a named
     parameter to the constructor.
-    
+
     Example:
         .. code-block:: python
             from langchain.llms import Anyscale
@@ -80,24 +81,24 @@ class Anyscale(BaseOpenAI):
             results = ray.get(futures)
     """
 
-
     """Key word arguments to pass to the model."""
     anyscale_api_base: Optional[str] = None
     anyscale_api_key: Optional[str] = None
- 
-    prefix_messages : List = Field(default_factory=list)
+
+    prefix_messages: List = Field(default_factory=list)
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["anyscale_api_base"] = get_from_dict_or_env(
-           values, "anyscale_api_base", "ANYSCALE_API_BASE"
+            values, "anyscale_api_base", "ANYSCALE_API_BASE"
         )
         values["anyscale_api_key"] = get_from_dict_or_env(
             values, "anyscale_api_key", "ANYSCALE_API_KEY"
         )
         try:
             import openai
+
             ## Always create ChatComplete client, replacing the legacy Complete client
             values["client"] = openai.ChatCompletion
         except ImportError:
@@ -109,7 +110,7 @@ class Anyscale(BaseOpenAI):
             raise ValueError("Cannot stream results when n > 1.")
         if values["streaming"] and values["best_of"] > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
-        
+
         return values
 
     @property
@@ -119,7 +120,7 @@ class Anyscale(BaseOpenAI):
             **{"model_name": self.model_name},
             **super()._identifying_params,
         }
-    
+
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
@@ -128,8 +129,6 @@ class Anyscale(BaseOpenAI):
             "api_base": self.anyscale_api_base,
         }
         return {**openai_creds, **{"model": self.model_name}, **super()._default_params}
-
-    
 
     @property
     def _llm_type(self) -> str:
@@ -145,7 +144,7 @@ class Anyscale(BaseOpenAI):
             )
         messages = self.prefix_messages + [{"role": "user", "content": prompts[0]}]
         params: Dict[str, Any] = self._invocation_params
-        
+
         return messages, params
 
     def _stream(
@@ -155,7 +154,6 @@ class Anyscale(BaseOpenAI):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
-        
         for stream_resp in completion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
@@ -164,7 +162,7 @@ class Anyscale(BaseOpenAI):
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(token, chunk=chunk)
-                
+
     async def _astream(
         self,
         messages: List[Dict],
@@ -172,7 +170,6 @@ class Anyscale(BaseOpenAI):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        
         async for stream_resp in await acompletion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
@@ -181,7 +178,7 @@ class Anyscale(BaseOpenAI):
             yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(token, chunk=chunk)
-                
+
     def _generate(
         self,
         prompts: List[str],
@@ -189,7 +186,6 @@ class Anyscale(BaseOpenAI):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        
         params = self._invocation_params
         if self.streaming:
             params = {**params, **kwargs, "stream": True}
@@ -202,11 +198,11 @@ class Anyscale(BaseOpenAI):
         if params.get("max_tokens") == -1:
             # for Chat api, omitting max_tokens is equivalent to having no limit
             del params["max_tokens"]
-        
+
         choices = []
         token_usage: Dict[str, int] = {}
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
-        
+
         for prompt in prompts:
             messages = self.prefix_messages + [{"role": "user", "content": prompt}]
             if self.streaming:
@@ -228,15 +224,15 @@ class Anyscale(BaseOpenAI):
                         else None,
                     }
                 )
-                
+
             else:
                 response = completion_with_retry(
                     self, messages=messages, run_manager=run_manager, **params
                 )
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
-        return create_llm_result(choices, prompts, token_usage, self.model_name)      
-    
+        return create_llm_result(choices, prompts, token_usage, self.model_name)
+
     async def _agenerate(
         self,
         prompts: List[str],
@@ -257,7 +253,7 @@ class Anyscale(BaseOpenAI):
         if params.get("max_tokens") == -1:
             # for Chat api, omitting max_tokens is equivalent to having no limit
             del params["max_tokens"]
-        
+
         choices = []
         token_usage: Dict[str, int] = {}
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
@@ -265,8 +261,9 @@ class Anyscale(BaseOpenAI):
             messages = self.prefix_messages + [{"role": "user", "content": prompt}]
             if self.streaming:
                 generation: Optional[GenerationChunk] = None
-                async for chunk in self._astream(messages, params, 
-                                                 run_manager, **kwargs):
+                async for chunk in self._astream(
+                    messages, params, run_manager, **kwargs
+                ):
                     if generation is None:
                         generation = chunk
                     else:
