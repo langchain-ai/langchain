@@ -59,7 +59,7 @@ class BESVerctorStore(VectorStore):
         self.index_name = index_name
         self.query_field = kwargs.get("query_field", "text")
         self.vector_query_field = kwargs.get("vector_query_field", "vector")
-        self.space_type = kwargs.get("space_type", "consine")
+        self.space_type = kwargs.get("space_type", "cosine")
         self.index_type = kwargs.get("index_type", "linear")
         self.index_params = kwargs.get("index_params") or {}
 
@@ -177,7 +177,6 @@ class BESVerctorStore(VectorStore):
                     "dims": dims_length, 
                     "index_type": "hnsw",
                     "space_type": self.space_type,
-                    "engine": self.index_params.get("engine", "nswlib"),
                     "parameters": {
                         "ef_construction": self.index_params.get("hnsw_ef_construction", 200),
                         "m": self.index_params.get("hnsw_m", 4)
