@@ -36,6 +36,7 @@ from langchain.tools.requests.tool import (
 from langchain.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
+from langchain.tools.shell.tool import ShellTool
 from langchain.tools.sleep.tool import SleepTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
@@ -87,16 +88,6 @@ def _get_tools_requests_delete() -> BaseTool:
 
 
 def _get_terminal() -> BaseTool:
-    """Get a terminal tool."""
-    try:
-        from langchain_experimental.shell import ShellTool
-    except ImportError:
-        raise ImportError(
-            "Terminal tools require the library `langchain_experimental` "
-            "to be installed."
-            "Please install it with `pip install langchain_experimental`."
-        )
-
     return ShellTool()
 
 
