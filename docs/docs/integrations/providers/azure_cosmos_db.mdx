@@ -1,0 +1,135 @@
+# Azure Cosmos DB
+
+>[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/) makes it easy to create a database with full native MongoDB support.
+> You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
+> Use vector search in Azure Cosmos DB for MongoDB vCore to seamlessly integrate your AI-based applications with your data that's stored in Azure Cosmos DB.
+
+## Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db).
+
+We need to install `pymongo` python package.
+
+```bash
+pip install pymongo
+```
+
+#### Deploy Azure Cosmos DB on Microsoft Azure
+
+Azure Cosmos DB for MongoDB vCore provides developers with a fully managed MongoDB-compatible database service for building modern applications with a familiar architecture.
+
+With Cosmos DB for MongoDB vCore, developers can enjoy the benefits of native Azure integrations, low total cost of ownership (TCO), and the familiar vCore architecture when migrating existing applications or building new ones.
+
+[Sign Up](https://azure.microsoft.com/en-us/free/) for free to get started today.
+
+## Vector Store
+
+See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db).
+
+```python
+
+
+from langchain.docstore.document import Document
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.vectorstores.azure_cosmos_db_vector_search import AzureCosmosDBVectorSearch, CosmosDBSimilarityType
+
+import logging
+import os
+import uuid
+
+# OpenAI Settings
+model_deployment = os.getenv("OPENAI_EMBEDDINGS_DEPLOYMENT", "smart-agent-embedding-ada")
+model_name = os.getenv("OPENAI_EMBEDDINGS_MODEL_NAME", "text-embedding-ada-002")
+
+# Mongo DB Settings
+CONNECTION_STRING = os.environ.get("MONGODB_VCORE_URI")
+INDEX_NAME = "izzy-test-index"
+NAMESPACE = "izzy_test_db.izzy_test_collection"
+DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
+
+num_lists = 100
+dimensions = 1536
+similarity_algorithm = CosmosDBSimilarityType.COS
+
+def prepare_collection() -> Any:
+    from pymongo import MongoClient
+
+    test_client: MongoClient = MongoClient(CONNECTION_STRING)
+    return test_client[DB_NAME][COLLECTION_NAME]
+
+
+def azure_openai_embeddings() -> Any:
+    openai_embeddings: OpenAIEmbeddings = OpenAIEmbeddings(deployment=model_deployment, model=model_name, chunk_size=1)
+    return openai_embeddings
+
+
+collection = prepare_collection()
+embeddings = azure_openai_embeddings()
+
+def load_from_documents() -> Any:
+
+    documents = [
+        Document(page_content="Dogs are tough.", metadata={"a": 1}),
+        Document(page_content="Cats have fluff.", metadata={"b": 1}),
+        Document(page_content="What is a sandwich?", metadata={"c": 1}),
+        Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
+    ]
+
+    vectorstore = AzureCosmosDBVectorSearch.from_documents(
+        documents,
+        embeddings,
+        collection=collection,
+        index_name=INDEX_NAME,
+    )
+
+def load_from_texts() -> Any:
+    texts = [
+        "Dogs are tough. Hello",
+        "Cats have fluff. Hola",
+        "What is a sandwich? Burger?",
+        "That fence is purple. Really?",
+    ]
+    vectorstore = AzureCosmosDBVectorSearch.from_texts(
+        texts,
+        embeddings,
+        collection=collection,
+        index_name=INDEX_NAME,
+    )
+
+def load_from_texts_with_metadata() -> Any:
+
+    test_metadata_list = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
+
+    texts = [
+        "Dogs are tough. Hello",
+        "Cats have fluff. Hola",
+        "What is a sandwich? Burger?",
+        "That fence is purple. Really?",
+    ]
+    vectorstore = AzureCosmosDBVectorSearch.from_texts(
+        texts,
+        embeddings,
+        metadatas=test_metadata_list,
+        collection=collection,
+        index_name=INDEX_NAME,
+    )
+
+def create_index() -> Any:
+    vectorstore = AzureCosmosDBVectorSearch.from_connection_string(CONNECTION_STRING, NAMESPACE, embeddings, index_name=INDEX_NAME)
+    vectorstore.create_index(num_lists, dimensions, similarity_algorithm)
+
+
+def search_similar() -> Any:
+    vectorstore = AzureCosmosDBVectorSearch.from_connection_string(CONNECTION_STRING, NAMESPACE, embeddings, index_name=INDEX_NAME)
+
+    output = vectorstore.similarity_search("Sandwich", k=7)
+    print(output)
+
+# Commenting out all the function calls
+# load_from_documents()
+# load_from_texts()
+# load_from_texts_with_metadata()
+# create_index()
+# search_similar()
+```
