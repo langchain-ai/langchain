@@ -1,20 +1,30 @@
 """Wrapper around Anyscale Endpoint"""
-from typing import Any, AsyncIterator, Dict, Iterator
-from typing import List, Mapping, Optional, Set, Tuple
-
-from langchain.pydantic_v1 import Field, root_validator
-
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-    AsyncCallbackManagerForLLMRun,
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
 )
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.llms.openai import (
+    BaseOpenAI,
+    acompletion_with_retry,
+    completion_with_retry,
+)
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
-from langchain.llms.openai import BaseOpenAI
-from langchain.llms.openai import completion_with_retry, acompletion_with_retry
-
 from langchain.utils import get_from_dict_or_env
+
 
 def update_token_usage(
     keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]
