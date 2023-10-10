@@ -59,6 +59,7 @@ def get_cohere_chat_request(
         ],
         "documents": documents,
         "connectors": maybe_connectors,
+        "prompt_truncation": "AUTO",
         **kwargs,
     }
 
