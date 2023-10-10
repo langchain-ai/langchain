@@ -734,8 +734,6 @@ class ElasticsearchStore(VectorStore):
         if self.query_field not in fields:
             fields.append(self.query_field)
 
-        print("FIELDS: " + str(fields))
-
         if self.embedding and query is not None:
             query_vector = self.embedding.embed_query(query)
 
@@ -764,7 +762,6 @@ class ElasticsearchStore(VectorStore):
         )
 
         hits = [hit for hit in response["hits"]["hits"]]
-        print(hits)
         for hit in hits:
             for field in fields:
                 if field in hit["_source"] and field not in [
@@ -773,7 +770,6 @@ class ElasticsearchStore(VectorStore):
                 ]:
                     hit["_source"]["metadata"][field] = hit["_source"][field]
 
-        print(hits)
         docs_and_scores = [
             (
                 Document(
