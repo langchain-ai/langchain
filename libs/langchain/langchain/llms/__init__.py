@@ -220,6 +220,12 @@ def _import_huggingface_pipeline() -> Any:
     return HuggingFacePipeline
 
 
+def _import_weight_only_pipeline() -> Any:
+    from langchain.llms.weight_only_quantization import WeightOnlyQuantPipeline
+
+    return WeightOnlyQuantPipeline
+
+
 def _import_huggingface_text_gen_inference() -> Any:
     from langchain.llms.huggingface_text_gen_inference import (
         HuggingFaceTextGenInference,
@@ -615,6 +621,8 @@ def __getattr__(name: str) -> Any:
         return _import_vllm_openai()
     elif name == "Writer":
         return _import_writer()
+    elif name == "WeightOnlyQuantPipeline":
+        return _import_weight_only_pipeline()
     elif name == "Xinference":
         return _import_xinference()
     elif name == "type_to_cls_dict":
@@ -773,6 +781,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
         "writer": _import_writer,
+        "weight_only_quantization": _import_weight_only_pipeline,
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,
         "qianfan_endpoint": _import_baidu_qianfan_endpoint,
