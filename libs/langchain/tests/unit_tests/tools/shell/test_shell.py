@@ -1,5 +1,5 @@
 import warnings
-from typing import List, Union
+from typing import List
 
 import pytest
 
@@ -28,11 +28,11 @@ class PlaceholderProcess:
         self._commands: List[str] = []
         self.output = output
 
-    def _run(self, commands: Union[str, List[str]]) -> str:
+    def _run(self, commands: List[str]) -> str:
         self._commands = commands
         return self.output
 
-    def run(self, commands: Union[str, List[str]]) -> str:
+    def run(self, commands: List[str]) -> str:
         return self._run(commands)
 
     async def arun(self, commands: List[str]) -> str:
