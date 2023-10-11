@@ -4,18 +4,19 @@ from typing import Optional
 
 from typing_extensions import Annotated
 
-from langchain.cli.create_repo.base import create, is_poetry_installed
-from langchain.cli.create_repo.pypi_name import is_name_taken, lint_name
-from langchain.cli.create_repo.user_info import get_git_user_email, get_git_user_name
-
+# Keep this import here so that we can check if Typer is installed
 try:
     import typer
 except ImportError:
     raise ImportError(
         "Typer must be installed to use the CLI. "
-        "You can install it with `pip install typer`."
+        "You can install it with `pip install typer` or install LangChain "
+        'with the [cli] extra like `pip install "langchain[cli]"`.'
     )
 
+from langchain.cli.create_repo.base import create, is_poetry_installed
+from langchain.cli.create_repo.pypi_name import is_name_taken, lint_name
+from langchain.cli.create_repo.user_info import get_git_user_email, get_git_user_name
 
 app = typer.Typer(no_args_is_help=False, add_completion=False)
 

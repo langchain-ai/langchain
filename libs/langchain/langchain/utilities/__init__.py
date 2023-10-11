@@ -20,6 +20,12 @@ def _import_apify() -> Any:
     return ApifyWrapper
 
 
+def _import_arcee() -> Any:
+    from langchain.utilities.arcee import ArceeWrapper
+
+    return ArceeWrapper
+
+
 def _import_arxiv() -> Any:
     from langchain.utilities.arxiv import ArxivAPIWrapper
 
@@ -30,12 +36,6 @@ def _import_awslambda() -> Any:
     from langchain.utilities.awslambda import LambdaWrapper
 
     return LambdaWrapper
-
-
-def _import_bash() -> Any:
-    from langchain.utilities.bash import BashProcess
-
-    return BashProcess
 
 
 def _import_bibtex() -> Any:
@@ -215,8 +215,6 @@ def __getattr__(name: str) -> Any:
         return _import_arxiv()
     elif name == "LambdaWrapper":
         return _import_awslambda()
-    elif name == "BashProcess":
-        return _import_bash()
     elif name == "BibtexparserWrapper":
         return _import_bibtex()
     elif name == "BingSearchAPIWrapper":
@@ -280,8 +278,8 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "AlphaVantageAPIWrapper",
     "ApifyWrapper",
+    "ArceeWrapper",
     "ArxivAPIWrapper",
-    "BashProcess",
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
