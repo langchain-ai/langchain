@@ -1,5 +1,5 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
-from typing import Any, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union
 
 from langchain.agents import BaseSingleActionAgent
 from langchain.agents.format_scratchpad.openai_functions import (
@@ -18,16 +18,9 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
 )
 from langchain.pydantic_v1 import root_validator
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    BasePromptTemplate,
-)
+from langchain.schema import AgentAction, AgentFinish, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import (
-    BaseMessage,
-    SystemMessage,
-)
+from langchain.schema.messages import BaseMessage, SystemMessage
 from langchain.tools.base import BaseTool
 from langchain.tools.render import format_tool_to_openai_function
 
@@ -81,7 +74,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         self,
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
-        with_functions: bool = True,
+        function_call: Union[
+            Literal["auto", "none"], Dict[Literal["name"], str]
+        ] = "auto",
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.
@@ -100,17 +95,14 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         full_inputs = dict(**selected_inputs, agent_scratchpad=agent_scratchpad)
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
-        if with_functions:
-            predicted_message = self.llm.predict_messages(
-                messages,
-                functions=self.functions,
-                callbacks=callbacks,
-            )
-        else:
-            predicted_message = self.llm.predict_messages(
-                messages,
-                callbacks=callbacks,
-            )
+
+        predicted_message = self.llm.predict_messages(
+            messages,
+            functions=self.functions,
+            function_call=function_call,
+            callbacks=callbacks,
+        )
+
         agent_decision = OpenAIFunctionsAgentOutputParser._parse_ai_message(
             predicted_message
         )
@@ -162,7 +154,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         elif early_stopping_method == "generate":
             # Generate does one final forward pass
             agent_decision = self.plan(
-                intermediate_steps, with_functions=False, **kwargs
+                intermediate_steps, function_call="none", **kwargs
             )
             if type(agent_decision) == AgentFinish:
                 return agent_decision
