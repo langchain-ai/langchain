@@ -15,7 +15,6 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
-from langchain.chains.llm_bash.base import LLMBashChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
@@ -183,7 +182,9 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
     )
 
 
-def _load_llm_bash_chain(config: dict, **kwargs: Any) -> LLMBashChain:
+def _load_llm_bash_chain(config: dict, **kwargs: Any) -> Any:
+    from langchain_experimental.llm_bash.base import LLMBashChain
+
     llm_chain = None
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
