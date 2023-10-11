@@ -173,11 +173,11 @@
       "destination": "/docs/use_cases/question_answering/vector_db_text_generation"
     },
     {
-      "source": "/docs/use_cases/more/agents/agent_simulations/",
+      "source": "/docs/use_cases/more/agents/agent_simulations(/?)",
       "destination": "/cookbook"
     },
     {
-      "source": "/docs/use_cases/more/agents/agents",
+      "source": "/docs/use_cases/more/agents/agents(/?)",
       "destination": "/cookbook"
     },
     {
@@ -185,11 +185,11 @@
       "destination": "/cookbook"
     },
     {
-      "source": "/docs/use_cases/more/agents/agents/",
+      "source": "/docs/use_cases/more/agents(/?)",
       "destination": "/cookbook"
     },
     {
-      "source": "/docs/use_cases/more/agents/autonomous_agents/",
+      "source": "/docs/use_cases/more/agents/autonomous_agents(/?)",
       "destination": "/cookbook"
     },
     {
