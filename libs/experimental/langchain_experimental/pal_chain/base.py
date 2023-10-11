@@ -226,9 +226,8 @@ class PALChain(Chain):
             or not code_validations.allow_imports
         ):
             for node in ast.walk(code_tree):
-                if (
-                    (not code_validations.allow_command_exec)
-                    and isinstance(node, ast.Call)
+                if (not code_validations.allow_command_exec) and isinstance(
+                    node, ast.Call
                 ):
                     if (
                         hasattr(node.func, "id")
@@ -238,7 +237,7 @@ class PALChain(Chain):
                             f"Found illegal command execution function "
                             f"{node.func.id} in code {code}"
                         )
-                        
+
                     if (
                         isinstance(node.func, ast.Attribute)
                         and node.func.attr in COMMAND_EXECUTION_FUNCTIONS
