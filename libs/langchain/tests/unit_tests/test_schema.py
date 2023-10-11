@@ -6,7 +6,8 @@ from typing import Union
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValueConcrete
 from langchain.pydantic_v1 import BaseModel
-from langchain.schema import Document
+from langchain.schema import AgentAction, AgentFinish, Document
+from langchain.schema.agent import AgentActionMessageLog
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
@@ -104,6 +105,9 @@ def test_serialization_of_wellknown_objects() -> None:
             AIMessageChunk,
             StringPromptValue,
             ChatPromptValueConcrete,
+            AgentFinish,
+            AgentAction,
+            AgentActionMessageLog,
         ]
 
     lc_objects = [
@@ -132,6 +136,14 @@ def test_serialization_of_wellknown_objects() -> None:
         StringPromptValue(text="hello"),
         ChatPromptValueConcrete(messages=[HumanMessage(content="human")]),
         Document(page_content="hello"),
+        AgentFinish(return_values={}, log=""),
+        AgentAction(tool="tool", tool_input="input", log=""),
+        AgentActionMessageLog(
+            tool="tool",
+            tool_input="input",
+            log="",
+            message_log=[HumanMessage(content="human")],
+        ),
     ]
 
     for lc_object in lc_objects:
