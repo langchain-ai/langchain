@@ -58,6 +58,7 @@ from langchain.schema.runnable.config import (
 )
 from langchain.schema.runnable.utils import (
     AddableDict,
+    AnyConfigurableField,
     ConfigurableField,
     ConfigurableFieldSpec,
     Input,
@@ -975,7 +976,7 @@ class Runnable(Generic[Input, Output], ABC):
 
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_fields(
-        self, **kwargs: ConfigurableField
+        self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
         from langchain.schema.runnable.configurable import RunnableConfigurableFields
 
@@ -1490,7 +1491,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             yield chunk
 
 
-class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
+class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     """
     A runnable that runs a mapping of runnables in parallel,
     and returns a mapping of their outputs.
@@ -1500,16 +1501,27 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
 
     def __init__(
         self,
-        steps: Mapping[
-            str,
-            Union[
-                Runnable[Input, Any],
-                Callable[[Input], Any],
-                Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
-            ],
+        __steps: Optional[
+            Mapping[
+                str,
+                Union[
+                    Runnable[Input, Any],
+                    Callable[[Input], Any],
+                    Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
+                ],
+            ]
+        ] = None,
+        **kwargs: Union[
+            Runnable[Input, Any],
+            Callable[[Input], Any],
+            Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
         ],
     ) -> None:
-        super().__init__(steps={key: coerce_to_runnable(r) for key, r in steps.items()})
+        merged = {**__steps} if __steps is not None else {}
+        merged.update(kwargs)
+        super().__init__(
+            steps={key: coerce_to_runnable(r) for key, r in merged.items()}
+        )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -1538,7 +1550,7 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
         ):
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model(  # type: ignore[call-overload]
-                "RunnableMapInput",
+                "RunnableParallelInput",
                 **{
                     k: (v.annotation, v.default)
                     for step in self.steps.values()
@@ -1553,7 +1565,7 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
     def output_schema(self) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
-            "RunnableMapOutput",
+            "RunnableParallelOutput",
             **{k: (v.OutputType, None) for k, v in self.steps.items()},
         )
 
@@ -1797,6 +1809,10 @@ class RunnableMap(RunnableSerializable[Input, Dict[str, Any]]):
             yield chunk
 
 
+# We support both names
+RunnableMap = RunnableParallel
+
+
 class RunnableGenerator(Runnable[Input, Output]):
     """
     A runnable that runs a generator function.
@@ -1931,8 +1947,41 @@ class RunnableGenerator(Runnable[Input, Output]):
 
 
 class RunnableLambda(Runnable[Input, Output]):
-    """
-    A runnable that runs a callable.
+    """RunnableLambda converts a python callable into a Runnable.
+
+    Wrapping a callable in a RunnableLambda makes the callable usable
+    within either a sync or async context.
+
+    RunnableLambda can be composed as any other Runnable and provides
+    seamless integration with LangChain tracing.
+
+    Examples:
+
+        .. code-block:: python
+
+            # This is a RunnableLambda
+            from langchain.schema.runnable import RunnableLambda
+
+            def add_one(x: int) -> int:
+                return x + 1
+
+            runnable = RunnableLambda(add_one)
+
+            runnable.invoke(1) # returns 2
+            runnable.batch([1, 2, 3]) # returns [2, 3, 4]
+
+            # Async is supported by default by delegating to the sync implementation
+            await runnable.ainvoke(1) # returns 2
+            await runnable.abatch([1, 2, 3]) # returns [2, 3, 4]
+
+
+            # Alternatively, can provide both synd and sync implementations
+            async def add_one_async(x: int) -> int:
+                return x + 1
+
+            runnable = RunnableLambda(add_one, afunc=add_one_async)
+            runnable.invoke(1) # Uses add_one
+            await runnable.ainvoke(1) # Uses add_one_async
     """
 
     def __init__(
@@ -1940,10 +1989,25 @@ class RunnableLambda(Runnable[Input, Output]):
         func: Union[Callable[[Input], Output], Callable[[Input], Awaitable[Output]]],
         afunc: Optional[Callable[[Input], Awaitable[Output]]] = None,
     ) -> None:
+        """Create a RunnableLambda from a callable, and async callable or both.
+
+        Accepts both sync and async variants to allow providing efficient
+        implementations for sync and async execution.
+
+        Args:
+            func: Either sync or async callable
+            afunc: An async callable that takes an input and returns an output.
+        """
         if afunc is not None:
             self.afunc = afunc
 
         if inspect.iscoroutinefunction(func):
+            if afunc is not None:
+                raise TypeError(
+                    "Func was provided as a coroutine function, but afunc was "
+                    "also provided. If providing both, func should be a regular "
+                    "function to avoid ambiguity."
+                )
             self.afunc = func
         elif callable(func):
             self.func = cast(Callable[[Input], Output], func)
@@ -1955,6 +2019,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
     @property
     def InputType(self) -> Any:
+        """The type of the input to this runnable."""
         func = getattr(self, "func", None) or getattr(self, "afunc")
         try:
             params = inspect.signature(func).parameters
@@ -1968,6 +2033,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
     @property
     def input_schema(self) -> Type[BaseModel]:
+        """The pydantic schema for the input to this runnable."""
         func = getattr(self, "func", None) or getattr(self, "afunc")
 
         if isinstance(func, itemgetter):
@@ -1995,6 +2061,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
     @property
     def OutputType(self) -> Any:
+        """The type of the output of this runnable as a type annotation."""
         func = getattr(self, "func", None) or getattr(self, "afunc")
         try:
             sig = inspect.signature(func)
@@ -2018,6 +2085,7 @@ class RunnableLambda(Runnable[Input, Output]):
             return False
 
     def __repr__(self) -> str:
+        """A string representation of this runnable."""
         return f"RunnableLambda({get_lambda_source(self.func) or '...'})"
 
     def _invoke(
@@ -2091,6 +2159,7 @@ class RunnableLambda(Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
+        """Invoke this runnable synchronously."""
         if hasattr(self, "func"):
             return self._call_with_config(
                 self._invoke,
@@ -2109,6 +2178,7 @@ class RunnableLambda(Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
+        """Invoke this runnable asynchronously."""
         if hasattr(self, "afunc"):
             return await self._acall_with_config(
                 self._ainvoke,
@@ -2183,30 +2253,32 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
         inputs: List[Input],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> List[Output]:
         return self.bound.batch(
-            inputs, patch_config(config, callbacks=run_manager.get_child())
+            inputs, patch_config(config, callbacks=run_manager.get_child()), **kwargs
         )
 
     def invoke(
-        self, input: List[Input], config: Optional[RunnableConfig] = None
+        self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Output]:
-        return self._call_with_config(self._invoke, input, config)
+        return self._call_with_config(self._invoke, input, config, **kwargs)
 
     async def _ainvoke(
         self,
         inputs: List[Input],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> List[Output]:
         return await self.bound.abatch(
-            inputs, patch_config(config, callbacks=run_manager.get_child())
+            inputs, patch_config(config, callbacks=run_manager.get_child()), **kwargs
         )
 
     async def ainvoke(
         self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Output]:
-        return await self._acall_with_config(self._ainvoke, input, config)
+        return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
 
 class RunnableBinding(RunnableSerializable[Input, Output]):
@@ -2262,6 +2334,8 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
                     copy[key] = {**copy.get(key, {}), **config[key]}  # type: ignore
                 elif key == "tags":
                     copy[key] = (copy.get(key) or []) + config[key]  # type: ignore
+                elif key == "configurable":
+                    copy[key] = {**copy.get(key, {}), **config[key]}  # type: ignore
                 else:
                     # Even though the keys aren't literals this is correct
                     # because both dicts are same type
@@ -2435,10 +2509,7 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
     elif callable(thing):
         return RunnableLambda(cast(Callable[[Input], Output], thing))
     elif isinstance(thing, dict):
-        runnables: Mapping[str, Runnable[Any, Any]] = {
-            key: coerce_to_runnable(r) for key, r in thing.items()
-        }
-        return cast(Runnable[Input, Output], RunnableMap(steps=runnables))
+        return cast(Runnable[Input, Output], RunnableParallel(thing))
     else:
         raise TypeError(
             f"Expected a Runnable, callable or dict."

@@ -135,6 +135,7 @@ def patch_config(
     recursion_limit: Optional[int] = None,
     max_concurrency: Optional[int] = None,
     run_name: Optional[str] = None,
+    configurable: Optional[Dict[str, Any]] = None,
 ) -> RunnableConfig:
     config = ensure_config(config)
     if copy_locals:
@@ -151,6 +152,8 @@ def patch_config(
         config["max_concurrency"] = max_concurrency
     if run_name is not None:
         config["run_name"] = run_name
+    if configurable is not None:
+        config["configurable"] = {**config.get("configurable", {}), **configurable}
     return config
 
 
