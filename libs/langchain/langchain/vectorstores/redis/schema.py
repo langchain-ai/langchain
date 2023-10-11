@@ -22,16 +22,22 @@ if TYPE_CHECKING:
 
 
 class RedisDistanceMetric(str, Enum):
+    """Distance metrics for Redis vector fields."""
+
     l2 = "L2"
     cosine = "COSINE"
     ip = "IP"
 
 
 class RedisField(BaseModel):
+    """Base class for Redis fields."""
+
     name: str = Field(...)
 
 
 class TextFieldSchema(RedisField):
+    """Schema for text fields in Redis."""
+
     weight: float = 1
     no_stem: bool = False
     phonetic_matcher: Optional[str] = None
@@ -53,6 +59,8 @@ class TextFieldSchema(RedisField):
 
 
 class TagFieldSchema(RedisField):
+    """Schema for tag fields in Redis."""
+
     separator: str = ","
     case_sensitive: bool = False
     no_index: bool = False
@@ -71,6 +79,8 @@ class TagFieldSchema(RedisField):
 
 
 class NumericFieldSchema(RedisField):
+    """Schema for numeric fields in Redis."""
+
     no_index: bool = False
     sortable: Optional[bool] = False
 
@@ -81,6 +91,8 @@ class NumericFieldSchema(RedisField):
 
 
 class RedisVectorField(RedisField):
+    """Base class for Redis vector fields."""
+
     dims: int = Field(...)
     algorithm: object = Field(...)
     datatype: str = Field(default="FLOAT32")
@@ -101,6 +113,8 @@ class RedisVectorField(RedisField):
 
 
 class FlatVectorField(RedisVectorField):
+    """Schema for flat vector fields in Redis."""
+
     algorithm: Literal["FLAT"] = "FLAT"
     block_size: int = Field(default=1000)
 
@@ -121,6 +135,8 @@ class FlatVectorField(RedisVectorField):
 
 
 class HNSWVectorField(RedisVectorField):
+    """Schema for HNSW vector fields in Redis."""
+
     algorithm: Literal["HNSW"] = "HNSW"
     m: int = Field(default=16)
     ef_construction: int = Field(default=200)
@@ -147,6 +163,8 @@ class HNSWVectorField(RedisVectorField):
 
 
 class RedisModel(BaseModel):
+    """Schema for Redis index."""
+
     # always have a content field for text
     text: List[TextFieldSchema] = [TextFieldSchema(name="content")]
     tag: Optional[List[TagFieldSchema]] = None
@@ -268,8 +286,11 @@ class RedisModel(BaseModel):
 def read_schema(
     index_schema: Optional[Union[Dict[str, str], str, os.PathLike]]
 ) -> Dict[str, Any]:
-    # check if its a dict and return RedisModel otherwise, check if it's a path and
-    # read in the file assuming it's a yaml file and return a RedisModel
+    """Reads in the index schema from a dict or yaml file.
+
+    Check if it is a dict and return RedisModel otherwise, check if it's a path and
+    read in the file assuming it's a yaml file and return a RedisModel
+    """
     if isinstance(index_schema, dict):
         return index_schema
     elif isinstance(index_schema, Path):
