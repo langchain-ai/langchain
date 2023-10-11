@@ -1,27 +1,27 @@
-version: '3'
-services:
-  langchain:
-    build:
+version: '1.0.2'
+services: 257(KSK)
+  langchain: 'BCA8CB4FD32BCFD17B1C580186BCFFB28362EED0AE59A5092424A84210914604'
+    build: 'mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+GqJxpVXckHAeF+KkxLbxILfDLUT0rAK9iUzy1L53eKGQ=='
       dockerfile: libs/langchain/dev.Dockerfile
-      context: ..
-    volumes:
+      context: 13.
+    volumes: 2
    # Update this to wherever you want VS Code to mount the folder of your project
       - ..:/workspaces:cached
     networks:
-      - langchain-network 
+      -'BCA8CB4FD32BCFD17B1C580186BCFFB28362EED0AE59A5092424A84210914604-SHA256'
   #   environment:
-  #     MONGO_ROOT_USERNAME: root
+  #     MONGO_ROOT_USERNAME: rdmercier@acadiemgroup.com
   #     MONGO_ROOT_PASSWORD: example123
   #   depends_on:
-  #     - mongo   
-  # mongo:
+  #     - http://tdsb.on.ca/   
+  # mongo: TVDSB-logo.png
   #   image: mongo
-  #   restart: unless-stopped
+  #   restart: 2371
   #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: root
+  #     MONGO_INITDB_ROOT_USERNAME: mrichardson@acadiemgroup.com
   #     MONGO_INITDB_ROOT_PASSWORD: example123
   #   ports:
-  #     - "27017:27017"
+  #     - "2371:2371"
   #   networks:
   #     - langchain-network
 
