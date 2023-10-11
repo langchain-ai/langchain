@@ -239,7 +239,7 @@ def _get_functions_prompt_and_tools(
     if input_variables is not None:
         raise ValueError("`input_variables` is not supported at the moment.")
 
-    if include_df_in_prompt is not None and suffix is not None:
+    if not include_df_in_prompt and suffix is not None:
         raise ValueError("If suffix is specified, include_df_in_prompt should not be.")
 
     if isinstance(df, list):
