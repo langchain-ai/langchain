@@ -1,6 +1,6 @@
 """Wrapper around YandexGPT chat models."""
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -15,6 +15,7 @@ from langchain.schema import (
     ChatGeneration,
     ChatResult,
     HumanMessage,
+    SystemMessage,
 )
 
 logger = logging.getLogger(__name__)
@@ -24,15 +25,22 @@ def _parse_message(role: str, text: str) -> Dict:
     return {"role": role, "text": text}
 
 
-def _parse_chat_history(history: List[BaseMessage]) -> List:
-    """Parse a sequence of messages into history."""
+def _parse_chat_history(history: List[BaseMessage]) -> Tuple[List[Dict[str, str]], str]:
+    """Parse a sequence of messages into history.
+
+    Returns:
+        A tuple of a list of parsed messages and an instruction message for the model.
+    """
     chat_history = []
+    instruction = ""
     for message in history:
         if isinstance(message, HumanMessage):
             chat_history.append(_parse_message("user", message.content))
         if isinstance(message, AIMessage):
             chat_history.append(_parse_message("assistant", message.content))
-    return chat_history
+        if isinstance(message, SystemMessage):
+            instruction = message.content
+    return chat_history, instruction
 
 
 class ChatYandexGPT(BaseYandexGPT, BaseChatModel):
@@ -41,13 +49,13 @@ class ChatYandexGPT(BaseYandexGPT, BaseChatModel):
     To use, you should have the ``yandexcloud`` python package installed, and the
     environment variable ``YC_IAM_TOKEN`` set with IAM token
     for the service account with the ``ai.languageModels.user`` role, or pass
-    it as a named parameter ``iam_token`` to the constructor.
+    it as a named parameter ``yc_iam_token`` to the constructor.
 
     Example:
         .. code-block:: python
 
             from langchain.chat_models import ChatYandexGPT
-            chat_model = ChatYandexGPT(iam_token="t1.9eu...")
+            chat_model = ChatYandexGPT(yc_iam_token="t1.9eu...")
 
     """
 
@@ -86,17 +94,17 @@ class ChatYandexGPT(BaseYandexGPT, BaseChatModel):
             raise ValueError(
                 "You should provide at least one message to start the chat!"
             )
-        print(messages)
-        print([Message(**message) for message in _parse_chat_history(messages)])
+        message_history, instruction = _parse_chat_history(messages)
         request = ChatRequest(
-            model="general",
+            model=self.model_name,
             generation_options=GenerationOptions(
-                temperature=DoubleValue(value=0.6),
-                max_tokens=Int64Value(value=1500),
+                temperature=DoubleValue(value=self.temperature),
+                max_tokens=Int64Value(value=self.max_tokens),
             ),
-            messages=[Message(**message) for message in _parse_chat_history(messages)],
+            instruction_text=instruction,
+            messages=[Message(**message) for message in message_history],
         )
-        sdk = SDK(iam_token=self.iam_token)
+        sdk = SDK(iam_token=self.yc_iam_token)
         operation = sdk.client(TextGenerationServiceStub).Chat(request)
         text = list(operation)[0].message.text
         text = text if stop is None else enforce_stop_tokens(text, stop)
