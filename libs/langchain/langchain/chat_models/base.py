@@ -38,14 +38,12 @@ from langchain.schema import (
 from langchain.schema.language_model import BaseLanguageModel, LanguageModelInput
 from langchain.schema.messages import (
     AIMessage,
-    AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
-    ChatMessageChunk,
-    FunctionMessageChunk,
+    ChatMessage,
+    FunctionMessage,
     HumanMessage,
-    HumanMessageChunk,
-    SystemMessageChunk,
+    SystemMessage,
 )
 from langchain.schema.output import ChatGenerationChunk
 from langchain.schema.runnable import RunnableConfig
@@ -115,13 +113,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
 
     @property
     def OutputType(self) -> Any:
-        """Get the input type for this runnable."""
+        """Get the output type for this runnable."""
         return Union[
-            HumanMessageChunk,
-            AIMessageChunk,
-            ChatMessageChunk,
-            FunctionMessageChunk,
-            SystemMessageChunk,
+            HumanMessage, AIMessage, ChatMessage, FunctionMessage, SystemMessage
         ]
 
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
