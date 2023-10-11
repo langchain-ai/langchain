@@ -8,6 +8,8 @@ from langchain.tools.ainetwork.base import AINBaseTool, OperationType
 
 
 class RuleSchema(BaseModel):
+    """Schema for owner operations."""
+
     type: OperationType = Field(...)
     path: str = Field(..., description="Blockchain reference path")
     address: Optional[Union[str, List[str]]] = Field(
@@ -28,6 +30,8 @@ class RuleSchema(BaseModel):
 
 
 class AINOwnerOps(AINBaseTool):
+    """Tool for owner operations."""
+
     name: str = "AINownerOps"
     description: str = """
 Rules for `owner` in AINetwork Blockchain database.

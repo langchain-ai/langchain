@@ -6,7 +6,17 @@ from langchain.schema import Document
 
 
 class MsWordParser(BaseBlobParser):
+    """Parse the Microsoft Word documents from a blob."""
+
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        """Parse a Microsoft Word document into the Document iterator.
+
+        Args:
+            blob: The blob to parse.
+
+        Returns: An iterator of Documents.
+
+        """
         try:
             from unstructured.partition.doc import partition_doc
             from unstructured.partition.docx import partition_docx
