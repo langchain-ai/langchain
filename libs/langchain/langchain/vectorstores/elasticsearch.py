@@ -360,6 +360,74 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
         return False
 
 
+class GetByIdStrategy(BaseRetrievalStrategy):
+    """Get by ID retrieval strategy returning all documents with provided ES ids.
+    Ex. `filter=[{"ids": ["Example ES _id 1", "Example ES _id 2"]}]`
+    """
+
+    def __init__(
+        self,
+        query_model_id: Optional[str] = None,
+    ):
+        self.query_model_id = query_model_id
+
+    def query(
+        self,
+        query_vector: Union[List[float], None],
+        query: Union[str, None],
+        k: int,
+        fetch_k: int,
+        vector_query_field: str,
+        text_field: str,
+        filter: List[dict],
+        similarity: Union[DistanceStrategy, None],
+    ) -> Dict:
+        if query_vector or self.query_model_id:
+            raise ValueError(
+                "Can not use an embedding function or a"
+                " query_model_id to perform with by _id strategy"
+            )
+
+        if len(filter) != 1 or not (ids := filter[0].get("ids")):
+            raise ValueError(
+                "Must pass in list of ids"
+                '`filter=[{"ids": ["Example ES _id 1", "Example ES _id 2"]}]`'
+            )
+
+        return {
+            "query": {"ids": {"values": ids}},
+        }
+
+    def index(
+        self,
+        dims_length: Union[int, None],
+        vector_query_field: str,
+        similarity: Union[DistanceStrategy, None],
+    ) -> Dict:
+        """Create the mapping for the Elasticsearch index."""
+        raise NotImplementedError(
+            "This store is intended to only be used for retrieval of existing data."
+        )
+
+
+RemapMetadataFields = Optional[List[str]]
+
+RemapMetadataFunction = Optional[Callable[[Dict, RemapMetadataFields], Dict]]
+
+
+def generic_remap(hit: Dict, remap_fields: RemapMetadataFields) -> Dict:
+    """Remap arbitrary index fields into metatdata object"""
+    if not remap_fields:
+        raise ValueError("Generic remap needs list of field names to add to metadata")
+
+    hit["_source"]["metadata"] = hit["_source"].get("metadata", {})
+    hit["_source"]["metadata"]["_id"] = hit["_id"]
+    for field_name in remap_fields:
+        hit["_source"]["metadata"][field_name] = hit["_source"][field_name]
+
+    return hit
+
+
 class ElasticsearchStore(VectorStore):
     """`Elasticsearch` vector store.
 
@@ -395,6 +463,13 @@ class ElasticsearchStore(VectorStore):
                             searching the index.
                             Defaults to COSINE. Can be one of COSINE,
                             EUCLIDEAN_DISTANCE, or DOT_PRODUCT.
+        remap_metadata_func: Optional. Function to be used to remap/ coerce remap_fields
+                            from a non-Langchain index into the format expected by it.
+                            In most cases the included generic_remap should suffice.
+        remap_fields: Allow to query a non-Langchain structured ES index and remap the
+                      the select fields into the structure expected by Langchain.
+                      Ex. If you have fields other than page_content and metadata on an
+                      index you can remap them into the metadata object when retrieving.
 
     If you want to use a cloud hosted Elasticsearch instance, you can pass in the
     cloud_id argument instead of the es_url argument.
@@ -493,6 +568,8 @@ class ElasticsearchStore(VectorStore):
             ]
         ] = None,
         strategy: BaseRetrievalStrategy = ApproxRetrievalStrategy(),
+        remap_metadata_func: RemapMetadataFunction = None,
+        remap_fields: RemapMetadataFields = None,
     ):
         self.embedding = embedding
         self.index_name = index_name
@@ -504,6 +581,9 @@ class ElasticsearchStore(VectorStore):
             else DistanceStrategy[distance_strategy]
         )
         self.strategy = strategy
+
+        self.remap_fields = remap_fields
+        self.remap_metadata_func = remap_metadata_func
 
         if es_connection is not None:
             self.client = es_connection.options(
@@ -670,6 +750,10 @@ class ElasticsearchStore(VectorStore):
         if self.query_field not in fields:
             fields.append(self.query_field)
 
+        if self.remap_fields:
+            updated_fields = set(fields + self.remap_fields)
+            fields = list(updated_fields)
+
         if self.embedding and query is not None:
             query_vector = self.embedding.embed_query(query)
 
@@ -698,11 +782,18 @@ class ElasticsearchStore(VectorStore):
             source=fields,
         )
 
-        hits = [hit for hit in response["hits"]["hits"]]
+        if self.remap_metadata_func:
+            hits = [
+                self.remap_metadata_func(hit, self.remap_fields)
+                for hit in response["hits"]["hits"]
+            ]
+        else:
+            hits = [hit for hit in response["hits"]["hits"]]
+
         docs_and_scores = [
             (
                 Document(
-                    page_content=hit["_source"][self.query_field],
+                    page_content=hit["_source"].get(self.query_field),
                     metadata=hit["_source"]["metadata"],
                 ),
                 hit["_score"],
@@ -1112,3 +1203,10 @@ class ElasticsearchStore(VectorStore):
                     deployed to Elasticsearch.
         """
         return SparseRetrievalStrategy(model_id=model_id)
+
+    @staticmethod
+    def GetByIdStrategy() -> "GetByIdStrategy":
+        """Used for cases you want to retrieve exact documents are needed.
+        But you want to do so staying with in the vector store "infrastructure".
+        """
+        return GetByIdStrategy()
