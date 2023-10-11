@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import os
 import time
 import uuid
@@ -150,7 +149,7 @@ class Vearch(VectorStore):
                     field_list.append({"field": key, "type": "float"})
                     continue
                 else:
-                    raise ValueError("Please check data type,support int, string, float")
+                    raise ValueError("Please check data type,support int, str, float")
         self.field_list = field_list
 
     def _create_table(
