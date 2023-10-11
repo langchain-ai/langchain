@@ -115,6 +115,37 @@ class SeleniumURLLoader(BaseLoader):
         else:
             raise ValueError("Invalid browser specified. Use 'chrome' or 'firefox'.")
 
+    def _build_metadata(self, url: str, driver: Union["Chrome", "Firefox"]) -> dict:
+        from selenium.common.exceptions import NoSuchElementException
+        from selenium.webdriver.common.by import By
+
+        """Build metadata based on the contents of the webpage"""
+        metadata = {
+            "source": url,
+            "title": "No title found.",
+            "description": "No description found.",
+            "language": "No language found.",
+        }
+        if title := driver.title:
+            metadata["title"] = title
+        try:
+            if description := driver.find_element(
+                By.XPATH, '//meta[@name="description"]'
+            ):
+                metadata["description"] = (
+                    description.get_attribute("content") or "No description found."
+                )
+        except NoSuchElementException:
+            pass
+        try:
+            if html_tag := driver.find_element(By.TAG_NAME, "html"):
+                metadata["language"] = (
+                    html_tag.get_attribute("lang") or "No language found."
+                )
+        except NoSuchElementException:
+            pass
+        return metadata
+
     def load(self) -> List[Document]:
         """Load the specified URLs using Selenium and create Document instances.
 
@@ -132,7 +163,7 @@ class SeleniumURLLoader(BaseLoader):
                 page_content = driver.page_source
                 elements = partition_html(text=page_content)
                 text = "\n\n".join([str(el) for el in elements])
-                metadata = {"source": url}
+                metadata = self._build_metadata(url, driver)
                 docs.append(Document(page_content=text, metadata=metadata))
             except Exception as e:
                 if self.continue_on_failure:

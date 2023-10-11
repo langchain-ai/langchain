@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 import pytest
 
-from langchain._api.deprecation import _warn_deprecated, deprecated
+from langchain._api.deprecation import deprecated, warn_deprecated
 from langchain.pydantic_v1 import BaseModel
 
 
@@ -55,7 +55,7 @@ def test_warn_deprecated(kwargs: Dict[str, Any], expected_message: str) -> None:
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
 
-        _warn_deprecated(**kwargs)
+        warn_deprecated(**kwargs)
 
         assert len(warning_list) == 1
         warning = warning_list[0].message
@@ -65,7 +65,7 @@ def test_warn_deprecated(kwargs: Dict[str, Any], expected_message: str) -> None:
 def test_undefined_deprecation_schedule() -> None:
     """This test is expected to fail until we defined a deprecation schedule."""
     with pytest.raises(NotImplementedError):
-        _warn_deprecated("1.0.0", pending=False)
+        warn_deprecated("1.0.0", pending=False)
 
 
 @deprecated(since="2.0.0", removal="3.0.0", pending=False)

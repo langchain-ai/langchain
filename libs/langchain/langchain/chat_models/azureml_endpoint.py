@@ -24,16 +24,36 @@ class LlamaContentFormatter(ContentFormatterBase):
     def _convert_message_to_dict(message: BaseMessage) -> Dict:
         """Converts message to a dict according to role"""
         if isinstance(message, HumanMessage):
-            return {"role": "user", "content": message.content}
+            return {
+                "role": "user",
+                "content": ContentFormatterBase.escape_special_characters(
+                    message.content
+                ),
+            }
         elif isinstance(message, AIMessage):
-            return {"role": "assistant", "content": message.content}
+            return {
+                "role": "assistant",
+                "content": ContentFormatterBase.escape_special_characters(
+                    message.content
+                ),
+            }
         elif isinstance(message, SystemMessage):
-            return {"role": "system", "content": message.content}
+            return {
+                "role": "system",
+                "content": ContentFormatterBase.escape_special_characters(
+                    message.content
+                ),
+            }
         elif (
             isinstance(message, ChatMessage)
             and message.role in LlamaContentFormatter.SUPPORTED_ROLES
         ):
-            return {"role": message.role, "content": message.content}
+            return {
+                "role": message.role,
+                "content": ContentFormatterBase.escape_special_characters(
+                    message.content
+                ),
+            }
         else:
             supported = ",".join(
                 [role for role in LlamaContentFormatter.SUPPORTED_ROLES]
@@ -93,7 +113,7 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
     the endpoint"""
 
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     @validator("http_client", always=True, allow_reuse=True)
     @classmethod

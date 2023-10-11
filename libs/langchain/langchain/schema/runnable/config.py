@@ -34,6 +34,10 @@ if TYPE_CHECKING:
     )
 
 
+class EmptyDict(TypedDict, total=False):
+    pass
+
+
 class RunnableConfig(TypedDict, total=False):
     """Configuration for a Runnable."""
 
@@ -76,6 +80,13 @@ class RunnableConfig(TypedDict, total=False):
     recursion_limit: int
     """
     Maximum number of times a call can recurse. If not provided, defaults to 10.
+    """
+
+    configurable: Dict[str, Any]
+    """
+    Runtime values for attributes previously made configurable by this Runnable,
+    or sub-Runnables, through .make_configurable(). Check .output_schema for
+    a description of the attributes that have been made configurable.
     """
 
 
@@ -124,6 +135,7 @@ def patch_config(
     recursion_limit: Optional[int] = None,
     max_concurrency: Optional[int] = None,
     run_name: Optional[str] = None,
+    configurable: Optional[Dict[str, Any]] = None,
 ) -> RunnableConfig:
     config = ensure_config(config)
     if copy_locals:
@@ -140,6 +152,8 @@ def patch_config(
         config["max_concurrency"] = max_concurrency
     if run_name is not None:
         config["run_name"] = run_name
+    if configurable is not None:
+        config["configurable"] = {**config.get("configurable", {}), **configurable}
     return config
 
 

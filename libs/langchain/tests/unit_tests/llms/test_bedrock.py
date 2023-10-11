@@ -245,7 +245,7 @@ Assistant:""",
 def test__human_assistant_format() -> None:
     for input_text, expected_output in TEST_CASES.items():
         if expected_output == ALTERNATION_ERROR:
-            with pytest.raises(ValueError):
+            with pytest.warns(UserWarning, match=ALTERNATION_ERROR):
                 _human_assistant_format(input_text)
         else:
             output = _human_assistant_format(input_text)

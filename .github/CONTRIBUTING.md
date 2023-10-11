@@ -32,7 +32,7 @@ best way to get our attention.
 
 ### 🚩GitHub Issues
 
-Our [issues](https://github.com/hwchase17/langchain/issues) page is kept up to date
+Our [issues](https://github.com/langchain-ai/langchain/issues) page is kept up to date
 with bugs, improvements, and feature requests.
 
 There is a taxonomy of labels to help with sorting and discovery of issues of interest. Please use these to help
@@ -60,11 +60,11 @@ we do not want these to get in the way of getting good code into the codebase.
 ## 🚀 Quick Start
 
 This quick start describes running the repository locally.
-For a [development container](https://containers.dev/), see the [.devcontainer folder](https://github.com/hwchase17/langchain/tree/master/.devcontainer).
+For a [development container](https://containers.dev/), see the [.devcontainer folder](https://github.com/langchain-ai/langchain/tree/master/.devcontainer).
 
 ### Dependency Management: Poetry and other env/dependency managers
 
-This project uses [Poetry](https://python-poetry.org/) v1.5.1+ as a dependency manager.
+This project uses [Poetry](https://python-poetry.org/) v1.6.1+ as a dependency manager.
 
 ❗Note: *Before installing Poetry*, if you use `Conda`, create and activate a new Conda env (e.g. `conda create -n langchain python=3.9`)
 
@@ -105,8 +105,8 @@ make test
 If the tests don't pass, you may need to pip install additional dependencies, such as `numexpr` and `openapi_schema_pydantic`.
 
 If during installation you receive a `WheelFileValidationError` for `debugpy`, please make sure you are running
-Poetry v1.5.1+. This bug was present in older versions of Poetry (e.g. 1.4.1) and has been resolved in newer releases.
-If you are still seeing this bug on v1.5.1, you may also try disabling "modern installation"
+Poetry v1.6.1+. This bug was present in older versions of Poetry (e.g. 1.4.1) and has been resolved in newer releases.
+If you are still seeing this bug on v1.6.1, you may also try disabling "modern installation"
 (`poetry config installer.modern-installation false`) and re-installing requirements.
 See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for more details.
 
