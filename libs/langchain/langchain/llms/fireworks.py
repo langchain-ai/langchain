@@ -45,7 +45,10 @@ class Fireworks(LLM):
         try:
             import fireworks.client
         except ImportError as e:
-            raise ImportError("") from e
+            raise ImportError(
+                "Could not import fireworks-ai python package. "
+                "Please install it with `pip install fireworks-ai`."
+            ) from e
         fireworks_api_key = get_from_dict_or_env(
             values, "fireworks_api_key", "FIREWORKS_API_KEY"
         )
