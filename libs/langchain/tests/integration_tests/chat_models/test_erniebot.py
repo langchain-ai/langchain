@@ -1,5 +1,7 @@
 """Test ERNIE Bot wrapper."""
 
+from typing import List
+
 import pytest
 
 from langchain.chat_models.erniebot import ErnieBotChat
@@ -130,7 +132,11 @@ def test_erniebot_function_calling() -> None:
     ]
 
     chat = ErnieBotChat()
-    messages = [HumanMessage(content="What is the temperature in Shenzhen today in degrees Celsius?")]
+    messages: List[BaseMessage] = [
+        HumanMessage(
+            content="What is the temperature in Shenzhen today in degrees Celsius?"
+        )
+    ]
 
     response = chat.generate([messages], functions=functions)
     assert isinstance(response, LLMResult)
@@ -145,7 +151,12 @@ def test_erniebot_function_calling() -> None:
     assert function_call["name"] == "get_current_temperature"
 
     messages.append(generation.message)
-    messages.append(FunctionMessage(name="get_current_temperature", content='{"temperature":25,"unit":"celsius"}'))
+    messages.append(
+        FunctionMessage(
+            name="get_current_temperature",
+            content='{"temperature":25,"unit":"celsius"}',
+        )
+    )
 
     response = chat.generate([messages])
     assert isinstance(response, LLMResult)
