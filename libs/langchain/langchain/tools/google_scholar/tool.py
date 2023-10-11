@@ -4,7 +4,7 @@ from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
-from langchain.utilities import GoogleScholarAPIWrapper
+from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
 
 
 class GoogleScholarQueryRun(BaseTool):
