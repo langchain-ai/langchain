@@ -629,7 +629,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {
@@ -643,7 +643,7 @@
                 "base",
                 "RunnableLambda"
               ],
-              "repr": "RunnableLambda(...)"
+              "repr": "RunnableLambda(lambda x: x['key'])"
             },
             "input": {
               "lc": 1,
@@ -652,7 +652,7 @@
                 "langchain",
                 "schema",
                 "runnable",
-                "RunnableMap"
+                "RunnableParallel"
               ],
               "kwargs": {
                 "steps": {
@@ -666,7 +666,7 @@
                       "base",
                       "RunnableLambda"
                     ],
-                    "repr": "RunnableLambda(...)"
+                    "repr": "RunnableLambda(lambda x: x['question'])"
                   }
                 }
               }
@@ -709,7 +709,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {
@@ -1438,7 +1438,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {
@@ -1461,7 +1461,7 @@
                 "langchain",
                 "schema",
                 "runnable",
-                "RunnableMap"
+                "RunnableParallel"
               ],
               "kwargs": {
                 "steps": {
@@ -2676,10 +2676,268 @@
         'type': 'object',
       }),
     }),
-    'title': 'PromptTemplateOutput',
+    'title': 'ChatPromptTemplateOutput',
   })
 # ---
 # name: test_schemas.4
+  dict({
+    'anyOf': list([
+      dict({
+        '$ref': '#/definitions/StringPromptValue',
+      }),
+      dict({
+        '$ref': '#/definitions/ChatPromptValueConcrete',
+      }),
+    ]),
+    'definitions': dict({
+      'AIMessage': dict({
+        'description': 'A Message from an AI.',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'title': 'Content',
+            'type': 'string',
+          }),
+          'example': dict({
+            'default': False,
+            'title': 'Example',
+            'type': 'boolean',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
+          'type': dict({
+            'default': 'ai',
+            'enum': list([
+              'ai',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+        ]),
+        'title': 'AIMessage',
+        'type': 'object',
+      }),
+      'ChatMessage': dict({
+        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'title': 'Content',
+            'type': 'string',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
+          'role': dict({
+            'title': 'Role',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'chat',
+            'enum': list([
+              'chat',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'role',
+        ]),
+        'title': 'ChatMessage',
+        'type': 'object',
+      }),
+      'ChatPromptValueConcrete': dict({
+        'description': '''
+          Chat prompt value which explicitly lists out the message types it accepts.
+          For use in external schemas.
+        ''',
+        'properties': dict({
+          'messages': dict({
+            'items': dict({
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/AIMessage',
+                }),
+                dict({
+                  '$ref': '#/definitions/HumanMessage',
+                }),
+                dict({
+                  '$ref': '#/definitions/ChatMessage',
+                }),
+                dict({
+                  '$ref': '#/definitions/SystemMessage',
+                }),
+                dict({
+                  '$ref': '#/definitions/FunctionMessage',
+                }),
+              ]),
+            }),
+            'title': 'Messages',
+            'type': 'array',
+          }),
+        }),
+        'required': list([
+          'messages',
+        ]),
+        'title': 'ChatPromptValueConcrete',
+        'type': 'object',
+      }),
+      'FunctionMessage': dict({
+        'description': 'A Message for passing the result of executing a function back to a model.',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'title': 'Content',
+            'type': 'string',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'function',
+            'enum': list([
+              'function',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'name',
+        ]),
+        'title': 'FunctionMessage',
+        'type': 'object',
+      }),
+      'HumanMessage': dict({
+        'description': 'A Message from a human.',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'title': 'Content',
+            'type': 'string',
+          }),
+          'example': dict({
+            'default': False,
+            'title': 'Example',
+            'type': 'boolean',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
+          'type': dict({
+            'default': 'human',
+            'enum': list([
+              'human',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+        ]),
+        'title': 'HumanMessage',
+        'type': 'object',
+      }),
+      'StringPromptValue': dict({
+        'description': 'String prompt value.',
+        'properties': dict({
+          'text': dict({
+            'title': 'Text',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'text',
+        ]),
+        'title': 'StringPromptValue',
+        'type': 'object',
+      }),
+      'SystemMessage': dict({
+        'description': '''
+          A Message for priming AI behavior, usually passed in as the first of a sequence
+          of input messages.
+        ''',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'title': 'Content',
+            'type': 'string',
+          }),
+          'is_chunk': dict({
+            'default': False,
+            'enum': list([
+              False,
+            ]),
+            'title': 'Is Chunk',
+            'type': 'boolean',
+          }),
+          'type': dict({
+            'default': 'system',
+            'enum': list([
+              'system',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+        ]),
+        'title': 'SystemMessage',
+        'type': 'object',
+      }),
+    }),
+    'title': 'PromptTemplateOutput',
+  })
+# ---
+# name: test_schemas.5
   dict({
     'definitions': dict({
       'AIMessage': dict({
@@ -2944,7 +3202,7 @@
     'type': 'array',
   })
 # ---
-# name: test_schemas.5
+# name: test_schemas.6
   dict({
     'anyOf': list([
       dict({
@@ -3197,7 +3455,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {
@@ -3511,7 +3769,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {
@@ -3652,7 +3910,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import warnings
 from abc import ABC, abstractmethod
+from functools import partial
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
@@ -121,10 +123,6 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> List[Document]:
-        if type(self).aget_relevant_documents == BaseRetriever.aget_relevant_documents:
-            # If the retriever doesn't implement async, use default implementation
-            return await super().ainvoke(input, config)
-
         config = config or {}
         return await self.aget_relevant_documents(
             input,
@@ -156,7 +154,9 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
         Returns:
             List of relevant documents
         """
-        raise NotImplementedError()
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self._get_relevant_documents, run_manager=run_manager), query
+        )
 
     def get_relevant_documents(
         self,
