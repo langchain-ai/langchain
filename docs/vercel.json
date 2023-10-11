@@ -1,23 +1,11 @@
 {
   "redirects": [
     {
-    "source": "/docs/use_cases/more/agents/autonomous_agents/autogpt",
+    "source": "/docs/use_cases/more/agents/autonomous_agents/:path*",
     "destination": "/cookbook"
     },
     {
-      "source": "/docs/use_cases/more/agents/autonomous_agents/baby_agi",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/autonomous_agents/baby_agi_with_agent",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agent_simulations/camel_role_playing",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agent_simulations/characters",
+      "source": "/docs/use_cases/more/agents/agent_simulations/:path*",
       "destination": "/cookbook"
     },
     {
@@ -46,14 +34,6 @@
     },
     {
       "source": "/docs/use_cases/question_answering/how_to/flare",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agent_simulations/gymnasium",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/autonomous_agents/hugginggpt",
       "destination": "/cookbook"
     },
     {
@@ -89,27 +69,7 @@
       "destination": "/cookbook"
     },
     {
-      "source": "/docs/use_cases/more/agents/autonomous_agents/marathon_times",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/autonomous_agents/meta_prompt",
-      "destination": "/cookbook"
-    },
-    {
       "source": "/docs/use_cases/more/agents/multi_modal/multi_modal_output_agent",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agent_simulations/multi_player_dnd",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agent_simulations/multiagent_authoritarian",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agent_simulations/multiagent_bidding",
       "destination": "/cookbook"
     },
     {
@@ -122,10 +82,6 @@
     },
     {
       "source": "/docs/use_cases/more/code_writing/pal",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agent_simulations/petting_zoo",
       "destination": "/cookbook"
     },
     {
@@ -150,14 +106,6 @@
     },
     {
       "source": "/docs/use_cases/question_answering/how_to/code/twitter-the-algorithm-analysis-deeplake",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agent_simulations/two_agent_debate_tools",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agent_simulations/two_player_dnd",
       "destination": "/cookbook"
     },
     {
@@ -282,10 +230,6 @@
     },
     {
       "source": "/docs/use_cases/more/agents/autonomous_agents/",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/autonomous_agents/plan_and_execute",
       "destination": "/cookbook"
     },
     {
@@ -3497,40 +3441,8 @@
       "destination": "/docs/modules/model_io/prompts/prompt_templates/prompt_serialization"
     },
     {
-      "source": "/en/latest/use_cases/agent_simulations/camel_role_playing.html",
-      "destination": "/docs/use_cases/agent_simulations/camel_role_playing"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/characters.html",
-      "destination": "/docs/use_cases/agent_simulations/characters"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/gymnasium.html",
-      "destination": "/docs/use_cases/agent_simulations/gymnasium"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/multi_player_dnd.html",
-      "destination": "/docs/use_cases/agent_simulations/multi_player_dnd"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/multiagent_authoritarian.html",
-      "destination": "/docs/use_cases/agent_simulations/multiagent_authoritarian"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/multiagent_bidding.html",
-      "destination": "/docs/use_cases/agent_simulations/multiagent_bidding"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/petting_zoo.html",
-      "destination": "/docs/use_cases/agent_simulations/petting_zoo"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/two_agent_debate_tools.html",
-      "destination": "/docs/use_cases/agent_simulations/two_agent_debate_tools"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/two_player_dnd.html",
-      "destination": "/docs/use_cases/agent_simulations/two_player_dnd"
+      "source": "/en/latest/use_cases/agent_simulations/:path*",
+      "destination": "/cookbook"
     },
     {
       "source": "/en/latest/use_cases/agents/baby_agi.html",
@@ -3569,24 +3481,8 @@
       "destination": "/docs/use_cases/apis"
     },
     {
-      "source": "/en/latest/use_cases/autonomous_agents/autogpt.html",
-      "destination": "/docs/use_cases/autonomous_agents/autogpt"
-    },
-    {
-      "source": "/en/latest/use_cases/autonomous_agents/baby_agi.html",
-      "destination": "/docs/use_cases/autonomous_agents/baby_agi"
-    },
-    {
-      "source": "/en/latest/use_cases/autonomous_agents/baby_agi_with_agent.html",
-      "destination": "/docs/use_cases/autonomous_agents/baby_agi_with_agent"
-    },
-    {
-      "source": "/en/latest/use_cases/autonomous_agents/marathon_times.html",
-      "destination": "/docs/use_cases/autonomous_agents/marathon_times"
-    },
-    {
-      "source": "/en/latest/use_cases/autonomous_agents/meta_prompt.html",
-      "destination": "/docs/use_cases/autonomous_agents/meta_prompt"
+      "source": "/en/latest/use_cases/autonomous_agents/:path*",
+      "destination": "/cookbook"
     },
     {
       "source": "/en/latest/use_cases/chatbots/voice_assistant.html",
