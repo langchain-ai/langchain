@@ -1,5 +1,5 @@
 ```python
-import langchain
+from langchain.globals import set_llm_cache
 from langchain.llms import OpenAI
 
 # To make the caching really obvious, lets use a slower model.
@@ -11,7 +11,7 @@ llm = OpenAI(model_name="text-davinci-002", n=2, best_of=2)
 
 ```python
 from langchain.cache import InMemoryCache
-langchain.llm_cache = InMemoryCache()
+set_llm_cache(InMemoryCache())
 
 # The first time, it is not yet in cache, so it should take longer
 llm.predict("Tell me a joke")
@@ -58,7 +58,7 @@ rm .langchain.db
 ```python
 # We can do the same thing with a SQLite cache
 from langchain.cache import SQLiteCache
-langchain.llm_cache = SQLiteCache(database_path=".langchain.db")
+set_llm_cache(SQLiteCache(database_path=".langchain.db"))
 ```
 
 
