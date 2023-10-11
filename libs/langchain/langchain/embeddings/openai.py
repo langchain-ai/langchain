@@ -389,11 +389,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
-                average = embed_with_retry(
-                    self,
-                    input="",
-                    **self._invocation_params,
-                )[
+                average = embed_with_retry(self, input="", **self._invocation_params,)[
                     "data"
                 ][0]["embedding"]
             else:

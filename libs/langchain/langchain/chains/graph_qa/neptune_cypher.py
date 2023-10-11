@@ -21,6 +21,7 @@ INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 
 def trim_query(query: str) -> str:
+    """Trim the query to only include Cypher keywords."""
     keywords = (
         "CALL",
         "CREATE",
