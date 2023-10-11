@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import List, Optional
 
 from langchain.document_loaders.parsers.language.code_segmenter import CodeSegmenter
 
@@ -40,7 +40,7 @@ class CobolSegmenter(CodeSegmenter):
         return paragraphs
 
     def simplify_code(self) -> str:
-        simplified_lines = self.source_lines[:]
+        simplified_lines: List[Optional[str]] = self.source_lines[:]
         start_idx = None
 
         for i, line in enumerate(self.source_lines):
