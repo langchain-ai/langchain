@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import tempfile
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
@@ -14,6 +16,9 @@ from langchain.callbacks.utils import (
     load_json,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 def import_clearml() -> Any:
@@ -378,7 +383,9 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         return resp
 
     @staticmethod
-    def _build_llm_df(base_df, base_df_fields, rename_map):
+    def _build_llm_df(
+        base_df: pd.DataFrame, base_df_fields: Sequence, rename_map: Mapping
+    ) -> pd.DataFrame:
         base_df_fields = [field for field in base_df_fields if field in base_df]
         rename_map = {
             map_entry_k: map_entry_v
@@ -393,7 +400,6 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     def _create_session_analysis_df(self) -> Any:
         """Create a dataframe with all the information from the session."""
         pd = import_pandas()
-        on_llm_start_records_df = pd.DataFrame(self.on_llm_start_records)
         on_llm_end_records_df = pd.DataFrame(self.on_llm_end_records)
 
         llm_input_prompts_df = ClearMLCallbackHandler._build_llm_df(
