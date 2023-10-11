@@ -5,7 +5,7 @@ import inspect
 import warnings
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
