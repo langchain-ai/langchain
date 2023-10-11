@@ -1,3 +1,4 @@
+"""Implementation of the RunnablePassthrough."""
 from __future__ import annotations
 
 import asyncio
@@ -21,7 +22,7 @@ from langchain.pydantic_v1 import BaseModel, create_model
 from langchain.schema.runnable.base import (
     Input,
     Runnable,
-    RunnableMap,
+    RunnableParallel,
     RunnableSerializable,
 )
 from langchain.schema.runnable.config import RunnableConfig, get_executor_for_config
@@ -31,16 +32,70 @@ from langchain.utils.iter import safetee
 
 
 def identity(x: Input) -> Input:
+    """An identity function"""
     return x
 
 
 async def aidentity(x: Input) -> Input:
+    """An async identity function"""
     return x
 
 
 class RunnablePassthrough(RunnableSerializable[Input, Input]):
-    """
-    A runnable that passes through the input.
+    """A runnable to passthrough inputs unchanged or with additional keys.
+
+    This runnable behaves almost like the identity function, except that it
+    can be configured to add additional keys to the output, if the input is a
+    dict.
+
+    The examples below demonstrate this runnable works using a few simple
+    chains. The chains rely on simple lambdas to make the examples easy to execute
+    and experiment with.
+
+    Examples:
+
+        .. code-block:: python
+
+            from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
+
+            runnable = RunnableParallel(
+                origin=RunnablePassthrough(),
+                modified=lambda x: x+1
+            )
+
+            runnable.invoke(1) # {'origin': 1, 'modified': 2}
+
+
+             def fake_llm(prompt: str) -> str: # Fake LLM for the example
+                return "completion"
+
+            chain = RunnableLambda(fake_llm) | {
+                'original': RunnablePassthrough(), # Original LLM output
+                'parsed': lambda text: text[::-1] # Parsing logic
+            }
+
+            chain.invoke('hello') # {'original': 'completion', 'parsed': 'noitelpmoc'}
+
+    In some cases, it may be useful to pass the input through while adding some
+    keys to the output. In this case, you can use the `assign` method:
+
+        .. code-block:: python
+
+            from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
+
+             def fake_llm(prompt: str) -> str: # Fake LLM for the example
+                return "completion"
+
+            runnable = {
+                'llm1':  fake_llm,
+                'llm2':  fake_llm,
+            }
+            | RunnablePassthrough.assign(
+                total_chars=lambda inputs: len(inputs['llm1'] + inputs['llm2'])
+              )
+
+            runnable.invoke('hello')
+            # {'llm1': 'completion', 'llm2': 'completion', 'total_chars': 20}
     """
 
     input_type: Optional[Type[Input]] = None
@@ -73,8 +128,7 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
             ],
         ],
     ) -> RunnableAssign:
-        """
-        Merge the Dict input with the output produced by the mapping argument.
+        """Merge the Dict input with the output produced by the mapping argument.
 
         Args:
             mapping: A mapping from keys to runnables or callables.
@@ -83,7 +137,7 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
             A runnable that merges the Dict input with the output produced by the
             mapping argument.
         """
-        return RunnableAssign(RunnableMap(kwargs))
+        return RunnableAssign(RunnableParallel(kwargs))
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
         return self._call_with_config(identity, input, config)
@@ -119,9 +173,9 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     A runnable that assigns key-value pairs to Dict[str, Any] inputs.
     """
 
-    mapper: RunnableMap[Dict[str, Any]]
+    mapper: RunnableParallel[Dict[str, Any]]
 
-    def __init__(self, mapper: RunnableMap[Dict[str, Any]], **kwargs: Any) -> None:
+    def __init__(self, mapper: RunnableParallel[Dict[str, Any]], **kwargs: Any) -> None:
         super().__init__(mapper=mapper, **kwargs)
 
     @classmethod
@@ -133,7 +187,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         return cls.__module__.split(".")[:-1]
 
     @property
-    def input_schema(self) -> type[BaseModel]:
+    def input_schema(self) -> Type[BaseModel]:
         map_input_schema = self.mapper.input_schema
         if not map_input_schema.__custom_root_type__:
             # ie. it's a dict
@@ -142,7 +196,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         return super().input_schema
 
     @property
-    def output_schema(self) -> type[BaseModel]:
+    def output_schema(self) -> Type[BaseModel]:
         map_input_schema = self.mapper.input_schema
         map_output_schema = self.mapper.output_schema
         if (
