@@ -811,6 +811,7 @@ class Language(str, Enum):
     HTML = "html"
     SOL = "sol"
     CSHARP = "csharp"
+    COBOL = "cobol"
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
@@ -1305,6 +1306,38 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.COBOL:
+            return [
+                # Split along divisions
+                "\nIDENTIFICATION DIVISION.",
+                "\nENVIRONMENT DIVISION.",
+                "\nDATA DIVISION.",
+                "\nPROCEDURE DIVISION.",
+                # Split along sections within DATA DIVISION
+                "\nWORKING-STORAGE SECTION.",
+                "\nLINKAGE SECTION.",
+                "\nFILE SECTION.",
+                # Split along sections within PROCEDURE DIVISION
+                "\nINPUT-OUTPUT SECTION.",
+                # Split along paragraphs and common statements
+                "\nOPEN ",
+                "\nCLOSE ",
+                "\nREAD ",
+                "\nWRITE ",
+                "\nIF ",
+                "\nELSE ",
+                "\nMOVE ",
+                "\nPERFORM ",
+                "\nUNTIL ",
+                "\nVARYING ",
+                "\nACCEPT ",
+                "\nDISPLAY ",
+                "\nSTOP RUN.",
+                # Split by the normal type of lines
+                "\n",
+                " ",
+                "",
+            ]
 
         else:
             raise ValueError(
@@ -1386,4 +1419,13 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
     def __init__(self, **kwargs: Any) -> None:
         """Initialize a LatexTextSplitter."""
         separators = self.get_separators_for_language(Language.LATEX)
+        super().__init__(separators=separators, **kwargs)
+
+
+class COBOLTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along COBOL syntax and layout elements."""
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize a COBOLTextSplitter."""
+        separators = self.get_separators_for_language(Language.COBOL)
         super().__init__(separators=separators, **kwargs)
