@@ -473,6 +473,7 @@ def _import_xinference() -> Any:
 
     return Xinference
 
+
 def _import_yandex_gpt() -> Any:
     from langchain.llms.yandex import YandexGPT
 
