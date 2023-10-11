@@ -227,8 +227,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
-                    "typename": {
-                        "title": "Typename",
+                    "type": {
+                        "title": "Type",
                         "enum": ["Document"],
                         "default": "Document",
                         "type": "string",
@@ -294,12 +294,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["ai"],
                         "type": "string",
                     },
-                    "typename": {
-                        "title": "Typename",
-                        "default": "AIMessage",
-                        "enum": ["AIMessage"],
-                        "type": "string",
-                    },
                     "example": {
                         "title": "Example",
                         "default": False,
@@ -317,12 +311,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
                         "type": "object",
-                    },
-                    "typename": {
-                        "title": "Typename",
-                        "default": "HumanMessage",
-                        "enum": ["HumanMessage"],
-                        "type": "string",
                     },
                     "type": {
                         "title": "Type",
@@ -348,12 +336,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
-                    "typename": {
-                        "title": "Typename",
-                        "default": "ChatMessage",
-                        "enum": ["ChatMessage"],
-                        "type": "string",
-                    },
                     "type": {
                         "title": "Type",
                         "default": "chat",
@@ -373,12 +355,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
                         "type": "object",
-                    },
-                    "typename": {
-                        "title": "Typename",
-                        "default": "SystemMessage",
-                        "enum": ["SystemMessage"],
-                        "type": "string",
                     },
                     "type": {
                         "title": "Type",
@@ -403,12 +379,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Type",
                         "default": "function",
                         "enum": ["function"],
-                        "type": "string",
-                    },
-                    "typename": {
-                        "title": "Typename",
-                        "default": "FunctionMessage",
-                        "enum": ["FunctionMessage"],
                         "type": "string",
                     },
                     "name": {"title": "Name", "type": "string"},
@@ -640,8 +610,8 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
-                    "typename": {
-                        "title": "Typename",
+                    "type": {
+                        "title": "Type",
                         "type": "string",
                         "enum": ["Document"],
                         "default": "Document",
@@ -679,8 +649,8 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
-                    "typename": {
-                        "title": "Typename",
+                    "type": {
+                        "title": "Type",
                         "type": "string",
                         "enum": ["Document"],
                         "default": "Document",
@@ -723,8 +693,8 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
-                    "typename": {
-                        "title": "Typename",
+                    "type": {
+                        "title": "Type",
                         "type": "string",
                         "enum": ["Document"],
                         "default": "Document",

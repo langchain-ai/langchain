@@ -18,7 +18,7 @@ class Document(Serializable):
     """Arbitrary metadata about the page content (e.g., source, relationships to other
         documents, etc.).
     """
-    typename: Literal["Document"] = "Document"
+    type: Literal["Document"] = "Document"
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

@@ -136,6 +136,6 @@ def test_serialization_of_wellknown_objects() -> None:
 
     for lc_object in lc_objects:
         d = lc_object.dict()
-        assert "typename" in d, f"Missing key `type` for {type(lc_object)}"
+        assert "type" in d, f"Missing key `type` for {type(lc_object)}"
         obj1 = WellKnownLCObject.parse_obj(d)
         assert type(obj1.__root__) == type(lc_object), f"failed for {type(lc_object)}"

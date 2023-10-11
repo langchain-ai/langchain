@@ -1701,14 +1701,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'AIMessage',
-            'enum': list([
-              'AIMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -1737,14 +1729,6 @@
               'chat',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'ChatMessage',
-            'enum': list([
-              'ChatMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -1784,12 +1768,12 @@
             'title': 'Messages',
             'type': 'array',
           }),
-          'typename': dict({
+          'type': dict({
             'default': 'ChatPromptValueConcrete',
             'enum': list([
               'ChatPromptValueConcrete',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -1820,14 +1804,6 @@
               'function',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'FunctionMessage',
-            'enum': list([
-              'FunctionMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -1862,14 +1838,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'HumanMessage',
-            'enum': list([
-              'HumanMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -1884,12 +1852,12 @@
             'title': 'Text',
             'type': 'string',
           }),
-          'typename': dict({
+          'type': dict({
             'default': 'StringPromptValue',
             'enum': list([
               'StringPromptValue',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -1919,14 +1887,6 @@
               'system',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'SystemMessage',
-            'enum': list([
-              'SystemMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -2000,14 +1960,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'AIMessage',
-            'enum': list([
-              'AIMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -2036,14 +1988,6 @@
               'chat',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'ChatMessage',
-            'enum': list([
-              'ChatMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -2083,12 +2027,12 @@
             'title': 'Messages',
             'type': 'array',
           }),
-          'typename': dict({
+          'type': dict({
             'default': 'ChatPromptValueConcrete',
             'enum': list([
               'ChatPromptValueConcrete',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -2119,14 +2063,6 @@
               'function',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'FunctionMessage',
-            'enum': list([
-              'FunctionMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -2161,14 +2097,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'HumanMessage',
-            'enum': list([
-              'HumanMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -2183,12 +2111,12 @@
             'title': 'Text',
             'type': 'string',
           }),
-          'typename': dict({
+          'type': dict({
             'default': 'StringPromptValue',
             'enum': list([
               'StringPromptValue',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -2218,14 +2146,6 @@
               'system',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'SystemMessage',
-            'enum': list([
-              'SystemMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -2276,19 +2196,11 @@
             'type': 'boolean',
           }),
           'type': dict({
-            'default': 'ai',
-            'enum': list([
-              'ai',
-            ]),
-            'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
             'default': 'AIMessageChunk',
             'enum': list([
               'AIMessageChunk',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -2314,19 +2226,11 @@
             'type': 'string',
           }),
           'type': dict({
-            'default': 'chat',
-            'enum': list([
-              'chat',
-            ]),
-            'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
             'default': 'ChatMessageChunk',
             'enum': list([
               'ChatMessageChunk',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -2353,19 +2257,11 @@
             'type': 'string',
           }),
           'type': dict({
-            'default': 'function',
-            'enum': list([
-              'function',
-            ]),
-            'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
             'default': 'FunctionMessageChunk',
             'enum': list([
               'FunctionMessageChunk',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -2393,19 +2289,11 @@
             'type': 'boolean',
           }),
           'type': dict({
-            'default': 'human',
-            'enum': list([
-              'human',
-            ]),
-            'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
             'default': 'HumanMessageChunk',
             'enum': list([
               'HumanMessageChunk',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -2427,19 +2315,11 @@
             'type': 'string',
           }),
           'type': dict({
-            'default': 'system',
-            'enum': list([
-              'system',
-            ]),
-            'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
             'default': 'SystemMessageChunk',
             'enum': list([
               'SystemMessageChunk',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -2488,14 +2368,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'AIMessage',
-            'enum': list([
-              'AIMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -2524,14 +2396,6 @@
               'chat',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'ChatMessage',
-            'enum': list([
-              'ChatMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -2571,12 +2435,12 @@
             'title': 'Messages',
             'type': 'array',
           }),
-          'typename': dict({
+          'type': dict({
             'default': 'ChatPromptValueConcrete',
             'enum': list([
               'ChatPromptValueConcrete',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -2607,14 +2471,6 @@
               'function',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'FunctionMessage',
-            'enum': list([
-              'FunctionMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -2649,14 +2505,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'HumanMessage',
-            'enum': list([
-              'HumanMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -2671,12 +2519,12 @@
             'title': 'Text',
             'type': 'string',
           }),
-          'typename': dict({
+          'type': dict({
             'default': 'StringPromptValue',
             'enum': list([
               'StringPromptValue',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -2706,14 +2554,6 @@
               'system',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'SystemMessage',
-            'enum': list([
-              'SystemMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -2762,14 +2602,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'AIMessage',
-            'enum': list([
-              'AIMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -2798,14 +2630,6 @@
               'chat',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'ChatMessage',
-            'enum': list([
-              'ChatMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -2845,12 +2669,12 @@
             'title': 'Messages',
             'type': 'array',
           }),
-          'typename': dict({
+          'type': dict({
             'default': 'ChatPromptValueConcrete',
             'enum': list([
               'ChatPromptValueConcrete',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -2881,14 +2705,6 @@
               'function',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'FunctionMessage',
-            'enum': list([
-              'FunctionMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -2923,14 +2739,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'HumanMessage',
-            'enum': list([
-              'HumanMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -2945,12 +2753,12 @@
             'title': 'Text',
             'type': 'string',
           }),
-          'typename': dict({
+          'type': dict({
             'default': 'StringPromptValue',
             'enum': list([
               'StringPromptValue',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -2980,14 +2788,6 @@
               'system',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'SystemMessage',
-            'enum': list([
-              'SystemMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -3028,14 +2828,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'AIMessage',
-            'enum': list([
-              'AIMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -3064,14 +2856,6 @@
               'chat',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'ChatMessage',
-            'enum': list([
-              'ChatMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -3111,12 +2895,12 @@
             'title': 'Messages',
             'type': 'array',
           }),
-          'typename': dict({
+          'type': dict({
             'default': 'ChatPromptValueConcrete',
             'enum': list([
               'ChatPromptValueConcrete',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -3147,14 +2931,6 @@
               'function',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'FunctionMessage',
-            'enum': list([
-              'FunctionMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -3189,14 +2965,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'HumanMessage',
-            'enum': list([
-              'HumanMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -3222,12 +2990,12 @@
             'title': 'Text',
             'type': 'string',
           }),
-          'typename': dict({
+          'type': dict({
             'default': 'StringPromptValue',
             'enum': list([
               'StringPromptValue',
             ]),
-            'title': 'Typename',
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -3257,14 +3025,6 @@
               'system',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'SystemMessage',
-            'enum': list([
-              'SystemMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -3329,14 +3089,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'AIMessage',
-            'enum': list([
-              'AIMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -3365,14 +3117,6 @@
               'chat',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'ChatMessage',
-            'enum': list([
-              'ChatMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -3404,14 +3148,6 @@
               'function',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'FunctionMessage',
-            'enum': list([
-              'FunctionMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),
@@ -3446,14 +3182,6 @@
             'title': 'Type',
             'type': 'string',
           }),
-          'typename': dict({
-            'default': 'HumanMessage',
-            'enum': list([
-              'HumanMessage',
-            ]),
-            'title': 'Typename',
-            'type': 'string',
-          }),
         }),
         'required': list([
           'content',
@@ -3481,14 +3209,6 @@
               'system',
             ]),
             'title': 'Type',
-            'type': 'string',
-          }),
-          'typename': dict({
-            'default': 'SystemMessage',
-            'enum': list([
-              'SystemMessage',
-            ]),
-            'title': 'Typename',
             'type': 'string',
           }),
         }),

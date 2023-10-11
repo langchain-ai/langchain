@@ -300,7 +300,7 @@ class ChatPromptValueConcrete(ChatPromptValue):
 
     messages: Sequence[AnyMessage]
 
-    typename: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
+    type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
 
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
