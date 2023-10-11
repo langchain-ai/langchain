@@ -2211,24 +2211,24 @@
   dict({
     'anyOf': list([
       dict({
-        '$ref': '#/definitions/HumanMessageChunk',
+        '$ref': '#/definitions/HumanMessage',
       }),
       dict({
-        '$ref': '#/definitions/AIMessageChunk',
+        '$ref': '#/definitions/AIMessage',
       }),
       dict({
-        '$ref': '#/definitions/ChatMessageChunk',
+        '$ref': '#/definitions/ChatMessage',
       }),
       dict({
-        '$ref': '#/definitions/FunctionMessageChunk',
+        '$ref': '#/definitions/FunctionMessage',
       }),
       dict({
-        '$ref': '#/definitions/SystemMessageChunk',
+        '$ref': '#/definitions/SystemMessage',
       }),
     ]),
     'definitions': dict({
-      'AIMessageChunk': dict({
-        'description': 'A Message chunk from an AI.',
+      'AIMessage': dict({
+        'description': 'A Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2244,9 +2244,9 @@
             'type': 'boolean',
           }),
           'is_chunk': dict({
-            'default': True,
+            'default': False,
             'enum': list([
-              True,
+              False,
             ]),
             'title': 'Is Chunk',
             'type': 'boolean',
@@ -2263,11 +2263,11 @@
         'required': list([
           'content',
         ]),
-        'title': 'AIMessageChunk',
+        'title': 'AIMessage',
         'type': 'object',
       }),
-      'ChatMessageChunk': dict({
-        'description': 'A Chat Message chunk.',
+      'ChatMessage': dict({
+        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2278,9 +2278,9 @@
             'type': 'string',
           }),
           'is_chunk': dict({
-            'default': True,
+            'default': False,
             'enum': list([
-              True,
+              False,
             ]),
             'title': 'Is Chunk',
             'type': 'boolean',
@@ -2302,11 +2302,11 @@
           'content',
           'role',
         ]),
-        'title': 'ChatMessageChunk',
+        'title': 'ChatMessage',
         'type': 'object',
       }),
-      'FunctionMessageChunk': dict({
-        'description': 'A Function Message chunk.',
+      'FunctionMessage': dict({
+        'description': 'A Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2317,9 +2317,9 @@
             'type': 'string',
           }),
           'is_chunk': dict({
-            'default': True,
+            'default': False,
             'enum': list([
-              True,
+              False,
             ]),
             'title': 'Is Chunk',
             'type': 'boolean',
@@ -2341,11 +2341,11 @@
           'content',
           'name',
         ]),
-        'title': 'FunctionMessageChunk',
+        'title': 'FunctionMessage',
         'type': 'object',
       }),
-      'HumanMessageChunk': dict({
-        'description': 'A Human Message chunk.',
+      'HumanMessage': dict({
+        'description': 'A Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2361,9 +2361,9 @@
             'type': 'boolean',
           }),
           'is_chunk': dict({
-            'default': True,
+            'default': False,
             'enum': list([
-              True,
+              False,
             ]),
             'title': 'Is Chunk',
             'type': 'boolean',
@@ -2380,11 +2380,14 @@
         'required': list([
           'content',
         ]),
-        'title': 'HumanMessageChunk',
+        'title': 'HumanMessage',
         'type': 'object',
       }),
-      'SystemMessageChunk': dict({
-        'description': 'A System Message chunk.',
+      'SystemMessage': dict({
+        'description': '''
+          A Message for priming AI behavior, usually passed in as the first of a sequence
+          of input messages.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2395,9 +2398,9 @@
             'type': 'string',
           }),
           'is_chunk': dict({
-            'default': True,
+            'default': False,
             'enum': list([
-              True,
+              False,
             ]),
             'title': 'Is Chunk',
             'type': 'boolean',
@@ -2414,7 +2417,7 @@
         'required': list([
           'content',
         ]),
-        'title': 'SystemMessageChunk',
+        'title': 'SystemMessage',
         'type': 'object',
       }),
     }),
