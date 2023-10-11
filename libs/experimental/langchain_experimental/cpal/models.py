@@ -1,6 +1,6 @@
 from __future__ import annotations  # allows pydantic model to reference itself
 
-import re
+import re # Uses Regular Expression Search
 from typing import Any, Optional, Union
 
 import duckdb
@@ -203,7 +203,7 @@ class StoryModel(BaseModel):
     def _run_query(self) -> None:
         def humanize_sql_error_msg(error: str) -> str:
             pattern = r"column\s+(.*?)\s+not found"
-            col_match = re.search(pattern, error)
+            col_match = re.search(pattern, error) # Uses Regular Expression Search for Pattern matching search for the input sql query
             if col_match:
                 return (
                     "SQL error: "
