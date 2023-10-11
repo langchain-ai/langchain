@@ -10,6 +10,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Type,
     TypeVar,
     Union,
 )
@@ -71,7 +72,7 @@ class BaseGenerationOutputParser(
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> type[T]:
+    def OutputType(self) -> Type[T]:
         # even though mypy complains this isn't valid,
         # it is good enough for pydantic to build the schema from
         return T  # type: ignore[misc]
@@ -154,7 +155,7 @@ class BaseOutputParser(
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> type[T]:
+    def OutputType(self) -> Type[T]:
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == 1:

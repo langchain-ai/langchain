@@ -25,7 +25,6 @@ import hashlib
 import inspect
 import json
 import logging
-import warnings
 from datetime import timedelta
 from functools import lru_cache
 from typing import (
@@ -54,7 +53,7 @@ except ImportError:
 from langchain.llms.base import LLM, get_prompts
 from langchain.load.dump import dumps
 from langchain.load.load import loads
-from langchain.schema import ChatGeneration, Generation
+from langchain.schema import Generation
 from langchain.schema.cache import RETURN_VAL_TYPE, BaseCache
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_env
@@ -306,7 +305,18 @@ class RedisCache(BaseCache):
         results = self.redis.hgetall(self._key(prompt, llm_string))
         if results:
             for _, text in results.items():
-                generations.append(Generation(text=text))
+                try:
+                    generations.append(loads(text))
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+                    # In a previous life we stored the raw text directly
+                    # in the table, so assume it's in that format.
+                    generations.append(Generation(text=text))
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -317,12 +327,6 @@ class RedisCache(BaseCache):
                     "RedisCache only supports caching of normal LLM generations, "
                     f"got {type(gen)}"
                 )
-            if isinstance(gen, ChatGeneration):
-                warnings.warn(
-                    "NOTE: Generation has not been cached. RedisCache does not"
-                    " support caching ChatModel outputs."
-                )
-                return
         # Write to a Redis HASH
         key = self._key(prompt, llm_string)
 
@@ -330,7 +334,7 @@ class RedisCache(BaseCache):
             pipe.hset(
                 key,
                 mapping={
-                    str(idx): generation.text
+                    str(idx): dumps(generation)
                     for idx, generation in enumerate(return_val)
                 },
             )
@@ -441,9 +445,20 @@ class RedisSemanticCache(BaseCache):
         )
         if results:
             for document in results:
-                generations.extend(
-                    _load_generations_from_json(document.metadata["return_val"])
-                )
+                try:
+                    generations.extend(loads(document.metadata["return_val"]))
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+                    # In a previous life we stored the raw text directly
+                    # in the table, so assume it's in that format.
+                    generations.extend(
+                        _load_generations_from_json(document.metadata["return_val"])
+                    )
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -454,18 +469,12 @@ class RedisSemanticCache(BaseCache):
                     "RedisSemanticCache only supports caching of "
                     f"normal LLM generations, got {type(gen)}"
                 )
-            if isinstance(gen, ChatGeneration):
-                warnings.warn(
-                    "NOTE: Generation has not been cached. RedisSentimentCache does not"
-                    " support caching ChatModel outputs."
-                )
-                return
         llm_cache = self._get_llm_cache(llm_string)
-        _dump_generations_to_json([g for g in return_val])
+
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
-            "return_val": _dump_generations_to_json([g for g in return_val]),
+            "return_val": dumps([g for g in return_val]),
         }
         llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
 
@@ -675,7 +684,8 @@ class MomentoCache(BaseCache):
         ttl: timedelta,
         *,
         configuration: Optional[momento.config.Configuration] = None,
-        auth_token: Optional[str] = None,
+        api_key: Optional[str] = None,
+        auth_token: Optional[str] = None,  # for backwards compatibility
         **kwargs: Any,
     ) -> MomentoCache:
         """Construct cache from CacheClient parameters."""
@@ -688,8 +698,13 @@ class MomentoCache(BaseCache):
             )
         if configuration is None:
             configuration = Configurations.Laptop.v1()
-        auth_token = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
-        credentials = CredentialProvider.from_string(auth_token)
+
+        # Try checking `MOMENTO_AUTH_TOKEN` first for backwards compatibility
+        try:
+            api_key = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
+        except ValueError:
+            api_key = api_key or get_from_env("api_key", "MOMENTO_API_KEY")
+        credentials = CredentialProvider.from_string(api_key)
         cache_client = CacheClient(configuration, credentials, default_ttl=ttl)
         return cls(cache_client, cache_name, ttl=ttl, **kwargs)
 

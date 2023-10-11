@@ -145,10 +145,13 @@ class BaseSingleActionAgent(BaseModel):
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
-        _type = self._agent_type
+        try:
+            _type = self._agent_type
+        except NotImplementedError:
+            _type = None
         if isinstance(_type, AgentType):
             _dict["_type"] = str(_type.value)
-        else:
+        elif _type is not None:
             _dict["_type"] = _type
         return _dict
 
@@ -175,6 +178,8 @@ class BaseSingleActionAgent(BaseModel):
 
         # Fetch dictionary to save
         agent_dict = self.dict()
+        if "_type" not in agent_dict:
+            raise NotImplementedError(f"Agent {self} does not support saving")
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:

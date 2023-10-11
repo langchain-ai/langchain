@@ -1182,7 +1182,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
 
 class CallbackManager(BaseCallbackManager):
-    """Callback manager that handles callbacks from langchain."""
+    """Callback manager that handles callbacks from LangChain."""
 
     def on_llm_start(
         self,
@@ -1450,6 +1450,8 @@ class CallbackManager(BaseCallbackManager):
 
 
 class CallbackManagerForChainGroup(CallbackManager):
+    """Callback manager for the chain group."""
+
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
@@ -1784,6 +1786,8 @@ class AsyncCallbackManager(BaseCallbackManager):
 
 
 class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
+    """Async callback manager for the chain group."""
+
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
@@ -1887,13 +1891,13 @@ def _configure(
             )
         else:
             callback_manager = callback_manager_cls(
-                handlers=inheritable_callbacks.handlers,
-                inheritable_handlers=inheritable_callbacks.inheritable_handlers,
+                handlers=inheritable_callbacks.handlers.copy(),
+                inheritable_handlers=inheritable_callbacks.inheritable_handlers.copy(),
                 parent_run_id=inheritable_callbacks.parent_run_id,
-                tags=inheritable_callbacks.tags,
-                inheritable_tags=inheritable_callbacks.inheritable_tags,
-                metadata=inheritable_callbacks.metadata,
-                inheritable_metadata=inheritable_callbacks.inheritable_metadata,
+                tags=inheritable_callbacks.tags.copy(),
+                inheritable_tags=inheritable_callbacks.inheritable_tags.copy(),
+                metadata=inheritable_callbacks.metadata.copy(),
+                inheritable_metadata=inheritable_callbacks.inheritable_metadata.copy(),
             )
         local_handlers_ = (
             local_callbacks
@@ -1987,7 +1991,7 @@ def _configure(
                         e,
                     )
         if open_ai is not None and not any(
-            isinstance(handler, OpenAICallbackHandler)
+            handler is open_ai  # direct pointer comparison
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(open_ai, True)

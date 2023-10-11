@@ -141,6 +141,13 @@ class AzureChatOpenAI(ChatOpenAI):
     def _llm_type(self) -> str:
         return "azure-openai-chat"
 
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        return {
+            "openai_api_type": self.openai_api_type,
+            "openai_api_version": self.openai_api_version,
+        }
+
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":

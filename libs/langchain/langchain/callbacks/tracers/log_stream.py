@@ -25,6 +25,8 @@ from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
 
 class LogEntry(TypedDict):
+    """A single entry in the run log."""
+
     id: str
     """ID of the sub-run."""
     name: str
@@ -49,21 +51,24 @@ class LogEntry(TypedDict):
 
 
 class RunState(TypedDict):
+    """State of the run."""
+
     id: str
     """ID of the run."""
     streamed_output: List[Any]
     """List of output chunks streamed by Runnable.stream()"""
     final_output: Optional[Any]
-    """Final output of the run, usually the result of aggregating streamed_output.
+    """Final output of the run, usually the result of aggregating (`+`) streamed_output.
     Only available after the run has finished successfully."""
 
     logs: Dict[str, LogEntry]
-    """List of sub-runs contained in this run, if any, in the order they were started.
-    If filters were supplied, this list will contain only the runs that matched the 
-    filters."""
+    """Map of run names to sub-runs. If filters were supplied, this list will
+    contain only the runs that matched the filters."""
 
 
 class RunLogPatch:
+    """A patch to the run log."""
+
     ops: List[Dict[str, Any]]
     """List of jsonpatch operations, which describe how to create the run state
     from an empty dict. This is the minimal representation of the log, designed to
@@ -74,7 +79,7 @@ class RunLogPatch:
     def __init__(self, *ops: Dict[str, Any]) -> None:
         self.ops = list(ops)
 
-    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLogPatch:
+    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
         if type(other) == RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(None, ops)
@@ -95,6 +100,8 @@ class RunLogPatch:
 
 
 class RunLog(RunLogPatch):
+    """A run log."""
+
     state: RunState
     """Current state of the log, obtained from applying all ops in sequence."""
 
@@ -102,7 +109,7 @@ class RunLog(RunLogPatch):
         super().__init__(*ops)
         self.state = state
 
-    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLogPatch:
+    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
         if type(other) == RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(self.state, other.ops)
@@ -119,6 +126,8 @@ class RunLog(RunLogPatch):
 
 
 class LogStreamCallbackHandler(BaseTracer):
+    """A tracer that streams run logs to a stream."""
+
     def __init__(
         self,
         *,

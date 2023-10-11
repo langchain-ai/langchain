@@ -9,7 +9,6 @@ from typing import List, Sequence
 import typer
 
 import langchain
-from langchain.cli.create_repo.pypi_name import is_name_taken, lint_name
 
 
 class UnderscoreTemplate(string.Template):
@@ -99,6 +98,10 @@ def _copy_template_files(
     """
     for template_directory_path in template_directories:
         for template_file_path in template_directory_path.glob("**/*"):
+            # Ignore __pycache__ directories and their contents
+            if "__pycache__" in template_file_path.parts:
+                continue
+
             relative_template_file_path = UnderscoreTemplate(
                 str(template_file_path.relative_to(template_directory_path))
             ).substitute(project_name_identifier=project_name_identifier)
@@ -106,8 +109,16 @@ def _copy_template_files(
             if template_file_path.is_dir():
                 project_file_path.mkdir(parents=True, exist_ok=True)
             else:
+                try:
+                    content = template_file_path.read_text(encoding="utf-8")
+                except UnicodeDecodeError as e:
+                    raise RuntimeError(
+                        "Encountered an error while reading a "
+                        f"template file {template_file_path}"
+                    ) from e
+
                 project_file_path.write_text(
-                    UnderscoreTemplate(template_file_path.read_text()).substitute(
+                    UnderscoreTemplate(content).substitute(
                         project_name=project_name,
                         project_name_identifier=project_name_identifier,
                         author_name=author_name,
@@ -145,9 +156,13 @@ def _pip_install(project_directory_path: Path) -> None:
 def _init_git(project_directory_path: Path) -> None:
     """Initialize git repository."""
     typer.echo(
-        f"\n{typer.style('3.', bold=True, fg=typer.colors.GREEN)} Initializing git..."
+        f"\n{typer.style('Initializing git...', bold=True, fg=typer.colors.GREEN)}"
     )
-    subprocess.run(["git", "init"], cwd=project_directory_path)
+    try:
+        subprocess.run(["git", "init"], cwd=project_directory_path)
+    except FileNotFoundError:
+        typer.echo("Git not found. Skipping git initialization.")
+        return
 
     # 7. Create initial commit
     subprocess.run(["git", "add", "."], cwd=project_directory_path)
@@ -157,58 +172,12 @@ def _init_git(project_directory_path: Path) -> None:
     )
 
 
-def _select_project_name(suggested_project_name: str) -> str:
-    """Help the user select a valid project name."""
-    while True:
-        project_name = typer.prompt(
-            "Please choose a project name: ", default=suggested_project_name
-        )
-
-        project_name_diagnostics = lint_name(project_name)
-        if project_name_diagnostics:
-            typer.echo(
-                f"{typer.style('Error:', fg=typer.colors.RED)}"
-                f" The project name"
-                f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
-                f" is not valid:",
-                err=True,
-            )
-
-            for diagnostic in project_name_diagnostics:
-                typer.echo(f"  - {diagnostic}")
-
-            if typer.confirm(
-                "Would you like to choose another name? "
-                "Choose NO to proceed with existing name.",
-                default=True,
-            ):
-                continue
-
-        if is_name_taken(project_name):
-            typer.echo(
-                f"{typer.style('Error:', fg=typer.colors.RED)}"
-                f" The project name"
-                f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
-                f" is already taken on pypi",
-                err=True,
-            )
-
-            if typer.confirm(
-                "Would you like to choose another name? "
-                "Choose NO to proceed with existing name.",
-                default=True,
-            ):
-                continue
-
-        # If we got here then the project name is valid and not taken
-        return project_name
-
-
 # PUBLIC API
 
 
 def create(
     project_directory: pathlib.Path,
+    project_name: str,
     author_name: str,
     author_email: str,
     use_poetry: bool,
@@ -217,27 +186,29 @@ def create(
 
     Args:
         project_directory (str): The directory to create the project in.
+        project_name: The name of the project.
         author_name (str): The name of the author.
         author_email (str): The email of the author.
         use_poetry (bool): Whether to use Poetry to manage the project.
     """
 
     project_directory_path = Path(project_directory)
-    project_name_suggestion = project_directory_path.name.replace("-", "_")
-    project_name = _select_project_name(project_name_suggestion)
     project_name_identifier = project_name
-
     resolved_path = project_directory_path.resolve()
 
     if not typer.confirm(
-        f"\n{typer.style('>', bold=True, fg=typer.colors.GREEN)} "
-        f"Creating new LangChain project "
-        f"{typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
-        f" in"
-        f" {typer.style(resolved_path, fg=typer.colors.BRIGHT_CYAN)}",
+        f"\n"
+        f"Creating a new LangChain project 🦜️🔗\n"
+        f"Name: {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}\n"
+        f"Path: {typer.style(resolved_path, fg=typer.colors.BRIGHT_CYAN)}\n"
+        f"Project name: {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}\n"
+        f"Author name: {typer.style(author_name, fg=typer.colors.BRIGHT_CYAN)}\n"
+        f"Author email: {typer.style(author_email, fg=typer.colors.BRIGHT_CYAN)}\n"
+        f"Use Poetry: {typer.style(str(use_poetry), fg=typer.colors.BRIGHT_CYAN)}\n"
+        "Continue?",
         default=True,
     ):
-        typer.echo("OK! Canceling project creation.")
+        typer.echo("Cancelled project creation. See you later! 👋")
         raise typer.Exit(code=0)
 
     _create_project_dir(
@@ -258,7 +229,7 @@ def create(
     _init_git(project_directory_path)
 
     typer.echo(
-        f"\n{typer.style('Done!', bold=True, fg=typer.colors.GREEN)}"
+        f"\n{typer.style('Done!🙌', bold=True, fg=typer.colors.GREEN)}"
         f" Your new LangChain project"
         f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
         f" has been created in"
@@ -288,4 +259,8 @@ def create(
 
 def is_poetry_installed() -> bool:
     """Check if Poetry is installed."""
-    return subprocess.run(["poetry", "--version"], capture_output=True).returncode == 0
+    try:
+        result = subprocess.run(["poetry", "--version"], capture_output=True)
+        return result.returncode == 0
+    except FileNotFoundError:
+        return False
