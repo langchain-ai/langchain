@@ -120,7 +120,7 @@ class LakeFSLoader(BaseLoader):
         if self.ref is None or self.ref == "":
             raise ValueError("no ref was provided. use `set_ref` to specify a ref")
         if self.path is None:
-            raise ValueError("no path was provided. use `set_path` to specify a repository")
+            raise ValueError("no path was provided. use `set_path` to specify a path")
 
 
 class UnstructuredLakeFSLoader(UnstructuredBaseLoader):
