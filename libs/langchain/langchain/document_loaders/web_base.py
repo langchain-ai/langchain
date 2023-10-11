@@ -10,6 +10,8 @@ import requests
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
+from trafilatura import fetch_url, extract
+
 logger = logging.getLogger(__name__)
 
 default_header_template = {
@@ -246,8 +248,9 @@ class WebBaseLoader(BaseLoader):
         """Lazy load text from the url(s) in web_path."""
         for path in self.web_paths:
             soup = self._scrape(path)
-            text = soup.get_text(**self.bs_get_text_kwargs)
+            # text = soup.get_text(**self.bs_get_text_kwargs)
             metadata = _build_metadata(soup, path)
+            text = extract(fetch_url(metadata["source"]))
             yield Document(page_content=text, metadata=metadata)
 
     def load(self) -> List[Document]:
@@ -260,8 +263,9 @@ class WebBaseLoader(BaseLoader):
         results = self.scrape_all(self.web_paths)
         docs = []
         for path, soup in zip(self.web_paths, results):
-            text = soup.get_text(**self.bs_get_text_kwargs)
+            # text = soup.get_text(**self.bs_get_text_kwargs)
             metadata = _build_metadata(soup, path)
+            text = extract(fetch_url(metadata["source"]))
             docs.append(Document(page_content=text, metadata=metadata))
 
         return docs
