@@ -200,7 +200,12 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.ends += 1
 
         resp = self._init_resp()
-        resp.update({"action": "on_chain_end", "outputs": outputs.get("output", outputs.get("text"))})
+        resp.update(
+            {
+                "action": "on_chain_end",
+                "outputs": outputs.get("output", outputs.get("text")),
+            }
+        )
         resp.update(self.get_custom_callback_meta())
 
         self.on_chain_end_records.append(resp)
@@ -371,11 +376,15 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             self.logger.report_media("Entities Plot", text, local_path=ent_output_path)
 
         return resp
-    
+
     @staticmethod
     def _build_llm_df(base_df, base_df_fields, rename_map):
         base_df_fields = [field for field in base_df_fields if field in base_df]
-        rename_map = {map_entry_k: map_entry_v for map_entry_k, map_entry_v in rename_map.items() if map_entry_k in base_df_fields}
+        rename_map = {
+            map_entry_k: map_entry_v
+            for map_entry_k, map_entry_v in rename_map.items()
+            if map_entry_k in base_df_fields
+        }
         llm_df = base_df[base_df_fields].dropna(axis=1)
         if rename_map:
             llm_df = llm_df.rename(rename_map, axis=1)
@@ -389,8 +398,9 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         llm_input_prompts_df = ClearMLCallbackHandler._build_llm_df(
             base_df=on_llm_end_records_df,
-            base_df_fields=["step", "prompts"] + (["name"] if "name" in on_llm_end_records_df else ["id"]),
-            rename_map={"step": "prompt_step"}
+            base_df_fields=["step", "prompts"]
+            + (["name"] if "name" in on_llm_end_records_df else ["id"]),
+            rename_map={"step": "prompt_step"},
         )
         complexity_metrics_columns = []
         visualizations_columns: List = []
@@ -426,7 +436,7 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             ]
             + complexity_metrics_columns
             + visualizations_columns,
-            {"step": "output_step", "text": "output"}
+            {"step": "output_step", "text": "output"},
         )
         session_analysis_df = pd.concat([llm_input_prompts_df, llm_outputs_df], axis=1)
         return session_analysis_df
