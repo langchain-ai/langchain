@@ -16,7 +16,10 @@ from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 
 class LLMRails(VectorStore):
-    """Implementation of Vector Store using LLMRails (https://llmrails.com/).
+    """Implementation of Vector Store using LLMRails.
+
+     See https://llmrails.com/
+
     Example:
         .. code-block:: python
 
@@ -224,6 +227,8 @@ class LLMRails(VectorStore):
 
 
 class LLMRailsRetriever(VectorStoreRetriever):
+    """Retriever for LLMRails."""
+
     vectorstore: LLMRails
     search_kwargs: dict = Field(default_factory=lambda: {"k": 5})
     """Search params.
