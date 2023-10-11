@@ -2,7 +2,7 @@
 import logging
 import os
 from time import sleep
-from typing import Any, Generator, Union
+from typing import Any, Generator, Optional, Union
 
 import pytest
 
@@ -394,7 +394,7 @@ class TestAzureCosmosDBVectorSearch:
 
     def invoke_delete_with_no_args(
         self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
-    ) -> bool | None:
+    ) -> Optional[bool]:
         vectorstore: AzureCosmosDBVectorSearch = (
             AzureCosmosDBVectorSearch.from_connection_string(
                 CONNECTION_STRING,

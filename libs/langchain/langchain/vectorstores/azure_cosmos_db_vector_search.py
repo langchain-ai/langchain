@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -15,25 +16,23 @@ from typing import (
 )
 
 import numpy as np
-from bson.objectid import ObjectId
 
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.runnable.configurable import StrEnum
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
+if TYPE_CHECKING:
+    from pymongo.collection import Collection
 
-class CosmosDBSimilarityType(
-    StrEnum
-):  # Before Python 3.11 native StrEnum is not available
+    from langchain.schema.embeddings import Embeddings
+
+
+# Before Python 3.11 native StrEnum is not available
+class CosmosDBSimilarityType(str, Enum):
     COS = "COS"  # CosineSimilarity
     IP = "IP"  # inner - product
     L2 = "L2"  # Euclidean distance
 
-
-if TYPE_CHECKING:
-    from pymongo.collection import Collection
 
 CosmosDBDocumentType = TypeVar("CosmosDBDocumentType", bound=Dict[str, Any])
 
@@ -314,6 +313,12 @@ class AzureCosmosDBVectorSearch(VectorStore):
         Args:
             document_id: The document identifier
         """
+        try:
+            from bson.objectid import ObjectId
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import bson, please install with `pip install bson`."
+            ) from e
         if document_id is None:
             raise ValueError("No document id provided to delete.")
 
