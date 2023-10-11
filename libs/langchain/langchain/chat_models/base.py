@@ -113,7 +113,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
 
     @property
     def OutputType(self) -> Any:
-        """Get the input type for this runnable."""
+        """Get the output type for this runnable."""
         return Union[
             HumanMessage, AIMessage, ChatMessage, FunctionMessage, SystemMessage
         ]
