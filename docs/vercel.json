@@ -1,6 +1,210 @@
 {
   "redirects": [
     {
+    "source": "/docs/use_cases/more/agents/autonomous_agents/:path*",
+    "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/agent_simulations/:path*",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/code/code-analysis-deeplake",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/code_writing/cpal",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/agents/custom_agent_with_plugin_retrieval",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/agents/custom_agent_with_plugin_retrieval_using_plugnplai",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/qa_structured/integrations/databricks",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/qa_structured/integrations/elasticsearch",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/flare",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/hyde",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/code_writing/",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/learned_prompt_optimization",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/code_writing/llm_bash",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/self_check/llm_checker",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/code_writing/llm_math",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/self_check/llm_summarization_checker",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/code_writing/llm_symbolic_math",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/multi_modal/multi_modal_output_agent",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/qa_structured/integrations/myscale_vector_sql",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/integrations/openai_functions_retrieval_qa",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/code_writing/pal",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/agents/sales_agent_with_context",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/integrations/semantic-search-over-chat",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/self_check/smart_llm",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/qa_structured/integrations/sqlite",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/graph/tot",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/code/twitter-the-algorithm-analysis-deeplake",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/agents/wikibase_agent",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/data_generation",
+      "destination": "/docs/use_cases/data_generation"
+    },
+    {
+      "source": "/docs/use_cases/more/graph/:path*",
+      "destination": "/docs/use_cases/graph/:path*"
+    },
+    {
+      "source": "/docs/use_cases/more/graph(/?)",
+      "destination": "/docs/use_cases/graph/"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/chat_vector_db",
+      "destination": "/docs/use_cases/question_answering/chat_vector_db"
+    },
+    {
+      "source": "/docs/use_cases/code_understanding",
+      "destination": "/docs/use_cases/question_answering/code_understanding"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/conversational_retrieval_agents",
+      "destination": "/docs/use_cases/question_answering/conversational_retrieval_agents"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/document-context-aware-QA",
+      "destination": "/docs/use_cases/question_answering/document-context-aware-QA"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/question_answering",
+      "destination": "/docs/use_cases/question_answering/"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/local_retrieval_qa",
+      "destination": "/docs/use_cases/question_answering/local_retrieval_qa"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/multi_retrieval_qa_router",
+      "destination": "/docs/use_cases/question_answering/multi_retrieval_qa_router"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/multiple_retrieval",
+      "destination": "/docs/use_cases/question_answering/multiple_retrieval"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/qa_citations",
+      "destination": "/docs/use_cases/question_answering/qa_citations"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/question_answering",
+      "destination": "/docs/use_cases/question_answering/question_answering"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/vector_db_qa",
+      "destination": "/docs/use_cases/question_answering/vector_db_qa"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/vector_db_text_generation",
+      "destination": "/docs/use_cases/question_answering/vector_db_text_generation"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/agent_simulations(/?)",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/agents(/?)",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/agents/camel_role_playing",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/agents(/?)",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/autonomous_agents(/?)",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/more/self_check/",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/analyze_document",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/how_to/code/",
+      "destination": "/cookbook"
+    },
+    {
       "source": "/docs/modules/agents/agents/examples/mrkl_chat(.html?)",
       "destination": "/docs/modules/agents/"
     },
@@ -13,7 +217,7 @@
       "destination": "/docs/integrations/providers/"
     },
     {
-      "source": "/docs/integrations/platforms(/?)",
+      "source": "/docs/integrations/platforms",
       "destination": "/docs/integrations/providers/"
     },
     {
@@ -1194,35 +1398,23 @@
     },
     {
       "source": "/en/latest/modules/chains/examples/flare.html",
-      "destination": "/docs/use_cases/question_answering/how_to/flare"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_cypher_qa",
-      "destination": "/docs/use_cases/more/graph/graph_cypher_qa"
+      "destination": "/cookbook"
     },
     {
       "source": "/en/latest/modules/chains/examples/graph_cypher_qa.html",
-      "destination": "/docs/use_cases/more/graph/graph_cypher_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_nebula_qa",
-      "destination": "/docs/use_cases/more/graph/graph_nebula_qa"
+      "destination": "/docs/use_cases/graph/graph_cypher_qa"
     },
     {
       "source": "/en/latest/modules/chains/examples/graph_nebula_qa.html",
-      "destination": "/docs/use_cases/more/graph/graph_nebula_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_qa",
-      "destination": "/docs/use_cases/more/graph/graph_qa"
+      "destination": "/docs/use_cases/graph/graph_nebula_qa"
     },
     {
       "source": "/en/latest/modules/chains/index_examples/graph_qa.html",
-      "destination": "/docs/use_cases/more/graph/graph_qa"
+      "destination": "/docs/use_cases/graph_qa"
     },
     {
       "source": "/en/latest/modules/chains/index_examples/hyde.html",
-      "destination": "/docs/use_cases/question_answering/how_to/hyde"
+      "destination": "/cookbook"
     },
     {
       "source": "/en/latest/modules/chains/examples/llm_bash.html",
@@ -1258,7 +1450,7 @@
     },
     {
       "source": "/en/latest/modules/chains/index_examples/vector_db_text_generation.html",
-      "destination": "/docs/use_cases/question_answering/how_to/vector_db_text_generation"
+      "destination": "/docs/use_cases/question_answering/vector_db_text_generation"
     },
     {
       "source": "/en/latest/modules/chains/generic/router.html",
@@ -3197,40 +3389,8 @@
       "destination": "/docs/modules/model_io/prompts/prompt_templates/prompt_serialization"
     },
     {
-      "source": "/en/latest/use_cases/agent_simulations/camel_role_playing.html",
-      "destination": "/docs/use_cases/agent_simulations/camel_role_playing"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/characters.html",
-      "destination": "/docs/use_cases/agent_simulations/characters"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/gymnasium.html",
-      "destination": "/docs/use_cases/agent_simulations/gymnasium"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/multi_player_dnd.html",
-      "destination": "/docs/use_cases/agent_simulations/multi_player_dnd"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/multiagent_authoritarian.html",
-      "destination": "/docs/use_cases/agent_simulations/multiagent_authoritarian"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/multiagent_bidding.html",
-      "destination": "/docs/use_cases/agent_simulations/multiagent_bidding"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/petting_zoo.html",
-      "destination": "/docs/use_cases/agent_simulations/petting_zoo"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/two_agent_debate_tools.html",
-      "destination": "/docs/use_cases/agent_simulations/two_agent_debate_tools"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/two_player_dnd.html",
-      "destination": "/docs/use_cases/agent_simulations/two_player_dnd"
+      "source": "/en/latest/use_cases/agent_simulations/:path*",
+      "destination": "/cookbook"
     },
     {
       "source": "/en/latest/use_cases/agents/baby_agi.html",
@@ -3269,24 +3429,8 @@
       "destination": "/docs/use_cases/apis"
     },
     {
-      "source": "/en/latest/use_cases/autonomous_agents/autogpt.html",
-      "destination": "/docs/use_cases/autonomous_agents/autogpt"
-    },
-    {
-      "source": "/en/latest/use_cases/autonomous_agents/baby_agi.html",
-      "destination": "/docs/use_cases/autonomous_agents/baby_agi"
-    },
-    {
-      "source": "/en/latest/use_cases/autonomous_agents/baby_agi_with_agent.html",
-      "destination": "/docs/use_cases/autonomous_agents/baby_agi_with_agent"
-    },
-    {
-      "source": "/en/latest/use_cases/autonomous_agents/marathon_times.html",
-      "destination": "/docs/use_cases/autonomous_agents/marathon_times"
-    },
-    {
-      "source": "/en/latest/use_cases/autonomous_agents/meta_prompt.html",
-      "destination": "/docs/use_cases/autonomous_agents/meta_prompt"
+      "source": "/en/latest/use_cases/autonomous_agents/:path*",
+      "destination": "/cookbook"
     },
     {
       "source": "/en/latest/use_cases/chatbots/voice_assistant.html",
@@ -3490,23 +3634,23 @@
     },
     {
       "source": "/docs/modules/chains/additional/analyze_document",
-      "destination": "/docs/use_cases/question_answering/how_to/analyze_document"
+      "destination": "/docs/use_cases/question_answering/analyze_document"
     },
     {
       "source": "/docs/modules/chains/popular/chat_vector_db",
-      "destination": "/docs/use_cases/question_answering/how_to/chat_vector_db"
+      "destination": "/docs/use_cases/question_answering/chat_vector_db"
     },
     {
       "source": "/docs/modules/chains/additional/multi_retrieval_qa_router",
-      "destination": "/docs/use_cases/question_answering/how_to/multi_retrieval_qa_router"
+      "destination": "/docs/use_cases/question_answering/multi_retrieval_qa_router"
     },
     {
       "source": "/docs/modules/chains/additional/question_answering",
-      "destination": "/docs/use_cases/question_answering/how_to/question_answering"
+      "destination": "/docs/use_cases/question_answering/question_answering"
     },
     {
       "source": "/docs/modules/chains/popular/vector_db_qa",
-      "destination": "/docs/use_cases/question_answering/how_to/vector_db_qa"
+      "destination": "/docs/use_cases/question_answering/vector_db_qa"
     },
     {
       "source": "/docs/modules/chains/popular/summarize",
@@ -3585,112 +3729,60 @@
       "destination": "/docs/use_cases/more/code_writing/"
     },
     {
-      "source": "/docs/use_cases/graph(/?)",
-      "destination": "/docs/use_cases/more/graph/"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_arangodb_qa",
-      "destination": "/docs/use_cases/more/graph/graph_arangodb_qa"
-    },
-    {
       "source": "/docs/modules/chains/additional/graph_arangodb_qa",
-      "destination": "/docs/use_cases/more/graph/graph_arangodb_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_cypher_qa",
-      "destination": "/docs/use_cases/more/graph/graph_cypher_qa"
+      "destination": "/docs/use_cases/graph/graph_arangodb_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_cypher_qa",
-      "destination": "/docs/use_cases/more/graph/graph_cypher_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_hugegraph_qa",
-      "destination": "/docs/use_cases/more/graph/graph_hugegraph_qa"
+      "destination": "/docs/use_cases/graph/graph_cypher_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_hugegraph_qa",
-      "destination": "/docs/use_cases/more/graph/graph_hugegraph_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_kuzu_qa",
-      "destination": "/docs/use_cases/more/graph/graph_kuzu_qa"
+      "destination": "/docs/use_cases/graph/graph_hugegraph_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_kuzu_qa",
-      "destination": "/docs/use_cases/more/graph/graph_kuzu_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_falkordb_qa",
-      "destination": "/docs/use_cases/more/graph/graph_falkordb_qa"
+      "destination": "/docs/use_cases/graph/graph_kuzu_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_falkordb_qa",
-      "destination": "/docs/use_cases/more/graph/graph_falkordb_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_nebula_qa",
-      "destination": "/docs/use_cases/more/graph/graph_nebula_qa"
+      "destination": "/docs/use_cases/graph/graph_falkordb_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_nebula_qa",
-      "destination": "/docs/use_cases/more/graph/graph_nebula_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_qa",
-      "destination": "/docs/use_cases/more/graph/graph_qa"
+      "destination": "/docs/use_cases/graph/graph_nebula_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_qa",
-      "destination": "/docs/use_cases/more/graph/graph_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_sparql_qa",
-      "destination": "/docs/use_cases/more/graph/graph_sparql_qa"
+      "destination": "/docs/use_cases/graph/graph_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_sparql_qa",
-      "destination": "/docs/use_cases/more/graph/graph_sparql_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/neptune_cypher_qa",
-      "destination": "/docs/use_cases/more/graph/neptune_cypher_qa"
+      "destination": "/docs/use_cases/graph/graph_sparql_qa"
     },
     {
       "source": "/docs/modules/chains/additional/neptune_cypher_qa",
-      "destination": "/docs/use_cases/more/graph/neptune_cypher_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/tot",
-      "destination": "/docs/use_cases/more/graph/tot"
+      "destination": "/docs/use_cases/graph/neptune_cypher_qa"
     },
     {
       "source": "/docs/modules/chains/additional/tot",
-      "destination": "/docs/use_cases/more/graph/tot"
-    },
-    {
-      "source": "/docs/use_cases/question_answering//document-context-aware-QA",
-      "destination": "/docs/use_cases/question_answering/how_to/document-context-aware-QA"
+      "destination": "/docs/use_cases/graph/tot"
     },
     {
       "source": "/docs/modules/chains/additional/flare",
-      "destination": "/docs/use_cases/question_answering/how_to/flare"
+      "destination": "/cookbook"
     },
     {
       "source": "/docs/modules/chains/additional/hyde",
-      "destination": "/docs/use_cases/question_answering/how_to/hyde"
-    },
-    {
-      "source": "/docs/use_cases/question_answering//local_retrieval_qa",
-      "destination": "/docs/use_cases/question_answering/how_to/local_retrieval_qa"
+      "destination": "/cookbook"
     },
     {
       "source": "/docs/modules/chains/additional/qa_citations",
-      "destination": "/docs/use_cases/question_answering/how_to/qa_citations"
+      "destination": "/docs/use_cases/question_answering/qa_citations"
     },
     {
       "source": "/docs/modules/chains/additional/vector_db_text_generation",
-      "destination": "/docs/use_cases/question_answering/how_to/vector_db_text_generation"
+      "destination": "/docs/use_cases/question_answering/vector_db_text_generation"
     },
     {
       "source": "/docs/modules/chains/additional/openai_functions_retrieval_qa",
@@ -3723,8 +3815,7 @@
     {
       "source": "/docs/use_cases/self_check(/?)",
       "destination": "/docs/use_cases/more/self_check/"
-    },
-    {
+    }, {
       "source": "/docs/modules/chains/additional/elasticsearch_database",
       "destination": "/docs/use_cases/qa_structured/integrations/elasticsearch"
     },

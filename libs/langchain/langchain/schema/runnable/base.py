@@ -2253,30 +2253,32 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
         inputs: List[Input],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> List[Output]:
         return self.bound.batch(
-            inputs, patch_config(config, callbacks=run_manager.get_child())
+            inputs, patch_config(config, callbacks=run_manager.get_child()), **kwargs
         )
 
     def invoke(
-        self, input: List[Input], config: Optional[RunnableConfig] = None
+        self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Output]:
-        return self._call_with_config(self._invoke, input, config)
+        return self._call_with_config(self._invoke, input, config, **kwargs)
 
     async def _ainvoke(
         self,
         inputs: List[Input],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> List[Output]:
         return await self.bound.abatch(
-            inputs, patch_config(config, callbacks=run_manager.get_child())
+            inputs, patch_config(config, callbacks=run_manager.get_child()), **kwargs
         )
 
     async def ainvoke(
         self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Output]:
-        return await self._acall_with_config(self._ainvoke, input, config)
+        return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
 
 class RunnableBinding(RunnableSerializable[Input, Output]):
@@ -2332,6 +2334,8 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
                     copy[key] = {**copy.get(key, {}), **config[key]}  # type: ignore
                 elif key == "tags":
                     copy[key] = (copy.get(key) or []) + config[key]  # type: ignore
+                elif key == "configurable":
+                    copy[key] = {**copy.get(key, {}), **config[key]}  # type: ignore
                 else:
                     # Even though the keys aren't literals this is correct
                     # because both dicts are same type
