@@ -647,7 +647,9 @@ class ElasticsearchStore(VectorStore):
         query_embedding = self.embedding.embed_query(query)
 
         # Fetch the initial documents
-        got_docs = self._search(query=query, k=fetch_k, fields=fields, **kwargs)
+        got_docs = self._search(
+            query_vector=query_embedding, k=fetch_k, fields=fields, **kwargs
+        )
 
         # Get the embeddings for the fetched documents
         got_embeddings = [doc.metadata[self.vector_query_field] for doc, _ in got_docs]
@@ -761,8 +763,8 @@ class ElasticsearchStore(VectorStore):
             source=fields,
         )
 
-        hits = [hit for hit in response["hits"]["hits"]]
-        for hit in hits:
+        docs_and_scores = []
+        for hit in response["hits"]["hits"]:
             for field in fields:
                 if field in hit["_source"] and field not in [
                     "metadata",
@@ -770,16 +772,15 @@ class ElasticsearchStore(VectorStore):
                 ]:
                     hit["_source"]["metadata"][field] = hit["_source"][field]
 
-        docs_and_scores = [
-            (
-                Document(
-                    page_content=hit["_source"][self.query_field],
-                    metadata=hit["_source"]["metadata"],
-                ),
-                hit["_score"],
+            docs_and_scores.append(
+                (
+                    Document(
+                        page_content=hit["_source"][self.query_field],
+                        metadata=hit["_source"]["metadata"],
+                    ),
+                    hit["_score"],
+                )
             )
-            for hit in hits
-        ]
         return docs_and_scores
 
     def delete(
