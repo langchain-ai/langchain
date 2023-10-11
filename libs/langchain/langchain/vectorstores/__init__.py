@@ -21,8 +21,6 @@ and retrieve the data that are 'most similar' to the embedded query.
 
 from typing import Any
 
-from langchain.schema.vectorstore import VectorStore
-
 
 def _import_alibaba_cloud_open_search() -> Any:
     from langchain.vectorstores.alibabacloud_opensearch import AlibabaCloudOpenSearch

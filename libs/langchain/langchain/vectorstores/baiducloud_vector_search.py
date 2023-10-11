@@ -13,8 +13,8 @@ from typing import (
 )
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -44,14 +44,15 @@ class BESVerctorStore(VectorStore):
         user: Username to use when connecting to Elasticsearch.
         password: Password to use when connecting to Elasticsearch.
 
-        More information can be obtained from https://cloud.baidu.com/doc/BES/s/8llyn0hh4
+        More information can be obtained from:
+        https://cloud.baidu.com/doc/BES/s/8llyn0hh4
 
     """
 
     def __init__(
         self,
         index_name: str,
-        bes_url: str = None,
+        bes_url: Optional[str] = None,
         user: Optional[str] = None,
         password: Optional[str] = None,
         embedding: Optional[Embeddings] = None,
@@ -70,7 +71,7 @@ class BESVerctorStore(VectorStore):
                 bes_url=bes_url, username=user, password=password
             )
         else:
-            raise ValueError("""Please spcified a bes connection url.""")
+            raise ValueError("""Please specified a bes connection url.""")
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -117,13 +118,14 @@ class BESVerctorStore(VectorStore):
         else:
             if dims_length is None:
                 raise ValueError(
-                    "Cannot create index without specifying dims_length when the index doesn't already exist. "
+                    "Cannot create index without specifying dims_length "
+                    + "when the index doesn't already exist. "
                 )
 
             indexMapping = self._index_mapping(dims_length=dims_length)
 
             logger.debug(
-                f"Creating index {self.index_name} with mappings {indexMapping} with settings"
+                f"Creating index {self.index_name} with mappings {indexMapping}"
             )
 
             self.client.indices.create(
@@ -218,7 +220,7 @@ class BESVerctorStore(VectorStore):
                 logger.error(f"Error deleting texts: {e}")
                 raise e
         else:
-            logger.info(f"no documents to delete")
+            logger.info("No documents to delete")
             return False
 
     def _query_body(
@@ -484,6 +486,6 @@ class BESVerctorStore(VectorStore):
 
         bes_url = kwargs.get("bes_url")
         if bes_url is None:
-            raise ValueError("Please provied a valid bes connection url")
+            raise ValueError("Please provided a valid bes connection url")
 
         return BESVerctorStore(embedding=embedding, **kwargs)

@@ -1,5 +1,4 @@
 """Test BESVerctorStore functionality."""
-import time
 from typing import List, Optional
 
 from langchain.docstore.document import Document
