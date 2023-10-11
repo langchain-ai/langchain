@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import requests
 import tiktoken
 from github import GithubException
+
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
@@ -77,7 +78,10 @@ class GitHubAPIWrapper(BaseModel):
         repo = g.get_repo(github_repository)
 
         github_base_branch = get_from_dict_or_env(
-            values, "github_base_branch", "GITHUB_BASE_BRANCH", default=repo.default_branch
+            values,
+            "github_base_branch",
+            "GITHUB_BASE_BRANCH",
+            default=repo.default_branch,
         )
 
         values["github"] = g
@@ -104,7 +108,7 @@ class GitHubAPIWrapper(BaseModel):
             number = issue.number
             parsed.append({"title": title, "number": number})
         return parsed
-    
+
     def parse_pull_requests(self, pull_requests: List[PullRequest]) -> List[dict]:
         """
         Extracts title and number from each Issue and puts them in a dictionary
@@ -115,11 +119,14 @@ class GitHubAPIWrapper(BaseModel):
         """
         parsed = []
         for pr in pull_requests:
-            parsed.append({"title": pr.title, 
-                           "number": pr.number, 
-                           "commits": str(pr.commits),
-                           "comments": str(pr.comments)
-                           })
+            parsed.append(
+                {
+                    "title": pr.title,
+                    "number": pr.number,
+                    "commits": str(pr.commits),
+                    "comments": str(pr.comments),
+                }
+            )
         return parsed
 
     def get_issues(self) -> str:
@@ -139,7 +146,7 @@ class GitHubAPIWrapper(BaseModel):
             return parsed_issues_str
         else:
             return "No open issues available"
-    
+
     def list_open_pull_requests(self) -> str:
         """
         Fetches all open PRs from the repo
@@ -158,7 +165,7 @@ class GitHubAPIWrapper(BaseModel):
             return parsed_prs_str
         else:
             return "No open pull requests available"
-    
+
     def list_files_in_main_branch(self) -> str:
         """
         Fetches all files in the main branch of the repo.
@@ -168,7 +175,9 @@ class GitHubAPIWrapper(BaseModel):
         """
         files = []
         try:
-            contents = self.github_repo_instance.get_contents("", ref=self.github_base_branch)
+            contents = self.github_repo_instance.get_contents(
+                "", ref=self.github_base_branch
+            )
             for content in contents:
                 if content.type == "dir":
                     files.extend(self.get_files_from_directory(content.path))
@@ -182,17 +191,19 @@ class GitHubAPIWrapper(BaseModel):
                 return "No files found in the main branch"
         except Exception as e:
             return str(e)
-    
+
     def set_active_branch(self, branch_name: str) -> str:
         """Equivalent to `git checkout branch_name` for this Agent. Clones formatting from Github.
 
         Returns an Error (as a string) if branch doesn't exist.
         """
-        curr_branches = [branch.name for branch in self.github_repo_instance.get_branches()]
+        curr_branches = [
+            branch.name for branch in self.github_repo_instance.get_branches()
+        ]
         if branch_name in curr_branches:
             self.active_branch = branch_name
             return f"Switched to branch `{branch_name}`"
-        else: 
+        else:
             return f"Error {branch_name} does not exist, in repo with current branches: {str(curr_branches)}"
 
     def list_branches_in_repo(self) -> str:
@@ -203,15 +214,19 @@ class GitHubAPIWrapper(BaseModel):
             str: A plaintext report containing the names of the branches.
         """
         try:
-            branches = [branch.name for branch in self.github_repo_instance.get_branches()]
+            branches = [
+                branch.name for branch in self.github_repo_instance.get_branches()
+            ]
             if branches:
                 branches_str = "\n".join(branches)
-                return f"Found {len(branches)} branches in the repository:\n{branches_str}"
+                return (
+                    f"Found {len(branches)} branches in the repository:\n{branches_str}"
+                )
             else:
                 return "No branches found in the repository"
         except Exception as e:
             return str(e)
-    
+
     def create_branch(self, proposed_branch_name):
         """
         Create a new branch, and set it as the active bot branch. Equivalent to `git switch -c proposed_branch_name`
@@ -222,20 +237,26 @@ class GitHubAPIWrapper(BaseModel):
         """
         i = 0
         new_branch_name = proposed_branch_name
-        base_branch = self.github_repo_instance.get_branch(self.github_repo_instance.default_branch)
+        base_branch = self.github_repo_instance.get_branch(
+            self.github_repo_instance.default_branch
+        )
         for i in range(1000):
             try:
-                self.github_repo_instance.create_git_ref(ref=f"refs/heads/{new_branch_name}", sha=base_branch.commit.sha)
+                self.github_repo_instance.create_git_ref(
+                    ref=f"refs/heads/{new_branch_name}", sha=base_branch.commit.sha
+                )
                 self.active_branch = new_branch_name
                 return f"Branch '{new_branch_name}' created successfully, and set as current active branch."
             except GithubException as e:
-                if e.status == 422 and "Reference already exists" in e.data['message']:
+                if e.status == 422 and "Reference already exists" in e.data["message"]:
                     i += 1
                     new_branch_name = f"{proposed_branch_name}_v{i}"
                 else:
                     # Handle any other exceptions
                     print(f"Failed to create branch. Error: {e}")
-                    raise Exception(f"Unable to create branch name from proposed_branch_name: {proposed_branch_name}")
+                    raise Exception(
+                        f"Unable to create branch name from proposed_branch_name: {proposed_branch_name}"
+                    )
         return f"Unable to create branch. At least 1000 branches exist with named derived from proposed_branch_name: `{proposed_branch_name}`"
 
     def list_files_in_bot_branch(self) -> str:
@@ -247,7 +268,9 @@ class GitHubAPIWrapper(BaseModel):
         """
         files = []
         try:
-            contents = self.github_repo_instance.get_contents("", ref=self.active_branch)
+            contents = self.github_repo_instance.get_contents(
+                "", ref=self.active_branch
+            )
             for content in contents:
                 if content.type == "dir":
                     files.extend(self.get_files_from_directory(content.path))
@@ -273,15 +296,16 @@ class GitHubAPIWrapper(BaseModel):
             List[dict]: List of files with their paths and names.
         """
         files = []
-        contents = self.github_repo_instance.get_contents(directory_path, ref=self.active_branch)
+        contents = self.github_repo_instance.get_contents(
+            directory_path, ref=self.active_branch
+        )
         for content in contents:
             if content.type == "dir":
                 files.extend(self.get_files_from_directory(content.path))
             else:
                 files.append(content.path)
-        return files    
-    
-    
+        return files
+
     def get_issue(self, issue_number: int) -> Dict[str, Any]:
         """
         Fetches a specific issue and its first 10 comments
@@ -308,9 +332,9 @@ class GitHubAPIWrapper(BaseModel):
             "body": issue.body,
             "comments": str(comments),
         }
-    
+
     def list_pull_request_files(self, pr_number: int) -> Dict[str, Any]:
-        """Fetches the full text of all files in a PR. Truncates after first 3k tokens. 
+        """Fetches the full text of all files in a PR. Truncates after first 3k tokens.
         # TODO: Enhancement to summarize files with ctags if they're getting long.
 
         Args:
@@ -324,8 +348,8 @@ class GitHubAPIWrapper(BaseModel):
         pr_files = []
         pr = self.github_repo_instance.get_pull(number=int(pr_number))
         total_tokens = 0
-        page=0
-        while True: # or while (total_tokens + tiktoken()) < MAX_TOKENS_FOR_FILES:
+        page = 0
+        while True:  # or while (total_tokens + tiktoken()) < MAX_TOKENS_FOR_FILES:
             files_page = pr.get_files().get_page(page)
             if len(files_page) == 0:
                 break
@@ -333,28 +357,45 @@ class GitHubAPIWrapper(BaseModel):
                 try:
                     file_metadata_response = requests.get(file.contents_url)
                     if file_metadata_response.status_code == 200:
-                        download_url = json.loads(file_metadata_response.text)['download_url']
+                        download_url = json.loads(file_metadata_response.text)[
+                            "download_url"
+                        ]
                     else:
-                        print(f"❌❌ Failed to download file: {file.contents_url}, skipping")
+                        print(
+                            f"❌❌ Failed to download file: {file.contents_url}, skipping"
+                        )
                         continue
-                    
+
                     file_content_response = requests.get(download_url)
                     if file_content_response.status_code == 200:
                         # Save the content as a UTF-8 string
                         file_content = file_content_response.text
                     else:
-                        print(f"failed downloading file content (Error {file_content_response.status_code}). Skipping")
+                        print(
+                            f"failed downloading file content (Error {file_content_response.status_code}). Skipping"
+                        )
                         continue
-                    
-                    file_tokens = len(tiktoken.get_encoding("cl100k_base").encode(file_content + file.filename + "file_name file_contents"))
+
+                    file_tokens = len(
+                        tiktoken.get_encoding("cl100k_base").encode(
+                            file_content + file.filename + "file_name file_contents"
+                        )
+                    )
                     if (total_tokens + file_tokens) < MAX_TOKENS_FOR_FILES:
-                        pr_files.append({"filename": file.filename, "contents": file_content,"additions": file.additions,"deletions": file.deletions})
+                        pr_files.append(
+                            {
+                                "filename": file.filename,
+                                "contents": file_content,
+                                "additions": file.additions,
+                                "deletions": file.deletions,
+                            }
+                        )
                         total_tokens += file_tokens
                 except Exception as e:
                     print(f"Error when reading files from a PR on github. {e}")
             page += 1
         return pr_files
-    
+
     def get_pull_request(self, pr_number: int) -> Dict[str, Any]:
         """
         Fetches a specific pull request and its first 10 comments, limited by max_tokens
@@ -367,7 +408,7 @@ class GitHubAPIWrapper(BaseModel):
         max_tokens = 2_000
         pull = self.github_repo_instance.get_pull(number=pr_number)
         total_tokens = 0
-        
+
         def get_tokens(text: str) -> int:
             return len(tiktoken.get_encoding("cl100k_base").encode(text))
 
@@ -377,7 +418,7 @@ class GitHubAPIWrapper(BaseModel):
             if total_tokens + tokens <= max_tokens:
                 data_dict[key] = value
                 total_tokens += tokens  # Now this will modify the outer variable
-        
+
         response_dict = {}
         add_to_dict(response_dict, "title", pull.title)
         add_to_dict(response_dict, "number", str(pr_number))
@@ -413,7 +454,6 @@ class GitHubAPIWrapper(BaseModel):
             page += 1
         add_to_dict(response_dict, "commits", str(commits))
         return response_dict
-
 
     def create_pull_request(self, pr_query: str) -> str:
         """
@@ -478,14 +518,16 @@ class GitHubAPIWrapper(BaseModel):
         file_contents = file_query[len(file_path) + 2 :]
 
         try:
-            try: 
-                file = self.github_repo_instance.get_contents(file_path, ref=self.active_branch)
+            try:
+                file = self.github_repo_instance.get_contents(
+                    file_path, ref=self.active_branch
+                )
                 if file:
                     return f"File already exists at `{file_path}` on branch `{self.active_branch}`. You must use `update_file` to modify it."
             except Exception as e:
                 # expected behavior, file shouldn't exist yet
                 pass
-            
+
             self.github_repo_instance.create_file(
                 path=file_path,
                 message="Create " + file_path,
@@ -505,11 +547,12 @@ class GitHubAPIWrapper(BaseModel):
             str: The file decoded as a string, or an error message if not found
         """
         try:
-            file = self.github_repo_instance.get_contents(file_path, ref=self.active_branch)
+            file = self.github_repo_instance.get_contents(
+                file_path, ref=self.active_branch
+            )
             return file.decoded_content.decode("utf-8")
         except Exception as e:
             return f"File not found `{file_path}` on branch `{self.active_branch}`. Error: {str(e)}"
-
 
     def update_file(self, file_query: str) -> str:
         """
@@ -555,7 +598,9 @@ class GitHubAPIWrapper(BaseModel):
                 message="Update " + file_path,
                 content=updated_file_content,
                 branch=self.active_branch,
-                sha=self.github_repo_instance.get_contents(file_path, ref=self.active_branch).sha, 
+                sha=self.github_repo_instance.get_contents(
+                    file_path, ref=self.active_branch
+                ).sha,
             )
             return "Updated file " + file_path
         except Exception as e:
@@ -574,38 +619,42 @@ class GitHubAPIWrapper(BaseModel):
                 path=file_path,
                 message="Delete " + file_path,
                 branch=self.active_branch,
-                sha=self.github_repo_instance.get_contents(file_path, ref=self.active_branch).sha,
+                sha=self.github_repo_instance.get_contents(
+                    file_path, ref=self.active_branch
+                ).sha,
             )
             return "Deleted file " + file_path
         except Exception as e:
             return "Unable to delete file due to error:\n" + str(e)
-    
+
     def search_issues_and_prs(self, query: str) -> str:
         """
         Searches issues and pull requests in the repository.
-        
+
         Parameters:
             query(str): The search query
-        
+
         Returns:
             str: A string containing the first 5 issues and pull requests
         """
         search_result = self.github.search_issues(query, repo=self.github_repository)
         max_items = min(5, len(search_result))
-        results = [f'Top {max_items} results:']
+        results = [f"Top {max_items} results:"]
         for issue in search_result[:max_items]:
-            results.append(f"Title: {issue.title}, Number: {issue.number}, State: {issue.state}")
-        
+            results.append(
+                f"Title: {issue.title}, Number: {issue.number}, State: {issue.state}"
+            )
+
         return "\n".join(results)
 
     def search_code(self, query: str) -> str:
         """
         Searches code in the repository.
         # Todo: limit total tokens returned...
-        
+
         Parameters:
             query(str): The search query
-        
+
         Returns:
             str: A string containing the first 5 code results
         """
@@ -613,28 +662,34 @@ class GitHubAPIWrapper(BaseModel):
         results = []
         for code in search_result[:5]:
             # Get the file content using the PyGithub get_contents method
-            file_content = self.github_repo_instance.get_contents(code.path, ref=self.active_branch).decoded_content
+            file_content = self.github_repo_instance.get_contents(
+                code.path, ref=self.active_branch
+            ).decoded_content
             results.append(f"Path: {code.path}, Content: {file_content}")
-        
+
         return "\n".join(results)
 
     def create_review_request(self, reviewer_username: str) -> str:
         """
         Creates a review request on *THE* open pull request that matches the current active_branch.
-        
+
         Parameters:
             reviewer_username(str): The username of the person who is being requested
-        
+
         Returns:
             str: A message confirming the creation of the review request
         """
-        pull_requests = self.github_repo_instance.get_pulls(state='open', sort='created')
+        pull_requests = self.github_repo_instance.get_pulls(
+            state="open", sort="created"
+        )
         # find PR against active_branch
-        pr = next((pr for pr in pull_requests if pr.head.ref == self.active_branch), None)
+        pr = next(
+            (pr for pr in pull_requests if pr.head.ref == self.active_branch), None
+        )
         if pr is None:
             return f"No open pull request found for the current branch `{self.active_branch}`"
 
-        try: 
+        try:
             pr.create_review_request(reviewers=[reviewer_username])
             return f"Review request created for user {reviewer_username} on PR #{pr.number}"
         except Exception as e:

@@ -80,8 +80,9 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
     ) -> str:
         """Use the tool."""
 
-        from langchain.chains.qa_with_sources.retrieval import \
-            RetrievalQAWithSourcesChain
+        from langchain.chains.qa_with_sources.retrieval import (
+            RetrievalQAWithSourcesChain,
+        )
 
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             self.llm, retriever=self.vectorstore.as_retriever()

@@ -77,7 +77,7 @@ LIST_PRS_PROMPT = """
 This tool will fetch a list of the repository's Pull Requests (PRs). It will return the title, and PR number of 5 PRs. It takes no input.
 """
 
-LIST_PULL_REQUEST_FILES="""
+LIST_PULL_REQUEST_FILES = """
 This tool will fetch the full text of all files in a pull request (PR) given the PR number as an input. This is useful for understanding the code changes in a PR or contributing to it. **VERY IMPORTANT**: You must specify the PR number as an integer input parameter.
 """
 
