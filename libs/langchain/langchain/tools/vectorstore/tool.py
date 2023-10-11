@@ -16,6 +16,8 @@ class BaseVectorStoreTool(BaseModel):
 
     vectorstore: VectorStore = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
+    # retriever_kwargs = Field()
+    retriever_kwargs: Dict[str, Any] = Field()
 
     class Config(BaseTool.Config):
         pass
@@ -48,7 +50,7 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
         from langchain.chains.retrieval_qa.base import RetrievalQA
 
         chain = RetrievalQA.from_chain_type(
-            self.llm, retriever=self.vectorstore.as_retriever()
+            self.llm, retriever=self.vectorstore.as_retriever(**self.retriever_kwargs)
         )
         return chain.run(
             query, callbacks=run_manager.get_child() if run_manager else None
@@ -78,9 +80,8 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
     ) -> str:
         """Use the tool."""
 
-        from langchain.chains.qa_with_sources.retrieval import (
-            RetrievalQAWithSourcesChain,
-        )
+        from langchain.chains.qa_with_sources.retrieval import \
+            RetrievalQAWithSourcesChain
 
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             self.llm, retriever=self.vectorstore.as_retriever()
