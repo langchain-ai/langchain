@@ -5,9 +5,9 @@ and packages.
 """
 from langchain.utilities.alpha_vantage import AlphaVantageAPIWrapper
 from langchain.utilities.apify import ApifyWrapper
+from langchain.utilities.arcee import ArceeWrapper
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
-from langchain.utilities.bash import BashProcess
 from langchain.utilities.bibtex import BibtexparserWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.brave_search import BraveSearchWrapper
@@ -40,8 +40,8 @@ from langchain.utilities.zapier import ZapierNLAWrapper
 __all__ = [
     "AlphaVantageAPIWrapper",
     "ApifyWrapper",
+    "ArceeWrapper",
     "ArxivAPIWrapper",
-    "BashProcess",
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
