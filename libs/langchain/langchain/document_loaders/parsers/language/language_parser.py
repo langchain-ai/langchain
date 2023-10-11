@@ -3,9 +3,9 @@ from typing import Any, Dict, Iterator, Optional
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
+from langchain.document_loaders.parsers.language.cobol import CobolSegmenter
 from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
 from langchain.document_loaders.parsers.language.python import PythonSegmenter
-from langchain.document_loaders.parsers.language.cobol import CobolSegmenter
 from langchain.text_splitter import Language
 
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
