@@ -59,7 +59,11 @@ from langchain.schema.runnable import (
     RunnableWithFallbacks,
 )
 from langchain.schema.runnable.base import ConfigurableField, RunnableGenerator
-from langchain.schema.runnable.utils import add
+from langchain.schema.runnable.utils import (
+    ConfigurableFieldMultiOption,
+    ConfigurableFieldSingleOption,
+    add,
+)
 from langchain.tools.base import BaseTool, tool
 from langchain.tools.json.tool import JsonListKeysTool, JsonSpec
 
@@ -223,6 +227,12 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "enum": ["Document"],
+                        "default": "Document",
+                        "type": "string",
+                    },
                 },
                 "required": ["page_content"],
             }
@@ -289,12 +299,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "default": False,
                         "type": "boolean",
                     },
-                    "is_chunk": {
-                        "title": "Is Chunk",
-                        "default": False,
-                        "enum": [False],
-                        "type": "boolean",
-                    },
                 },
                 "required": ["content"],
             },
@@ -319,12 +323,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "default": False,
                         "type": "boolean",
                     },
-                    "is_chunk": {
-                        "title": "Is Chunk",
-                        "default": False,
-                        "enum": [False],
-                        "type": "boolean",
-                    },
                 },
                 "required": ["content"],
             },
@@ -345,12 +343,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "type": "string",
                     },
                     "role": {"title": "Role", "type": "string"},
-                    "is_chunk": {
-                        "title": "Is Chunk",
-                        "default": False,
-                        "enum": [False],
-                        "type": "boolean",
-                    },
                 },
                 "required": ["content", "role"],
             },
@@ -369,12 +361,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "default": "system",
                         "enum": ["system"],
                         "type": "string",
-                    },
-                    "is_chunk": {
-                        "title": "Is Chunk",
-                        "default": False,
-                        "enum": [False],
-                        "type": "boolean",
                     },
                 },
                 "required": ["content"],
@@ -396,12 +382,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "type": "string",
                     },
                     "name": {"title": "Name", "type": "string"},
-                    "is_chunk": {
-                        "title": "Is Chunk",
-                        "default": False,
-                        "enum": [False],
-                        "type": "boolean",
-                    },
                 },
                 "required": ["content", "name"],
             },
@@ -630,6 +610,12 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "type": "string",
+                        "enum": ["Document"],
+                        "default": "Document",
+                    },
                 },
                 "required": ["page_content"],
             }
@@ -663,6 +649,12 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "type": "string",
+                        "enum": ["Document"],
+                        "default": "Document",
+                    },
                 },
                 "required": ["page_content"],
             }
@@ -701,6 +693,12 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "type": "string",
+                        "enum": ["Document"],
+                        "default": "Document",
+                    },
                 },
                 "required": ["page_content"],
             }
@@ -903,6 +901,18 @@ def test_configurable_fields() -> None:
 
 
 def test_configurable_fields_example() -> None:
+    fake_chat = FakeListChatModel(responses=["b"]).configurable_fields(
+        responses=ConfigurableFieldMultiOption(
+            id="chat_responses",
+            name="Chat Responses",
+            options={
+                "hello": "A good morning to you!",
+                "bye": "See you later!",
+                "helpful": "How can I help you?",
+            },
+            default=["hello", "bye"],
+        )
+    )
     fake_llm = (
         FakeListLLM(responses=["a"])
         .configurable_fields(
@@ -914,15 +924,20 @@ def test_configurable_fields_example() -> None:
         )
         .configurable_alternatives(
             ConfigurableField(id="llm", name="LLM"),
-            chat=FakeListChatModel(responses=["b"]) | StrOutputParser(),
+            chat=fake_chat | StrOutputParser(),
         )
     )
 
     prompt = PromptTemplate.from_template("Hello, {name}!").configurable_fields(
-        template=ConfigurableField(
+        template=ConfigurableFieldSingleOption(
             id="prompt_template",
             name="Prompt Template",
             description="The prompt template for this chain",
+            options={
+                "hello": "Hello, {name}!",
+                "good_morning": "A very good morning to you, {name}!",
+            },
+            default="hello",
         )
     )
 
@@ -941,10 +956,28 @@ def test_configurable_fields_example() -> None:
                 "enum": ["chat", "default"],
                 "type": "string",
             },
+            "Chat_Responses": {
+                "description": "An enumeration.",
+                "enum": ["hello", "bye", "helpful"],
+                "title": "Chat Responses",
+                "type": "string",
+            },
+            "Prompt_Template": {
+                "description": "An enumeration.",
+                "enum": ["hello", "good_morning"],
+                "title": "Prompt Template",
+                "type": "string",
+            },
             "Configurable": {
                 "title": "Configurable",
                 "type": "object",
                 "properties": {
+                    "chat_responses": {
+                        "default": ["hello", "bye"],
+                        "items": {"$ref": "#/definitions/Chat_Responses"},
+                        "title": "Chat Responses",
+                        "type": "array",
+                    },
                     "llm": {
                         "title": "LLM",
                         "default": "default",
@@ -960,8 +993,8 @@ def test_configurable_fields_example() -> None:
                     "prompt_template": {
                         "title": "Prompt Template",
                         "description": "The prompt template for this chain",
-                        "default": "Hello, {name}!",
-                        "type": "string",
+                        "default": "hello",
+                        "allOf": [{"$ref": "#/definitions/Prompt_Template"}],
                     },
                 },
             },
@@ -972,7 +1005,14 @@ def test_configurable_fields_example() -> None:
         chain_configurable.with_config(configurable={"llm": "chat"}).invoke(
             {"name": "John"}
         )
-        == "b"
+        == "A good morning to you!"
+    )
+
+    assert (
+        chain_configurable.with_config(
+            configurable={"llm": "chat", "chat_responses": ["helpful"]}
+        ).invoke({"name": "John"})
+        == "How can I help you?"
     )
 
 
