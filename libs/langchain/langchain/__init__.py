@@ -2,17 +2,9 @@
 """Main entrypoint into package."""
 import warnings
 from importlib import metadata
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from langchain._api.deprecation import surface_langchain_deprecation_warnings
-
-if TYPE_CHECKING:
-    from langchain.schema import BaseCache
-
-    verbose: bool
-    debug: bool
-    llm_cache: Optional[BaseCache]
-
 
 try:
     __version__ = metadata.version(__package__)
@@ -29,7 +21,7 @@ def _is_interactive_env() -> bool:
     return hasattr(sys, "ps2")
 
 
-def _warn_on_import(name: str) -> None:
+def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
     """Warn on import of deprecated module."""
     if _is_interactive_env():
         # No warnings for interactive environments.
@@ -37,9 +29,16 @@ def _warn_on_import(name: str) -> None:
         # where users rely on auto-complete and may trigger this warning
         # even if they are not using any deprecated modules
         return
-    warnings.warn(
-        f"Importing {name} from langchain root module is no longer supported."
-    )
+
+    if replacement:
+        warnings.warn(
+            f"Importing {name} from langchain root module is no longer supported. "
+            f"Please use {replacement} instead."
+        )
+    else:
+        warnings.warn(
+            f"Importing {name} from langchain root module is no longer supported."
+        )
 
 
 # Surfaces Deprecation and Pending Deprecation warnings from langchain.
@@ -329,23 +328,38 @@ def __getattr__(name: str) -> Any:
 
         return SerpAPIWrapper
     elif name == "verbose":
-        from langchain.utils.globals import verbose
+        from langchain.globals import _verbose
 
-        _warn_on_import(name)
+        _warn_on_import(
+            name,
+            replacement=(
+                "langchain.globals.set_verbose() / langchain.globals.get_verbose()"
+            ),
+        )
 
-        return verbose
+        return _verbose
     elif name == "debug":
-        from langchain.utils.globals import debug
+        from langchain.globals import _debug
 
-        _warn_on_import(name)
+        _warn_on_import(
+            name,
+            replacement=(
+                "langchain.globals.set_debug() / langchain.globals.get_debug()"
+            ),
+        )
 
-        return debug
+        return _debug
     elif name == "llm_cache":
-        from langchain.utils.globals import llm_cache
+        from langchain.globals import _llm_cache
 
-        _warn_on_import(name)
+        _warn_on_import(
+            name,
+            replacement=(
+                "langchain.globals.set_llm_cache() / langchain.globals.get_llm_cache()"
+            ),
+        )
 
-        return llm_cache
+        return _llm_cache
     else:
         raise AttributeError(f"Could not find: {name}")
 
