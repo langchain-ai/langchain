@@ -3,7 +3,10 @@
 import unittest
 from typing import Union
 
+from langchain.prompts.base import StringPromptValue
+from langchain.prompts.chat import ChatPromptValueConcrete
 from langchain.pydantic_v1 import BaseModel
+from langchain.schema import Document
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
@@ -81,24 +84,29 @@ def test_multiple_msg() -> None:
     assert messages_from_dict(messages_to_dict(msgs)) == msgs
 
 
-def test_distinguish_messages() -> None:
-    """Test that pydantic is able to discriminate between similar looking messages."""
+def test_serialization_of_wellknown_objects() -> None:
+    """Test that pydantic is able to serialize and deserialize well known objects."""
 
-    class WellKnownTypes(BaseModel):
+    class WellKnownLCObject(BaseModel):
+        """A well known LangChain object."""
+
         __root__: Union[
+            Document,
             HumanMessage,
-            AIMessage,
             SystemMessage,
-            FunctionMessage,
-            HumanMessageChunk,
-            AIMessageChunk,
-            SystemMessageChunk,
-            FunctionMessageChunk,
-            ChatMessageChunk,
             ChatMessage,
+            FunctionMessage,
+            AIMessage,
+            HumanMessageChunk,
+            SystemMessageChunk,
+            ChatMessageChunk,
+            FunctionMessageChunk,
+            AIMessageChunk,
+            StringPromptValue,
+            ChatPromptValueConcrete,
         ]
 
-    messages = [
+    lc_objects = [
         HumanMessage(content="human"),
         HumanMessageChunk(content="human"),
         AIMessage(content="ai"),
@@ -121,8 +129,13 @@ def test_distinguish_messages() -> None:
             role="human",
             content="human",
         ),
+        StringPromptValue(text="hello"),
+        ChatPromptValueConcrete(messages=[HumanMessage(content="human")]),
+        Document(page_content="hello"),
     ]
 
-    for msg in messages:
-        obj1 = WellKnownTypes.parse_obj(msg.dict())
-        assert type(obj1.__root__) == type(msg), f"failed for {type(msg)}"
+    for lc_object in lc_objects:
+        d = lc_object.dict()
+        assert "type" in d, f"Missing key `type` for {type(lc_object)}"
+        obj1 = WellKnownLCObject.parse_obj(d)
+        assert type(obj1.__root__) == type(lc_object), f"failed for {type(lc_object)}"

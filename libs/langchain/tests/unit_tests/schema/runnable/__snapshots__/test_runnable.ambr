@@ -1693,14 +1693,6 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -1726,14 +1718,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'role': dict({
             'title': 'Role',
@@ -1784,6 +1768,14 @@
             'title': 'Messages',
             'type': 'array',
           }),
+          'type': dict({
+            'default': 'ChatPromptValueConcrete',
+            'enum': list([
+              'ChatPromptValueConcrete',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'messages',
@@ -1801,14 +1793,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'name': dict({
             'title': 'Name',
@@ -1846,14 +1830,6 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -1876,6 +1852,14 @@
             'title': 'Text',
             'type': 'string',
           }),
+          'type': dict({
+            'default': 'StringPromptValue',
+            'enum': list([
+              'StringPromptValue',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'text',
@@ -1896,14 +1880,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'type': dict({
             'default': 'system',
@@ -1976,14 +1952,6 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -2009,14 +1977,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'role': dict({
             'title': 'Role',
@@ -2067,6 +2027,14 @@
             'title': 'Messages',
             'type': 'array',
           }),
+          'type': dict({
+            'default': 'ChatPromptValueConcrete',
+            'enum': list([
+              'ChatPromptValueConcrete',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'messages',
@@ -2084,14 +2052,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'name': dict({
             'title': 'Name',
@@ -2127,14 +2087,6 @@
           'example': dict({
             'default': False,
             'title': 'Example',
-            'type': 'boolean',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
             'type': 'boolean',
           }),
           'type': dict({
@@ -2159,6 +2111,14 @@
             'title': 'Text',
             'type': 'string',
           }),
+          'type': dict({
+            'default': 'StringPromptValue',
+            'enum': list([
+              'StringPromptValue',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'text',
@@ -2179,14 +2139,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'type': dict({
             'default': 'system',
@@ -2211,24 +2163,24 @@
   dict({
     'anyOf': list([
       dict({
-        '$ref': '#/definitions/HumanMessage',
+        '$ref': '#/definitions/HumanMessageChunk',
       }),
       dict({
-        '$ref': '#/definitions/AIMessage',
+        '$ref': '#/definitions/AIMessageChunk',
       }),
       dict({
-        '$ref': '#/definitions/ChatMessage',
+        '$ref': '#/definitions/ChatMessageChunk',
       }),
       dict({
-        '$ref': '#/definitions/FunctionMessage',
+        '$ref': '#/definitions/FunctionMessageChunk',
       }),
       dict({
-        '$ref': '#/definitions/SystemMessage',
+        '$ref': '#/definitions/SystemMessageChunk',
       }),
     ]),
     'definitions': dict({
-      'AIMessage': dict({
-        'description': 'A Message from an AI.',
+      'AIMessageChunk': dict({
+        'description': 'A Message chunk from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2243,18 +2195,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
-            'default': 'ai',
+            'default': 'AIMessageChunk',
             'enum': list([
-              'ai',
+              'AIMessageChunk',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2263,11 +2207,11 @@
         'required': list([
           'content',
         ]),
-        'title': 'AIMessage',
+        'title': 'AIMessageChunk',
         'type': 'object',
       }),
-      'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+      'ChatMessageChunk': dict({
+        'description': 'A Chat Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2277,22 +2221,14 @@
             'title': 'Content',
             'type': 'string',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'role': dict({
             'title': 'Role',
             'type': 'string',
           }),
           'type': dict({
-            'default': 'chat',
+            'default': 'ChatMessageChunk',
             'enum': list([
-              'chat',
+              'ChatMessageChunk',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2302,11 +2238,11 @@
           'content',
           'role',
         ]),
-        'title': 'ChatMessage',
+        'title': 'ChatMessageChunk',
         'type': 'object',
       }),
-      'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+      'FunctionMessageChunk': dict({
+        'description': 'A Function Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2316,22 +2252,14 @@
             'title': 'Content',
             'type': 'string',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
           }),
           'type': dict({
-            'default': 'function',
+            'default': 'FunctionMessageChunk',
             'enum': list([
-              'function',
+              'FunctionMessageChunk',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2341,11 +2269,11 @@
           'content',
           'name',
         ]),
-        'title': 'FunctionMessage',
+        'title': 'FunctionMessageChunk',
         'type': 'object',
       }),
-      'HumanMessage': dict({
-        'description': 'A Message from a human.',
+      'HumanMessageChunk': dict({
+        'description': 'A Human Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2360,18 +2288,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
-            'default': 'human',
+            'default': 'HumanMessageChunk',
             'enum': list([
-              'human',
+              'HumanMessageChunk',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2380,14 +2300,11 @@
         'required': list([
           'content',
         ]),
-        'title': 'HumanMessage',
+        'title': 'HumanMessageChunk',
         'type': 'object',
       }),
-      'SystemMessage': dict({
-        'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
-          of input messages.
-        ''',
+      'SystemMessageChunk': dict({
+        'description': 'A System Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2397,18 +2314,10 @@
             'title': 'Content',
             'type': 'string',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
-            'default': 'system',
+            'default': 'SystemMessageChunk',
             'enum': list([
-              'system',
+              'SystemMessageChunk',
             ]),
             'title': 'Type',
             'type': 'string',
@@ -2417,7 +2326,7 @@
         'required': list([
           'content',
         ]),
-        'title': 'SystemMessage',
+        'title': 'SystemMessageChunk',
         'type': 'object',
       }),
     }),
@@ -2451,14 +2360,6 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -2484,14 +2385,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'role': dict({
             'title': 'Role',
@@ -2542,6 +2435,14 @@
             'title': 'Messages',
             'type': 'array',
           }),
+          'type': dict({
+            'default': 'ChatPromptValueConcrete',
+            'enum': list([
+              'ChatPromptValueConcrete',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'messages',
@@ -2559,14 +2460,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'name': dict({
             'title': 'Name',
@@ -2604,14 +2497,6 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -2634,6 +2519,14 @@
             'title': 'Text',
             'type': 'string',
           }),
+          'type': dict({
+            'default': 'StringPromptValue',
+            'enum': list([
+              'StringPromptValue',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'text',
@@ -2654,14 +2547,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'type': dict({
             'default': 'system',
@@ -2709,14 +2594,6 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -2742,14 +2619,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'role': dict({
             'title': 'Role',
@@ -2800,6 +2669,14 @@
             'title': 'Messages',
             'type': 'array',
           }),
+          'type': dict({
+            'default': 'ChatPromptValueConcrete',
+            'enum': list([
+              'ChatPromptValueConcrete',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'messages',
@@ -2817,14 +2694,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'name': dict({
             'title': 'Name',
@@ -2862,14 +2731,6 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -2892,6 +2753,14 @@
             'title': 'Text',
             'type': 'string',
           }),
+          'type': dict({
+            'default': 'StringPromptValue',
+            'enum': list([
+              'StringPromptValue',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'text',
@@ -2912,14 +2781,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'type': dict({
             'default': 'system',
@@ -2959,14 +2820,6 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -2992,14 +2845,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'role': dict({
             'title': 'Role',
@@ -3050,6 +2895,14 @@
             'title': 'Messages',
             'type': 'array',
           }),
+          'type': dict({
+            'default': 'ChatPromptValueConcrete',
+            'enum': list([
+              'ChatPromptValueConcrete',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'messages',
@@ -3067,14 +2920,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'name': dict({
             'title': 'Name',
@@ -3112,14 +2957,6 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -3153,6 +2990,14 @@
             'title': 'Text',
             'type': 'string',
           }),
+          'type': dict({
+            'default': 'StringPromptValue',
+            'enum': list([
+              'StringPromptValue',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'text',
@@ -3173,14 +3018,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'type': dict({
             'default': 'system',
@@ -3244,14 +3081,6 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -3277,14 +3106,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'role': dict({
             'title': 'Role',
@@ -3316,14 +3137,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'name': dict({
             'title': 'Name',
@@ -3361,14 +3174,6 @@
             'title': 'Example',
             'type': 'boolean',
           }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
-          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -3397,14 +3202,6 @@
           'content': dict({
             'title': 'Content',
             'type': 'string',
-          }),
-          'is_chunk': dict({
-            'default': False,
-            'enum': list([
-              False,
-            ]),
-            'title': 'Is Chunk',
-            'type': 'boolean',
           }),
           'type': dict({
             'default': 'system',
