@@ -85,6 +85,7 @@ def _import_bageldb() -> Any:
 
     return Bagel
 
+
 def _import_baiducloud_vector_search() -> Any:
     from langchain.vectorstores.baiducloud_vector_search import BESVerctorStore
 

@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 class BESVerctorStore(VectorStore):
     """`Baidu Elasticsearch` vector store.
 
@@ -45,7 +46,8 @@ class BESVerctorStore(VectorStore):
 
         More information can be obtained from https://cloud.baidu.com/doc/BES/s/8llyn0hh4
 
-    """     
+    """
+
     def __init__(
         self,
         index_name: str,
@@ -53,7 +55,7 @@ class BESVerctorStore(VectorStore):
         user: Optional[str] = None,
         password: Optional[str] = None,
         embedding: Optional[Embeddings] = None,
-        **kwargs
+        **kwargs,
     ):
         self.embedding = embedding
         self.index_name = index_name
@@ -65,14 +67,10 @@ class BESVerctorStore(VectorStore):
 
         if bes_url is not None:
             self.client = BESVerctorStore.bes_client(
-                bes_url=bes_url,
-                username=user,
-                password=password
+                bes_url=bes_url, username=user, password=password
             )
         else:
-            raise ValueError(
-                """Please spcified a bes connection url."""
-            )
+            raise ValueError("""Please spcified a bes connection url.""")
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -106,12 +104,7 @@ class BESVerctorStore(VectorStore):
             raise e
         return es_client
 
-  
-
-    def _create_index_if_not_exists(
-        self, 
-        dims_length: Optional[int] = None
-    ) -> None:
+    def _create_index_if_not_exists(self, dims_length: Optional[int] = None) -> None:
         """Create the index if it doesn't already exist.
 
         Args:
@@ -122,34 +115,26 @@ class BESVerctorStore(VectorStore):
             logger.info(f"Index {self.index_name} already exists. Skipping creation.")
 
         else:
-            if dims_length is None: 
+            if dims_length is None:
                 raise ValueError(
                     "Cannot create index without specifying dims_length when the index doesn't already exist. "
                 )
 
-            indexMapping = self._index_mapping(
-                dims_length=dims_length
-            )
+            indexMapping = self._index_mapping(dims_length=dims_length)
 
             logger.debug(
                 f"Creating index {self.index_name} with mappings {indexMapping} with settings"
             )
 
-            self.client.indices.create(index=self.index_name, body={
-                "settings": {
-                    "index":{
-                        "knn": True
-                    }
+            self.client.indices.create(
+                index=self.index_name,
+                body={
+                    "settings": {"index": {"knn": True}},
+                    "mappings": {"properties": indexMapping},
                 },
-                "mappings": {
-                    "properties": indexMapping
-                }
-            })
+            )
 
-    def _index_mapping(
-        self,
-        dims_length: Union[int, None]
-    ) -> Dict:
+    def _index_mapping(self, dims_length: Union[int, None]) -> Dict:
         """
         Executes when the index is created.
 
@@ -164,31 +149,33 @@ class BESVerctorStore(VectorStore):
         if "linear" == self.index_type:
             return {
                 self.vector_query_field: {
-                    "type": "bpack_vector", 
-                    "dims": dims_length, 
-                    "build_index": self.index_params.get("build_index", False)
+                    "type": "bpack_vector",
+                    "dims": dims_length,
+                    "build_index": self.index_params.get("build_index", False),
                 }
             }
 
         elif "hnsw" == self.index_type:
             return {
                 self.vector_query_field: {
-                    "type": "bpack_vector", 
-                    "dims": dims_length, 
+                    "type": "bpack_vector",
+                    "dims": dims_length,
                     "index_type": "hnsw",
                     "space_type": self.space_type,
                     "parameters": {
-                        "ef_construction": self.index_params.get("hnsw_ef_construction", 200),
-                        "m": self.index_params.get("hnsw_m", 4)
-                    }
+                        "ef_construction": self.index_params.get(
+                            "hnsw_ef_construction", 200
+                        ),
+                        "m": self.index_params.get("hnsw_m", 4),
+                    },
                 }
             }
         else:
             return {
-               self.vector_query_field: {
-                  "type": "bpack_vector", 
-                  "model_id": self.index_params.get("model_id", "") 
-               } 
+                self.vector_query_field: {
+                    "type": "bpack_vector",
+                    "model_id": self.index_params.get("model_id", ""),
+                }
             }
 
     def delete(
@@ -219,7 +206,12 @@ class BESVerctorStore(VectorStore):
 
         if len(body) > 0:
             try:
-                bulk(self.client, body, refresh=kwargs.get("refresh_indices", True), ignore_status=404)
+                bulk(
+                    self.client,
+                    body,
+                    refresh=kwargs.get("refresh_indices", True),
+                    ignore_status=404,
+                )
                 logger.debug(f"Deleted {len(body)} texts from index")
                 return True
             except BulkIndexError as e:
@@ -228,36 +220,27 @@ class BESVerctorStore(VectorStore):
         else:
             logger.info(f"no documents to delete")
             return False
-        
+
     def _query_body(
         self,
         query_vector: Union[List[float], None],
         filter: Optional[dict] = None,
-        search_params: Dict = {}
+        search_params: Dict = {},
     ) -> Dict:
-        
-        query_vector_body = {
-           "vector": query_vector,
-           "k": search_params.get("k", 2) 
-        }
-        
+        query_vector_body = {"vector": query_vector, "k": search_params.get("k", 2)}
+
         if filter is not None and len(filter) != 0:
             query_vector_body["filter"] = filter
-        
+
         if "linear" == self.index_type:
             query_vector_body["linear"] = True
             query_vector_body["space_type"] = self.space_type
         else:
             query_vector_body["ef"] = search_params.get("ef", 10)
 
-
         return {
             "size": search_params.get("size", 4),
-            "query": {
-                "knn": {
-                    self.vector_query_field: query_vector_body
-                }
-            }
+            "query": {"knn": {self.vector_query_field: query_vector_body}},
         }
 
     def _search(
@@ -266,7 +249,7 @@ class BESVerctorStore(VectorStore):
         query_vector: Union[List[float], None] = None,
         filter: Optional[dict] = None,
         custom_query: Optional[Callable[[Dict, Union[str, None]], Dict]] = None,
-        search_params: Dict = {}
+        search_params: Dict = {},
     ) -> List[Tuple[Document, float]]:
         """Return searched documents result from BES
 
@@ -283,13 +266,10 @@ class BESVerctorStore(VectorStore):
         if self.embedding and query is not None:
             query_vector = self.embedding.embed_query(query)
 
-
         query_body = self._query_body(
-            query_vector=query_vector,
-            filter=filter,
-            search_params=search_params
+            query_vector=query_vector, filter=filter, search_params=search_params
         )
-        
+
         if custom_query is not None:
             query_body = custom_query(query_body, query)
             logger.debug(f"Calling custom_query, Query body now: {query_body}")
@@ -297,10 +277,7 @@ class BESVerctorStore(VectorStore):
         logger.debug(f"Query body: {query_body}")
 
         # Perform the kNN search on the BES index and return the results.
-        response = self.client.search(
-            index=self.index_name,
-            **query_body
-        )
+        response = self.client.search(index=self.index_name, **query_body)
         logger.debug(f"response={response}")
 
         hits = [hit for hit in response["hits"]["hits"]]
@@ -316,7 +293,6 @@ class BESVerctorStore(VectorStore):
         ]
 
         return docs_and_scores
-
 
     def similarity_search(
         self,
@@ -337,10 +313,10 @@ class BESVerctorStore(VectorStore):
             in descending order of similarity.
         """
 
-        results = self.similarity_search_with_score(query=query, k=k,  filter=filter, **kwargs)
+        results = self.similarity_search_with_score(
+            query=query, k=k, filter=filter, **kwargs
+        )
         return [doc for doc, _ in results]
-
-
 
     def similarity_search_with_score(
         self, query: str, k: int, filter: Optional[dict] = None, **kwargs: Any
@@ -358,7 +334,7 @@ class BESVerctorStore(VectorStore):
         search_params = kwargs.get("search_params") or {}
 
         if len(search_params) == 0 or search_params.get("size") is None:
-            search_params["size"] = k 
+            search_params["size"] = k
 
         return self._search(query=query, filter=filter, **kwargs)
 
@@ -379,14 +355,11 @@ class BESVerctorStore(VectorStore):
             kwargs: create index key words arguments
         """
 
-        vectorStore = BESVerctorStore._bes_vector_store(
-            embedding=embedding, **kwargs
-        )
+        vectorStore = BESVerctorStore._bes_vector_store(embedding=embedding, **kwargs)
         # Encode the provided texts and add them to the newly created index.
         vectorStore.add_documents(documents)
 
         return vectorStore
-
 
     @classmethod
     def from_texts(
@@ -406,15 +379,13 @@ class BESVerctorStore(VectorStore):
             kwargs: create index key words arguments
         """
 
-        vectorStore = BESVerctorStore._bes_vector_store(
-            embedding=embedding, **kwargs
-        )
+        vectorStore = BESVerctorStore._bes_vector_store(embedding=embedding, **kwargs)
 
         # Encode the provided texts and add them to the newly created index.
         vectorStore.add_texts(texts, metadatas=metadatas, **kwargs)
 
         return vectorStore
-    
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -448,9 +419,7 @@ class BESVerctorStore(VectorStore):
             dims_length = len(embeddings[0])
 
             if create_index_if_not_exists:
-                self._create_index_if_not_exists(
-                    dims_length=dims_length
-                )
+                self._create_index_if_not_exists(dims_length=dims_length)
 
             for i, (text, vector) in enumerate(zip(texts, embeddings)):
                 metadata = metadatas[i] if metadatas else {}
@@ -512,12 +481,9 @@ class BESVerctorStore(VectorStore):
 
         if index_name is None:
             raise ValueError("Please provide an index_name.")
-        
+
         bes_url = kwargs.get("bes_url")
         if bes_url is None:
             raise ValueError("Please provied a valid bes connection url")
 
-        return BESVerctorStore(
-            embedding=embedding,
-            **kwargs
-        )
+        return BESVerctorStore(embedding=embedding, **kwargs)
