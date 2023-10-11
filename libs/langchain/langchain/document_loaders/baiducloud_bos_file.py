@@ -1,13 +1,14 @@
 import logging
 import os
 import tempfile
+from typing import Any, Iterator, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
-from typing import Any, Iterator, List
 
 logger = logging.getLogger(__name__)
+
 
 class BaiduBOSFileLoader(BaseLoader):
     """Load from `Baidu Cloud BOS` file."""
@@ -31,8 +32,8 @@ class BaiduBOSFileLoader(BaseLoader):
             from baidubce.services.bos.bos_client import BosClient
         except ImportError:
             raise ImportError(
-                "Please using `pip install bce-python-sdk`" + 
-                " before import bos related package."
+                "Please using `pip install bce-python-sdk`"
+                + " before import bos related package."
             )
 
         # Initialize BOS Client
@@ -42,9 +43,7 @@ class BaiduBOSFileLoader(BaseLoader):
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             # Download the file to a destination
             logger.debug(f"get object key {self.key} to file {file_path}")
-            client.get_object_to_file(
-                self.bucket, self.key, file_path
-            )
+            client.get_object_to_file(self.bucket, self.key, file_path)
             try:
                 loader = UnstructuredFileLoader(file_path)
                 documents = loader.load()

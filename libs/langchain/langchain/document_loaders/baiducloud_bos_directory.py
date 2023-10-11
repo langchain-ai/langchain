@@ -1,6 +1,8 @@
+from typing import Any, Iterator, List
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from typing import Any, Iterator, List
+
 
 class BaiduBOSDirectoryLoader(BaseLoader):
     """Load from `Baidu BOS directory`."""
@@ -31,17 +33,18 @@ class BaiduBOSDirectoryLoader(BaseLoader):
         marker = ""
         while True:
             response = client.list_objects(
-                bucket_name=self.bucket, 
-                prefix=self.prefix, 
-                marker=marker, 
-                max_keys=1000
+                bucket_name=self.bucket,
+                prefix=self.prefix,
+                marker=marker,
+                max_keys=1000,
             )
             contents_len = len(response.contents)
             contents.extend(response.contents)
-            if response.is_truncated or contents_len < int(str(response.max_keys)) :
+            if response.is_truncated or contents_len < int(str(response.max_keys)):
                 break
             marker = response.next_marker
-        from baidu_bos_file import BaiduBOSFileLoader   
+        from baidu_bos_file import BaiduBOSFileLoader
+
         for content in contents:
             if str(content.key).endswith("/"):
                 continue
