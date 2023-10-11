@@ -79,6 +79,9 @@ class BaseConversationalRetrievalChain(Chain):
     get_chat_history: Optional[Callable[[List[CHAT_TURN_TYPE]], str]] = None
     """An optional function to get a string of the chat history.
     If None is provided, will use a default."""
+    response_if_no_docs_found: Optional[str]
+    """If specified, the chain will return a fixed response if no docs 
+    are found for the question. """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -143,14 +146,19 @@ class BaseConversationalRetrievalChain(Chain):
             docs = self._get_docs(new_question, inputs, run_manager=_run_manager)
         else:
             docs = self._get_docs(new_question, inputs)  # type: ignore[call-arg]
-        new_inputs = inputs.copy()
-        if self.rephrase_question:
-            new_inputs["question"] = new_question
-        new_inputs["chat_history"] = chat_history_str
-        answer = self.combine_docs_chain.run(
-            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
-        )
-        output: Dict[str, Any] = {self.output_key: answer}
+        output: Dict[str, Any] = {}
+        if self.response_if_no_docs_found is not None and len(docs) == 0:
+            output[self.output_key] = self.response_if_no_docs_found
+        else:
+            new_inputs = inputs.copy()
+            if self.rephrase_question:
+                new_inputs["question"] = new_question
+            new_inputs["chat_history"] = chat_history_str
+            answer = self.combine_docs_chain.run(
+                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+            )
+            output[self.output_key] = answer
+
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
