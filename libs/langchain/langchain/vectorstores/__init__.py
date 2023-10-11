@@ -37,6 +37,12 @@ def _import_alibaba_cloud_open_search_settings() -> Any:
     return AlibabaCloudOpenSearchSettings
 
 
+def _import_azure_cosmos_db() -> Any:
+    from langchain.vectorstores.azure_cosmos_db import AzureCosmosDBVectorSearch
+
+    return AzureCosmosDBVectorSearch
+
+
 def _import_elastic_knn_search() -> Any:
     from langchain.vectorstores.elastic_vector_search import ElasticKnnSearch
 
@@ -398,6 +404,8 @@ def __getattr__(name: str) -> Any:
         return _import_alibaba_cloud_open_search()
     elif name == "AlibabaCloudOpenSearchSettings":
         return _import_alibaba_cloud_open_search_settings()
+    elif name == "AzureCosmosDBVectorSearch":
+        return _import_azure_cosmos_db()
     elif name == "ElasticKnnSearch":
         return _import_elastic_knn_search()
     elif name == "ElasticVectorSearch":
@@ -588,4 +596,5 @@ __all__ = [
     "Zilliz",
     "Zilliz",
     "TencentVectorDB",
+    "AzureCosmosDBVectorSearch",
 ]

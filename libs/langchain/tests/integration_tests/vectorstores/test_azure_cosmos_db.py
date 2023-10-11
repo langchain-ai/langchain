@@ -8,7 +8,7 @@ import pytest
 
 from langchain.docstore.document import Document
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores.azure_cosmos_db_vector_search import (
+from langchain.vectorstores.azure_cosmos_db import (
     AzureCosmosDBVectorSearch,
     CosmosDBSimilarityType,
 )
@@ -54,7 +54,7 @@ def azure_openai_embeddings() -> Any:
 This is how to run the integration tests:
 
 cd libs/langchain
-pytest tests/integration_tests/vectorstores/test_azure_cosmos_db_vector_search.py 
+pytest tests/integration_tests/vectorstores/test_azure_cosmos_db.py 
 """
 
 
