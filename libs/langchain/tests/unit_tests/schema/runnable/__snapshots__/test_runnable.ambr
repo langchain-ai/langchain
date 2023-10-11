@@ -629,7 +629,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {
@@ -643,7 +643,7 @@
                 "base",
                 "RunnableLambda"
               ],
-              "repr": "RunnableLambda(...)"
+              "repr": "RunnableLambda(lambda x: x['key'])"
             },
             "input": {
               "lc": 1,
@@ -652,7 +652,7 @@
                 "langchain",
                 "schema",
                 "runnable",
-                "RunnableMap"
+                "RunnableParallel"
               ],
               "kwargs": {
                 "steps": {
@@ -666,7 +666,7 @@
                       "base",
                       "RunnableLambda"
                     ],
-                    "repr": "RunnableLambda(...)"
+                    "repr": "RunnableLambda(lambda x: x['question'])"
                   }
                 }
               }
@@ -709,7 +709,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {
@@ -1438,7 +1438,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {
@@ -1461,7 +1461,7 @@
                 "langchain",
                 "schema",
                 "runnable",
-                "RunnableMap"
+                "RunnableParallel"
               ],
               "kwargs": {
                 "steps": {
@@ -3455,7 +3455,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {
@@ -3769,7 +3769,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {
@@ -3910,7 +3910,7 @@
           "langchain",
           "schema",
           "runnable",
-          "RunnableMap"
+          "RunnableParallel"
         ],
         "kwargs": {
           "steps": {
