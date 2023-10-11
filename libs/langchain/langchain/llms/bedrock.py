@@ -8,6 +8,10 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.output import GenerationChunk
+from langchain.utilities.anthropic import (
+    get_num_tokens_anthropic,
+    get_token_ids_anthropic,
+)
 
 HUMAN_PROMPT = "\n\nHuman:"
 ASSISTANT_PROMPT = "\n\nAssistant:"
@@ -54,30 +58,6 @@ def _human_assistant_format(input_text: str) -> str:
         input_text = input_text + ASSISTANT_PROMPT  # SILENT CORRECTION
 
     return input_text
-
-
-def _get_anthropic_client() -> Any:
-    try:
-        import anthropic
-    except ImportError:
-        raise ImportError(
-            "Could not import anthropic python package. "
-            "This is needed in order to accurately tokenize the text "
-            "for anthropic models. Please install it with `pip install anthropic`."
-        )
-    return anthropic.Anthropic()
-
-
-def _get_num_tokens_anthropic(text: str) -> int:
-    client = _get_anthropic_client()
-    return client.count_tokens(text=text)
-
-
-def _get_token_ids_anthropic(text: str) -> List[int]:
-    client = _get_anthropic_client()
-    tokenizer = client.get_tokenizer()
-    encoded_text = tokenizer.encode(text)  # type: ignore
-    return encoded_text.ids  # type: ignore
 
 
 class LLMInputOutputAdapter:
@@ -246,6 +226,10 @@ class BedrockBase(BaseModel, ABC):
     def _get_provider(self) -> str:
         return self.model_id.split(".")[0]
 
+    @property
+    def _model_is_anthropic(self) -> bool:
+        return self._get_provider() == "anthropic"
+
     def _prepare_input_and_invoke(
         self,
         prompt: str,
@@ -354,10 +338,6 @@ class Bedrock(LLM, BedrockBase):
         """Return type of llm."""
         return "amazon_bedrock"
 
-    @property
-    def _model_is_anthropic(self) -> bool:
-        return self.model_id.split(".")[0] == "anthropic"
-
     class Config:
         """Configuration for this pydantic object."""
 
@@ -424,12 +404,12 @@ class Bedrock(LLM, BedrockBase):
 
     def get_num_tokens(self, text: str) -> int:
         if self._model_is_anthropic:
-            return _get_num_tokens_anthropic(text=text)
+            return get_num_tokens_anthropic(text)
         else:
-            return super().get_num_tokens(text=text)
+            return super().get_num_tokens(text)
 
     def get_token_ids(self, text: str) -> List[int]:
         if self._model_is_anthropic:
-            return _get_token_ids_anthropic(text=text)
+            return get_token_ids_anthropic(text)
         else:
             return super().get_token_ids(text)
