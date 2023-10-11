@@ -1420,12 +1420,3 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
         """Initialize a LatexTextSplitter."""
         separators = self.get_separators_for_language(Language.LATEX)
         super().__init__(separators=separators, **kwargs)
-
-
-class COBOLTextSplitter(RecursiveCharacterTextSplitter):
-    """Attempts to split the text along COBOL syntax and layout elements."""
-
-    def __init__(self, **kwargs: Any) -> None:
-        """Initialize a COBOLTextSplitter."""
-        separators = self.get_separators_for_language(Language.COBOL)
-        super().__init__(separators=separators, **kwargs)
