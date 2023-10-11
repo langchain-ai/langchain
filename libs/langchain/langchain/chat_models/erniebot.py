@@ -302,7 +302,7 @@ class ErnieBotChat(BaseChatModel):
         if role == "user":
             return HumanMessage(content=message_dict["content"])
         elif role == "assistant":
-            content = message_dict.get("content", "")
+            content = message_dict["content"] or ""
             if message_dict.get("function_call"):
                 additional_kwargs = {
                     "function_call": dict(message_dict["function_call"])
