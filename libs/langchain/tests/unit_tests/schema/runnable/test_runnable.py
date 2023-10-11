@@ -227,6 +227,12 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "enum": ["Document"],
+                        "default": "Document",
+                        "type": "string",
+                    },
                 },
                 "required": ["page_content"],
             }
@@ -293,12 +299,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "default": False,
                         "type": "boolean",
                     },
-                    "is_chunk": {
-                        "title": "Is Chunk",
-                        "default": False,
-                        "enum": [False],
-                        "type": "boolean",
-                    },
                 },
                 "required": ["content"],
             },
@@ -323,12 +323,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "default": False,
                         "type": "boolean",
                     },
-                    "is_chunk": {
-                        "title": "Is Chunk",
-                        "default": False,
-                        "enum": [False],
-                        "type": "boolean",
-                    },
                 },
                 "required": ["content"],
             },
@@ -349,12 +343,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "type": "string",
                     },
                     "role": {"title": "Role", "type": "string"},
-                    "is_chunk": {
-                        "title": "Is Chunk",
-                        "default": False,
-                        "enum": [False],
-                        "type": "boolean",
-                    },
                 },
                 "required": ["content", "role"],
             },
@@ -373,12 +361,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "default": "system",
                         "enum": ["system"],
                         "type": "string",
-                    },
-                    "is_chunk": {
-                        "title": "Is Chunk",
-                        "default": False,
-                        "enum": [False],
-                        "type": "boolean",
                     },
                 },
                 "required": ["content"],
@@ -400,12 +382,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "type": "string",
                     },
                     "name": {"title": "Name", "type": "string"},
-                    "is_chunk": {
-                        "title": "Is Chunk",
-                        "default": False,
-                        "enum": [False],
-                        "type": "boolean",
-                    },
                 },
                 "required": ["content", "name"],
             },
@@ -634,6 +610,12 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "type": "string",
+                        "enum": ["Document"],
+                        "default": "Document",
+                    },
                 },
                 "required": ["page_content"],
             }
@@ -667,6 +649,12 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "type": "string",
+                        "enum": ["Document"],
+                        "default": "Document",
+                    },
                 },
                 "required": ["page_content"],
             }
@@ -705,6 +693,12 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "type": "string",
+                        "enum": ["Document"],
+                        "default": "Document",
+                    },
                 },
                 "required": ["page_content"],
             }
