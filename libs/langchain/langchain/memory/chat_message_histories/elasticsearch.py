@@ -127,9 +127,9 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
         )
         try:
             es_client.info()
-        except Exception as e:
-            logger.error(f"Error connecting to Elasticsearch: {e}")
-            raise e
+        except Exception as err:
+            logger.error(f"Error connecting to Elasticsearch: {err}")
+            raise err
 
         return es_client
 
@@ -145,7 +145,8 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
                 sort="created_at:asc",
             )
         except ApiError as err:
-            logger.error(err)
+            logger.error(f"Could not retrieve messages from Elasticsearch: {err}")
+            raise err
 
         if result and len(result["hits"]["hits"]) > 0:
             items = [
@@ -162,7 +163,6 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
         try:
             from elasticsearch import ApiError
 
-            print("indexing message", message)
             self.client.index(
                 index=self.index,
                 document={
@@ -173,7 +173,8 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
                 refresh=True,
             )
         except ApiError as err:
-            logger.error(err)
+            logger.error(f"Could not add message to Elasticsearch: {err}")
+            raise err
 
     def clear(self) -> None:
         """Clear session memory in Elasticsearch"""
@@ -185,5 +186,6 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
                 query={"term": {"session_id": self.session_id}},
                 refresh=True,
             )
-        except ApiError:
-            logger.error("Could not clear session memory in Elasticsearch")
+        except ApiError as err:
+            logger.error(f"Could not clear session memory in Elasticsearch: {err}")
+            raise err
