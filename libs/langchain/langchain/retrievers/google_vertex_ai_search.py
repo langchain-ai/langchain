@@ -69,11 +69,11 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
     when making API calls. If not provided, credentials will be ascertained from
     the environment."""
 
-    # TODO: Add extra data type handling for type website
-    engine_data_type: int = Field(default=0, ge=0, le=1)
+    engine_data_type: int = Field(default=0, ge=0, le=2)
     """ Defines the Vertex AI Search data type
     0 - Unstructured data 
     1 - Structured data
+    2 - Website data (with Advanced Website Indexing)
     """
 
     _client: SearchServiceClient
@@ -235,6 +235,47 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
 
         return documents
 
+    def _convert_website_search_response(
+        self, results: Sequence[SearchResult]
+    ) -> List[Document]:
+        """Converts a sequence of search results to a list of LangChain documents."""
+        from google.protobuf.json_format import MessageToDict
+
+        documents: List[Document] = []
+
+        for result in results:
+            document_dict = MessageToDict(
+                result.document._pb, preserving_proto_field_name=True
+            )
+            derived_struct_data = document_dict.get("derived_struct_data")
+            if not derived_struct_data:
+                continue
+
+            doc_metadata = document_dict.get("struct_data", {})
+            doc_metadata["id"] = document_dict["id"]
+            doc_metadata["source"] = derived_struct_data.get("link", "")
+
+            chunk_type = "extractive_answers"
+
+            if chunk_type not in derived_struct_data:
+                continue
+
+            for chunk in derived_struct_data[chunk_type]:
+                documents.append(
+                    Document(
+                        page_content=chunk.get("content", ""), metadata=doc_metadata
+                    )
+                )
+
+        if not documents:
+            print(
+                f"No {chunk_type} could be found.\n"
+                "Make sure that your data store is using Advanced Website Indexing.\n"
+                "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"  # noqa: E501
+            )
+
+        return documents
+
     def _create_search_request(self, query: str) -> SearchRequest:
         """Prepares a SearchRequest object."""
         from google.cloud.discoveryengine_v1beta import SearchRequest
@@ -265,11 +306,16 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
             )
         elif self.engine_data_type == 1:
             content_search_spec = None
+        elif self.engine_data_type == 2:
+            content_search_spec = SearchRequest.ContentSearchSpec(
+                extractive_content_spec=SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
+                    max_extractive_answer_count=self.max_extractive_answer_count,
+                )
+            )
         else:
-            # TODO: Add extra data type handling for type website
             raise NotImplementedError(
-                "Only engine data type 0 (Unstructured) or 1 (Structured)"
-                + " are supported currently."
+                "Only data store type 0 (Unstructured), 1 (Structured),"
+                "or 2 (Website with Advanced Indexing) are supported currently."
                 + f" Got {self.engine_data_type}"
             )
 
@@ -303,11 +349,12 @@ class GoogleVertexAISearchRetriever(BaseRetriever):
             documents = self._convert_unstructured_search_response(response.results)
         elif self.engine_data_type == 1:
             documents = self._convert_structured_search_response(response.results)
+        elif self.engine_data_type == 2:
+            documents = self._convert_website_search_response(response.results)
         else:
-            # TODO: Add extra data type handling for type website
             raise NotImplementedError(
-                "Only engine data type 0 (Unstructured) or 1 (Structured)"
-                + " are supported currently."
+                "Only data store type 0 (Unstructured), 1 (Structured),"
+                "or 2 (Website with Advanced Indexing) are supported currently."
                 + f" Got {self.engine_data_type}"
             )
 
