@@ -116,7 +116,9 @@ class LakeFSLoader(BaseLoader):
 
     def __validate_instance(self) -> None:
         if self.repo is None or self.repo == "":
-            raise ValueError("no repository was provided. use `set_repo` to specify a repository")
+            raise ValueError(
+                "no repository was provided. use `set_repo` to specify a repository"
+            )
         if self.ref is None or self.ref == "":
             raise ValueError("no ref was provided. use `set_ref` to specify a ref")
         if self.path is None:
