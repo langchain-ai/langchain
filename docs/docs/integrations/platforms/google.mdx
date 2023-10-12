@@ -152,6 +152,23 @@ See a [usage example](/docs/integrations/retrievers/google_vertex_ai_search).
 from langchain.retrievers import GoogleVertexAISearchRetriever
 ```
 
+### Document AI Warehouse
+> [Google Cloud Document AI Warehouse](https://cloud.google.com/document-ai-warehouse)
+> allows enterprises to search, store, govern, and manage documents and their AI-extracted 
+> data and metadata in a single platform. Documents should be uploaded outside of Langchain,
+> 
+
+```python
+from langchain.retrievers import GoogleDocumentAIWarehouseRetriever
+docai_wh_retriever = GoogleDocumentAIWarehouseRetriever(
+    project_number=...
+)
+query = ...
+documents = docai_wh_retriever.get_relevant_documents(
+    query, user_ldap=...
+)
+```
+
 ## Tools
 ### Google Search
 

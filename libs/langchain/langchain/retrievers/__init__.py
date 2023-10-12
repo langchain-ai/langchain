@@ -28,6 +28,9 @@ from langchain.retrievers.contextual_compression import ContextualCompressionRet
 from langchain.retrievers.docarray import DocArrayRetriever
 from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
 from langchain.retrievers.ensemble import EnsembleRetriever
+from langchain.retrievers.google_cloud_documentai_warehouse import (
+    GoogleDocumentAIWarehouseRetriever,
+)
 from langchain.retrievers.google_cloud_enterprise_search import (
     GoogleCloudEnterpriseSearchRetriever,
 )
@@ -74,6 +77,7 @@ __all__ = [
     "ContextualCompressionRetriever",
     "ChaindeskRetriever",
     "ElasticSearchBM25Retriever",
+    "GoogleDocumentAIWarehouseRetriever",
     "GoogleCloudEnterpriseSearchRetriever",
     "GoogleVertexAISearchRetriever",
     "KayAiRetriever",
