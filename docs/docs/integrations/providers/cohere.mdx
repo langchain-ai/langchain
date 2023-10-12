@@ -1,0 +1,38 @@
+# Cohere
+
+>[Cohere](https://cohere.ai/about) is a Canadian startup that provides natural language processing models
+> that help companies improve human-machine interactions.
+
+## Installation and Setup
+- Install the Python SDK :
+```bash
+pip install cohere
+```
+
+Get a [Cohere api key](https://dashboard.cohere.ai/) and set it as an environment variable (`COHERE_API_KEY`)
+
+
+## LLM
+
+There exists an Cohere LLM wrapper, which you can access with 
+See a [usage example](/docs/integrations/llms/cohere).
+
+```python
+from langchain.llms import Cohere
+```
+
+## Text Embedding Model
+
+There exists an Cohere Embedding model, which you can access with 
+```python
+from langchain.embeddings import CohereEmbeddings
+```
+For a more detailed walkthrough of this, see [this notebook](/docs/integrations/text_embedding/cohere.html)
+
+## Retriever
+
+See a [usage example](/docs/integrations/retrievers/cohere-reranker).
+
+```python
+from langchain.retrievers.document_compressors import CohereRerank
+```
