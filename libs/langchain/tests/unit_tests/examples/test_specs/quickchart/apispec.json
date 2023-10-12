@@ -1,0 +1,283 @@
+{
+   "openapi": "3.0.0",
+   "info": {
+      "title": "QuickChart API",
+      "version": "1.0.0",
+      "description": "An API to generate charts and QR codes using QuickChart services."
+   },
+   "servers": [
+      {
+         "url": "https://quickchart.io"
+      }
+   ],
+   "paths": {
+      "/chart": {
+         "get": {
+            "summary": "Generate a chart (GET)",
+            "description": "Generate a chart based on the provided parameters.",
+            "parameters": [
+               {
+                  "in": "query",
+                  "name": "chart",
+                  "schema": {
+                     "type": "string"
+                  },
+                  "description": "The chart configuration in Chart.js format (JSON or Javascript)."
+               },
+               {
+                  "in": "query",
+                  "name": "width",
+                  "schema": {
+                     "type": "integer"
+                  },
+                  "description": "The width of the chart in pixels."
+               },
+               {
+                  "in": "query",
+                  "name": "height",
+                  "schema": {
+                     "type": "integer"
+                  },
+                  "description": "The height of the chart in pixels."
+               },
+               {
+                  "in": "query",
+                  "name": "format",
+                  "schema": {
+                     "type": "string"
+                  },
+                  "description": "The output format of the chart, e.g., 'png', 'jpg', 'svg', or 'webp'."
+               },
+               {
+                  "in": "query",
+                  "name": "backgroundColor",
+                  "schema": {
+                     "type": "string"
+                  },
+                  "description": "The background color of the chart."
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "A generated chart image.",
+                  "content": {
+                     "image/png": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     },
+                     "image/jpeg": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     },
+                     "image/svg+xml": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     },
+                     "image/webp": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     }
+                  }
+               }
+            }
+         },
+         "post": {
+            "summary": "Generate a chart (POST)",
+            "description": "Generate a chart based on the provided configuration in the request body.",
+            "requestBody": {
+               "required": true,
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "type": "object",
+                        "properties": {
+                           "chart": {
+                              "type": "object",
+                              "description": "The chart configuration in JSON format."
+                           },
+                           "width": {
+                              "type": "integer",
+                              "description": "The width of the chart in pixels."
+                           },
+                           "height": {
+                              "type": "integer",
+                              "description": "The height of the chart in pixels."
+                           },
+                           "format": {
+                              "type": "string",
+                              "description": "The output format of the chart, e.g., 'png', 'jpg', 'svg', or 'webp'."
+                           },
+                           "backgroundColor": {
+                              "type": "string",
+                              "description": "The background color of the chart."
+                           }
+                        }
+                     }
+                  }
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "A generated chart image.",
+                  "content": {
+                     "image/png": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     },
+                     "image/jpeg": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     },
+                     "image/svg+xml": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     },
+                     "image/webp": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      },
+      "/qr": {
+         "get": {
+            "summary": "Generate a QR code (GET)",
+            "description": "Generate a QR code based on the provided parameters.",
+            "parameters": [
+               {
+                  "in": "query",
+                  "name": "text",
+                  "schema": {
+                     "type": "string"
+                  },
+                  "description": "The text to be encoded in the QR code."
+               },
+               {
+                  "in": "query",
+                  "name": "width",
+                  "schema": {
+                     "type": "integer"
+                  },
+                  "description": "The width of the QR code in pixels."
+               },
+               {
+                  "in": "query",
+                  "name": "height",
+                  "schema": {
+                     "type": "integer"
+                  },
+                  "description": "The height of the QR code in pixels."
+               },
+               {
+                  "in": "query",
+                  "name": "format",
+                  "schema": {
+                     "type": "string"
+                  },
+                  "description": "The output format of the QR code, e.g., 'png' or 'svg'."
+               },
+               {
+                  "in": "query",
+                  "name": "margin",
+                  "schema": {
+                     "type": "integer"
+                  },
+                  "description": "The margin around the QR code in pixels."
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "A generated QR code image.",
+                  "content": {
+                     "image/png": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     },
+                     "image/svg+xml": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     }
+                  }
+               }
+            }
+         },
+         "post": {
+            "summary": "Generate a QR code (POST)",
+            "description": "Generate a QR code based on the provided configuration in the request body.",
+            "requestBody": {
+               "required": true,
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "type": "object",
+                        "properties": {
+                           "text": {
+                              "type": "string",
+                              "description": "The text to be encoded in the QR code."
+                           },
+                           "width": {
+                              "type": "integer",
+                              "description": "The width of the QR code in pixels."
+                           },
+                           "height": {
+                              "type": "integer",
+                              "description": "The height of the QR code in pixels."
+                           },
+                           "format": {
+                              "type": "string",
+                              "description": "The output format of the QR code, e.g., 'png' or 'svg'."
+                           },
+                           "margin": {
+                              "type": "integer",
+                              "description": "The margin around the QR code in pixels."
+                           }
+                        }
+                     }
+                  }
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "A generated QR code image.",
+                  "content": {
+                     "image/png": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     },
+                     "image/svg+xml": {
+                        "schema": {
+                           "type": "string",
+                           "format": "binary"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}

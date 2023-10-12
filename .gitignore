@@ -1,3 +1,4 @@
+.vs/
 .vscode/
 .idea/
 # Byte-compiled / optimized / DLL files
@@ -28,6 +29,12 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# Google GitHub Actions credentials files created by:
+# https://github.com/google-github-actions/auth
+#
+# That action recommends adding this gitignore to prevent accidentally committing keys.
+gha-creds-*.json
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -72,6 +79,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/docs/_build/
 
 # PyBuilder
 target/
@@ -106,6 +114,7 @@ celerybeat.pid
 
 # Environments
 .env
+.envrc
 .venv
 .venvs
 env/
@@ -134,3 +143,37 @@ dmypy.json
 
 # macOS display setting files
 .DS_Store
+
+# Wandb directory
+wandb/
+
+# asdf tool versions
+.tool-versions
+/.ruff_cache/
+
+*.pkl
+*.bin
+
+# integration test artifacts
+data_map*
+\[('_type', 'fake'), ('stop', None)]
+
+# Replit files
+*replit*
+
+node_modules
+docs/.yarn/
+docs/node_modules/
+docs/.docusaurus/
+docs/.cache-loader/
+docs/_dist
+docs/api_reference/api_reference.rst
+docs/api_reference/experimental_api_reference.rst
+docs/api_reference/_build
+docs/api_reference/*/
+!docs/api_reference/_static/
+!docs/api_reference/templates/
+!docs/api_reference/themes/
+docs/docs/build
+docs/docs/node_modules
+docs/docs/yarn.lock
