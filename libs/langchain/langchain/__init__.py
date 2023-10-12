@@ -44,12 +44,6 @@ def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
 # Surfaces Deprecation and Pending Deprecation warnings from langchain.
 surface_langchain_deprecation_warnings()
 
-def __setattr__(name, value):
-    print("foo")
-    if name == 'debug' and value is True:
-        warnings.warn("Debug mode is enabled in LangChain", UserWarning)
-    globals()[name] = value
-
 
 def __getattr__(name: str) -> Any:
     if name == "MRKLChain":
