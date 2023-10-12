@@ -1,7 +1,6 @@
 import json
 
-from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories import SingleStoreDBChatMessageHistory
+from langchain.memory import ConversationBufferMemory, SingleStoreDBChatMessageHistory
 from langchain.schema.messages import _message_to_dict
 
 # Replace these with your mongodb connection string
