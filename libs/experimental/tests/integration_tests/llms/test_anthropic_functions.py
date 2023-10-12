@@ -14,11 +14,11 @@ class TestAnthropicFunctions(unittest.TestCase):
     """
 
     def test_default_chat_anthropic(self) -> None:
-        model = AnthropicFunctions(model="claude-2")
-        self.assertIsInstance(model.model, ChatAnthropic)
+        base_model = AnthropicFunctions(model="claude-2")
+        self.assertIsInstance(base_model.model, ChatAnthropic)
 
         # bind functions
-        model = model.bind(
+        model = base_model.bind(
             functions=[
                 {
                     "name": "get_current_weather",
@@ -28,7 +28,8 @@ class TestAnthropicFunctions(unittest.TestCase):
                         "properties": {
                             "location": {
                                 "type": "string",
-                                "description": "The city and state, e.g. San Francisco, CA",
+                                "description": "The city and state, "
+                                "e.g. San Francisco, CA",
                             },
                             "unit": {
                                 "type": "string",
@@ -68,11 +69,11 @@ class TestAnthropicFunctions(unittest.TestCase):
             model_kwargs={"temperature": 0.1},
             region_name="us-east-1",
         )
-        model = AnthropicFunctions(llm=llm)
-        assert isinstance(model.model, BedrockChat)
+        base_model = AnthropicFunctions(llm=llm)
+        assert isinstance(base_model.model, BedrockChat)
 
         # bind functions
-        model = model.bind(
+        model = base_model.bind(
             functions=[
                 {
                     "name": "get_current_weather",
@@ -82,7 +83,8 @@ class TestAnthropicFunctions(unittest.TestCase):
                         "properties": {
                             "location": {
                                 "type": "string",
-                                "description": "The city and state, e.g. San Francisco, CA",
+                                "description": "The city and state, "
+                                "e.g. San Francisco, CA",
                             },
                             "unit": {
                                 "type": "string",
