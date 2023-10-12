@@ -217,10 +217,6 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        if type(self)._arun == BaseTool._arun:
-            # If the tool does not implement async, fall back to default implementation
-            return await super().ainvoke(input, config, **kwargs)
-
         config = config or {}
         return await self.arun(
             input,
@@ -657,7 +653,6 @@ class StructuredTool(BaseTool):
             )
         return await asyncio.get_running_loop().run_in_executor(
             None,
-            self._run,
             partial(self._run, run_manager=run_manager, **kwargs),
             *args,
         )

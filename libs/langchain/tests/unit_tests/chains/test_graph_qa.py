@@ -1,4 +1,9 @@
+from typing import List
+
+import pandas as pd
+
 from langchain.chains.graph_qa.cypher import construct_schema, extract_cypher
+from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 
 
 def test_no_backticks() -> None:
@@ -117,3 +122,31 @@ def test_include_types3() -> None:
         "['(:Actor)-[:ACTED_IN]->(:Movie)']"
     )
     assert output == expected_schema
+
+
+def test_validating_cypher_statements() -> None:
+    cypher_file = "tests/unit_tests/data/cypher_corrector.csv"
+    examples = pd.read_csv(cypher_file)
+    examples.fillna("", inplace=True)
+    for _, row in examples.iterrows():
+        schema = load_schemas(row["schema"])
+        corrector = CypherQueryCorrector(schema)
+        assert corrector(row["statement"]) == row["correct_query"]
+
+
+def load_schemas(str_schemas: str) -> List[Schema]:
+    """
+    Args:
+        str_schemas: string of schemas
+    """
+    values = str_schemas.replace("(", "").replace(")", "").split(",")
+    schemas = []
+    for i in range(len(values) // 3):
+        schemas.append(
+            Schema(
+                values[i * 3].strip(),
+                values[i * 3 + 1].strip(),
+                values[i * 3 + 2].strip(),
+            )
+        )
+    return schemas

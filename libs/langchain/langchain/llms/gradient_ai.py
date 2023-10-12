@@ -54,7 +54,7 @@ class GradientLLM(LLM):
     """
 
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     gradient_api_url: str = "https://api.gradient.ai/api"
     """Endpoint URL to use."""

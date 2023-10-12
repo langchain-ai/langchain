@@ -10,9 +10,16 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
+from langsmith.utils import LangSmithError
+from tenacity import (
+    Retrying,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run, TracerSession
+from langchain.callbacks.tracers.schemas import Run
 from langchain.env import get_runtime_environment
 from langchain.load.dump import dumpd
 from langchain.schema.messages import BaseMessage
@@ -71,7 +78,6 @@ class LangChainTracer(BaseTracer):
     ) -> None:
         """Initialize the LangChain tracer."""
         super().__init__(**kwargs)
-        self.session: Optional[TracerSession] = None
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
@@ -82,6 +88,7 @@ class LangChainTracer(BaseTracer):
         self._futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.tags = tags or []
         self.executor = _get_executor() if use_threading else None
+        self.latest_run: Optional[Run] = None
         global _TRACERS
         _TRACERS.add(self)
 
@@ -121,7 +128,27 @@ class LangChainTracer(BaseTracer):
         self._on_chat_model_start(chat_model_run)
 
     def _persist_run(self, run: Run) -> None:
-        """The Langchain Tracer uses Post/Patch rather than persist."""
+        run_ = run.copy()
+        run_.reference_example_id = self.example_id
+        self.latest_run = run_
+
+    def get_run_url(self) -> str:
+        """Get the LangSmith root run URL"""
+        if not self.latest_run:
+            raise ValueError("No traced run found.")
+        # If this is the first run in a project, the project may not yet be created.
+        # This method is only really useful for debugging flows, so we will assume
+        # there is some tolerace for latency.
+        for attempt in Retrying(
+            stop=stop_after_attempt(5),
+            wait=wait_exponential_jitter(),
+            retry=retry_if_exception_type(LangSmithError),
+        ):
+            with attempt:
+                return self.client.get_run_url(
+                    run=self.latest_run, project_name=self.project_name
+                )
+        raise ValueError("Failed to get run URL.")
 
     def _get_tags(self, run: Run) -> List[str]:
         """Get combined tags for a run."""

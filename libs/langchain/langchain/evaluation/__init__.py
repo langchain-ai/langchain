@@ -77,6 +77,10 @@ from langchain.evaluation.schema import (
     PairwiseStringEvaluator,
     StringEvaluator,
 )
+from langchain.evaluation.scoring import (
+    LabeledScoreStringEvalChain,
+    ScoreStringEvalChain,
+)
 from langchain.evaluation.string_distance import (
     PairwiseStringDistanceEvalChain,
     StringDistance,
@@ -108,4 +112,6 @@ __all__ = [
     "load_evaluator",
     "load_dataset",
     "AgentTrajectoryEvaluator",
+    "ScoreStringEvalChain",
+    "LabeledScoreStringEvalChain",
 ]
