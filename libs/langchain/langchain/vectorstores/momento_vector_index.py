@@ -1,3 +1,4 @@
+import json
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -151,7 +152,8 @@ class MomentoVectorIndex(VectorStore):
         Args:
             texts (Iterable[str]): Iterable of strings to add to the vectorstore.
             metadatas (Optional[List[dict]]): Optional list of metadatas associated with
-                the texts.
+                the texts. Defaults to None. The metadata values are assumed to be JSON
+                serializable.
             kwargs (Any): Other optional parameters. Specifically:
             - ids (List[str], optional): List of ids to use for the texts.
                 Defaults to None, in which case uuids are generated.
@@ -195,12 +197,14 @@ class MomentoVectorIndex(VectorStore):
         for i in range(0, len(embeddings), batch_size):
             start = i
             end = min(i + batch_size, len(embeddings))
+            metadata_to_store = [
+                {k: json.dumps(v) for k, v in metadata.items()}
+                for metadata in metadatas[start:end]
+            ]
             items = [
                 Item(id=id, vector=vector, metadata=metadata)
                 for id, vector, metadata in zip(
-                    ids[start:end],
-                    embeddings[start:end],
-                    metadatas[start:end],
+                    ids[start:end], embeddings[start:end], metadata_to_store
                 )
             ]
 
@@ -306,8 +310,9 @@ class MomentoVectorIndex(VectorStore):
 
         results = []
         for hit in response.hits:
-            text = cast(str, hit.metadata.pop(self.text_field))
-            doc = Document(page_content=text, metadata=hit.metadata)
+            metadata = {k: json.loads(v) for k, v in hit.metadata.items()}
+            text = cast(str, metadata.pop(self.text_field))
+            doc = Document(page_content=text, metadata=metadata)
             pair = (doc, hit.distance)
             results.append(pair)
 
@@ -346,7 +351,8 @@ class MomentoVectorIndex(VectorStore):
             texts (List[str]): The texts to initialize the Vector Store with.
             embedding (Embeddings): The embedding function to use.
             metadatas (Optional[List[dict]], optional): The metadata associated with
-                the texts. Defaults to None.
+                the texts. Defaults to None. The metadata values are assumed to be JSON
+                serializable.
             kwargs (Any): Vector Store specific parameters. The following are forwarded
                 to the Vector Store constructor and required:
             - index_name (str, optional): The name of the index to store the documents

@@ -97,7 +97,10 @@ def test_from_texts_with_metadatas(
     random_text = random_string()
     random_document = f"Hello world {random_text} goodbye world!"
     texts.insert(0, random_document)
-    metadatas = [{"page": f"{i}", "source": "user"} for i in range(len(texts))]
+    metadatas = [
+        {"page": i, "source": "user", "tags": ["a", "b", i * 1.0]}
+        for i in range(len(texts))
+    ]
 
     vector_store = None
     try:
@@ -116,7 +119,8 @@ def test_from_texts_with_metadatas(
         documents = vector_store.similarity_search(query=random_text, k=1)
         assert documents == [
             Document(
-                page_content=random_document, metadata={"page": "0", "source": "user"}
+                page_content=random_document,
+                metadata={"page": 0, "source": "user", "tags": ["a", "b", 0.0]},
             )
         ]
     finally:
@@ -127,7 +131,7 @@ def test_from_texts_with_metadatas(
 def test_from_texts_with_scores(vector_store: MomentoVectorIndex) -> None:
     #    """Test end to end construction and search with scores and IDs."""
     texts = ["apple", "orange", "hammer"]
-    metadatas = [{"page": f"{i}"} for i in range(len(texts))]
+    metadatas = [{"page": i} for i in range(len(texts))]
 
     vector_store.add_texts(texts, metadatas)
     wait()
@@ -136,9 +140,9 @@ def test_from_texts_with_scores(vector_store: MomentoVectorIndex) -> None:
     scores = [o[1] for o in search_results]
 
     assert docs == [
-        Document(page_content="apple", metadata={"page": "0"}),
-        Document(page_content="orange", metadata={"page": "1"}),
-        Document(page_content="hammer", metadata={"page": "2"}),
+        Document(page_content="apple", metadata={"page": 0}),
+        Document(page_content="orange", metadata={"page": 1}),
+        Document(page_content="hammer", metadata={"page": 2}),
     ]
     assert scores[0] > scores[1] > scores[2]
 
@@ -149,7 +153,7 @@ def test_add_documents_with_ids(vector_store: MomentoVectorIndex) -> None:
 
     texts = ["apple", "orange", "hammer"]
     ids = [random_string() for _ in range(len(texts))]
-    metadatas = [{"page": f"{i}"} for i in range(len(texts))]
+    metadatas = [{"page": i} for i in range(len(texts))]
 
     # Add texts with metadata and ids
     stored_ids = vector_store.add_texts(texts, metadatas, ids=ids)
