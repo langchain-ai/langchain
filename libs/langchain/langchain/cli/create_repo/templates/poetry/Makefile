@@ -26,6 +26,9 @@ format format_diff:
 	poetry run black $(PYTHON_FILES)
 	poetry run ruff --select I --fix $(PYTHON_FILES)
 
+deploy_gcp:
+	gcloud run deploy ____project_name_identifier --source . --port 8001 --env-vars-file .env.gcp.yaml --allow-unauthenticated --region us-central1 --min-instances 1
+
 ######################
 # HELP
 ######################
@@ -36,3 +39,4 @@ help:
 	@echo 'make format                       - run code formatters'
 	@echo 'make lint                         - run linters'
 	@echo 'make test                         - run unit tests'
+	@echo 'make deploy_gcp                   - deploy to GCP'

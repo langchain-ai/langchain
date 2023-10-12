@@ -37,6 +37,12 @@ def _import_alibaba_cloud_open_search_settings() -> Any:
     return AlibabaCloudOpenSearchSettings
 
 
+def _import_azure_cosmos_db() -> Any:
+    from langchain.vectorstores.azure_cosmos_db import AzureCosmosDBVectorSearch
+
+    return AzureCosmosDBVectorSearch
+
+
 def _import_elastic_knn_search() -> Any:
     from langchain.vectorstores.elastic_vector_search import ElasticKnnSearch
 
@@ -205,6 +211,12 @@ def _import_milvus() -> Any:
     return Milvus
 
 
+def _import_momento_vector_index() -> Any:
+    from langchain.vectorstores.momento_vector_index import MomentoVectorIndex
+
+    return MomentoVectorIndex
+
+
 def _import_mongodb_atlas() -> Any:
     from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 
@@ -281,6 +293,12 @@ def _import_scann() -> Any:
     from langchain.vectorstores.scann import ScaNN
 
     return ScaNN
+
+
+def _import_semadb() -> Any:
+    from langchain.vectorstores.semadb import SemaDB
+
+    return SemaDB
 
 
 def _import_singlestoredb() -> Any:
@@ -392,6 +410,8 @@ def __getattr__(name: str) -> Any:
         return _import_alibaba_cloud_open_search()
     elif name == "AlibabaCloudOpenSearchSettings":
         return _import_alibaba_cloud_open_search_settings()
+    elif name == "AzureCosmosDBVectorSearch":
+        return _import_azure_cosmos_db()
     elif name == "ElasticKnnSearch":
         return _import_elastic_knn_search()
     elif name == "ElasticVectorSearch":
@@ -446,6 +466,8 @@ def __getattr__(name: str) -> Any:
         return _import_meilisearch()
     elif name == "Milvus":
         return _import_milvus()
+    elif name == "MomentoVectorIndex":
+        return _import_momento_vector_index()
     elif name == "MongoDBAtlasVectorSearch":
         return _import_mongodb_atlas()
     elif name == "MyScaleSettings":
@@ -470,6 +492,8 @@ def __getattr__(name: str) -> Any:
         return _import_rocksetdb()
     elif name == "ScaNN":
         return _import_scann()
+    elif name == "SemaDB":
+        return _import_semadb()
     elif name == "SingleStoreDB":
         return _import_singlestoredb()
     elif name == "SKLearnVectorStore":
@@ -545,6 +569,7 @@ __all__ = [
     "MatchingEngine",
     "Meilisearch",
     "Milvus",
+    "MomentoVectorIndex",
     "MongoDBAtlasVectorSearch",
     "MyScale",
     "MyScaleSettings",
@@ -559,6 +584,7 @@ __all__ = [
     "Rockset",
     "SKLearnVectorStore",
     "ScaNN",
+    "SemaDB",
     "SingleStoreDB",
     "SingleStoreDB",
     "SQLiteVSS",
@@ -579,4 +605,5 @@ __all__ = [
     "Zilliz",
     "Zilliz",
     "TencentVectorDB",
+    "AzureCosmosDBVectorSearch",
 ]
