@@ -390,8 +390,22 @@ class MarkdownHeaderTextSplitter:
         header_stack: List[HeaderType] = []
         initial_metadata: Dict[str, str] = {}
 
+        in_code_block = False
+
         for line in lines:
             stripped_line = line.strip()
+
+            if stripped_line.startswith("```"):
+                # code block in one row
+                if stripped_line.count("```") >= 2:
+                    in_code_block = False
+                else:
+                    in_code_block = not in_code_block
+
+            if in_code_block:
+                current_content.append(stripped_line)
+                continue
+
             # Check each line against each of the header types (e.g., #, ##)
             for sep, name in self.headers_to_split_on:
                 # Check if line starts with a header that we intend to split on
@@ -628,10 +642,16 @@ class HTMLHeaderTextSplitter:
 # @dataclass(frozen=True, kw_only=True, slots=True)
 @dataclass(frozen=True)
 class Tokenizer:
+    """Tokenizer data class."""
+
     chunk_overlap: int
+    """Overlap in tokens between chunks"""
     tokens_per_chunk: int
+    """Maximum number of tokens per chunk"""
     decode: Callable[[list[int]], str]
+    """ Function to decode a list of token ids to a string"""
     encode: Callable[[str], List[int]]
+    """ Function to encode a string to a list of token ids"""
 
 
 def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
