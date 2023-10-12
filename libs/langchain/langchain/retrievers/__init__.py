@@ -31,10 +31,8 @@ from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.retrievers.google_cloud_documentai_warehouse import (
     GoogleDocumentAIWarehouseRetriever,
 )
-from langchain.retrievers.google_cloud_enterprise_search import (
-    GoogleCloudEnterpriseSearchRetriever,
-)
 from langchain.retrievers.google_vertex_ai_search import (
+    GoogleCloudEnterpriseSearchRetriever,
     GoogleVertexAISearchRetriever,
 )
 from langchain.retrievers.kay import KayAiRetriever
