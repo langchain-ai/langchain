@@ -1082,7 +1082,8 @@ async def test_abatch() -> None:
 
 
 def test_compatible_vectorstore_documentation() -> None:
-    """
+    """Test which vectorstores are compatible with the indexing API.
+
     This serves as a reminder to update the documentation in [1]
     that specifies which vectorstores are compatible with the
     indexing API.
@@ -1097,7 +1098,8 @@ def test_compatible_vectorstore_documentation() -> None:
     """
 
     # Check if a vectorstore is compatible with the indexing API
-    def check_compatibility(vector_store):
+    def check_compatibility(vector_store: VectorStore) -> bool:
+        """Check if a vectorstore is compatible with the indexing API."""
         methods = ["delete", "add_documents"]
         for method in methods:
             if not hasattr(vector_store, method):
