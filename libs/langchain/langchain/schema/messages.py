@@ -157,7 +157,10 @@ HumanMessage.update_forward_refs()
 class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     """A Human Message chunk."""
 
-    pass
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["HumanMessageChunk"] = "HumanMessageChunk"  # type: ignore[assignment] # noqa: E501
 
 
 class AIMessage(BaseMessage):
@@ -176,6 +179,11 @@ AIMessage.update_forward_refs()
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     """A Message chunk from an AI."""
+
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment] # noqa: E501
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
@@ -209,7 +217,10 @@ SystemMessage.update_forward_refs()
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     """A System Message chunk."""
 
-    pass
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["SystemMessageChunk"] = "SystemMessageChunk"  # type: ignore[assignment] # noqa: E501
 
 
 class FunctionMessage(BaseMessage):
@@ -226,6 +237,13 @@ FunctionMessage.update_forward_refs()
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     """A Function Message chunk."""
+
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal[
+        "FunctionMessageChunk"
+    ] = "FunctionMessageChunk"  # type: ignore[assignment]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):
@@ -259,6 +277,11 @@ ChatMessage.update_forward_refs()
 
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     """A Chat Message chunk."""
+
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ChatMessageChunk):

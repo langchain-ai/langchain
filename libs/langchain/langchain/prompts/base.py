@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
-from typing import Any, Callable, Dict, List, Set
+from typing import Any, Callable, Dict, List, Literal, Set
 
 from langchain.schema.messages import BaseMessage, HumanMessage
 from langchain.schema.prompt import PromptValue
@@ -12,7 +12,12 @@ from langchain.utils.formatting import formatter
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
-    """Format a template using jinja2."""
+    """Format a template using jinja2.
+
+    *Security warning*: jinja2 templates are not sandboxed and may lead
+    to arbitrary Python code execution. Do not expand jinja2 templates
+    using unverified or user-controlled inputs!
+    """
     try:
         from jinja2 import Template
     except ImportError:
@@ -99,6 +104,7 @@ class StringPromptValue(PromptValue):
 
     text: str
     """Prompt text."""
+    type: Literal["StringPromptValue"] = "StringPromptValue"
 
     def to_string(self) -> str:
         """Return prompt as string."""

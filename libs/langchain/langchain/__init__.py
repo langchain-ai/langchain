@@ -4,6 +4,8 @@ import warnings
 from importlib import metadata
 from typing import TYPE_CHECKING, Any, Optional
 
+from langchain._api.deprecation import surface_langchain_deprecation_warnings
+
 if TYPE_CHECKING:
     from langchain.schema import BaseCache
 
@@ -40,6 +42,10 @@ def _warn_on_import(name: str) -> None:
     )
 
 
+# Surfaces Deprecation and Pending Deprecation warnings from langchain.
+surface_langchain_deprecation_warnings()
+
+
 def __getattr__(name: str) -> Any:
     if name == "MRKLChain":
         from langchain.agents import MRKLChain
@@ -66,11 +72,15 @@ def __getattr__(name: str) -> Any:
 
         return ConversationChain
     elif name == "LLMBashChain":
-        from langchain.chains import LLMBashChain
+        raise ImportError(
+            "This module has been moved to langchain-experimental. "
+            "For more details: "
+            "https://github.com/langchain-ai/langchain/discussions/11352."
+            "To access this code, install it with `pip install langchain-experimental`."
+            "`from langchain_experimental.llm_bash.base "
+            "import LLMBashChain`"
+        )
 
-        _warn_on_import(name)
-
-        return LLMBashChain
     elif name == "LLMChain":
         from langchain.chains import LLMChain
 
