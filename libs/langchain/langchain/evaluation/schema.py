@@ -31,9 +31,15 @@ class EvaluatorType(str, Enum):
     PAIRWISE_STRING = "pairwise_string"
     """The pairwise string evaluator, which predicts the preferred prediction from
     between two models."""
+    SCORE_STRING = "score_string"
+    """The scored string evaluator, which gives a score between 1 and 10 
+    to a prediction."""
     LABELED_PAIRWISE_STRING = "labeled_pairwise_string"
     """The labeled pairwise string evaluator, which predicts the preferred prediction
     from between two models based on a ground truth reference label."""
+    LABELED_SCORE_STRING = "labeled_score_string"
+    """The labeled scored string evaluator, which gives a score between 1 and 10
+    to a prediction based on a ground truth reference label."""
     AGENT_TRAJECTORY = "trajectory"
     """The agent trajectory evaluator, which grades the agent's intermediate steps."""
     CRITERIA = "criteria"
@@ -44,6 +50,10 @@ class EvaluatorType(str, Enum):
     custom set of criteria, with a reference label."""
     STRING_DISTANCE = "string_distance"
     """Compare predictions to a reference answer using string edit distances."""
+    EXACT_MATCH = "exact_match"
+    """Compare predictions to a reference answer using exact matching."""
+    REGEX_MATCH = "regex_match"
+    """Compare predictions to a reference answer using regular expressions."""
     PAIRWISE_STRING_DISTANCE = "pairwise_string_distance"
     """Compare predictions based on string edit distances."""
     EMBEDDING_DISTANCE = "embedding_distance"

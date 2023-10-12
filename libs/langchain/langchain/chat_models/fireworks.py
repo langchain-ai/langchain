@@ -96,7 +96,10 @@ class ChatFireworks(BaseChatModel):
         try:
             import fireworks.client
         except ImportError as e:
-            raise ImportError("") from e
+            raise ImportError(
+                "Could not import fireworks-ai python package. "
+                "Please install it with `pip install fireworks-ai`."
+            ) from e
         fireworks_api_key = get_from_dict_or_env(
             values, "fireworks_api_key", "FIREWORKS_API_KEY"
         )
@@ -115,14 +118,16 @@ class ChatFireworks(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        message_dicts = self._create_message_dicts(messages, stop)
+        message_dicts = self._create_message_dicts(messages)
 
         params = {
             "model": self.model,
             "messages": message_dicts,
             **self.model_kwargs,
         }
-        response = completion_with_retry(self, run_manager=run_manager, **params)
+        response = completion_with_retry(
+            self, run_manager=run_manager, stop=stop, **params
+        )
         return self._create_chat_result(response)
 
     async def _agenerate(
@@ -132,13 +137,15 @@ class ChatFireworks(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        message_dicts = self._create_message_dicts(messages, stop)
+        message_dicts = self._create_message_dicts(messages)
         params = {
             "model": self.model,
             "messages": message_dicts,
             **self.model_kwargs,
         }
-        response = await acompletion_with_retry(self, run_manager=run_manager, **params)
+        response = await acompletion_with_retry(
+            self, run_manager=run_manager, stop=stop, **params
+        )
         return self._create_chat_result(response)
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
@@ -159,7 +166,7 @@ class ChatFireworks(BaseChatModel):
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
+        self, messages: List[BaseMessage]
     ) -> List[Dict[str, Any]]:
         message_dicts = [convert_message_to_dict(m) for m in messages]
         return message_dicts
@@ -171,7 +178,7 @@ class ChatFireworks(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        message_dicts = self._create_message_dicts(messages, stop)
+        message_dicts = self._create_message_dicts(messages)
         default_chunk_class = AIMessageChunk
         params = {
             "model": self.model,
@@ -179,33 +186,8 @@ class ChatFireworks(BaseChatModel):
             "stream": True,
             **self.model_kwargs,
         }
-        for chunk in completion_with_retry(self, run_manager=run_manager, **params):
-            choice = chunk.choices[0]
-            chunk = _convert_delta_to_message_chunk(choice.delta, default_chunk_class)
-            finish_reason = choice.finish_reason
-            generation_info = (
-                dict(finish_reason=finish_reason) if finish_reason is not None else None
-            )
-            default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
-
-    async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        message_dicts = self._create_message_dicts(messages, stop)
-        default_chunk_class = AIMessageChunk
-        params = {
-            "model": self.model,
-            "messages": message_dicts,
-            "stream": True,
-            **self.model_kwargs,
-        }
-        async for chunk in await acompletion_with_retry_streaming(
-            self, run_manager=run_manager, **params
+        for chunk in completion_with_retry(
+            self, run_manager=run_manager, stop=stop, **params
         ):
             choice = chunk.choices[0]
             chunk = _convert_delta_to_message_chunk(choice.delta, default_chunk_class)
@@ -215,10 +197,42 @@ class ChatFireworks(BaseChatModel):
             )
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.content, chunk=chunk)
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        message_dicts = self._create_message_dicts(messages)
+        default_chunk_class = AIMessageChunk
+        params = {
+            "model": self.model,
+            "messages": message_dicts,
+            "stream": True,
+            **self.model_kwargs,
+        }
+        async for chunk in await acompletion_with_retry_streaming(
+            self, run_manager=run_manager, stop=stop, **params
+        ):
+            choice = chunk.choices[0]
+            chunk = _convert_delta_to_message_chunk(choice.delta, default_chunk_class)
+            finish_reason = choice.finish_reason
+            generation_info = (
+                dict(finish_reason=finish_reason) if finish_reason is not None else None
+            )
+            default_chunk_class = chunk.__class__
+            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            if run_manager:
+                await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
 
 
 def completion_with_retry(
     llm: ChatFireworks,
+    *,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
@@ -238,6 +252,7 @@ def completion_with_retry(
 
 async def acompletion_with_retry(
     llm: ChatFireworks,
+    *,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
@@ -257,6 +272,7 @@ async def acompletion_with_retry(
 
 async def acompletion_with_retry_streaming(
     llm: ChatFireworks,
+    *,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:

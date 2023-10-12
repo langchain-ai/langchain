@@ -36,7 +36,7 @@ class Anyscale(LLM):
     """
 
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model. Reserved for future use"""
+    """Keyword arguments to pass to the model. Reserved for future use"""
 
     anyscale_service_url: Optional[str] = None
     anyscale_service_route: Optional[str] = None

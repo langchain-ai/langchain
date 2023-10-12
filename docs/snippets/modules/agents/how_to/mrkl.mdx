@@ -1,5 +1,9 @@
 ```python
-from langchain.chains import LLMMathChain\nfrom langchain.llms import OpenAI\nfrom langchain.utilities import SerpAPIWrapper\nfrom langchain.utilities import SQLDatabase\nfrom langchain_experimental.sql import SQLDatabaseChain
+from langchain.chains import LLMMathChain
+from langchain.llms import OpenAI
+from langchain.utilities import SerpAPIWrapper
+from langchain.utilities import SQLDatabase
+from langchain_experimental.sql import SQLDatabaseChain
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
 ```
@@ -13,7 +17,7 @@ db = SQLDatabase.from_uri("sqlite:///../../../../../notebooks/Chinook.db")
 db_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True)
 tools = [
     Tool(
-        name = "Search",
+        name="Search",
         func=search.run,
         description="useful for when you need to answer questions about current events. You should ask targeted questions"
     ),

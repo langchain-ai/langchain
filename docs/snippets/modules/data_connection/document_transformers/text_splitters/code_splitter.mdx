@@ -17,7 +17,9 @@ from langchain.text_splitter import (
     ['cpp',
      'go',
      'java',
+     'kotlin',
      'js',
+     'ts',
      'php',
      'proto',
      'python',
@@ -29,7 +31,8 @@ from langchain.text_splitter import (
      'markdown',
      'latex',
      'html',
-     'sol',]
+     'sol',
+     'csharp']
 ```
 
 </CodeOutputBlock>
@@ -102,6 +105,36 @@ js_docs
 
 ```
     [Document(page_content='function helloWorld() {\n  console.log("Hello, World!");\n}', metadata={}),
+     Document(page_content='// Call the function\nhelloWorld();', metadata={})]
+```
+
+</CodeOutputBlock>
+
+## TS
+Here's an example using the TS text splitter:
+
+
+```python
+TS_CODE = """
+function helloWorld(): void {
+  console.log("Hello, World!");
+}
+
+// Call the function
+helloWorld();
+"""
+
+ts_splitter = RecursiveCharacterTextSplitter.from_language(
+    language=Language.TS, chunk_size=60, chunk_overlap=0
+)
+ts_docs = ts_splitter.create_documents([TS_CODE])
+ts_docs
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='function helloWorld(): void {\n  console.log("Hello, World!");\n}', metadata={}),
      Document(page_content='// Call the function\nhelloWorld();', metadata={})]
 ```
 
@@ -307,6 +340,75 @@ sol_docs
     Document(page_content='pragma solidity ^0.8.20;', metadata={}),
     Document(page_content='contract HelloWorld {\n   function add(uint a, uint b) pure public returns(uint) {\n       return a + b;\n   }\n}', metadata={})
 ]
+ ```
+
+ </CodeOutputBlock>
+
+
+## C#
+Here's an example using the C# text splitter:
+
+```csharp
+using System;
+class Program
+{
+    static void Main()
+    {
+        int age = 30; // Change the age value as needed
+
+        // Categorize the age without any console output
+        if (age < 18)
+        {
+            // Age is under 18
+        }
+        else if (age >= 18 && age < 65)
+        {
+            // Age is an adult
+        }
+        else
+        {
+            // Age is a senior citizen
+        }
+    }
+}
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='using System;', metadata={}),
+     Document(page_content='class Program\n{', metadata={}),
+     Document(page_content='static void', metadata={}),
+     Document(page_content='Main()', metadata={}),
+     Document(page_content='{', metadata={}),
+     Document(page_content='int age', metadata={}),
+     Document(page_content='= 30; // Change', metadata={}),
+     Document(page_content='the age value', metadata={}),
+     Document(page_content='as needed', metadata={}),
+     Document(page_content='//', metadata={}),
+     Document(page_content='Categorize the', metadata={}),
+     Document(page_content='age without any', metadata={}),
+     Document(page_content='console output', metadata={}),
+     Document(page_content='if (age', metadata={}),
+     Document(page_content='< 18)', metadata={}),
+     Document(page_content='{', metadata={}),
+     Document(page_content='//', metadata={}),
+     Document(page_content='Age is under 18', metadata={}),
+     Document(page_content='}', metadata={}),
+     Document(page_content='else if', metadata={}),
+     Document(page_content='(age >= 18 &&', metadata={}),
+     Document(page_content='age < 65)', metadata={}),
+     Document(page_content='{', metadata={}),
+     Document(page_content='//', metadata={}),
+     Document(page_content='Age is an adult', metadata={}),
+     Document(page_content='}', metadata={}),
+     Document(page_content='else', metadata={}),
+     Document(page_content='{', metadata={}),
+     Document(page_content='//', metadata={}),
+     Document(page_content='Age is a senior', metadata={}),
+     Document(page_content='citizen', metadata={}),
+     Document(page_content='}\n    }', metadata={}),
+     Document(page_content='}', metadata={})]
  ```
 
  </CodeOutputBlock>

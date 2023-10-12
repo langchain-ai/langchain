@@ -80,7 +80,7 @@ def check_index_exists(client: RedisType, index_name: str) -> bool:
 
 
 class Redis(VectorStore):
-    """Wrapper around Redis vector database.
+    """Redis vector database.
 
     To use, you should have the ``redis`` python package installed
     and have a running Redis Enterprise or Redis-Stack server

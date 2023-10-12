@@ -42,6 +42,7 @@ def _convert_resp_to_message_chunk(resp: Mapping[str, Any]) -> BaseMessageChunk:
 
 
 def convert_message_to_dict(message: BaseMessage) -> dict:
+    """Convert a message to a dictionary that can be passed to the API."""
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -105,11 +106,12 @@ class QianfanChatEndpoint(BaseChatModel):
     """
 
     model: str = "ERNIE-Bot-turbo"
-    """Model name. 
+    """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
-    `model` will be ignored if `endpoint` is set
+    `model` will be ignored if `endpoint` is set.
+    Default is ERNIE-Bot-turbo.
     """
 
     endpoint: Optional[str] = None

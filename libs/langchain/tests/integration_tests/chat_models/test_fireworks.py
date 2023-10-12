@@ -73,7 +73,7 @@ def test_chat_fireworks_llm_output_contains_model_id() -> None:
 
 
 def test_fireworks_streaming() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from Fireworks."""
     llm = ChatFireworks()
 
     for token in llm.stream("I'm Pickle Rick"):
@@ -98,7 +98,7 @@ async def test_chat_fireworks_agenerate() -> None:
 
 @pytest.mark.asyncio
 async def test_fireworks_astream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from Fireworks."""
     llm = ChatFireworks()
 
     async for token in llm.astream("Who's the best quarterback in the NFL?"):
