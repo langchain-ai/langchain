@@ -54,11 +54,6 @@ if TYPE_CHECKING:
     from langchain.vectorstores.redis.schema import RedisModel
 
 
-def _redis_key(prefix: str) -> str:
-    """Redis key schema for a given prefix."""
-    return f"{prefix}:{uuid.uuid4().hex}"
-
-
 def _redis_prefix(index_name: str) -> str:
     """Redis key prefix for a given index."""
     return f"doc:{index_name}"
@@ -420,14 +415,8 @@ class Redis(VectorStore):
             **kwargs,
         )
 
-        # Create embeddings over documents
-        embeddings = embedding.embed_documents(texts)
-
-        # Create the search index
-        instance._create_index(dim=len(embeddings[0]))
-
         # Add data to Redis
-        keys = instance.add_texts(texts, metadatas, embeddings, keys=keys)
+        keys = instance.add_texts(texts, metadatas, keys=keys)
         return instance, keys
 
     @classmethod
@@ -705,27 +694,24 @@ class Redis(VectorStore):
             if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
 
+        embeddings = embeddings or self._embeddings.embed_documents(list(texts))
+        self._create_index_if_not_exist(dim=len(embeddings[0]))
+
         # Write data to redis
         pipeline = self.client.pipeline(transaction=False)
-        if not embeddings:
-            embeddings = []
-            for i, text in enumerate(texts):
-                embeddings.append(self._embeddings.embed_query(text))
-        self._create_index(len(embeddings[0]))
         for i, text in enumerate(texts):
             # Use provided values by default or fallback
-            key = f"{prefix}:{keys_or_ids[i]}" if keys_or_ids else _redis_key(prefix)
+            key = keys_or_ids[i] if keys_or_ids else str(uuid.uuid4().hex)
+            if not key.startswith(prefix + ":"):
+                key = prefix + ":" + key
             metadata = metadatas[i] if metadatas else {}
             metadata = _prepare_metadata(metadata) if clean_metadata else metadata
-            embedding = (
-                embeddings[i] if embeddings else self._embeddings.embed_query(text)
-            )
             pipeline.hset(
                 key,
                 mapping={
                     self._schema.content_key: text,
                     self._schema.content_vector_key: _array_to_buffer(
-                        embedding, self._schema.vector_dtype
+                        embeddings[i], self._schema.vector_dtype
                     ),
                     **metadata,
                 },
@@ -1217,7 +1203,7 @@ class Redis(VectorStore):
             schema.add_vector_field(vector_field)
         return schema
 
-    def _create_index(self, dim: int = 1536) -> None:
+    def _create_index_if_not_exist(self, dim: int = 1536) -> None:
         try:
             from redis.commands.search.indexDefinition import (  # type: ignore
                 IndexDefinition,
