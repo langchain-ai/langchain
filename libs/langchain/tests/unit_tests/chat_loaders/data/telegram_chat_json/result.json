@@ -1,0 +1,67 @@
+{
+ "name": "Jimmeny",
+ "type": "personal_chat",
+ "id": 5965280513,
+ "messages": [
+  {
+   "id": 1,
+   "type": "message",
+   "date": "2023-08-23T13:11:23",
+   "date_unixtime": "1692821483",
+   "from": "Jimmeny Marvelton",
+   "from_id": "user123450513",
+   "text": "i refuse to converse with you",
+   "text_entities": [
+    {
+     "type": "plain",
+     "text": "i refuse to converse with you"
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "type": "message",
+   "date": "2023-08-23T13:13:20",
+   "date_unixtime": "1692821600",
+   "from": "Batman & Robin",
+   "from_id": "user6565661032",
+   "text": "Hi nemesis",
+   "text_entities": [
+    {
+     "type": "plain",
+     "text": "Hi nemesis"
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "type": "message",
+   "date": "2023-08-23T13:15:35",
+   "date_unixtime": "1692821735",
+   "from": "Jimmeny Marvelton",
+   "from_id": "user123450513",
+   "text": "we meet again",
+   "text_entities": [
+    {
+     "type": "plain",
+     "text": "we meet again"
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "type": "message",
+   "date": "2023-08-23T13:15:53",
+   "date_unixtime": "1692821753",
+   "from": "Jimmeny Marvelton",
+   "from_id": "user123450513",
+   "text": "you will not trick me this time",
+   "text_entities": [
+    {
+     "type": "plain",
+     "text": "you will not trick me this time"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,20 @@
+{
+    "input_variables": [
+        "question",
+        "student_answer"
+    ],
+    "output_parser": {
+        "regex": "(.*?)\nScore: (.*)",
+        "output_keys": [
+            "answer",
+            "score"
+        ],
+        "default_output_key": null,
+        "_type": "regex_parser"
+    },
+    "partial_variables": {},
+    "template": "Given the following question and student answer, provide a correct answer and score the student answer.\nQuestion: {question}\nStudent Answer: {student_answer}\nCorrect Answer:",
+    "template_format": "f-string",
+    "validate_template": true,
+    "_type": "prompt"
+}

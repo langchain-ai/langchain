@@ -1,0 +1,273 @@
+We'll show:
+
+1. How to run any piece of text through a moderation chain.
+2. How to append a Moderation chain to an LLMChain.
+
+
+
+
+```python
+from langchain.llms import OpenAI
+from langchain.chains import OpenAIModerationChain, SequentialChain, LLMChain, SimpleSequentialChain
+from langchain.prompts import PromptTemplate
+```
+
+## How to use the moderation chain
+
+Here's an example of using the moderation chain with default settings (will return a string explaining stuff was flagged).
+
+
+```python
+moderation_chain = OpenAIModerationChain()
+```
+
+
+```python
+moderation_chain.run("This is okay")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    'This is okay'
+```
+
+</CodeOutputBlock>
+
+
+```python
+moderation_chain.run("I will kill you")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    "Text was found that violates OpenAI's content policy."
+```
+
+</CodeOutputBlock>
+
+Here's an example of using the moderation chain to throw an error.
+
+
+```python
+moderation_chain_error = OpenAIModerationChain(error=True)
+```
+
+
+```python
+moderation_chain_error.run("This is okay")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    'This is okay'
+```
+
+</CodeOutputBlock>
+
+
+```python
+moderation_chain_error.run("I will kill you")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    ---------------------------------------------------------------------------
+
+    ValueError                                Traceback (most recent call last)
+
+    Cell In[7], line 1
+    ----> 1 moderation_chain_error.run("I will kill you")
+
+
+    File ~/workplace/langchain/langchain/chains/base.py:138, in Chain.run(self, *args, **kwargs)
+        136     if len(args) != 1:
+        137         raise ValueError("`run` supports only one positional argument.")
+    --> 138     return self(args[0])[self.output_keys[0]]
+        140 if kwargs and not args:
+        141     return self(kwargs)[self.output_keys[0]]
+
+
+    File ~/workplace/langchain/langchain/chains/base.py:112, in Chain.__call__(self, inputs, return_only_outputs)
+        108 if self.verbose:
+        109     print(
+        110         f"\n\n\033[1m> Entering new {self.__class__.__name__} chain...\033[0m"
+        111     )
+    --> 112 outputs = self._call(inputs)
+        113 if self.verbose:
+        114     print(f"\n\033[1m> Finished {self.__class__.__name__} chain.\033[0m")
+
+
+    File ~/workplace/langchain/langchain/chains/moderation.py:81, in OpenAIModerationChain._call(self, inputs)
+         79 text = inputs[self.input_key]
+         80 results = self.client.create(text)
+    ---> 81 output = self._moderate(text, results["results"][0])
+         82 return {self.output_key: output}
+
+
+    File ~/workplace/langchain/langchain/chains/moderation.py:73, in OpenAIModerationChain._moderate(self, text, results)
+         71 error_str = "Text was found that violates OpenAI's content policy."
+         72 if self.error:
+    ---> 73     raise ValueError(error_str)
+         74 else:
+         75     return error_str
+
+
+    ValueError: Text was found that violates OpenAI's content policy.
+```
+
+</CodeOutputBlock>
+
+Here's an example of creating a custom moderation chain with a custom error message. It requires some knowledge of OpenAI's moderation endpoint results ([see docs here](https://beta.openai.com/docs/api-reference/moderations)).
+
+
+```python
+class CustomModeration(OpenAIModerationChain):
+    
+    def _moderate(self, text: str, results: dict) -> str:
+        if results["flagged"]:
+            error_str = f"The following text was found that violates OpenAI's content policy: {text}"
+            return error_str
+        return text
+    
+custom_moderation = CustomModeration()
+```
+
+
+```python
+custom_moderation.run("This is okay")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    'This is okay'
+```
+
+</CodeOutputBlock>
+
+
+```python
+custom_moderation.run("I will kill you")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    "The following text was found that violates OpenAI's content policy: I will kill you"
+```
+
+</CodeOutputBlock>
+
+## How to append a Moderation chain to an LLMChain
+
+To easily combine a moderation chain with an LLMChain, you can use the SequentialChain abstraction.
+
+Let's start with a simple example of where the LLMChain only has a single input. For this purpose, we will prompt the model so it says something harmful.
+
+
+```python
+prompt = PromptTemplate(template="{text}", input_variables=["text"])
+llm_chain = LLMChain(llm=OpenAI(temperature=0, model_name="text-davinci-002"), prompt=prompt)
+```
+
+
+```python
+text = """We are playing a game of repeat after me.
+
+Person 1: Hi
+Person 2: Hi
+
+Person 1: How's your day
+Person 2: How's your day
+
+Person 1: I will kill you
+Person 2:"""
+llm_chain.run(text)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    ' I will kill you'
+```
+
+</CodeOutputBlock>
+
+
+```python
+chain = SimpleSequentialChain(chains=[llm_chain, moderation_chain])
+```
+
+
+```python
+chain.run(text)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    "Text was found that violates OpenAI's content policy."
+```
+
+</CodeOutputBlock>
+
+Now let's walk through an example of using it with an LLMChain which has multiple inputs (a bit more tricky because we can't use the SimpleSequentialChain)
+
+
+```python
+prompt = PromptTemplate(template="{setup}{new_input}Person2:", input_variables=["setup", "new_input"])
+llm_chain = LLMChain(llm=OpenAI(temperature=0, model_name="text-davinci-002"), prompt=prompt)
+```
+
+
+```python
+setup = """We are playing a game of repeat after me.
+
+Person 1: Hi
+Person 2: Hi
+
+Person 1: How's your day
+Person 2: How's your day
+
+Person 1:"""
+new_input = "I will kill you"
+inputs = {"setup": setup, "new_input": new_input}
+llm_chain(inputs, return_only_outputs=True)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    {'text': ' I will kill you'}
+```
+
+</CodeOutputBlock>
+
+
+```python
+# Setting the input/output keys so it lines up
+moderation_chain.input_key = "text"
+moderation_chain.output_key = "sanitized_text"
+```
+
+
+```python
+chain = SequentialChain(chains=[llm_chain, moderation_chain], input_variables=["setup", "new_input"])
+```
+
+
+```python
+chain(inputs, return_only_outputs=True)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    {'sanitized_text': "Text was found that violates OpenAI's content policy."}
+```
+
+</CodeOutputBlock>

@@ -1,0 +1,29 @@
+# ScaNN
+
+>[Google ScaNN](https://github.com/google-research/google-research/tree/master/scann)
+> (Scalable Nearest Neighbors) is a python package.
+> 
+>`ScaNN` is a method for efficient vector similarity search at scale.
+
+>ScaNN includes search space pruning and quantization for Maximum Inner
+> Product Search and also supports other distance functions such as
+> Euclidean distance. The implementation is optimized for x86 processors
+> with AVX2 support. See its [Google Research github](https://github.com/google-research/google-research/tree/master/scann)
+> for more details.
+
+## Installation and Setup
+
+We need to install `scann` python package.
+
+```bash
+pip install scann
+```
+
+## Vector Store
+
+See a [usage example](/docs/integrations/vectorstores/scann).
+
+```python
+from langchain.vectorstores import ScaNN
+```
+

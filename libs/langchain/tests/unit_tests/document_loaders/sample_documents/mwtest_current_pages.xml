@@ -1,0 +1,211 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Text Wiki</sitename>
+    <dbname>test123</dbname>
+    <base>http://control.fandom.com/wiki/Control_Wiki</base>
+    <generator>MediaWiki 1.37.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Text Wiki</namespace>
+      <namespace key="5" case="first-letter">Text Wiki talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="110" case="first-letter">Forum</namespace>
+      <namespace key="111" case="first-letter">Forum talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="500" case="first-letter">User blog</namespace>
+      <namespace key="501" case="first-letter">User blog comment</namespace>
+      <namespace key="502" case="first-letter">Blog</namespace>
+      <namespace key="503" case="first-letter">Blog talk</namespace>
+      <namespace key="710" case="first-letter">TimedText</namespace>
+      <namespace key="711" case="first-letter">TimedText talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="1200" case="first-letter">Message Wall</namespace>
+      <namespace key="1201" case="first-letter">Thread</namespace>
+      <namespace key="1202" case="first-letter">Message Wall Greeting</namespace>
+      <namespace key="2000" case="first-letter">Board</namespace>
+      <namespace key="2001" case="first-letter">Board Thread</namespace>
+      <namespace key="2002" case="first-letter">Topic</namespace>
+      <namespace key="2900" case="first-letter">Map</namespace>
+      <namespace key="2901" case="first-letter">Map talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Whiskers the Cat</title>
+    <ns>0</ns>
+    <id>190</id>
+    <revision>
+      <id>14802</id>
+      <parentid>14312</parentid>
+      <timestamp>2022-04-30T04:37:40Z</timestamp>
+      <contributor>
+        <username>Test user</username>
+        <id>47482455</id>
+      </contributor>
+      <minor/>
+      <comment>/* External links */Unicode+Fixes</comment>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="233" sha1="qa5cny8ozb0vw4ahvoxevpe0u8f03lw" xml:space="preserve">
+      {{Standard Animal
+|title = Whiskers the Cat
+|image =whiskers.jpg
+|full_name = Sir Whiskers Whiskerington Whiskey Wiskerton III
+|birth = May 9, 2018&lt;br&gt;Portland, Maine, U.S.
+|age = {{Age|2018|5|09}}
+|gender = Male
+|nationality = American
+|occupation = Cat
+}}
+'''Whiskers the Cat '''is an American cat. 
+
+== Gallery ==
+&lt;gallery widths="200" spacing="small" position="left" captionalign="left" hideaddbutton="true"&gt;
+whiskers-on-the-floor.jpg|Whiskers is known for taking long naps
+&lt;/gallery&gt;
+
+== Appearance and Personality ==
+
+Whiskers is a medium-sized cat with a soft and fluffy coat. Its fur is predominantly white, with patches of orange and gray, giving it a unique and eye-catching appearance. But what truly sets Whiskers apart are its long, elegant whiskers that frame its adorable face.
+
+Aside from its adorable appearance, Whiskers is known for its friendly and sociable personality. This cat is extremely affectionate and loves to curl up on laps for a cozy cuddle. It enjoys playing with toys, chasing laser pointers, and exploring its surroundings with curiosity.
+
+== Popularity ==
+
+Whiskers rose to fame through social media platforms, where its adorable pictures and videos quickly went viral. Many internet users were captivated by its cuteness and endearing antics, leading to a dedicated following of fans and admirers.
+
+== Legacy ==
+
+Whiskers has become an iconic internet sensation, symbolizing the charm and playfulness of cats. It has inspired countless memes, fan art, and even merchandise. Whiskers continues to bring joy and happiness to people around the world, reminding us of the beauty and companionship that pets can bring into our lives.
+
+== References ==
+{{Reflist}}
+
+
+== External links ==
+* [[Wikipedia:Cat]] on Wikipedia
+
+{{WikiNavbox}}
+[[Category:Cats]]</text>
+      <sha1>qa5cny8ozb0vw4ahvoxevpe0u8f03lw</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>File:TestPics.jpg</title>
+    <ns>6</ns>
+    <id>123</id>
+    <revision>
+      <id>14331</id>
+      <parentid>14802</parentid>
+      <timestamp>2023-04-17T16:39:12Z</timestamp>
+      <contributor>
+        <username>user</username>
+        <id>123456</id>
+      </contributor>
+      <minor/>
+      <comment>user moved page [[File:920x920.jpg]] to [[File:test.jpg]] for reasons</comment>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="25" sha1="1diptt6cjtef34rewxvcmnduax281kz40p" xml:space="preserve">
+[[Category:Test images]]</text>
+      <sha1>1diptt6cjter6axvcmnduax281kz40p</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Gallagher</title>
+    <ns>0</ns>
+    <id>789</id>
+    <revision>
+      <id></id>
+      <parentid>14312</parentid>
+      <timestamp>2022-04-30T04:37:40Z</timestamp>
+      <contributor>
+        <username>Test User</username>
+        <id>474112455</id>
+      </contributor>
+      <minor/>
+      <comment>/* External links */Unicode+Fixes</comment>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="942" sha1="qa5cny8ozb0vw4ahvoxevpe0u8f03lw" xml:space="preserve">
+      {{Standard Animal
+|title = Gallagher
+|image =gallagher-hockey.jpg
+|full_name = Gallager Golden
+|birth = November 13, 1994&lt;br&gt;Boston, Massachusetts, U.S.
+|age = {{Age|1994|11|13}}
+|gender = Male
+|nationality = American
+|occupation = Professional Hockey Player
+}}
+== Gallagher (Golden Retriever) ==
+
+[[File:Gallagher the Golden Retriever.jpg|thumb|Gallagher, the talented golden retriever]]
+
+'''Gallagher''' is a golden retriever who gained widespread attention as a professional hockey player for the Boston Bruins during the 1997-1998 season. This remarkable canine athlete captivated audiences with its exceptional skills on the ice and became an icon in the world of sports.
+
+== Career ==
+
+Gallagher's journey to becoming a professional hockey player began when it was discovered by Bruins' scouts during a charity event. Impressed by its agility, speed, and natural talent for puck handling, the team decided to sign Gallagher as an honorary member.
+
+During the 1997-1998 season, Gallagher proved to be a remarkable asset to the Bruins. Although unconventional, its ability to navigate the rink, steal the puck, and assist in scoring goals astonished both teammates and opponents alike. Despite the challenges of being a dog in a human-dominated sport, Gallagher's determination and love for the game were unmatched.
+
+== Statistics ==
+
+Throughout the 1997-1998 season, Gallagher's statistics were nothing short of extraordinary:
+
+- Goals: 25
+- Assists: 40
+- Penalties: 10
+
+These impressive numbers placed Gallagher among the league's top performers and solidified its status as an unforgettable player.
+
+== Legacy ==
+
+Gallagher's incredible achievements as a golden retriever hockey player left an indelible mark on the sport. It inspired a generation of fans and players alike, proving that dedication, teamwork, and a little bit of canine charm can overcome any obstacle.
+
+While Gallagher's hockey career was limited to a single season, its impact transcended the game. The dog's popularity skyrocketed, leading to numerous endorsements, appearances in movies and commercials, and even a line of dog-themed hockey merchandise.
+
+== References ==
+{{Reflist}}
+[[Category: Animals]]
+</text>
+      <sha1>qa5cny9y86ftfuyyuoxevpe0u8f03lw</sha1>
+    </revision>
+  </page>
+<page>
+    <title>Sir Whiskers Whiskerington Whiskey Wiskerton III</title>
+    <ns>0</ns>
+    <id>101</id>
+    <redirect title="Whiskers" />
+    <revision>
+      <id>455</id>
+      <timestamp>2018-10-17T04:10:06Z</timestamp>
+      <contributor>
+        <username>Test User</username>
+        <id>35032394</id>
+      </contributor>
+      <comment>User moved page [[Sir Whiskers Whiskerington Whiskey Wiskerton III]] to [[Whiskers]]</comment>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="22" sha1="e854tjjb9a233fsdfs6bp1ve4v8g2qnkma" xml:space="preserve">#REDIRECT [[Whiskers]]</text>
+      <sha1>e854tjjb9a233fsdfs6bp1ve4v8g2qnkma</sha1>
+    </revision>
+  </page>
+</mediawiki>
