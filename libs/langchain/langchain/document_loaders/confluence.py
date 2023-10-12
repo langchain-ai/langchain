@@ -521,7 +521,7 @@ class ConfluenceLoader(BaseLoader):
             metadata=metadata,
         )
 
-   def process_attachment(
+    def process_attachment(
         self,
         page_id: str,
         ocr_languages: Optional[str] = None,
@@ -562,7 +562,7 @@ class ConfluenceLoader(BaseLoader):
                 else:
                     continue
                 texts.append(text)
-            except HTTPError as e:
+            except requests.HTTPError as e:
                 if e.response.status_code == 404:
                     print(f"Attachment not found at {absolute_url}")
                     continue
