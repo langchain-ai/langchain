@@ -124,10 +124,12 @@ def _destrip(tool_input: Any) -> Any:
 
 
 class AnthropicFunctions(BaseChatModel):
-    model: ChatAnthropic
+    model: BaseChatModel
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
+        if "llm" in values:
+            return {"model": values["llm"]}
         return {"model": ChatAnthropic(**values)}
 
     def _generate(

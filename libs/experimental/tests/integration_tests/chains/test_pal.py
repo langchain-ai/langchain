@@ -1,6 +1,6 @@
 """Test PAL chain."""
 
-from langchain.chains.pal.base import PALChain
+from langchain_experimental.pal_chain.base import PALChain
 from langchain.llms import OpenAI
 
 

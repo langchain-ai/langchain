@@ -1,7 +1,7 @@
 """Test SQL Database Chain."""
 from langchain.llms.openai import OpenAI
 from langchain.utilities.sql_database import SQLDatabase
-from libs.experimental.langchain_experimental.sql.base import (
+from langchain_experimental.sql.base import (
     SQLDatabaseChain,
     SQLDatabaseSequentialChain,
 )
