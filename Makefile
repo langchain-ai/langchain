@@ -15,10 +15,10 @@ docs_build:
 	docs/.local_build.sh
 
 docs_clean:
-	rm -r docs/_dist
+	rm -r _dist
 
 docs_linkcheck:
-	poetry run linkchecker docs/_dist/docs/ --ignore-url node_modules
+	poetry run linkchecker _dist/docs/ --ignore-url node_modules
 
 api_docs_build:
 	poetry run python docs/api_reference/create_api_rst.py
