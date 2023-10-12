@@ -124,13 +124,22 @@ def _destrip(tool_input: Any) -> Any:
 
 
 class AnthropicFunctions(BaseChatModel):
-    model: BaseChatModel
+    llm: BaseChatModel
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        if "llm" in values:
-            return {"model": values["llm"]}
-        return {"model": ChatAnthropic(**values)}
+        values["llm"] = values.get("llm") or ChatAnthropic(**values)
+        return values
+
+    @property
+    def model(self) -> BaseChatModel:
+        """For backwards compatibility."""
+        return self.llm
 
     def _generate(
         self,
