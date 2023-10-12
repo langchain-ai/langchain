@@ -1,7 +1,7 @@
 import asyncio
 import json
 from json import JSONDecodeError
-from typing import List, Union
+from typing import List, Optional, Union
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.schema import (
@@ -15,6 +15,7 @@ from langchain.schema.messages import (
     BaseMessage,
 )
 from langchain.schema.output import ChatGeneration, Generation
+from langchain.schema.prompt import PromptValue
 
 
 class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
@@ -76,7 +77,11 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         )
 
     def parse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self,
+        result: List[Generation],
+        *,
+        prompt: Optional[PromptValue] = None,
+        partial: bool = False,
     ) -> Union[AgentAction, AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             raise ValueError("This output parser only works on ChatGeneration output")
@@ -84,7 +89,11 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         return self._parse_ai_message(message)
 
     async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self,
+        result: List[Generation],
+        *,
+        prompt: Optional[PromptValue] = None,
+        partial: bool = False,
     ) -> Union[AgentAction, AgentFinish]:
         return await asyncio.get_running_loop().run_in_executor(
             None, self.parse_result, result

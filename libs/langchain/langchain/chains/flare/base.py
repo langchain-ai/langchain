@@ -38,7 +38,7 @@ class _ResponseChain(LLMChain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Tuple[Sequence[str], Sequence[float]]:
         llm_result = self.generate([_input], run_manager=run_manager)
-        return self._extract_tokens_and_log_probs(llm_result.generations[0])
+        return self._extract_tokens_and_log_probs(llm_result[1].generations[0])
 
     @abstractmethod
     def _extract_tokens_and_log_probs(
