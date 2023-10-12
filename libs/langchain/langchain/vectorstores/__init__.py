@@ -295,6 +295,12 @@ def _import_scann() -> Any:
     return ScaNN
 
 
+def _import_semadb() -> Any:
+    from langchain.vectorstores.semadb import SemaDB
+
+    return SemaDB
+
+
 def _import_singlestoredb() -> Any:
     from langchain.vectorstores.singlestoredb import SingleStoreDB
 
@@ -486,6 +492,8 @@ def __getattr__(name: str) -> Any:
         return _import_rocksetdb()
     elif name == "ScaNN":
         return _import_scann()
+    elif name == "SemaDB":
+        return _import_semadb()
     elif name == "SingleStoreDB":
         return _import_singlestoredb()
     elif name == "SKLearnVectorStore":
@@ -576,6 +584,7 @@ __all__ = [
     "Rockset",
     "SKLearnVectorStore",
     "ScaNN",
+    "SemaDB",
     "SingleStoreDB",
     "SingleStoreDB",
     "SQLiteVSS",

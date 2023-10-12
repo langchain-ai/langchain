@@ -19,7 +19,7 @@ See the notebook [Connect to Databricks](/docs/use_cases/qa_structured/integrati
 Databricks MLflow integrates with LangChain
 -------------------------------------------
 
-MLflow is an open source platform to manage the ML lifecycle, including experimentation, reproducibility, deployment, and a central model registry. See the notebook [MLflow Callback Handler](/docs/integrations/providers/mlflow_tracking) for details about MLflow's integration with LangChain.
+MLflow is an open-source platform to manage the ML lifecycle, including experimentation, reproducibility, deployment, and a central model registry. See the notebook [MLflow Callback Handler](/docs/integrations/providers/mlflow_tracking) for details about MLflow's integration with LangChain.
 
 Databricks provides a fully managed and hosted version of MLflow integrated with enterprise security features, high availability, and other Databricks workspace features such as experiment and run management and notebook revision capture. MLflow on Databricks offers an integrated experience for tracking and securing machine learning model training runs and running machine learning projects. See [MLflow guide](https://docs.databricks.com/mlflow/index.html) for more details.
 
