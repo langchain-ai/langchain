@@ -76,5 +76,5 @@ __all__ = [
     "BaseLLMOutputParser",
     "BasePromptTemplate",
     "format_document",
-"TrainResult",
+    "TrainResult",
 ]
