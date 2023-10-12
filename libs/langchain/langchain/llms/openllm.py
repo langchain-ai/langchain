@@ -218,8 +218,8 @@ class OpenLLM(LLM):
         """Get the identifying parameters."""
         if self._client is not None:
             self.llm_kwargs.update(self._client._config())
-            model_name = self._metadata()["model_name"]
-            model_id = self._metadata()["model_id"]
+            model_name = self._client._metadata()["model_name"]
+            model_id = self._client._metadata()["model_id"]
         else:
             if self._runner is None:
                 raise ValueError("Runner must be initialized.")
@@ -302,8 +302,9 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
+            async_client = openllm.client.AsyncHTTPClient(self.server_url)
             res = (
-                await self._client.generate(prompt, **config.model_dump(flatten=True))
+                await async_client.generate(prompt, **config.model_dump(flatten=True))
             ).responses[0]
         else:
             assert self._runner is not None
