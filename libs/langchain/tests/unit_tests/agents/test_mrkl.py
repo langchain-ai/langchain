@@ -152,7 +152,7 @@ def test_from_chains() -> None:
     ]
     agent = ZeroShotAgent.from_llm_and_tools(FakeLLM(), chain_configs)
     expected_tools_prompt = "foo: foobar1\nbar: foobar2"
-    expected_tool_names = "foo, bar"
+    expected_tool_names = "\"foo\", \"bar\""
     expected_template = "\n\n".join(
         [
             PREFIX,
