@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -251,7 +252,7 @@ class BaseOutputParser(
             Structured output.
         """
         return await asyncio.get_running_loop().run_in_executor(
-            None, self.parse_result, result
+            None, functools.partial(self.parse_result, partial=partial), result
         )
 
     async def aparse(self, text: str) -> T:
