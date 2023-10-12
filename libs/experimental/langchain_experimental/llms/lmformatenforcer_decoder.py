@@ -1,7 +1,6 @@
 """Experimental implementation of lm-format-enforcer wrapped LLM."""
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
@@ -52,10 +51,10 @@ class LMFormatEnforcer(HuggingFacePipeline):
         **kwargs: Any,
     ):
         # We integrate lmformatenforcer by adding a prefix_allowed_tokens_fn.
-        # It has to be done on each call, because the prefix function is stateful, so it needs to be reinitialized.
+        # It has to be done on each call, because the prefix function is stateful.
         if "prefix_allowed_tokens_fn" in self.pipeline._forward_params:
             raise ValueError(
-                "prefix_allowed_tokens_fn is already set, unsupported by LMFormatEnforcer."
+                "prefix_allowed_tokens_fn param is forbidden with LMFormatEnforcer."
             )
 
         has_json_schema = self.json_schema is not None
