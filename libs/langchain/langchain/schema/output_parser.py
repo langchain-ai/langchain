@@ -250,7 +250,9 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
-        return await self.aparse(result[0].text)
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self.parse_result, result
+        )
 
     async def aparse(self, text: str) -> T:
         """Parse a single string model output into some structure.
