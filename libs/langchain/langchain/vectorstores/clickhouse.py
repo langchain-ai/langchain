@@ -34,9 +34,9 @@ class ClickhouseSettings(BaseSettings):
     """`ClickHouse` client configuration.
 
     Attribute:
-        clickhouse_host (str) : An URL to connect to MyScale backend.
+        host (str) : An URL to connect to MyScale backend.
                              Defaults to 'localhost'.
-        clickhouse_port (int) : URL port to connect with HTTP. Defaults to 8443.
+        port (int) : URL port to connect with HTTP. Defaults to 8443.
         username (str) : Username to login. Defaults to None.
         password (str) : Password to login. Defaults to None.
         index_type (str): index type string.
