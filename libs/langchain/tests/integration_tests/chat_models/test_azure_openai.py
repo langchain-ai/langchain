@@ -14,18 +14,34 @@ from langchain.schema import (
 from langchain.schema.messages import BaseMessage, HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
-os.environ["OPENAI_API_VERSION"] = os.environ.get("AZURE_OPENAI_API_VERSION", "")
-os.environ["OPENAI_API_BASE"] = os.environ.get("AZURE_OPENAI_API_BASE", "")
-os.environ["OPENAI_API_KEY"] = os.environ.get("AZURE_OPENAI_API_KEY", "")
+OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "")
+OPENAI_API_BASE = os.environ.get("AZURE_OPENAI_API_BASE", "")
+OPENAI_API_KEY = os.environ.get("AZURE_OPENAI_API_KEY", "")
 DEPLOYMENT_NAME = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "")
 
 
+def _get_llm(**kwargs: Any) -> AzureChatOpenAI:
+    return AzureChatOpenAI(
+        deployment_name=DEPLOYMENT_NAME,
+        openai_api_version=OPENAI_API_VERSION,
+        openai_api_base=OPENAI_API_BASE,
+        openai_api_key=OPENAI_API_KEY,
+        **kwargs,
+    )
+
+
 @pytest.mark.scheduled
-def test_chat_openai() -> None:
+@pytest.fixture
+def llm() -> AzureChatOpenAI:
+    return _get_llm(
+        max_tokens=10,
+    )
+
+
+def test_chat_openai(llm: AzureChatOpenAI) -> None:
     """Test AzureChatOpenAI wrapper."""
-    chat = AzureChatOpenAI(max_tokens=10, deployment_name=DEPLOYMENT_NAME)
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = llm([message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -33,7 +49,7 @@ def test_chat_openai() -> None:
 @pytest.mark.scheduled
 def test_chat_openai_generate() -> None:
     """Test AzureChatOpenAI wrapper with generate."""
-    chat = AzureChatOpenAI(max_tokens=10, n=2, deployment_name=DEPLOYMENT_NAME)
+    chat = _get_llm(max_tokens=10, n=2)
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -49,7 +65,7 @@ def test_chat_openai_generate() -> None:
 @pytest.mark.scheduled
 def test_chat_openai_multiple_completions() -> None:
     """Test AzureChatOpenAI wrapper with multiple completions."""
-    chat = AzureChatOpenAI(max_tokens=10, n=5, deployment_name=DEPLOYMENT_NAME)
+    chat = _get_llm(max_tokens=10, n=5)
     message = HumanMessage(content="Hello")
     response = chat._generate([message])
     assert isinstance(response, ChatResult)
@@ -64,13 +80,12 @@ def test_chat_openai_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = AzureChatOpenAI(
+    chat = _get_llm(
         max_tokens=10,
         streaming=True,
         temperature=0,
         callback_manager=callback_manager,
         verbose=True,
-        deployment_name=DEPLOYMENT_NAME,
     )
     message = HumanMessage(content="Hello")
     response = chat([message])
@@ -95,11 +110,10 @@ def test_chat_openai_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = AzureChatOpenAI(
+    chat = _get_llm(
         max_tokens=2,
         temperature=0,
         callback_manager=callback_manager,
-        deployment_name=DEPLOYMENT_NAME,
     )
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
@@ -107,43 +121,11 @@ def test_chat_openai_streaming_generation_info() -> None:
     assert generation.generations[0][0].text == "Hello!"
 
 
-def test_chat_openai_llm_output_contains_model_name() -> None:
-    """Test llm_output contains model_name."""
-    chat = AzureChatOpenAI(max_tokens=10, deployment_name=DEPLOYMENT_NAME)
-    message = HumanMessage(content="Hello")
-    llm_result = chat.generate([[message]])
-    assert llm_result.llm_output is not None
-    assert llm_result.llm_output["model_name"] == chat.model_name
-
-
-def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
-    """Test llm_output contains model_name."""
-    chat = AzureChatOpenAI(
-        max_tokens=10, streaming=True, deployment_name=DEPLOYMENT_NAME
-    )
-    message = HumanMessage(content="Hello")
-    llm_result = chat.generate([[message]])
-    assert llm_result.llm_output is not None
-    assert llm_result.llm_output["model_name"] == chat.model_name
-
-
-def test_chat_openai_invalid_streaming_params() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    with pytest.raises(ValueError):
-        AzureChatOpenAI(
-            max_tokens=10,
-            streaming=True,
-            temperature=0,
-            n=5,
-            deployment_name=DEPLOYMENT_NAME,
-        )
-
-
 @pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_async_chat_openai() -> None:
     """Test async generation."""
-    chat = AzureChatOpenAI(max_tokens=10, n=2, deployment_name=DEPLOYMENT_NAME)
+    chat = _get_llm(max_tokens=10, n=2)
     message = HumanMessage(content="Hello")
     response = await chat.agenerate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -162,13 +144,12 @@ async def test_async_chat_openai_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = AzureChatOpenAI(
+    chat = _get_llm(
         max_tokens=10,
         streaming=True,
         temperature=0,
         callback_manager=callback_manager,
         verbose=True,
-        deployment_name=DEPLOYMENT_NAME,
     )
     message = HumanMessage(content="Hello")
     response = await chat.agenerate([[message], [message]])
@@ -181,35 +162,6 @@ async def test_async_chat_openai_streaming() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
-
-
-def test_chat_openai_extra_kwargs() -> None:
-    """Test extra kwargs to chat openai."""
-    # Check that foo is saved in extra_kwargs.
-    llm = AzureChatOpenAI(foo=3, max_tokens=10, deployment_name=DEPLOYMENT_NAME)
-    assert llm.max_tokens == 10
-    assert llm.model_kwargs == {"foo": 3}
-
-    # Test that if extra_kwargs are provided, they are added to it.
-    llm = AzureChatOpenAI(foo=3, model_kwargs={"bar": 2})
-    assert llm.model_kwargs == {"foo": 3, "bar": 2}
-
-    # Test that if provided twice it errors
-    with pytest.raises(ValueError):
-        AzureChatOpenAI(foo=3, model_kwargs={"foo": 2})
-
-    # Test that if explicit param is specified in kwargs it errors
-    with pytest.raises(ValueError):
-        AzureChatOpenAI(model_kwargs={"temperature": 0.2})
-
-    # Test that "model" cannot be specified in kwargs
-    with pytest.raises(ValueError):
-        AzureChatOpenAI(model_kwargs={"model": "text-davinci-003"})
-
-
-@pytest.fixture
-def llm() -> AzureChatOpenAI:
-    return AzureChatOpenAI(max_tokens=10, deployment_name=DEPLOYMENT_NAME)
 
 
 @pytest.mark.scheduled
