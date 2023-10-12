@@ -204,18 +204,21 @@ class HuggingFacePipeline(BaseLLM):
                 if self.pipeline.task == "text-generation":
                     try:
                         from transformers.pipelines.text_generation import ReturnType
-                    except ImportError as e:
-                        raise ImportError(
-                            "Could not import transformers python package. "
-                            "Please install it with `pip install transformers`."
-                        ) from e
-                    if (
-                        self.pipeline._postprocess_params.get("return_type")
-                        == ReturnType.NEW_TEXT
-                    ):
-                        text = response["generated_text"]
-                    else:
+
+                        remove_prompt = (
+                            self.pipeline._postprocess_params.get("return_type")
+                            != ReturnType.NEW_TEXT
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Unable to extract pipeline return_type. "
+                            f"Received error:\n\n{e}"
+                        )
+                        remove_prompt = True
+                    if remove_prompt:
                         text = response["generated_text"][len(batch_prompts[j]) :]
+                    else:
+                        text = response["generated_text"]
                 elif self.pipeline.task == "text2text-generation":
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
