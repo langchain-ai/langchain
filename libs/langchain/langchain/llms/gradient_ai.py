@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, TypedDict, Union
 
 import aiohttp
 import requests
@@ -7,14 +7,17 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import TrainableLLM
+from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, root_validator
-from langchain.schema.train import TrainResult
 from langchain.utils import get_from_dict_or_env
 
 
-class GradientLLM(TrainableLLM):
+class TrainResult(TypedDict):
+    loss: float
+
+
+class GradientLLM(LLM):
     """Gradient.ai LLM Endpoints.
 
     GradientLLM is a class to interact with LLMs on gradient.ai
@@ -281,7 +284,7 @@ class GradientLLM(TrainableLLM):
 
         return text
 
-    def _train_unsupervised(
+    def train_unsupervised(
         self,
         inputs: Sequence[str],
         **kwargs: Any,
@@ -302,7 +305,7 @@ class GradientLLM(TrainableLLM):
         loss = response_json["sumLoss"] / response_json["numberOfTrainableTokens"]
         return TrainResult(loss=loss)
 
-    async def _atrain_unsupervised(
+    async def atrain_unsupervised(
         self,
         inputs: Sequence[str],
         **kwargs: Any,

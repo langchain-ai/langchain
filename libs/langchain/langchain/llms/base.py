@@ -56,7 +56,6 @@ from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
 from langchain.schema.output import GenerationChunk
 from langchain.schema.runnable import RunnableConfig
 from langchain.schema.runnable.config import get_config_list
-from langchain.schema.train import TrainResult
 
 logger = logging.getLogger(__name__)
 
@@ -1062,29 +1061,3 @@ class LLM(BaseLLM):
             )
             generations.append([Generation(text=text)])
         return LLMResult(generations=generations)
-
-
-class TrainableLLM(LLM):
-    @abstractmethod
-    def _train_unsupervised(
-        self,
-        inputs: Sequence[str],
-        **kwargs: Any,
-    ) -> TrainResult:
-        """
-        Train the LLM on the given input.
-        """
-
-    async def _atrain_unsupervised(
-        self,
-        inputs: Sequence[str],
-        **kwargs: Any,
-    ) -> TrainResult:
-        """
-        Train the LLM on the given input.
-        """
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._train_unsupervised, **kwargs), inputs
-        )
-
-    # TODO: add other training methods, like supervised learning, DPO, PPO, etc
