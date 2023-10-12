@@ -12,7 +12,7 @@ class CobolSegmenter(CodeSegmenter):
 
     def __init__(self, code: str):
         super().__init__(code)
-        self.source_lines = self.code.splitlines()
+        self.source_lines: List[Optional[str]] = self.code.splitlines()
 
     def is_valid(self) -> bool:
         # Check divisions at the start of lines to reduce false positives
@@ -40,7 +40,7 @@ class CobolSegmenter(CodeSegmenter):
         return paragraphs
 
     def simplify_code(self) -> str:
-        simplified_lines: List[Optional[str]] = self.source_lines[:]
+        simplified_lines: List[Optional[str]] = self.source_lines.copy()
         start_idx = None
 
         for i, line in enumerate(self.source_lines):
