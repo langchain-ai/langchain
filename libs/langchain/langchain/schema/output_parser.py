@@ -34,7 +34,13 @@ class BaseLLMOutputParser(Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: PromptValue = None,
+        partial: bool = False,
+    ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -46,7 +52,11 @@ class BaseLLMOutputParser(Generic[T], ABC):
         """
 
     async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self,
+        result: List[Generation],
+        *,
+        prompt: PromptValue = None,
+        partial: bool = False,
     ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
@@ -58,7 +68,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
             Structured output.
         """
         return await asyncio.get_running_loop().run_in_executor(
-            None, self.parse_result, result
+            None, self.parse_result, result, **{"prompt": prompt}
         )
 
 
@@ -209,7 +219,13 @@ class BaseOutputParser(
                 run_type="parser",
             )
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: PromptValue = None,
+        partial: bool = False,
+    ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -222,7 +238,7 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
-        return self.parse(result[0].text)
+        return self.parse_with_prompt(result[0].text, prompt)
 
     @abstractmethod
     def parse(self, text: str) -> T:
@@ -236,7 +252,11 @@ class BaseOutputParser(
         """
 
     async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self,
+        result: List[Generation],
+        *,
+        prompt: PromptValue = None,
+        partial: bool = False,
     ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
