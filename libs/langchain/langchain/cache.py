@@ -26,6 +26,7 @@ import inspect
 import json
 import logging
 import uuid
+import warnings
 from datetime import timedelta
 from functools import lru_cache
 from typing import (
@@ -53,7 +54,7 @@ except ImportError:
 from langchain.llms.base import LLM, get_prompts
 from langchain.load.dump import dumps
 from langchain.load.load import loads
-from langchain.schema import Generation
+from langchain.schema import ChatGeneration, Generation
 from langchain.schema.cache import RETURN_VAL_TYPE, BaseCache
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_env
