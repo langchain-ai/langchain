@@ -88,7 +88,7 @@ class OpenLLM(LLM):
     """Initialize this LLM instance in current process by default. Should 
     only set to False when using in conjunction with BentoML Service."""
     llm_kwargs: Dict[str, Any]
-    """Key word arguments to be passed to openllm.LLM"""
+    """Keyword arguments to be passed to openllm.LLM"""
 
     _runner: Optional[openllm.LLMRunner] = PrivateAttr(default=None)
     _client: Union[
