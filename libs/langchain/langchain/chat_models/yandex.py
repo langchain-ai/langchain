@@ -47,15 +47,15 @@ class ChatYandexGPT(BaseYandexGPT, BaseChatModel):
     """Wrapper around YandexGPT large language models.
 
     To use, you should have the ``yandexcloud`` python package installed, and the
-    environment variable ``YC_IAM_TOKEN`` set with IAM token
+    environment variable ``IAM_TOKEN`` set with IAM token
     for the service account with the ``ai.languageModels.user`` role, or pass
-    it as a named parameter ``yc_iam_token`` to the constructor.
+    it as a named parameter ``iam_token`` to the constructor.
 
     Example:
         .. code-block:: python
 
             from langchain.chat_models import ChatYandexGPT
-            chat_model = ChatYandexGPT(yc_iam_token="t1.9eu...")
+            chat_model = ChatYandexGPT(iam_token="t1.9eu...")
 
     """
 
@@ -104,7 +104,7 @@ class ChatYandexGPT(BaseYandexGPT, BaseChatModel):
             instruction_text=instruction,
             messages=[Message(**message) for message in message_history],
         )
-        sdk = SDK(iam_token=self.yc_iam_token)
+        sdk = SDK(iam_token=self.iam_token)
         operation = sdk.client(TextGenerationServiceStub).Chat(request)
         text = list(operation)[0].message.text
         text = text if stop is None else enforce_stop_tokens(text, stop)

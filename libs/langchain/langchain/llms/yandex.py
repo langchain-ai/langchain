@@ -9,15 +9,18 @@ from langchain.utils import get_from_dict_or_env
 
 
 class BaseYandexGPT(Serializable):
-    yc_iam_token: str = ""
+    iam_token: str = ""
     """Yandex Cloud IAM token for service account
     with the `ai.languageModels.user` role"""
     model_name: str = "general"
     """Model name to use."""
     temperature: float = 0.6
-    """What sampling temperature to use."""
+    """What sampling temperature to use.
+    Should be a double number between 0 (inclusive) and 1 (inclusive)."""
     max_tokens: int = 7400
-    """The maximum number of tokens to generate in the completion."""
+    """Sets the maximum limit on the total number of tokens
+    used for both the input prompt and the generated response.
+    Must be greater than zero and not exceed 7400 tokens."""
     stop: Optional[List[str]] = None
     """Sequences when completion generation will stop."""
 
@@ -29,8 +32,8 @@ class BaseYandexGPT(Serializable):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that iam token exists in environment."""
 
-        yc_iam_token = get_from_dict_or_env(values, "yc_iam_token", "YC_IAM_TOKEN")
-        values["yc_iam_token"] = yc_iam_token
+        iam_token = get_from_dict_or_env(values, "iam_token", "IAM_TOKEN")
+        values["iam_token"] = iam_token
         return values
 
 
@@ -38,15 +41,15 @@ class YandexGPT(BaseYandexGPT, LLM):
     """Yandex large language models.
 
     To use, you should have the ``yandexcloud`` python package installed, and the
-    environment variable ``YC_IAM_TOKEN`` set with IAM token
+    environment variable ``IAM_TOKEN`` set with IAM token
     for the service account with the ``ai.languageModels.user`` role, or pass
-    it as a named parameter ``yc_iam_token`` to the constructor.
+    it as a named parameter ``iam_token`` to the constructor.
 
     Example:
         .. code-block:: python
 
             from langchain.llms import YandexGPT
-            yandex_gpt = YandexGPT(yc_iam_token="t1.9eu...")
+            yandex_gpt = YandexGPT(iam_token="t1.9eu...")
     """
 
     @property
@@ -95,7 +98,7 @@ class YandexGPT(BaseYandexGPT, LLM):
             raise ImportError(
                 "Please install YandexCloud SDK" " with `pip install yandexcloud`."
             ) from e
-        sdk = SDK(iam_token=self.yc_iam_token)
+        sdk = SDK(iam_token=self.iam_token)
         request = InstructRequest(
             model=self.model_name,
             request_text=prompt,
