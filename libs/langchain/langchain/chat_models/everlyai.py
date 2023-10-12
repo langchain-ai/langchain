@@ -63,7 +63,12 @@ class ChatEverlyAI(ChatOpenAI):
     def get_available_models() -> Set[str]:
         """Get available models from EverlyAI API."""
         # EverlyAI doesn't yet support dynamically query for available models.
-        return set(["meta-llama/Llama-2-7b-chat-hf", "meta-llama/Llama-2-13b-chat-hf-quantized"])
+        return set(
+            [
+                "meta-llama/Llama-2-7b-chat-hf",
+                "meta-llama/Llama-2-13b-chat-hf-quantized",
+            ]
+        )
 
     @root_validator(pre=True)
     def validate_environment_override(cls, values: dict) -> dict:
