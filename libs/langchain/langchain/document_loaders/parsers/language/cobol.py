@@ -1,5 +1,5 @@
 import re
-from typing import List, Optional
+from typing import List
 
 from langchain.document_loaders.parsers.language.code_segmenter import CodeSegmenter
 
@@ -12,7 +12,7 @@ class CobolSegmenter(CodeSegmenter):
 
     def __init__(self, code: str):
         super().__init__(code)
-        self.source_lines: List[Optional[str]] = self.code.splitlines()
+        self.source_lines: List[str] = self.code.splitlines()
 
     def is_valid(self) -> bool:
         # Check divisions at the start of lines to reduce false positives
@@ -40,19 +40,19 @@ class CobolSegmenter(CodeSegmenter):
         return paragraphs
 
     def simplify_code(self) -> str:
-        simplified_lines: List[Optional[str]] = self.source_lines.copy()
+        simplified_lines: List[str] = self.source_lines.copy()
         start_idx = None
 
         for i, line in enumerate(self.source_lines):
             if self.PARAGRAPH_PATTERN.match(line.strip()):
                 if start_idx is not None:
                     # Use list slicing for optimization
-                    simplified_lines[start_idx + 1 : i] = [None] * (i - start_idx - 1)
+                    simplified_lines[start_idx + 1 : i] = [""] * (i - start_idx - 1)
                 start_idx = i
 
         if start_idx is not None:
-            simplified_lines[start_idx + 1 :] = [None] * (
+            simplified_lines[start_idx + 1 :] = [""] * (
                 len(self.source_lines) - start_idx - 1
             )
 
-        return "\n".join(line for line in simplified_lines if line is not None)
+        return "\n".join(line for line in simplified_lines if line)
