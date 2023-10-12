@@ -198,7 +198,7 @@ class MomentoVectorIndex(VectorStore):
             start = i
             end = min(i + batch_size, len(embeddings))
             metadata_to_store = [
-                {k: json.dumps(v) for k, v in metadata.items()}
+                {k: self.__serialize_metadata(v) for k, v in metadata.items()}
                 for metadata in metadatas[start:end]
             ]
             items = [
@@ -310,7 +310,9 @@ class MomentoVectorIndex(VectorStore):
 
         results = []
         for hit in response.hits:
-            metadata = {k: json.loads(v) for k, v in hit.metadata.items()}
+            metadata = {
+                k: self.__deserialize_metadata(v) for k, v in hit.metadata.items()
+            }
             text = cast(str, metadata.pop(self.text_field))
             doc = Document(page_content=text, metadata=metadata)
             pair = (doc, hit.distance)
@@ -393,3 +395,21 @@ class MomentoVectorIndex(VectorStore):
         vector_db = cls(embedding=embedding, client=client, **kwargs)  # type: ignore
         vector_db.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         return vector_db
+
+    @staticmethod
+    def __serialize_metadata(value: Any) -> str:
+        try:
+            return json.dumps(value)
+        except TypeError as e:
+            raise TypeError(
+                f"Metadata value must be JSON serializable. Value was: {value}; {e}"
+            ) from None
+
+    @staticmethod
+    def __deserialize_metadata(value: str) -> Any:
+        try:
+            return json.loads(value)
+        except TypeError as e:
+            raise TypeError(
+                f"Metadata value must be JSON deserializable. Value was: {value}; {e}"
+            ) from None

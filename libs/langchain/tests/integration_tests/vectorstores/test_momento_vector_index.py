@@ -166,3 +166,18 @@ def test_add_documents_with_ids(vector_store: MomentoVectorIndex) -> None:
     )
     assert isinstance(response, Search.Success)
     assert [hit.id for hit in response.hits] == ids
+
+
+def test_add_non_json_metadata_raises_exception(
+    vector_store: MomentoVectorIndex,
+) -> None:
+    """Test that add_texts with non-json metadata raises an exception."""
+    texts = ["apple", "orange", "hammer"]
+    metadatas = [{"source": b"asdf"} for i in range(len(texts))]
+
+    with pytest.raises(Exception) as exception_info:
+        vector_store.add_texts(texts, metadatas)
+
+    assert str(exception_info.value).startswith(
+        "Metadata value must be JSON serializable"
+    )
