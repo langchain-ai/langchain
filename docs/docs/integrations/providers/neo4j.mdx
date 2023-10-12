@@ -29,7 +29,7 @@ To import this vectorstore:
 from langchain.vectorstores import Neo4jVector
 ```
 
-For a more detailed walkthrough of the Neo4j vector index wrapper, see [this notebook](/docs/integrations/vectorstores/neo4jvector.html)
+For a more detailed walkthrough of the Neo4j vector index wrapper, see [documentation](/docs/integrations/vectorstores/neo4jvector.html)
 
 ### GraphCypherQAChain
 
@@ -41,4 +41,18 @@ from langchain.graphs import Neo4jGraph
 from langchain.chains import GraphCypherQAChain
 ```
 
-For a more detailed walkthrough of Cypher generating chain, see [this notebook](/docs/use_cases/graph/graph_cypher_qa.html)
+For a more detailed walkthrough of Cypher generating chain, see [documentation](/docs/use_cases/graph/graph_cypher_qa.html)
+
+### Constructing a knowledge graph from text
+
+Text data often contain rich relationships and insights that can be useful for various analytics, recommendation engines, or knowledge management applications.
+Diffbot's NLP API allows for the extraction of entities, relationships, and semantic meaning from unstructured text data.
+By coupling Diffbot's NLP API with Neo4j, a graph database, you can create powerful, dynamic graph structures based on the information extracted from text.
+These graph structures are fully queryable and can be integrated into various applications.
+
+```python
+from langchain.graphs import Neo4jGraph
+from langchain_experimental.graph_transformers.diffbot import DiffbotGraphTransformer
+```
+
+For a more detailed walkthrough generating graphs from text, see [documentation](/docs/use_cases/graph/diffbot_graphtransformer.html)
