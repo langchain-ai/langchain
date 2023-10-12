@@ -34,7 +34,7 @@ def momento_cache() -> Iterator[MomentoCache]:
     )
     try:
         llm_cache = MomentoCache(client, cache_name)
-        set_llm_cache(lm_cache)
+        set_llm_cache(llm_cache)
         yield llm_cache
     finally:
         client.delete_cache(cache_name)
