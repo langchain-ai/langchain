@@ -54,11 +54,6 @@ if TYPE_CHECKING:
     from langchain.vectorstores.redis.schema import RedisModel
 
 
-def _redis_prefix(index_name: str) -> str:
-    """Redis key prefix for a given index."""
-    return f"doc:{index_name}"
-
-
 def _default_relevance_score(val: float) -> float:
     return 1 - val
 
@@ -253,6 +248,7 @@ class Redis(VectorStore):
         index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
         vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
+        key_prefix: str = "doc",
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
@@ -279,6 +275,7 @@ class Redis(VectorStore):
         self.client = redis_client
         self.relevance_score_fn = relevance_score_fn
         self._schema = self._get_schema_with_defaults(index_schema, vector_schema)
+        self._key_prefix = key_prefix
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -656,6 +653,10 @@ class Redis(VectorStore):
             # Index not exist
             return False
 
+    @property
+    def _full_key_prefix(self) -> str:
+        return f"{self._key_prefix}:{self.index_name}"
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -681,7 +682,6 @@ class Redis(VectorStore):
             List[str]: List of ids added to the vectorstore
         """
         ids = []
-        prefix = _redis_prefix(self.index_name)
 
         # Get keys or ids from kwargs
         # Other vectorstores use ids
@@ -702,8 +702,8 @@ class Redis(VectorStore):
         for i, text in enumerate(texts):
             # Use provided values by default or fallback
             key = keys_or_ids[i] if keys_or_ids else str(uuid.uuid4().hex)
-            if not key.startswith(prefix + ":"):
-                key = prefix + ":" + key
+            if not key.startswith(self._full_key_prefix + ":"):
+                key = self._full_key_prefix + ":" + key
             metadata = metadatas[i] if metadatas else {}
             metadata = _prepare_metadata(metadata) if clean_metadata else metadata
             pipeline.hset(
@@ -1223,12 +1223,12 @@ class Redis(VectorStore):
 
         # Check if index exists
         if not check_index_exists(self.client, self.index_name):
-            prefix = _redis_prefix(self.index_name)
-
             # Create Redis Index
             self.client.ft(self.index_name).create_index(
                 fields=self._schema.get_fields(),
-                definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
+                definition=IndexDefinition(
+                    prefix=[self._full_key_prefix], index_type=IndexType.HASH
+                ),
             )
 
     def _calculate_fp_distance(self, distance: str) -> float:
