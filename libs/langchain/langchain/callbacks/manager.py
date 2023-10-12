@@ -27,7 +27,6 @@ from uuid import UUID
 
 from tenacity import RetryCallState
 
-import langchain
 from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -88,7 +87,9 @@ run_collector_var: ContextVar[
 
 
 def _get_debug() -> bool:
-    return langchain.debug
+    from langchain.globals import get_debug
+
+    return get_debug()
 
 
 @contextmanager

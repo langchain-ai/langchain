@@ -63,11 +63,11 @@ from langchain.cache import RedisCache
 
 To use this cache with your LLMs:
 ```python
-import langchain
+from langchain.globals import set_llm_cache
 import redis
 
 redis_client = redis.Redis.from_url(...)
-langchain.llm_cache = RedisCache(redis_client)
+set_llm_cache(RedisCache(redis_client))
 ```
 
 #### Semantic Cache
@@ -80,7 +80,7 @@ from langchain.cache import RedisSemanticCache
 
 To use this cache with your LLMs:
 ```python
-import langchain
+from langchain.globals import set_llm_cache
 import redis
 
 # use any embedding provider...
@@ -88,10 +88,10 @@ from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 redis_url = "redis://localhost:6379"
 
-langchain.llm_cache = RedisSemanticCache(
+set_llm_cache(RedisSemanticCache(
     embedding=FakeEmbeddings(),
     redis_url=redis_url
-)
+))
 ```
 
 ### VectorStore
