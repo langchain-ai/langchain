@@ -60,10 +60,11 @@ class GitHubAPIWrapper(BaseModel):
             )
 
         try:
-            # Try interpreting as file path, fallback to interpreting as they key itself (as a str)
+            # interpret the key as a file path
+            # fallback to interpreting as they key itself
             with open(github_app_private_key, "r") as f:
                 private_key = f.read()
-        except Exception as e:
+        except Exception:
             private_key = github_app_private_key
 
         auth = Auth.AppAuth(
@@ -193,7 +194,8 @@ class GitHubAPIWrapper(BaseModel):
             return str(e)
 
     def set_active_branch(self, branch_name: str) -> str:
-        """Equivalent to `git checkout branch_name` for this Agent. Clones formatting from Github.
+        """Equivalent to `git checkout branch_name` for this Agent. 
+        Clones formatting from Github.
 
         Returns an Error (as a string) if branch doesn't exist.
         """
@@ -204,7 +206,8 @@ class GitHubAPIWrapper(BaseModel):
             self.active_branch = branch_name
             return f"Switched to branch `{branch_name}`"
         else:
-            return f"Error {branch_name} does not exist, in repo with current branches: {str(curr_branches)}"
+            return (f"Error {branch_name} does not exist,"
+            f"in repo with current branches: {str(curr_branches)}")
 
     def list_branches_in_repo(self) -> str:
         """
@@ -229,8 +232,10 @@ class GitHubAPIWrapper(BaseModel):
 
     def create_branch(self, proposed_branch_name):
         """
-        Create a new branch, and set it as the active bot branch. Equivalent to `git switch -c proposed_branch_name`
-        If the proposed branch already exists, we append _v1 then _v2 ... until a unique name is found.
+        Create a new branch, and set it as the active bot branch.
+        Equivalent to `git switch -c proposed_branch_name`
+        If the proposed branch already exists, we append _v1 then _v2...
+        until a unique name is found.
 
         Returns:
             str: A plaintext success message.
@@ -246,7 +251,8 @@ class GitHubAPIWrapper(BaseModel):
                     ref=f"refs/heads/{new_branch_name}", sha=base_branch.commit.sha
                 )
                 self.active_branch = new_branch_name
-                return f"Branch '{new_branch_name}' created successfully, and set as current active branch."
+                return (f"Branch '{new_branch_name}' "
+            "created successfully, and set as current active branch.")
             except GithubException as e:
                 if e.status == 422 and "Reference already exists" in e.data["message"]:
                     i += 1
@@ -255,13 +261,17 @@ class GitHubAPIWrapper(BaseModel):
                     # Handle any other exceptions
                     print(f"Failed to create branch. Error: {e}")
                     raise Exception(
-                        f"Unable to create branch name from proposed_branch_name: {proposed_branch_name}"
+                        f"Unable to create branch name from proposed_branch_name: "
+                        f"{proposed_branch_name}"
                     )
-        return f"Unable to create branch. At least 1000 branches exist with named derived from proposed_branch_name: `{proposed_branch_name}`"
+        return ("Unable to create branch. "
+                "At least 1000 branches exist with named derived from "
+                f"proposed_branch_name: `{proposed_branch_name}`")
 
     def list_files_in_bot_branch(self) -> str:
         """
-        Fetches all files in the active branch of the repo, the branch the bot uses to make changes.
+        Fetches all files in the active branch of the repo, 
+        the branch the bot uses to make changes.
 
         Returns:
             str: A plaintext list containing the the filepaths in the branch.
@@ -279,7 +289,8 @@ class GitHubAPIWrapper(BaseModel):
 
             if files:
                 files_str = "\n".join(files)
-                return f"Found {len(files)} files in branch `{self.active_branch}`:\n{files_str}"
+                return (f"Found {len(files)} files in branch `{self.active_branch}`:\n"
+                        f"{files_str}")
             else:
                 return f"No files found in branch: `{self.active_branch}`"
         except Exception as e:
@@ -362,7 +373,7 @@ class GitHubAPIWrapper(BaseModel):
                         ]
                     else:
                         print(
-                            f"❌❌ Failed to download file: {file.contents_url}, skipping"
+                            f"Failed to download file: {file.contents_url}, skipping"
                         )
                         continue
 
@@ -372,7 +383,8 @@ class GitHubAPIWrapper(BaseModel):
                         file_content = file_content_response.text
                     else:
                         print(
-                            f"failed downloading file content (Error {file_content_response.status_code}). Skipping"
+                            "Failed downloading file content "
+                            f"(Error {file_content_response.status_code}). Skipping"
                         )
                         continue
 
@@ -403,7 +415,8 @@ class GitHubAPIWrapper(BaseModel):
             pr_number(int): The number for the Github pull
             max_tokens(int): The maximum number of tokens in the response
         Returns:
-            dict: A dictionary containing the pull's title, body, and comments as a string
+            dict: A dictionary containing the pull's title, body, 
+            and comments as a string
         """
         max_tokens = 2_000
         pull = self.github_repo_instance.get_pull(number=pr_number)
@@ -523,8 +536,10 @@ class GitHubAPIWrapper(BaseModel):
                     file_path, ref=self.active_branch
                 )
                 if file:
-                    return f"File already exists at `{file_path}` on branch `{self.active_branch}`. You must use `update_file` to modify it."
-            except Exception as e:
+                    return (f"File already exists at `{file_path}` "
+                            f"on branch `{self.active_branch}`. You must use "
+                            "`update_file` to modify it.")
+            except Exception:
                 # expected behavior, file shouldn't exist yet
                 pass
 
@@ -540,7 +555,8 @@ class GitHubAPIWrapper(BaseModel):
 
     def read_file(self, file_path: PathLike) -> str:
         """
-        Read a file from this agent's branch, defined by self.active_branch, which supports PR branches.
+        Read a file from this agent's branch, defined by self.active_branch,
+        which supports PR branches.
         Parameters:
             file_path(str): the file path
         Returns:
@@ -552,7 +568,8 @@ class GitHubAPIWrapper(BaseModel):
             )
             return file.decoded_content.decode("utf-8")
         except Exception as e:
-            return f"File not found `{file_path}` on branch `{self.active_branch}`. Error: {str(e)}"
+            return (f"File not found `{file_path}` on branch"
+                    f"`{self.active_branch}`. Error: {str(e)}")
 
     def update_file(self, file_query: str) -> str:
         """
@@ -671,7 +688,8 @@ class GitHubAPIWrapper(BaseModel):
 
     def create_review_request(self, reviewer_username: str) -> str:
         """
-        Creates a review request on *THE* open pull request that matches the current active_branch.
+        Creates a review request on *THE* open pull request 
+        that matches the current active_branch.
 
         Parameters:
             reviewer_username(str): The username of the person who is being requested
@@ -687,11 +705,13 @@ class GitHubAPIWrapper(BaseModel):
             (pr for pr in pull_requests if pr.head.ref == self.active_branch), None
         )
         if pr is None:
-            return f"No open pull request found for the current branch `{self.active_branch}`"
+            return (f"No open pull request found for the "
+                    f"current branch `{self.active_branch}`")
 
         try:
             pr.create_review_request(reviewers=[reviewer_username])
-            return f"Review request created for user {reviewer_username} on PR #{pr.number}"
+            return (f"Review request created for user {reviewer_username} "
+                    f"on PR #{pr.number}")
         except Exception as e:
             return f"Failed to create a review request with error {e}"
 

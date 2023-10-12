@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from github import GithubException
+
+from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -10,30 +13,32 @@ from langchain.prompts.chat import (
 
 if TYPE_CHECKING:
     from github.Issue import Issue
-    from github.PullRequest import PullRequest
-
-
-"""Helper functions for developers. Use `generate_branch_name` to create a nice name for this Agent's `active_branch`, where the bot will commit its work."""
 
 
 def generate_branch_name(issue: Issue):
-    """Generate a meaningful branch name that the Agent will use to commit it's new code against. Later, it can use this branch to open a pull request."""
-    system_template = "You are a helpful assistant that writes clear and concise GitHub branch names for new pull requests."
+    """
+    Helper functions. Use `generate_branch_name()` to generate a meaningful 
+    branch name that the Agent will use to commit it's new code against. 
+    Later, it can use this branch to open a pull request.
+    """
+    system_template = "You are a helpful assistant that writes clear and concise" \
+                      "GitHub branch names for new pull requests."
     system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
     example_issue = {
         "title": "Implement an Integral function in C",
-        "body": "This function should take as input a mathematical function and the limits of integration and return the integral value.",
+        "body": "This function should take as input a mathematical function " \
+              "and the limits of integration and return the integral value.",
     }
 
     prompt = HumanMessagePromptTemplate.from_template(
-        """Given this issue, please return a single string that would be a suitable branch name on which to implement this feature request. Use common software development best practices to name the branch.
-        Follow this formatting exactly:
-        Issue: {example_issue}
-        Branch name: `add_integral_in_c`
-
-
-        Issue: {issue}
-        Branch name: `"""
+        "Given this issue, please return a single string that would be a suitable " \
+        "branch name on which to implement this feature request. Use common software " \
+        "development best practices to name the branch.\n" \
+        "Follow this formatting exactly:" \
+        "Issue: {example_issue}" \
+        "Branch name: `add_integral_in_c`\n\n" \
+        "Issue: {issue}" \
+        "Branch name: `" 
     )
 
     # Combine into a Chat conversation
@@ -42,7 +47,7 @@ def generate_branch_name(issue: Issue):
         issue=str(issue), example_issue=str(example_issue)
     )
 
-    llm = ChatOpenAI(temperature=0, model="gpt-4", max_retries=3, request_timeout=60 * 3)  # type: ignore
+    llm = ChatOpenAI(temperature=0, model="gpt-4")
     output = llm(formatted_messages)
     return _ensure_unique_branch_name(
         issue.repository, _sanitize_branch_name(output.content)
@@ -86,8 +91,9 @@ def _ensure_unique_branch_name(repo, proposed_branch_name):
                 # Handle any other exceptions
                 print(f"Failed to create branch. Error: {e}")
                 raise Exception(
-                    f"Unable to create branch name from proposed_branch_name: {proposed_branch_name}"
-                )
+                    "Unable to create branch name from "
+                    f"proposed_branch_name: {proposed_branch_name}")
     raise Exception(
-        f"Unable to create branch. At least 1000 branches exist with named derived from proposed_branch_name: `{proposed_branch_name}`"
+        f"Unable to create branch. At least 1000 branches exist with"
+        f"named derived from proposed_branch_name: `{proposed_branch_name}`"
     )

@@ -7,7 +7,7 @@ To use this tool, you must first set as environment variables:
     GITHUB_REPOSITORY -> format: {owner}/{repo}
 
 """
-from typing import Optional, Type
+from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import Field

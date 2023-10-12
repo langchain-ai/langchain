@@ -66,7 +66,7 @@ class GitHubToolkit(BaseToolkit):
             },
             {
                 "mode": "list_pull_request_files",
-                "name": "Get an overview of the files in any Pull Request (fetch by PR number)",
+                "name": "Overview of files included in PR (fetch by PR number)",
                 "description": LIST_PULL_REQUEST_FILES,
             },
             {
