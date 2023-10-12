@@ -193,7 +193,7 @@ class SingleStoreDB(VectorStore):
             self.connection_kwargs["conn_attrs"] = dict()
 
         self.connection_kwargs["conn_attrs"]["_connector_name"] = "langchain python sdk"
-        self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.0"
+        self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.1"
 
         """Create connection pool."""
         self.connection_pool = QueuePool(
