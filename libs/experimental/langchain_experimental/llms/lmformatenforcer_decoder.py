@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain.schema import LLMResult
 from transformers.pipelines import Text2TextGenerationPipeline
 
 from langchain_experimental.pydantic_v1 import Field, root_validator
@@ -49,7 +50,7 @@ class LMFormatEnforcer(HuggingFacePipeline):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ):
+    ) -> LLMResult:
         # We integrate lmformatenforcer by adding a prefix_allowed_tokens_fn.
         # It has to be done on each call, because the prefix function is stateful.
         if "prefix_allowed_tokens_fn" in self.pipeline._forward_params:
