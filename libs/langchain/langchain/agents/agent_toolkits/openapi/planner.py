@@ -291,8 +291,6 @@ def _create_api_controller_tool(
             "{method} {route}".format(method=method, route=route.split("?")[0])
             for method, route in matches
         ]
-        endpoint_docs_by_name = {name: docs for name, _, docs in api_spec.endpoints}
-
         docs_str = ""
         for endpoint_name in endpoint_names:
             found_match = False
