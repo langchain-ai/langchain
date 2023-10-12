@@ -1,0 +1,7 @@
+# Dynamically select from multiple retrievers
+
+This notebook demonstrates how to use the `RouterChain` paradigm to create a chain that dynamically selects which Retrieval system to use. Specifically we show how to use the `MultiRetrievalQAChain` to create a question-answering chain that selects the retrieval QA chain which is most relevant for a given question, and then answers the question using it.
+
+import Example from "@snippets/modules/chains/additional/multi_retrieval_qa_router.mdx"
+
+<Example/>
