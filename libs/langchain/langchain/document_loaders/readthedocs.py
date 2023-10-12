@@ -59,13 +59,14 @@ class ReadTheDocsLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
         docs = []
-        for p in self.file_path.rglob("*.html"):
-            if p.is_dir():
-                continue
-            with open(p, encoding=self.encoding, errors=self.errors) as f:
-                text = self._clean_data(f.read())
-            metadata = {"source": str(p)}
-            docs.append(Document(page_content=text, metadata=metadata))
+        for file_pattern in ["*.htm", "*.html"]:
+            for p in self.file_path.rglob(file_pattern):
+                if p.is_dir():
+                    continue
+                with open(p, encoding=self.encoding, errors=self.errors) as f:
+                    text = self._clean_data(f.read())
+                metadata = {"source": str(p)}
+                docs.append(Document(page_content=text, metadata=metadata))
         return docs
 
     def _clean_data(self, data: str) -> str:
