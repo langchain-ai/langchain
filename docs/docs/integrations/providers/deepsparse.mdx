@@ -29,6 +29,191 @@ It provides a simple, unified interface for all models:
 from langchain.llms import DeepSparse
 llm = DeepSparse(model='zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base-none')
 print(llm('def fib():'))
+"""
+a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+
+def fib2(n):
+    a, b = 0, 1
+    while a < n:
+        yield a
+        a, b = b, a + b
+
+def primes():
+    yield 2
+    it = fib()
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes2():
+    yield 2
+    it = fib2(10)
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes3(n):
+    it = fib2(n)
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes3_2(n):
+    it = fib2(n)
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes4(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes5(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes6(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes7(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes8(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes9(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes10(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes11(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes12(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes13(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes14(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes15(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes16(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes17(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes18(n):
+    it = fib2(n)
+    yield 2
+    while True:
+        try:
+            yield next(it)
+        except StopIteration:
+            return
+
+def primes19(n):
+    it = fib2(n)
+    
+"""
 ```
 ## Streaming
 The DeepSparse LangChain wrapper also supports per token output streaming:
