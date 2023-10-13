@@ -10,7 +10,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema import Generation, LLMResult
@@ -21,7 +21,7 @@ class TrainResult(TypedDict):
     loss: float
 
 
-class GradientLLM(LLM):
+class GradientLLM(BaseLLM):
     """Gradient.ai LLM Endpoints.
 
     GradientLLM is a class to interact with LLMs on gradient.ai
