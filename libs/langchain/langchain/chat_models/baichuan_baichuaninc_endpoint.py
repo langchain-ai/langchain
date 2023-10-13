@@ -103,7 +103,7 @@ class BaichuanChatEndpoint():
             baichuan_ak (str): api_key
             baichuan_sk (str): secret_key
             model (str): Default Baichuan2-7B，Baichuan2-13B，Baichuan2-53B which is commercial.
-            streaming (bool): Defautlt False
+            streaming (bool): Default False
 
         Returns:
             Execute predict return response.
