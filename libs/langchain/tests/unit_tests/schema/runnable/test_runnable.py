@@ -1017,6 +1017,34 @@ def test_configurable_fields_example() -> None:
 
 
 @pytest.mark.asyncio
+async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
+    fake = FakeRunnable()
+    mock = mocker.Mock()
+
+    seq: Runnable = fake | RunnablePassthrough(mock)
+
+    assert await seq.ainvoke("hello") == 5
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+    assert [
+        part async for part in seq.astream("hello", dict(metadata={"key": "value"}))
+    ] == [5]
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+    assert seq.invoke("hello") == 5
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+    assert [part for part in seq.stream("hello", dict(metadata={"key": "value"}))] == [
+        5
+    ]
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+
+@pytest.mark.asyncio
 async def test_with_config(mocker: MockerFixture) -> None:
     fake = FakeRunnable()
     spy = mocker.spy(fake, "invoke")
