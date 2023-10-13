@@ -21,7 +21,6 @@ from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.anyscale import ChatAnyscale
 from langchain.chat_models.azure_openai import AzureChatOpenAI
 from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
-from langchain.chat_models.baichuan_baichuaninc_endpoint import BaichuanChatEndpoint
 from langchain.chat_models.bedrock import BedrockChat
 from langchain.chat_models.cohere import ChatCohere
 from langchain.chat_models.ernie import ErnieBotChat
@@ -62,5 +61,4 @@ __all__ = [
     "ChatKonko",
     "QianfanChatEndpoint",
     "ChatFireworks",
-    "BaichuanChatEndpoint",
 ]
