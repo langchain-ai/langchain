@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Sequence,
     Set,
     Tuple,
@@ -28,6 +29,7 @@ from langchain.schema import (
 )
 from langchain.schema.messages import (
     AIMessage,
+    AnyMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
@@ -39,13 +41,9 @@ from langchain.schema.messages import (
 class BaseMessagePromptTemplate(Serializable, ABC):
     """Base class for message prompt templates."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether this object should be serialized.
-
-        Returns:
-            Whether this object should be serialized.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return True
 
     @abstractmethod
@@ -284,7 +282,7 @@ class ChatPromptValue(PromptValue):
     A type of a prompt value that is built from messages.
     """
 
-    messages: List[BaseMessage]
+    messages: Sequence[BaseMessage]
     """List of messages."""
 
     def to_string(self) -> str:
@@ -293,7 +291,16 @@ class ChatPromptValue(PromptValue):
 
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as a list of messages."""
-        return self.messages
+        return list(self.messages)
+
+
+class ChatPromptValueConcrete(ChatPromptValue):
+    """Chat prompt value which explicitly lists out the message types it accepts.
+    For use in external schemas."""
+
+    messages: Sequence[AnyMessage]
+
+    type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
 
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
@@ -416,9 +423,13 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         messages = values["messages"]
         input_vars = set()
+        input_types: Dict[str, Any] = values.get("input_types", {})
         for message in messages:
             if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
                 input_vars.update(message.input_variables)
+            if isinstance(message, MessagesPlaceholder):
+                if message.variable_name not in input_types:
+                    input_types[message.variable_name] = List[AnyMessage]
         if "partial_variables" in values:
             input_vars = input_vars - set(values["partial_variables"])
         if "input_variables" in values:
@@ -430,6 +441,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 )
         else:
             values["input_variables"] = sorted(input_vars)
+        values["input_types"] = input_types
         return values
 
     @classmethod

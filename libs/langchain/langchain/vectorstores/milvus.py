@@ -8,7 +8,7 @@ import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
@@ -193,7 +193,7 @@ class Milvus(VectorStore):
             given_address = address
         else:
             given_address = None
-            logger.debug("Missing standard address type for reuse atttempt")
+            logger.debug("Missing standard address type for reuse attempt")
 
         # User defaults to empty string when getting connection info
         if user is not None:
