@@ -22,6 +22,7 @@ COMPARATOR_TO_TQL = {
 OPERATOR_TO_TQL = {
     Operator.AND: "and",
     Operator.OR: "or",
+    Operator.NOT: "NOT",
 }
 
 
@@ -37,7 +38,7 @@ def can_cast_to_float(string: str) -> bool:
 class DeepLakeTranslator(Visitor):
     """Translate `DeepLake` internal query language elements to valid filters."""
 
-    allowed_operators = [Operator.AND, Operator.OR]
+    allowed_operators = [Operator.AND, Operator.OR, Operator.NOT]
     """Subset of allowed logical operators."""
     allowed_comparators = [
         Comparator.EQ,

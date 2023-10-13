@@ -131,14 +131,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
 
 
 class ReActChain(AgentExecutor):
-    """Chain that implements the ReAct paper.
-
-    Example:
-        .. code-block:: python
-
-            from langchain import ReActChain, OpenAI
-            react = ReAct(llm=OpenAI())
-    """
+    """[Deprecated] Chain that implements the ReAct paper."""
 
     def __init__(self, llm: BaseLanguageModel, docstore: Docstore, **kwargs: Any):
         """Initialize with the LLM and a docstore."""

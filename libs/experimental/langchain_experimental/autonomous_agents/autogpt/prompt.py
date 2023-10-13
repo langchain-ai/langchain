@@ -5,8 +5,8 @@ from langchain.prompts.chat import (
     BaseChatPromptTemplate,
 )
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain.schema.vectorstore import VectorStoreRetriever
 from langchain.tools.base import BaseTool
-from langchain.vectorstores.base import VectorStoreRetriever
 
 from langchain_experimental.autonomous_agents.autogpt.prompt_generator import get_prompt
 from langchain_experimental.pydantic_v1 import BaseModel

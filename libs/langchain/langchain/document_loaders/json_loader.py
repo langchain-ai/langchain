@@ -64,7 +64,7 @@ class JSONLoader(BaseLoader):
                     if line:
                         self._parse(line, docs)
         else:
-            self._parse(self.file_path.read_text(), docs)
+            self._parse(self.file_path.read_text(encoding="utf-8"), docs)
         return docs
 
     def _parse(self, content: str, docs: List[Document]) -> None:
@@ -76,24 +76,20 @@ class JSONLoader(BaseLoader):
         # and prevent the user from getting a cryptic error later on.
         if self._content_key is not None:
             self._validate_content_key(data)
+        if self._metadata_func is not None:
+            self._validate_metadata_func(data)
 
         for i, sample in enumerate(data, len(docs) + 1):
-            metadata = dict(
-                source=str(self.file_path),
-                seq_num=i,
+            text = self._get_text(sample=sample)
+            metadata = self._get_metadata(
+                sample=sample, source=str(self.file_path), seq_num=i
             )
-            text = self._get_text(sample=sample, metadata=metadata)
             docs.append(Document(page_content=text, metadata=metadata))
 
-    def _get_text(self, sample: Any, metadata: dict) -> str:
+    def _get_text(self, sample: Any) -> str:
         """Convert sample to string format"""
         if self._content_key is not None:
             content = sample.get(self._content_key)
-            if self._metadata_func is not None:
-                # We pass in the metadata dict to the metadata_func
-                # so that the user can customize the default metadata
-                # based on the content of the JSON object.
-                metadata = self._metadata_func(sample, metadata)
         else:
             content = sample
 
@@ -112,6 +108,20 @@ class JSONLoader(BaseLoader):
         else:
             return str(content) if content is not None else ""
 
+    def _get_metadata(
+        self, sample: Dict[str, Any], **additional_fields: Any
+    ) -> Dict[str, Any]:
+        """
+        Return a metadata dictionary base on the existence of metadata_func
+        :param sample: single data payload
+        :param additional_fields: key-word arguments to be added as metadata values
+        :return:
+        """
+        if self._metadata_func is not None:
+            return self._metadata_func(sample, additional_fields)
+        else:
+            return additional_fields
+
     def _validate_content_key(self, data: Any) -> None:
         """Check if a content key is valid"""
         sample = data.first()
@@ -127,6 +137,10 @@ class JSONLoader(BaseLoader):
                     with the key `{self._content_key}`"
             )
 
+    def _validate_metadata_func(self, data: Any) -> None:
+        """Check if the metadata_func output is valid"""
+
+        sample = data.first()
         if self._metadata_func is not None:
             sample_metadata = self._metadata_func(sample, {})
             if not isinstance(sample_metadata, dict):

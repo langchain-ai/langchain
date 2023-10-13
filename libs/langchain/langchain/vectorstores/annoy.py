@@ -12,8 +12,8 @@ import numpy as np
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 INDEX_METRICS = frozenset(["angular", "euclidean", "manhattan", "hamming", "dot"])
@@ -40,7 +40,7 @@ class Annoy(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain import Annoy
+            from langchain.vectorstores import Annoy
             db = Annoy(embedding_function, index, docstore, index_to_docstore_id)
 
     """
@@ -350,7 +350,7 @@ class Annoy(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Annoy
+                from langchain.vectorstores import Annoy
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 index = Annoy.from_texts(texts, embeddings)
@@ -390,7 +390,7 @@ class Annoy(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Annoy
+                from langchain.vectorstores import Annoy
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)

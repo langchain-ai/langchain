@@ -248,6 +248,14 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
 
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"google_api_key": "GOOGLE_API_KEY"}
+
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return True
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""

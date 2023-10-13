@@ -6,8 +6,6 @@ import re
 import warnings
 from typing import Any, Dict, List, Optional
 
-import numexpr
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -26,7 +24,8 @@ class LLMMathChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import LLMMathChain, OpenAI
+            from langchain.chains import LLMMathChain
+            from langchain.llms import OpenAI
             llm_math = LLMMathChain.from_llm(OpenAI())
     """
 
@@ -46,6 +45,13 @@ class LLMMathChain(Chain):
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
+        try:
+            import numexpr  # noqa: F401
+        except ImportError:
+            raise ImportError(
+                "LLMMathChain requires the numexpr package. "
+                "Please install it with `pip install numexpr`."
+            )
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMMathChain with an llm is deprecated. "
@@ -74,6 +80,8 @@ class LLMMathChain(Chain):
         return [self.output_key]
 
     def _evaluate_expression(self, expression: str) -> str:
+        import numexpr  # noqa: F401
+
         try:
             local_dict = {"pi": math.pi, "e": math.e}
             output = str(

@@ -23,11 +23,11 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_env
-from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
 
@@ -77,7 +77,7 @@ def _get_search_client(
 ) -> SearchClient:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
-    from azure.identity import DefaultAzureCredential
+    from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
@@ -93,6 +93,9 @@ def _get_search_client(
     default_fields = default_fields or []
     if key is None:
         credential = DefaultAzureCredential()
+    elif key.upper() == "INTERACTIVE":
+        credential = InteractiveBrowserCredential()
+        credential.get_token("https://search.azure.com/.default")
     else:
         credential = AzureKeyCredential(key)
     index_client: SearchIndexClient = SearchIndexClient(
@@ -378,15 +381,18 @@ class AzureSearch(VectorStore):
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
         )
         # Convert results to Document objects
         docs = [
             (
                 Document(
-                    page_content=result[FIELDS_CONTENT],
-                    metadata=json.loads(result[FIELDS_METADATA]),
+                    page_content=result.pop(FIELDS_CONTENT),
+                    metadata=json.loads(result[FIELDS_METADATA])
+                    if FIELDS_METADATA in result
+                    else {
+                        k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR
+                    },
                 ),
                 float(result["@search.score"]),
             )
@@ -435,7 +441,6 @@ class AzureSearch(VectorStore):
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             top=k,
         )
@@ -443,8 +448,12 @@ class AzureSearch(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result[FIELDS_CONTENT],
-                    metadata=json.loads(result[FIELDS_METADATA]),
+                    page_content=result.pop(FIELDS_CONTENT),
+                    metadata=json.loads(result[FIELDS_METADATA])
+                    if FIELDS_METADATA in result
+                    else {
+                        k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR
+                    },
                 ),
                 float(result["@search.score"]),
             )
@@ -495,7 +504,6 @@ class AzureSearch(VectorStore):
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             query_type="semantic",
             query_language=self.semantic_query_language,
@@ -516,9 +524,17 @@ class AzureSearch(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result["content"],
+                    page_content=result.pop(FIELDS_CONTENT),
                     metadata={
-                        **json.loads(result["metadata"]),
+                        **(
+                            json.loads(result[FIELDS_METADATA])
+                            if FIELDS_METADATA in result
+                            else {
+                                k: v
+                                for k, v in result.items()
+                                if k != FIELDS_CONTENT_VECTOR
+                            }
+                        ),
                         **{
                             "captions": {
                                 "text": result.get("@search.captions", [{}])[0].text,
@@ -568,7 +584,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     vectorstore: AzureSearch
     """Azure Search instance used to find similar documents."""
     search_type: str = "hybrid"
-    """Type of search to perform. Options are "similarity", "hybrid", 
+    """Type of search to perform. Options are "similarity", "hybrid",
     "semantic_hybrid"."""
     k: int = 4
     """Number of documents to return."""
@@ -590,15 +606,15 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
         query: str,
-        *,
         run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         if self.search_type == "similarity":
-            docs = self.vectorstore.vector_search(query, k=self.k)
+            docs = self.vectorstore.vector_search(query, k=self.k, **kwargs)
         elif self.search_type == "hybrid":
-            docs = self.vectorstore.hybrid_search(query, k=self.k)
+            docs = self.vectorstore.hybrid_search(query, k=self.k, **kwargs)
         elif self.search_type == "semantic_hybrid":
-            docs = self.vectorstore.semantic_hybrid_search(query, k=self.k)
+            docs = self.vectorstore.semantic_hybrid_search(query, k=self.k, **kwargs)
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs

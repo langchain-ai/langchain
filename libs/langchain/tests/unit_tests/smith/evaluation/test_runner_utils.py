@@ -181,11 +181,15 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         assert "the wrong input" in inputs
         return {"the right input": inputs["the wrong input"]}
 
-    result = _run_llm_or_chain(example, lambda: mock_chain, input_mapper=input_mapper)
+    result = _run_llm_or_chain(
+        example,
+        {"callbacks": [], "tags": []},
+        llm_or_chain_factory=lambda: mock_chain,
+        input_mapper=input_mapper,
+    )
     assert result == {"output": "2", "the right input": "1"}
     bad_result = _run_llm_or_chain(
-        example,
-        lambda: mock_chain,
+        example, {"callbacks": [], "tags": []}, llm_or_chain_factory=lambda: mock_chain
     )
     assert "Error" in bad_result
 
@@ -195,7 +199,12 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         return "the right input"
 
     mock_llm = FakeLLM(queries={"the right input": "somenumber"})
-    llm_result = _run_llm_or_chain(example, mock_llm, input_mapper=llm_input_mapper)
+    llm_result = _run_llm_or_chain(
+        example,
+        {"callbacks": [], "tags": []},
+        llm_or_chain_factory=mock_llm,
+        input_mapper=llm_input_mapper,
+    )
     assert isinstance(llm_result, str)
     assert llm_result == "somenumber"
 
@@ -324,10 +333,14 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
         expected = {
-            uuid_: {
-                "output": {"result": f"Result for example {uuid.UUID(uuid_)}"},
+            str(example.id): {
+                "output": {
+                    "result": f"Result for example {uuid.UUID(str(example.id))}"
+                },
+                "input": {"input": example.inputs["input"]},
+                "reference": {"output": example.outputs["output"]},
                 "feedback": [],
             }
-            for uuid_ in uuids
+            for example in examples
         }
         assert results["results"] == expected

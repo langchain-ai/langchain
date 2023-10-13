@@ -14,10 +14,12 @@ from typing import (
     Union,
 )
 
+import numpy as np
+
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
-from langchain.vectorstores.utils import DistanceStrategy
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
+from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -506,7 +508,9 @@ class ElasticsearchStore(VectorStore):
         self.strategy = strategy
 
         if es_connection is not None:
-            self.client = es_connection
+            self.client = es_connection.options(
+                headers={"user-agent": self.get_user_agent()}
+            )
         elif es_url is not None or es_cloud_id is not None:
             self.client = ElasticsearchStore.connect_to_elasticsearch(
                 es_url=es_url,
@@ -520,6 +524,12 @@ class ElasticsearchStore(VectorStore):
                 """Either provide a pre-existing Elasticsearch connection, \
                 or valid credentials for creating a new connection."""
             )
+
+    @staticmethod
+    def get_user_agent() -> str:
+        from langchain import __version__
+
+        return f"langchain-py-vs/{__version__}"
 
     @staticmethod
     def connect_to_elasticsearch(
@@ -557,7 +567,10 @@ class ElasticsearchStore(VectorStore):
         elif username and password:
             connection_params["basic_auth"] = (username, password)
 
-        es_client = elasticsearch.Elasticsearch(**connection_params)
+        es_client = elasticsearch.Elasticsearch(
+            **connection_params,
+            headers={"user-agent": ElasticsearchStore.get_user_agent()},
+        )
         try:
             es_client.info()
         except Exception as e:
@@ -591,6 +604,67 @@ class ElasticsearchStore(VectorStore):
 
         results = self._search(query=query, k=k, filter=filter, **kwargs)
         return [doc for doc, _ in results]
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        fields: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            query (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            fields: Other fields to get from elasticsearch source. These fields
+                will be added to the document metadata.
+
+        Returns:
+            List[Document]: A list of Documents selected by maximal marginal relevance.
+        """
+        if self.embedding is None:
+            raise ValueError("You must provide an embedding function to perform MMR")
+        remove_vector_query_field_from_metadata = True
+        if fields is None:
+            fields = [self.vector_query_field]
+        elif self.vector_query_field not in fields:
+            fields.append(self.vector_query_field)
+        else:
+            remove_vector_query_field_from_metadata = False
+
+        # Embed the query
+        query_embedding = self.embedding.embed_query(query)
+
+        # Fetch the initial documents
+        got_docs = self._search(
+            query_vector=query_embedding, k=fetch_k, fields=fields, **kwargs
+        )
+
+        # Get the embeddings for the fetched documents
+        got_embeddings = [doc.metadata[self.vector_query_field] for doc, _ in got_docs]
+
+        # Select documents using maximal marginal relevance
+        selected_indices = maximal_marginal_relevance(
+            np.array(query_embedding), got_embeddings, lambda_mult=lambda_mult, k=k
+        )
+        selected_docs = [got_docs[i][0] for i in selected_indices]
+
+        if remove_vector_query_field_from_metadata:
+            for doc in selected_docs:
+                del doc.metadata["vector"]
+
+        return selected_docs
 
     def similarity_search_with_score(
         self, query: str, k: int = 4, filter: Optional[List[dict]] = None, **kwargs: Any
@@ -654,7 +728,10 @@ class ElasticsearchStore(VectorStore):
             List of Documents most similar to the query and score for each
         """
         if fields is None:
-            fields = ["metadata"]
+            fields = []
+
+        if "metadata" not in fields:
+            fields.append("metadata")
 
         if self.query_field not in fields:
             fields.append(self.query_field)
@@ -678,7 +755,6 @@ class ElasticsearchStore(VectorStore):
         if custom_query is not None:
             query_body = custom_query(query_body, query)
             logger.debug(f"Calling custom_query, Query body now: {query_body}")
-
         # Perform the kNN search on the Elasticsearch index and return the results.
         response = self.client.search(
             index=self.index_name,
@@ -687,18 +763,24 @@ class ElasticsearchStore(VectorStore):
             source=fields,
         )
 
-        hits = [hit for hit in response["hits"]["hits"]]
-        docs_and_scores = [
-            (
-                Document(
-                    page_content=hit["_source"][self.query_field],
-                    metadata=hit["_source"]["metadata"],
-                ),
-                hit["_score"],
-            )
-            for hit in hits
-        ]
+        docs_and_scores = []
+        for hit in response["hits"]["hits"]:
+            for field in fields:
+                if field in hit["_source"] and field not in [
+                    "metadata",
+                    self.query_field,
+                ]:
+                    hit["_source"]["metadata"][field] = hit["_source"][field]
 
+            docs_and_scores.append(
+                (
+                    Document(
+                        page_content=hit["_source"].get(self.query_field, ""),
+                        metadata=hit["_source"]["metadata"],
+                    ),
+                    hit["_score"],
+                )
+            )
         return docs_and_scores
 
     def delete(
@@ -791,6 +873,7 @@ class ElasticsearchStore(VectorStore):
         ids: Optional[List[str]] = None,
         refresh_indices: bool = True,
         create_index_if_not_exists: bool = True,
+        bulk_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -803,6 +886,9 @@ class ElasticsearchStore(VectorStore):
                             after adding the texts.
             create_index_if_not_exists: Whether to create the Elasticsearch
                                         index if it doesn't already exist.
+            *bulk_kwargs: Additional arguments to pass to Elasticsearch bulk.
+                - chunk_size: Optional. Number of texts to add to the
+                    index at a time. Defaults to 500.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -814,7 +900,7 @@ class ElasticsearchStore(VectorStore):
                 "Could not import elasticsearch python package. "
                 "Please install it with `pip install elasticsearch`."
             )
-
+        bulk_kwargs = bulk_kwargs or {}
         embeddings = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         requests = []
@@ -866,7 +952,11 @@ class ElasticsearchStore(VectorStore):
         if len(requests) > 0:
             try:
                 success, failed = bulk(
-                    self.client, requests, stats_only=True, refresh=refresh_indices
+                    self.client,
+                    requests,
+                    stats_only=True,
+                    refresh=refresh_indices,
+                    **bulk_kwargs,
                 )
                 logger.debug(
                     f"Added {success} and failed to add {failed} texts to index"
@@ -890,6 +980,7 @@ class ElasticsearchStore(VectorStore):
         texts: List[str],
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[Dict[str, Any]]] = None,
+        bulk_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> "ElasticsearchStore":
         """Construct ElasticsearchStore wrapper from raw documents.
@@ -927,6 +1018,8 @@ class ElasticsearchStore(VectorStore):
                                 strategy to use. Defaults to "COSINE".
                                 can be one of "COSINE",
                                 "EUCLIDEAN_DISTANCE", "DOT_PRODUCT".
+            bulk_kwargs: Optional. Additional arguments to pass to
+                        Elasticsearch bulk.
         """
 
         elasticsearchStore = ElasticsearchStore._create_cls_from_kwargs(
@@ -934,7 +1027,9 @@ class ElasticsearchStore(VectorStore):
         )
 
         # Encode the provided texts and add them to the newly created index.
-        elasticsearchStore.add_texts(texts, metadatas=metadatas)
+        elasticsearchStore.add_texts(
+            texts, metadatas=metadatas, bulk_kwargs=bulk_kwargs
+        )
 
         return elasticsearchStore
 
@@ -985,6 +1080,7 @@ class ElasticsearchStore(VectorStore):
         cls,
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
+        bulk_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> "ElasticsearchStore":
         """Construct ElasticsearchStore wrapper from documents.
@@ -1018,13 +1114,15 @@ class ElasticsearchStore(VectorStore):
             vector_query_field: Optional. Name of the field
                                 to store the embedding vectors in.
             query_field: Optional. Name of the field to store the texts in.
+            bulk_kwargs: Optional. Additional arguments to pass to
+                        Elasticsearch bulk.
         """
 
         elasticsearchStore = ElasticsearchStore._create_cls_from_kwargs(
             embedding=embedding, **kwargs
         )
         # Encode the provided texts and add them to the newly created index.
-        elasticsearchStore.add_documents(documents)
+        elasticsearchStore.add_documents(documents, bulk_kwargs=bulk_kwargs)
 
         return elasticsearchStore
 

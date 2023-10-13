@@ -38,7 +38,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             # details.
             document_prompt = PromptTemplate(
                 input_variables=["page_content"],
-                 template="{page_content}"
+                template="{page_content}"
             )
             document_variable_name = "context"
             llm = OpenAI()

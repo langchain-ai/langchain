@@ -9,7 +9,7 @@ example_prompt = PromptTemplate(
     template="Input: {input}\nOutput: {output}",
 )
 
-# These are a lot of examples of a pretend task of creating antonyms.
+# Examples of a pretend task of creating antonyms.
 examples = [
     {"input": "happy", "output": "sad"},
     {"input": "tall", "output": "short"},
@@ -22,13 +22,13 @@ examples = [
 
 ```python
 example_selector = SemanticSimilarityExampleSelector.from_examples(
-    # This is the list of examples available to select from.
+    # The list of examples available to select from.
     examples, 
-    # This is the embedding class used to produce embeddings which are used to measure semantic similarity.
+    # The embedding class used to produce embeddings which are used to measure semantic similarity.
     OpenAIEmbeddings(), 
-    # This is the VectorStore class that is used to store the embeddings and do a similarity search over.
+    # The VectorStore class that is used to store the embeddings and do a similarity search over.
     Chroma, 
-    # This is the number of examples to produce.
+    # The number of examples to produce.
     k=1
 )
 similar_prompt = FewShotPromptTemplate(
@@ -73,7 +73,7 @@ print(similar_prompt.format(adjective="worried"))
 
 ```python
 # Input is a measurement, so should select the tall/short example
-print(similar_prompt.format(adjective="fat"))
+print(similar_prompt.format(adjective="large"))
 ```
 
 <CodeOutputBlock lang="python">
@@ -81,10 +81,10 @@ print(similar_prompt.format(adjective="fat"))
 ```
     Give the antonym of every input
     
-    Input: happy
-    Output: sad
+    Input: tall
+    Output: short
     
-    Input: fat
+    Input: large
     Output:
 ```
 
@@ -94,7 +94,7 @@ print(similar_prompt.format(adjective="fat"))
 ```python
 # You can add new examples to the SemanticSimilarityExampleSelector as well
 similar_prompt.example_selector.add_example({"input": "enthusiastic", "output": "apathetic"})
-print(similar_prompt.format(adjective="joyful"))
+print(similar_prompt.format(adjective="passionate"))
 ```
 
 <CodeOutputBlock lang="python">
@@ -102,10 +102,10 @@ print(similar_prompt.format(adjective="joyful"))
 ```
     Give the antonym of every input
     
-    Input: happy
-    Output: sad
+    Input: enthusiastic
+    Output: apathetic
     
-    Input: joyful
+    Input: passionate
     Output:
 ```
 

@@ -7,7 +7,9 @@ from langchain.document_loaders import PlaywrightURLLoader
 from langchain.document_loaders.url_playwright import PlaywrightEvaluator
 
 if TYPE_CHECKING:
-    from playwright.async_api import AsyncBrowser, AsyncPage, AsyncResponse
+    from playwright.async_api import Browser as AsyncBrowser
+    from playwright.async_api import Page as AsyncPage
+    from playwright.async_api import Response as AsyncResponse
     from playwright.sync_api import Browser, Page, Response
 
 

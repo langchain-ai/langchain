@@ -5,8 +5,8 @@ from enum import Enum
 from typing import Any, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +151,7 @@ class Rockset(VectorStore):
         This is intended as a quicker way to get started.
         """
 
-        # Sanitize imputs
+        # Sanitize inputs
         assert client is not None, "Rockset Client cannot be None"
         assert collection_name, "Collection name cannot be empty"
         assert text_key, "Text key name cannot be empty"

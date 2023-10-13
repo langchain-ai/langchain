@@ -32,7 +32,9 @@ class LLMChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import LLMChain, OpenAI, PromptTemplate
+            from langchain.chains import LLMChain
+            from langchain.llms import OpenAI
+            from langchain.prompts import PromptTemplate
             prompt_template = "Tell me a {adjective} joke"
             prompt = PromptTemplate(
                 input_variables=["adjective"], template=prompt_template
@@ -40,8 +42,8 @@ class LLMChain(Chain):
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
     """
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(self) -> bool:
         return True
 
     prompt: BasePromptTemplate
@@ -184,7 +186,7 @@ class LLMChain(Chain):
         )
         try:
             response = self.generate(input_list, run_manager=run_manager)
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             run_manager.on_chain_error(e)
             raise e
         outputs = self.create_outputs(response)
@@ -204,7 +206,7 @@ class LLMChain(Chain):
         )
         try:
             response = await self.agenerate(input_list, run_manager=run_manager)
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             await run_manager.on_chain_error(e)
             raise e
         outputs = self.create_outputs(response)

@@ -5,9 +5,11 @@ from langchain_experimental.comprehend_moderation.base_moderation import BaseMod
 from langchain_experimental.comprehend_moderation.base_moderation_callbacks import (
     BaseModerationCallbackHandler,
 )
-from langchain_experimental.comprehend_moderation.base_moderation_enums import (
-    BaseModerationActions,
-    BaseModerationFilters,
+from langchain_experimental.comprehend_moderation.base_moderation_config import (
+    BaseModerationConfig,
+    ModerationIntentConfig,
+    ModerationPiiConfig,
+    ModerationToxicityConfig,
 )
 from langchain_experimental.comprehend_moderation.intent import ComprehendIntent
 from langchain_experimental.comprehend_moderation.pii import ComprehendPII
@@ -15,11 +17,13 @@ from langchain_experimental.comprehend_moderation.toxicity import ComprehendToxi
 
 __all__ = [
     "BaseModeration",
-    "BaseModerationActions",
-    "BaseModerationFilters",
     "ComprehendPII",
     "ComprehendIntent",
     "ComprehendToxicity",
+    "BaseModerationConfig",
+    "ModerationPiiConfig",
+    "ModerationToxicityConfig",
+    "ModerationIntentConfig",
     "BaseModerationCallbackHandler",
     "AmazonComprehendModerationChain",
 ]

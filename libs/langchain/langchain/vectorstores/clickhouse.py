@@ -7,9 +7,9 @@ from threading import Thread
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseSettings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 
 logger = logging.getLogger()
 
@@ -34,9 +34,9 @@ class ClickhouseSettings(BaseSettings):
     """`ClickHouse` client configuration.
 
     Attribute:
-        clickhouse_host (str) : An URL to connect to MyScale backend.
+        host (str) : An URL to connect to MyScale backend.
                              Defaults to 'localhost'.
-        clickhouse_port (int) : URL port to connect with HTTP. Defaults to 8443.
+        port (int) : URL port to connect with HTTP. Defaults to 8443.
         username (str) : Username to login. Defaults to None.
         password (str) : Password to login. Defaults to None.
         index_type (str): index type string.

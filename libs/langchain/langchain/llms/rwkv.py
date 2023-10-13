@@ -121,7 +121,7 @@ class RWKV(LLM, BaseModel):
             values["pipeline"] = PIPELINE(values["client"], values["tokens_path"])
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import rwkv python package. "
                 "Please install it with `pip install rwkv`."
             )

@@ -60,3 +60,8 @@ class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain):
             question, callbacks=run_manager.get_child()
         )
         return self._reduce_tokens_below_limit(docs)
+
+    @property
+    def _chain_type(self) -> str:
+        """Return the chain type."""
+        return "retrieval_qa_with_sources_chain"

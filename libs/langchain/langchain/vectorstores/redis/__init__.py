@@ -1,4 +1,4 @@
-from .base import Redis
+from .base import Redis, RedisVectorStoreRetriever
 from .filters import (
     RedisFilter,
     RedisNum,
@@ -6,4 +6,11 @@ from .filters import (
     RedisText,
 )
 
-__all__ = ["Redis", "RedisFilter", "RedisTag", "RedisText", "RedisNum"]
+__all__ = [
+    "Redis",
+    "RedisFilter",
+    "RedisTag",
+    "RedisText",
+    "RedisNum",
+    "RedisVectorStoreRetriever",
+]

@@ -1,0 +1,22 @@
+---
+name: Documentation Lint
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Run import check
+      run: |
+        # We should not encourage imports directly from main init file
+        # Expect for hub
+        git grep 'from langchain import' docs/{docs,snippets} | grep -vE 'from langchain import (hub)' && exit 1 || exit 0

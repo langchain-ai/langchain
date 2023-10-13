@@ -27,7 +27,7 @@ runs:
   using: composite
   steps:
     - uses: actions/setup-python@v4
-      name: Setup python $${ inputs.python-version }}
+      name: Setup python ${{ inputs.python-version }}
       with:
         python-version: ${{ inputs.python-version }}
 
@@ -39,9 +39,34 @@ runs:
       with:
         path: |
           /opt/pipx/venvs/poetry
-          /opt/pipx_bin/poetry
         # This step caches the poetry installation, so make sure it's keyed on the poetry version as well.
         key: bin-poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-${{ inputs.poetry-version }}
+
+    - name: Refresh shell hashtable and fixup softlinks
+      if: steps.cache-bin-poetry.outputs.cache-hit == 'true'
+      shell: bash
+      env:
+        POETRY_VERSION: ${{ inputs.poetry-version }}
+        PYTHON_VERSION: ${{ inputs.python-version }}
+      run: |
+        set -eux
+
+        # Refresh the shell hashtable, to ensure correct `which` output.
+        hash -r
+
+        # `actions/cache@v3` doesn't always seem able to correctly unpack softlinks.
+        # Delete and recreate the softlinks pipx expects to have.
+        rm /opt/pipx/venvs/poetry/bin/python
+        cd /opt/pipx/venvs/poetry/bin
+        ln -s "$(which "python$PYTHON_VERSION")" python
+        chmod +x python
+        cd /opt/pipx_bin/
+        ln -s /opt/pipx/venvs/poetry/bin/poetry poetry
+        chmod +x poetry
+
+        # Ensure everything got set up correctly.
+        /opt/pipx/venvs/poetry/bin/python --version
+        /opt/pipx_bin/poetry --version
 
     - name: Install poetry
       if: steps.cache-bin-poetry.outputs.cache-hit != 'true'

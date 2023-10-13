@@ -22,11 +22,16 @@ class PromptTemplate(StringPromptTemplate):
 
     The template can be formatted using either f-strings (default) or jinja2 syntax.
 
+    *Security warning*: Prefer using `template_format="f-string"` instead of
+    `template_format="jinja2"`, since jinja2 templates are not sandboxed and may
+    lead to arbitrary Python code execution. Do not construct a jinja2 `PromptTemplate`
+    from unverified or user-controlled inputs!
+
     Example:
 
         .. code-block:: python
 
-            from langchain import PromptTemplate
+            from langchain.prompts import PromptTemplate
 
             # Instantiation using from_template (recommended)
             prompt = PromptTemplate.from_template("Say {foo}")

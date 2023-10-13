@@ -3,14 +3,14 @@ from typing import Any, Dict, List, Optional, Type
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.document_loaders.base import BaseLoader
-from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms.openai import OpenAI
 from langchain.pydantic_v1 import BaseModel, Extra, Field
 from langchain.schema import Document
+from langchain.schema.embeddings import Embeddings
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.vectorstore import VectorStore
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
 
 

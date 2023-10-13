@@ -24,8 +24,8 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
@@ -120,16 +120,19 @@ async def async_embed_with_retry(embeddings: LocalAIEmbeddings, **kwargs: Any) -
 class LocalAIEmbeddings(BaseModel, Embeddings):
     """LocalAI embedding models.
 
-    To use, you should have the ``openai`` python package installed, and the
-    environment variable ``OPENAI_API_KEY`` set to a random string. You need to
-    specify ``OPENAI_API_BASE`` to point to your LocalAI service endpoint.
+    Since LocalAI and OpenAI have 1:1 compatibility between APIs, this class
+    uses the ``openai`` Python package's ``openai.Embedding`` as its client.
+    Thus, you should have the ``openai`` python package installed, and defeat
+    the environment variable ``OPENAI_API_KEY`` by setting to a random string.
+    You also need to specify ``OPENAI_API_BASE`` to point to your LocalAI
+    service endpoint.
 
     Example:
         .. code-block:: python
 
             from langchain.embeddings import LocalAIEmbeddings
             openai = LocalAIEmbeddings(
-                openai_api_key="random-key",
+                openai_api_key="random-string",
                 openai_api_base="http://localhost:8080"
             )
 

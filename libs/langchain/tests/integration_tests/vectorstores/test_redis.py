@@ -136,6 +136,32 @@ def test_redis_from_documents(texts: List[str]) -> None:
     assert drop(docsearch.index_name)
 
 
+def test_custom_keys(texts: List[str]) -> None:
+    keys_in = ["test_key_1", "test_key_2", "test_key_3"]
+    docsearch, keys_out = Redis.from_texts_return_keys(
+        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, keys=keys_in
+    )
+    assert keys_in == keys_out
+    assert drop(docsearch.index_name)
+
+
+def test_custom_keys_from_docs(texts: List[str]) -> None:
+    keys_in = ["test_key_1", "test_key_2", "test_key_3"]
+    docs = [Document(page_content=t, metadata={"a": "b"}) for t in texts]
+
+    docsearch = Redis.from_documents(
+        docs, FakeEmbeddings(), redis_url=TEST_REDIS_URL, keys=keys_in
+    )
+    client = docsearch.client
+    # test keys are correct
+    assert client.hget("test_key_1", "content")
+    # test metadata is stored
+    assert client.hget("test_key_1", "a") == bytes("b", "utf-8")
+    # test all keys are stored
+    assert client.hget("test_key_2", "content")
+    assert drop(docsearch.index_name)
+
+
 # -- test filters -- #
 
 
@@ -187,12 +213,21 @@ def test_redis_filters_1(
         documents, FakeEmbeddings(), redis_url=TEST_REDIS_URL
     )
 
-    output = docsearch.similarity_search("foo", k=3, filter=filter_expr)
+    sim_output = docsearch.similarity_search("foo", k=3, filter=filter_expr)
+    mmr_output = docsearch.max_marginal_relevance_search(
+        "foo", k=3, fetch_k=5, filter=filter_expr
+    )
 
-    assert len(output) == expected_length
+    assert len(sim_output) == expected_length
+    assert len(mmr_output) == expected_length
 
     if expected_nums is not None:
-        for out in output:
+        for out in sim_output:
+            assert (
+                out.metadata["text"] in expected_nums
+                or int(out.metadata["num"]) in expected_nums
+            )
+        for out in mmr_output:
             assert (
                 out.metadata["text"] in expected_nums
                 or int(out.metadata["num"]) in expected_nums
@@ -302,7 +337,6 @@ def test_similarity_search_limit_distance(texts: List[str]) -> None:
 
 def test_similarity_search_with_score_with_limit_distance(texts: List[str]) -> None:
     """Test similarity search with score with limit score."""
-
     docsearch = Redis.from_texts(
         texts, ConsistentFakeEmbeddings(), redis_url=TEST_REDIS_URL
     )
@@ -314,6 +348,32 @@ def test_similarity_search_with_score_with_limit_distance(texts: List[str]) -> N
     for out, score in output:
         if out.page_content == texts[1]:
             score == COSINE_SCORE
+    assert drop(docsearch.index_name)
+
+
+def test_max_marginal_relevance_search(texts: List[str]) -> None:
+    """Test max marginal relevance search."""
+    docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
+
+    mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=3, fetch_k=3)
+    sim_output = docsearch.similarity_search(texts[0], k=3)
+    assert mmr_output == sim_output
+
+    mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=2, fetch_k=3)
+    assert len(mmr_output) == 2
+    assert mmr_output[0].page_content == texts[0]
+    assert mmr_output[1].page_content == texts[1]
+
+    mmr_output = docsearch.max_marginal_relevance_search(
+        texts[0], k=2, fetch_k=3, lambda_mult=0.1  # more diversity
+    )
+    assert len(mmr_output) == 2
+    assert mmr_output[0].page_content == texts[0]
+    assert mmr_output[1].page_content == texts[2]
+
+    # if fetch_k < k, then the output will be less than k
+    mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=3, fetch_k=2)
+    assert len(mmr_output) == 2
     assert drop(docsearch.index_name)
 
 
