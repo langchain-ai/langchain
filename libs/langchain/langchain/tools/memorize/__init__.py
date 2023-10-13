@@ -1,4 +1,4 @@
-"""Metaphor Search API toolkit."""
+"""Unsupervised learning based memorization."""
 
 from langchain.tools.memorize.tool import Memorize
 
