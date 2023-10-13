@@ -124,7 +124,6 @@ class RecursiveUrlLoader(BaseLoader):
         if not header_template.get("User-Agent"):
             try:
                 from fake_useragent import UserAgent
-
                 header_template["User-Agent"] = UserAgent().random
             except ImportError:
                 logger.info(
