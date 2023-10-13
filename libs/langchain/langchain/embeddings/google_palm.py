@@ -40,17 +40,17 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
     )
 
 
-def embed_with_retry(
+def _embed_with_retry(
     embeddings: GooglePalmEmbeddings, *args: Any, **kwargs: Any
 ) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator()
 
     @retry_decorator
-    def _embed_with_retry(*args: Any, **kwargs: Any) -> Any:
+    def __embed_with_retry(*args: Any, **kwargs: Any) -> Any:
         return embeddings.client.generate_embeddings(*args, **kwargs)
 
-    return _embed_with_retry(*args, **kwargs)
+    return __embed_with_retry(*args, **kwargs)
 
 
 class GooglePalmEmbeddings(BaseModel, Embeddings):
@@ -83,5 +83,5 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
-        embedding = embed_with_retry(self, self.model_name, text)
+        embedding = _embed_with_retry(self, self.model_name, text)
         return embedding["embedding"]

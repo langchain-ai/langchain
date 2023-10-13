@@ -34,15 +34,15 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
     )
 
 
-def embed_with_retry(embeddings: MiniMaxEmbeddings, *args: Any, **kwargs: Any) -> Any:
+def _embed_with_retry(embeddings: MiniMaxEmbeddings, *args: Any, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator()
 
     @retry_decorator
-    def _embed_with_retry(*args: Any, **kwargs: Any) -> Any:
+    def __embed_with_retry(*args: Any, **kwargs: Any) -> Any:
         return embeddings.embed(*args, **kwargs)
 
-    return _embed_with_retry(*args, **kwargs)
+    return __embed_with_retry(*args, **kwargs)
 
 
 class MiniMaxEmbeddings(BaseModel, Embeddings):
@@ -144,7 +144,7 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = embed_with_retry(self, texts=texts, embed_type=self.embed_type_db)
+        embeddings = _embed_with_retry(self, texts=texts, embed_type=self.embed_type_db)
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
@@ -156,7 +156,7 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embeddings = embed_with_retry(
+        embeddings = _embed_with_retry(
             self, texts=[text], embed_type=self.embed_type_query
         )
         return embeddings[0]

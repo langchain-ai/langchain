@@ -95,27 +95,27 @@ def _check_response(response: dict, skip_empty: bool = False) -> dict:
     return response
 
 
-def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
+def _embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
     retry_decorator = _create_retry_decorator(embeddings)
 
     @retry_decorator
-    def _embed_with_retry(**kwargs: Any) -> Any:
+    def __embed_with_retry(**kwargs: Any) -> Any:
         response = embeddings.client.create(**kwargs)
         return _check_response(response, skip_empty=embeddings.skip_empty)
 
-    return _embed_with_retry(**kwargs)
+    return __embed_with_retry(**kwargs)
 
 
-async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
+async def _async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
 
     @_async_retry_decorator(embeddings)
-    async def _async_embed_with_retry(**kwargs: Any) -> Any:
+    async def __async_embed_with_retry(**kwargs: Any) -> Any:
         response = await embeddings.client.acreate(**kwargs)
         return _check_response(response, skip_empty=embeddings.skip_empty)
 
-    return await _async_embed_with_retry(**kwargs)
+    return await __async_embed_with_retry(**kwargs)
 
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
@@ -371,7 +371,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             _iter = range(0, len(tokens), _chunk_size)
 
         for i in _iter:
-            response = embed_with_retry(
+            response = _embed_with_retry(
                 self,
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
@@ -389,7 +389,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
-                average = embed_with_retry(
+                average = _embed_with_retry(
                     self,
                     input="",
                     **self._invocation_params,
@@ -443,7 +443,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         batched_embeddings: List[List[float]] = []
         _chunk_size = chunk_size or self.chunk_size
         for i in range(0, len(tokens), _chunk_size):
-            response = await async_embed_with_retry(
+            response = await _async_embed_with_retry(
                 self,
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
@@ -460,7 +460,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             _result = results[i]
             if len(_result) == 0:
                 average = (
-                    await async_embed_with_retry(
+                    await _async_embed_with_retry(
                         self,
                         input="",
                         **self._invocation_params,

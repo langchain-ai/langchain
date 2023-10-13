@@ -40,12 +40,12 @@ def _create_retry_decorator(embeddings: DashScopeEmbeddings) -> Callable[[Any], 
     )
 
 
-def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
+def _embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
     retry_decorator = _create_retry_decorator(embeddings)
 
     @retry_decorator
-    def _embed_with_retry(**kwargs: Any) -> Any:
+    def __embed_with_retry(**kwargs: Any) -> Any:
         resp = embeddings.client.call(**kwargs)
         if resp.status_code == 200:
             return resp.output["embeddings"]
@@ -61,7 +61,7 @@ def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
                 response=resp,
             )
 
-    return _embed_with_retry(**kwargs)
+    return __embed_with_retry(**kwargs)
 
 
 class DashScopeEmbeddings(BaseModel, Embeddings):
@@ -135,7 +135,7 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = embed_with_retry(
+        embeddings = _embed_with_retry(
             self, input=texts, text_type="document", model=self.model
         )
         embedding_list = [item["embedding"] for item in embeddings]
@@ -150,7 +150,7 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        embedding = embed_with_retry(
+        embedding = _embed_with_retry(
             self, input=text, text_type="query", model=self.model
         )[0]["embedding"]
         return embedding

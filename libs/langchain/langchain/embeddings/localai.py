@@ -94,27 +94,27 @@ def _check_response(response: dict) -> dict:
     return response
 
 
-def embed_with_retry(embeddings: LocalAIEmbeddings, **kwargs: Any) -> Any:
+def _embed_with_retry(embeddings: LocalAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
     retry_decorator = _create_retry_decorator(embeddings)
 
     @retry_decorator
-    def _embed_with_retry(**kwargs: Any) -> Any:
+    def __embed_with_retry(**kwargs: Any) -> Any:
         response = embeddings.client.create(**kwargs)
         return _check_response(response)
 
-    return _embed_with_retry(**kwargs)
+    return __embed_with_retry(**kwargs)
 
 
-async def async_embed_with_retry(embeddings: LocalAIEmbeddings, **kwargs: Any) -> Any:
+async def _async_embed_with_retry(embeddings: LocalAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
 
     @_async_retry_decorator(embeddings)
-    async def _async_embed_with_retry(**kwargs: Any) -> Any:
+    async def __async_embed_with_retry(**kwargs: Any) -> Any:
         response = await embeddings.client.acreate(**kwargs)
         return _check_response(response)
 
-    return await _async_embed_with_retry(**kwargs)
+    return await __async_embed_with_retry(**kwargs)
 
 
 class LocalAIEmbeddings(BaseModel, Embeddings):
@@ -265,13 +265,13 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
             # replace newlines, which can negatively affect performance.
             text = text.replace("\n", " ")
-        return embed_with_retry(
+        return _embed_with_retry(
             self,
             input=[text],
             **self._invocation_params,
-        )["data"][
-            0
-        ]["embedding"]
+        )[
+            "data"
+        ][0]["embedding"]
 
     async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint."""
@@ -281,7 +281,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             # replace newlines, which can negatively affect performance.
             text = text.replace("\n", " ")
         return (
-            await async_embed_with_retry(
+            await _async_embed_with_retry(
                 self,
                 input=[text],
                 **self._invocation_params,
