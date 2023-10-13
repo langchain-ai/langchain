@@ -43,6 +43,7 @@ from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchResults
+from langchain.tools.memorize.tool import Memorize
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.golden_query import GoldenQueryAPIWrapper
 from langchain.utilities.pubmed import PubMedAPIWrapper
@@ -300,6 +301,10 @@ def _get_eleven_labs_text2speech(**kwargs: Any) -> BaseTool:
     return ElevenLabsText2SpeechTool(**kwargs)
 
 
+def _get_memorize(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
+    return Memorize(llm=llm)
+
+
 _EXTRA_LLM_TOOLS: Dict[
     str,
     Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],
@@ -307,6 +312,7 @@ _EXTRA_LLM_TOOLS: Dict[
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
     "podcast-api": (_get_podcast_api, ["listen_api_key"]),
+    "memorize": (_get_memorize, []),
 }
 _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[str]]] = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
