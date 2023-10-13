@@ -19,7 +19,7 @@ class OutputFixingParser(BaseOutputParser[T]):
     parser: BaseOutputParser[T]
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Any
-    max_retries: int
+    max_retries: int = 1
 
     @classmethod
     def from_llm(
