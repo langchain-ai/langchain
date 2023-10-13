@@ -185,17 +185,17 @@ class SingleStoreDB(VectorStore):
         self.metadata_field = metadata_field
         self.vector_field = vector_field
 
-        """Pass the rest of the kwargs to the connection."""
+        # Pass the rest of the kwargs to the connection.
         self.connection_kwargs = kwargs
 
-        """Add program name and version to connection attributes."""
+        # Add program name and version to connection attributes.
         if "conn_attrs" not in self.connection_kwargs:
             self.connection_kwargs["conn_attrs"] = dict()
 
         self.connection_kwargs["conn_attrs"]["_connector_name"] = "langchain python sdk"
         self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.1"
 
-        """Create connection pool."""
+        # Create connection pool.
         self.connection_pool = QueuePool(
             self._get_connection,
             max_overflow=max_overflow,

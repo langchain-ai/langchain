@@ -19,6 +19,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
     def __init__(
         self,
         session_id: str,
+        *,
         table_name: str = "message_store",
         id_field: str = "id",
         session_id_field: str = "session_id",
@@ -141,17 +142,17 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
         self.session_id_field = session_id_field
         self.message_field = message_field
 
-        """Pass the rest of the kwargs to the connection."""
+        # Pass the rest of the kwargs to the connection.
         self.connection_kwargs = kwargs
 
-        """Add connection attributes to the connection kwargs."""
+        # Add connection attributes to the connection kwargs.
         if "conn_attrs" not in self.connection_kwargs:
             self.connection_kwargs["conn_attrs"] = dict()
 
         self.connection_kwargs["conn_attrs"]["_connector_name"] = "langchain python sdk"
         self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.1"
 
-        """Create a connection pool."""
+        # Create a connection pool.
         try:
             from sqlalchemy.pool import QueuePool
         except ImportError:
