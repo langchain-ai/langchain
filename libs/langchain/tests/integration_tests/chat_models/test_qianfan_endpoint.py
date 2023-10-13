@@ -231,6 +231,3 @@ def test_functions_call() -> None:
     )
     resp = llm_chain.generate([{}])
     assert isinstance(resp, LLMResult)
-
-
-[]
