@@ -286,17 +286,17 @@ class ChatOpenAI(BaseChatModel):
             **self.model_kwargs,
         }
 
-    def completion_with_retry(
+    def _completion_with_retry(
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
         @retry_decorator
-        def _completion_with_retry(**kwargs: Any) -> Any:
+        def __completion_with_retry(**kwargs: Any) -> Any:
             return self.client.create(**kwargs)
 
-        return _completion_with_retry(**kwargs)
+        return __completion_with_retry(**kwargs)
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
@@ -323,7 +323,7 @@ class ChatOpenAI(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        for chunk in self.completion_with_retry(
+        for chunk in self._completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
             if len(chunk["choices"]) == 0:
@@ -357,7 +357,7 @@ class ChatOpenAI(BaseChatModel):
             return _generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = self.completion_with_retry(
+        response = self._completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         )
         return self._create_chat_result(response)

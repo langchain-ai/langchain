@@ -86,7 +86,7 @@ def _create_retry_decorator(
     return decorator
 
 
-def completion_with_retry(
+def _completion_with_retry(
     llm: VertexAI,
     *args: Any,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
@@ -96,13 +96,13 @@ def completion_with_retry(
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
-    def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
+    def __completion_with_retry(*args: Any, **kwargs: Any) -> Any:
         return llm.client.predict(*args, **kwargs)
 
-    return _completion_with_retry(*args, **kwargs)
+    return __completion_with_retry(*args, **kwargs)
 
 
-def stream_completion_with_retry(
+def _stream_completion_with_retry(
     llm: VertexAI,
     *args: Any,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
@@ -118,7 +118,7 @@ def stream_completion_with_retry(
     return _completion_with_retry(*args, **kwargs)
 
 
-async def acompletion_with_retry(
+async def _acompletion_with_retry(
     llm: VertexAI,
     *args: Any,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
@@ -128,10 +128,10 @@ async def acompletion_with_retry(
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
-    async def _acompletion_with_retry(*args: Any, **kwargs: Any) -> Any:
+    async def __acompletion_with_retry(*args: Any, **kwargs: Any) -> Any:
         return await llm.client.predict_async(*args, **kwargs)
 
-    return await _acompletion_with_retry(*args, **kwargs)
+    return await __acompletion_with_retry(*args, **kwargs)
 
 
 class _VertexAIBase(BaseModel):
@@ -295,7 +295,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
                     generation += chunk
                 generations.append([generation])
             else:
-                res = completion_with_retry(
+                res = _completion_with_retry(
                     self, prompt, run_manager=run_manager, **params
                 )
                 generations.append([_response_to_generation(r) for r in res.candidates])
@@ -311,7 +311,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         params = self._prepare_params(stop=stop, **kwargs)
         generations = []
         for prompt in prompts:
-            res = await acompletion_with_retry(
+            res = await _acompletion_with_retry(
                 self, prompt, run_manager=run_manager, **params
             )
             generations.append([_response_to_generation(r) for r in res.candidates])
@@ -325,7 +325,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         params = self._prepare_params(stop=stop, stream=True, **kwargs)
-        for stream_resp in stream_completion_with_retry(
+        for stream_resp in _stream_completion_with_retry(
             self, prompt, run_manager=run_manager, **params
         ):
             chunk = _response_to_generation(stream_resp)

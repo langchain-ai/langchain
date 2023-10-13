@@ -100,7 +100,7 @@ def _create_retry_decorator(
     )
 
 
-def completion_with_retry(
+def _completion_with_retry(
     llm: Union[BaseOpenAI, OpenAIChat],
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -109,13 +109,13 @@ def completion_with_retry(
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
-    def _completion_with_retry(**kwargs: Any) -> Any:
+    def __completion_with_retry(**kwargs: Any) -> Any:
         return llm.client.create(**kwargs)
 
-    return _completion_with_retry(**kwargs)
+    return __completion_with_retry(**kwargs)
 
 
-async def acompletion_with_retry(
+async def _acompletion_with_retry(
     llm: Union[BaseOpenAI, OpenAIChat],
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -305,7 +305,7 @@ class BaseOpenAI(BaseLLM):
     ) -> Iterator[GenerationChunk]:
         params = {**self._invocation_params, **kwargs, "stream": True}
         self.get_sub_prompts(params, [prompt], stop)  # this mutates params
-        for stream_resp in completion_with_retry(
+        for stream_resp in _completion_with_retry(
             self, prompt=prompt, run_manager=run_manager, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
@@ -329,7 +329,7 @@ class BaseOpenAI(BaseLLM):
     ) -> AsyncIterator[GenerationChunk]:
         params = {**self._invocation_params, **kwargs, "stream": True}
         self.get_sub_prompts(params, [prompt], stop)  # this mutate params
-        async for stream_resp in await acompletion_with_retry(
+        async for stream_resp in await _acompletion_with_retry(
             self, prompt=prompt, run_manager=run_manager, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
@@ -398,7 +398,7 @@ class BaseOpenAI(BaseLLM):
                     }
                 )
             else:
-                response = completion_with_retry(
+                response = _completion_with_retry(
                     self, prompt=_prompts, run_manager=run_manager, **params
                 )
                 choices.extend(response["choices"])
@@ -447,7 +447,7 @@ class BaseOpenAI(BaseLLM):
                     }
                 )
             else:
-                response = await acompletion_with_retry(
+                response = await _acompletion_with_retry(
                     self, prompt=_prompts, run_manager=run_manager, **params
                 )
                 choices.extend(response["choices"])
@@ -847,7 +847,7 @@ class OpenAIChat(BaseLLM):
     ) -> Iterator[GenerationChunk]:
         messages, params = self._get_chat_params([prompt], stop)
         params = {**params, **kwargs, "stream": True}
-        for stream_resp in completion_with_retry(
+        for stream_resp in _completion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
@@ -865,7 +865,7 @@ class OpenAIChat(BaseLLM):
     ) -> AsyncIterator[GenerationChunk]:
         messages, params = self._get_chat_params([prompt], stop)
         params = {**params, **kwargs, "stream": True}
-        async for stream_resp in await acompletion_with_retry(
+        async for stream_resp in await _acompletion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
@@ -893,7 +893,7 @@ class OpenAIChat(BaseLLM):
 
         messages, params = self._get_chat_params(prompts, stop)
         params = {**params, **kwargs}
-        full_response = completion_with_retry(
+        full_response = _completion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         )
         llm_output = {
@@ -926,7 +926,7 @@ class OpenAIChat(BaseLLM):
 
         messages, params = self._get_chat_params(prompts, stop)
         params = {**params, **kwargs}
-        full_response = await acompletion_with_retry(
+        full_response = await _acompletion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         )
         llm_output = {

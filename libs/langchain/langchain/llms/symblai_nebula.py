@@ -167,7 +167,7 @@ class Nebula(LLM):
         else:
             raise ValueError("Prompt must contain instruction and conversation.")
 
-        response = completion_with_retry(
+        response = _completion_with_retry(
             self,
             instruction=instruction,
             conversation=conversation,
@@ -232,12 +232,12 @@ def _create_retry_decorator(llm: Nebula) -> Callable[[Any], Any]:
     )
 
 
-def completion_with_retry(llm: Nebula, **kwargs: Any) -> Any:
+def _completion_with_retry(llm: Nebula, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(llm)
 
     @retry_decorator
-    def _completion_with_retry(**_kwargs: Any) -> Any:
+    def __completion_with_retry(**_kwargs: Any) -> Any:
         return make_request(llm, **_kwargs)
 
-    return _completion_with_retry(**kwargs)
+    return __completion_with_retry(**kwargs)

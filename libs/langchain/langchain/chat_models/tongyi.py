@@ -266,14 +266,14 @@ class ChatTongyi(BaseChatModel):
             **self.model_kwargs,
         }
 
-    def completion_with_retry(
+    def _completion_with_retry(
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
         @retry_decorator
-        def _completion_with_retry(**_kwargs: Any) -> Any:
+        def __completion_with_retry(**_kwargs: Any) -> Any:
             resp = self.client.call(**_kwargs)
             if resp.status_code == 200:
                 return resp
@@ -289,19 +289,19 @@ class ChatTongyi(BaseChatModel):
                     response=resp,
                 )
 
-        return _completion_with_retry(**kwargs)
+        return __completion_with_retry(**kwargs)
 
-    def stream_completion_with_retry(
+    def _stream_completion_with_retry(
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
         @retry_decorator
-        def _stream_completion_with_retry(**_kwargs: Any) -> Any:
+        def __stream_completion_with_retry(**_kwargs: Any) -> Any:
             return self.client.call(**_kwargs)
 
-        return _stream_completion_with_retry(**kwargs)
+        return __stream_completion_with_retry(**kwargs)
 
     def _generate(
         self,
@@ -320,7 +320,7 @@ class ChatTongyi(BaseChatModel):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = self.completion_with_retry(
+        response = self._completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         )
         return self._create_chat_result(response)
@@ -337,7 +337,7 @@ class ChatTongyi(BaseChatModel):
         # Mark current chunk total length
         length = 0
         default_chunk_class = AIMessageChunk
-        for chunk in self.stream_completion_with_retry(
+        for chunk in self._stream_completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
             if len(chunk["output"]["choices"]) == 0:

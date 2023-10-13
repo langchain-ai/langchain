@@ -17,8 +17,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.openai import (
     BaseOpenAI,
-    acompletion_with_retry,
-    completion_with_retry,
+    _acompletion_with_retry,
+    _completion_with_retry,
 )
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import Generation, LLMResult
@@ -162,7 +162,7 @@ class Anyscale(BaseOpenAI):
     ) -> Iterator[GenerationChunk]:
         messages, params = self._get_chat_messages([prompt], stop)
         params = {**params, **kwargs, "stream": True}
-        for stream_resp in completion_with_retry(
+        for stream_resp in _completion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
@@ -180,7 +180,7 @@ class Anyscale(BaseOpenAI):
     ) -> AsyncIterator[GenerationChunk]:
         messages, params = self._get_chat_messages([prompt], stop)
         params = {**params, **kwargs, "stream": True}
-        async for stream_resp in await acompletion_with_retry(
+        async for stream_resp in await _acompletion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
@@ -223,7 +223,7 @@ class Anyscale(BaseOpenAI):
             else:
                 messages, params = self._get_chat_messages([prompt], stop)
                 params = {**params, **kwargs}
-                response = completion_with_retry(
+                response = _completion_with_retry(
                     self, messages=messages, run_manager=run_manager, **params
                 )
                 choices.extend(response["choices"])
@@ -264,7 +264,7 @@ class Anyscale(BaseOpenAI):
             else:
                 messages, params = self._get_chat_messages([prompt], stop)
                 params = {**params, **kwargs}
-                response = await acompletion_with_retry(
+                response = await _acompletion_with_retry(
                     self, messages=messages, run_manager=run_manager, **params
                 )
                 choices.extend(response["choices"])

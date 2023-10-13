@@ -274,15 +274,15 @@ class JinaChat(BaseChatModel):
             before_sleep=before_sleep_log(logger, logging.WARNING),
         )
 
-    def completion_with_retry(self, **kwargs: Any) -> Any:
+    def _completion_with_retry(self, **kwargs: Any) -> Any:
         """Use tenacity to retry the completion call."""
         retry_decorator = self._create_retry_decorator()
 
         @retry_decorator
-        def _completion_with_retry(**kwargs: Any) -> Any:
+        def __completion_with_retry(**kwargs: Any) -> Any:
             return self.client.create(**kwargs)
 
-        return _completion_with_retry(**kwargs)
+        return __completion_with_retry(**kwargs)
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
@@ -309,7 +309,7 @@ class JinaChat(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        for chunk in self.completion_with_retry(messages=message_dicts, **params):
+        for chunk in self._completion_with_retry(messages=message_dicts, **params):
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
@@ -332,7 +332,7 @@ class JinaChat(BaseChatModel):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = self.completion_with_retry(messages=message_dicts, **params)
+        response = self._completion_with_retry(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
     def _create_message_dicts(

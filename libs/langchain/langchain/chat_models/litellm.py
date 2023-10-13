@@ -225,17 +225,17 @@ class ChatLiteLLM(BaseChatModel):
         }
         return {**self._default_params, **creds}
 
-    def completion_with_retry(
+    def _completion_with_retry(
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
         @retry_decorator
-        def _completion_with_retry(**kwargs: Any) -> Any:
+        def __completion_with_retry(**kwargs: Any) -> Any:
             return self.client.completion(**kwargs)
 
-        return _completion_with_retry(**kwargs)
+        return __completion_with_retry(**kwargs)
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -302,7 +302,7 @@ class ChatLiteLLM(BaseChatModel):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = self.completion_with_retry(
+        response = self._completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         )
         return self._create_chat_result(response)
@@ -345,7 +345,7 @@ class ChatLiteLLM(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        for chunk in self.completion_with_retry(
+        for chunk in self._completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
             if len(chunk["choices"]) == 0:
