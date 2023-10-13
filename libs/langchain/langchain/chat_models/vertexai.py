@@ -174,7 +174,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
-        params = self._prepare_params(stop=stop, stream=should_stream, **kwargs)
+        params = self._prepare_params(stop=stop, stream=False, **kwargs)
         examples = kwargs.get("examples", None)
         if examples:
             params["examples"] = _parse_examples(examples)
