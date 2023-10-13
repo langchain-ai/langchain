@@ -1,8 +1,12 @@
 {
   "redirects": [
     {
-    "source": "/docs/use_cases/more/agents/autonomous_agents/:path*",
-    "destination": "/cookbook"
+      "source": "/docs/modules/data_connection/retrievers/self_query/:path*",
+      "destination": "/docs/integrations/retrievers/self_query/:path*"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/autonomous_agents/:path*",
+      "destination": "/cookbook"
     },
     {
       "source": "/docs/use_cases/more/agents/agent_simulations/:path*",
