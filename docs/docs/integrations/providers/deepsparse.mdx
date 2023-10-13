@@ -221,7 +221,7 @@ The DeepSparse LangChain wrapper also supports per token output streaming:
 ```python
 from langchain.llms import DeepSparse
 llm = DeepSparse(
-    model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base_quant-none",
+    model="hf:neuralmagic/mpt-7b-chat-pruned50-quant",
     streaming=True
 )
 for chunk in llm.stream("Tell me a joke", stop=["'","\n"]):
