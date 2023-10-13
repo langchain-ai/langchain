@@ -98,9 +98,7 @@ class ChatYandexGPT(BaseYandexGPT, BaseChatModel):
             )
         message_history, instruction = _parse_chat_history(messages)
         channel_credentials = grpc.ssl_channel_credentials()
-        channel = grpc.secure_channel(
-            "llm.api.cloud.yandex.net:443", channel_credentials
-        )
+        channel = grpc.secure_channel(self.url, channel_credentials)
         request = ChatRequest(
             model=self.model_name,
             generation_options=GenerationOptions(

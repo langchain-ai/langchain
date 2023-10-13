@@ -26,6 +26,8 @@ class BaseYandexGPT(Serializable):
     Must be greater than zero and not exceed 7400 tokens."""
     stop: Optional[List[str]] = None
     """Sequences when completion generation will stop."""
+    url: str = "llm.api.cloud.yandex.net:443"
+    """The url of the API."""
 
     @property
     def _llm_type(self) -> str:
@@ -109,9 +111,7 @@ class YandexGPT(BaseYandexGPT, LLM):
                 "Please install YandexCloud SDK" " with `pip install yandexcloud`."
             ) from e
         channel_credentials = grpc.ssl_channel_credentials()
-        channel = grpc.secure_channel(
-            "llm.api.cloud.yandex.net:443", channel_credentials
-        )
+        channel = grpc.secure_channel(self.url, channel_credentials)
         request = InstructRequest(
             model=self.model_name,
             request_text=prompt,
