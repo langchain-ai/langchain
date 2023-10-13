@@ -11,8 +11,8 @@ from typing import (
     Optional,
     Tuple,
 )
+from urllib.error import URLError
 
-from requests.exceptions import HTTPError
 from tenacity import (
     RetryCallState,
     retry,
@@ -146,7 +146,7 @@ def _create_retry_decorator(
         reraise=True,
         stop=stop_after_attempt(llm.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(retry_if_exception_type(HTTPError)),
+        retry=(retry_if_exception_type(URLError)),
         before_sleep=_before_sleep,
     )
 
@@ -283,7 +283,7 @@ class ChatTongyi(BaseChatModel):
                     f"code: {resp.code} \n message: {resp.message}"
                 )
             else:
-                raise HTTPError(
+                raise URLError(
                     f"HTTP error occurred: status_code: {resp.status_code} \n "
                     f"code: {resp.code} \n message: {resp.message}"
                 )
