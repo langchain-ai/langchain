@@ -25,7 +25,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-
+default_header_template = {
+    "User-Agent": "",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*"
+    ";q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Referer": "https://www.google.com/",
+    "DNT": "1",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+}
 def _metadata_extractor(raw_html: str, url: str) -> dict:
     """Extract metadata from raw html using BeautifulSoup."""
     metadata = {"source": url}
@@ -110,7 +119,20 @@ class RecursiveUrlLoader(BaseLoader):
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
         self.link_regex = link_regex
         self._lock = asyncio.Lock() if self.use_async else None
-        self.headers = headers
+
+        header_template = headers or default_header_template.copy()
+        if not header_template.get("User-Agent"):
+            try:
+                from fake_useragent import UserAgent
+
+                header_template["User-Agent"] = UserAgent().random
+            except ImportError:
+                logger.info(
+                    "fake_useragent not found, using default user agent."
+                    "To get a realistic header for requests, "
+                    "`pip install fake_useragent`."
+                )
+        self.headers = dict(header_template)
         self.check_response_status = check_response_status
 
     def _get_child_links_recursive(
