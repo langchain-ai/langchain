@@ -7,7 +7,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-def concatenate_cells(
+def _concatenate_cells(
     cell: dict, include_outputs: bool, max_output_length: int, traceback: bool
 ) -> str:
     """Combine cells information in a readable format ready to be used.
@@ -55,16 +55,16 @@ def concatenate_cells(
     return ""
 
 
-def remove_newlines(x: Any) -> Any:
+def _remove_newlines(x: Any) -> Any:
     """Recursively remove newlines, no matter the data structure they are stored in."""
     import pandas as pd
 
     if isinstance(x, str):
         return x.replace("\n", "")
     elif isinstance(x, list):
-        return [remove_newlines(elem) for elem in x]
+        return [_remove_newlines(elem) for elem in x]
     elif isinstance(x, pd.DataFrame):
-        return x.applymap(remove_newlines)
+        return x.applymap(_remove_newlines)
     else:
         return x
 
@@ -118,10 +118,10 @@ class NotebookLoader(BaseLoader):
         data = pd.json_normalize(d["cells"])
         filtered_data = data[["cell_type", "source", "outputs"]]
         if self.remove_newline:
-            filtered_data = filtered_data.applymap(remove_newlines)
+            filtered_data = filtered_data.applymap(_remove_newlines)
 
         text = filtered_data.apply(
-            lambda x: concatenate_cells(
+            lambda x: _concatenate_cells(
                 x, self.include_outputs, self.max_output_length, self.traceback
             ),
             axis=1,

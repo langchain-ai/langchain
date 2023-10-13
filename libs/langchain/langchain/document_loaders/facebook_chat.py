@@ -7,7 +7,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-def concatenate_rows(row: dict) -> str:
+def _concatenate_rows(row: dict) -> str:
     """Combine message information in a readable format ready to be used.
 
     Args:
@@ -36,7 +36,7 @@ class FacebookChatLoader(BaseLoader):
             d = json.load(f)
 
         text = "".join(
-            concatenate_rows(message)
+            _concatenate_rows(message)
             for message in d["messages"]
             if message.get("content") and isinstance(message["content"], str)
         )

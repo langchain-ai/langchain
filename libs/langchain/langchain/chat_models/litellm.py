@@ -97,7 +97,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict["content"], role=role)
 
 
-async def acompletion_with_retry(
+async def _acompletion_with_retry(
     llm: ChatLiteLLM,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -368,7 +368,7 @@ class ChatLiteLLM(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        async for chunk in await acompletion_with_retry(
+        async for chunk in await _acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
             if len(chunk["choices"]) == 0:
@@ -397,7 +397,7 @@ class ChatLiteLLM(BaseChatModel):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = await acompletion_with_retry(
+        response = await _acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         )
         return self._create_chat_result(response)

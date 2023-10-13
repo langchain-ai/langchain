@@ -5,7 +5,7 @@ from typing import List
 import pytest
 
 from langchain.chat_models import ChatAnthropic
-from langchain.chat_models.anthropic import convert_messages_to_prompt_anthropic
+from langchain.chat_models.anthropic import _convert_messages_to_prompt_anthropic
 from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
@@ -69,5 +69,5 @@ def test_anthropic_initialization() -> None:
     ],
 )
 def test_formatting(messages: List[BaseMessage], expected: str) -> None:
-    result = convert_messages_to_prompt_anthropic(messages)
+    result = _convert_messages_to_prompt_anthropic(messages)
     assert result == expected

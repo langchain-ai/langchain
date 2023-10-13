@@ -73,7 +73,7 @@ class Fireworks(LLM):
             "prompt": prompt,
             **self.model_kwargs,
         }
-        response = completion_with_retry(
+        response = _completion_with_retry(
             self, run_manager=run_manager, stop=stop, **params
         )
 
@@ -92,7 +92,7 @@ class Fireworks(LLM):
             "prompt": prompt,
             **self.model_kwargs,
         }
-        response = await acompletion_with_retry(
+        response = await _acompletion_with_retry(
             self, run_manager=run_manager, stop=stop, **params
         )
 
@@ -111,7 +111,7 @@ class Fireworks(LLM):
             "stream": True,
             **self.model_kwargs,
         }
-        for stream_resp in completion_with_retry(
+        for stream_resp in _completion_with_retry(
             self, run_manager=run_manager, stop=stop, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
@@ -132,7 +132,7 @@ class Fireworks(LLM):
             "stream": True,
             **self.model_kwargs,
         }
-        async for stream_resp in await acompletion_with_retry_streaming(
+        async for stream_resp in await _acompletion_with_retry_streaming(
             self, run_manager=run_manager, stop=stop, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
@@ -177,7 +177,7 @@ class Fireworks(LLM):
         assert generation is not None
 
 
-def completion_with_retry(
+def _completion_with_retry(
     llm: Fireworks,
     *,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
@@ -189,15 +189,15 @@ def completion_with_retry(
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
-    def _completion_with_retry(**kwargs: Any) -> Any:
+    def __completion_with_retry(**kwargs: Any) -> Any:
         return fireworks.client.Completion.create(
             **kwargs,
         )
 
-    return _completion_with_retry(**kwargs)
+    return __completion_with_retry(**kwargs)
 
 
-async def acompletion_with_retry(
+async def _acompletion_with_retry(
     llm: Fireworks,
     *,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
@@ -217,7 +217,7 @@ async def acompletion_with_retry(
     return await _completion_with_retry(**kwargs)
 
 
-async def acompletion_with_retry_streaming(
+async def _acompletion_with_retry_streaming(
     llm: Fireworks,
     *,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,

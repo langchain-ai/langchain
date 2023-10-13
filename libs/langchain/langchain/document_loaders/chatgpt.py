@@ -6,7 +6,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-def concatenate_rows(message: dict, title: str) -> str:
+def _concatenate_rows(message: dict, title: str) -> str:
     """
     Combine message information in a readable format ready to be used.
     Args:
@@ -50,7 +50,7 @@ class ChatGPTLoader(BaseLoader):
             messages = d["mapping"]
             text = "".join(
                 [
-                    concatenate_rows(messages[key]["message"], title)
+                    _concatenate_rows(messages[key]["message"], title)
                     for idx, key in enumerate(messages)
                     if not (
                         idx == 0

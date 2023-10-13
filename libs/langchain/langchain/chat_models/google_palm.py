@@ -190,27 +190,27 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
     )
 
 
-def chat_with_retry(llm: ChatGooglePalm, **kwargs: Any) -> Any:
+def _chat_with_retry(llm: ChatGooglePalm, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator()
 
     @retry_decorator
-    def _chat_with_retry(**kwargs: Any) -> Any:
+    def __chat_with_retry(**kwargs: Any) -> Any:
         return llm.client.chat(**kwargs)
 
-    return _chat_with_retry(**kwargs)
+    return __chat_with_retry(**kwargs)
 
 
-async def achat_with_retry(llm: ChatGooglePalm, **kwargs: Any) -> Any:
+async def _achat_with_retry(llm: ChatGooglePalm, **kwargs: Any) -> Any:
     """Use tenacity to retry the async completion call."""
     retry_decorator = _create_retry_decorator()
 
     @retry_decorator
-    async def _achat_with_retry(**kwargs: Any) -> Any:
+    async def __achat_with_retry(**kwargs: Any) -> Any:
         # Use OpenAI's async api https://github.com/openai/openai-python#async-api
         return await llm.client.chat_async(**kwargs)
 
-    return await _achat_with_retry(**kwargs)
+    return await __achat_with_retry(**kwargs)
 
 
 class ChatGooglePalm(BaseChatModel, BaseModel):
@@ -294,7 +294,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     ) -> ChatResult:
         prompt = _messages_to_prompt_dict(messages)
 
-        response: genai.types.ChatResponse = chat_with_retry(
+        response: genai.types.ChatResponse = _chat_with_retry(
             self,
             model=self.model_name,
             prompt=prompt,
@@ -316,7 +316,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     ) -> ChatResult:
         prompt = _messages_to_prompt_dict(messages)
 
-        response: genai.types.ChatResponse = await achat_with_retry(
+        response: genai.types.ChatResponse = await _achat_with_retry(
             self,
             model=self.model_name,
             prompt=prompt,

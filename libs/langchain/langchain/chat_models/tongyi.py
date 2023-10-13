@@ -67,7 +67,7 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict["content"], role=role)
 
 
-def convert_message_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -368,7 +368,7 @@ class ChatTongyi(BaseChatModel):
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
 
-        message_dicts = [convert_message_to_dict(m) for m in messages]
+        message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
     def _client_params(self) -> Dict[str, Any]:

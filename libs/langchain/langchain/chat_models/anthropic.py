@@ -40,7 +40,7 @@ def _convert_one_message_to_text(
     return message_text
 
 
-def convert_messages_to_prompt_anthropic(
+def _convert_messages_to_prompt_anthropic(
     messages: List[BaseMessage],
     *,
     human_prompt: str = "\n\nHuman:",
@@ -115,7 +115,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             prompt_params["human_prompt"] = self.HUMAN_PROMPT
         if self.AI_PROMPT:
             prompt_params["ai_prompt"] = self.AI_PROMPT
-        return convert_messages_to_prompt_anthropic(messages=messages, **prompt_params)
+        return _convert_messages_to_prompt_anthropic(messages=messages, **prompt_params)
 
     def convert_prompt(self, prompt: PromptValue) -> str:
         return self._convert_messages_to_prompt(prompt.to_messages())

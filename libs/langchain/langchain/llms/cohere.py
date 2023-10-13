@@ -40,18 +40,18 @@ def _create_retry_decorator(llm: Cohere) -> Callable[[Any], Any]:
     )
 
 
-def completion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
+def _completion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(llm)
 
     @retry_decorator
-    def _completion_with_retry(**kwargs: Any) -> Any:
+    def __completion_with_retry(**kwargs: Any) -> Any:
         return llm.client.generate(**kwargs)
 
-    return _completion_with_retry(**kwargs)
+    return __completion_with_retry(**kwargs)
 
 
-def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
+def _acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(llm)
 
@@ -206,7 +206,7 @@ class Cohere(LLM, BaseCohere):
                 response = cohere("Tell me a joke.")
         """
         params = self._invocation_params(stop, **kwargs)
-        response = completion_with_retry(
+        response = _completion_with_retry(
             self, model=self.model, prompt=prompt, **params
         )
         _stop = params.get("stop_sequences")
@@ -234,7 +234,7 @@ class Cohere(LLM, BaseCohere):
                 response = await cohere("Tell me a joke.")
         """
         params = self._invocation_params(stop, **kwargs)
-        response = await acompletion_with_retry(
+        response = await _acompletion_with_retry(
             self, model=self.model, prompt=prompt, **params
         )
         _stop = params.get("stop_sequences")

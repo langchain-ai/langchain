@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from telethon.hints import EntityLike
 
 
-def concatenate_rows(row: dict) -> str:
+def _concatenate_rows(row: dict) -> str:
     """Combine message information in a readable format ready to be used."""
     date = row["date"]
     sender = row["from"]
@@ -37,7 +37,7 @@ class TelegramChatFileLoader(BaseLoader):
             d = json.load(f)
 
         text = "".join(
-            concatenate_rows(message)
+            _concatenate_rows(message)
             for message in d["messages"]
             if message["type"] == "message" and isinstance(message["text"], str)
         )
@@ -46,7 +46,7 @@ class TelegramChatFileLoader(BaseLoader):
         return [Document(page_content=text, metadata=metadata)]
 
 
-def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
+def _text_to_docs(text: Union[str, List[str]]) -> List[Document]:
     """Convert a string or list of strings to a list of Documents with metadata."""
     if isinstance(text, str):
         # Take a single string as one page
@@ -258,4 +258,4 @@ class TelegramChatApiLoader(BaseLoader):
         message_threads = self._get_message_threads(df)
         combined_texts = self._combine_message_texts(message_threads, df)
 
-        return text_to_docs(combined_texts)
+        return _text_to_docs(combined_texts)

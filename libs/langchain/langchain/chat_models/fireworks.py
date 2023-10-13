@@ -58,7 +58,7 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-def convert_dict_to_message(_dict: Any) -> BaseMessage:
+def _convert_dict_to_message(_dict: Any) -> BaseMessage:
     """Convert a dict response to a message."""
     role = _dict.role
     content = _dict.content or ""
@@ -125,7 +125,7 @@ class ChatFireworks(BaseChatModel):
             "messages": message_dicts,
             **self.model_kwargs,
         }
-        response = completion_with_retry(
+        response = _completion_with_retry(
             self, run_manager=run_manager, stop=stop, **params
         )
         return self._create_chat_result(response)
@@ -143,7 +143,7 @@ class ChatFireworks(BaseChatModel):
             "messages": message_dicts,
             **self.model_kwargs,
         }
-        response = await acompletion_with_retry(
+        response = await _acompletion_with_retry(
             self, run_manager=run_manager, stop=stop, **params
         )
         return self._create_chat_result(response)
@@ -156,7 +156,7 @@ class ChatFireworks(BaseChatModel):
     def _create_chat_result(self, response: Any) -> ChatResult:
         generations = []
         for res in response.choices:
-            message = convert_dict_to_message(res.message)
+            message = _convert_dict_to_message(res.message)
             gen = ChatGeneration(
                 message=message,
                 generation_info=dict(finish_reason=res.finish_reason),
@@ -186,7 +186,7 @@ class ChatFireworks(BaseChatModel):
             "stream": True,
             **self.model_kwargs,
         }
-        for chunk in completion_with_retry(
+        for chunk in _completion_with_retry(
             self, run_manager=run_manager, stop=stop, **params
         ):
             choice = chunk.choices[0]
@@ -215,7 +215,7 @@ class ChatFireworks(BaseChatModel):
             "stream": True,
             **self.model_kwargs,
         }
-        async for chunk in await acompletion_with_retry_streaming(
+        async for chunk in await _acompletion_with_retry_streaming(
             self, run_manager=run_manager, stop=stop, **params
         ):
             choice = chunk.choices[0]
@@ -230,7 +230,7 @@ class ChatFireworks(BaseChatModel):
                 await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
 
 
-def completion_with_retry(
+def _completion_with_retry(
     llm: ChatFireworks,
     *,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
@@ -242,15 +242,15 @@ def completion_with_retry(
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
-    def _completion_with_retry(**kwargs: Any) -> Any:
+    def __completion_with_retry(**kwargs: Any) -> Any:
         return fireworks.client.ChatCompletion.create(
             **kwargs,
         )
 
-    return _completion_with_retry(**kwargs)
+    return __completion_with_retry(**kwargs)
 
 
-async def acompletion_with_retry(
+async def _acompletion_with_retry(
     llm: ChatFireworks,
     *,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
@@ -270,7 +270,7 @@ async def acompletion_with_retry(
     return await _completion_with_retry(**kwargs)
 
 
-async def acompletion_with_retry_streaming(
+async def _acompletion_with_retry_streaming(
     llm: ChatFireworks,
     *,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,

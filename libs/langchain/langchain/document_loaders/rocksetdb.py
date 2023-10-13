@@ -4,7 +4,7 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.schema import Document
 
 
-def default_joiner(docs: List[Tuple[str, Any]]) -> str:
+def _default_joiner(docs: List[Tuple[str, Any]]) -> str:
     """Default joiner for content columns."""
     return "\n".join([doc[1] for doc in docs])
 
@@ -47,7 +47,9 @@ class RocksetLoader(BaseLoader):
         query: Any,
         content_keys: List[str],
         metadata_keys: Optional[List[str]] = None,
-        content_columns_joiner: Callable[[List[Tuple[str, Any]]], str] = default_joiner,
+        content_columns_joiner: Callable[
+            [List[Tuple[str, Any]]], str
+        ] = _default_joiner,
     ):
         """Initialize with Rockset client.
 

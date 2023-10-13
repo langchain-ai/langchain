@@ -43,7 +43,7 @@ class _FileType(str, Enum):
     PDF = "pdf"
 
 
-def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
+def _fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
     mime_types_mapping = {}
     for file_type in file_types:
         if file_type.value == "doc":
@@ -73,7 +73,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
     @property
     def _fetch_mime_types(self) -> Dict[str, str]:
         """Return a dict of supported file types to corresponding mime types."""
-        return fetch_mime_types(self._file_types)
+        return _fetch_mime_types(self._file_types)
 
     @property
     @abstractmethod

@@ -6,7 +6,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-def concatenate_rows(date: str, sender: str, text: str) -> str:
+def _concatenate_rows(date: str, sender: str, text: str) -> str:
     """Combine message information in a readable format ready to be used."""
     return f"{sender} on {date}: {text}\n\n"
 
@@ -57,7 +57,7 @@ class WhatsAppChatLoader(BaseLoader):
             if result:
                 date, sender, text = result.groups()
                 if text not in ignore_lines:
-                    text_content += concatenate_rows(date, sender, text)
+                    text_content += _concatenate_rows(date, sender, text)
 
         metadata = {"source": str(p)}
 

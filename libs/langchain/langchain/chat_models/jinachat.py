@@ -79,7 +79,7 @@ def _create_retry_decorator(llm: JinaChat) -> Callable[[Any], Any]:
     )
 
 
-async def acompletion_with_retry(llm: JinaChat, **kwargs: Any) -> Any:
+async def _acompletion_with_retry(llm: JinaChat, **kwargs: Any) -> Any:
     """Use tenacity to retry the async completion call."""
     retry_decorator = _create_retry_decorator(llm)
 
@@ -366,7 +366,7 @@ class JinaChat(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        async for chunk in await acompletion_with_retry(
+        async for chunk in await _acompletion_with_retry(
             self, messages=message_dicts, **params
         ):
             delta = chunk["choices"][0]["delta"]
@@ -391,7 +391,7 @@ class JinaChat(BaseChatModel):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = await acompletion_with_retry(self, messages=message_dicts, **params)
+        response = await _acompletion_with_retry(self, messages=message_dicts, **params)
         return self._create_chat_result(response)
 
     @property

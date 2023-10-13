@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterator, List, Optional
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.anthropic import convert_messages_to_prompt_anthropic
+from langchain.chat_models.anthropic import _convert_messages_to_prompt_anthropic
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.bedrock import BedrockBase
 from langchain.pydantic_v1 import Extra
@@ -25,7 +25,7 @@ class ChatPromptAdapter:
         cls, provider: str, messages: List[BaseMessage]
     ) -> str:
         if provider == "anthropic":
-            prompt = convert_messages_to_prompt_anthropic(messages=messages)
+            prompt = _convert_messages_to_prompt_anthropic(messages=messages)
         else:
             raise NotImplementedError(
                 f"Provider {provider} model does not support chat."
