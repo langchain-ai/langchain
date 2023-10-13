@@ -285,7 +285,8 @@ class ChatTongyi(BaseChatModel):
             else:
                 raise HTTPError(
                     f"HTTP error occurred: status_code: {resp.status_code} \n "
-                    f"code: {resp.code} \n message: {resp.message}"
+                    f"code: {resp.code} \n message: {resp.message}",
+                    response=resp,
                 )
 
         return _completion_with_retry(**kwargs)
