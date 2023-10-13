@@ -1,5 +1,15 @@
+# Self-querying
+
+:::info
+Head to [Integrations](/docs/integrations/retrievers/self_query) for documentation on vector stores with built-in support for self-querying.
+:::
+
+A self-querying retriever is one that, as the name suggests, has the ability to query itself. Specifically, given any natural language query, the retriever uses a query-constructing LLM chain to write a structured query and then applies that structured query to its underlying VectorStore. This allows the retriever to not only use the user-input query for semantic similarity comparison with the contents of stored documents but to also extract filters from the user query on the metadata of stored documents and to execute those filters.
+
+![](https://drive.google.com/uc?id=1OQUN-0MJcDUxmPXofgS7MqReEs720pqS)
+
 ## Get started
-We'll use a Pinecone vector store in this example.
+For demonstration purposes we'll use a `Pinecone` vector store.
 
 First we'll want to create a `Pinecone` vector store and seed it with some data. We've created a small demo set of documents that contain summaries of movies.
 
@@ -60,18 +70,18 @@ from langchain.chains.query_constructor.base import AttributeInfo
 metadata_field_info=[
     AttributeInfo(
         name="genre",
-        description="The genre of the movie", 
-        type="string or list[string]", 
+        description="The genre of the movie",
+        type="string or list[string]",
     ),
     AttributeInfo(
         name="year",
-        description="The year the movie was released", 
-        type="integer", 
+        description="The year the movie was released",
+        type="integer",
     ),
     AttributeInfo(
         name="director",
-        description="The name of the movie director", 
-        type="string", 
+        description="The name of the movie director",
+        type="string",
     ),
     AttributeInfo(
         name="rating",
@@ -185,10 +195,10 @@ We can do this by passing `enable_limit=True` to the constructor.
 
 ```python
 retriever = SelfQueryRetriever.from_llm(
-    llm, 
-    vectorstore, 
-    document_content_description, 
-    metadata_field_info, 
+    llm,
+    vectorstore,
+    document_content_description,
+    metadata_field_info,
     enable_limit=True,
     verbose=True
 )
@@ -199,3 +209,4 @@ retriever = SelfQueryRetriever.from_llm(
 # This example only specifies a relevant query
 retriever.get_relevant_documents("What are two movies about dinosaurs")
 ```
+
