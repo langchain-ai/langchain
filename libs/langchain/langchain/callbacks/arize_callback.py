@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.utils import import_pandas
+from langchain.callbacks.utils import _import_pandas
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
@@ -60,7 +60,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
         pass
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        pd = import_pandas()
+        pd = _import_pandas()
         from arize.utils.types import (
             EmbeddingColumnNames,
             Environments,

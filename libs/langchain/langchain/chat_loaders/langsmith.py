@@ -149,7 +149,7 @@ class LangSmithDatasetChatLoader(BaseChatLoader):
         for data_point in data:
             yield ChatSession(
                 messages=[
-                    oai_adapter.convert_dict_to_message(m)
+                    oai_adapter._convert_dict_to_message(m)
                     for m in data_point.get("messages", [])
                 ],
                 functions=data_point.get("functions"),

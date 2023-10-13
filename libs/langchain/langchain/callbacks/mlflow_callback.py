@@ -10,17 +10,17 @@ from typing import Any, Dict, List, Optional, Union
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     BaseMetadataCallbackHandler,
+    _import_pandas,
+    _import_spacy,
+    _import_textstat,
     flatten_dict,
     hash_string,
-    import_pandas,
-    import_spacy,
-    import_textstat,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 
-def import_mlflow() -> Any:
+def _import_mlflow() -> Any:
     """Import the mlflow python package and raise an error if it is not installed."""
     try:
         import mlflow
@@ -47,8 +47,8 @@ def analyze_text(
             files serialized to  HTML string.
     """
     resp: Dict[str, Any] = {}
-    textstat = import_textstat()
-    spacy = import_spacy()
+    textstat = _import_textstat()
+    spacy = _import_spacy()
     text_complexity_metrics = {
         "flesch_reading_ease": textstat.flesch_reading_ease(text),
         "flesch_kincaid_grade": textstat.flesch_kincaid_grade(text),
@@ -127,7 +127,7 @@ class MlflowLogger:
     """
 
     def __init__(self, **kwargs: Any):
-        self.mlflow = import_mlflow()
+        self.mlflow = _import_mlflow()
         if "DATABRICKS_RUNTIME_VERSION" in os.environ:
             self.mlflow.set_tracking_uri("databricks")
             self.mlf_expid = self.mlflow.tracking.fluent._get_experiment_id()
@@ -246,10 +246,10 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         tracking_uri: Optional[str] = None,
     ) -> None:
         """Initialize callback handler."""
-        import_pandas()
-        import_textstat()
-        import_mlflow()
-        spacy = import_spacy()
+        _import_pandas()
+        _import_textstat()
+        _import_mlflow()
+        spacy = _import_spacy()
         super().__init__()
 
         self.name = name
@@ -547,7 +547,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def _create_session_analysis_df(self) -> Any:
         """Create a dataframe with all the information from the session."""
-        pd = import_pandas()
+        pd = _import_pandas()
         on_llm_start_records_df = pd.DataFrame(self.records["on_llm_start_records"])
         on_llm_end_records_df = pd.DataFrame(self.records["on_llm_end_records"])
 
@@ -617,7 +617,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         return session_analysis_df
 
     def flush_tracker(self, langchain_asset: Any = None, finish: bool = False) -> None:
-        pd = import_pandas()
+        pd = _import_pandas()
         self.mlflg.table("action_records", pd.DataFrame(self.records["action_records"]))
         session_analysis_df = self._create_session_analysis_df()
         chat_html = session_analysis_df.pop("chat_html")

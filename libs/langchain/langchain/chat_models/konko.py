@@ -17,7 +17,7 @@ from typing import (
 
 import requests
 
-from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
+from langchain.adapters.openai import _convert_dict_to_message, _convert_message_to_dict
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
@@ -246,13 +246,13 @@ class ChatKonko(ChatOpenAI):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [convert_message_to_dict(m) for m in messages]
+        message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = []
         for res in response["choices"]:
-            message = convert_dict_to_message(res["message"])
+            message = _convert_dict_to_message(res["message"])
             gen = ChatGeneration(
                 message=message,
                 generation_info=dict(finish_reason=res.get("finish_reason")),

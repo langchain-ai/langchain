@@ -23,7 +23,7 @@ class LabelStudioMode(Enum):
     CHAT = "chat"
 
 
-def get_default_label_configs(
+def _get_default_label_configs(
     mode: Union[str, LabelStudioMode]
 ) -> Tuple[str, LabelStudioMode]:
     """Get default Label Studio configs for the given mode.
@@ -173,7 +173,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
             self.project_config = project_config
             self.mode = None
         else:
-            self.project_config, self.mode = get_default_label_configs(mode)
+            self.project_config, self.mode = _get_default_label_configs(mode)
 
         self.project_id = project_id or os.getenv("LABEL_STUDIO_PROJECT_ID")
         if self.project_id is not None:

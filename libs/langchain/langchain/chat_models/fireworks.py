@@ -10,7 +10,7 @@ from typing import (
     Union,
 )
 
-from langchain.adapters.openai import convert_message_to_dict
+from langchain.adapters.openai import _convert_message_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -168,7 +168,7 @@ class ChatFireworks(BaseChatModel):
     def _create_message_dicts(
         self, messages: List[BaseMessage]
     ) -> List[Dict[str, Any]]:
-        message_dicts = [convert_message_to_dict(m) for m in messages]
+        message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts
 
     def _stream(

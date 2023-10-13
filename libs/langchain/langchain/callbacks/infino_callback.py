@@ -6,7 +6,7 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 from langchain.schema.messages import BaseMessage
 
 
-def import_infino() -> Any:
+def _import_infino() -> Any:
     """Import the infino client."""
     try:
         from infinopy import InfinoClient
@@ -19,7 +19,7 @@ def import_infino() -> Any:
     return InfinoClient()
 
 
-def import_tiktoken() -> Any:
+def _import_tiktoken() -> Any:
     """Import tiktoken for counting tokens for OpenAI models."""
     try:
         import tiktoken
@@ -38,7 +38,7 @@ def get_num_tokens(string: str, openai_model_name: str) -> int:
     Official documentation: https://github.com/openai/openai-cookbook/blob/main
                             /examples/How_to_count_tokens_with_tiktoken.ipynb
     """
-    tiktoken = import_tiktoken()
+    tiktoken = _import_tiktoken()
 
     encoding = tiktoken.encoding_for_model(openai_model_name)
     num_tokens = len(encoding.encode(string))
@@ -55,7 +55,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         verbose: bool = False,
     ) -> None:
         # Set Infino client
-        self.client = import_infino()
+        self.client = _import_infino()
         self.model_id = model_id
         self.model_version = model_version
         self.verbose = verbose

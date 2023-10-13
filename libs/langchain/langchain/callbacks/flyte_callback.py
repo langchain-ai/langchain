@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     BaseMetadataCallbackHandler,
+    _import_pandas,
+    _import_spacy,
+    _import_textstat,
     flatten_dict,
-    import_pandas,
-    import_spacy,
-    import_textstat,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def import_flytekit() -> Tuple[flytekit, renderer]:
+def _import_flytekit() -> Tuple[flytekit, renderer]:
     """Import flytekit and flytekitplugins-deck-standard."""
     try:
         import flytekit  # noqa: F401
@@ -75,7 +75,7 @@ def analyze_text(
         resp.update(text_complexity_metrics)
 
     if nlp is not None:
-        spacy = import_spacy()
+        spacy = _import_spacy()
         doc = nlp(text)
         dep_out = spacy.displacy.render(  # type: ignore
             doc, style="dep", jupyter=False, page=True
@@ -97,12 +97,12 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def __init__(self) -> None:
         """Initialize callback handler."""
-        flytekit, renderer = import_flytekit()
-        self.pandas = import_pandas()
+        flytekit, renderer = _import_flytekit()
+        self.pandas = _import_pandas()
 
         self.textstat = None
         try:
-            self.textstat = import_textstat()
+            self.textstat = _import_textstat()
         except ImportError:
             logger.warning(
                 "Textstat library is not installed. \
@@ -112,7 +112,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         spacy = None
         try:
-            spacy = import_spacy()
+            spacy = _import_spacy()
         except ImportError:
             logger.warning(
                 "Spacy library is not installed. \

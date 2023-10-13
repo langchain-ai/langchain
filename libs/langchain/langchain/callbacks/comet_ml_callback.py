@@ -7,17 +7,17 @@ import langchain
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     BaseMetadataCallbackHandler,
+    _import_pandas,
+    _import_spacy,
+    _import_textstat,
     flatten_dict,
-    import_pandas,
-    import_spacy,
-    import_textstat,
 )
 from langchain.schema import AgentAction, AgentFinish, Generation, LLMResult
 
 LANGCHAIN_MODEL_NAME = "langchain-model"
 
 
-def import_comet_ml() -> Any:
+def _import_comet_ml() -> Any:
     """Import comet_ml and raise an error if it is not installed."""
     try:
         import comet_ml  # noqa: F401
@@ -33,7 +33,7 @@ def import_comet_ml() -> Any:
 def _get_experiment(
     workspace: Optional[str] = None, project_name: Optional[str] = None
 ) -> Any:
-    comet_ml = import_comet_ml()
+    comet_ml = _import_comet_ml()
 
     experiment = comet_ml.Experiment(  # type: ignore
         workspace=workspace,
@@ -44,7 +44,7 @@ def _get_experiment(
 
 
 def _fetch_text_complexity_metrics(text: str) -> dict:
-    textstat = import_textstat()
+    textstat = _import_textstat()
     text_complexity_metrics = {
         "flesch_reading_ease": textstat.flesch_reading_ease(text),
         "flesch_kincaid_grade": textstat.flesch_kincaid_grade(text),
@@ -67,7 +67,7 @@ def _fetch_text_complexity_metrics(text: str) -> dict:
 
 
 def _summarize_metrics_for_generated_outputs(metrics: Sequence) -> dict:
-    pd = import_pandas()
+    pd = _import_pandas()
     metrics_df = pd.DataFrame(metrics)
     metrics_summary = metrics_df.describe()
 
@@ -107,7 +107,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     ) -> None:
         """Initialize callback handler."""
 
-        self.comet_ml = import_comet_ml()
+        self.comet_ml = _import_comet_ml()
         super().__init__()
 
         self.task_type = task_type
@@ -140,7 +140,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.action_records: list = []
         self.complexity_metrics = complexity_metrics
         if self.visualizations:
-            spacy = import_spacy()
+            spacy = _import_spacy()
             self.nlp = spacy.load("en_core_web_sm")
         else:
             self.nlp = None
@@ -535,7 +535,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if not (self.visualizations and self.nlp):
             return
 
-        spacy = import_spacy()
+        spacy = _import_spacy()
 
         prompts = session_df["prompts"].tolist()
         outputs = session_df["text"].tolist()
@@ -603,7 +603,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.temp_dir = tempfile.TemporaryDirectory()
 
     def _create_session_analysis_dataframe(self, langchain_asset: Any = None) -> dict:
-        pd = import_pandas()
+        pd = _import_pandas()
 
         llm_parameters = self._get_llm_parameters(langchain_asset)
         num_generations_per_prompt = llm_parameters.get("n", 1)

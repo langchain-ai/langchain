@@ -10,7 +10,7 @@ from langchain.schema import (
 )
 
 
-def import_context() -> Any:
+def _import_context() -> Any:
     """Import the `getcontext` package."""
     try:
         import getcontext  # noqa: F401
@@ -98,7 +98,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
             self.message_model,
             self.message_role_model,
             self.rating_model,
-        ) = import_context()
+        ) = _import_context()
 
         token = token or os.environ.get("CONTEXT_TOKEN") or ""
 

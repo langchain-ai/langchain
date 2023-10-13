@@ -28,7 +28,7 @@ from langchain.schema.messages import (
 )
 
 
-async def aenumerate(
+async def _aenumerate(
     iterable: AsyncIterator[Any], start: int = 0
 ) -> AsyncIterator[tuple[int, Any]]:
     """Async version of enumerate."""
@@ -38,7 +38,7 @@ async def aenumerate(
         i += 1
 
 
-def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["role"]
     if role == "user":
         return HumanMessage(content=_dict["content"])
@@ -59,7 +59,7 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict["content"], role=role)
 
 
-def convert_message_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -87,7 +87,7 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def convert_openai_messages(messages: Sequence[Dict[str, Any]]) -> List[BaseMessage]:
+def _convert_openai_messages(messages: Sequence[Dict[str, Any]]) -> List[BaseMessage]:
     """Convert dictionaries representing OpenAI messages to LangChain format.
 
     Args:
@@ -96,7 +96,7 @@ def convert_openai_messages(messages: Sequence[Dict[str, Any]]) -> List[BaseMess
     Returns:
         List of LangChain BaseMessage objects.
     """
-    return [convert_dict_to_message(m) for m in messages]
+    return [_convert_dict_to_message(m) for m in messages]
 
 
 def _convert_message_chunk_to_delta(chunk: BaseMessageChunk, i: int) -> Dict[str, Any]:
@@ -155,10 +155,10 @@ class ChatCompletion:
         models = importlib.import_module("langchain.chat_models")
         model_cls = getattr(models, provider)
         model_config = model_cls(**kwargs)
-        converted_messages = convert_openai_messages(messages)
+        converted_messages = _convert_openai_messages(messages)
         if not stream:
             result = model_config.invoke(converted_messages)
-            return {"choices": [{"message": convert_message_to_dict(result)}]}
+            return {"choices": [{"message": _convert_message_to_dict(result)}]}
         else:
             return (
                 _convert_message_chunk_to_delta(c, i)
@@ -198,14 +198,14 @@ class ChatCompletion:
         models = importlib.import_module("langchain.chat_models")
         model_cls = getattr(models, provider)
         model_config = model_cls(**kwargs)
-        converted_messages = convert_openai_messages(messages)
+        converted_messages = _convert_openai_messages(messages)
         if not stream:
             result = await model_config.ainvoke(converted_messages)
-            return {"choices": [{"message": convert_message_to_dict(result)}]}
+            return {"choices": [{"message": _convert_message_to_dict(result)}]}
         else:
             return (
                 _convert_message_chunk_to_delta(c, i)
-                async for i, c in aenumerate(model_config.astream(converted_messages))
+                async for i, c in _aenumerate(model_config.astream(converted_messages))
             )
 
 
@@ -214,12 +214,12 @@ def _has_assistant_message(session: ChatSession) -> bool:
     return any([isinstance(m, AIMessage) for m in session["messages"]])
 
 
-def convert_messages_for_finetuning(
+def _convert_messages_for_finetuning(
     sessions: Iterable[ChatSession],
 ) -> List[List[dict]]:
     """Convert messages to a list of lists of dictionaries for fine-tuning."""
     return [
-        [convert_message_to_dict(s) for s in session["messages"]]
+        [_convert_message_to_dict(s) for s in session["messages"]]
         for session in sessions
         if _has_assistant_message(session)
     ]

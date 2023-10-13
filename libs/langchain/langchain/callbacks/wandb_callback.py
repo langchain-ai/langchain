@@ -7,16 +7,16 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     BaseMetadataCallbackHandler,
+    _import_pandas,
+    _import_spacy,
+    _import_textstat,
     flatten_dict,
     hash_string,
-    import_pandas,
-    import_spacy,
-    import_textstat,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-def import_wandb() -> Any:
+def _import_wandb() -> Any:
     """Import the wandb python package and raise an error if it is not installed."""
     try:
         import wandb  # noqa: F401
@@ -28,7 +28,7 @@ def import_wandb() -> Any:
     return wandb
 
 
-def load_json_to_dict(json_path: Union[str, Path]) -> dict:
+def _load_json_to_dict(json_path: Union[str, Path]) -> dict:
     """Load json file to a dictionary.
 
     Parameters:
@@ -42,7 +42,7 @@ def load_json_to_dict(json_path: Union[str, Path]) -> dict:
     return data
 
 
-def analyze_text(
+def _analyze_text(
     text: str,
     complexity_metrics: bool = True,
     visualize: bool = True,
@@ -63,9 +63,9 @@ def analyze_text(
             files serialized in a wandb.Html element.
     """
     resp = {}
-    textstat = import_textstat()
-    wandb = import_wandb()
-    spacy = import_spacy()
+    textstat = _import_textstat()
+    wandb = _import_wandb()
+    spacy = _import_spacy()
     if complexity_metrics:
         text_complexity_metrics = {
             "flesch_reading_ease": textstat.flesch_reading_ease(text),
@@ -120,7 +120,7 @@ def construct_html_from_prompt_and_generation(prompt: str, generation: str) -> A
 
     Returns:
         (wandb.Html): The html element."""
-    wandb = import_wandb()
+    wandb = _import_wandb()
     formatted_prompt = prompt.replace("\n", "<br>")
     formatted_generation = generation.replace("\n", "<br>")
 
@@ -173,10 +173,10 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     ) -> None:
         """Initialize callback handler."""
 
-        wandb = import_wandb()
-        import_pandas()
-        import_textstat()
-        spacy = import_spacy()
+        wandb = _import_wandb()
+        _import_pandas()
+        _import_textstat()
+        spacy = _import_spacy()
         super().__init__()
 
         self.job_type = job_type
@@ -269,7 +269,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 generation_resp = deepcopy(resp)
                 generation_resp.update(flatten_dict(generation.dict()))
                 generation_resp.update(
-                    analyze_text(
+                    _analyze_text(
                         generation.text,
                         complexity_metrics=self.complexity_metrics,
                         visualize=self.visualize,
@@ -438,7 +438,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def _create_session_analysis_df(self) -> Any:
         """Create a dataframe with all the information from the session."""
-        pd = import_pandas()
+        pd = _import_pandas()
         on_llm_start_records_df = pd.DataFrame(self.on_llm_start_records)
         on_llm_end_records_df = pd.DataFrame(self.on_llm_end_records)
 
@@ -533,8 +533,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             Returns:
                 None
         """
-        pd = import_pandas()
-        wandb = import_wandb()
+        pd = _import_pandas()
+        wandb = _import_wandb()
         action_records_table = wandb.Table(dataframe=pd.DataFrame(self.action_records))
         session_analysis_table = wandb.Table(
             dataframe=self._create_session_analysis_df()
@@ -554,11 +554,11 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             try:
                 langchain_asset.save(langchain_asset_path)
                 model_artifact.add_file(str(langchain_asset_path))
-                model_artifact.metadata = load_json_to_dict(langchain_asset_path)
+                model_artifact.metadata = _load_json_to_dict(langchain_asset_path)
             except ValueError:
                 langchain_asset.save_agent(langchain_asset_path)
                 model_artifact.add_file(str(langchain_asset_path))
-                model_artifact.metadata = load_json_to_dict(langchain_asset_path)
+                model_artifact.metadata = _load_json_to_dict(langchain_asset_path)
             except NotImplementedError as e:
                 print("Could not save model.")
                 print(repr(e))

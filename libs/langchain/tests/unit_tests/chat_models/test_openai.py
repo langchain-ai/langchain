@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from langchain.adapters.openai import convert_dict_to_message
+from langchain.adapters.openai import _convert_dict_to_message
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema.messages import (
     AIMessage,
@@ -26,7 +26,7 @@ def test_openai_model_param() -> None:
 def test_function_message_dict_to_function_message() -> None:
     content = json.dumps({"result": "Example #1"})
     name = "test_function"
-    result = convert_dict_to_message(
+    result = _convert_dict_to_message(
         {
             "role": "function",
             "name": name,
@@ -40,21 +40,21 @@ def test_function_message_dict_to_function_message() -> None:
 
 def test__convert_dict_to_message_human() -> None:
     message = {"role": "user", "content": "foo"}
-    result = convert_dict_to_message(message)
+    result = _convert_dict_to_message(message)
     expected_output = HumanMessage(content="foo")
     assert result == expected_output
 
 
 def test__convert_dict_to_message_ai() -> None:
     message = {"role": "assistant", "content": "foo"}
-    result = convert_dict_to_message(message)
+    result = _convert_dict_to_message(message)
     expected_output = AIMessage(content="foo")
     assert result == expected_output
 
 
 def test__convert_dict_to_message_system() -> None:
     message = {"role": "system", "content": "foo"}
-    result = convert_dict_to_message(message)
+    result = _convert_dict_to_message(message)
     expected_output = SystemMessage(content="foo")
     assert result == expected_output
 

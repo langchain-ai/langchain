@@ -5,7 +5,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-def import_aim() -> Any:
+def _import_aim() -> Any:
     """Import the aim python package and raise an error if it is not installed."""
     try:
         import aim
@@ -169,7 +169,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         super().__init__()
 
-        aim = import_aim()
+        aim = _import_aim()
         self.repo = repo
         self.experiment_name = experiment_name
         self.system_tracking_interval = system_tracking_interval
@@ -184,7 +184,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.action_records: list = []
 
     def setup(self, **kwargs: Any) -> None:
-        aim = import_aim()
+        aim = _import_aim()
 
         if not self._run:
             if self._run_hash:
@@ -210,7 +210,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Run when LLM starts."""
-        aim = import_aim()
+        aim = _import_aim()
 
         self.step += 1
         self.llm_starts += 1
@@ -229,7 +229,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
-        aim = import_aim()
+        aim = _import_aim()
         self.step += 1
         self.llm_ends += 1
         self.ends += 1
@@ -264,7 +264,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Run when chain starts running."""
-        aim = import_aim()
+        aim = _import_aim()
         self.step += 1
         self.chain_starts += 1
         self.starts += 1
@@ -280,7 +280,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
-        aim = import_aim()
+        aim = _import_aim()
         self.step += 1
         self.chain_ends += 1
         self.ends += 1
@@ -303,7 +303,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
-        aim = import_aim()
+        aim = _import_aim()
         self.step += 1
         self.tool_starts += 1
         self.starts += 1
@@ -315,7 +315,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
-        aim = import_aim()
+        aim = _import_aim()
         self.step += 1
         self.tool_ends += 1
         self.ends += 1
@@ -339,7 +339,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent ends running."""
-        aim = import_aim()
+        aim = _import_aim()
         self.step += 1
         self.agent_ends += 1
         self.ends += 1
@@ -356,7 +356,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
-        aim = import_aim()
+        aim = _import_aim()
         self.step += 1
         self.tool_starts += 1
         self.starts += 1

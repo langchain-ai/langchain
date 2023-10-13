@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 diagnostic_logger = logging.getLogger(__name__)
 
 
-def import_langkit(
+def _import_langkit(
     sentiment: bool = False,
     toxicity: bool = False,
     themes: bool = False,
@@ -159,7 +159,7 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
                 WhyLabs writer.
         """
         # langkit library will import necessary whylogs libraries
-        import_langkit(sentiment=sentiment, toxicity=toxicity, themes=themes)
+        _import_langkit(sentiment=sentiment, toxicity=toxicity, themes=themes)
 
         import whylogs as why
         from langkit.callback_handler import get_callback_instance

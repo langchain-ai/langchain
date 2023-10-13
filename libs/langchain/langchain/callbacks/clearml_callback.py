@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     BaseMetadataCallbackHandler,
+    _import_pandas,
+    _import_spacy,
+    _import_textstat,
     flatten_dict,
     hash_string,
-    import_pandas,
-    import_spacy,
-    import_textstat,
     load_json,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
 
-def import_clearml() -> Any:
+def _import_clearml() -> Any:
     """Import the clearml python package and raise an error if it is not installed."""
     try:
         import clearml  # noqa: F401
@@ -63,8 +63,8 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     ) -> None:
         """Initialize callback handler."""
 
-        clearml = import_clearml()
-        spacy = import_spacy()
+        clearml = _import_clearml()
+        spacy = _import_spacy()
         super().__init__()
 
         self.task_type = task_type
@@ -329,8 +329,8 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             (dict): A dictionary containing the complexity metrics.
         """
         resp = {}
-        textstat = import_textstat()
-        spacy = import_spacy()
+        textstat = _import_textstat()
+        spacy = _import_spacy()
         if self.complexity_metrics:
             text_complexity_metrics = {
                 "flesch_reading_ease": textstat.flesch_reading_ease(text),
@@ -399,7 +399,7 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def _create_session_analysis_df(self) -> Any:
         """Create a dataframe with all the information from the session."""
-        pd = import_pandas()
+        pd = _import_pandas()
         on_llm_end_records_df = pd.DataFrame(self.on_llm_end_records)
 
         llm_input_prompts_df = ClearMLCallbackHandler._build_llm_df(
@@ -465,8 +465,8 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             Returns:
                 None
         """
-        pd = import_pandas()
-        clearml = import_clearml()
+        pd = _import_pandas()
+        clearml = _import_clearml()
 
         # Log the action records
         self.logger.report_table(
