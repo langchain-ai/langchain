@@ -1,4 +1,5 @@
 import json
+import warnings
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
@@ -7,6 +8,10 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.output import GenerationChunk
+from langchain.utilities.anthropic import (
+    get_num_tokens_anthropic,
+    get_token_ids_anthropic,
+)
 
 HUMAN_PROMPT = "\n\nHuman:"
 ASSISTANT_PROMPT = "\n\nAssistant:"
@@ -42,12 +47,12 @@ def _human_assistant_format(input_text: str) -> str:
             if count % 2 == 0:
                 count += 1
             else:
-                raise ValueError(ALTERNATION_ERROR + f" Received {input_text}")
+                warnings.warn(ALTERNATION_ERROR + f" Received {input_text}")
         if input_text[i : i + len(ASSISTANT_PROMPT)] == ASSISTANT_PROMPT:
             if count % 2 == 1:
                 count += 1
             else:
-                raise ValueError(ALTERNATION_ERROR + f" Received {input_text}")
+                warnings.warn(ALTERNATION_ERROR + f" Received {input_text}")
 
     if count % 2 == 1:  # Only saw Human, no Assistant
         input_text = input_text + ASSISTANT_PROMPT  # SILENT CORRECTION
@@ -221,6 +226,10 @@ class BedrockBase(BaseModel, ABC):
     def _get_provider(self) -> str:
         return self.model_id.split(".")[0]
 
+    @property
+    def _model_is_anthropic(self) -> bool:
+        return self._get_provider() == "anthropic"
+
     def _prepare_input_and_invoke(
         self,
         prompt: str,
@@ -317,7 +326,7 @@ class Bedrock(LLM, BedrockBase):
             from bedrock_langchain.bedrock_llm import BedrockLLM
 
             llm = BedrockLLM(
-                credentials_profile_name="default", 
+                credentials_profile_name="default",
                 model_id="amazon.titan-text-express-v1",
                 streaming=True
             )
@@ -392,3 +401,15 @@ class Bedrock(LLM, BedrockBase):
             return completion
 
         return self._prepare_input_and_invoke(prompt=prompt, stop=stop, **kwargs)
+
+    def get_num_tokens(self, text: str) -> int:
+        if self._model_is_anthropic:
+            return get_num_tokens_anthropic(text)
+        else:
+            return super().get_num_tokens(text)
+
+    def get_token_ids(self, text: str) -> List[int]:
+        if self._model_is_anthropic:
+            return get_token_ids_anthropic(text)
+        else:
+            return super().get_token_ids(text)

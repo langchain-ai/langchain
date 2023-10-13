@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -14,6 +14,7 @@ class ReadTheDocsLoader(BaseLoader):
         encoding: Optional[str] = None,
         errors: Optional[str] = None,
         custom_html_tag: Optional[Tuple[str, dict]] = None,
+        patterns: Sequence[str] = ("*.htm", "*.html"),
         **kwargs: Optional[Any]
     ):
         """
@@ -34,6 +35,8 @@ class ReadTheDocsLoader(BaseLoader):
                 cannot be used in binary mode.
             custom_html_tag: Optional custom html tag to retrieve the content from
                 files.
+            patterns: The file patterns to load, passed to `glob.rglob`.
+            kwargs: named arguments passed to `bs4.BeautifulSoup`.
         """
         try:
             from bs4 import BeautifulSoup
@@ -54,18 +57,20 @@ class ReadTheDocsLoader(BaseLoader):
         self.encoding = encoding
         self.errors = errors
         self.custom_html_tag = custom_html_tag
+        self.patterns = patterns
         self.bs_kwargs = kwargs
 
     def load(self) -> List[Document]:
         """Load documents."""
         docs = []
-        for p in self.file_path.rglob("*"):
-            if p.is_dir():
-                continue
-            with open(p, encoding=self.encoding, errors=self.errors) as f:
-                text = self._clean_data(f.read())
-            metadata = {"source": str(p)}
-            docs.append(Document(page_content=text, metadata=metadata))
+        for file_pattern in self.patterns:
+            for p in self.file_path.rglob(file_pattern):
+                if p.is_dir():
+                    continue
+                with open(p, encoding=self.encoding, errors=self.errors) as f:
+                    text = self._clean_data(f.read())
+                metadata = {"source": str(p)}
+                docs.append(Document(page_content=text, metadata=metadata))
         return docs
 
     def _clean_data(self, data: str) -> str:
