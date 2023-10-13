@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Optional, Protocol, Sequence
+from typing import Any, Optional, Protocol, Sequence, runtime_checkable
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -10,6 +10,7 @@ from langchain.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
 
 
+@runtime_checkable
 class TrainableLLM(Protocol):
     @abstractmethod
     def train_unsupervised(
