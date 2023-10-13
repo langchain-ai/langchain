@@ -1,8 +1,7 @@
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Mapping, Optional, Sequence, TypedDict, Union
-
+from typing import Any, Dict, List, Mapping, Optional, Sequence, TypedDict
 
 import aiohttp
 import requests
