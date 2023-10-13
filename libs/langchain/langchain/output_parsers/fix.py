@@ -62,6 +62,8 @@ class OutputFixingParser(BaseOutputParser[T]):
                         error=repr(e),
                     )
 
+        raise OutputParserException("Failed to parse")
+
     async def aparse(self, completion: str) -> T:
         retries = 0
 
@@ -78,6 +80,8 @@ class OutputFixingParser(BaseOutputParser[T]):
                         completion=completion,
                         error=repr(e),
                     )
+
+        raise OutputParserException("Failed to parse")
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
