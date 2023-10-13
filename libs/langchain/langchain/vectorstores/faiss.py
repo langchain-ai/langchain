@@ -10,6 +10,7 @@ from functools import partial
 from pathlib import Path
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Dict,
     Iterable,
@@ -84,14 +85,16 @@ class FAISS(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Callable,
+        embedding_function: Callable[[str], List[float]],
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         normalize_L2: bool = False,
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
-        async_embedding_function: Optional[Callable] = None,
+        async_embedding_function: Optional[
+            Callable[[str], Awaitable[List[float]]]
+        ] = None,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
@@ -188,6 +191,7 @@ class FAISS(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+        assert self.async_embedding_function is not None
         embeddings = await asyncio.gather(
             *[self.async_embedding_function(text) for text in texts]
         )
@@ -366,6 +370,7 @@ class FAISS(VectorStore):
             List of documents most similar to the query text with
             L2 distance in float. Lower score represents more similarity.
         """
+        assert self.async_embedding_function is not None
         embedding = await self.async_embedding_function(query)
         docs = await self.asimilarity_search_with_score_by_vector(
             embedding,
@@ -722,6 +727,7 @@ class FAISS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        assert self.async_embedding_function is not None
         embedding = await self.async_embedding_function(query)
         docs = await self.amax_marginal_relevance_search_by_vector(
             embedding,
