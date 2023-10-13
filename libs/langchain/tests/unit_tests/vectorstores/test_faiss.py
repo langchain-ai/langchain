@@ -558,7 +558,13 @@ def test_faiss_add_texts_not_supported() -> None:
 @pytest.mark.asyncio
 async def test_faiss_async_add_texts_not_supported() -> None:
     """Test adding of texts to a docstore that doesn't support it."""
-    docsearch = FAISS(FakeEmbeddings().aembed_query, None, FakeDocstore(), {})
+    docsearch = FAISS(
+        FakeEmbeddings().embed_query,
+        None,
+        FakeDocstore(),
+        {},
+        async_embedding_function=FakeEmbeddings().aembed_query,
+    )
     with pytest.raises(ValueError):
         await docsearch.aadd_texts(["foo"])
 
@@ -584,9 +590,7 @@ async def test_faiss_async_local_save_load() -> None:
     temp_timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     with tempfile.TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
         docsearch.save_local(temp_folder)
-        new_docsearch = FAISS.load_local(
-            temp_folder, FakeEmbeddings(), asynchronous=True
-        )
+        new_docsearch = FAISS.load_local(temp_folder, FakeEmbeddings())
     assert new_docsearch.index is not None
 
 
