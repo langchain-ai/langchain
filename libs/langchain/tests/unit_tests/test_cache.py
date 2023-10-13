@@ -72,20 +72,21 @@ def test_llm_caching() -> None:
 
 
 def test_old_sqlite_llm_caching() -> None:
-    if isinstance(get_llm_cache(), SQLAlchemyCache):
+    llm_cache = get_llm_cache()
+    if isinstance(llm_cache, SQLAlchemyCache):
         prompt = "How are you?"
         response = "Test response"
         cached_response = "Cached test response"
         llm = FakeListLLM(responses=[response])
         items = [
-            get_llm_cache().cache_schema(
+            llm_cache.cache_schema(
                 prompt=prompt,
                 llm=create_llm_string(llm),
                 response=cached_response,
                 idx=0,
             )
         ]
-        with Session(get_llm_cache().engine) as session, session.begin():
+        with Session(llm_cache.engine) as session, session.begin():
             for item in items:
                 session.merge(item)
         assert llm(prompt) == cached_response

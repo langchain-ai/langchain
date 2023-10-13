@@ -1,6 +1,6 @@
 """Test Redis cache functionality."""
 import uuid
-from typing import List
+from typing import List, cast
 
 import pytest
 
@@ -29,9 +29,10 @@ def test_redis_cache_ttl() -> None:
     import redis
 
     set_llm_cache(RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL), ttl=1))
-    get_llm_cache().update("foo", "bar", [Generation(text="fizz")])
-    key = get_llm_cache()._key("foo", "bar")
-    assert get_llm_cache().redis.pttl(key) > 0
+    llm_cache = cast(RedisCache, get_llm_cache())
+    llm_cache.update("foo", "bar", [Generation(text="fizz")])
+    key = llm_cache._key("foo", "bar")
+    assert llm_cache.redis.pttl(key) > 0
 
 
 def test_redis_cache() -> None:
@@ -49,7 +50,8 @@ def test_redis_cache() -> None:
         llm_output={},
     )
     assert output == expected_output
-    get_llm_cache().redis.flushall()
+    llm_cache = cast(RedisCache, get_llm_cache())
+    llm_cache.redis.flushall()
 
 
 def test_redis_cache_chat() -> None:
@@ -70,7 +72,8 @@ def test_redis_cache_chat() -> None:
         llm_output={},
     )
     assert output == expected_output
-    get_llm_cache().redis.flushall()
+    llm_cache = cast(RedisCache, get_llm_cache())
+    llm_cache.redis.flushall()
 
 
 def test_redis_semantic_cache() -> None:
