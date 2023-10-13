@@ -20,6 +20,9 @@ from langchain.memory.chat_message_histories.sql import SQLChatMessageHistory
 from langchain.memory.chat_message_histories.streamlit import (
     StreamlitChatMessageHistory,
 )
+from langchain.memory.chat_message_histories.upstash_redis import (
+    UpstashRedisChatMessageHistory,
+)
 from langchain.memory.chat_message_histories.xata import XataChatMessageHistory
 from langchain.memory.chat_message_histories.zep import ZepChatMessageHistory
 
@@ -40,4 +43,5 @@ __all__ = [
     "StreamlitChatMessageHistory",
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
+    "UpstashRedisChatMessageHistory",
 ]
