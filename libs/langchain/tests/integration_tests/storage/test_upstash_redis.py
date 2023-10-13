@@ -1,9 +1,14 @@
 """Implement integration tests for Redis storage."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pytest
-from upstash_redis import Redis
 
 from langchain.storage.upstash_redis import UpstashRedisStore
+
+if TYPE_CHECKING:
+    from upstash_redis import Redis
 
 pytest.importorskip("upstash_redis")
 
