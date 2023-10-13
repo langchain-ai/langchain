@@ -1,7 +1,7 @@
 {
   "redirects": [
     {
-      "source": "/docs/modules/data_connection/self_query/:path*",
+      "source": "/docs/modules/data_connection/retrievers/self_query/:path*",
       "destination": "/docs/integrations/retrievers/self_query/:path*"
     },
     {
