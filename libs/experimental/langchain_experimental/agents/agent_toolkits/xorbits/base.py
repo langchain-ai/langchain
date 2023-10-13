@@ -6,6 +6,7 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
+
 from langchain_experimental.agents.agent_toolkits.xorbits.prompt import (
     NP_PREFIX,
     NP_SUFFIX,
