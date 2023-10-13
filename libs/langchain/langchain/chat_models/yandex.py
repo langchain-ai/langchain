@@ -46,10 +46,12 @@ def _parse_chat_history(history: List[BaseMessage]) -> Tuple[List[Dict[str, str]
 class ChatYandexGPT(BaseYandexGPT, BaseChatModel):
     """Wrapper around YandexGPT large language models.
 
-    To use, you should have the ``yandexcloud`` python package installed, and the
-    environment variable ``IAM_TOKEN`` set with IAM token
-    for the service account with the ``ai.languageModels.user`` role, or pass
-    it as a named parameter ``iam_token`` to the constructor.
+    There are two authentication options for the service account
+    with the ``ai.languageModels.user`` role:
+        - You can specify the token in a constructor parameter `iam_token`
+        or in an environment variable `YC_IAM_TOKEN`.
+        - You can specify the key in a constructor parameter `api_key`
+        or in an environment variable `YC_API_KEY`.
 
     Example:
         .. code-block:: python
@@ -79,13 +81,13 @@ class ChatYandexGPT(BaseYandexGPT, BaseChatModel):
             ValueError: if the last message in the list is not from human.
         """
         try:
+            import grpc
             from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
             from yandex.cloud.ai.llm.v1alpha.llm_pb2 import GenerationOptions, Message
             from yandex.cloud.ai.llm.v1alpha.llm_service_pb2 import ChatRequest
             from yandex.cloud.ai.llm.v1alpha.llm_service_pb2_grpc import (
                 TextGenerationServiceStub,
             )
-            from yandexcloud import SDK
         except ImportError as e:
             raise ImportError(
                 "Please install YandexCloud SDK" " with `pip install yandexcloud`."
@@ -95,6 +97,10 @@ class ChatYandexGPT(BaseYandexGPT, BaseChatModel):
                 "You should provide at least one message to start the chat!"
             )
         message_history, instruction = _parse_chat_history(messages)
+        channel_credentials = grpc.ssl_channel_credentials()
+        channel = grpc.secure_channel(
+            "llm.api.cloud.yandex.net:443", channel_credentials
+        )
         request = ChatRequest(
             model=self.model_name,
             generation_options=GenerationOptions(
@@ -104,9 +110,13 @@ class ChatYandexGPT(BaseYandexGPT, BaseChatModel):
             instruction_text=instruction,
             messages=[Message(**message) for message in message_history],
         )
-        sdk = SDK(iam_token=self.iam_token)
-        operation = sdk.client(TextGenerationServiceStub).Chat(request)
-        text = list(operation)[0].message.text
+        stub = TextGenerationServiceStub(channel)
+        if self.iam_token:
+            metadata = (("authorization", f"Bearer {self.iam_token}"),)
+        else:
+            metadata = (("authorization", f"Api-Key {self.api_key}"),)
+        res = stub.Chat(request, metadata=metadata)
+        text = list(res)[0].message.text
         text = text if stop is None else enforce_stop_tokens(text, stop)
         message = AIMessage(content=text)
         return ChatResult(generations=[ChatGeneration(message=message)])

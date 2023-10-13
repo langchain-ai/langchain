@@ -12,6 +12,9 @@ class BaseYandexGPT(Serializable):
     iam_token: str = ""
     """Yandex Cloud IAM token for service account
     with the `ai.languageModels.user` role"""
+    api_key: str = ""
+    """Yandex Cloud Api Key for service account
+    with the `ai.languageModels.user` role"""
     model_name: str = "general"
     """Model name to use."""
     temperature: float = 0.6
@@ -32,18 +35,28 @@ class BaseYandexGPT(Serializable):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that iam token exists in environment."""
 
-        iam_token = get_from_dict_or_env(values, "iam_token", "IAM_TOKEN")
+        iam_token = get_from_dict_or_env(values, "iam_token", "YC_IAM_TOKEN", "")
         values["iam_token"] = iam_token
+        api_key = get_from_dict_or_env(values, "api_key", "YC_API_KEY", "")
+        values["api_key"] = api_key
+        if (api_key == "") == (iam_token == ""):
+            raise ValueError(
+                "Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided, but not both."
+            )
         return values
 
 
 class YandexGPT(BaseYandexGPT, LLM):
     """Yandex large language models.
 
-    To use, you should have the ``yandexcloud`` python package installed, and the
-    environment variable ``IAM_TOKEN`` set with IAM token
-    for the service account with the ``ai.languageModels.user`` role, or pass
-    it as a named parameter ``iam_token`` to the constructor.
+    To use, you should have the ``yandexcloud`` python package installed.
+
+    There are two authentication options for the service account
+    with the ``ai.languageModels.user`` role:
+        - You can specify the token in a constructor parameter `iam_token`
+        or in an environment variable `YC_IAM_TOKEN`.
+        - You can specify the key in a constructor parameter `api_key`
+        or in an environment variable `YC_API_KEY`.
 
     Example:
         .. code-block:: python
@@ -84,21 +97,21 @@ class YandexGPT(BaseYandexGPT, LLM):
                 response = YandexGPT("Tell me a joke.")
         """
         try:
+            import grpc
             from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
             from yandex.cloud.ai.llm.v1alpha.llm_pb2 import GenerationOptions
-            from yandex.cloud.ai.llm.v1alpha.llm_service_pb2 import (
-                InstructRequest,
-                InstructResponse,
-            )
+            from yandex.cloud.ai.llm.v1alpha.llm_service_pb2 import InstructRequest
             from yandex.cloud.ai.llm.v1alpha.llm_service_pb2_grpc import (
-                TextGenerationAsyncServiceStub,
+                TextGenerationServiceStub,
             )
-            from yandexcloud import SDK
         except ImportError as e:
             raise ImportError(
                 "Please install YandexCloud SDK" " with `pip install yandexcloud`."
             ) from e
-        sdk = SDK(iam_token=self.iam_token)
+        channel_credentials = grpc.ssl_channel_credentials()
+        channel = grpc.secure_channel(
+            "llm.api.cloud.yandex.net:443", channel_credentials
+        )
         request = InstructRequest(
             model=self.model_name,
             request_text=prompt,
@@ -107,11 +120,13 @@ class YandexGPT(BaseYandexGPT, LLM):
                 max_tokens=Int64Value(value=self.max_tokens),
             ),
         )
-        operation = sdk.client(TextGenerationAsyncServiceStub).Instruct(request)
-        res = sdk.wait_operation_and_get_result(
-            operation, response_type=InstructResponse
-        )
-        text = res.response.alternatives[0].text
+        stub = TextGenerationServiceStub(channel)
+        if self.iam_token:
+            metadata = (("authorization", f"Bearer {self.iam_token}"),)
+        else:
+            metadata = (("authorization", f"Api-Key {self.api_key}"),)
+        res = stub.Instruct(request, metadata=metadata)
+        text = list(res)[0].alternatives[0].text
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         return text
