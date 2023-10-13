@@ -91,9 +91,11 @@ class FAISS(VectorStore):
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         normalize_L2: bool = False,
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
+        async_embedding_function: Optional[Callable] = None,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
+        self.async_embedding_function = async_embedding_function
         self.index = index
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
@@ -187,7 +189,7 @@ class FAISS(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         embeddings = await asyncio.gather(
-            *[self.embedding_function(text) for text in texts]
+            *[self.async_embedding_function(text) for text in texts]
         )
         return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
 
@@ -364,7 +366,7 @@ class FAISS(VectorStore):
             List of documents most similar to the query text with
             L2 distance in float. Lower score represents more similarity.
         """
-        embedding = await self.embedding_function(query)
+        embedding = await self.async_embedding_function(query)
         docs = await self.asimilarity_search_with_score_by_vector(
             embedding,
             k,
@@ -720,7 +722,7 @@ class FAISS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        embedding = await self.embedding_function(query)
+        embedding = await self.async_embedding_function(query)
         docs = await self.amax_marginal_relevance_search_by_vector(
             embedding,
             k=k,
@@ -820,36 +822,7 @@ class FAISS(VectorStore):
             index,
             InMemoryDocstore(),
             {},
-            normalize_L2=normalize_L2,
-            distance_strategy=distance_strategy,
-            **kwargs,
-        )
-        vecstore.__add(texts, embeddings, metadatas=metadatas, ids=ids)
-        return vecstore
-
-    @classmethod
-    def __afrom(
-        cls,
-        texts: Iterable[str],
-        embeddings: List[List[float]],
-        embedding: Embeddings,
-        metadatas: Optional[Iterable[dict]] = None,
-        ids: Optional[List[str]] = None,
-        normalize_L2: bool = False,
-        distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
-        **kwargs: Any,
-    ) -> FAISS:
-        faiss = dependable_faiss_import()
-        if distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
-            index = faiss.IndexFlatIP(len(embeddings[0]))
-        else:
-            # Default to L2, currently other metric types not initialized.
-            index = faiss.IndexFlatL2(len(embeddings[0]))
-        vecstore = cls(
-            embedding.aembed_query,
-            index,
-            InMemoryDocstore(),
-            {},
+            async_embedding_function=embedding.aembed_query,
             normalize_L2=normalize_L2,
             distance_strategy=distance_strategy,
             **kwargs,
@@ -922,7 +895,7 @@ class FAISS(VectorStore):
                 faiss = await FAISS.afrom_texts(texts, embeddings)
         """
         embeddings = await embedding.aembed_documents(texts)
-        return cls.__afrom(
+        return cls.__from(
             texts,
             embeddings,
             embedding,
@@ -980,31 +953,9 @@ class FAISS(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> FAISS:
-        """Construct FAISS wrapper from raw documents asynchronously.
-
-        This is a user friendly interface that:
-            1. Embeds documents.
-            2. Creates an in memory docstore
-            3. Initializes the FAISS database
-
-        This is intended to be a quick way to get started.
-
-        Example:
-            .. code-block:: python
-
-                from langchain.vectorstores import FAISS
-                from langchain.embeddings import OpenAIEmbeddings
-
-                embeddings = OpenAIEmbeddings()
-                text_embeddings = embeddings.embed_documents(texts)
-                text_embedding_pairs = zip(texts, text_embeddings)
-                faiss = await FAISS.afrom_embeddings(text_embedding_pairs, embeddings)
-        """
-        texts = [t[0] for t in text_embeddings]
-        embeddings = [t[1] for t in text_embeddings]
-        return cls.__afrom(
-            texts,
-            embeddings,
+        """Construct FAISS wrapper from raw documents asynchronously."""
+        return cls.from_embeddings(
+            text_embeddings,
             embedding,
             metadatas=metadatas,
             ids=ids,
@@ -1038,7 +989,6 @@ class FAISS(VectorStore):
         folder_path: str,
         embeddings: Embeddings,
         index_name: str = "index",
-        asynchronous: bool = False,
         **kwargs: Any,
     ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id from disk.
@@ -1060,14 +1010,14 @@ class FAISS(VectorStore):
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
-        if asynchronous:
-            return cls(
-                embeddings.aembed_query, index, docstore, index_to_docstore_id, **kwargs
-            )
-        else:
-            return cls(
-                embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
-            )
+        return cls(
+            embeddings.embed_query,
+            index,
+            docstore,
+            index_to_docstore_id,
+            async_embedding_function=embeddings.aembed_query,
+            **kwargs,
+        )
 
     def serialize_to_bytes(self) -> bytes:
         """Serialize FAISS index, docstore, and index_to_docstore_id to bytes."""
@@ -1078,19 +1028,18 @@ class FAISS(VectorStore):
         cls,
         serialized: bytes,
         embeddings: Embeddings,
-        asynchronous: bool = False,
         **kwargs: Any,
     ) -> FAISS:
         """Deserialize FAISS index, docstore, and index_to_docstore_id from bytes."""
         index, docstore, index_to_docstore_id = pickle.loads(serialized)
-        if asynchronous:
-            return cls(
-                embeddings.aembed_query, index, docstore, index_to_docstore_id, **kwargs
-            )
-        else:
-            return cls(
-                embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
-            )
+        return cls(
+            embeddings.embed_query,
+            index,
+            docstore,
+            index_to_docstore_id,
+            async_embedding_function=embeddings.aembed_query,
+            **kwargs,
+        )
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
