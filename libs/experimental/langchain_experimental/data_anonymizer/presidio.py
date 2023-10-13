@@ -139,7 +139,12 @@ class PresidioAnonymizerBase(AnonymizerBase):
 
 
 class PresidioAnonymizer(PresidioAnonymizerBase):
-    def _anonymize(self, text: str, language: Optional[str] = None) -> str:
+    def _anonymize(
+        self,
+        text: str,
+        language: Optional[str] = None,
+        allow_list: Optional[List[str]] = None,
+    ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
         Each time fake values will be different, as they are generated randomly.
@@ -172,6 +177,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
             text,
             entities=self.analyzed_fields,
             language=language,
+            allow_list=allow_list,
         )
 
         filtered_analyzer_results = (
@@ -226,7 +232,12 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             for key, inner_dict in self.deanonymizer_mapping.items()
         }
 
-    def _anonymize(self, text: str, language: Optional[str] = None) -> str:
+    def _anonymize(
+        self,
+        text: str,
+        language: Optional[str] = None,
+        allow_list: Optional[List[str]] = None,
+    ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
         Each time fake values will be different, as they are generated randomly.
@@ -261,6 +272,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             text,
             entities=self.analyzed_fields,
             language=language,
+            allow_list=allow_list,
         )
 
         filtered_analyzer_results = (

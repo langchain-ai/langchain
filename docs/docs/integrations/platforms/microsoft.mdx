@@ -1,6 +1,6 @@
 # Microsoft
 
-All functionality related to Microsoft
+All functionality related to Microsoft Azure
 
 ## LLM
 ### Azure OpenAI
@@ -109,7 +109,39 @@ from langchain.document_loaders import UnstructuredWordDocumentLoader
 ```
 
 
-## Retriever
+## Vector stores
+
+### Azure Cosmos DB
+
+>[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/) makes it easy to create a database with full native MongoDB support.
+> You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
+> Use vector search in Azure Cosmos DB for MongoDB vCore to seamlessly integrate your AI-based applications with your data that's stored in Azure Cosmos DB.
+
+#### Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db).
+
+We need to install `pymongo` python package.
+
+```bash
+pip install pymongo
+```
+
+#### Deploy Azure Cosmos DB on Microsoft Azure
+
+Azure Cosmos DB for MongoDB vCore provides developers with a fully managed MongoDB-compatible database service for building modern applications with a familiar architecture.
+
+With Cosmos DB for MongoDB vCore, developers can enjoy the benefits of native Azure integrations, low total cost of ownership (TCO), and the familiar vCore architecture when migrating existing applications or building new ones.
+
+[Sign Up](https://azure.microsoft.com/en-us/free/) for free to get started today.
+
+See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db).
+
+```python
+from langchain.vectorstores import AzureCosmosDBVectorSearch
+```
+
+## Retrievers
 ### Azure Cognitive Search
 
 >[Azure Cognitive Search](https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search) (formerly known as `Azure Search`) is a cloud search service that gives developers infrastructure, APIs, and tools for building a rich search experience over private, heterogeneous content in web, mobile, and enterprise applications.
