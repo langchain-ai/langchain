@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import (
     Any,
     List,
@@ -136,11 +137,11 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
                 message_history = SingleStoreDBChatMessageHistory("my-session")
         """
 
-        self.table_name = table_name
-        self.session_id = session_id
-        self.id_field = id_field
-        self.session_id_field = session_id_field
-        self.message_field = message_field
+        self.table_name = self._sanitize_input(table_name)
+        self.session_id = self._sanitize_input(session_id)
+        self.id_field = self._sanitize_input(id_field)
+        self.session_id_field = self._sanitize_input(session_id_field)
+        self.message_field = self._sanitize_input(message_field)
 
         # Pass the rest of the kwargs to the connection.
         self.connection_kwargs = kwargs
@@ -167,7 +168,11 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
             pool_size=pool_size,
             timeout=timeout,
         )
-        self._create_table_if_not_exists()
+        self.table_created = False
+
+    def _sanitize_input(self, input_str: str) -> str:
+        # Remove characters that are not alphanumeric or underscores
+        return re.sub(r"[^a-zA-Z0-9_]", "", input_str)
 
     def _get_connection(self) -> Any:
         try:
@@ -181,6 +186,8 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
 
     def _create_table_if_not_exists(self) -> None:
         """Create table if it doesn't exist."""
+        if self.table_created:
+            return
         conn = self.connection_pool.connect()
         try:
             cur = conn.cursor()
@@ -196,6 +203,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
                         self.message_field,
                     ),
                 )
+                self.table_created = True
             finally:
                 cur.close()
         finally:
@@ -204,6 +212,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the messages from SingleStoreDB"""
+        self._create_table_if_not_exists()
         conn = self.connection_pool.connect()
         items = []
         try:
@@ -228,6 +237,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in SingleStoreDB"""
+        self._create_table_if_not_exists()
         conn = self.connection_pool.connect()
         try:
             cur = conn.cursor()
@@ -247,6 +257,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
 
     def clear(self) -> None:
         """Clear session memory from SingleStoreDB"""
+        self._create_table_if_not_exists()
         conn = self.connection_pool.connect()
         try:
             cur = conn.cursor()

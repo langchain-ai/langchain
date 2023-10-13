@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import (
     Any,
     Callable,
@@ -180,10 +181,10 @@ class SingleStoreDB(VectorStore):
 
         self.embedding = embedding
         self.distance_strategy = distance_strategy
-        self.table_name = table_name
-        self.content_field = content_field
-        self.metadata_field = metadata_field
-        self.vector_field = vector_field
+        self.table_name = self._sanitize_input(table_name)
+        self.content_field = self._sanitize_input(content_field)
+        self.metadata_field = self._sanitize_input(metadata_field)
+        self.vector_field = self._sanitize_input(vector_field)
 
         # Pass the rest of the kwargs to the connection.
         self.connection_kwargs = kwargs
@@ -207,6 +208,10 @@ class SingleStoreDB(VectorStore):
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding
+
+    def _sanitize_input(self, input_str: str) -> str:
+        # Remove characters that are not alphanumeric or underscores
+        return re.sub(r"[^a-zA-Z0-9_]", "", input_str)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         return self._max_inner_product_relevance_score_fn
