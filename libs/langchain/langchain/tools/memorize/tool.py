@@ -45,7 +45,7 @@ class Memorize(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         train_result = self.llm.train_unsupervised((information_to_learn,))
-        return f"Train complete. Loss: {train_result.loss}"
+        return f"Train complete. Loss: {train_result['loss']}"
 
     async def _arun(
         self,
@@ -53,4 +53,4 @@ class Memorize(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         train_result = await self.llm.atrain_unsupervised((information_to_learn,))
-        return f"Train complete. Loss: {train_result.loss}"
+        return f"Train complete. Loss: {train_result['loss']}"
