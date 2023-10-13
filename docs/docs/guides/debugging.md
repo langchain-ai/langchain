@@ -14,7 +14,7 @@ For anyone building production-grade LLM applications, we highly recommend using
 
 ![LangSmith run](/img/run_details.png)
 
-## `langchain.debug` and `langchain.verbose`
+## `set_debug` and `set_verbose`
 
 If you're prototyping in Jupyter Notebooks or running Python scripts, it can be helpful to print out the intermediate steps of a Chain run. 
 
@@ -45,15 +45,15 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 </CodeOutputBlock>
 
-### `langchain.debug = True`
+### `set_debug(True)`
 
 Setting the global `debug` flag will cause all LangChain components with callback support (chains, models, agents, tools, retrievers) to print the inputs they receive and outputs they generate. This is the most verbose setting and will fully log raw inputs and outputs.
 
 
 ```python
-import langchain
+from langchain.globals import set_debug
 
-langchain.debug = True
+set_debug(True)
 
 agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?")
 ```
@@ -376,15 +376,15 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 </details>
 
-### `langchain.verbose = True`
+### `set_vebose(True)`
 
 Setting the `verbose` flag will print out inputs and outputs in a slightly more readable format and will skip logging certain raw outputs (like the token usage stats for an LLM call) so that you can focus on application logic.
 
 
 ```python
-import langchain
+from langchain.globals import set_verbose
 
-langchain.verbose = True
+set_verbose(True)
 
 agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?")
 ```

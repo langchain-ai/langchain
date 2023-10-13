@@ -3,6 +3,9 @@ from langchain.memory.chat_message_histories.cassandra import (
 )
 from langchain.memory.chat_message_histories.cosmos_db import CosmosDBChatMessageHistory
 from langchain.memory.chat_message_histories.dynamodb import DynamoDBChatMessageHistory
+from langchain.memory.chat_message_histories.elasticsearch import (
+    ElasticsearchChatMessageHistory,
+)
 from langchain.memory.chat_message_histories.file import FileChatMessageHistory
 from langchain.memory.chat_message_histories.firestore import (
     FirestoreChatMessageHistory,
@@ -20,6 +23,9 @@ from langchain.memory.chat_message_histories.sql import SQLChatMessageHistory
 from langchain.memory.chat_message_histories.streamlit import (
     StreamlitChatMessageHistory,
 )
+from langchain.memory.chat_message_histories.upstash_redis import (
+    UpstashRedisChatMessageHistory,
+)
 from langchain.memory.chat_message_histories.xata import XataChatMessageHistory
 from langchain.memory.chat_message_histories.zep import ZepChatMessageHistory
 
@@ -28,6 +34,7 @@ __all__ = [
     "CassandraChatMessageHistory",
     "CosmosDBChatMessageHistory",
     "DynamoDBChatMessageHistory",
+    "ElasticsearchChatMessageHistory",
     "FileChatMessageHistory",
     "FirestoreChatMessageHistory",
     "MomentoChatMessageHistory",
@@ -40,4 +47,5 @@ __all__ = [
     "SingleStoreDBChatMessageHistory",
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
+    "UpstashRedisChatMessageHistory",
 ]

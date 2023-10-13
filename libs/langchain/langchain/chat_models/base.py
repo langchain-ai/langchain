@@ -50,7 +50,9 @@ from langchain.schema.runnable import RunnableConfig
 
 
 def _get_verbosity() -> bool:
-    return langchain.verbose
+    from langchain.globals import get_verbose
+
+    return get_verbose()
 
 
 def _generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
