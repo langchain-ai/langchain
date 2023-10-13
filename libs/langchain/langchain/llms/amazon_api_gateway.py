@@ -36,7 +36,7 @@ class AmazonAPIGateway(LLM):
     """API Gateway HTTP Headers to send, e.g. for authentication"""
 
     model_kwargs: Optional[Dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     content_handler: ContentHandlerAmazonAPIGateway = ContentHandlerAmazonAPIGateway()
     """The content handler class that provides an input and
