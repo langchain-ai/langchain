@@ -10,6 +10,7 @@ build:
   tools:
     python: "3.11"
   commands:
+      - python -m pip install docs/api_reference/requirements.txt
       - python docs/api_reference/create_api_rst.py
       - sphinx-build -M html . $READTHEDOCS_OUTPUT/html -j auto
 
