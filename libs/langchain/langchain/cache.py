@@ -463,15 +463,15 @@ class RedisSemanticCache(BaseCache):
 
         .. code-block:: python
 
-            import langchain
+            from langchain.globals import set_llm_cache
 
             from langchain.cache import RedisSemanticCache
             from langchain.embeddings import OpenAIEmbeddings
 
-            langchain.llm_cache = RedisSemanticCache(
+            set_llm_cache(RedisSemanticCache(
                 redis_url="redis://localhost:6379",
                 embedding=OpenAIEmbeddings()
-            )
+            ))
 
         """
         self._cache_dict: Dict[str, RedisVectorstore] = {}
@@ -588,6 +588,7 @@ class GPTCache(BaseCache):
             import gptcache
             from gptcache.processor.pre import get_prompt
             from gptcache.manager.factory import get_data_manager
+            from langchain.globals import set_llm_cache
 
             # Avoid multiple caches using the same file,
             causing different llm model caches to affect each other
@@ -601,7 +602,7 @@ class GPTCache(BaseCache):
                     ),
                 )
 
-            langchain.llm_cache = GPTCache(init_gptcache)
+            set_llm_cache(GPTCache(init_gptcache))
 
         """
         try:
