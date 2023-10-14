@@ -150,10 +150,16 @@ PromptTemplates help with exactly this!
 They bundle up all the logic for going from user input into a fully formatted prompt.
 This can start off very simple - for example, a prompt to produce the above string would just be:
 
-import PromptTemplateLLM from "@snippets/get_started/quickstart/prompt_templates_llms.mdx"
-import PromptTemplateChatModel from "@snippets/get_started/quickstart/prompt_templates_chat_models.mdx"
+```python
+from langchain.prompts import PromptTemplate
 
-<PromptTemplateLLM/>
+prompt = PromptTemplate.from_template("What is a good name for a company that makes {product}?")
+prompt.format(product="colorful socks")
+```
+
+```pycon
+What is a good name for a company that makes colorful socks?
+```
 
 However, the advantages of using these over raw string formatting are several.
 You can "partial" out variables - e.g. you can format only some of the variables at a time.
@@ -166,7 +172,27 @@ Here, what happens most often is a ChatPromptTemplate is a list of ChatMessageTe
 Each ChatMessageTemplate contains instructions for how to format that ChatMessage - its role, and then also its content.
 Let's take a look at this below:
 
-<PromptTemplateChatModel/>
+```python
+from langchain.prompts.chat import ChatPromptTemplate
+
+template = "You are a helpful assistant that translates {input_language} to {output_language}."
+human_template = "{text}"
+
+chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", template),
+    ("human", human_template),
+])
+
+chat_prompt.format_messages(input_language="English", output_language="French", text="I love programming.")
+```
+
+```pycon
+[
+    SystemMessage(content="You are a helpful assistant that translates English to French.", additional_kwargs={}),
+    HumanMessage(content="I love programming.")
+]
+```
+
 
 ChatPromptTemplates can also be constructed in other ways - see the [section on prompts](/docs/modules/model_io/prompts) for more detail.
 
