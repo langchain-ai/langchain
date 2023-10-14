@@ -7,52 +7,87 @@ from langchain.document_loaders.parsers.language.code_segmenter import CodeSegme
 class CobolSegmenter(CodeSegmenter):
     """Code segmenter for `COBOL`."""
 
-    # Regex pattern for paragraph names
-    PARAGRAPH_PATTERN = re.compile(r"^[A-Z0-9\-]+\.$", re.IGNORECASE)
+    PARAGRAPH_PATTERN = re.compile(r"^[A-Z0-9\-]+(\s+.*)?\.$", re.IGNORECASE)
+    DIVISION_PATTERN = re.compile(
+        r"^\s*(IDENTIFICATION|DATA|PROCEDURE|ENVIRONMENT)\s+DIVISION.*$", re.IGNORECASE
+    )
+    SECTION_PATTERN = re.compile(r"^\s*[A-Z0-9\-]+\s+SECTION.$", re.IGNORECASE)
 
     def __init__(self, code: str):
         super().__init__(code)
         self.source_lines: List[str] = self.code.splitlines()
 
     def is_valid(self) -> bool:
-        # Check divisions at the start of lines to reduce false positives
-        divisions = ["IDENTIFICATION DIVISION", "DATA DIVISION", "PROCEDURE DIVISION"]
-        return any(
-            line.startswith(div) for line in self.source_lines for div in divisions
-        )
+        # Identify presence of any division to validate COBOL code
+        return any(self.DIVISION_PATTERN.match(line) for line in self.source_lines)
 
     def _extract_code(self, start_idx: int, end_idx: int) -> str:
-        return "\n".join(self.source_lines[start_idx:end_idx])
+        return "\n".join(self.source_lines[start_idx:end_idx]).rstrip("\n")
+
+    def _is_relevant_code(self, line: str) -> bool:
+        """Check if a line is part of the procedure division or a relevant section."""
+        if "PROCEDURE DIVISION" in line.upper():
+            return True
+        # Add additional conditions for relevant sections if needed
+        return False
+
+    def _process_lines(self, func) -> List[str]:
+        """A generic function to process COBOL lines based on provided func."""
+        elements = []
+        start_idx = None
+        inside_relevant_section = False
+
+        for i, line in enumerate(self.source_lines):
+            if self._is_relevant_code(line):
+                inside_relevant_section = True
+
+            if inside_relevant_section and (
+                self.PARAGRAPH_PATTERN.match(line.strip().split(" ")[0])
+                or self.SECTION_PATTERN.match(line.strip())
+            ):
+                if start_idx is not None:
+                    func(elements, start_idx, i)
+                start_idx = i
+
+        # Handle the last element if exists
+        if start_idx is not None:
+            func(elements, start_idx, len(self.source_lines))
+
+        return elements
 
     def extract_functions_classes(self) -> List[str]:
-        paragraphs = []
-        start_idx = None
+        def extract_func(elements, start_idx, end_idx):
+            elements.append(self._extract_code(start_idx, end_idx))
 
-        for i, line in enumerate(self.source_lines):
-            if self.PARAGRAPH_PATTERN.match(line.strip()):
-                if start_idx is not None:
-                    paragraphs.append(self._extract_code(start_idx, i))
-                start_idx = i
-
-        if start_idx is not None:
-            paragraphs.append(self._extract_code(start_idx, len(self.source_lines)))
-
-        return paragraphs
+        return self._process_lines(extract_func)
 
     def simplify_code(self) -> str:
-        simplified_lines: List[str] = self.source_lines.copy()
-        start_idx = None
+        simplified_lines: List[str] = []
+        inside_relevant_section = False
+        omitted_code_added = (
+            False  # To track if "* OMITTED CODE *" has been added after the last header
+        )
 
-        for i, line in enumerate(self.source_lines):
-            if self.PARAGRAPH_PATTERN.match(line.strip()):
-                if start_idx is not None:
-                    # Use list slicing for optimization
-                    simplified_lines[start_idx + 1 : i] = [""] * (i - start_idx - 1)
-                start_idx = i
-
-        if start_idx is not None:
-            simplified_lines[start_idx + 1 :] = [""] * (
-                len(self.source_lines) - start_idx - 1
+        for line in self.source_lines:
+            is_header = (
+                "PROCEDURE DIVISION" in line
+                or "DATA DIVISION" in line
+                or "IDENTIFICATION DIVISION" in line
+                or self.PARAGRAPH_PATTERN.match(line.strip().split(" ")[0])
+                or self.SECTION_PATTERN.match(line.strip())
             )
 
-        return "\n".join(line for line in simplified_lines if line)
+            if is_header:
+                inside_relevant_section = True
+                omitted_code_added = False  # Reset the flag since we're entering a new section/division or paragraph
+
+            if inside_relevant_section:
+                if is_header:
+                    # Add header and reset the omitted code added flag
+                    simplified_lines.append(line)
+                elif not omitted_code_added:
+                    # Add omitted code comment only if it hasn't been added directly after the last header
+                    simplified_lines.append("* OMITTED CODE *")
+                    omitted_code_added = True
+
+        return "\n".join(simplified_lines)

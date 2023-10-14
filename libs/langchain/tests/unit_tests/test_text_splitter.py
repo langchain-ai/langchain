@@ -474,7 +474,7 @@ helloWorld();
 
 def test_cobol_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.COBOL, chunk_size=30, chunk_overlap=0
+        Language.COBOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
     )
     code = """
 IDENTIFICATION DIVISION.
@@ -488,15 +488,21 @@ STOP RUN.
     """
     chunks = splitter.split_text(code)
     assert chunks == [
-        "IDENTIFICATION DIVISION.",
-        "PROGRAM-ID. HelloWorld.",
+        "IDENTIFICATION",
+        "DIVISION.",
+        "PROGRAM-ID.",
+        "HelloWorld.",
         "DATA DIVISION.",
-        "WORKING-STORAGE SECTION.",
-        "01 GREETING           PIC X",
-        "(12)   VALUE 'Hello, ",
+        "WORKING-STORAGE",
+        "SECTION.",
+        "01 GREETING",
+        "PIC X(12)",
+        "VALUE 'Hello,",
         "World!'.",
-        "PROCEDURE DIVISION.",
-        "DISPLAY GREETING.",
+        "PROCEDURE",
+        "DIVISION.",
+        "DISPLAY",
+        "GREETING.",
         "STOP RUN.",
     ]
 
