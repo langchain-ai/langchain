@@ -17,7 +17,7 @@ def strip_markdown_code(md_string: str) -> str:
     return stripped_string
 
 
-def head_file(path: str, n: int) -> list[str]:
+def head_file(path: str, n: int) -> List[str]:
     try:
         with open(path, "r") as f:
             return [str(line) for line in itertools.islice(f, n)]
