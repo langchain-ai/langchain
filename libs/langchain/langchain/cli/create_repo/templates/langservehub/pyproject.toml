@@ -21,9 +21,9 @@ uvicorn = "^0.23.2"
 start="poetry run uvicorn app.server:app --reload"
 
 [tool.poe.tasks.add]
-cmd="langservehub.scripts:add"
+cmd="langserve.scripts:add"
 args = [
-    {name = "package", help = "package name"},
+    {name = "package", help = "package name", positional = true},
     {name = "path", help = "path to packages", default = "../packages"},
     {name = "repo", help = "An alternative GitHub Repo", default = "langchain-ai/langserve-hub"}
 ]
