@@ -152,7 +152,7 @@ def _get_tmdb_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         headers={"Authorization": f"Bearer {tmdb_bearer_token}"},
     )
     return Tool(
-        name="TMDB API",
+        name="TMDB-API",
         description="Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
