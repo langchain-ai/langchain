@@ -522,6 +522,30 @@ class Vearch(VectorStore):
         ret = all(i == 0 for i in tmp_res)
         return ret
 
+    def fill_meta_info_and_content_flag(self, record):
+        content = ""
+        meta_info = {}
+        for field in record["_source"]:
+            if field == "text":
+                content = record["_source"][field]
+                continue
+            elif field == "metadata":
+                meta_info["source"] = record["_source"][field]
+                continue
+        return content, meta_info
+
+    def fill_meta_info_and_content_no_flag(self, docs_detail):
+        content = ""
+        meta_info = {}
+        for field in docs_detail:
+            if field == "text":
+                content = docs_detail[field]
+                continue
+            elif field == "metadata":
+                meta_info["source"] = docs_detail[field]
+                continue
+        return content, meta_info
+
     def get(
         self,
         ids: Optional[List[str]] = None,
@@ -546,15 +570,7 @@ class Vearch(VectorStore):
             for record in docs_detail:
                 if record["found"] is False:
                     continue
-                content = ""
-                meta_info = {}
-                for field in record["_source"]:
-                    if field == "text":
-                        content = record["_source"][field]
-                        continue
-                    elif field == "metadata":
-                        meta_info["source"] = record["_source"][field]
-                        continue
+                content, meta_info = self.fill_meta_info_and_content_flag(record)
                 results[record["_id"]] = Document(
                     page_content=content, metadata=meta_info
                 )
@@ -563,15 +579,7 @@ class Vearch(VectorStore):
                 docs_detail = self.vearch.get_doc_by_id(id)
                 if docs_detail == {}:
                     continue
-                content = ""
-                meta_info = {}
-                for field in docs_detail:
-                    if field == "text":
-                        content = docs_detail[field]
-                        continue
-                    elif field == "metadata":
-                        meta_info["source"] = docs_detail[field]
-                        continue
+                content, meta_info = self.fill_meta_info_and_content_no_flag(docs_detail)
                 results[docs_detail["_id"]] = Document(
                     page_content=content, metadata=meta_info
                 )
