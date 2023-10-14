@@ -992,6 +992,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_alternatives(
         self,
         which: ConfigurableField,
+        default_key: str = "default",
         **kwargs: Runnable[Input, Output],
     ) -> RunnableSerializable[Input, Output]:
         from langchain.schema.runnable.configurable import (
@@ -999,7 +1000,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         )
 
         return RunnableConfigurableAlternatives(
-            which=which, default=self, alternatives=kwargs
+            which=which, default=self, alternatives=kwargs, default_key=default_key
         )
 
 
