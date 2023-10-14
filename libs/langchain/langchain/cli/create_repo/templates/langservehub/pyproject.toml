@@ -21,7 +21,7 @@ pygithub = "^2.1.1"
 [tool.poe.tasks]
 start="poetry run uvicorn app.server:app --reload"
 
-[tool.poe.tasks._add]
+[tool.poe.tasks.add]
 script="langserve.scripts:download"
 args = [
     {name = "package", help = "package name", positional = true},
@@ -29,16 +29,6 @@ args = [
     {name = "repo", help = "An alternative GitHub Repo", default = "langchain-ai/langserve-hub"},
     {name = "api_path", help = "The API path to mount", default = ""}
 ]
-
-[tool.poe.tasks.add]
-uses = { installed_path = "_add" }
-args = [
-    {name = "package", help = "package name", positional = true},
-    {name = "package_dir", help = "path to packages", default = "packages"},
-    {name = "repo", help = "An alternative GitHub Repo", default = "langchain-ai/langserve-hub"},
-    {name = "api_path", help = "The API path to mount", default = ""}
-]
-cmd="poetry add packages/$installed_path"
 
 [tool.poe.tasks.list]
 script="langserve.scripts:list"

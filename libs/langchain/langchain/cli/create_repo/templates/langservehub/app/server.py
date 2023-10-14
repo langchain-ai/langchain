@@ -3,7 +3,7 @@ from langserve import add_package_routes
 
 app = FastAPI()
 
-add_package_routes(app, "../packages")
+add_package_routes(app, "packages")
 
 if __name__ == "__main__":
     import uvicorn
