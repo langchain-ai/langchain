@@ -57,6 +57,15 @@ docker run -p 8001:8001 -e PORT=8001 ____project_name_identifier:latest
 
 Don't forget to add any needed environment variables!
 
+## Deploy to GCP
+
+You can deploy to GCP Cloud Run using the following command:
+
+First edit `.env.gcp.yaml` file with any environment variables you need. Then run:
+
+```
+make deploy_gcp
+```
 
 ## Contributing
 

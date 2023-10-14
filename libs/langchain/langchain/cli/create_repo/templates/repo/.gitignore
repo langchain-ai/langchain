@@ -116,6 +116,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.env.gcp.yaml
 
 # Spyder project settings
 .spyderproject
