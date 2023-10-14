@@ -763,8 +763,10 @@ client = ["httpx-sse (>=0.3.1)"]
 server = ["fastapi (>=0.90.1)", "sse-starlette (>=1.3.0,<2.0.0)"]
 
 [package.source]
-type = "directory"
-url = "../../../../../../../../langserve"
+type = "git"
+url = "https://github.com/langchain-ai/langserve"
+reference = "erick/langservehub"
+resolved_reference = "02c8a5fcddd56d84c5b2c41bbb94a791d8a3bec7"
 
 [[package]]
 name = "langsmith"
@@ -1544,4 +1546,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "43a6ecd50429aa137ec893ae39312ff9d3481aa149bd3bc767537e57f3ddfe69"
+content-hash = "1ac027c01647b277c485a789a86e644103a424517e87c72088e7e56035330220"

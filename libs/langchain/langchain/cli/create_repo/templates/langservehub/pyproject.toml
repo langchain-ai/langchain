@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 sse-starlette = "^1.6.5"
-langserve = {path = "/Users/erickfriis/langchain/langserve"}
+langserve = {git = "https://github.com/langchain-ai/langserve", rev = "erick/langservehub"}
 tomli-w = "^1.0.0"
 uvicorn = "^0.23.2"
 fastapi = "^0.103.2"
