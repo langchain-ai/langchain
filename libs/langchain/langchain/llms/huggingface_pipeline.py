@@ -69,7 +69,7 @@ class HuggingFacePipeline(BaseLLM):
         cls,
         model_id: str,
         task: str,
-        device: int = -1,
+        device: Optional[int] = -1,
         model_kwargs: Optional[dict] = None,
         pipeline_kwargs: Optional[dict] = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
@@ -108,7 +108,20 @@ class HuggingFacePipeline(BaseLLM):
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
-        if importlib.util.find_spec("torch") is not None:
+        if (
+            model.is_quantized
+            or model.model.is_loaded_in_4bit
+            or model.model.is_loaded_in_8bit
+        ) and device is not None:
+            logger.warning(
+                f"Setting the `device` argument to None from {device} to avoid "
+                "the error caused by attempting to move the model that was already "
+                "loaded on the GPU using the Accelerate module to the same or "
+                "another device."
+            )
+            device = None
+
+        if device is not None and importlib.util.find_spec("torch") is not None:
             import torch
 
             cuda_device_count = torch.cuda.device_count()
@@ -189,8 +202,23 @@ class HuggingFacePipeline(BaseLLM):
                     response = response[0]
 
                 if self.pipeline.task == "text-generation":
-                    # Text generation return includes the starter text
-                    text = response["generated_text"][len(batch_prompts[j]) :]
+                    try:
+                        from transformers.pipelines.text_generation import ReturnType
+
+                        remove_prompt = (
+                            self.pipeline._postprocess_params.get("return_type")
+                            != ReturnType.NEW_TEXT
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Unable to extract pipeline return_type. "
+                            f"Received error:\n\n{e}"
+                        )
+                        remove_prompt = True
+                    if remove_prompt:
+                        text = response["generated_text"][len(batch_prompts[j]) :]
+                    else:
+                        text = response["generated_text"]
                 elif self.pipeline.task == "text2text-generation":
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":

@@ -27,7 +27,6 @@ from uuid import UUID
 
 from tenacity import RetryCallState
 
-import langchain
 from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -88,7 +87,9 @@ run_collector_var: ContextVar[
 
 
 def _get_debug() -> bool:
-    return langchain.debug
+    from langchain.globals import get_debug
+
+    return get_debug()
 
 
 @contextmanager
@@ -1891,13 +1892,13 @@ def _configure(
             )
         else:
             callback_manager = callback_manager_cls(
-                handlers=inheritable_callbacks.handlers,
-                inheritable_handlers=inheritable_callbacks.inheritable_handlers,
+                handlers=inheritable_callbacks.handlers.copy(),
+                inheritable_handlers=inheritable_callbacks.inheritable_handlers.copy(),
                 parent_run_id=inheritable_callbacks.parent_run_id,
-                tags=inheritable_callbacks.tags,
-                inheritable_tags=inheritable_callbacks.inheritable_tags,
-                metadata=inheritable_callbacks.metadata,
-                inheritable_metadata=inheritable_callbacks.inheritable_metadata,
+                tags=inheritable_callbacks.tags.copy(),
+                inheritable_tags=inheritable_callbacks.inheritable_tags.copy(),
+                metadata=inheritable_callbacks.metadata.copy(),
+                inheritable_metadata=inheritable_callbacks.inheritable_metadata.copy(),
             )
         local_handlers_ = (
             local_callbacks
@@ -1991,7 +1992,7 @@ def _configure(
                         e,
                     )
         if open_ai is not None and not any(
-            isinstance(handler, OpenAICallbackHandler)
+            handler is open_ai  # direct pointer comparison
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(open_ai, True)

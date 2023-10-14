@@ -50,12 +50,7 @@ from langchain.load.dump import dumpd
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
 from langchain.pydantic_v1 import Field, root_validator, validator
-from langchain.schema import (
-    Generation,
-    LLMResult,
-    PromptValue,
-    RunInfo,
-)
+from langchain.schema import Generation, LLMResult, PromptValue, RunInfo
 from langchain.schema.language_model import BaseLanguageModel, LanguageModelInput
 from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
 from langchain.schema.output import GenerationChunk
@@ -66,7 +61,9 @@ logger = logging.getLogger(__name__)
 
 
 def _get_verbosity() -> bool:
-    return langchain.verbose
+    from langchain.globals import get_verbose
+
+    return get_verbose()
 
 
 @functools.lru_cache
