@@ -10,9 +10,12 @@ build:
   tools:
     python: "3.11"
   commands:
-      - python -m pip install -r docs/api_reference/requirements.txt
+      - python -mvirtualenv $READTHEDOCS_VIRTUALENV_PATH
+      - python -m pip install --upgrade --no-cache-dir pip setuptools
+      - python -m pip install --upgrade --no-cache-dir sphinx readthedocs-sphinx-ext
+      - python -m pip install --exists-action=w --no-cache-dir -r docs/api_reference/requirements.txt
       - python docs/api_reference/create_api_rst.py
-      - sphinx-build -M html . $READTHEDOCS_OUTPUT/html -j auto
+      - python -m sphinx -T -E -b html -d _build/doctrees -D language=en . $READTHEDOCS_OUTPUT/html -j auto
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
