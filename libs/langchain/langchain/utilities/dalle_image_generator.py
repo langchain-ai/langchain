@@ -26,10 +26,13 @@ class DallEAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    def _dalle_image_url(self, prompt: str) -> str:
+    def _dalle_image_url(self, prompt: str) -> str | list[str]:
         params = {"prompt": prompt, "n": self.n, "size": self.size}
         response = self.client.create(**params)
-        return response["data"][0]["url"]
+        if self.n > 1: 
+            return [item["url"] for item in response["data"]]
+        else:
+            return response["data"][0]["url"]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
