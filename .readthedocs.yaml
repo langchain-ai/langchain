@@ -12,6 +12,8 @@ build:
   jobs:
     pre_build:
       - python docs/api_reference/create_api_rst.py
+  commands:
+      - sphinx-build -M html . $READTHEDOCS_OUTPUT/html -j auto
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
