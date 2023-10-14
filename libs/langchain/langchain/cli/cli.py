@@ -76,12 +76,25 @@ def new(
     use_poetry: Annotated[
         Optional[bool], typer.Option(help="Specify whether to use Poetry or not.")
     ] = None,
+    template: Annotated[
+        Optional[str], typer.Argument(help="The template to use for the project.")
+    ] = None,
 ) -> None:
     """Create a new project with LangChain."""
 
     project_directory_path = Path(project_directory)
     project_name_suggestion = project_directory_path.name.replace("-", "_")
     project_name = _select_project_name(project_name_suggestion)
+
+    if template == "langservehub":
+        create(
+            project_directory,
+            project_name,
+            author_name,
+            author_email,
+            use_poetry,
+            template,
+        )
 
     if not author_name:
         author_name = typer.prompt("Author Name", default=get_git_user_name())

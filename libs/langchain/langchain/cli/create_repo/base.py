@@ -4,7 +4,7 @@ import pathlib
 import string
 import subprocess
 from pathlib import Path
-from typing import List, Sequence
+from typing import List, Sequence, Optional
 
 import typer
 
@@ -22,9 +22,10 @@ def _create_project_dir(
     project_name_identifier: str,
     author_name: str,
     author_email: str,
+    template: Optional[str] = None,
 ) -> None:
     project_directory_path.mkdir(parents=True, exist_ok=True)
-    template_directories = _get_template_directories(use_poetry)
+    template_directories = _get_template_directories(use_poetry, template)
     _check_conflicting_files(template_directories, project_directory_path)
     _copy_template_files(
         template_directories,
@@ -36,7 +37,9 @@ def _create_project_dir(
     )
 
 
-def _get_template_directories(use_poetry: bool) -> List[Path]:
+def _get_template_directories(
+    use_poetry: bool, template: Optional[str] = None
+) -> List[Path]:
     """Get the directories containing the templates.
 
     Args:
@@ -44,6 +47,9 @@ def _get_template_directories(use_poetry: bool) -> List[Path]:
 
     """
     template_parent_path = Path(__file__).parent / "templates"
+    if template:
+        return [template_parent_path / template]
+
     template_directories = [template_parent_path / "repo"]
     if use_poetry:
         template_directories.append(template_parent_path / "poetry")
@@ -181,6 +187,7 @@ def create(
     author_name: str,
     author_email: str,
     use_poetry: bool,
+    template: Optional[str] = None,
 ) -> None:
     """Create a new LangChain project.
 
@@ -196,20 +203,21 @@ def create(
     project_name_identifier = project_name
     resolved_path = project_directory_path.resolve()
 
-    if not typer.confirm(
-        f"\n"
-        f"Creating a new LangChain project 🦜️🔗\n"
-        f"Name: {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}\n"
-        f"Path: {typer.style(resolved_path, fg=typer.colors.BRIGHT_CYAN)}\n"
-        f"Project name: {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}\n"
-        f"Author name: {typer.style(author_name, fg=typer.colors.BRIGHT_CYAN)}\n"
-        f"Author email: {typer.style(author_email, fg=typer.colors.BRIGHT_CYAN)}\n"
-        f"Use Poetry: {typer.style(str(use_poetry), fg=typer.colors.BRIGHT_CYAN)}\n"
-        "Continue?",
-        default=True,
-    ):
-        typer.echo("Cancelled project creation. See you later! 👋")
-        raise typer.Exit(code=0)
+    if not template:
+        if not typer.confirm(
+            f"\n"
+            f"Creating a new LangChain project 🦜️🔗\n"
+            f"Name: {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}\n"
+            f"Path: {typer.style(resolved_path, fg=typer.colors.BRIGHT_CYAN)}\n"
+            f"Project name: {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}\n"
+            f"Author name: {typer.style(author_name, fg=typer.colors.BRIGHT_CYAN)}\n"
+            f"Author email: {typer.style(author_email, fg=typer.colors.BRIGHT_CYAN)}\n"
+            f"Use Poetry: {typer.style(str(use_poetry), fg=typer.colors.BRIGHT_CYAN)}\n"
+            "Continue?",
+            default=True,
+        ):
+            typer.echo("Cancelled project creation. See you later! 👋")
+            raise typer.Exit(code=0)
 
     _create_project_dir(
         project_directory_path,
@@ -218,6 +226,7 @@ def create(
         project_name_identifier,
         author_name,
         author_email,
+        template,
     )
 
     # TODO(Team): Add installation
