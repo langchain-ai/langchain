@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 sse-starlette = "^1.6.5"
-langserve = {git = "https://github.com/langchain-ai/langserve", rev = "erick/langservehub"}
+langserve = {path = "/Users/erickfriis/langchain/langserve"}
 tomli-w = "^1.0.0"
 uvicorn = "^0.23.2"
 fastapi = "^0.103.2"
@@ -16,15 +16,16 @@ fastapi = "^0.103.2"
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"
 uvicorn = "^0.23.2"
+pygithub = "^2.1.1"
 
 [tool.poe.tasks]
 start="poetry run uvicorn app.server:app --reload"
 
 [tool.poe.tasks.add]
-cmd="langserve.scripts:add"
+script="langserve.scripts:download"
 args = [
     {name = "package", help = "package name", positional = true},
-    {name = "path", help = "path to packages", default = "../packages"},
+    {name = "package_dir", help = "path to packages", default = "packages"},
     {name = "repo", help = "An alternative GitHub Repo", default = "langchain-ai/langserve-hub"}
 ]
 
@@ -32,9 +33,9 @@ args = [
 cmd="poetry install"
 
 [tool.poe.tasks.list]
-cmd="langserve.scripts:list"
+script="langserve.scripts:list"
 args = [
-    { name = "path", help = "path to packages", default = "../packages"}
+    { name = "path", help = "path to packages", default = "packages"}
 ]
 
 
