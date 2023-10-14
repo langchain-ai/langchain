@@ -1981,7 +1981,7 @@ async def test_stream_log_retriever() -> None:
                         messages=[
                             SystemMessage(content="You are a nice assistant."),
                             HumanMessage(
-                                content="[Document(page_content='foo'), Document(page_content='bar')]"
+                                content="[Document(page_content='foo'), Document(page_content='bar')]"  # noqa: E501
                             ),
                             HumanMessage(content="What is your name?"),
                         ]
