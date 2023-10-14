@@ -1,8 +1,8 @@
 import base64
 import itertools
 import json
-import os
 import re
+from pathlib import Path
 from typing import Dict, List, Type
 
 import requests
@@ -50,9 +50,9 @@ It should be in python format NOT markdown. \
 The code should NOT be wrapped in backticks. \
 All python packages including requests, matplotlib, scipy, numpy, pandas, \
 etc are available. \
-If you have any files outputted write them to "output/" relative to the execution 
+If you have any files outputted write them to "output/" relative to the execution \
 path. Output can only be read from the directory, stdout, and stdin. \
-Do not use things like plot.show() as it will 
+Do not use things like plot.show() as it will \
 not work instead write them out `output/` and a link to the file will be returned. \
 print() any output and results so you can capture the output."""
 
@@ -133,7 +133,7 @@ class BearlyInterpreterTool:
     def add_file(self, source_path: str, target_path: str, description: str) -> None:
         if target_path in self.files:
             raise ValueError("target_path already exists")
-        if not os.path.exists(source_path):
+        if not Path(source_path).exists():
             raise ValueError("source_path does not exist")
         self.files[target_path] = FileInfo(
             target_path=target_path, source_path=source_path, description=description
