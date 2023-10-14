@@ -1,15 +1,9 @@
 from fastapi import FastAPI
-from langserve import add_routes
-
-from ____project_name_identifier.chain import get_chain
+from langserve import add_package_routes
 
 app = FastAPI()
 
-add_routes(
-    app,
-    get_chain(),
-    config_keys=["tags"],
-)
+add_package_routes(app, "../packages")
 
 if __name__ == "__main__":
     import uvicorn

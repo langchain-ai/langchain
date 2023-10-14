@@ -622,21 +622,25 @@ name = "langserve"
 version = "0.0.8"
 description = ""
 optional = false
-python-versions = ">=3.8.1,<4.0.0"
-files = [
-    {file = "langserve-0.0.8-py3-none-any.whl", hash = "sha256:3f960437d51682ff9fc51b8cc694401303b4bef9802b24bdcaa7c50c6b60474b"},
-    {file = "langserve-0.0.8.tar.gz", hash = "sha256:142b7a575285a9185ff6e089fbd15507d3ab39ad61507bffb31f874694b4a306"},
-]
+python-versions = "^3.8.1"
+files = []
+develop = false
 
 [package.dependencies]
 httpx = ">=0.23.0"
 langchain = ">=0.0.313"
-pydantic = ">=1,<2"
+pydantic = "^1"
 
 [package.extras]
 all = ["fastapi (>=0.90.1)", "httpx-sse (>=0.3.1)", "sse-starlette (>=1.3.0,<2.0.0)"]
 client = ["httpx-sse (>=0.3.1)"]
 server = ["fastapi (>=0.90.1)", "sse-starlette (>=1.3.0,<2.0.0)"]
+
+[package.source]
+type = "git"
+url = "https://github.com/langchain-ai/langserve"
+reference = "erick/langservehub"
+resolved_reference = "49bec3c3aaa198445e1c4563e6811aab35f20464"
 
 [[package]]
 name = "langsmith"
@@ -1230,4 +1234,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "eb6b5bd8992b9848ce7dc8803637bc686e2c604bf089b70273053ef9ce408253"
+content-hash = "65309088f275f05f432ceadb31231512bc16f3147ded792c9b339e1d0c52dceb"
