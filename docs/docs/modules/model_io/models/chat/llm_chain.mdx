@@ -2,6 +2,19 @@
 
 You can use the existing LLMChain in a very similar way to before - provide a prompt and a model.
 
-import LLMChain from "@snippets/modules/model_io/models/chat/how_to/llm_chain.mdx"
+```python
+chain = LLMChain(llm=chat, prompt=chat_prompt)
+```
 
-<LLMChain/>
+
+```python
+chain.run(input_language="English", output_language="French", text="I love programming.")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    "J'adore la programmation."
+```
+
+</CodeOutputBlock>
