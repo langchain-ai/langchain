@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  server:
+    build:
+      context: .
+    image: ____project_name:latest
+    container_name: ____project_name
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env

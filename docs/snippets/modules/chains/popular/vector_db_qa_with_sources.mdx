@@ -41,7 +41,7 @@ result["source_documents"]
 
 </CodeOutputBlock>
 
-Alternatively, if our document have a "source" metadata key, we can use the `RetrievalQAWithSourceChain` to cite our sources:
+Alternatively, if our document have a "source" metadata key, we can use the `RetrievalQAWithSourcesChain` to cite our sources:
 
 ```python
 docsearch = Chroma.from_texts(texts, embeddings, metadatas=[{"source": f"{i}-pl"} for i in range(len(texts))])

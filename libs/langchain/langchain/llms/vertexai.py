@@ -18,7 +18,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
-from langchain.pydantic_v1 import BaseModel, root_validator
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.schema import (
     Generation,
     LLMResult,
@@ -144,7 +144,7 @@ class _VertexAIBase(BaseModel):
     "Default is 5."
     max_retries: int = 6
     """The maximum number of retries to make when generating."""
-    task_executor: ClassVar[Optional[Executor]] = None
+    task_executor: ClassVar[Optional[Executor]] = Field(default=None, exclude=True)
     stop: Optional[List[str]] = None
     "Optional list of stop words to use when generating."
     model_name: Optional[str] = None
@@ -171,11 +171,14 @@ class _VertexAICommon(_VertexAIBase):
     top_k: int = 40
     "How the model selects tokens for output, the next token is selected from "
     "among the top-k most probable tokens. Top-k is ignored for Codey models."
-    credentials: Any = None
+    credentials: Any = Field(default=None, exclude=True)
     "The default custom credentials (google.auth.credentials.Credentials) to use "
     "when making API calls. If not provided, credentials will be ascertained from "
     "the environment."
+    n: int = 1
+    """How many completions to generate for each prompt."""
     streaming: bool = False
+    """Whether to stream the results or not."""
 
     @property
     def _llm_type(self) -> str:
@@ -203,6 +206,7 @@ class _VertexAICommon(_VertexAIBase):
                 "max_output_tokens": self.max_output_tokens,
                 "top_k": self.top_k,
                 "top_p": self.top_p,
+                "candidate_count": self.n,
             }
 
     @classmethod
@@ -215,10 +219,16 @@ class _VertexAICommon(_VertexAIBase):
     def _prepare_params(
         self,
         stop: Optional[List[str]] = None,
+        stream: bool = False,
         **kwargs: Any,
     ) -> dict:
         stop_sequences = stop or self.stop
-        return {**self._default_params, "stop_sequences": stop_sequences, **kwargs}
+        params_mapping = {"n": "candidate_count"}
+        params = {params_mapping.get(k, k): v for k, v in kwargs.items()}
+        params = {**self._default_params, "stop_sequences": stop_sequences, **params}
+        if stream or self.streaming:
+            params.pop("candidate_count")
+        return params
 
 
 class VertexAI(_VertexAICommon, BaseLLM):
@@ -228,6 +238,10 @@ class VertexAI(_VertexAICommon, BaseLLM):
     "The name of the Vertex AI large language model."
     tuned_model_name: Optional[str] = None
     "The name of a tuned model. If provided, model_name is ignored."
+
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -256,6 +270,9 @@ class VertexAI(_VertexAICommon, BaseLLM):
                     values["client"] = CodeGenerationModel.from_pretrained(model_name)
         except ImportError:
             raise_vertex_import_error()
+
+        if values["streaming"] and values["n"] > 1:
+            raise ValueError("Only one candidate can be generated with streaming!")
         return values
 
     def _generate(
@@ -267,7 +284,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         **kwargs: Any,
     ) -> LLMResult:
         should_stream = stream if stream is not None else self.streaming
-        params = self._prepare_params(stop=stop, **kwargs)
+        params = self._prepare_params(stop=stop, stream=should_stream, **kwargs)
         generations = []
         for prompt in prompts:
             if should_stream:
@@ -281,7 +298,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 res = completion_with_retry(
                     self, prompt, run_manager=run_manager, **params
                 )
-                generations.append([_response_to_generation(res)])
+                generations.append([_response_to_generation(r) for r in res.candidates])
         return LLMResult(generations=generations)
 
     async def _agenerate(
@@ -297,7 +314,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
             res = await acompletion_with_retry(
                 self, prompt, run_manager=run_manager, **params
             )
-            generations.append([_response_to_generation(res)])
+            generations.append([_response_to_generation(r) for r in res.candidates])
         return LLMResult(generations=generations)
 
     def _stream(
@@ -307,7 +324,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
-        params = self._prepare_params(stop=stop, **kwargs)
+        params = self._prepare_params(stop=stop, stream=True, **kwargs)
         for stream_resp in stream_completion_with_retry(
             self, prompt, run_manager=run_manager, **params
         ):

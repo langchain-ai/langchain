@@ -99,6 +99,13 @@ class RecursiveUrlLoader(BaseLoader):
             else _metadata_extractor
         )
         self.exclude_dirs = exclude_dirs if exclude_dirs is not None else ()
+
+        if any(url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs):
+            raise ValueError(
+                f"Base url is included in exclude_dirs. Received base_url: {url} and "
+                f"exclude_dirs: {self.exclude_dirs}"
+            )
+
         self.timeout = timeout
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
         self.link_regex = link_regex
@@ -118,9 +125,6 @@ class RecursiveUrlLoader(BaseLoader):
         """
 
         if depth >= self.max_depth:
-            return
-        # Exclude the links that start with any of the excluded directories
-        if any(url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs):
             return
 
         # Get all links that can be accessed from the current URL
@@ -149,6 +153,7 @@ class RecursiveUrlLoader(BaseLoader):
             base_url=self.url,
             pattern=self.link_regex,
             prevent_outside=self.prevent_outside,
+            exclude_prefixes=self.exclude_dirs,
         )
         for link in sub_links:
             # Check all unvisited links
@@ -182,10 +187,6 @@ class RecursiveUrlLoader(BaseLoader):
         if depth >= self.max_depth:
             return []
 
-        # Exclude the root and parent from a list
-        # Exclude the links that start with any of the excluded directories
-        if any(url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs):
-            return []
         # Disable SSL verification because websites may have invalid SSL certificates,
         # but won't cause any security issues for us.
         close_session = session is None
@@ -229,6 +230,7 @@ class RecursiveUrlLoader(BaseLoader):
                 base_url=self.url,
                 pattern=self.link_regex,
                 prevent_outside=self.prevent_outside,
+                exclude_prefixes=self.exclude_dirs,
             )
 
             # Recursively call the function to get the children of the children

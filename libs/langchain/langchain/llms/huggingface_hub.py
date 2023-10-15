@@ -33,7 +33,7 @@ class HuggingFaceHub(LLM):
     """Task to call the model with.
     Should be a task that returns `generated_text` or `summary_text`."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     huggingfacehub_api_token: Optional[str] = None
 
