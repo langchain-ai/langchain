@@ -633,6 +633,12 @@ def _import_zapier_tool_ZapierNLARunAction() -> Any:
     return ZapierNLARunAction
 
 
+def _import_bearly_tool() -> Any:
+    from langchain.tools.bearly.tool import BearlyInterpreterTool
+
+    return BearlyInterpreterTool
+
+
 def __getattr__(name: str) -> Any:
     if name == "AINAppOps":
         return _import_ainetwork_app()
@@ -838,6 +844,8 @@ def __getattr__(name: str) -> Any:
         return _import_zapier_tool_ZapierNLAListActions()
     elif name == "ZapierNLARunAction":
         return _import_zapier_tool_ZapierNLARunAction()
+    elif name == "BearlyInterpreterTool":
+        return _import_bearly_tool()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -949,4 +957,5 @@ __all__ = [
     "ZapierNLARunAction",
     "tool",
     "format_tool_to_openai_function",
+    "BearlyInterpreterTool",
 ]

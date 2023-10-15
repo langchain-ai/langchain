@@ -37,6 +37,12 @@ def _import_alibaba_cloud_open_search_settings() -> Any:
     return AlibabaCloudOpenSearchSettings
 
 
+def _import_azure_cosmos_db() -> Any:
+    from langchain.vectorstores.azure_cosmos_db import AzureCosmosDBVectorSearch
+
+    return AzureCosmosDBVectorSearch
+
+
 def _import_elastic_knn_search() -> Any:
     from langchain.vectorstores.elastic_vector_search import ElasticKnnSearch
 
@@ -289,6 +295,12 @@ def _import_scann() -> Any:
     return ScaNN
 
 
+def _import_semadb() -> Any:
+    from langchain.vectorstores.semadb import SemaDB
+
+    return SemaDB
+
+
 def _import_singlestoredb() -> Any:
     from langchain.vectorstores.singlestoredb import SingleStoreDB
 
@@ -398,6 +410,8 @@ def __getattr__(name: str) -> Any:
         return _import_alibaba_cloud_open_search()
     elif name == "AlibabaCloudOpenSearchSettings":
         return _import_alibaba_cloud_open_search_settings()
+    elif name == "AzureCosmosDBVectorSearch":
+        return _import_azure_cosmos_db()
     elif name == "ElasticKnnSearch":
         return _import_elastic_knn_search()
     elif name == "ElasticVectorSearch":
@@ -478,6 +492,8 @@ def __getattr__(name: str) -> Any:
         return _import_rocksetdb()
     elif name == "ScaNN":
         return _import_scann()
+    elif name == "SemaDB":
+        return _import_semadb()
     elif name == "SingleStoreDB":
         return _import_singlestoredb()
     elif name == "SKLearnVectorStore":
@@ -568,6 +584,7 @@ __all__ = [
     "Rockset",
     "SKLearnVectorStore",
     "ScaNN",
+    "SemaDB",
     "SingleStoreDB",
     "SingleStoreDB",
     "SQLiteVSS",
@@ -586,6 +603,6 @@ __all__ = [
     "Weaviate",
     "ZepVectorStore",
     "Zilliz",
-    "Zilliz",
     "TencentVectorDB",
+    "AzureCosmosDBVectorSearch",
 ]
