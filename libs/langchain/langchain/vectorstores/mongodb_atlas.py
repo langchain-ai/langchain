@@ -178,6 +178,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         pipeline = [
             query,
             {"$set": {"score": {"$meta": "vectorSearchScore"}}},
+            {"$set": {"source": f"${self._text_key}"}},
         ]
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
