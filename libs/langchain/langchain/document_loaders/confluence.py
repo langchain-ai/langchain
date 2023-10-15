@@ -539,7 +539,7 @@ class ConfluenceLoader(BaseLoader):
         texts = []
         for attachment in attachments:
             media_type = attachment["metadata"]["mediaType"]
-            absolute_url = self.base_url + attachment["_links"]["download"]
+            absolute_url = self.base_url + "/wiki" + attachment["_links"]["download"]
             title = attachment["title"]
             try:
                 if media_type == "application/pdf":
