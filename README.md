@@ -62,7 +62,7 @@ This library aims to assist in the development of those types of applications. C
 Please see [here](https://python.langchain.com) for full documentation on:
 
 - Getting started (installation, setting up the environment, simple examples)
-- How-To examples (demos, integrations, helper functions)
+- How-To-do examples (demos, integrations, helper functions)
 - Reference (full API docs)
 - Resources (high-level explanation of core concepts)
 
