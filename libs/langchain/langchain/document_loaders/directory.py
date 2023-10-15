@@ -31,6 +31,7 @@ class DirectoryLoader(BaseLoader):
         self,
         path: str,
         glob: str = "**/[!.]*",
+        exclude_glob: Optional[str] = None,
         silent_errors: bool = False,
         load_hidden: bool = False,
         loader_cls: FILE_LOADER_TYPE = UnstructuredFileLoader,
@@ -50,6 +51,8 @@ class DirectoryLoader(BaseLoader):
             path: Path to directory.
             glob: Glob pattern to use to find files. Defaults to "**/[!.]*"
                (all files except hidden).
+            exclude_glob: Glob pattern to use to exclude files from the glob pattern.
+                Defaults to None (don't exclude anything).
             silent_errors: Whether to silently ignore errors. Defaults to False.
             load_hidden: Whether to load hidden files. Defaults to False.
             loader_cls: Loader class to use for loading files.
@@ -61,13 +64,14 @@ class DirectoryLoader(BaseLoader):
             max_concurrency: The maximum number of threads to use. Defaults to 4.
             sample_size: The maximum number of files you would like to load from the
                 directory.
-            randomize_sample: Suffle the files to get a random sample.
+            randomize_sample: Shuffle the files to get a random sample.
             sample_seed: set the seed of the random shuffle for reporoducibility.
         """
         if loader_kwargs is None:
             loader_kwargs = {}
         self.path = path
         self.glob = glob
+        self.exclude_glob = exclude_glob
         self.load_hidden = load_hidden
         self.loader_cls = loader_cls
         self.loader_kwargs = loader_kwargs
@@ -116,7 +120,14 @@ class DirectoryLoader(BaseLoader):
             raise ValueError(f"Expected directory, got file: '{self.path}'")
 
         docs: List[Document] = []
-        items = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
+        item_set = set(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
+        if self.exclude_glob:
+            item_set -= set(
+                p.rglob(self.exclude_glob)
+                if self.recursive
+                else p.glob(self.exclude_glob)
+            )
+        items = list(item_set)
 
         if self.sample_size > 0:
             if self.randomize_sample:

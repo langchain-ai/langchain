@@ -4,11 +4,11 @@ Under the hood, by default this uses the [UnstructuredLoader](/docs/integrations
 from langchain.document_loaders import DirectoryLoader
 ```
 
-We can use the `glob` parameter to control which files to load. Note that here it doesn't load the `.rst` file or the `.html` files.
+We can use the `glob` and `exclude_glob` parameters to control which files to load. Note that here it doesn't load the `.rst` file or the `.html` files.
 
 
 ```python
-loader = DirectoryLoader('../', glob="**/*.md")
+loader = DirectoryLoader('../', glob="**/*.md", exclude_glob="bak/**/*.*")
 ```
 
 
