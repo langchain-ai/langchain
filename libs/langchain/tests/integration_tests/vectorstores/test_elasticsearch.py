@@ -385,6 +385,39 @@ class TestElasticsearch:
                 distance_strategy="NOT_A_STRATEGY",
             )
 
+    def test_max_marginal_relevance_search(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test max marginal relevance search."""
+        texts = ["foo", "bar", "baz"]
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+            strategy=ElasticsearchStore.ExactRetrievalStrategy(),
+        )
+
+        mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=3, fetch_k=3)
+        sim_output = docsearch.similarity_search(texts[0], k=3)
+        assert mmr_output == sim_output
+
+        mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=2, fetch_k=3)
+        assert len(mmr_output) == 2
+        assert mmr_output[0].page_content == texts[0]
+        assert mmr_output[1].page_content == texts[1]
+
+        mmr_output = docsearch.max_marginal_relevance_search(
+            texts[0], k=2, fetch_k=3, lambda_mult=0.1  # more diversity
+        )
+        assert len(mmr_output) == 2
+        assert mmr_output[0].page_content == texts[0]
+        assert mmr_output[1].page_content == texts[2]
+
+        # if fetch_k < k, then the output will be less than k
+        mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=3, fetch_k=2)
+        assert len(mmr_output) == 2
+
     def test_similarity_search_approx_with_hybrid_search(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:

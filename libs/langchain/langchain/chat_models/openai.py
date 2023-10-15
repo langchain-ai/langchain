@@ -14,6 +14,7 @@ from typing import (
     Mapping,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 
@@ -97,7 +98,7 @@ async def acompletion_with_retry(
 
 
 def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
@@ -139,6 +140,21 @@ class ChatOpenAI(BaseChatModel):
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        if self.openai_organization != "":
+            attributes["openai_organization"] = self.openai_organization
+
+        if self.openai_api_base != "":
+            attributes["openai_api_base"] = self.openai_api_base
+
+        if self.openai_proxy != "":
+            attributes["openai_proxy"] = self.openai_proxy
+
+        return attributes
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

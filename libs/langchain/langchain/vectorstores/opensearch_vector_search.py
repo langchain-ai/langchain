@@ -341,38 +341,21 @@ class OpenSearchVectorSearch(VectorStore):
         http_auth = _get_kwargs_value(kwargs, "http_auth", None)
         self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
+        self.engine = _get_kwargs_value(kwargs, "engine", None)
 
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
 
-    def add_texts(
+    def __add(
         self,
         texts: Iterable[str],
+        embeddings: List[List[float]],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         bulk_size: int = 500,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
-
-        Args:
-            texts: Iterable of strings to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
-            ids: Optional list of ids to associate with the texts.
-            bulk_size: Bulk API request count; Default: 500
-
-        Returns:
-            List of ids from adding the texts into the vectorstore.
-
-        Optional Args:
-            vector_field: Document field embeddings are stored in. Defaults to
-            "vector_field".
-
-            text_field: Document field the text of the document is stored in. Defaults
-            to "text".
-        """
-        embeddings = self.embedding_function.embed_documents(list(texts))
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         index_name = _get_kwargs_value(kwargs, "index_name", self.index_name)
         text_field = _get_kwargs_value(kwargs, "text_field", "text")
@@ -403,6 +386,79 @@ class OpenSearchVectorSearch(VectorStore):
             mapping=mapping,
             max_chunk_bytes=max_chunk_bytes,
             is_aoss=self.is_aoss,
+        )
+
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        bulk_size: int = 500,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
+            bulk_size: Bulk API request count; Default: 500
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
+        """
+        embeddings = self.embedding_function.embed_documents(list(texts))
+        return self.__add(
+            texts,
+            embeddings,
+            metadatas=metadatas,
+            ids=ids,
+            bulk_size=bulk_size,
+            kwargs=kwargs,
+        )
+
+    def add_embeddings(
+        self,
+        text_embeddings: Iterable[Tuple[str, List[float]]],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        bulk_size: int = 500,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add the given texts and embeddings to the vectorstore.
+
+        Args:
+            text_embeddings: Iterable pairs of string and embedding to
+                add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
+            bulk_size: Bulk API request count; Default: 500
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
+        """
+        texts, embeddings = zip(*text_embeddings)
+        return self.__add(
+            list(texts),
+            list(embeddings),
+            metadatas=metadatas,
+            ids=ids,
+            bulk_size=bulk_size,
+            kwargs=kwargs,
         )
 
     def similarity_search(
@@ -528,6 +584,7 @@ class OpenSearchVectorSearch(VectorStore):
         search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
         vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
         index_name = _get_kwargs_value(kwargs, "index_name", self.index_name)
+        filter = _get_kwargs_value(kwargs, "filter", {})
 
         if (
             self.is_aoss
@@ -563,6 +620,17 @@ class OpenSearchVectorSearch(VectorStore):
                     "Both `lucene_filter` and `boolean_filter` are provided which "
                     "is invalid. `lucene_filter` is deprecated"
                 )
+
+            if (
+                efficient_filter == {}
+                and boolean_filter == {}
+                and lucene_filter == {}
+                and filter != {}
+            ):
+                if self.engine in ["faiss", "lucene"]:
+                    efficient_filter = filter
+                else:
+                    boolean_filter = filter
 
             if boolean_filter != {}:
                 search_query = _approximate_search_query_with_boolean_filter(
@@ -668,7 +736,7 @@ class OpenSearchVectorSearch(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
-        """Construct OpenSearchVectorSearch wrapper from raw documents.
+        """Construct OpenSearchVectorSearch wrapper from raw texts.
 
         Example:
             .. code-block:: python
@@ -679,6 +747,74 @@ class OpenSearchVectorSearch(VectorStore):
                 opensearch_vector_search = OpenSearchVectorSearch.from_texts(
                     texts,
                     embeddings,
+                    opensearch_url="http://localhost:9200"
+                )
+
+        OpenSearch by default supports Approximate Search powered by nmslib, faiss
+        and lucene engines recommended for large datasets. Also supports brute force
+        search through Script Scoring and Painless Scripting.
+
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
+
+        Optional Keyword Args for Approximate Search:
+            engine: "nmslib", "faiss", "lucene"; default: "nmslib"
+
+            space_type: "l2", "l1", "cosinesimil", "linf", "innerproduct"; default: "l2"
+
+            ef_search: Size of the dynamic list used during k-NN searches. Higher values
+            lead to more accurate but slower searches; default: 512
+
+            ef_construction: Size of the dynamic list used during k-NN graph creation.
+            Higher values lead to more accurate graph but slower indexing speed;
+            default: 512
+
+            m: Number of bidirectional links created for each new element. Large impact
+            on memory consumption. Between 2 and 100; default: 16
+
+        Keyword Args for Script Scoring or Painless Scripting:
+            is_appx_search: False
+
+        """
+        embeddings = embedding.embed_documents(texts)
+        return cls.from_embeddings(
+            embeddings,
+            texts,
+            embedding,
+            metadatas=metadatas,
+            bulk_size=bulk_size,
+            ids=ids,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_embeddings(
+        cls,
+        embeddings: List[List[float]],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        bulk_size: int = 500,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> OpenSearchVectorSearch:
+        """Construct OpenSearchVectorSearch wrapper from pre-vectorized embeddings.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.vectorstores import OpenSearchVectorSearch
+                from langchain.embeddings import OpenAIEmbeddings
+                embedder = OpenAIEmbeddings()
+                embeddings = embedder.embed_documents(["foo", "bar"])
+                opensearch_vector_search = OpenSearchVectorSearch.from_embeddings(
+                    embeddings,
+                    texts,
+                    embedder,
                     opensearch_url="http://localhost:9200"
                 )
 
@@ -731,7 +867,6 @@ class OpenSearchVectorSearch(VectorStore):
             "max_chunk_bytes",
             "is_aoss",
         ]
-        embeddings = embedding.embed_documents(texts)
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
         # Get the index name from either from kwargs or ENV Variable
@@ -745,6 +880,7 @@ class OpenSearchVectorSearch(VectorStore):
         max_chunk_bytes = _get_kwargs_value(kwargs, "max_chunk_bytes", 1 * 1024 * 1024)
         http_auth = _get_kwargs_value(kwargs, "http_auth", None)
         is_aoss = _is_aoss_enabled(http_auth=http_auth)
+        engine = None
 
         if is_aoss and not is_appx_search:
             raise ValueError(
@@ -774,12 +910,13 @@ class OpenSearchVectorSearch(VectorStore):
             index_name,
             embeddings,
             texts,
-            metadatas=metadatas,
             ids=ids,
+            metadatas=metadatas,
             vector_field=vector_field,
             text_field=text_field,
             mapping=mapping,
             max_chunk_bytes=max_chunk_bytes,
             is_aoss=is_aoss,
         )
+        kwargs["engine"] = engine
         return cls(opensearch_url, index_name, embedding, **kwargs)
