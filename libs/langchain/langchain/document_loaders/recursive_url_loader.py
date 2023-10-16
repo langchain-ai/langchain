@@ -110,6 +110,27 @@ class RecursiveUrlLoader(BaseLoader):
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
         self.link_regex = link_regex
         self._lock = asyncio.Lock() if self.use_async else None
+        """ Default User-Agent is included in the header, if not provided."""
+        if headers is not None and not headers.get("User-Agent"):
+            try:
+                from fake_useragent import UserAgent
+                headers["User-Agent"] = UserAgent().random
+            except ImportError:
+                print(
+                    "fake_useragent not found, using default user agent."
+                    "To get a realistic header for requests, "
+                    "`pip install fake_useragent`."
+                )
+        elif headers is None:
+            try:
+                from fake_useragent import UserAgent
+                headers = {"User-Agent": UserAgent().random}
+            except ImportError:
+                print(
+                    "fake_useragent not found, using default user agent."
+                    "To get a realistic header for requests, "
+                    "`pip install fake_useragent`."
+                )
         self.headers = headers
         self.check_response_status = check_response_status
 
