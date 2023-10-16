@@ -242,7 +242,7 @@ class Runnable(Generic[Input, Output], ABC):
             Callable[[Iterator[Any]], Iterator[Other]],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
-    ) -> RunnableSequence[Input, Other]:
+    ) -> Runnable[Input, Other]:
         """Compose this runnable with another object to create a RunnableSequence."""
         return RunnableSequence(first=self, last=coerce_to_runnable(other))
 
@@ -254,7 +254,7 @@ class Runnable(Generic[Input, Output], ABC):
             Callable[[Iterator[Other]], Iterator[Any]],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
-    ) -> RunnableSequence[Other, Output]:
+    ) -> Runnable[Other, Output]:
         """Compose this runnable with another object to create a RunnableSequence."""
         return RunnableSequence(first=coerce_to_runnable(other), last=self)
 
@@ -992,6 +992,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_alternatives(
         self,
         which: ConfigurableField,
+        default_key: str = "default",
         **kwargs: Runnable[Input, Output],
     ) -> RunnableSerializable[Input, Output]:
         from langchain.schema.runnable.configurable import (
@@ -999,7 +1000,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         )
 
         return RunnableConfigurableAlternatives(
-            which=which, default=self, alternatives=kwargs
+            which=which, default=self, alternatives=kwargs, default_key=default_key
         )
 
 
@@ -1063,7 +1064,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             Callable[[Iterator[Any]], Iterator[Other]],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
-    ) -> RunnableSequence[Input, Other]:
+    ) -> Runnable[Input, Other]:
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 first=self.first,
@@ -1085,7 +1086,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             Callable[[Iterator[Other]], Iterator[Any]],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
-    ) -> RunnableSequence[Other, Output]:
+    ) -> Runnable[Other, Output]:
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 first=other.first,
