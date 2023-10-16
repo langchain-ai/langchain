@@ -4,7 +4,7 @@ from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output_parser import NoOpOutputParser
 from langchain.schema.prompt_template import BasePromptTemplate
-from langchain.schema.runnable import RunnableMap, RunnableSequence
+from langchain.schema.runnable import Runnable, RunnableParallel
 from langchain.utilities.sql_database import SQLDatabase
 
 
@@ -30,7 +30,7 @@ def create_sql_query_chain(
     db: SQLDatabase,
     prompt: Optional[BasePromptTemplate] = None,
     k: int = 5,
-) -> RunnableSequence[Union[SQLInput, SQLInputWithTables], str]:
+) -> Runnable[Union[SQLInput, SQLInputWithTables], str]:
     """Create a chain that generates SQL queries.
 
     Args:
@@ -60,7 +60,7 @@ def create_sql_query_chain(
     if "dialect" in prompt_to_use.input_variables:
         inputs["dialect"] = lambda _: (db.dialect, prompt_to_use)
     return (
-        RunnableMap(inputs)
+        RunnableParallel(inputs)
         | prompt_to_use
         | llm.bind(stop=["\nSQLResult:"])
         | NoOpOutputParser()

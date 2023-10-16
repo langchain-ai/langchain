@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Sequence,
     Set,
     Tuple,
@@ -298,6 +299,8 @@ class ChatPromptValueConcrete(ChatPromptValue):
     For use in external schemas."""
 
     messages: Sequence[AnyMessage]
+
+    type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
 
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):

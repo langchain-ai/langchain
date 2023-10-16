@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-experimental"
-version = "0.0.26"
+version = "0.0.29"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -86,5 +86,6 @@ addopts = "--strict-markers --strict-config --durations=5"
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
-  "requires: mark tests as requiring a specific library"
+  "requires: mark tests as requiring a specific library",
+  "asyncio: mark tests as requiring asyncio"
 ]

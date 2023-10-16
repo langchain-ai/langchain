@@ -44,18 +44,15 @@ for message in st.session_state.messages:
 
 
 if prompt := st.chat_input():
-    if (
-        not access_token
-        and not credentials
-        and not (user and password)
-    ):
+    if not access_token and not credentials and not (user and password):
         st.info("Заполните данные GigaChat для того, чтобы продолжить")
         st.stop()
 
     chat = GigaChat(
         base_url=base_url,
         credentials=credentials,
-        access_token=st.session_state.get("token") or access_token,  # Переиспользуем токен
+        access_token=st.session_state.get("token")
+        or access_token,  # Переиспользуем токен
         user=user,
         password=password,
         verify_ssl_certs=False,

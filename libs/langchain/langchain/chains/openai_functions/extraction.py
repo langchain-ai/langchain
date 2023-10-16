@@ -51,7 +51,8 @@ def create_extraction_chain(
         schema: The schema of the entities to extract.
         llm: The language model to use.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
-            logs will be printed to the console. Defaults to `langchain.verbose` value.
+            logs will be printed to the console. Defaults to the global `verbose` value,
+            accessible via `langchain.globals.get_verbose()`.
 
     Returns:
         Chain that can be used to extract information from a passage.
@@ -78,6 +79,10 @@ def create_extraction_chain_pydantic(
     Args:
         pydantic_schema: The pydantic schema of the entities to extract.
         llm: The language model to use.
+        prompt: The prompt to use for extraction.
+        verbose: Whether to run in verbose mode. In verbose mode, some intermediate
+            logs will be printed to the console. Defaults to the global `verbose` value,
+            accessible via `langchain.globals.get_verbose()`
 
     Returns:
         Chain that can be used to extract information from a passage.

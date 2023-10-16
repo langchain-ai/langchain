@@ -227,6 +227,21 @@ files = [
 frozenlist = ">=1.1.0"
 
 [[package]]
+name = "aiosqlite"
+version = "0.19.0"
+description = "asyncio bridge to the standard sqlite3 module"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "aiosqlite-0.19.0-py3-none-any.whl", hash = "sha256:edba222e03453e094a3ce605db1b970c4b3376264e56f32e2a4959f948d66a96"},
+    {file = "aiosqlite-0.19.0.tar.gz", hash = "sha256:95ee77b91c8d2808bd08a59fbebf66270e9090c3d92ffbf260dc0db0b979577d"},
+]
+
+[package.extras]
+dev = ["aiounittest (==1.4.1)", "attribution (==1.6.2)", "black (==23.3.0)", "coverage[toml] (==7.2.3)", "flake8 (==5.0.4)", "flake8-bugbear (==23.3.12)", "flit (==3.7.1)", "mypy (==1.2.0)", "ufmt (==2.1.0)", "usort (==1.0.6)"]
+docs = ["sphinx (==6.1.3)", "sphinx-mdinclude (==0.5.3)"]
+
+[[package]]
 name = "aleph-alpha-client"
 version = "2.17.0"
 description = "python client to interact with Aleph Alpha api endpoints"
@@ -4156,13 +4171,13 @@ all = ["datasets (>=2.12.0,<3.0.0)", "evaluate (>=0.4.0,<0.5.0)", "faiss-cpu (>=
 
 [[package]]
 name = "langsmith"
-version = "0.0.41"
+version = "0.0.43"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.41-py3-none-any.whl", hash = "sha256:a555bef3d51e37bce284090b155e2148ec4098efa96ee918b3092c43c4bfaa77"},
-    {file = "langsmith-0.0.41.tar.gz", hash = "sha256:ea05649bb140d6e58614e171df6539410b77ce393c23545453278677e916e351"},
+    {file = "langsmith-0.0.43-py3-none-any.whl", hash = "sha256:27854bebdae6a35c88e1c1172e6abba27592287b70511aca2a953a59fade0e87"},
+    {file = "langsmith-0.0.43.tar.gz", hash = "sha256:f7705f13eb8ce3b8eb16c4d2b2760c62cfb9a3b3ab6aa0728afa84d26b2a6e55"},
 ]
 
 [package.dependencies]
@@ -4747,29 +4762,29 @@ files = [
 
 [[package]]
 name = "momento"
-version = "1.9.2"
+version = "1.10.1"
 description = "SDK for Momento"
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "momento-1.9.2-py3-none-any.whl", hash = "sha256:8d6cb266c867e80ad9019e6ad1997c5e77be65ffb0182cfe9e55da20e06183ad"},
-    {file = "momento-1.9.2.tar.gz", hash = "sha256:9f5e9401de04aec620f6acd4f8b61f0e76ba8aca18c72e2b3f1b9008dd8054d7"},
+    {file = "momento-1.10.1-py3-none-any.whl", hash = "sha256:a97893bb3542499a429aa67c66d9330cd64b8f1a4f64c33dba4adc72cc3e9d01"},
+    {file = "momento-1.10.1.tar.gz", hash = "sha256:c9cc21d06194371881c9749a20f3a6db68190427ff29dfd414aa94b90b27ab89"},
 ]
 
 [package.dependencies]
 grpcio = ">=1.46.0,<2.0.0"
-momento-wire-types = ">=0.75.0,<0.76.0"
+momento-wire-types = ">=0.84.0,<0.85.0"
 pyjwt = ">=2.4.0,<3.0.0"
 
 [[package]]
 name = "momento-wire-types"
-version = "0.75.0"
+version = "0.84.2"
 description = "Momento Client Proto Generated Files"
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "momento_wire_types-0.75.0-py3-none-any.whl", hash = "sha256:dce824584bde6d4896fbb4c010c146b68dac6d10bf6b77c5487edf43ff12ff75"},
-    {file = "momento_wire_types-0.75.0.tar.gz", hash = "sha256:eb70d549bdcc28a0926b273737cd60f37eededbae3456db43e7dfa67ca83446f"},
+    {file = "momento_wire_types-0.84.2-py3-none-any.whl", hash = "sha256:1b260556f1220bc3d5b3ffd7491a7d6de6654fef87e8a17f2b7cae53e9e30a23"},
+    {file = "momento_wire_types-0.84.2.tar.gz", hash = "sha256:0560180af916cc588598ac0ee0fe04872ad30f428971c81e2d54b146a9f6d5fc"},
 ]
 
 [package.dependencies]
@@ -8493,6 +8508,21 @@ files = [
 pyasn1 = ">=0.1.3"
 
 [[package]]
+name = "rspace-client"
+version = "2.5.0"
+description = "A client for calling RSpace ELN and Inventory APIs"
+optional = true
+python-versions = ">=3.7.11,<4.0.0"
+files = [
+    {file = "rspace-client-2.5.0.tar.gz", hash = "sha256:101abc83d094051d2babcaa133fa1a47221b3d5953d72eef3c331ef7084071a1"},
+    {file = "rspace_client-2.5.0-py3-none-any.whl", hash = "sha256:b1072df88dfa8f068f3137584d20cf135493b0521a9809c2f6ddec6b378a9cc3"},
+]
+
+[package.dependencies]
+beautifulsoup4 = ">=4.9.3,<5.0.0"
+requests = ">=2.25.1,<3.0.0"
+
+[[package]]
 name = "ruff"
 version = "0.0.249"
 description = "An extremely fast Python linter, written in Rust."
@@ -10153,6 +10183,21 @@ tzdata = {version = "*", markers = "platform_system == \"Windows\""}
 devenv = ["black", "check-manifest", "flake8", "pyroma", "pytest (>=4.3)", "pytest-cov", "pytest-mock (>=3.3)", "zest.releaser"]
 
 [[package]]
+name = "upstash-redis"
+version = "0.15.0"
+description = "Serverless Redis SDK from Upstash"
+optional = true
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "upstash_redis-0.15.0-py3-none-any.whl", hash = "sha256:4a89913cb2bb2422610bc2a9c8d6b9a9d75d0674c22c5ea8037d35d343ee5846"},
+    {file = "upstash_redis-0.15.0.tar.gz", hash = "sha256:910f6a567142167b742c38efecfabf23f47e24fcbddb00a6b5845cb11064c3af"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.8.4,<4.0.0"
+requests = ">=2.31.0,<3.0.0"
+
+[[package]]
 name = "uri-template"
 version = "1.3.0"
 description = "RFC 6570 URI Template Processor"
@@ -10904,7 +10949,7 @@ cli = ["typer"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["amazon-textract-caller", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "markdownify", "motor", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-schema-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "xata", "xmltodict"]
+extended-testing = ["aiosqlite", "amazon-textract-caller", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "markdownify", "motor", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-schema-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -10914,4 +10959,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "cbe02a5c5f5e731b6005a3f073a6093e0be9d700e9f70b91d41cc05d0129eab0"
+content-hash = "11b705bc7eb5c94961e6254dd6bbecaed6c921031eba99b930ed672ffa995986"

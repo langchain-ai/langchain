@@ -3,36 +3,31 @@ from langchain.prompts import PromptTemplate
 
 SONG_DATA_SOURCE = """\
 ```json
-{
+{{
     "content": "Текст песни",
-    "attributes": {
-        "artist": {
+    "attributes": {{
+        "artist": {{
             "type": "string",
             "description": "Имя исполнителя песни"
-        },
-        "length": {
+        }},
+        "length": {{
             "type": "integer",
             "description": "Длительность песни в секундах"
-        },
-        "genre": {
+        }},
+        "genre": {{
             "type": "string",
             "description": "Жанр песни, один из \"pop\", \"rock\" или \"rap\""
-        }
-    }
-}
+        }}
+    }}
+}}
 ```\
-""".replace(
-    "{", "{{"
-).replace(
-    "}", "}}"
-)
+"""
 
 FULL_ANSWER = """\
 ```json
 {{
     "query": "teenager love",
-    "filter": "and(or(eq(\\"artist\\", \\"Taylor Swift\\"), eq(\\"artist\\", \\"Katy Perry\\")), \
-lt(\\"length\\", 180), eq(\\"genre\\", \\"pop\\"))"
+    "filter": "and(or(eq(\\"artist\\", \\"Taylor Swift\\"), eq(\\"artist\\", \\"Katy Perry\\")), lt(\\"length\\", 180), eq(\\"genre\\", \\"pop\\"))"
 }}
 ```\
 """
@@ -104,11 +99,20 @@ EXAMPLE_PROMPT_TEMPLATE = """\
 {structured_request}
 """
 
-EXAMPLE_PROMPT = PromptTemplate(
-    input_variables=["i", "data_source", "user_query", "structured_request"],
-    template=EXAMPLE_PROMPT_TEMPLATE,
-)
+EXAMPLE_PROMPT = PromptTemplate.from_template(EXAMPLE_PROMPT_TEMPLATE)
 
+USER_SPECIFIED_EXAMPLE_PROMPT = PromptTemplate.from_template(
+    """\
+<< Example {i}. >>
+User Query:
+{user_query}
+
+Structured Request:
+```json
+{structured_request}
+```
+"""
+)
 
 DEFAULT_SCHEMA = """\
 << Схема структурированного запроса >>
@@ -141,6 +145,7 @@ DEFAULT_SCHEMA = """\
 Убедитесь, что фильтры учитывают описания атрибутов и делают только те сравнения, которые возможны с учетом типа хранимых данных.
 Убедитесь, что фильтры используются только по мере необходимости. Если нет фильтров, которые следует применить, верните "NO_FILTER" для значения фильтра.\
 """
+DEFAULT_SCHEMA_PROMPT = PromptTemplate.from_template(DEFAULT_SCHEMA)
 
 SCHEMA_WITH_LIMIT = """\
 << Схема структурированного запроса >>
@@ -175,12 +180,27 @@ SCHEMA_WITH_LIMIT = """\
 Убедитесь, что фильтры используются только по мере необходимости. Если нет фильтров, которые следует применить, верните "NO_FILTER" для значения фильтра.
 Убедитесь, что `limit` всегда является целым числом. Это необязательный параметр, поэтому оставьте его пустым, если он не имеет смысла.
 """
+SCHEMA_WITH_LIMIT_PROMPT = PromptTemplate.from_template(SCHEMA_WITH_LIMIT)
 
 DEFAULT_PREFIX = """\
 Твоя задача - структурировать запрос пользователя, чтобы он соответствовал схеме запроса, представленной ниже.
 
 {schema}\
 """
+
+PREFIX_WITH_DATA_SOURCE = (
+    DEFAULT_PREFIX
+    + """
+
+<< Data Source >>
+```json
+{{{{
+    "content": "{content}",
+    "attributes": {attributes}
+}}}}
+```
+"""
+)
 
 DEFAULT_SUFFIX = """\
 << Пример {i}. >>
@@ -192,6 +212,14 @@ DEFAULT_SUFFIX = """\
 }}}}
 ```
 
+Запрос пользователя:
+{{query}}
+
+Структурированный запрос:
+"""
+
+SUFFIX_WITHOUT_DATA_SOURCE = """\
+<< Пример {i}. >>
 Запрос пользователя:
 {{query}}
 

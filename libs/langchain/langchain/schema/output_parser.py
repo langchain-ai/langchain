@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -250,7 +251,9 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
-        return await self.aparse(result[0].text)
+        return await asyncio.get_running_loop().run_in_executor(
+            None, functools.partial(self.parse_result, partial=partial), result
+        )
 
     async def aparse(self, text: str) -> T:
         """Parse a single string model output into some structure.
