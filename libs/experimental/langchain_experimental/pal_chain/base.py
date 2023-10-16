@@ -156,6 +156,7 @@ class PALChain(Chain):
         PALChain.validate_code(code, self.code_validations)
 
         # TODO: look into why mypy thinks PythonREPL's type here is `Any`
+        #       and therefore not callable
         repl = PythonREPL(
             _globals=self.python_globals,
             _locals=self.python_locals,
