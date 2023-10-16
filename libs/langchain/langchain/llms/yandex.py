@@ -41,9 +41,9 @@ class _BaseYandexGPT(Serializable):
         values["iam_token"] = iam_token
         api_key = get_from_dict_or_env(values, "api_key", "YC_API_KEY", "")
         values["api_key"] = api_key
-        if (api_key == "") == (iam_token == ""):
+        if api_key == "" and iam_token == "":
             raise ValueError(
-                "Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided, but not both."
+                "Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided."
             )
         return values
 
