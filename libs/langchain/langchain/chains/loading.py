@@ -30,7 +30,7 @@ from langchain.prompts.loading import (
 )
 from langchain.utilities.loading import try_load_from_hub
 
-URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
+URL_BASE = "https://raw.githubusercontent.com/ai-forever/gigachain/hub/master/chains/"
 
 
 def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:

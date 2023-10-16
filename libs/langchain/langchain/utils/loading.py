@@ -12,7 +12,7 @@ import requests
 DEFAULT_REF = os.environ.get("LANGCHAIN_HUB_DEFAULT_REF", "master")
 URL_BASE = os.environ.get(
     "LANGCHAIN_HUB_URL_BASE",
-    "https://raw.githubusercontent.com/hwchase17/langchain-hub/{ref}/",
+    "https://raw.githubusercontent.com/ai-forever/gigachain/{ref}/hub/",
 )
 HUB_PATH_RE = re.compile(r"lc(?P<ref>@[^:]+)?://(?P<path>.*)")
 

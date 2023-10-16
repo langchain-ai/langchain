@@ -15,7 +15,7 @@ from langchain.utilities.loading import try_load_from_hub
 
 logger = logging.getLogger(__file__)
 
-URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"
+URL_BASE = "https://raw.githubusercontent.com/ai-forever/gigachain/hub/master/agents/"
 
 
 def _load_agent_from_tools(

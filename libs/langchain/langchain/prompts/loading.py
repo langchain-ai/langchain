@@ -11,7 +11,7 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, StrOutputParser
 from langchain.utils.loading import try_load_from_hub
 
-URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
+URL_BASE = "https://raw.githubusercontent.com/ai-forever/gigachain/hub/master/prompts/"
 logger = logging.getLogger(__name__)
 
 
