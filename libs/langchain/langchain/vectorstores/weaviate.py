@@ -92,6 +92,7 @@ class Weaviate(VectorStore):
             Callable[[float], float]
         ] = _default_score_normalizer,
         by_text: bool = True,
+        **kwargs: Any,
     ):
         """Initialize with Weaviate client."""
         try:
