@@ -8,7 +8,7 @@ from langchain.pydantic_v1 import root_validator
 from langchain.utils import get_from_dict_or_env
 
 
-class BaseYandexGPT(Serializable):
+class _BaseYandexGPT(Serializable):
     iam_token: str = ""
     """Yandex Cloud IAM token for service account
     with the `ai.languageModels.user` role"""
@@ -48,7 +48,7 @@ class BaseYandexGPT(Serializable):
         return values
 
 
-class YandexGPT(BaseYandexGPT, LLM):
+class YandexGPT(_BaseYandexGPT, LLM):
     """Yandex large language models.
 
     To use, you should have the ``yandexcloud`` python package installed.

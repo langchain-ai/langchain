@@ -8,7 +8,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.llms.yandex import BaseYandexGPT
+from langchain.llms.yandex import _BaseYandexGPT
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -43,7 +43,7 @@ def _parse_chat_history(history: List[BaseMessage]) -> Tuple[List[Dict[str, str]
     return chat_history, instruction
 
 
-class ChatYandexGPT(BaseYandexGPT, BaseChatModel):
+class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
     """Wrapper around YandexGPT large language models.
 
     There are two authentication options for the service account
