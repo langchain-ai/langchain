@@ -12,64 +12,52 @@ logger = logging.getLogger()
 
 
 class AlibabaCloudOpenSearchSettings:
-    """`Alibaba Cloud Opensearch` client configuration.
+    """Alibaba Cloud Opensearch` client configuration.
 
     Attribute:
         endpoint (str) : The endpoint of opensearch instance, You can find it
          from the console of Alibaba Cloud OpenSearch.
         instance_id (str) : The identify of opensearch instance, You can find
          it from the console of Alibaba Cloud OpenSearch.
-        protocol (str): Communication Protocol between SDK and Server, default is http.
         username (str) : The username specified when purchasing the instance.
         password (str) : The password specified when purchasing the instance，
           After the instance is created, you can modify it on the console.
-        namespace (str) : The instance data will be partitioned based on the "namespace" field.
-         If the namespace is enabled, you need to specify the namespace field name during initialization.
-         Otherwise, the queries cannot be executed correctly.
         tablename (str): The table name specified during instance configuration.
-        embedding_field_separator(str): Delimiter specified for writing vector field data, default is comma.
         field_name_mapping (Dict) : Using field name mapping between opensearch
           vector store and opensearch instance configuration table field names:
         {
             'id': 'The id field name map of index document.',
             'document': 'The text field name map of index document.',
             'embedding': 'In the embedding field of the opensearch instance,
-            the values must be in float type and separated by separator, default is comma.',
+              the values must be in float type and separated by separator,
+              default is comma.',
             'metadata_field_x': 'Metadata field mapping includes the mapped
-            field name and operator in the mapping value, separated by a comma
-            between the mapped field name and the operator.',
+             field name and operator in the mapping value, separated by a comma
+             between the mapped field name and the operator.',
         }
+        protocol (str): Communication Protocol between SDK and Server, default is http.
+        namespace (str) : The instance data will be partitioned based on the "namespace"
+         field,If the namespace is enabled, you need to specify the namespace field
+         name during initialization, Otherwise, the queries cannot be executed
+         correctly.
+        embedding_field_separator(str): Delimiter specified for writing vector
+         field data, default is comma.
+        output_fields: Specify the field list returned when invoking OpenSearch,
+         by default it is the value list of the field mapping field.
     """
 
-    endpoint: str
-    instance_id: str
-    protocol: str
-    username: str
-    password: str
-    namespace: str
-    table_name: str
-    embedding_field_separator: str
-    output_fields: [str]
-    field_name_mapping: Dict[str, str] = {
-        "id": "id",
-        "document": "document",
-        "embedding": "embedding",
-        "metadata_field_x": "metadata_field_x,operator",
-    }
-    inverse_field_name_mapping = {}
-
     def __init__(
-            self,
-            endpoint: str,
-            instance_id: str,
-            username: str,
-            password: str,
-            table_name: str,
-            field_name_mapping: Dict[str, str],
-            protocol: str = 'http',
-            namespace: str = '',
-            embedding_field_separator: str = ',',
-            output_fields=None
+        self,
+        endpoint: str,
+        instance_id: str,
+        username: str,
+        password: str,
+        table_name: str,
+        field_name_mapping: Dict[str, str],
+        protocol: str = "http",
+        namespace: str = "",
+        embedding_field_separator: str = ",",
+        output_fields: Optional[List[str]] = None,
     ) -> None:
         self.endpoint = endpoint
         self.instance_id = instance_id
@@ -78,11 +66,14 @@ class AlibabaCloudOpenSearchSettings:
         self.password = password
         self.namespace = namespace
         self.table_name = table_name
-        self.opt_table_name = '_'.join([self.instance_id, self.table_name])
+        self.opt_table_name = "_".join([self.instance_id, self.table_name])
         self.field_name_mapping = field_name_mapping
         self.embedding_field_separator = embedding_field_separator
         if output_fields is None:
-            self.output_fields = [field.split(",")[0] for field in self.field_name_mapping.values()]
+            self.output_fields = [
+                field.split(",")[0] for field in self.field_name_mapping.values()
+            ]
+        self.inverse_field_name_mapping: Dict[str, str] = {}
         for key, value in self.field_name_mapping.items():
             self.inverse_field_name_mapping[value.split(",")[0]] = key
 
@@ -111,10 +102,10 @@ class AlibabaCloudOpenSearch(VectorStore):
     """`Alibaba Cloud OpenSearch` vector store."""
 
     def __init__(
-            self,
-            embedding: Embeddings,
-            config: AlibabaCloudOpenSearchSettings,
-            **kwargs: Any,
+        self,
+        embedding: Embeddings,
+        config: AlibabaCloudOpenSearchSettings,
+        **kwargs: Any,
     ) -> None:
         try:
             from alibabacloud_ha3engine_vector import client, models
@@ -148,17 +139,15 @@ class AlibabaCloudOpenSearch(VectorStore):
         self.options_headers: Dict[str, str] = {}
 
     def add_texts(
-            self,
-            texts: Iterable[str],
-            ids: List[str] = None,
-            metadatas: Optional[List[dict]] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Insert documents into the instance..
         Args:
-            texts: The text segments to be inserted into the vector storage，should not be empty.
-            ids: Specify the ID for the inserted document. If left empty, the ID will be automatically generated based
-             on the text content.
+            texts: The text segments to be inserted into the vector storage,
+             should not be empty.
             metadatas: Metadata information.
         Returns:
             id_list: List of document IDs.
@@ -191,13 +180,7 @@ class AlibabaCloudOpenSearch(VectorStore):
 
         from alibabacloud_ha3engine_vector import models
 
-        if texts is None or len(texts) == 0:
-            raise Exception("the inserted text segments cannot be empty.")
-
-        if ids is not None and len(texts) != len(ids):
-            raise Exception("the number of text segments does not match the given number of IDs.")
-
-        id_list = ids if ids is not None else [sha1(t.encode("utf-8")).hexdigest() for t in texts]
+        id_list = [sha1(t.encode("utf-8")).hexdigest() for t in texts]
         embeddings = self.embedding.embed_documents(list(texts))
         metadatas = metadatas or [{} for _ in texts]
         field_name_map = self.config.field_name_mapping
@@ -214,7 +197,9 @@ class AlibabaCloudOpenSearch(VectorStore):
             if embedding is not None:
                 add_doc_fields.__setitem__(
                     field_name_map["embedding"],
-                    self.config.embedding_field_separator.join(str(unit) for unit in embedding),
+                    self.config.embedding_field_separator.join(
+                        str(unit) for unit in embedding
+                    ),
                 )
             if metadata is not None:
                 for md_key, md_value in metadata.items():
@@ -227,21 +212,21 @@ class AlibabaCloudOpenSearch(VectorStore):
         return _upsert(add_doc_list)
 
     def similarity_search(
-            self,
-            text: str,
-            k: int = 4,
-            search_filter: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        search_filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Perform similarity retrieval based on text.
         Args:
-            text: Vectorize text for retrieval.，should not be empty.
+            query: Vectorize text for retrieval.，should not be empty.
             k: top n.
             search_filter: Additional filtering conditions.
         Returns:
             document_list: List of documents.
         """
-        embedding = self.embedding.embed_query(text)
+        embedding = self.embedding.embed_query(query)
         return self.create_results(
             self.inner_embedding_query(
                 embedding=embedding, search_filter=search_filter, k=k
@@ -249,21 +234,21 @@ class AlibabaCloudOpenSearch(VectorStore):
         )
 
     def similarity_search_with_relevance_scores(
-            self,
-            text: str,
-            k: int = 4,
-            search_filter: Optional[dict] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        search_filter: Optional[dict] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Perform similarity retrieval based on text with scores.
         Args:
-            text: Vectorize text for retrieval.，should not be empty.
+            query: Vectorize text for retrieval.，should not be empty.
             k: top n.
             search_filter: Additional filtering conditions.
         Returns:
             document_list: List of documents.
         """
-        embedding: List[float] = self.embedding.embed_query(text)
+        embedding: List[float] = self.embedding.embed_query(query)
         return self.create_results_with_score(
             self.inner_embedding_query(
                 embedding=embedding, search_filter=search_filter, k=k
@@ -271,20 +256,20 @@ class AlibabaCloudOpenSearch(VectorStore):
         )
 
     def similarity_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            search_filter: Optional[dict] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        search_filter: Optional[dict] = None,
+        **kwargs: Any,
     ) -> List[Document]:
-        """ Perform retrieval directly using vectors.
-         Args:
-             embedding: vectors.
-             k: top n.
-             search_filter: Additional filtering conditions.
-         Returns:
-             document_list: List of documents.
-         """
+        """Perform retrieval directly using vectors.
+        Args:
+            embedding: vectors.
+            k: top n.
+            search_filter: Additional filtering conditions.
+        Returns:
+            document_list: List of documents.
+        """
         return self.create_results(
             self.inner_embedding_query(
                 embedding=embedding, search_filter=search_filter, k=k
@@ -292,15 +277,15 @@ class AlibabaCloudOpenSearch(VectorStore):
         )
 
     def inner_embedding_query(
-            self,
-            embedding: List[float],
-            search_filter: Optional[Dict[str, Any]] = None,
-            k: int = 4,
+        self,
+        embedding: List[float],
+        search_filter: Optional[Dict[str, Any]] = None,
+        k: int = 4,
     ) -> Dict[str, Any]:
         def generate_filter_query() -> str:
             if search_filter is None:
-                return ''
-            filter_clause = ' AND '.join(
+                return ""
+            filter_clause = " AND ".join(
                 [
                     create_filter(md_key, md_value)
                     for md_key, md_value in search_filter.items()
@@ -326,13 +311,15 @@ class AlibabaCloudOpenSearch(VectorStore):
             return f'{md_filter_key}{md_filter_operator}"{md_value}"'
 
         def search_data() -> Dict[str, Any]:
-            request = QueryRequest(table_name=self.config.table_name,
-                                   namespace=self.config.namespace,
-                                   vector=embedding,
-                                   include_vector=True,
-                                   output_fields=self.config.output_fields,
-                                   filter=generate_filter_query(),
-                                   top_k=k)
+            request = QueryRequest(
+                table_name=self.config.table_name,
+                namespace=self.config.namespace,
+                vector=embedding,
+                include_vector=True,
+                output_fields=self.config.output_fields,
+                filter=generate_filter_query(),
+                top_k=k,
+            )
 
             query_result = self.ha3_engine_client.query(request)
             return json.loads(query_result.body)
@@ -341,7 +328,11 @@ class AlibabaCloudOpenSearch(VectorStore):
 
         try:
             json_response = search_data()
-            if 'errorCode' in json_response and 'errorMsg' in json_response and len(json_response['errorMsg']) > 0:
+            if (
+                "errorCode" in json_response
+                and "errorMsg" in json_response
+                and len(json_response["errorMsg"]) > 0
+            ):
                 logger.error(
                     f"query {self.config.endpoint} {self.config.instance_id} "
                     f"failed:{json_response['errorMsg']}."
@@ -361,10 +352,13 @@ class AlibabaCloudOpenSearch(VectorStore):
         items = json_result["result"]
         query_result_list: List[Document] = []
         for item in items:
-            if 'fields' not in item or self.config.field_name_mapping["document"] not in item['fields']:
+            if (
+                "fields" not in item
+                or self.config.field_name_mapping["document"] not in item["fields"]
+            ):
                 query_result_list.append(Document())
             else:
-                fields = item['fields']
+                fields = item["fields"]
                 query_result_list.append(
                     Document(
                         page_content=fields[self.config.field_name_mapping["document"]],
@@ -390,7 +384,7 @@ class AlibabaCloudOpenSearch(VectorStore):
         return metadata
 
     def create_results_with_score(
-            self, json_result: Dict[str, Any]
+        self, json_result: Dict[str, Any]
     ) -> List[Tuple[Document, float]]:
         """Parsing the returned results with scores.
         Args:
@@ -405,10 +399,10 @@ class AlibabaCloudOpenSearch(VectorStore):
             query_result_list.append(
                 (
                     Document(
-                        page_content=fields[self.config.field_name_mapping['document']],
+                        page_content=fields[self.config.field_name_mapping["document"]],
                         metadata=self.create_inverse_metadata(fields),
                     ),
-                    float(item['score']),
+                    float(item["score"]),
                 )
             )
         return query_result_list
@@ -416,11 +410,11 @@ class AlibabaCloudOpenSearch(VectorStore):
     def delete_documents_with_texts(self, texts: List[str]) -> bool:
         """Delete documents based on their page content.
 
-         Args:
-             texts: List of document page content.
-         Returns:
-            Whether the deletion was successful or not.
-         """
+        Args:
+            texts: List of document page content.
+        Returns:
+           Whether the deletion was successful or not.
+        """
         id_list = [sha1(t.encode("utf-8")).hexdigest() for t in texts]
         return self.delete_documents_with_document_id(id_list)
 
@@ -433,26 +427,28 @@ class AlibabaCloudOpenSearch(VectorStore):
             Whether the deletion was successful or not.
         """
         if id_list is None or len(id_list) == 0:
-            return
+            return True
 
         from alibabacloud_ha3engine_vector import models
 
         delete_doc_list = []
         for doc_id in id_list:
-            delete_doc_list.append({
-                "fields": {
-                    self.config.field_name_mapping['id']: doc_id
-                },
-                "cmd": "delete"
-            })
+            delete_doc_list.append(
+                {
+                    "fields": {self.config.field_name_mapping["id"]: doc_id},
+                    "cmd": "delete",
+                }
+            )
 
         delete_request = models.PushDocumentsRequest(
             self.options_headers, delete_doc_list
         )
         try:
-            delete_response = self.ha3_engine_client.push_documents(self.config.opt_table_name,
-                                                                    self.config.field_name_mapping['id'],
-                                                                    delete_request)
+            delete_response = self.ha3_engine_client.push_documents(
+                self.config.opt_table_name,
+                self.config.field_name_mapping["id"],
+                delete_request,
+            )
             json_response = json.loads(delete_response.body)
             return json_response["status"] == "OK"
         except Exception as e:
@@ -465,31 +461,26 @@ class AlibabaCloudOpenSearch(VectorStore):
 
     @classmethod
     def from_texts(
-            cls,
-            texts: List[str],
-            embedding: Embeddings,
-            ids: List[str] = None,
-            metadatas: Optional[List[dict]] = None,
-            config: Optional[AlibabaCloudOpenSearchSettings] = None,
-            **kwargs: Any,
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        config: Optional[AlibabaCloudOpenSearchSettings] = None,
+        **kwargs: Any,
     ) -> "AlibabaCloudOpenSearch":
         """Create alibaba cloud opensearch vector store instance.
 
         Args:
-            texts: The text segments to be inserted into the vector storage，should not be empty.
+            texts: The text segments to be inserted into the vector storage,
+             should not be empty.
             embedding: Embedding function, Embedding function.
             config: Alibaba OpenSearch instance configuration.
-            ids: Specify the ID for the inserted document. If left empty, the ID will be automatically generated based
-             on the text content.
             metadatas: Metadata information.
         Returns:
             AlibabaCloudOpenSearch: Alibaba cloud opensearch vector store instance.
         """
         if texts is None or len(texts) == 0:
             raise Exception("the inserted text segments, should not be empty.")
-
-        if ids is not None and len(texts) != len(ids):
-            raise Exception("the number of text segments does not match the given number of IDs.")
 
         if embedding is None:
             raise Exception("the embeddings should not be empty.")
@@ -498,34 +489,31 @@ class AlibabaCloudOpenSearch(VectorStore):
             raise Exception("config should not be none.")
 
         ctx = cls(embedding, config, **kwargs)
-        ctx.add_texts(texts=texts, ids=ids, metadatas=metadatas)
+        ctx.add_texts(texts=texts, metadatas=metadatas)
         return ctx
 
     @classmethod
     def from_documents(
-            cls,
-            documents: List[Document],
-            embedding: Embeddings,
-            config: Optional[AlibabaCloudOpenSearchSettings],
-            ids: Optional[List[str]] = None,
-            **kwargs: Any,
+        cls,
+        documents: List[Document],
+        embedding: Embeddings,
+        config: Optional[AlibabaCloudOpenSearchSettings] = None,
+        **kwargs: Any,
     ) -> "AlibabaCloudOpenSearch":
         """Create alibaba cloud opensearch vector store instance.
 
         Args:
-            documents: Documents to be inserted into the vector storage，should not be empty.
+            documents: Documents to be inserted into the vector storage,
+             should not be empty.
             embedding: Embedding function, Embedding function.
             config: Alibaba OpenSearch instance configuration.
-            ids: Specify the ID for the inserted document. If left empty, the ID will be automatically generated based
-             on the text content.
+            ids: Specify the ID for the inserted document. If left empty, the ID will be
+             automatically generated based on the text content.
         Returns:
             AlibabaCloudOpenSearch: Alibaba cloud opensearch vector store instance.
         """
         if documents is None or len(documents) == 0:
             raise Exception("the inserted documents, should not be empty.")
-
-        if ids is not None and len(documents) != len(ids):
-            raise Exception("the number of documents does not match the given number of IDs.")
 
         if embedding is None:
             raise Exception("the embeddings should not be empty.")
@@ -538,7 +526,6 @@ class AlibabaCloudOpenSearch(VectorStore):
         return cls.from_texts(
             texts=texts,
             embedding=embedding,
-            ids=ids,
             metadatas=metadatas,
             config=config,
             **kwargs,
