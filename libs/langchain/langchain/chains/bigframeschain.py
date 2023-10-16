@@ -1,11 +1,9 @@
 """BigFramesChain that just formats a prompt and calls an LLM."""
 from __future__ import annotations
 
-import warnings
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-import bigframes
 import bigframes.pandas as bf
 import inspect
 
@@ -21,7 +19,6 @@ from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import (
     BaseLLMOutputParser,
     BasePromptTemplate,
-    LLMResult,
     PromptValue,
     StrOutputParser,
 )
@@ -190,11 +187,9 @@ class BigFramesChain(Chain):
         if args and not kwargs:
             if len(args) != 1:
                 raise ValueError("`run` supports only one positional argument.")
-            logger.error("hello 1")
             return self(args[0], callbacks=callbacks, tags=tags, metadata=metadata)
 
         if kwargs and not args:
-            logger.error("hello 2")
             return self(kwargs, callbacks=callbacks, tags=tags, metadata=metadata)
 
         if not kwargs and not args:

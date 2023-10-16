@@ -43,23 +43,6 @@ def get_prompts(
     return existing_prompts, llm_string, missing_prompt_idxs, missing_prompts
 
 
-# def update_cache(
-#     existing_prompts: Dict[int, List],
-#     llm_string: str,
-#     missing_prompt_idxs: List[int],
-#     new_results: LLMResult,
-#     prompts: List[str],
-# ) -> Optional[dict]:
-#     """Update the cache and get the LLM output."""
-#     for i, result in enumerate(new_results.generations):
-#         existing_prompts[missing_prompt_idxs[i]] = result
-#         prompt = prompts[missing_prompt_idxs[i]]
-#         if langchain.llm_cache is not None:
-#             langchain.llm_cache.update(prompt, llm_string, result)
-#     llm_output = new_results.llm_output
-#     return llm_output
-
-
 class BigFramesLLM(BaseLLM):
     """BigFrames large language models."""
 

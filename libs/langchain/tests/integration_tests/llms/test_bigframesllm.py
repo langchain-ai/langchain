@@ -86,7 +86,7 @@ def test_bigframesllm_chained_invoke() -> None:
 
     # answer is a string
     answer = llm_chain.invoke({"question":"What is BigFrames?"})
-    print(answer)
+
     assert answer["question"] == "What is BigFrames?"
     assert answer["text"].startswith(
         " BigFrames is a distributed computing framework"
@@ -106,7 +106,7 @@ def test_bigframeschain_chained_call() -> None:
 
     # answer is a BigFrames DataFrame
     answer = llm_chain("What is BigFrames?")
-    print(answer)
+
     assert "ml_generate_text_llm_result" in answer.columns
     series = answer["ml_generate_text_llm_result"]
     assert series[0].startswith(
@@ -127,7 +127,6 @@ def test_bigframeschain_chained_run() -> None:
     # answer is a BigFrames DataFrame
     answer = llm_chain.run("What is BigFrames?")
 
-    print(answer)
     assert "ml_generate_text_llm_result" in answer.columns
     series = answer["ml_generate_text_llm_result"]
     assert series[0].startswith(
@@ -150,7 +149,6 @@ def test_bigframesllmchained_df_input_chained_run() -> None:
     # answer is a BigFrames DataFrame
     answer = llm_chain.run(df_api["API"])
     assert "ml_generate_text_llm_result" in answer.columns
-    print(answer)
 
 
 def test_bigframesllmchained_df_input_chained_run() -> None:
@@ -175,5 +173,4 @@ def test_bigframesllmchained_df_input_chained_run() -> None:
     # answer is a BigFrames DataFrame
     answer = llm_chain.run(df["prompt"])
     assert "ml_generate_text_llm_result" in answer['text'].columns
-    print(answer)
 
