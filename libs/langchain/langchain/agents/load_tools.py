@@ -38,6 +38,7 @@ from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
 from langchain.tools.sleep.tool import SleepTool
+from langchain.tools.merriam_webster.tool import MerriamWebsterQueryRun
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
@@ -57,6 +58,7 @@ from langchain.utilities.searchapi import SearchApiAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.twilio import TwilioAPIWrapper
+from langchain.utilities.merriam_webster import MerriamWebsterAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
@@ -186,6 +188,10 @@ def _get_wolfram_alpha(**kwargs: Any) -> BaseTool:
 
 def _get_google_search(**kwargs: Any) -> BaseTool:
     return GoogleSearchRun(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
+
+
+def _get_merriam_webster(**kwargs: Any) -> BaseTool:
+    return MerriamWebsterQueryRun(api_wrapper=MerriamWebsterAPIWrapper(**kwargs))
 
 
 def _get_wikipedia(**kwargs: Any) -> BaseTool:
@@ -336,6 +342,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "dalle-image-generator": (_get_dalle_image_generator, ["openai_api_key"]),
     "twilio": (_get_twilio, ["account_sid", "auth_token", "from_number"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
+    "merriam-webster": (_get_merriam_webster, ["merriam_webster_api_key"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
     "arxiv": (
         _get_arxiv,
