@@ -3,23 +3,23 @@ from langchain.prompts import PromptTemplate
 
 SONG_DATA_SOURCE = """\
 ```json
-{
+{{
     "content": "Текст песни",
-    "attributes": {
-        "artist": {
+    "attributes": {{
+        "artist": {{
             "type": "string",
             "description": "Имя исполнителя песни"
-        },
-        "length": {
+        }},
+        "length": {{
             "type": "integer",
             "description": "Длительность песни в секундах"
-        },
-        "genre": {
+        }},
+        "genre": {{
             "type": "string",
             "description": "Жанр песни, один из \"pop\", \"rock\" или \"rap\""
-        }
-    }
-}
+        }}
+    }}
+}}
 ```\
 """
 
@@ -219,9 +219,9 @@ DEFAULT_SUFFIX = """\
 """
 
 SUFFIX_WITHOUT_DATA_SOURCE = """\
-<< Example {i}. >>
-User Query:
+<< Пример {i}. >>
+Запрос пользователя:
 {{query}}
 
-Structured Request:
+Структурированный запрос:
 """

@@ -144,6 +144,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         template = self.example_separator.join([piece for piece in pieces if piece])
 
         # Format the template with the input variables.
+        print(f"!!!!!!!!!!!!!!! {DEFAULT_FORMATTER_MAPPING} ||| {self.template_format} ||| {template}")
         return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
 
     @property
