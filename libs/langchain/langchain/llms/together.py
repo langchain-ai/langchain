@@ -35,7 +35,7 @@ class Together(LLM):
         "repetition_penalty": 1
     }
 
-    for api reference check together documentation: 
+    for api reference check together documentation:
     https://docs.together.ai/docs/inference-rest
     """
 
@@ -113,6 +113,17 @@ class Together(LLM):
             "max_tokens": self.max_tokens,
             "repetition_penalty": self.repetition_penalty,
         }
+
+        # Overwrite the values in payload with kwargs if they are provided
+        for key in [
+            "temperature",
+            "top_p",
+            "top_k",
+            "max_tokens",
+            "repetition_penalty",
+        ]:
+            if key in kwargs:
+                payload[key] = kwargs[key]
 
         # filter None values to not pass them to the http payload
         payload = {k: v for k, v in payload.items() if v is not None}
