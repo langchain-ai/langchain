@@ -32,7 +32,7 @@ class FileManagementToolkit(BaseToolkit):
     """Toolkit for interacting with local files.
 
     *Security Notice*: This toolkit provides methods to interact with local files.
-        If providing this toolkit to an agent on an LLM, ensure to scope
+        If providing this toolkit to an agent on an LLM, ensure you scope
         the agent's permissions to only include the necessary permissions
         to perform the desired operations.
 
