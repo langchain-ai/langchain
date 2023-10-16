@@ -3,6 +3,7 @@
 https://www.nltk.org/_modules/nltk/translate/bleu_score.html
 https://aclanthology.org/P02-1040.pdf
 """
+import importlib.util
 from typing import Dict, List
 
 import numpy as np
@@ -66,16 +67,24 @@ class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
     @root_validator(pre=True)
     def check_dependencies(cls, values: Dict) -> Dict:
         """Check that valid dependencies exist."""
-        try:
-            from nltk.translate.bleu_score import (  # noqa: disable=F401
-                SmoothingFunction,
-                sentence_bleu,
-            )
-        except ImportError as e:
+        spec = importlib.util.find_spec("nltk.translate.bleu_score")
+        if spec is None:
             raise ImportError(
                 "Not all the correct dependencies for this ExampleSelect exist."
                 "Please install nltk with `pip install nltk`."
-            ) from e
+            )
+
+        # Module exists, now we need to check for the specific attributes
+        nltk_bleu = importlib.import_module("nltk.translate.bleu_score")
+        if (
+            not hasattr(nltk_bleu, "sentence_bleu") or 
+            not hasattr(nltk_bleu, "SmoothingFunction")
+        ):
+            raise ImportError(
+                "Required functions or classes are missing in nltk's bleu_score module. " # noqa: E501
+                "Please ensure you have the correct version of nltk."
+            )
+
 
         return values
 

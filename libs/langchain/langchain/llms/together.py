@@ -1,6 +1,6 @@
 """Wrapper around Together's Generation API."""
 import logging
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession
 
@@ -24,7 +24,7 @@ class Together(LLM):
     the environment variable ``TOGETHER_API_KEY`` set with your API token.
     You can find your token here: https://api.together.xyz/settings/api-keys
 
-    
+
     params format {
         "model": "togethercomputer/RedPajama-INCITE-7B-Instruct",
         "prompt": "Q: The capital of France is?\nA:",
@@ -35,7 +35,8 @@ class Together(LLM):
         "repetition_penalty": 1
     }
 
-    for api reference check together documentation: https://docs.together.ai/docs/inference-rest.
+    for api reference check together documentation: 
+    https://docs.together.ai/docs/inference-rest
     """
 
     base_url: str = "https://api.together.xyz/inference"
@@ -44,8 +45,9 @@ class Together(LLM):
 
     model: Optional[str] = None
     """
-    model name for above provider (eg: 'togethercomputer/RedPajama-INCITE-Chat-3B-v1' for RedPajama-INCITE Chat (3B))
-    available models are shown on https://docs.together.ai/docs/inference-models under 'available providers'
+    model name for above provider (eg: 'togethercomputer/RedPajama-INCITE-Chat-3B-v1' 
+    for RedPajama-INCITE Chat (3B))
+    available models are shown on https://docs.together.ai/docs/inference-models 
     """
 
     temperature: Optional[float] = Field(default=0.7, ge=0, le=1)  # for text
@@ -53,10 +55,10 @@ class Together(LLM):
     top_k: Optional[int] = Field(default=50, ge=0)  # for text
     max_tokens: Optional[int] = Field(default=128, ge=0)  # for text
     repetition_penalty: Optional[float] = Field(default=1, ge=0, le=1)  # for text
-    
 
     class Config:
         """Configuration for this pydantic object."""
+
         extra = Extra.forbid
 
     @root_validator()
@@ -100,7 +102,7 @@ class Together(LLM):
         url = f"{self.base_url}"
         headers = {
             "Authorization": f"Bearer {self.together_api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         payload: Dict[str, Any] = {
             "model": self.model,
@@ -109,7 +111,7 @@ class Together(LLM):
             "top_p": self.top_p,
             "top_k": self.top_k,
             "max_tokens": self.max_tokens,
-            "repetition_penalty": self.repetition_penalty
+            "repetition_penalty": self.repetition_penalty,
         }
 
         # filter None values to not pass them to the http payload
@@ -129,13 +131,12 @@ class Together(LLM):
             )
 
         data = response.json()
-        
+
         if data.get("status") != "finished":
             err_msg = data.get("error", "Undefined Error")
             raise Exception(err_msg)
 
         output = self._format_output(data)
-
 
         return output
 
@@ -167,7 +168,7 @@ class Together(LLM):
 
         headers = {
             "Authorization": f"Bearer {self.together_api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
 
         payload: Dict[str, Any] = {
@@ -177,7 +178,7 @@ class Together(LLM):
             "top_p": self.top_p,
             "top_k": self.top_k,
             "max_tokens": self.max_tokens,
-            "repetition_penalty": self.repetition_penalty
+            "repetition_penalty": self.repetition_penalty,
         }
 
         # filter `None` values to not pass them to the http payload as null
@@ -187,7 +188,9 @@ class Together(LLM):
             payload["settings"] = {self.provider: self.model}
 
         async with ClientSession() as session:
-            async with session.post(self.base_url, json=payload, headers=headers) as response:
+            async with session.post(
+                self.base_url, json=payload, headers=headers
+            ) as response:
                 if response.status >= 500:
                     raise Exception(f"Together Server: Error {response.status}")
                 elif response.status >= 400:
@@ -201,7 +204,7 @@ class Together(LLM):
                     )
 
                 response_json = await response.json()
-                
+
                 if response_json.get("status") != "finished":
                     err_msg = response_json.get("error", "Undefined Error")
                     raise Exception(err_msg)

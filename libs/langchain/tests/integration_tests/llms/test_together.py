@@ -20,7 +20,8 @@ def test_together_call() -> None:
 
 async def test_together_acall() -> None:
     """Test simple call to together."""
-    output = await llm.agenerate(["Say foo:"])
     llm = Together(temperature=0.2, max_tokens=250)
+    output = await llm.agenerate(["Say foo:"])
+    
     assert llm._llm_type == "together"
     assert isinstance(output, str)
