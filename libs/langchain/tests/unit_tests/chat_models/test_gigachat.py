@@ -1,4 +1,4 @@
-from typing import Any, AsyncGenerator, Coroutine, Iterable, Iterator, List
+from typing import Any, AsyncGenerator, Iterable, List
 
 import pytest
 from gigachat.models import (
