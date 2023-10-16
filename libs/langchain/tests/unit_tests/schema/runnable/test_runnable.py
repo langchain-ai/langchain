@@ -1017,6 +1017,34 @@ def test_configurable_fields_example() -> None:
 
 
 @pytest.mark.asyncio
+async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
+    fake = FakeRunnable()
+    mock = mocker.Mock()
+
+    seq: Runnable = fake | RunnablePassthrough(mock)
+
+    assert await seq.ainvoke("hello") == 5
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+    assert [
+        part async for part in seq.astream("hello", dict(metadata={"key": "value"}))
+    ] == [5]
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+    assert seq.invoke("hello") == 5
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+    assert [part for part in seq.stream("hello", dict(metadata={"key": "value"}))] == [
+        5
+    ]
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+
+@pytest.mark.asyncio
 async def test_with_config(mocker: MockerFixture) -> None:
     fake = FakeRunnable()
     spy = mocker.spy(fake, "invoke")
@@ -1950,7 +1978,7 @@ def test_combining_sequences(
         lambda x: {"question": x[0] + x[1]}
     )
 
-    chain2 = input_formatter | prompt2 | chat2 | parser2
+    chain2 = cast(RunnableSequence, input_formatter | prompt2 | chat2 | parser2)
 
     assert isinstance(chain, RunnableSequence)
     assert chain2.first == input_formatter
@@ -1959,7 +1987,7 @@ def test_combining_sequences(
     if sys.version_info >= (3, 9):
         assert dumps(chain2, pretty=True) == snapshot
 
-    combined_chain = chain | chain2
+    combined_chain = cast(RunnableSequence, chain | chain2)
 
     assert combined_chain.first == prompt
     assert combined_chain.middle == [
@@ -2944,7 +2972,7 @@ def llm_with_multi_fallbacks() -> RunnableWithFallbacks:
 
 
 @pytest.fixture()
-def llm_chain_with_fallbacks() -> RunnableSequence:
+def llm_chain_with_fallbacks() -> Runnable:
     error_llm = FakeListLLM(responses=["foo"], i=1)
     pass_llm = FakeListLLM(responses=["bar"])
 

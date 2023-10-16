@@ -603,7 +603,6 @@ __all__ = [
     "Weaviate",
     "ZepVectorStore",
     "Zilliz",
-    "Zilliz",
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
 ]

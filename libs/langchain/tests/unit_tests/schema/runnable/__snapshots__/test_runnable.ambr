@@ -3281,7 +3281,11 @@
                     "runnable",
                     "RunnablePassthrough"
                   ],
-                  "kwargs": {}
+                  "kwargs": {
+                    "func": null,
+                    "afunc": null,
+                    "input_type": null
+                  }
                 },
                 "last": {
                   "lc": 1,
