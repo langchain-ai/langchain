@@ -64,7 +64,7 @@ For a [development container](https://containers.dev/), see the [.devcontainer f
 
 ### Dependency Management: Poetry and other env/dependency managers
 
-This project uses [Poetry](https://python-poetry.org/) v1.5.1+ as a dependency manager.
+This project uses [Poetry](https://python-poetry.org/) v1.6.1+ as a dependency manager.
 
 ❗Note: *Before installing Poetry*, if you use `Conda`, create and activate a new Conda env (e.g. `conda create -n langchain python=3.9`)
 
@@ -105,8 +105,8 @@ make test
 If the tests don't pass, you may need to pip install additional dependencies, such as `numexpr` and `openapi_schema_pydantic`.
 
 If during installation you receive a `WheelFileValidationError` for `debugpy`, please make sure you are running
-Poetry v1.5.1+. This bug was present in older versions of Poetry (e.g. 1.4.1) and has been resolved in newer releases.
-If you are still seeing this bug on v1.5.1, you may also try disabling "modern installation"
+Poetry v1.6.1+. This bug was present in older versions of Poetry (e.g. 1.4.1) and has been resolved in newer releases.
+If you are still seeing this bug on v1.6.1, you may also try disabling "modern installation"
 (`poetry config installer.modern-installation false`) and re-installing requirements.
 See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for more details.
 
@@ -288,6 +288,13 @@ Finally, you can run the linkchecker to make sure all links are valid:
 make docs_linkcheck
 make api_docs_linkcheck
 ```
+
+### Verify Documentation changes
+
+After pushing documentation changes to the repository, you can preview and verify that the changes are 
+what you wanted by clicking the `View deployment` or `Visit Preview` buttons on the pull request `Conversation` page. 
+This will take you to a preview of the documentation changes.
+This preview is created by [Vercel](https://vercel.com/docs/getting-started-with-vercel).
 
 ## 🏭 Release Process
 
