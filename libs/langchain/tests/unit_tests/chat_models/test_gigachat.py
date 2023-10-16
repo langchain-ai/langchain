@@ -1,3 +1,4 @@
+# flake8: noqa: I001
 from typing import Any, AsyncGenerator, Iterable, List
 
 import pytest
