@@ -112,21 +112,6 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import LanceDB
 
-import lancedb
-
-db = lancedb.connect("/tmp/lancedb")
-table = db.create_table(
-    "my_table",
-    data=[
-        {
-            "vector": embeddings.embed_query("Hello World"),
-            "text": "Hello World",
-            "id": "1",
-        }
-    ],
-    mode="overwrite",
-)
-
 # Load the document, split it into chunks, embed each chunk and load it into the vector store.
 raw_documents = TextLoader('../../../state_of_the_union.txt').load()
 text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
