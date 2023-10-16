@@ -170,11 +170,6 @@ const config = {
             position: "left",
           },
           {
-            to: "/docs/security",
-            label: "Security",
-            position: "left",
-          },
-          {
             to: "https://chat.langchain.com",
             label: "Chat our docs",
             position: "right",
