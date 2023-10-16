@@ -76,15 +76,13 @@ class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
 
         # Module exists, now we need to check for the specific attributes
         nltk_bleu = importlib.import_module("nltk.translate.bleu_score")
-        if (
-            not hasattr(nltk_bleu, "sentence_bleu") or 
-            not hasattr(nltk_bleu, "SmoothingFunction")
+        if not hasattr(nltk_bleu, "sentence_bleu") or not hasattr(
+            nltk_bleu, "SmoothingFunction"
         ):
             raise ImportError(
-                "Required functions or classes are missing in nltk's bleu_score module. " # noqa: E501
+                "Required functions or classes are missing in nltk's bleu_score module. "  # noqa: E501
                 "Please ensure you have the correct version of nltk."
             )
-
 
         return values
 

@@ -1,4 +1,4 @@
-"""Wrapper around Together's Generation API."""
+"""Wrapper around Together AI's Completion API."""
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -9,8 +9,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
-from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, Field, root_validator
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utilities.requests import Requests
 from langchain.utils import get_from_dict_or_env
 
@@ -18,50 +17,56 @@ logger = logging.getLogger(__name__)
 
 
 class Together(LLM):
-    """Wrapper around together models.
+    """Wrapper around Together AI models.
 
-    To use, you should have
-    the environment variable ``TOGETHER_API_KEY`` set with your API token.
-    You can find your token here: https://api.together.xyz/settings/api-keys
+    To use, you'll need an API key which you can find here:
+    https://api.together.xyz/settings/api-keys. This can be passed in as init param
+    ``together_api_key`` or set as environment variable ``TOGETHER_API_KEY``.
 
-
-    params format {
-        "model": "togethercomputer/RedPajama-INCITE-7B-Instruct",
-        "prompt": "Q: The capital of France is?\nA:",
-        "temperature": 0.7,
-        "top_p": 0.7,
-        "top_k": 50,
-        "max_tokens": 1,
-        "repetition_penalty": 1
-    }
-
-    for api reference check together documentation:
-    https://docs.together.ai/docs/inference-rest
+    Together AI API reference: https://docs.together.ai/reference/inference
     """
 
     base_url: str = "https://api.together.xyz/inference"
-
-    together_api_key: Optional[str] = None
-
-    model: Optional[str] = None
+    """Base inference API URL."""
+    together_api_key: str
+    """Together AI API key. Get it here: https://api.together.xyz/settings/api-keys"""
+    model: str
+    """Model name. Available models listed here: 
+        https://docs.together.ai/docs/inference-models
     """
-    model name for above provider (eg: 'togethercomputer/RedPajama-INCITE-Chat-3B-v1' 
-    for RedPajama-INCITE Chat (3B))
-    available models are shown on https://docs.together.ai/docs/inference-models 
+    temperature: Optional[float] = None
+    """Model temperature."""
+    top_p: Optional[float] = None
+    """Used to dynamically adjust the number of choices for each predicted token based 
+        on the cumulative probabilities. A value of 1 will always yield the same 
+        output. A temperature less than 1 favors more correctness and is appropriate 
+        for question answering or summarization. A value greater than 1 introduces more 
+        randomness in the output.
     """
-
-    temperature: Optional[float] = Field(default=0.7, ge=0, le=1)  # for text
-    top_p: Optional[float] = Field(default=0.7, ge=0, le=1)  # for text
-    top_k: Optional[int] = Field(default=50, ge=0)  # for text
-    max_tokens: Optional[int] = Field(default=128, ge=0)  # for text
-    repetition_penalty: Optional[float] = Field(default=1, ge=0, le=1)  # for text
+    top_k: Optional[int] = None
+    """Used to limit the number of choices for the next predicted word or token. It 
+        specifies the maximum number of tokens to consider at each step, based on their 
+        probability of occurrence. This technique helps to speed up the generation 
+        process and can improve the quality of the generated text by focusing on the 
+        most likely options.
+    """
+    max_tokens: Optional[int] = None
+    """The maximum number of tokens to generate."""
+    repetition_penalty: Optional[float] = None
+    """A number that controls the diversity of generated text by reducing the 
+        likelihood of repeated sequences. Higher values decrease repetition.
+    """
+    logprobs: Optional[int] = None
+    """An integer that specifies how many top token log probabilities are included in 
+        the response for each token generation step.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["together_api_key"] = get_from_dict_or_env(
@@ -83,6 +88,17 @@ class Together(LLM):
 
         return f"langchain/{__version__}"
 
+    @property
+    def default_params(self) -> Dict[str, Any]:
+        return {
+            "model": self.model,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+            "max_tokens": self.max_tokens,
+            "repetition_penalty": self.repetition_penalty,
+        }
+
     def _call(
         self,
         prompt: str,
@@ -96,40 +112,25 @@ class Together(LLM):
             prompt: The prompt to pass into the model.
 
         Returns:
-            json formatted str response.
+            The string generated by the model..
         """
 
-        url = f"{self.base_url}"
         headers = {
             "Authorization": f"Bearer {self.together_api_key}",
             "Content-Type": "application/json",
         }
+        stop_to_use = stop[0] if stop and len(stop) == 1 else stop
         payload: Dict[str, Any] = {
-            "model": self.model,
+            **self.default_params,
             "prompt": prompt,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "top_k": self.top_k,
-            "max_tokens": self.max_tokens,
-            "repetition_penalty": self.repetition_penalty,
+            "stop": stop_to_use,
+            **kwargs,
         }
-
-        # Overwrite the values in payload with kwargs if they are provided
-        for key in [
-            "temperature",
-            "top_p",
-            "top_k",
-            "max_tokens",
-            "repetition_penalty",
-        ]:
-            if key in kwargs:
-                payload[key] = kwargs[key]
 
         # filter None values to not pass them to the http payload
         payload = {k: v for k, v in payload.items() if v is not None}
-
         request = Requests(headers=headers)
-        response = request.post(url=url, data=payload)
+        response = request.post(url=self.base_url, data=payload)
 
         if response.status_code >= 500:
             raise Exception(f"Together Server: Error {response.status_code}")
@@ -142,7 +143,6 @@ class Together(LLM):
             )
 
         data = response.json()
-
         if data.get("status") != "finished":
             err_msg = data.get("error", "Undefined Error")
             raise Exception(err_msg)
@@ -166,38 +166,20 @@ class Together(LLM):
         Returns:
             The string generated by the model.
         """
-
-        stops = None
-        if self.stop_sequences is not None and stop is not None:
-            raise ValueError(
-                "stop sequences found in both the input and default params."
-            )
-        elif self.stop_sequences is not None:
-            stops = self.stop_sequences
-        else:
-            stops = stop
-
         headers = {
             "Authorization": f"Bearer {self.together_api_key}",
             "Content-Type": "application/json",
         }
-
+        stop_to_use = stop[0] if stop and len(stop) == 1 else stop
         payload: Dict[str, Any] = {
-            "model": self.model,
+            **self.default_params,
             "prompt": prompt,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "top_k": self.top_k,
-            "max_tokens": self.max_tokens,
-            "repetition_penalty": self.repetition_penalty,
+            "stop": stop_to_use,
+            **kwargs,
         }
 
-        # filter `None` values to not pass them to the http payload as null
+        # filter None values to not pass them to the http payload
         payload = {k: v for k, v in payload.items() if v is not None}
-
-        if self.model is not None:
-            payload["settings"] = {self.provider: self.model}
-
         async with ClientSession() as session:
             async with session.post(
                 self.base_url, json=payload, headers=headers
@@ -221,7 +203,4 @@ class Together(LLM):
                     raise Exception(err_msg)
 
                 output = self._format_output(response_json)
-                if stops is not None:
-                    output = enforce_stop_tokens(output, stops)
-
                 return output
