@@ -775,7 +775,7 @@ class ElasticsearchStore(VectorStore):
             docs_and_scores.append(
                 (
                     Document(
-                        page_content=hit["_source"][self.query_field],
+                        page_content=hit["_source"].get(self.query_field, ""),
                         metadata=hit["_source"]["metadata"],
                     ),
                     hit["_score"],
