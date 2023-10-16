@@ -38,8 +38,11 @@ class DocusaurusLoader(BaseLoader):
         """Load documents."""
         from langchain.document_loaders.sitemap import SitemapLoader
 
+        if not self.kwargs.get("is_local"):
+            self.url = f"{self.url}/sitemap.xml"
+
         loader = SitemapLoader(
-            f"{self.url}/sitemap.xml",
+            web_path=self.url,
             parsing_function=self._parsing_function,
             **self.kwargs,
         )
