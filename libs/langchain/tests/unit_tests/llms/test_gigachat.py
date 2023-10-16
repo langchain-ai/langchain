@@ -1,3 +1,5 @@
+from typing import Any, AsyncGenerator, Iterable, List
+
 import pytest
 from gigachat.models import (
     ChatCompletion,
@@ -8,6 +10,7 @@ from gigachat.models import (
     MessagesChunk,
     Usage,
 )
+from pytest_mock import MockerFixture
 
 from langchain.llms.gigachat import GigaChat
 
@@ -18,7 +21,7 @@ from ..callbacks.fake_callback_handler import (
 
 
 @pytest.fixture
-def chat_completion():
+def chat_completion() -> ChatCompletion:
     return ChatCompletion(
         choices=[
             Choices(
@@ -42,7 +45,7 @@ def chat_completion():
 
 
 @pytest.fixture
-def chat_completion_stream():
+def chat_completion_stream() -> List[ChatCompletionChunk]:
     return [
         ChatCompletionChunk(
             choices=[
@@ -71,7 +74,11 @@ def chat_completion_stream():
 
 
 @pytest.fixture
-def patch_gigachat(mocker, chat_completion, chat_completion_stream):
+def patch_gigachat(
+    mocker: MockerFixture,
+    chat_completion: ChatCompletion,
+    chat_completion_stream: List[ChatCompletionChunk],
+) -> None:
     mock = mocker.Mock()
     mock.chat.return_value = chat_completion
     mock.stream.return_value = chat_completion_stream
@@ -80,8 +87,10 @@ def patch_gigachat(mocker, chat_completion, chat_completion_stream):
 
 
 @pytest.fixture
-def patch_gigachat_achat(mocker, chat_completion):
-    async def return_value_coroutine(value):
+def patch_gigachat_achat(
+    mocker: MockerFixture, chat_completion: ChatCompletion
+) -> None:
+    async def return_value_coroutine(value: Any) -> Any:
         return value
 
     mock = mocker.Mock()
@@ -91,8 +100,10 @@ def patch_gigachat_achat(mocker, chat_completion):
 
 
 @pytest.fixture
-def patch_gigachat_astream(mocker, chat_completion_stream):
-    async def return_value_async_generator(value):
+def patch_gigachat_astream(
+    mocker: MockerFixture, chat_completion_stream: List[ChatCompletionChunk]
+) -> None:
+    async def return_value_async_generator(value: Iterable) -> AsyncGenerator:
         for chunk in value:
             yield chunk
 
@@ -102,7 +113,7 @@ def patch_gigachat_astream(mocker, chat_completion_stream):
     mocker.patch("gigachat.GigaChat", return_value=mock)
 
 
-def test_gigachat_predict(patch_gigachat):
+def test_gigachat_predict(patch_gigachat: None) -> None:
     expected = "Bar Baz"
 
     llm = GigaChat()
@@ -111,7 +122,7 @@ def test_gigachat_predict(patch_gigachat):
     assert actual == expected
 
 
-def test_gigachat_predict_stream(patch_gigachat):
+def test_gigachat_predict_stream(patch_gigachat: None) -> None:
     expected = "Bar Baz Stream"
 
     llm = GigaChat()
@@ -123,7 +134,7 @@ def test_gigachat_predict_stream(patch_gigachat):
 
 
 @pytest.mark.asyncio()
-async def test_gigachat_apredict(patch_gigachat_achat):
+async def test_gigachat_apredict(patch_gigachat_achat: None) -> None:
     expected = "Bar Baz"
 
     llm = GigaChat()
@@ -133,7 +144,7 @@ async def test_gigachat_apredict(patch_gigachat_achat):
 
 
 @pytest.mark.asyncio()
-async def test_gigachat_apredict_stream(patch_gigachat_astream):
+async def test_gigachat_apredict_stream(patch_gigachat_astream: None) -> None:
     expected = "Bar Baz Stream"
 
     llm = GigaChat()
@@ -144,7 +155,7 @@ async def test_gigachat_apredict_stream(patch_gigachat_astream):
     assert callback_handler.llm_streams == 2
 
 
-def test_gigachat_stream(patch_gigachat):
+def test_gigachat_stream(patch_gigachat: None) -> None:
     expected = ["Bar Baz", " Stream"]
 
     llm = GigaChat()
@@ -154,7 +165,7 @@ def test_gigachat_stream(patch_gigachat):
 
 
 @pytest.mark.asyncio()
-async def test_gigachat_astream(patch_gigachat_astream):
+async def test_gigachat_astream(patch_gigachat_astream: None) -> None:
     expected = ["Bar Baz", " Stream"]
 
     llm = GigaChat()

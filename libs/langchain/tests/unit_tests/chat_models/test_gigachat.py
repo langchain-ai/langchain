@@ -1,3 +1,5 @@
+from typing import Any, AsyncGenerator, Coroutine, Iterable, Iterator, List
+
 import pytest
 from gigachat.models import (
     ChatCompletion,
@@ -8,6 +10,7 @@ from gigachat.models import (
     MessagesChunk,
     Usage,
 )
+from pytest_mock import MockerFixture
 
 from langchain.chat_models.gigachat import (
     GigaChat,
@@ -29,7 +32,7 @@ from ..callbacks.fake_callback_handler import (
 )
 
 
-def test__convert_dict_to_message_system():
+def test__convert_dict_to_message_system() -> None:
     message = Messages(role="system", content="foo")
     expected = SystemMessage(content="foo")
 
@@ -38,7 +41,7 @@ def test__convert_dict_to_message_system():
     assert actual == expected
 
 
-def test__convert_dict_to_message_human():
+def test__convert_dict_to_message_human() -> None:
     message = Messages(role="user", content="foo")
     expected = HumanMessage(content="foo")
 
@@ -47,7 +50,7 @@ def test__convert_dict_to_message_human():
     assert actual == expected
 
 
-def test__convert_dict_to_message_ai():
+def test__convert_dict_to_message_ai() -> None:
     message = Messages(role="assistant", content="foo")
     expected = AIMessage(content="foo")
 
@@ -56,7 +59,7 @@ def test__convert_dict_to_message_ai():
     assert actual == expected
 
 
-def test__convert_dict_to_message_type_error():
+def test__convert_dict_to_message_type_error() -> None:
     message = Messages(role="user", content="foo")
     message.role = "bar"
 
@@ -64,7 +67,7 @@ def test__convert_dict_to_message_type_error():
         _convert_dict_to_message(message)
 
 
-def test__convert_message_to_dict_system():
+def test__convert_message_to_dict_system() -> None:
     message = SystemMessage(content="foo")
     expected = Messages(role="system", content="foo")
 
@@ -73,7 +76,7 @@ def test__convert_message_to_dict_system():
     assert actual == expected
 
 
-def test__convert_message_to_dict_human():
+def test__convert_message_to_dict_human() -> None:
     message = HumanMessage(content="foo")
     expected = Messages(role="user", content="foo")
 
@@ -82,7 +85,7 @@ def test__convert_message_to_dict_human():
     assert actual == expected
 
 
-def test__convert_message_to_dict_ai():
+def test__convert_message_to_dict_ai() -> None:
     message = AIMessage(content="foo")
     expected = Messages(role="assistant", content="foo")
 
@@ -92,7 +95,7 @@ def test__convert_message_to_dict_ai():
 
 
 @pytest.mark.parametrize("role", ("system", "user", "assistant"))
-def test__convert_message_to_dict_chat(role):
+def test__convert_message_to_dict_chat(role: str) -> None:
     message = ChatMessage(role=role, content="foo")
     expected = Messages(role=role, content="foo")
 
@@ -101,14 +104,14 @@ def test__convert_message_to_dict_chat(role):
     assert actual == expected
 
 
-def test__convert_message_to_dict_type_error():
+def test__convert_message_to_dict_type_error() -> None:
     message = FunctionMessage(name="bar", content="foo")
     with pytest.raises(TypeError):
         _convert_message_to_dict(message)
 
 
 @pytest.fixture
-def chat_completion():
+def chat_completion() -> ChatCompletion:
     return ChatCompletion(
         choices=[
             Choices(
@@ -132,7 +135,7 @@ def chat_completion():
 
 
 @pytest.fixture
-def chat_completion_stream():
+def chat_completion_stream() -> List[ChatCompletionChunk]:
     return [
         ChatCompletionChunk(
             choices=[
@@ -161,7 +164,12 @@ def chat_completion_stream():
 
 
 @pytest.fixture
-def patch_gigachat(mocker, chat_completion, chat_completion_stream):
+def patch_gigachat(
+    mocker: MockerFixture,
+    chat_completion: ChatCompletion,
+    chat_completion_stream: List[ChatCompletionChunk],
+) -> None:
+    print(type(mocker))
     mock = mocker.Mock()
     mock.chat.return_value = chat_completion
     mock.stream.return_value = chat_completion_stream
@@ -170,8 +178,10 @@ def patch_gigachat(mocker, chat_completion, chat_completion_stream):
 
 
 @pytest.fixture
-def patch_gigachat_achat(mocker, chat_completion):
-    async def return_value_coroutine(value):
+def patch_gigachat_achat(
+    mocker: MockerFixture, chat_completion: ChatCompletion
+) -> None:
+    async def return_value_coroutine(value: Any) -> Any:
         return value
 
     mock = mocker.Mock()
@@ -181,8 +191,10 @@ def patch_gigachat_achat(mocker, chat_completion):
 
 
 @pytest.fixture
-def patch_gigachat_astream(mocker, chat_completion_stream):
-    async def return_value_async_generator(value):
+def patch_gigachat_astream(
+    mocker: MockerFixture, chat_completion_stream: List[ChatCompletionChunk]
+) -> None:
+    async def return_value_async_generator(value: Iterable) -> AsyncGenerator:
         for chunk in value:
             yield chunk
 
@@ -192,7 +204,7 @@ def patch_gigachat_astream(mocker, chat_completion_stream):
     mocker.patch("gigachat.GigaChat", return_value=mock)
 
 
-def test_gigachat_predict(patch_gigachat):
+def test_gigachat_predict(patch_gigachat: None) -> None:
     expected = "Bar Baz"
 
     llm = GigaChat()
@@ -201,7 +213,7 @@ def test_gigachat_predict(patch_gigachat):
     assert actual == expected
 
 
-def test_gigachat_predict_stream(patch_gigachat):
+def test_gigachat_predict_stream(patch_gigachat: None) -> None:
     expected = "Bar Baz Stream"
 
     llm = GigaChat()
@@ -213,7 +225,7 @@ def test_gigachat_predict_stream(patch_gigachat):
 
 
 @pytest.mark.asyncio()
-async def test_gigachat_apredict(patch_gigachat_achat):
+async def test_gigachat_apredict(patch_gigachat_achat: None) -> None:
     expected = "Bar Baz"
 
     llm = GigaChat()
@@ -223,7 +235,7 @@ async def test_gigachat_apredict(patch_gigachat_achat):
 
 
 @pytest.mark.asyncio()
-async def test_gigachat_apredict_stream(patch_gigachat_astream):
+async def test_gigachat_apredict_stream(patch_gigachat_astream: None) -> None:
     expected = "Bar Baz Stream"
 
     llm = GigaChat()
@@ -234,7 +246,7 @@ async def test_gigachat_apredict_stream(patch_gigachat_astream):
     assert callback_handler.llm_streams == 2
 
 
-def test_gigachat_stream(patch_gigachat):
+def test_gigachat_stream(patch_gigachat: None) -> None:
     expected = [AIMessageChunk(content="Bar Baz"), AIMessageChunk(content=" Stream")]
 
     llm = GigaChat()
@@ -244,7 +256,7 @@ def test_gigachat_stream(patch_gigachat):
 
 
 @pytest.mark.asyncio()
-async def test_gigachat_astream(patch_gigachat_astream):
+async def test_gigachat_astream(patch_gigachat_astream: None) -> None:
     expected = [AIMessageChunk(content="Bar Baz"), AIMessageChunk(content=" Stream")]
 
     llm = GigaChat()
