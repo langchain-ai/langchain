@@ -1,9 +1,9 @@
 import re
-from typing import *
+from typing import List, Tuple
 
 from langchain.agents import ConversationalChatAgent
 from langchain.agents.conversational_chat.prompt import TEMPLATE_TOOL_RESPONSE
-from langchain.schema import BaseMessage, AIMessage, HumanMessage, AgentAction
+from langchain.schema import AgentAction, AIMessage, BaseMessage, HumanMessage
 
 CONTEXT_PATTERN = re.compile(r"^CONTEXT:")
 
@@ -11,7 +11,8 @@ CONTEXT_PATTERN = re.compile(r"^CONTEXT:")
 class ConversationalChatContextAgent(ConversationalChatAgent):
     """
     An agent designed to hold a conversation in addition to using tools.
-    This agent can ask for context from the user. To ask for context, tools have to return a prefix 'CONTEXT:' followed by the context question.
+    This agent can ask for context from the user. To ask for context,
+    tools have to return a prefix 'CONTEXT:' followed by the context question.
     """
 
     @property
