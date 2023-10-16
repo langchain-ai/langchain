@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class SeleniumURLLoader(BaseLoader):
-    """Loader that uses Selenium and to load a page and unstructured to load the html.
+    """Load `HTML` pages with `Selenium` and parse with `Unstructured`.
+
     This is useful for loading pages that require javascript to render.
 
     Attributes:
@@ -73,6 +74,7 @@ class SeleniumURLLoader(BaseLoader):
         if self.browser.lower() == "chrome":
             from selenium.webdriver import Chrome
             from selenium.webdriver.chrome.options import Options as ChromeOptions
+            from selenium.webdriver.chrome.service import Service
 
             chrome_options = ChromeOptions()
 
@@ -86,10 +88,14 @@ class SeleniumURLLoader(BaseLoader):
                 chrome_options.binary_location = self.binary_location
             if self.executable_path is None:
                 return Chrome(options=chrome_options)
-            return Chrome(executable_path=self.executable_path, options=chrome_options)
+            return Chrome(
+                options=chrome_options,
+                service=Service(executable_path=self.executable_path),
+            )
         elif self.browser.lower() == "firefox":
             from selenium.webdriver import Firefox
             from selenium.webdriver.firefox.options import Options as FirefoxOptions
+            from selenium.webdriver.firefox.service import Service
 
             firefox_options = FirefoxOptions()
 
@@ -103,10 +109,42 @@ class SeleniumURLLoader(BaseLoader):
             if self.executable_path is None:
                 return Firefox(options=firefox_options)
             return Firefox(
-                executable_path=self.executable_path, options=firefox_options
+                options=firefox_options,
+                service=Service(executable_path=self.executable_path),
             )
         else:
             raise ValueError("Invalid browser specified. Use 'chrome' or 'firefox'.")
+
+    def _build_metadata(self, url: str, driver: Union["Chrome", "Firefox"]) -> dict:
+        from selenium.common.exceptions import NoSuchElementException
+        from selenium.webdriver.common.by import By
+
+        """Build metadata based on the contents of the webpage"""
+        metadata = {
+            "source": url,
+            "title": "No title found.",
+            "description": "No description found.",
+            "language": "No language found.",
+        }
+        if title := driver.title:
+            metadata["title"] = title
+        try:
+            if description := driver.find_element(
+                By.XPATH, '//meta[@name="description"]'
+            ):
+                metadata["description"] = (
+                    description.get_attribute("content") or "No description found."
+                )
+        except NoSuchElementException:
+            pass
+        try:
+            if html_tag := driver.find_element(By.TAG_NAME, "html"):
+                metadata["language"] = (
+                    html_tag.get_attribute("lang") or "No language found."
+                )
+        except NoSuchElementException:
+            pass
+        return metadata
 
     def load(self) -> List[Document]:
         """Load the specified URLs using Selenium and create Document instances.
@@ -125,7 +163,7 @@ class SeleniumURLLoader(BaseLoader):
                 page_content = driver.page_source
                 elements = partition_html(text=page_content)
                 text = "\n\n".join([str(el) for el in elements])
-                metadata = {"source": url}
+                metadata = self._build_metadata(url, driver)
                 docs.append(Document(page_content=text, metadata=metadata))
             except Exception as e:
                 if self.continue_on_failure:

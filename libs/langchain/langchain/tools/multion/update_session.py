@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING, Optional, Type
 
-from pydantic import BaseModel, Field
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
 
 if TYPE_CHECKING:
@@ -34,12 +33,20 @@ class UpdateSessionSchema(BaseModel):
 
 
 class MultionUpdateSession(BaseTool):
+    """Tool that updates an existing Multion Browser Window with provided fields.
+
+    Attributes:
+        name: The name of the tool. Default: "update_multion_session"
+        description: The description of the tool.
+        args_schema: The schema for the tool's arguments. Default: UpdateSessionSchema
+    """
+
     name: str = "update_multion_session"
     description: str = """Use this tool to update \
-        a existing corresponding \
-    Multion Browser Window with provided fields. \
-        Note:TabId is got from one of the previous Browser window creation."""
+an existing corresponding Multion Browser Window with provided fields. \
+Note: TabId must be received from previous Browser window creation."""
     args_schema: Type[UpdateSessionSchema] = UpdateSessionSchema
+    tabId: str = ""
 
     def _run(
         self,
@@ -55,9 +62,10 @@ class MultionUpdateSession(BaseTool):
                 self.tabId = tabId
                 return content
             except Exception as e:
-                print(f"{e}, creating a new session")
-                response = multion.new_session({"input": query, "url": url})
-                self.tabID = response["tabId"]
-                return {"tabId": response["tabId"], "Response": response["message"]}
+                print(f"{e}, retrying...")
+                return {"error": f"{e}", "Response": "retrying..."}
+                # response = multion.new_session({"input": query, "url": url})
+                # self.tabID = response["tabId"]
+                # return {"tabId": response["tabId"], "Response": response["message"]}
         except Exception as e:
             raise Exception(f"An error occurred: {e}")

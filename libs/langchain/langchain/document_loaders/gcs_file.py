@@ -1,4 +1,3 @@
-"""Load documents from a GCS file."""
 import os
 import tempfile
 from typing import Callable, List, Optional
@@ -9,7 +8,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class GCSFileLoader(BaseLoader):
-    """Load Documents from a GCS file."""
+    """Load from GCS file."""
 
     def __init__(
         self,
@@ -24,7 +23,7 @@ class GCSFileLoader(BaseLoader):
             project_name: The name of the project to load
             bucket: The name of the GCS bucket.
             blob: The name of the GCS blob to load.
-            loader_func: A loader function that instatiates a loader based on a
+            loader_func: A loader function that instantiates a loader based on a
                 file_path argument. If nothing is provided, the
                 UnstructuredFileLoader is used.
 

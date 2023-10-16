@@ -1,5 +1,5 @@
 """SQL agent."""
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.agent_toolkits.sql.prompt import (
@@ -21,6 +21,7 @@ from langchain.prompts.chat import (
 )
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import AIMessage, SystemMessage
+from langchain.tools import BaseTool
 
 
 def create_sql_agent(
@@ -38,10 +39,11 @@ def create_sql_agent(
     early_stopping_method: str = "force",
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    extra_tools: Sequence[BaseTool] = (),
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct an SQL agent from an LLM and tools."""
-    tools = toolkit.get_tools()
+    tools = toolkit.get_tools() + list(extra_tools)
     prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
     agent: BaseSingleActionAgent
 

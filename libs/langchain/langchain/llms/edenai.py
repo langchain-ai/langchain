@@ -3,7 +3,6 @@ import logging
 from typing import Any, Dict, List, Literal, Optional
 
 from aiohttp import ClientSession
-from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -11,7 +10,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.requests import Requests
+from langchain.pydantic_v1 import Extra, Field, root_validator
+from langchain.utilities.requests import Requests
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class EdenAI(LLM):
     for api reference check edenai documentation: http://docs.edenai.co.
     """
 
-    base_url = "https://api.edenai.run/v2"
+    base_url: str = "https://api.edenai.run/v2"
 
     edenai_api_key: Optional[str] = None
 
@@ -41,13 +41,24 @@ class EdenAI(LLM):
     """Subfeature of above feature, use generation by default"""
 
     provider: str
-    """Geneerative provider to use (eg: openai,stabilityai,cohere,google etc.)"""
+    """Generative provider to use (eg: openai,stabilityai,cohere,google etc.)"""
 
-    params: Dict[str, Any]
+    model: Optional[str] = None
     """
-    Parameters to pass to above subfeature (excluding 'providers' & 'text')
-    ref text: https://docs.edenai.co/reference/text_generation_create
-    ref image: https://docs.edenai.co/reference/text_generation_create
+    model name for above provider (eg: 'text-davinci-003' for openai)
+    available models are shown on https://docs.edenai.co/ under 'available providers'
+    """
+
+    # Optional parameters to add depending of chosen feature
+    # see api reference for more infos
+    temperature: Optional[float] = Field(default=None, ge=0, le=1)  # for text
+    max_tokens: Optional[int] = Field(default=None, ge=0)  # for text
+    resolution: Optional[Literal["256x256", "512x512", "1024x1024"]] = None  # for image
+
+    params: Dict[str, Any] = Field(default_factory=dict)
+    """
+    DEPRECATED: use temperature, max_tokens, resolution directly
+    optional parameters to pass to api
     """
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -98,6 +109,12 @@ class EdenAI(LLM):
         else:
             return output[self.provider]["items"][0]["image"]
 
+    @staticmethod
+    def get_user_agent() -> str:
+        from langchain import __version__
+
+        return f"langchain/{__version__}"
+
     def _call(
         self,
         prompt: str,
@@ -112,7 +129,6 @@ class EdenAI(LLM):
 
         Returns:
             json formatted str response.
-
         """
         stops = None
         if self.stop_sequences is not None and stop is not None:
@@ -125,16 +141,28 @@ class EdenAI(LLM):
             stops = stop
 
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
-        headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
-        payload = {
-            **self.params,
-            "providers": self.provider,
-            "num_images": 1,  # always limit to 1 (ignored for text)
-            "text": prompt,
-            **kwargs,
+        headers = {
+            "Authorization": f"Bearer {self.edenai_api_key}",
+            "User-Agent": self.get_user_agent(),
         }
-        request = Requests(headers=headers)
+        payload: Dict[str, Any] = {
+            "providers": self.provider,
+            "text": prompt,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "resolution": self.resolution,
+            **self.params,
+            **kwargs,
+            "num_images": 1,  # always limit to 1 (ignored for text)
+        }
 
+        # filter None values to not pass them to the http payload
+        payload = {k: v for k, v in payload.items() if v is not None}
+
+        if self.model is not None:
+            payload["settings"] = {self.provider: self.model}
+
+        request = Requests(headers=headers)
         response = request.post(url=url, data=payload)
 
         if response.status_code >= 500:
@@ -147,7 +175,13 @@ class EdenAI(LLM):
                 f"{response.status_code}: {response.text}"
             )
 
-        output = self._format_output(response.json())
+        data = response.json()
+        provider_response = data[self.provider]
+        if provider_response.get("status") == "fail":
+            err_msg = provider_response.get("error", {}).get("message")
+            raise Exception(err_msg)
+
+        output = self._format_output(data)
 
         if stops is not None:
             output = enforce_stop_tokens(output, stops)
@@ -182,19 +216,29 @@ class EdenAI(LLM):
         else:
             stops = stop
 
-        print("Running the acall")
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
-        headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
-        payload = {
-            **self.params,
+        headers = {
+            "Authorization": f"Bearer {self.edenai_api_key}",
+            "User-Agent": self.get_user_agent(),
+        }
+        payload: Dict[str, Any] = {
             "providers": self.provider,
-            "num_images": 1,  # always limit to 1 (ignored for text)
             "text": prompt,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "resolution": self.resolution,
+            **self.params,
             **kwargs,
+            "num_images": 1,  # always limit to 1 (ignored for text)
         }
 
+        # filter `None` values to not pass them to the http payload as null
+        payload = {k: v for k, v in payload.items() if v is not None}
+
+        if self.model is not None:
+            payload["settings"] = {self.provider: self.model}
+
         async with ClientSession() as session:
-            print("Requesting")
             async with session.post(url, json=payload, headers=headers) as response:
                 if response.status >= 500:
                     raise Exception(f"EdenAI Server: Error {response.status}")
@@ -209,6 +253,10 @@ class EdenAI(LLM):
                     )
 
                 response_json = await response.json()
+                provider_response = response_json[self.provider]
+                if provider_response.get("status") == "fail":
+                    err_msg = provider_response.get("error", {}).get("message")
+                    raise Exception(err_msg)
 
                 output = self._format_output(response_json)
                 if stops is not None:

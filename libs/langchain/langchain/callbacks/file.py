@@ -13,7 +13,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         self, filename: str, mode: str = "a", color: Optional[str] = None
     ) -> None:
         """Initialize callback handler."""
-        self.file = cast(TextIO, open(filename, mode))
+        self.file = cast(TextIO, open(filename, mode, encoding="utf-8"))
         self.color = color
 
     def __del__(self) -> None:

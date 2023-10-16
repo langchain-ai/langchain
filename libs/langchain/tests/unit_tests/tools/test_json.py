@@ -30,6 +30,10 @@ def test_json_spec_value() -> None:
     assert spec.value('data["baz"]') == "{'test': {'foo': [1, 2, 3]}}"
     assert spec.value('data["baz"]["test"]') == "{'foo': [1, 2, 3]}"
     assert spec.value('data["baz"]["test"]["foo"]') == "[1, 2, 3]"
+    assert spec.value("data['foo']") == "bar"
+    assert spec.value("data['baz']") == "{'test': {'foo': [1, 2, 3]}}"
+    assert spec.value("data['baz']['test']") == "{'foo': [1, 2, 3]}"
+    assert spec.value("data['baz']['test']['foo']") == "[1, 2, 3]"
 
 
 def test_json_spec_value_max_length() -> None:

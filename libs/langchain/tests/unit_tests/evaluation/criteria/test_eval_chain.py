@@ -24,29 +24,38 @@ def test_resolve_criteria_str() -> None:
     }
 
 
-def test_CriteriaResultOutputParser_parse() -> None:
-    output_parser = CriteriaResultOutputParser()
-    text = """Here is my step-by-step reasoning for the given criteria:
+@pytest.mark.parametrize(
+    "text,want",
+    [
+        ("Y", {"reasoning": "", "value": "Y", "score": 1}),
+        (
+            """Here is my step-by-step reasoning for the given criteria:
 The criterion is: "Do you like cake?" I like cake.
-Y"""
+Y""",
+            {
+                "reasoning": """Here is my step-by-step reasoning for the given criteria:
+The criterion is: "Do you like cake?" I like cake.""",  # noqa: E501
+                "value": "Y",
+                "score": 1,
+            },
+        ),
+        (
+            " NThe submission N is correct, accurate, and factual. It accurately"
+            " identifies the specific effects of knowledge and interest on"
+            " these factors. Therefore, the submission Y meets the criteria. Y",
+            {
+                "reasoning": "NThe submission N is correct, accurate, and factual. It"
+                " accurately identifies the specific effects of knowledge and interest"
+                " on these factors. Therefore, the submission Y meets the criteria.",
+                "value": "Y",
+                "score": 1,
+            },
+        ),
+    ],
+)
+def test_CriteriaResultOutputParser_parse(text: str, want: dict) -> None:
+    output_parser = CriteriaResultOutputParser()
     got = output_parser.parse(text)
-    want = {
-        "reasoning": """Here is my step-by-step reasoning for the given criteria:
-The criterion is: "Do you like cake?" I like cake.""",
-        "value": "Y",
-        "score": 1,
-    }
-    assert got.get("reasoning") == want["reasoning"]
-    assert got.get("value") == want["value"]
-    assert got.get("score") == want["score"]
-
-    text = "Y"
-    got = output_parser.parse(text)
-    want = {
-        "reasoning": "",
-        "value": "Y",
-        "score": 1,
-    }
     assert got.get("reasoning") == want["reasoning"]
     assert got.get("value") == want["value"]
     assert got.get("score") == want["score"]

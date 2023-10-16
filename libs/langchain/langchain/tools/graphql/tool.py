@@ -11,8 +11,8 @@ class BaseGraphQLTool(BaseTool):
 
     graphql_wrapper: GraphQLAPIWrapper
 
-    name = "query_graphql"
-    description = """\
+    name: str = "query_graphql"
+    description: str = """\
     Input to this tool is a detailed and correct GraphQL query, output is a result from the API.
     If the query is not correct, an error message will be returned.
     If an error is returned with 'Bad request' in it, rewrite the query and try again.

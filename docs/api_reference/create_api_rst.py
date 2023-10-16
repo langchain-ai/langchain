@@ -3,7 +3,7 @@ import importlib
 import inspect
 import typing
 from pathlib import Path
-from typing import TypedDict, Sequence, List, Dict, Literal, Union
+from typing import TypedDict, Sequence, List, Dict, Literal, Union, Optional
 from enum import Enum
 
 from pydantic import BaseModel
@@ -122,7 +122,8 @@ def _merge_module_members(
 
 
 def _load_package_modules(
-    package_directory: Union[str, Path]
+    package_directory: Union[str, Path],
+    submodule: Optional[str] = None
 ) -> Dict[str, ModuleMembers]:
     """Recursively load modules of a package based on the file system.
 
@@ -131,6 +132,7 @@ def _load_package_modules(
 
     Parameters:
         package_directory: Path to the package directory.
+        submodule: Optional name of submodule to load.
 
     Returns:
         list: A list of loaded module objects.
@@ -142,33 +144,52 @@ def _load_package_modules(
     )
     modules_by_namespace = {}
 
+    # Get the high level package name
     package_name = package_path.name
 
-    for file_path in package_path.rglob("*.py"):
-        if not file_path.name.startswith("__"):
-            relative_module_name = file_path.relative_to(package_path)
-            # Get the full namespace of the module
-            namespace = str(relative_module_name).replace(".py", "").replace("/", ".")
-            # Keep only the top level namespace
-            top_namespace = namespace.split(".")[0]
+    # If we are loading a submodule, add it in
+    if submodule is not None:
+        package_path = package_path / submodule
 
-            try:
+    for file_path in package_path.rglob("*.py"):
+        if file_path.name.startswith("_"):
+            continue
+
+        relative_module_name = file_path.relative_to(package_path)
+
+        # Skip if any module part starts with an underscore
+        if any(part.startswith("_") for part in relative_module_name.parts):
+            continue
+
+        # Get the full namespace of the module
+        namespace = str(relative_module_name).replace(".py", "").replace("/", ".")
+        # Keep only the top level namespace
+        top_namespace = namespace.split(".")[0]
+
+        try:
+            # If submodule is present, we need to construct the paths in a slightly
+            # different way
+            if submodule is not None:
+                module_members = _load_module_members(
+                    f"{package_name}.{submodule}.{namespace}", f"{submodule}.{namespace}"
+                )
+            else:
                 module_members = _load_module_members(
                     f"{package_name}.{namespace}", namespace
                 )
-                # Merge module members if the namespace already exists
-                if top_namespace in modules_by_namespace:
-                    existing_module_members = modules_by_namespace[top_namespace]
-                    _module_members = _merge_module_members(
-                        [existing_module_members, module_members]
-                    )
-                else:
-                    _module_members = module_members
+            # Merge module members if the namespace already exists
+            if top_namespace in modules_by_namespace:
+                existing_module_members = modules_by_namespace[top_namespace]
+                _module_members = _merge_module_members(
+                    [existing_module_members, module_members]
+                )
+            else:
+                _module_members = module_members
 
-                modules_by_namespace[top_namespace] = _module_members
+            modules_by_namespace[top_namespace] = _module_members
 
-            except ImportError as e:
-                print(f"Error: Unable to import module '{namespace}' with error: {e}")
+        except ImportError as e:
+            print(f"Error: Unable to import module '{namespace}' with error: {e}")
 
     return modules_by_namespace
 
@@ -221,10 +242,10 @@ Classes
     :toctree: {module}
 """
 
-            for class_ in classes:
-                if not class_['is_public']:
+            for class_ in sorted(classes, key=lambda c: c["qualified_name"]):
+                if not class_["is_public"]:
                     continue
-                    
+
                 if class_["kind"] == "TypedDict":
                     template = "typeddict.rst"
                 elif class_["kind"] == "enum":
@@ -262,6 +283,12 @@ Functions
 def main() -> None:
     """Generate the reference.rst file for each package."""
     lc_members = _load_package_modules(PKG_DIR)
+    # Put some packages at top level
+    tools = _load_package_modules(PKG_DIR, "tools")
+    lc_members['tools.render'] = tools['render']
+    agents = _load_package_modules(PKG_DIR, "agents")
+    lc_members['agents.output_parsers'] = agents['output_parsers']
+    lc_members['agents.format_scratchpad'] = agents['format_scratchpad']
     lc_doc = ".. _api_reference:\n\n" + _construct_doc("langchain", lc_members)
     with open(WRITE_FILE, "w") as f:
         f.write(lc_doc)

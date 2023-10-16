@@ -16,10 +16,22 @@
 """
 
 from langchain.document_loaders.acreom import AcreomLoader
+from langchain.document_loaders.airbyte import (
+    AirbyteCDKLoader,
+    AirbyteGongLoader,
+    AirbyteHubspotLoader,
+    AirbyteSalesforceLoader,
+    AirbyteShopifyLoader,
+    AirbyteStripeLoader,
+    AirbyteTypeformLoader,
+    AirbyteZendeskSupportLoader,
+)
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
+from langchain.document_loaders.arcgis_loader import ArcGISLoader
 from langchain.document_loaders.arxiv import ArxivLoader
+from langchain.document_loaders.assemblyai import AssemblyAIAudioTranscriptLoader
 from langchain.document_loaders.async_html import AsyncHtmlLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.azure_blob_storage_container import (
@@ -42,6 +54,7 @@ from langchain.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain.document_loaders.brave_search import BraveSearchLoader
 from langchain.document_loaders.browserless import BrowserlessLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
+from langchain.document_loaders.chromium import AsyncChromiumLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.concurrent import ConcurrentLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
@@ -95,6 +108,7 @@ from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.merge import MergedDataLoader
 from langchain.document_loaders.mhtml import MHTMLLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
+from langchain.document_loaders.mongodb import MongodbLoader
 from langchain.document_loaders.news import NewsURLLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
@@ -120,6 +134,7 @@ from langchain.document_loaders.pdf import (
     PyPDFLoader,
     UnstructuredPDFLoader,
 )
+from langchain.document_loaders.polars_dataframe import PolarsDataFrameLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.psychic import PsychicLoader
 from langchain.document_loaders.pubmed import PubMedLoader
@@ -135,6 +150,7 @@ from langchain.document_loaders.rst import UnstructuredRSTLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
+from langchain.document_loaders.sharepoint import SharePointLoader
 from langchain.document_loaders.sitemap import SitemapLoader
 from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.snowflake_loader import SnowflakeLoader
@@ -186,13 +202,26 @@ PagedPDFSplitter = PyPDFLoader
 TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
+    "AcreomLoader",
+    "AsyncHtmlLoader",
+    "AsyncChromiumLoader",
     "AZLyricsLoader",
     "AcreomLoader",
+    "AirbyteCDKLoader",
+    "AirbyteGongLoader",
     "AirbyteJSONLoader",
+    "AirbyteHubspotLoader",
+    "AirbyteSalesforceLoader",
+    "AirbyteShopifyLoader",
+    "AirbyteStripeLoader",
+    "AirbyteTypeformLoader",
+    "AirbyteZendeskSupportLoader",
     "AirtableLoader",
     "AmazonTextractPDFLoader",
     "ApifyDatasetLoader",
+    "ArcGISLoader",
     "ArxivLoader",
+    "AssemblyAIAudioTranscriptLoader",
     "AsyncHtmlLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
@@ -242,7 +271,6 @@ __all__ = [
     "GutenbergLoader",
     "HNLoader",
     "HuggingFaceDatasetLoader",
-    "HuggingFaceDatasetLoader",
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
@@ -257,6 +285,7 @@ __all__ = [
     "MaxComputeLoader",
     "MergedDataLoader",
     "ModernTreasuryLoader",
+    "MongodbLoader",
     "NewsURLLoader",
     "NotebookLoader",
     "NotionDBLoader",
@@ -274,6 +303,7 @@ __all__ = [
     "PDFPlumberLoader",
     "PagedPDFSplitter",
     "PlaywrightURLLoader",
+    "PolarsDataFrameLoader",
     "PsychicLoader",
     "PubMedLoader",
     "PyMuPDFLoader",
@@ -292,6 +322,7 @@ __all__ = [
     "S3FileLoader",
     "SRTLoader",
     "SeleniumURLLoader",
+    "SharePointLoader",
     "SitemapLoader",
     "SlackDirectoryLoader",
     "SnowflakeLoader",

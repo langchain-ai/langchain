@@ -1,11 +1,10 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from pydantic import validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
 from langchain.llms.azureml_endpoint import AzureMLEndpointClient, ContentFormatterBase
+from langchain.pydantic_v1 import validator
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
@@ -17,24 +16,44 @@ from langchain.utils import get_from_dict_or_env
 
 
 class LlamaContentFormatter(ContentFormatterBase):
-    """Content formatter for LLaMa"""
+    """Content formatter for `LLaMA`."""
 
-    SUPPORTED_ROLES = ["user", "assistant", "system"]
+    SUPPORTED_ROLES: List[str] = ["user", "assistant", "system"]
 
     @staticmethod
     def _convert_message_to_dict(message: BaseMessage) -> Dict:
         """Converts message to a dict according to role"""
         if isinstance(message, HumanMessage):
-            return {"role": "user", "content": message.content}
+            return {
+                "role": "user",
+                "content": ContentFormatterBase.escape_special_characters(
+                    message.content
+                ),
+            }
         elif isinstance(message, AIMessage):
-            return {"role": "assistant", "content": message.content}
+            return {
+                "role": "assistant",
+                "content": ContentFormatterBase.escape_special_characters(
+                    message.content
+                ),
+            }
         elif isinstance(message, SystemMessage):
-            return {"role": "system", "content": message.content}
+            return {
+                "role": "system",
+                "content": ContentFormatterBase.escape_special_characters(
+                    message.content
+                ),
+            }
         elif (
             isinstance(message, ChatMessage)
             and message.role in LlamaContentFormatter.SUPPORTED_ROLES
         ):
-            return {"role": message.role, "content": message.content}
+            return {
+                "role": message.role,
+                "content": ContentFormatterBase.escape_special_characters(
+                    message.content
+                ),
+            }
         else:
             supported = ",".join(
                 [role for role in LlamaContentFormatter.SUPPORTED_ROLES]
@@ -66,7 +85,7 @@ class LlamaContentFormatter(ContentFormatterBase):
 
 
 class AzureMLChatOnlineEndpoint(SimpleChatModel):
-    """Azure ML Chat Online Endpoint models.
+    """`AzureML` Chat models API.
 
     Example:
         .. code-block:: python
@@ -94,7 +113,7 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
     the endpoint"""
 
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     @validator("http_client", always=True, allow_reuse=True)
     @classmethod

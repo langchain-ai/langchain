@@ -1,6 +1,7 @@
 """Generic utility functions."""
 import contextlib
 import datetime
+import functools
 import importlib
 import warnings
 from importlib.metadata import version
@@ -14,7 +15,8 @@ def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
     """Validate specified keyword args are mutually exclusive."""
 
     def decorator(func: Callable) -> Callable:
-        def wrapper(*args: Any, **kwargs: Any) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             """Validate exactly one arg in each group is not None."""
             counts = [
                 sum(1 for arg in arg_group if kwargs.get(arg) is not None)
@@ -141,7 +143,13 @@ def build_extra_kwargs(
     values: Dict[str, Any],
     all_required_field_names: Set[str],
 ) -> Dict[str, Any]:
-    """"""
+    """Build extra kwargs from values and extra_kwargs.
+
+    Args:
+        extra_kwargs: Extra kwargs passed in by user.
+        values: Values passed in by user.
+        all_required_field_names: All required field names for the pydantic class.
+    """
     for field_name in list(values):
         if field_name in extra_kwargs:
             raise ValueError(f"Found {field_name} supplied twice.")

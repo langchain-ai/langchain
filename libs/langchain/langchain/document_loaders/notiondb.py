@@ -1,5 +1,3 @@
-"""Notion DB loader for langchain"""
-
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -14,7 +12,7 @@ BLOCK_URL = NOTION_BASE_URL + "/blocks/{block_id}/children"
 
 
 class NotionDBLoader(BaseLoader):
-    """Notion DB Loader.
+    """Load from `Notion DB`.
 
     Reads content from pages within a Notion Database.
     Args:
@@ -122,6 +120,16 @@ class NotionDBLoader(BaseLoader):
                     if prop_data["people"]
                     else []
                 )
+            elif prop_type == "date":
+                value = prop_data["date"] if prop_data["date"] else None
+            elif prop_type == "last_edited_time":
+                value = (
+                    prop_data["last_edited_time"]
+                    if prop_data["last_edited_time"]
+                    else None
+                )
+            elif prop_type == "created_time":
+                value = prop_data["created_time"] if prop_data["created_time"] else None
             else:
                 value = None
 

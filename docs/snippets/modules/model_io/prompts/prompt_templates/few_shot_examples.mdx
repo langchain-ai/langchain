@@ -1,13 +1,13 @@
 ### Use Case
 
-In this tutorial, we'll configure few shot examples for self-ask with search.
+In this tutorial, we'll configure few-shot examples for self-ask with search.
 
 
 ## Using an example set
 
 ### Create the example set
 
-To get started, create a list of few shot examples. Each example should be a dictionary with the keys being the input variables and the values being the values for those input variables.
+To get started, create a list of few-shot examples. Each example should be a dictionary with the keys being the input variables and the values being the values for those input variables.
 
 ```python
 from langchain.prompts.few_shot import FewShotPromptTemplate
@@ -69,9 +69,9 @@ So the final answer is: No
 ]
 ```
 
-### Create a formatter for the few shot examples
+### Create a formatter for the few-shot examples
 
-Configure a formatter that will format the few shot examples into a string. This formatter should be a `PromptTemplate` object.
+Configure a formatter that will format the few-shot examples into a string. This formatter should be a `PromptTemplate` object.
 
 
 ```python
@@ -98,7 +98,7 @@ print(example_prompt.format(**examples[0]))
 
 ### Feed examples and formatter to `FewShotPromptTemplate`
 
-Finally, create a `FewShotPromptTemplate` object. This object takes in the few shot examples and the formatter for the few shot examples.
+Finally, create a `FewShotPromptTemplate` object. This object takes in the few-shot examples and the formatter for the few-shot examples.
 
 
 ```python
@@ -171,7 +171,7 @@ print(prompt.format(input="Who was the father of Mary Ball Washington?"))
 We will reuse the example set and the formatter from the previous section. However, instead of feeding the examples directly into the `FewShotPromptTemplate` object, we will feed them into an `ExampleSelector` object.
 
 
-In this tutorial, we will use the `SemanticSimilarityExampleSelector` class. This class selects few shot examples based on their similarity to the input. It uses an embedding model to compute the similarity between the input and the few shot examples, as well as a vector store to perform the nearest neighbor search.
+In this tutorial, we will use the `SemanticSimilarityExampleSelector` class. This class selects few-shot examples based on their similarity to the input. It uses an embedding model to compute the similarity between the input and the few-shot examples, as well as a vector store to perform the nearest neighbor search.
 
 
 ```python
@@ -224,7 +224,7 @@ for example in selected_examples:
 
 ### Feed example selector into `FewShotPromptTemplate`
 
-Finally, create a `FewShotPromptTemplate` object. This object takes in the example selector and the formatter for the few shot examples.
+Finally, create a `FewShotPromptTemplate` object. This object takes in the example selector and the formatter for the few-shot examples.
 
 
 ```python

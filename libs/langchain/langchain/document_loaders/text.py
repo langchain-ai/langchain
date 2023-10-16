@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class TextLoader(BaseLoader):
-    """Load text files.
+    """Load text file.
 
 
     Args:

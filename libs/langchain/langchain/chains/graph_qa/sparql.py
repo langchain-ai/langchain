@@ -5,8 +5,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import Field
-
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import (
@@ -18,6 +16,7 @@ from langchain.chains.graph_qa.prompts import (
 from langchain.chains.llm import LLMChain
 from langchain.graphs.rdf_graph import RdfGraph
 from langchain.prompts.base import BasePromptTemplate
+from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 
 
@@ -85,17 +84,17 @@ class GraphSparqlQAChain(Chain):
         _intent = self.sparql_intent_chain.run({"prompt": prompt}, callbacks=callbacks)
         intent = _intent.strip()
 
-        if "SELECT" not in intent and "UPDATE" not in intent:
+        if "SELECT" in intent and "UPDATE" not in intent:
+            sparql_generation_chain = self.sparql_generation_select_chain
+            intent = "SELECT"
+        elif "UPDATE" in intent and "SELECT" not in intent:
+            sparql_generation_chain = self.sparql_generation_update_chain
+            intent = "UPDATE"
+        else:
             raise ValueError(
                 "I am sorry, but this prompt seems to fit none of the currently "
                 "supported SPARQL query types, i.e., SELECT and UPDATE."
             )
-        elif intent.find("SELECT") < intent.find("UPDATE"):
-            sparql_generation_chain = self.sparql_generation_select_chain
-            intent = "SELECT"
-        else:
-            sparql_generation_chain = self.sparql_generation_update_chain
-            intent = "UPDATE"
 
         _run_manager.on_text("Identified intent:", end="\n", verbose=self.verbose)
         _run_manager.on_text(intent, color="green", end="\n", verbose=self.verbose)

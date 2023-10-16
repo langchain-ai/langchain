@@ -8,8 +8,6 @@ and ROCKSET_REGION environment variables set.
 import json
 import os
 
-from rockset import DevRegions, Regions, RocksetClient
-
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import RocksetChatMessageHistory
 from langchain.schema.messages import _message_to_dict
@@ -23,6 +21,8 @@ class TestRockset:
 
     @classmethod
     def setup_class(cls) -> None:
+        from rockset import DevRegions, Regions, RocksetClient
+
         assert os.environ.get("ROCKSET_API_KEY") is not None
         assert os.environ.get("ROCKSET_REGION") is not None
 

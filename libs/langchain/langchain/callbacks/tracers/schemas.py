@@ -8,8 +8,8 @@ from uuid import UUID
 
 from langsmith.schemas import RunBase as BaseRunV2
 from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
-from pydantic import BaseModel, Field, root_validator
 
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.schema import LLMResult
 
 
@@ -120,6 +120,7 @@ class Run(BaseRunV2):
 
 ChainRun.update_forward_refs()
 ToolRun.update_forward_refs()
+Run.update_forward_refs()
 
 __all__ = [
     "BaseRun",

@@ -5,7 +5,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class FaunaLoader(BaseLoader):
-    """FaunaDB Loader.
+    """Load from `FaunaDB`.
 
     Attributes:
         query (str): The FQL query string to execute.
