@@ -296,7 +296,6 @@ what you wanted by clicking the `View deployment` or `Visit Preview` buttons on 
 This will take you to a preview of the documentation changes.
 This preview is created by [Vercel](https://vercel.com/docs/getting-started-with-vercel).
 
-
 ## 🏭 Release Process
 
 As of now, LangChain has an ad hoc release process: releases are cut with high frequency by
