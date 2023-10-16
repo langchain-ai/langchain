@@ -121,7 +121,7 @@ def get_debug() -> bool:
     return _debug or old_debug
 
 
-def set_llm_cache(value: "BaseCache") -> None:
+def set_llm_cache(value: Optional["BaseCache"]) -> None:
     """Set a new LLM cache, overwriting the previous value, if any."""
     import langchain
 
