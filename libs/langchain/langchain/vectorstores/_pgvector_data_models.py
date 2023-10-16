@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 import sqlalchemy
 from pgvector.sqlalchemy import Vector
-from sqlalchemy.dialects.postgresql import JSON, UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Session, relationship
 
 from langchain.vectorstores.pgvector import BaseModel
@@ -14,7 +14,7 @@ class CollectionStore(BaseModel):
     __tablename__ = "langchain_pg_collection"
 
     name = sqlalchemy.Column(sqlalchemy.String)
-    cmetadata = sqlalchemy.Column(JSON)
+    cmetadata = sqlalchemy.Column(JSONB)
 
     embeddings = relationship(
         "EmbeddingStore",
@@ -65,7 +65,7 @@ class EmbeddingStore(BaseModel):
 
     embedding: Vector = sqlalchemy.Column(Vector(None))
     document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    cmetadata = sqlalchemy.Column(JSON, nullable=True)
+    cmetadata = sqlalchemy.Column(JSONB, nullable=True)
 
     # custom_id : any user defined id
     custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
