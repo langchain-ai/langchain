@@ -10,7 +10,6 @@ def test_sitemap() -> None:
     """Test sitemap loader."""
     loader = SitemapLoader("https://langchain.readthedocs.io/sitemap.xml")
     documents = loader.load()
-    print(documents[0].page_content)
     assert len(documents) > 1
     assert "LangChain Python API" in documents[0].page_content
 
