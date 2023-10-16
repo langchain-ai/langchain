@@ -18,8 +18,8 @@ FORMAT_INSTRUCTIONS = """ИНСТРУКЦИИ ПО ФОРМАТУ ОТВЕТА
 
 ```json
 {{{{
-    "action": string, \\ Действие, которое нужно предпринять. Должно быть одним из {tool_names}
-    "action_input": string \\ Ввод для действия
+    "action": string, \\\\ Действие, которое нужно предпринять. Должно быть одним из {tool_names}
+    "action_input": string \\\\ Ввод для действия
 }}}}
 ```
 
@@ -29,7 +29,7 @@ FORMAT_INSTRUCTIONS = """ИНСТРУКЦИИ ПО ФОРМАТУ ОТВЕТА
 ```json
 {{{{
     "action": "Final Answer",
-    "action_input": string \\ Здесь ты должен указать, что хочешь вернуть в ответ
+    "action_input": string \\\\ Здесь ты должен указать, что хочешь вернуть в ответ
 }}}}
 ```"""
 

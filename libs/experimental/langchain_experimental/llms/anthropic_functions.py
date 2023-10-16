@@ -125,11 +125,17 @@ def _destrip(tool_input: Any) -> Any:
 
 
 class AnthropicFunctions(BaseChatModel):
-    model: ChatAnthropic
+    llm: BaseChatModel
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        return {"model": ChatAnthropic(**values)}
+        values["llm"] = values.get("llm") or ChatAnthropic(**values)
+        return values
+
+    @property
+    def model(self) -> BaseChatModel:
+        """For backwards compatibility."""
+        return self.llm
 
     def _generate(
         self,

@@ -180,3 +180,7 @@ docs/docs_skeleton/node_modules
 docs/docs_skeleton/yarn.lock
 processed.txt
 libs/langchain/langchain/output_parsers/list.py
+docs/docs/build
+docs/docs/node_modules
+docs/docs/yarn.lock
+_dist
