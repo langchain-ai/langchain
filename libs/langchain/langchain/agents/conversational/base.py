@@ -1,7 +1,8 @@
 """An agent designed to hold a conversation in addition to using tools."""
 from __future__ import annotations
 
-from typing import Any, List, Optional, Sequence
+import re
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -12,6 +13,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.pydantic_v1 import Field
+from langchain.schema import AgentAction, BaseMessage
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
@@ -43,7 +45,7 @@ class ConversationalAgent(Agent):
     @property
     def llm_prefix(self) -> str:
         """Prefix to append the llm call with."""
-        return "Thought:"
+        return ""
 
     @classmethod
     def create_prompt(
@@ -71,7 +73,10 @@ class ConversationalAgent(Agent):
             A PromptTemplate with the template assembled from the pieces here.
         """
         tool_strings = "\n".join(
-            [f"> {tool.name}: {tool.description}" for tool in tools]
+            [
+                f"{index + 1}: {tool.name}\n {tool.description}"
+                for index, tool in enumerate(tools)
+            ]
         )
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(
@@ -81,6 +86,18 @@ class ConversationalAgent(Agent):
         if input_variables is None:
             input_variables = ["input", "chat_history", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)
+
+    def _construct_scratchpad(
+        self, intermediate_steps: List[Tuple[AgentAction, str]]
+    ) -> Union[str, List[BaseMessage]]:
+        """Construct the scratchpad that lets the agent continue its thought process."""
+        thoughts = ""
+        for action, observation in intermediate_steps:
+            thoughts += re.sub(
+                r"Observation:\s.+", "", action.log, 0, re.MULTILINE | re.DOTALL
+            )
+            thoughts += f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}"
+        return thoughts
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
