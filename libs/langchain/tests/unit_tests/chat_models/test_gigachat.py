@@ -1,6 +1,8 @@
 from typing import Any, AsyncGenerator, Iterable, List
 
 import pytest
+from pytest_mock import MockerFixture
+
 from gigachat.models import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -10,8 +12,6 @@ from gigachat.models import (
     MessagesChunk,
     Usage,
 )
-from pytest_mock import MockerFixture
-
 from langchain.chat_models.gigachat import (
     GigaChat,
     _convert_dict_to_message,
