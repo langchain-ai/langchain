@@ -18,7 +18,14 @@ from langchain.utilities.github import GitHubAPIWrapper
 
 
 class GitHubToolkit(BaseToolkit):
-    """GitHub Toolkit."""
+    """GitHub Toolkit.
+
+    *Security Note* This toolkit contains tools that can modify the state of a
+        GitHub repository; e.g., by creating, deleting, or updating files, creating
+        issues, pull requests, or comments.
+
+        See [Security](https://python.langchain.com/docs/security) for more information.
+    """
 
     tools: List[BaseTool] = []
 

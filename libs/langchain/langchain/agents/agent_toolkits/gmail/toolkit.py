@@ -27,7 +27,12 @@ SCOPES = ["https://mail.google.com/"]
 
 
 class GmailToolkit(BaseToolkit):
-    """Toolkit for interacting with Gmail."""
+    """Toolkit for interacting with Gmail.
+
+    *Security Note* This toolkit contains tools that can read and modify
+        the state of a Gmail account; e.g., by creating, deleting, or updating
+        drafts, messages, or threads etc.
+    """
 
     api_resource: Resource = Field(default_factory=build_resource_service)
 

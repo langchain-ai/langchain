@@ -18,7 +18,12 @@ from langchain.utilities.gitlab import GitLabAPIWrapper
 
 
 class GitLabToolkit(BaseToolkit):
-    """GitLab Toolkit."""
+    """GitLab Toolkit.
+
+    *Security Note* This toolkit contains tools that can modify the state of a
+        GitLab repository; e.g., by creating, deleting, or updating files, creating
+        issues, pull requests, or comments.
+    """
 
     tools: List[BaseTool] = []
 
