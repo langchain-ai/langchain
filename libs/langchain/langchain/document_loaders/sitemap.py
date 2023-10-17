@@ -87,6 +87,8 @@ class SitemapLoader(WebBaseLoader):
                 interpreted as regular expression syntax. For example, `.` appears
                 frequently in URLs and should be escaped if you want to match a literal
                 `.` rather than any character.
+                restrict_to_same_domain takes precedence over filter_urls when
+                restrict_to_same_domain is True and the sitemap is not a local file.
             parsing_function: Function to parse bs4.Soup output
             blocksize: number of sitemap locations per block
             blocknum: the number of the block that should be loaded - zero indexed.
@@ -114,7 +116,7 @@ class SitemapLoader(WebBaseLoader):
             import lxml  # noqa:F401
         except ImportError:
             raise ImportError(
-                "lxml package not found, please install it with " "`pip install lxml`"
+                "lxml package not found, please install it with `pip install lxml`"
             )
 
         super().__init__(web_paths=[web_path], **kwargs)
