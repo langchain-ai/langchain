@@ -41,8 +41,9 @@ Once again this is done through the SQLAlchemy wrapper.
 
 ```
 import sqlalchemy
+from langchain.globals import set_llm_cache
 eng = sqlalchemy.create_engine(conn_str)
-langchain.llm_cache = SQLAlchemyCache(engine=eng)
+set_llm_cache(SQLAlchemyCache(engine=eng))
 ```
 
 From here, see the [LLM Caching](/docs/modules/model_io/models/llms/how_to/llm_caching) documentation on how to use.

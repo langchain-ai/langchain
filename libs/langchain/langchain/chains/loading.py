@@ -80,7 +80,7 @@ def _load_stuff_documents_chain(config: dict, **kwargs: Any) -> StuffDocumentsCh
     elif "llm_chain_path" in config:
         llm_chain = load_chain(config.pop("llm_chain_path"))
     else:
-        raise ValueError("One of `llm_chain` or `llm_chain_config` must be present.")
+        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
 
     if not isinstance(llm_chain, LLMChain):
         raise ValueError(f"Expected LLMChain, got {llm_chain}")
@@ -109,7 +109,7 @@ def _load_map_reduce_documents_chain(
     elif "llm_chain_path" in config:
         llm_chain = load_chain(config.pop("llm_chain_path"))
     else:
-        raise ValueError("One of `llm_chain` or `llm_chain_config` must be present.")
+        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
 
     if not isinstance(llm_chain, LLMChain):
         raise ValueError(f"Expected LLMChain, got {llm_chain}")
@@ -295,7 +295,7 @@ def _load_map_rerank_documents_chain(
     elif "llm_chain_path" in config:
         llm_chain = load_chain(config.pop("llm_chain_path"))
     else:
-        raise ValueError("One of `llm_chain` or `llm_chain_config` must be present.")
+        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
     return MapRerankDocumentsChain(llm_chain=llm_chain, **config)
 
 
@@ -320,7 +320,7 @@ def _load_refine_documents_chain(config: dict, **kwargs: Any) -> RefineDocuments
         initial_llm_chain = load_chain(config.pop("initial_llm_chain_path"))
     else:
         raise ValueError(
-            "One of `initial_llm_chain` or `initial_llm_chain_config` must be present."
+            "One of `initial_llm_chain` or `initial_llm_chain_path` must be present."
         )
     if "refine_llm_chain" in config:
         refine_llm_chain_config = config.pop("refine_llm_chain")
@@ -329,7 +329,7 @@ def _load_refine_documents_chain(config: dict, **kwargs: Any) -> RefineDocuments
         refine_llm_chain = load_chain(config.pop("refine_llm_chain_path"))
     else:
         raise ValueError(
-            "One of `refine_llm_chain` or `refine_llm_chain_config` must be present."
+            "One of `refine_llm_chain` or `refine_llm_chain_path` must be present."
         )
     if "document_prompt" in config:
         prompt_config = config.pop("document_prompt")

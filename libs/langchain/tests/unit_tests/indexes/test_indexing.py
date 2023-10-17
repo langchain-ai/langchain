@@ -15,6 +15,7 @@ from unittest.mock import patch
 import pytest
 import pytest_asyncio
 
+import langchain.vectorstores
 from langchain.document_loaders.base import BaseLoader
 from langchain.embeddings.base import Embeddings
 from langchain.indexes import aindex, index
@@ -1078,3 +1079,76 @@ async def test_abatch() -> None:
     batches = _abatch(2, _to_async_iter(range(5)))
     assert isinstance(batches, AsyncIterator)
     assert [batch async for batch in batches] == [[0, 1], [2, 3], [4]]
+
+
+def test_compatible_vectorstore_documentation() -> None:
+    """Test which vectorstores are compatible with the indexing API.
+
+    This serves as a reminder to update the documentation in [1]
+    that specifies which vectorstores are compatible with the
+    indexing API.
+
+    Ideally if a developer adds a new vectorstore or modifies
+    an existing one in such a way that affects its compatibility
+    with the Indexing API, he/she will see this failed test
+    case and 1) update docs in [1] and 2) update the `documented`
+    dict in this test case.
+
+    [1] langchain/docs/docs_skeleton/docs/modules/data_connection/indexing.ipynb
+    """
+
+    # Check if a vectorstore is compatible with the indexing API
+    def check_compatibility(vector_store: VectorStore) -> bool:
+        """Check if a vectorstore is compatible with the indexing API."""
+        methods = ["delete", "add_documents"]
+        for method in methods:
+            if not hasattr(vector_store, method):
+                return False
+        # Checking if the vectorstore has overridden the default delete method
+        # implementation which just raises a NotImplementedError
+        if getattr(vector_store, "delete") == VectorStore.delete:
+            return False
+        return True
+
+    # Check all vector store classes for compatibility
+    compatible = set()
+    for class_name in langchain.vectorstores.__all__:
+        # Get the definition of the class
+        cls = getattr(langchain.vectorstores, class_name)
+
+        # If the class corresponds to a vectorstore, check its compatibility
+        if issubclass(cls, VectorStore):
+            is_compatible = check_compatibility(cls)
+            if is_compatible:
+                compatible.add(class_name)
+
+    # These are mentioned in the indexing.ipynb documentation
+    documented = {
+        "AnalyticDB",
+        "AzureCosmosDBVectorSearch",
+        "AwaDB",
+        "Bagel",
+        "Cassandra",
+        "Chroma",
+        "DashVector",
+        "DeepLake",
+        "Dingo",
+        "ElasticVectorSearch",
+        "ElasticsearchStore",
+        "FAISS",
+        "MomentoVectorIndex",
+        "PGVector",
+        "Pinecone",
+        "Qdrant",
+        "Redis",
+        "ScaNN",
+        "SemaDB",
+        "SupabaseVectorStore",
+        "TimescaleVector",
+        "Vald",
+        "Vearch",
+        "VespaStore",
+        "Weaviate",
+        "ZepVectorStore",
+    }
+    assert compatible == documented
