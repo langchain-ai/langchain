@@ -11,7 +11,7 @@ def test_sitemap() -> None:
     loader = SitemapLoader("https://langchain.readthedocs.io/sitemap.xml")
     documents = loader.load()
     assert len(documents) > 1
-    assert "🦜🔗" in documents[0].page_content
+    assert "LangChain Python API" in documents[0].page_content
 
 
 def test_sitemap_block() -> None:
@@ -21,7 +21,7 @@ def test_sitemap_block() -> None:
     )
     documents = loader.load()
     assert len(documents) == 1
-    assert "🦜🔗" in documents[0].page_content
+    assert "LangChain Python API" in documents[0].page_content
 
 
 def test_sitemap_block_only_one() -> None:
@@ -31,7 +31,7 @@ def test_sitemap_block_only_one() -> None:
     )
     documents = loader.load()
     assert len(documents) > 1
-    assert "🦜🔗" in documents[0].page_content
+    assert "LangChain Python API" in documents[0].page_content
 
 
 def test_sitemap_block_blocknum_default() -> None:
@@ -41,7 +41,7 @@ def test_sitemap_block_blocknum_default() -> None:
     )
     documents = loader.load()
     assert len(documents) > 1
-    assert "🦜🔗" in documents[0].page_content
+    assert "LangChain Python API" in documents[0].page_content
 
 
 def test_sitemap_block_size_to_small() -> None:
@@ -76,11 +76,11 @@ def test_filter_sitemap() -> None:
     """Test sitemap loader."""
     loader = SitemapLoader(
         "https://langchain.readthedocs.io/sitemap.xml",
-        filter_urls=["https://python.langchain.com/en/stable/"],
+        filter_urls=["https://api.python.langchain.com/en/stable/"],
     )
     documents = loader.load()
     assert len(documents) == 1
-    assert "🦜🔗" in documents[0].page_content
+    assert "LangChain Python API" in documents[0].page_content
 
 
 def test_sitemap_metadata() -> None:
@@ -128,7 +128,7 @@ def test_sitemap_metadata_default() -> None:
 def test_local_sitemap() -> None:
     """Test sitemap loader."""
     file_path = Path(__file__).parent.parent / "examples/sitemap.xml"
-    loader = SitemapLoader(str(file_path))
+    loader = SitemapLoader(str(file_path), is_local=True)
     documents = loader.load()
     assert len(documents) > 1
-    assert "🦜🔗" in documents[0].page_content
+    assert "🦜️🔗" in documents[0].page_content
