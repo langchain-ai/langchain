@@ -1,15 +1,15 @@
+import importlib.metadata
 import logging
 import logging
 import os
 import traceback
-import importlib.metadata
-from packaging.version import parse
+import warnings
 from contextvars import ContextVar
-from datetime import datetime
 from typing import Any, Dict, List, Literal, Union
 from uuid import UUID
 
 import requests
+from packaging.version import parse
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema.agent import AgentAction, AgentFinish
@@ -195,6 +195,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     __app_id: str
     __verbose: bool
     __llmonitor_version: str
+    __has_valid_config: bool
 
     def __init__(
         self,
@@ -204,6 +205,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     ) -> None:
         super().__init__()
 
+        self.__has_valid_config = True
+
         try:
             import llmonitor
 
@@ -211,37 +214,47 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             self.__track_event = llmonitor.track_event
 
         except ImportError:
-            raise ImportError(
-                "To use the LLMonitor callback handler you need to have the `llmonitor` Python package installed. Please install it with `pip install llmonitor`"
+            warnings.warn(
+                """[LLMonitor] To use the LLMonitor callback handler you need to 
+                have the `llmonitor` Python package installed. Please install it 
+                with `pip install llmonitor`"""
             )
+            self.__has_valid_config = False
 
-        # TODO: put correct versoin version, still think it should be fetched from a server, and callback fixed version in case there's a error fetching
-        # we already do a server call anyway
-        if parse(self.__llmonitor_version) < parse("0.0.19"):
-            raise ImportError(
-                f"The installed `llmonitor` version is {self.__llmonitor_version} but `LLMonitorCallbackHandler` requires at least version 0.0.19 upgrade `llmonitor` with `pip install --upgrade llmonitor`"
+        if parse(self.__llmonitor_version) < parse("0.0.20"):
+            warnings.warn(
+                f"""[LLMonitor] The installed `llmonitor` version is 
+                {self.__llmonitor_version} but `LLMonitorCallbackHandler` requires 
+                at least version 0.0.20 upgrade `llmonitor` with `pip install 
+                --upgrade llmonitor`"""
             )
+            self.__has_valid_config = False
 
         self.__api_url = api_url or os.getenv("LLMONITOR_API_URL") or DEFAULT_API_URL
-
         self.__verbose = verbose or bool(os.getenv("LLMONITOR_VERBOSE"))
 
         _app_id = app_id or os.getenv("LLMONITOR_APP_ID")
         if _app_id is None:
-            raise ValueError(
-                """app_id must be provided either as an argument or as 
+            warnings.warn(
+                """[LLMonitor] app_id must be provided either as an argument or as 
                 an environment variable"""
             )
+            self.__has_valid_config = False
+
         self.__app_id = _app_id
+
+        if self.__has_valid_config is False:
+            return
 
         try:
             res = requests.get(f"{self.__api_url}/api/app/{self.__app_id}")
             if not res.ok:
                 raise ConnectionError()
-        except Exception as e:
-            raise ConnectionError(
-                f"Could not connect to the LLMonitor API at {self.__api_url}"
-            ) from e
+        except Exception:
+            warnings.warn(
+                f"""[LLMonitor] Could not connect to the LLMonitor API at 
+                {self.__api_url}"""
+            )
 
     def on_llm_start(
         self,
@@ -254,6 +267,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> None:
+        if self.__has_valid_config is False:
+            return
         try:
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
@@ -275,7 +290,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 user_props=user_props,
             )
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_llm_start: {e}")
+            warnings.warn(f"[LLMonitor] An error occurred in on_llm_start: {e}")
 
     def on_chat_model_start(
         self,
@@ -288,6 +303,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> Any:
+        if self.__has_valid_config is False:
+            return
         try:
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
@@ -297,7 +314,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             input = _parse_lc_messages(messages[0])
 
             self.__track_event(
-                "chat",
+                "llm",
                 "start",
                 user_id=user_id,
                 run_id=run_id,
@@ -321,6 +338,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> None:
+        if self.__has_valid_config is False:
+            return
         try:
             run_id = str(run_id)
             parent_run_id = str(parent_run_id) if parent_run_id else None
@@ -371,6 +390,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> None:
+        if self.__has_valid_config is False:
+            return
         try:
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
@@ -402,6 +423,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         tags: Union[List[str], None] = None,
         **kwargs: Any,
     ) -> None:
+        if self.__has_valid_config is False:
+            return
         try:
             run_id = str(run_id)
             parent_run_id = (str(parent_run_id) if parent_run_id else None,)
@@ -427,6 +450,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> Any:
+        if self.__has_valid_config is False:
+            return
         try:
             name = serialized.get("id", [None, None, None, None])[3]
             type = "chain"
@@ -474,6 +499,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
+        if self.__has_valid_config is False:
+            return
         try:
             run_id = str(run_id)
             output = _parse_output(outputs)
@@ -497,6 +524,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
+        if self.__has_valid_config is False:
+            return
         try:
             run_id = str(run_id)
             parent_run_id = str(parent_run_id) if parent_run_id else None
@@ -522,6 +551,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
+        if self.__has_valid_config is False:
+            return
         try:
             run_id = str(run_id)
             parent_run_id = str(parent_run_id) if parent_run_id else None
@@ -545,6 +576,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
+        if self.__has_valid_config is False:
+            return
         try:
             run_id = str(run_id)
             parent_run_id = str(parent_run_id) if parent_run_id else None
@@ -568,6 +601,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
+        if self.__has_valid_config is False:
+            return
         try:
             run_id = str(run_id)
             parent_run_id = str(parent_run_id) if parent_run_id else None
@@ -591,6 +626,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
+        if self.__has_valid_config is False:
+            return
         try:
             run_id = str(run_id)
             parent_run_id = str(parent_run_id) if parent_run_id else None
