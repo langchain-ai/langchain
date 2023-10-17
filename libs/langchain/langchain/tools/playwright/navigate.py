@@ -35,7 +35,7 @@ class NavigateTool(BaseBrowserTool):
     **Security Note**: This tool provides code to control web-browser navigation.
 
         This tool can navigate to any URL, including internal network URLs, and
-        URLs expose on the server itself.
+        URLs exposed on the server itself.
 
         However, if exposing this tool to end-users, consider limiting network
         access to the server that hosts the agent.
