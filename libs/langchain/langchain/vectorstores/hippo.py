@@ -97,9 +97,9 @@ class Hippo(VectorStore):
 
         # In order for a collection to be compatible, 'pk' should be an auto-increment primary key and string
         self._primary_field = "pk"
-        # In order for compatiblility, the text field will need to be called "text"
+        # In order for compatibility, the text field will need to be called "text"
         self._text_field = "text"
-        # In order for compatbility, the vector field needs to be called "vector"
+        # In order for compatibility, the vector field needs to be called "vector"
         self._vector_field = "vector"
         self.fields: List[str] = []
         # Create the connection to the server
