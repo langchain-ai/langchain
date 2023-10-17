@@ -14,6 +14,10 @@ from langchain.agents.agent_toolkits.csv.base import create_csv_agent
 from langchain.agents.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
 )
+
+
+from langchain.agents.agent_toolkits.slack.toolkit import SlackToolKit
+
 from langchain.agents.agent_toolkits.gmail.toolkit import GmailToolkit
 from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
 from langchain.agents.agent_toolkits.json.base import create_json_agent
@@ -60,6 +64,7 @@ __all__ = [
     "OpenAPIToolkit",
     "PlayWrightBrowserToolkit",
     "PowerBIToolkit",
+    "SlackToolKit",
     "SQLDatabaseToolkit",
     "SparkSQLToolkit",
     "VectorStoreInfo",
