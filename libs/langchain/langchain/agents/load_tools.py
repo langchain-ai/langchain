@@ -454,7 +454,7 @@ def load_tools(
     application.
 
     For example, if an application only needs to read from a database,
-    the database tool should not be given write permissions. More over
+    the database tool should not be given write permissions. Moreover
     consider scoping the permissions to only allow accessing specific
     tables and impose user-level quota for limiting resource usage.
 
