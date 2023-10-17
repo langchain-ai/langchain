@@ -145,7 +145,6 @@ def _get_user_props(metadata: Any) -> Any:
 
     metadata = metadata or {}
     return metadata.get("user_props", None)
-    return metadata.get("user_props", None)
 
 
 def _parse_lc_message(message: BaseMessage) -> Dict[str, Any]:
@@ -194,8 +193,6 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     __api_url: str
     __app_id: str
     __verbose: bool
-    __llmonitor_version: str
-    __has_valid_config: bool
     __llmonitor_version: str
     __has_valid_config: bool
 
@@ -267,26 +264,16 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 an environment variable"""
             )
             self.__has_valid_config = False
-
-            self.__has_valid_config = False
-
-        self.__app_id = _app_id
+        else:
+            self.__app_id = _app_id
 
         if self.__has_valid_config is False:
-            return
-
-        if self.__has_valid_config is False:
-            return
+            return None
 
         try:
             res = requests.get(f"{self.__api_url}/api/app/{self.__app_id}")
             if not res.ok:
                 raise ConnectionError()
-        except Exception:
-            warnings.warn(
-                f"""[LLMonitor] Could not connect to the LLMonitor API at 
-                {self.__api_url}"""
-            )
         except Exception:
             warnings.warn(
                 f"""[LLMonitor] Could not connect to the LLMonitor API at 
@@ -309,8 +296,6 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         try:
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
             name = kwargs.get("invocation_params", {}).get("model_name")
             input = _parse_input(prompts)
 
@@ -318,32 +303,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 "llm",
                 "start",
                 user_id=user_id,
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                name=name,
-                input=input,
-                tags=tags,
-                metadata=metadata,
-                user_props=user_props,
-            )
-        except Exception as e:
-            warnings.warn(f"[LLMonitor] An error occurred in on_llm_start: {e}")
-        if self.__has_valid_config is False:
-            return
-        try:
-            user_id = _get_user_id(metadata)
-            user_props = _get_user_props(metadata)
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
-            name = kwargs.get("invocation_params", {}).get("model_name")
-            input = _parse_input(prompts)
-
-            self.__track_event(
-                "llm",
-                "start",
-                user_id=user_id,
-                run_id=run_id,
-                parent_run_id=parent_run_id,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
                 name=name,
                 input=input,
                 tags=tags,
@@ -370,16 +331,14 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
             name = (kwargs.get("invocation_params", {}).get("model_name"),)
-            run_id = str(run_id)
-            parent_run_id = (str(parent_run_id) if parent_run_id else None,)
             input = _parse_lc_messages(messages[0])
 
             self.__track_event(
                 "llm",
                 "start",
                 user_id=user_id,
-                run_id=run_id,
-                parent_run_id=parent_run_id,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
                 name=name,
                 input=input,
                 tags=tags,
@@ -388,33 +347,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             )
         except Exception as e:
             logging.warning(
-                f"[LLMonitor] An error occurred in on_chat_model_start: " f"{e}"
-            )
-        if self.__has_valid_config is False:
-            return
-        try:
-            user_id = _get_user_id(metadata)
-            user_props = _get_user_props(metadata)
-            name = (kwargs.get("invocation_params", {}).get("model_name"),)
-            run_id = str(run_id)
-            parent_run_id = (str(parent_run_id) if parent_run_id else None,)
-            input = _parse_lc_messages(messages[0])
-
-            self.__track_event(
-                "llm",
-                "start",
-                user_id=user_id,
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                name=name,
-                input=input,
-                tags=tags,
-                metadata=metadata,
-                user_props=user_props,
-            )
-        except Exception as e:
-            logging.warning(
-                f"[LLMonitor] An error occurred in on_chat_model_start: " f"{e}"
+                f"[LLMonitor] An error occurred in on_chat_model_start: {e}"
             )
 
     def on_llm_end(
@@ -429,32 +362,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             return
 
         try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
             token_usage = (response.llm_output or {}).get("token_usage", {})
-            token_usage = {
-                "prompt": token_usage.get("prompt_tokens"),
-                "completion": token_usage.get("completion_tokens"),
-            }
-
-            parsed_output = [
-                {
-                    "text": generation.text,
-                    "role": "ai",
-                    **(
-                        {
-                            "functionCall": generation.message.additional_kwargs[
-                                "function_call"
-                            ]
-                        }
-                        if hasattr(generation, "message")
-                        and hasattr(generation.message, "additional_kwargs")
-                        and "function_call" in generation.message.additional_kwargs
-                        else {}
-                    ),
-                }
-                for generation in response.generations[0]
-            ]
             parsed_output = [
                 {
                     "text": generation.text,
@@ -477,23 +385,16 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             self.__track_event(
                 "llm",
                 "end",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
                 output=parsed_output,
-                token_usage=token_usage,
+                token_usage={
+                    "prompt": token_usage.get("prompt_tokens"),
+                    "completion": token_usage.get("completion_tokens"),
+                },
             )
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_llm_end: {e}")
-            self.__track_event(
-                "llm",
-                "end",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                output=parsed_output,
-                token_usage=token_usage,
-            )
-        except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_llm_end: {e}")
+            warnings.warn(f"[LLMonitor] An error occurred in on_llm_end: {e}")
 
     def on_tool_start(
         self,
@@ -512,15 +413,13 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
             name = serialized.get("name")
-            run_id = str(run_id)
-            parent_run_id = (str(parent_run_id) if parent_run_id else None,)
 
             self.__track_event(
                 "tool",
                 "start",
                 user_id=user_id,
-                run_id=run_id,
-                parent_run_id=parent_run_id,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
                 name=name,
                 input=input_str,
                 tags=tags,
@@ -528,30 +427,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 user_props=user_props,
             )
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_tool_start: {e}")
-        if self.__has_valid_config is False:
-            return
-        try:
-            user_id = _get_user_id(metadata)
-            user_props = _get_user_props(metadata)
-            name = serialized.get("name")
-            run_id = str(run_id)
-            parent_run_id = (str(parent_run_id) if parent_run_id else None,)
-
-            self.__track_event(
-                "tool",
-                "start",
-                user_id=user_id,
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                name=name,
-                input=input_str,
-                tags=tags,
-                metadata=metadata,
-                user_props=user_props,
-            )
-        except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_tool_start: {e}")
+            warnings.warn(f"[LLMonitor] An error occurred in on_tool_start: {e}")
 
     def on_tool_end(
         self,
@@ -565,33 +441,15 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         if self.__has_valid_config is False:
             return
         try:
-            run_id = str(run_id)
-            parent_run_id = (str(parent_run_id) if parent_run_id else None,)
-
             self.__track_event(
                 "tool",
                 "end",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
                 output=output,
             )
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_tool_end: {e}")
-        if self.__has_valid_config is False:
-            return
-        try:
-            run_id = str(run_id)
-            parent_run_id = (str(parent_run_id) if parent_run_id else None,)
-
-            self.__track_event(
-                "tool",
-                "end",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                output=output,
-            )
-        except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_tool_end: {e}")
+            warnings.warn(f"[LLMonitor] An error occurred in on_tool_end: {e}")
 
     def on_chain_start(
         self,
@@ -614,38 +472,25 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             agentName = metadata.get("agent_name")
             if agentName is None:
                 agentName = metadata.get("agentName")
-            agentName = metadata.get("agent_name")
-            if agentName is None:
-                agentName = metadata.get("agentName")
 
-            if agentName is not None:
-                type = "agent"
-                name = agentName
             if name == "AgentExecutor" or name == "PlanAndExecute":
                 type = "agent"
             if agentName is not None:
                 type = "agent"
                 name = agentName
-            if name == "AgentExecutor" or name == "PlanAndExecute":
-                type = "agent"
-
-            if parent_run_id is not None:
-                type = "chain"
             if parent_run_id is not None:
                 type = "chain"
 
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
             input = _parse_input(inputs)
 
             self.__track_event(
                 type,
                 "start",
                 user_id=user_id,
-                run_id=run_id,
-                parent_run_id=parent_run_id,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
                 name=name,
                 input=input,
                 tags=tags,
@@ -653,27 +498,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 user_props=user_props,
             )
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_chain_start: {e}")
-            user_id = _get_user_id(metadata)
-            user_props = _get_user_props(metadata)
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
-            input = _parse_input(inputs)
-
-            self.__track_event(
-                type,
-                "start",
-                user_id=user_id,
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                name=name,
-                input=input,
-                tags=tags,
-                metadata=metadata,
-                user_props=user_props,
-            )
-        except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_chain_start: {e}")
+            warnings.warn(f"[LLMonitor] An error occurred in on_chain_start: {e}")
 
     def on_chain_end(
         self,
@@ -686,31 +511,13 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         if self.__has_valid_config is False:
             return
         try:
-            run_id = str(run_id)
             output = _parse_output(outputs)
-            parent_run_id = (str(parent_run_id) if parent_run_id else None,)
 
             self.__track_event(
                 "chain",
                 "end",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                output=output,
-            )
-        except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_chain_end: {e}")
-        if self.__has_valid_config is False:
-            return
-        try:
-            run_id = str(run_id)
-            output = _parse_output(outputs)
-            parent_run_id = (str(parent_run_id) if parent_run_id else None,)
-
-            self.__track_event(
-                "chain",
-                "end",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
                 output=output,
             )
         except Exception as e:
@@ -727,34 +534,14 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         if self.__has_valid_config is False:
             return
         try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
             name = action.tool
             input = _parse_input(action.tool_input)
 
             self.__track_event(
                 "tool",
                 "start",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                name=name,
-                input=input,
-            )
-        except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_agent_action: {e}")
-        if self.__has_valid_config is False:
-            return
-        try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
-            name = action.tool
-            input = _parse_input(action.tool_input)
-
-            self.__track_event(
-                "tool",
-                "start",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
                 name=name,
                 input=input,
             )
@@ -772,31 +559,13 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         if self.__has_valid_config is False:
             return
         try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
             output = _parse_output(finish.return_values)
 
             self.__track_event(
                 "agent",
                 "end",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                output=output,
-            )
-        except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_agent_finish: {e}")
-        if self.__has_valid_config is False:
-            return
-        try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
-            output = _parse_output(finish.return_values)
-
-            self.__track_event(
-                "agent",
-                "end",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
                 output=output,
             )
         except Exception as e:
@@ -813,32 +582,12 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         if self.__has_valid_config is False:
             return
         try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
-            error = {"message": str(error), "stack": traceback.format_exc()}
-
             self.__track_event(
                 "chain",
                 "error",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                error=error,
-            )
-        except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_chain_error: {e}")
-        if self.__has_valid_config is False:
-            return
-        try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
-            error = {"message": str(error), "stack": traceback.format_exc()}
-
-            self.__track_event(
-                "chain",
-                "error",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                error=error,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                error={"message": str(error), "stack": traceback.format_exc()},
             )
         except Exception as e:
             logging.warning(f"[LLMonitor] An error occurred in on_chain_error: {e}")
@@ -854,32 +603,12 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         if self.__has_valid_config is False:
             return
         try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
-            error = {"message": str(error), "stack": traceback.format_exc()}
-
             self.__track_event(
                 "tool",
                 "error",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                error=error,
-            )
-        except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_tool_error: {e}")
-        if self.__has_valid_config is False:
-            return
-        try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
-            error = {"message": str(error), "stack": traceback.format_exc()}
-
-            self.__track_event(
-                "tool",
-                "error",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                error=error,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                error={"message": str(error), "stack": traceback.format_exc()},
             )
         except Exception as e:
             logging.warning(f"[LLMonitor] An error occurred in on_tool_error: {e}")
@@ -895,32 +624,12 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         if self.__has_valid_config is False:
             return
         try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
-            error = {"message": str(error), "stack": traceback.format_exc()}
-
             self.__track_event(
                 "llm",
                 "error",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                error=error,
-            )
-        except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_llm_error: {e}")
-        if self.__has_valid_config is False:
-            return
-        try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
-            error = {"message": str(error), "stack": traceback.format_exc()}
-
-            self.__track_event(
-                "llm",
-                "error",
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                error=error,
+                run_id=str(run_id),
+                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                error={"message": str(error), "stack": traceback.format_exc()},
             )
         except Exception as e:
             logging.warning(f"[LLMonitor] An error occurred in on_llm_error: {e}")
