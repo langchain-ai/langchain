@@ -8,6 +8,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, Optional, Type
 
+from langchain._api import warn_deprecated
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -58,6 +59,16 @@ class PythonREPLTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Any:
         """Use the tool."""
+        warn_deprecated(
+            since="0.0.314",
+            message=(
+                "On 2023-10-27 this module will be be deprecated from langchain, and "
+                "will be available from the langchain-experimental package."
+                "This code is already available in langchain-experimental."
+                "See https://github.com/langchain-ai/langchain/discussions/11680."
+            ),
+            pending=True,
+        )
         if self.sanitize_input:
             query = sanitize_input(query)
         return self.python_repl.run(query)
@@ -68,6 +79,16 @@ class PythonREPLTool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> Any:
         """Use the tool asynchronously."""
+        warn_deprecated(
+            since="0.0.314",
+            message=(
+                "On 2023-10-27 this module will be be deprecated from langchain, and "
+                "will be available from the langchain-experimental package."
+                "This code is already available in langchain-experimental."
+                "See https://github.com/langchain-ai/langchain/discussions/11680."
+            ),
+            pending=True,
+        )
         if self.sanitize_input:
             query = sanitize_input(query)
 
@@ -113,6 +134,17 @@ class PythonAstREPLTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        warn_deprecated(
+            since="0.0.314",
+            message=(
+                "On 2023-10-27 this module will be be deprecated from langchain, and "
+                "will be available from the langchain-experimental package."
+                "This code is already available in langchain-experimental."
+                "See https://github.com/langchain-ai/langchain/discussions/11680."
+            ),
+            pending=True,
+        )
+
         try:
             if self.sanitize_input:
                 query = sanitize_input(query)
@@ -143,6 +175,16 @@ class PythonAstREPLTool(BaseTool):
     ) -> Any:
         """Use the tool asynchronously."""
 
+        warn_deprecated(
+            since="0.0.314",
+            message=(
+                "On 2023-10-27 this module will be be deprecated from langchain, and "
+                "will be available from the langchain-experimental package."
+                "This code is already available in langchain-experimental."
+                "See https://github.com/langchain-ai/langchain/discussions/11680."
+            ),
+            pending=True,
+        )
         loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(None, self._run, query)
 

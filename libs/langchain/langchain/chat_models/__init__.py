@@ -39,6 +39,7 @@ from langchain.chat_models.ollama import ChatOllama
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.vertexai import ChatVertexAI
+from langchain.chat_models.yandex import ChatYandexGPT
 
 __all__ = [
     "ChatOpenAI",
@@ -63,4 +64,5 @@ __all__ = [
     "ChatKonko",
     "QianfanChatEndpoint",
     "ChatFireworks",
+    "ChatYandexGPT",
 ]
