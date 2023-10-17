@@ -1,14 +1,12 @@
-"""Chain that interprets a prompt and executes python code to do math.
+def raise_on_import() -> None:
+    """Raise an error on import since is deprecated."""
+    raise ImportError(
+        "This module has been moved to langchain-experimental. "
+        "For more details: https://github.com/langchain-ai/langchain/discussions/11352."
+        "To access this code, install it with `pip install langchain-experimental`."
+        "`from langchain_experimental.llm_symbolic_math.base "
+        "import LLMSymbolicMathChain`"
+    )
 
-Heavily borrowed from llm_math, wrapper for SymPy
-"""
-from langchain._api import warn_deprecated
 
-warn_deprecated(
-    since="0.0.304",
-    message=(
-        "On 2023-10-06 this module will be moved to langchain-experimental as "
-        "it relies on sympy https://github.com/sympy/sympy/issues/10805"
-    ),
-    pending=True,
-)
+raise_on_import()

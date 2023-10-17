@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Sequence
+from typing import Any, Literal, Sequence
 
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
@@ -18,6 +18,7 @@ class Document(Serializable):
     """Arbitrary metadata about the page content (e.g., source, relationships to other
         documents, etc.).
     """
+    type: Literal["Document"] = "Document"
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

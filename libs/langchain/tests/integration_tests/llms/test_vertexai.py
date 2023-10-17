@@ -29,29 +29,31 @@ def test_vertex_call() -> None:
 
 @pytest.mark.scheduled
 def test_vertex_generate() -> None:
-    llm = VertexAI(temperate=0)
-    output = llm.generate(["Please say foo:"])
+    llm = VertexAI(temperature=0.3, n=2, model_name="text-bison@001")
+    output = llm.generate(["Say foo:"])
     assert isinstance(output, LLMResult)
+    assert len(output.generations) == 1
+    assert len(output.generations[0]) == 2
 
 
 @pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_vertex_agenerate() -> None:
-    llm = VertexAI(temperate=0)
+    llm = VertexAI(temperature=0)
     output = await llm.agenerate(["Please say foo:"])
     assert isinstance(output, LLMResult)
 
 
 @pytest.mark.scheduled
 def test_vertex_stream() -> None:
-    llm = VertexAI(temperate=0)
+    llm = VertexAI(temperature=0)
     outputs = list(llm.stream("Please say foo:"))
     assert isinstance(outputs[0], str)
 
 
 @pytest.mark.asyncio
 async def test_vertex_consistency() -> None:
-    llm = VertexAI(temperate=0)
+    llm = VertexAI(temperature=0)
     output = llm.generate(["Please say foo:"])
     streaming_output = llm.generate(["Please say foo:"], stream=True)
     async_output = await llm.agenerate(["Please say foo:"])

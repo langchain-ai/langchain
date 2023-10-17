@@ -52,6 +52,12 @@ def _import_anyscale() -> Any:
     return Anyscale
 
 
+def _import_arcee() -> Any:
+    from langchain.llms.arcee import Arcee
+
+    return Arcee
+
+
 def _import_aviary() -> Any:
     from langchain.llms.aviary import Aviary
 
@@ -426,6 +432,12 @@ def _import_titan_takeoff() -> Any:
     return TitanTakeoff
 
 
+def _import_together() -> Any:
+    from langchain.llms.together import Together
+
+    return Together
+
+
 def _import_tongyi() -> Any:
     from langchain.llms.tongyi import Tongyi
 
@@ -479,6 +491,8 @@ def __getattr__(name: str) -> Any:
         return _import_anthropic()
     elif name == "Anyscale":
         return _import_anyscale()
+    elif name == "Arcee":
+        return _import_arcee()
     elif name == "Aviary":
         return _import_aviary()
     elif name == "AzureMLOnlineEndpoint":
@@ -603,6 +617,8 @@ def __getattr__(name: str) -> Any:
         return _import_textgen()
     elif name == "TitanTakeoff":
         return _import_titan_takeoff()
+    elif name == "Together":
+        return _import_together()
     elif name == "Tongyi":
         return _import_tongyi()
     elif name == "VertexAI":
@@ -633,6 +649,7 @@ __all__ = [
     "AmazonAPIGateway",
     "Anthropic",
     "Anyscale",
+    "Arcee",
     "Aviary",
     "AzureMLOnlineEndpoint",
     "AzureOpenAI",
@@ -713,6 +730,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "amazon_bedrock": _import_bedrock,
         "anthropic": _import_anthropic,
         "anyscale": _import_anyscale,
+        "arcee": _import_arcee,
         "aviary": _import_aviary,
         "azure": _import_azure_openai,
         "azureml_endpoint": _import_azureml_endpoint,
@@ -763,6 +781,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "self_hosted": _import_self_hosted,
         "self_hosted_hugging_face": _import_self_hosted_hugging_face,
         "stochasticai": _import_stochasticai,
+        "together": _import_together,
         "tongyi": _import_tongyi,
         "titan_takeoff": _import_titan_takeoff,
         "vertexai": _import_vertex,
