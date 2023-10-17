@@ -29,7 +29,7 @@ SCOPES = ["https://mail.google.com/"]
 class GmailToolkit(BaseToolkit):
     """Toolkit for interacting with Gmail.
 
-    *Security Note* This toolkit contains tools that can read and modify
+    *Security Note*: This toolkit contains tools that can read and modify
         the state of a service; e.g., by reading, creating, updating, deleting
         data associated with this service.
 

@@ -20,7 +20,7 @@ from langchain.utilities.github import GitHubAPIWrapper
 class GitHubToolkit(BaseToolkit):
     """GitHub Toolkit.
 
-    *Security Note* This toolkit contains tools that can read and modify
+    *Security Note*: This toolkit contains tools that can read and modify
         the state of a service; e.g., by creating, deleting, or updating,
         reading underlying data.
 
