@@ -54,10 +54,12 @@ from langchain.schema.runnable.config import (
     get_callback_manager_for_config,
     get_config_list,
     get_executor_for_config,
+    merge_configs,
     patch_config,
 )
 from langchain.schema.runnable.utils import (
     AddableDict,
+    AnyConfigurableField,
     ConfigurableField,
     ConfigurableFieldSpec,
     Input,
@@ -241,7 +243,7 @@ class Runnable(Generic[Input, Output], ABC):
             Callable[[Iterator[Any]], Iterator[Other]],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
-    ) -> RunnableSequence[Input, Other]:
+    ) -> Runnable[Input, Other]:
         """Compose this runnable with another object to create a RunnableSequence."""
         return RunnableSequence(first=self, last=coerce_to_runnable(other))
 
@@ -253,7 +255,7 @@ class Runnable(Generic[Input, Output], ABC):
             Callable[[Iterator[Other]], Iterator[Any]],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
-    ) -> RunnableSequence[Other, Output]:
+    ) -> Runnable[Other, Output]:
         """Compose this runnable with another object to create a RunnableSequence."""
         return RunnableSequence(first=coerce_to_runnable(other), last=self)
 
@@ -563,7 +565,12 @@ class Runnable(Generic[Input, Output], ABC):
         Bind config to a Runnable, returning a new Runnable.
         """
         return RunnableBinding(
-            bound=self, config={**(config or {}), **kwargs}, kwargs={}
+            bound=self,
+            config=cast(
+                RunnableConfig,
+                {**(config or {}), **kwargs},
+            ),  # type: ignore[misc]
+            kwargs={},
         )
 
     def with_retry(
@@ -975,7 +982,7 @@ class Runnable(Generic[Input, Output], ABC):
 
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_fields(
-        self, **kwargs: ConfigurableField
+        self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
         from langchain.schema.runnable.configurable import RunnableConfigurableFields
 
@@ -991,6 +998,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_alternatives(
         self,
         which: ConfigurableField,
+        default_key: str = "default",
         **kwargs: Runnable[Input, Output],
     ) -> RunnableSerializable[Input, Output]:
         from langchain.schema.runnable.configurable import (
@@ -998,7 +1006,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         )
 
         return RunnableConfigurableAlternatives(
-            which=which, default=self, alternatives=kwargs
+            which=which, default=self, alternatives=kwargs, default_key=default_key
         )
 
 
@@ -1062,7 +1070,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             Callable[[Iterator[Any]], Iterator[Other]],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
-    ) -> RunnableSequence[Input, Other]:
+    ) -> Runnable[Input, Other]:
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 first=self.first,
@@ -1084,7 +1092,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             Callable[[Iterator[Other]], Iterator[Any]],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
-    ) -> RunnableSequence[Other, Output]:
+    ) -> Runnable[Other, Output]:
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 first=other.first,
@@ -2252,30 +2260,32 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
         inputs: List[Input],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> List[Output]:
         return self.bound.batch(
-            inputs, patch_config(config, callbacks=run_manager.get_child())
+            inputs, patch_config(config, callbacks=run_manager.get_child()), **kwargs
         )
 
     def invoke(
-        self, input: List[Input], config: Optional[RunnableConfig] = None
+        self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Output]:
-        return self._call_with_config(self._invoke, input, config)
+        return self._call_with_config(self._invoke, input, config, **kwargs)
 
     async def _ainvoke(
         self,
         inputs: List[Input],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> List[Output]:
         return await self.bound.abatch(
-            inputs, patch_config(config, callbacks=run_manager.get_child())
+            inputs, patch_config(config, callbacks=run_manager.get_child()), **kwargs
         )
 
     async def ainvoke(
         self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Output]:
-        return await self._acall_with_config(self._ainvoke, input, config)
+        return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
 
 class RunnableBinding(RunnableSerializable[Input, Output]):
@@ -2287,10 +2297,30 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
 
     kwargs: Mapping[str, Any]
 
-    config: Mapping[str, Any] = Field(default_factory=dict)
+    config: RunnableConfig = Field(default_factory=dict)
 
     class Config:
         arbitrary_types_allowed = True
+
+    def __init__(
+        self,
+        *,
+        bound: Runnable[Input, Output],
+        kwargs: Mapping[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **other_kwargs: Any,
+    ) -> None:
+        config = config or {}
+        # config_specs contains the list of valid `configurable` keys
+        if configurable := config.get("configurable", None):
+            allowed_keys = set(s.id for s in bound.config_specs)
+            for key in configurable:
+                if key not in allowed_keys:
+                    raise ValueError(
+                        f"Configurable key '{key}' not found in runnable with"
+                        f" config keys: {allowed_keys}"
+                    )
+        super().__init__(bound=bound, kwargs=kwargs, config=config, **other_kwargs)
 
     @property
     def InputType(self) -> Type[Input]:
@@ -2323,20 +2353,6 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     def get_lc_namespace(cls) -> List[str]:
         return cls.__module__.split(".")[:-1]
 
-    def _merge_config(self, config: Optional[RunnableConfig]) -> RunnableConfig:
-        copy = cast(RunnableConfig, dict(self.config))
-        if config:
-            for key in config:
-                if key == "metadata":
-                    copy[key] = {**copy.get(key, {}), **config[key]}  # type: ignore
-                elif key == "tags":
-                    copy[key] = (copy.get(key) or []) + config[key]  # type: ignore
-                else:
-                    # Even though the keys aren't literals this is correct
-                    # because both dicts are same type
-                    copy[key] = config[key] or copy.get(key)  # type: ignore
-        return copy
-
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         return self.__class__(
             bound=self.bound, config=self.config, kwargs={**self.kwargs, **kwargs}
@@ -2351,7 +2367,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         return self.__class__(
             bound=self.bound,
             kwargs=self.kwargs,
-            config={**self.config, **(config or {}), **kwargs},
+            config=cast(RunnableConfig, {**self.config, **(config or {}), **kwargs}),
         )
 
     def with_retry(self, **kwargs: Any) -> Runnable[Input, Output]:
@@ -2369,7 +2385,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     ) -> Output:
         return self.bound.invoke(
             input,
-            self._merge_config(config),
+            merge_configs(self.config, config),
             **{**self.kwargs, **kwargs},
         )
 
@@ -2381,7 +2397,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     ) -> Output:
         return await self.bound.ainvoke(
             input,
-            self._merge_config(config),
+            merge_configs(self.config, config),
             **{**self.kwargs, **kwargs},
         )
 
@@ -2395,11 +2411,12 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     ) -> List[Output]:
         if isinstance(config, list):
             configs = cast(
-                List[RunnableConfig], [self._merge_config(conf) for conf in config]
+                List[RunnableConfig],
+                [merge_configs(self.config, conf) for conf in config],
             )
         else:
             configs = [
-                patch_config(self._merge_config(config), copy_locals=True)
+                patch_config(merge_configs(self.config, config), copy_locals=True)
                 for _ in range(len(inputs))
             ]
         return self.bound.batch(
@@ -2419,11 +2436,12 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     ) -> List[Output]:
         if isinstance(config, list):
             configs = cast(
-                List[RunnableConfig], [self._merge_config(conf) for conf in config]
+                List[RunnableConfig],
+                [merge_configs(self.config, conf) for conf in config],
             )
         else:
             configs = [
-                patch_config(self._merge_config(config), copy_locals=True)
+                patch_config(merge_configs(self.config, config), copy_locals=True)
                 for _ in range(len(inputs))
             ]
         return await self.bound.abatch(
@@ -2441,7 +2459,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     ) -> Iterator[Output]:
         yield from self.bound.stream(
             input,
-            self._merge_config(config),
+            merge_configs(self.config, config),
             **{**self.kwargs, **kwargs},
         )
 
@@ -2453,7 +2471,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     ) -> AsyncIterator[Output]:
         async for item in self.bound.astream(
             input,
-            self._merge_config(config),
+            merge_configs(self.config, config),
             **{**self.kwargs, **kwargs},
         ):
             yield item
@@ -2466,7 +2484,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     ) -> Iterator[Output]:
         yield from self.bound.transform(
             input,
-            self._merge_config(config),
+            merge_configs(self.config, config),
             **{**self.kwargs, **kwargs},
         )
 
@@ -2478,7 +2496,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     ) -> AsyncIterator[Output]:
         async for item in self.bound.atransform(
             input,
-            self._merge_config(config),
+            merge_configs(self.config, config),
             **{**self.kwargs, **kwargs},
         ):
             yield item

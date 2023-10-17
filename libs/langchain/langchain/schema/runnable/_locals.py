@@ -11,7 +11,7 @@ from typing import (
     Union,
 )
 
-from langchain.schema.runnable.base import Input, Output, RunnableSerializable
+from langchain.schema.runnable.base import Input, Other, Output, RunnableSerializable
 from langchain.schema.runnable.config import RunnableConfig
 from langchain.schema.runnable.passthrough import RunnablePassthrough
 
@@ -36,7 +36,7 @@ class PutLocalVar(RunnablePassthrough):
 
     def _concat_put(
         self,
-        input: Input,
+        input: Other,
         *,
         config: Optional[RunnableConfig] = None,
         replace: bool = False,
@@ -68,35 +68,35 @@ class PutLocalVar(RunnablePassthrough):
                 f"{(type(self.key))}."
             )
 
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
+    def invoke(self, input: Other, config: Optional[RunnableConfig] = None) -> Other:
         self._concat_put(input, config=config, replace=True)
         return super().invoke(input, config=config)
 
     async def ainvoke(
         self,
-        input: Input,
+        input: Other,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Input:
+    ) -> Other:
         self._concat_put(input, config=config, replace=True)
         return await super().ainvoke(input, config=config)
 
     def transform(
         self,
-        input: Iterator[Input],
+        input: Iterator[Other],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Iterator[Input]:
+    ) -> Iterator[Other]:
         for chunk in super().transform(input, config=config):
             self._concat_put(chunk, config=config)
             yield chunk
 
     async def atransform(
         self,
-        input: AsyncIterator[Input],
+        input: AsyncIterator[Other],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Input]:
+    ) -> AsyncIterator[Other]:
         async for chunk in super().atransform(input, config=config):
             self._concat_put(chunk, config=config)
             yield chunk
