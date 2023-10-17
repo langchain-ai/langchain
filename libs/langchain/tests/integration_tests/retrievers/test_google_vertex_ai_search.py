@@ -20,7 +20,6 @@ from langchain.retrievers.google_vertex_ai_search import (
     GoogleVertexAIMultiTurnSearchRetriever,
     GoogleVertexAISearchRetriever,
 )
-
 from langchain.schema import Document
 
 
