@@ -231,29 +231,6 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
         self.__has_valid_config = True
 
-        try:
-            import llmonitor
-
-            self.__llmonitor_version = importlib.metadata.version("llmonitor")
-            self.__track_event = llmonitor.track_event
-
-        except ImportError:
-            warnings.warn(
-                """[LLMonitor] To use the LLMonitor callback handler you need to 
-                have the `llmonitor` Python package installed. Please install it 
-                with `pip install llmonitor`"""
-            )
-            self.__has_valid_config = False
-
-        if parse(self.__llmonitor_version) < parse("0.0.20"):
-            warnings.warn(
-                f"""[LLMonitor] The installed `llmonitor` version is 
-                {self.__llmonitor_version} but `LLMonitorCallbackHandler` requires 
-                at least version 0.0.20 upgrade `llmonitor` with `pip install 
-                --upgrade llmonitor`"""
-            )
-            self.__has_valid_config = False
-
         self.__api_url = api_url or os.getenv("LLMONITOR_API_URL") or DEFAULT_API_URL
         self.__verbose = verbose or bool(os.getenv("LLMONITOR_VERBOSE"))
 
