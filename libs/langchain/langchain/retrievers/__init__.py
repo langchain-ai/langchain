@@ -33,6 +33,7 @@ from langchain.retrievers.google_cloud_documentai_warehouse import (
 )
 from langchain.retrievers.google_vertex_ai_search import (
     GoogleCloudEnterpriseSearchRetriever,
+    GoogleVertexAIMultiTurnSearchRetriever,
     GoogleVertexAISearchRetriever,
 )
 from langchain.retrievers.kay import KayAiRetriever
@@ -77,6 +78,7 @@ __all__ = [
     "ElasticSearchBM25Retriever",
     "GoogleDocumentAIWarehouseRetriever",
     "GoogleCloudEnterpriseSearchRetriever",
+    "GoogleVertexAIMultiTurnSearchRetriever",
     "GoogleVertexAISearchRetriever",
     "KayAiRetriever",
     "KNNRetriever",

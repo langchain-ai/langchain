@@ -22,7 +22,7 @@ from typing import (
 
 from langchain.pydantic_v1 import BaseModel, create_model
 from langchain.schema.runnable.base import (
-    Input,
+    Other,
     Runnable,
     RunnableParallel,
     RunnableSerializable,
@@ -33,17 +33,17 @@ from langchain.utils.aiter import atee, py_anext
 from langchain.utils.iter import safetee
 
 
-def identity(x: Input) -> Input:
+def identity(x: Other) -> Other:
     """An identity function"""
     return x
 
 
-async def aidentity(x: Input) -> Input:
+async def aidentity(x: Other) -> Other:
     """An async identity function"""
     return x
 
 
-class RunnablePassthrough(RunnableSerializable[Input, Input]):
+class RunnablePassthrough(RunnableSerializable[Other, Other]):
     """A runnable to passthrough inputs unchanged or with additional keys.
 
     This runnable behaves almost like the identity function, except that it
@@ -100,20 +100,20 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
             # {'llm1': 'completion', 'llm2': 'completion', 'total_chars': 20}
     """
 
-    input_type: Optional[Type[Input]] = None
+    input_type: Optional[Type[Other]] = None
 
-    func: Optional[Callable[[Input], None]] = None
+    func: Optional[Callable[[Other], None]] = None
 
-    afunc: Optional[Callable[[Input], Awaitable[None]]] = None
+    afunc: Optional[Callable[[Other], Awaitable[None]]] = None
 
     def __init__(
         self,
         func: Optional[
-            Union[Callable[[Input], None], Callable[[Input], Awaitable[None]]]
+            Union[Callable[[Other], None], Callable[[Other], Awaitable[None]]]
         ] = None,
-        afunc: Optional[Callable[[Input], Awaitable[None]]] = None,
+        afunc: Optional[Callable[[Other], Awaitable[None]]] = None,
         *,
-        input_type: Optional[Type[Input]] = None,
+        input_type: Optional[Type[Other]] = None,
         **kwargs: Any,
     ) -> None:
         if inspect.iscoroutinefunction(func):
@@ -161,17 +161,17 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
         """
         return RunnableAssign(RunnableParallel(kwargs))
 
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
+    def invoke(self, input: Other, config: Optional[RunnableConfig] = None) -> Other:
         if self.func is not None:
             self.func(input)
         return self._call_with_config(identity, input, config)
 
     async def ainvoke(
         self,
-        input: Input,
+        input: Other,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Input:
+    ) -> Other:
         if self.afunc is not None:
             await self.afunc(input, **kwargs)
         elif self.func is not None:
@@ -180,10 +180,10 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
 
     def transform(
         self,
-        input: Iterator[Input],
+        input: Iterator[Other],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Iterator[Input]:
+    ) -> Iterator[Other]:
         if self.func is None:
             for chunk in self._transform_stream_with_config(input, identity, config):
                 yield chunk
@@ -202,10 +202,10 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
 
     async def atransform(
         self,
-        input: AsyncIterator[Input],
+        input: AsyncIterator[Other],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Input]:
+    ) -> AsyncIterator[Other]:
         if self.afunc is None and self.func is None:
             async for chunk in self._atransform_stream_with_config(
                 input, identity, config
@@ -231,19 +231,19 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
 
     def stream(
         self,
-        input: Input,
+        input: Other,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Iterator[Input]:
+    ) -> Iterator[Other]:
         return self.transform(iter([input]), config, **kwargs)
 
     async def astream(
         self,
-        input: Input,
+        input: Other,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Input]:
-        async def input_aiter() -> AsyncIterator[Input]:
+    ) -> AsyncIterator[Other]:
+        async def input_aiter() -> AsyncIterator[Other]:
             yield input
 
         async for chunk in self.atransform(input_aiter(), config, **kwargs):
