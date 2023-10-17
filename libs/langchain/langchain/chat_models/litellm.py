@@ -44,8 +44,6 @@ from langchain.schema.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    FunctionMessage,
-    FunctionMessageChunk
 )
 from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env
