@@ -28,7 +28,7 @@ def _extract_scheme_and_domain(url: str) -> Tuple[str, str]:
         url (str): The input URL.
 
     Returns:
-        return a 2-tuple of schema and domain
+        return a 2-tuple of scheme and domain
     """
     parsed_uri = urlparse(url)
     return parsed_uri.scheme, parsed_uri.netloc
