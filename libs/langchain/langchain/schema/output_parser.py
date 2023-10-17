@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -10,6 +11,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Type,
     TypeVar,
     Union,
 )
@@ -71,7 +73,7 @@ class BaseGenerationOutputParser(
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> type[T]:
+    def OutputType(self) -> Type[T]:
         # even though mypy complains this isn't valid,
         # it is good enough for pydantic to build the schema from
         return T  # type: ignore[misc]
@@ -154,7 +156,7 @@ class BaseOutputParser(
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> type[T]:
+    def OutputType(self) -> Type[T]:
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == 1:
@@ -249,7 +251,9 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
-        return await self.aparse(result[0].text)
+        return await asyncio.get_running_loop().run_in_executor(
+            None, functools.partial(self.parse_result, partial=partial), result
+        )
 
     async def aparse(self, text: str) -> T:
         """Parse a single string model output into some structure.

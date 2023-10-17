@@ -1,10 +1,13 @@
+"""Implementation of the RunnablePassthrough."""
 from __future__ import annotations
 
 import asyncio
+import inspect
 import threading
 from typing import (
     Any,
     AsyncIterator,
+    Awaitable,
     Callable,
     Dict,
     Iterator,
@@ -19,9 +22,9 @@ from typing import (
 
 from langchain.pydantic_v1 import BaseModel, create_model
 from langchain.schema.runnable.base import (
-    Input,
+    Other,
     Runnable,
-    RunnableMap,
+    RunnableParallel,
     RunnableSerializable,
 )
 from langchain.schema.runnable.config import RunnableConfig, get_executor_for_config
@@ -30,20 +33,94 @@ from langchain.utils.aiter import atee, py_anext
 from langchain.utils.iter import safetee
 
 
-def identity(x: Input) -> Input:
+def identity(x: Other) -> Other:
+    """An identity function"""
     return x
 
 
-async def aidentity(x: Input) -> Input:
+async def aidentity(x: Other) -> Other:
+    """An async identity function"""
     return x
 
 
-class RunnablePassthrough(RunnableSerializable[Input, Input]):
-    """
-    A runnable that passes through the input.
+class RunnablePassthrough(RunnableSerializable[Other, Other]):
+    """A runnable to passthrough inputs unchanged or with additional keys.
+
+    This runnable behaves almost like the identity function, except that it
+    can be configured to add additional keys to the output, if the input is a
+    dict.
+
+    The examples below demonstrate this runnable works using a few simple
+    chains. The chains rely on simple lambdas to make the examples easy to execute
+    and experiment with.
+
+    Examples:
+
+        .. code-block:: python
+
+            from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
+
+            runnable = RunnableParallel(
+                origin=RunnablePassthrough(),
+                modified=lambda x: x+1
+            )
+
+            runnable.invoke(1) # {'origin': 1, 'modified': 2}
+
+
+             def fake_llm(prompt: str) -> str: # Fake LLM for the example
+                return "completion"
+
+            chain = RunnableLambda(fake_llm) | {
+                'original': RunnablePassthrough(), # Original LLM output
+                'parsed': lambda text: text[::-1] # Parsing logic
+            }
+
+            chain.invoke('hello') # {'original': 'completion', 'parsed': 'noitelpmoc'}
+
+    In some cases, it may be useful to pass the input through while adding some
+    keys to the output. In this case, you can use the `assign` method:
+
+        .. code-block:: python
+
+            from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
+
+             def fake_llm(prompt: str) -> str: # Fake LLM for the example
+                return "completion"
+
+            runnable = {
+                'llm1':  fake_llm,
+                'llm2':  fake_llm,
+            }
+            | RunnablePassthrough.assign(
+                total_chars=lambda inputs: len(inputs['llm1'] + inputs['llm2'])
+              )
+
+            runnable.invoke('hello')
+            # {'llm1': 'completion', 'llm2': 'completion', 'total_chars': 20}
     """
 
-    input_type: Optional[Type[Input]] = None
+    input_type: Optional[Type[Other]] = None
+
+    func: Optional[Callable[[Other], None]] = None
+
+    afunc: Optional[Callable[[Other], Awaitable[None]]] = None
+
+    def __init__(
+        self,
+        func: Optional[
+            Union[Callable[[Other], None], Callable[[Other], Awaitable[None]]]
+        ] = None,
+        afunc: Optional[Callable[[Other], Awaitable[None]]] = None,
+        *,
+        input_type: Optional[Type[Other]] = None,
+        **kwargs: Any,
+    ) -> None:
+        if inspect.iscoroutinefunction(func):
+            afunc = func
+            func = None
+
+        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -73,8 +150,7 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
             ],
         ],
     ) -> RunnableAssign:
-        """
-        Merge the Dict input with the output produced by the mapping argument.
+        """Merge the Dict input with the output produced by the mapping argument.
 
         Args:
             mapping: A mapping from keys to runnables or callables.
@@ -83,34 +159,94 @@ class RunnablePassthrough(RunnableSerializable[Input, Input]):
             A runnable that merges the Dict input with the output produced by the
             mapping argument.
         """
-        return RunnableAssign(RunnableMap(kwargs))
+        return RunnableAssign(RunnableParallel(kwargs))
 
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
+    def invoke(self, input: Other, config: Optional[RunnableConfig] = None) -> Other:
+        if self.func is not None:
+            self.func(input)
         return self._call_with_config(identity, input, config)
 
     async def ainvoke(
         self,
-        input: Input,
+        input: Other,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Input:
+    ) -> Other:
+        if self.afunc is not None:
+            await self.afunc(input, **kwargs)
+        elif self.func is not None:
+            self.func(input, **kwargs)
         return await self._acall_with_config(aidentity, input, config)
 
     def transform(
         self,
-        input: Iterator[Input],
+        input: Iterator[Other],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Iterator[Input]:
-        return self._transform_stream_with_config(input, identity, config)
+    ) -> Iterator[Other]:
+        if self.func is None:
+            for chunk in self._transform_stream_with_config(input, identity, config):
+                yield chunk
+        else:
+            final = None
+
+            for chunk in self._transform_stream_with_config(input, identity, config):
+                yield chunk
+                if final is None:
+                    final = chunk
+                else:
+                    final = final + chunk
+
+            if final is not None:
+                self.func(final, **kwargs)
 
     async def atransform(
         self,
-        input: AsyncIterator[Input],
+        input: AsyncIterator[Other],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Input]:
-        async for chunk in self._atransform_stream_with_config(input, identity, config):
+    ) -> AsyncIterator[Other]:
+        if self.afunc is None and self.func is None:
+            async for chunk in self._atransform_stream_with_config(
+                input, identity, config
+            ):
+                yield chunk
+        else:
+            final = None
+
+            async for chunk in self._atransform_stream_with_config(
+                input, identity, config
+            ):
+                yield chunk
+                if final is None:
+                    final = chunk
+                else:
+                    final = final + chunk
+
+            if final is not None:
+                if self.afunc is not None:
+                    await self.afunc(final, **kwargs)
+                elif self.func is not None:
+                    self.func(final, **kwargs)
+
+    def stream(
+        self,
+        input: Other,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Iterator[Other]:
+        return self.transform(iter([input]), config, **kwargs)
+
+    async def astream(
+        self,
+        input: Other,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[Other]:
+        async def input_aiter() -> AsyncIterator[Other]:
+            yield input
+
+        async for chunk in self.atransform(input_aiter(), config, **kwargs):
             yield chunk
 
 
@@ -119,9 +255,9 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     A runnable that assigns key-value pairs to Dict[str, Any] inputs.
     """
 
-    mapper: RunnableMap[Dict[str, Any]]
+    mapper: RunnableParallel[Dict[str, Any]]
 
-    def __init__(self, mapper: RunnableMap[Dict[str, Any]], **kwargs: Any) -> None:
+    def __init__(self, mapper: RunnableParallel[Dict[str, Any]], **kwargs: Any) -> None:
         super().__init__(mapper=mapper, **kwargs)
 
     @classmethod
@@ -133,7 +269,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         return cls.__module__.split(".")[:-1]
 
     @property
-    def input_schema(self) -> type[BaseModel]:
+    def input_schema(self) -> Type[BaseModel]:
         map_input_schema = self.mapper.input_schema
         if not map_input_schema.__custom_root_type__:
             # ie. it's a dict
@@ -142,7 +278,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         return super().input_schema
 
     @property
-    def output_schema(self) -> type[BaseModel]:
+    def output_schema(self) -> Type[BaseModel]:
         map_input_schema = self.mapper.input_schema
         map_output_schema = self.mapper.output_schema
         if (
@@ -171,7 +307,9 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        assert isinstance(input, dict)
+        assert isinstance(
+            input, dict
+        ), "The input to RunnablePassthrough.assign() must be a dict."
         return {
             **input,
             **self.mapper.invoke(input, config, **kwargs),
@@ -183,7 +321,9 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        assert isinstance(input, dict)
+        assert isinstance(
+            input, dict
+        ), "The input to RunnablePassthrough.assign() must be a dict."
         return {
             **input,
             **await self.mapper.ainvoke(input, config, **kwargs),
@@ -204,10 +344,16 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         # get executor to start map output stream in background
         with get_executor_for_config(config or {}) as executor:
             # start map output stream
-            first_map_chunk_future = executor.submit(next, map_output)  # type: ignore
+            first_map_chunk_future = executor.submit(
+                next,
+                map_output,  # type: ignore
+                None,
+            )
             # consume passthrough stream
             for chunk in for_passthrough:
-                assert isinstance(chunk, dict)
+                assert isinstance(
+                    chunk, dict
+                ), "The input to RunnablePassthrough.assign() must be a dict."
                 # remove mapper keys from passthrough chunk, to be overwritten by map
                 filtered = AddableDict(
                     {k: v for k, v in chunk.items() if k not in mapper_keys}
@@ -233,11 +379,13 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         map_output = self.mapper.atransform(for_map, config, **kwargs)
         # start map output stream
         first_map_chunk_task: asyncio.Task = asyncio.create_task(
-            py_anext(map_output),  # type: ignore[arg-type]
+            py_anext(map_output, None),  # type: ignore[arg-type]
         )
         # consume passthrough stream
         async for chunk in for_passthrough:
-            assert isinstance(chunk, dict)
+            assert isinstance(
+                chunk, dict
+            ), "The input to RunnablePassthrough.assign() must be a dict."
             # remove mapper keys from passthrough chunk, to be overwritten by map output
             filtered = AddableDict(
                 {k: v for k, v in chunk.items() if k not in mapper_keys}

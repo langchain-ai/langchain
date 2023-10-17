@@ -49,7 +49,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def _start_trace(self, run: Run) -> None:
         """Start a trace for a run."""
         if run.parent_run_id:
-            parent_run = self.run_map[str(run.parent_run_id)]
+            parent_run = self.run_map.get(str(run.parent_run_id))
             if parent_run:
                 self._add_child_run(parent_run, run)
                 parent_run.child_execution_order = max(

@@ -450,6 +450,43 @@ class MyScale(VectorStore):
             f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
         )
 
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        where_str: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        assert not (
+            ids is None and where_str is None
+        ), "You need to specify where to be deleted! Either with `ids` or `where_str`"
+        conds = []
+        if ids:
+            conds.extend([f"{self.config.column_map['id']} = '{id}'" for id in ids])
+        if where_str:
+            conds.append(where_str)
+        assert len(conds) > 0
+        where_str_final = " AND ".join(conds)
+        qstr = (
+            f"DELETE FROM {self.config.database}.{self.config.table} "
+            f"WHERE {where_str_final}"
+        )
+        try:
+            self.client.command(qstr)
+            return True
+        except Exception as e:
+            logger.error(str(e))
+            return False
+
     @property
     def metadata_column(self) -> str:
         return self.config.column_map["metadata"]
