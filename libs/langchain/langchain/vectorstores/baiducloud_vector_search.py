@@ -52,12 +52,12 @@ class BESVerctorStore(VectorStore):
     def __init__(
         self,
         index_name: str,
-        bes_url: Optional[str] = None,
+        bes_url: str,
         user: Optional[str] = None,
         password: Optional[str] = None,
         embedding: Optional[Embeddings] = None,
-        **kwargs,
-    ):
+        **kwargs: Optional[dict],
+    ) -> None:
         self.embedding = embedding
         self.index_name = index_name
         self.query_field = kwargs.get("query_field", "text")
