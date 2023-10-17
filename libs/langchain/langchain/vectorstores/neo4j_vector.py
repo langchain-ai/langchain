@@ -61,6 +61,7 @@ def _get_search_index_query(search_type: SearchType) -> str:
 
 
 def check_if_not_null(props: List[str], values: List[Any]) -> None:
+    """Check if the values are not None or empty string"""
     for prop, value in zip(props, values):
         if not value:
             raise ValueError(f"Parameter `{prop}` must not be None or empty string")

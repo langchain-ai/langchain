@@ -31,6 +31,7 @@ def test_load_evaluators(evaluator_type: EvaluatorType) -> None:
     [
         [EvaluatorType.LABELED_CRITERIA],
         [EvaluatorType.LABELED_PAIRWISE_STRING],
+        [EvaluatorType.LABELED_SCORE_STRING],
         [EvaluatorType.QA],
         [EvaluatorType.CONTEXT_QA],
         [EvaluatorType.COT_QA],

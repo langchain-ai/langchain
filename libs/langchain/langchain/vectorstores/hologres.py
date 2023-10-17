@@ -435,7 +435,7 @@ class Hologres(VectorStore):
         **kwargs: Any,
     ) -> Hologres:
         """
-        Get intsance of an existing Hologres store.This method will
+        Get instance of an existing Hologres store.This method will
         return the instance of the store without inserting any new
         embeddings
         """

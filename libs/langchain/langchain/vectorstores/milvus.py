@@ -193,7 +193,7 @@ class Milvus(VectorStore):
             given_address = address
         else:
             given_address = None
-            logger.debug("Missing standard address type for reuse atttempt")
+            logger.debug("Missing standard address type for reuse attempt")
 
         # User defaults to empty string when getting connection info
         if user is not None:

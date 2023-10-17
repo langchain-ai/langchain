@@ -70,7 +70,10 @@ class BaseModeration:
         elif isinstance(prompt, str):
             return text
         elif isinstance(prompt, ChatPromptValue):
-            messages = prompt.messages
+            # Copy the messages because we may need to mutate them.
+            # We don't want to mutate data we don't own.
+            messages = list(prompt.messages)
+
             message = messages[self.chat_message_index]
 
             if isinstance(message, HumanMessage):
