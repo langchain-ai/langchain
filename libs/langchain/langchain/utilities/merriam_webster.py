@@ -1,6 +1,6 @@
 """Util that calls Merriam-Webster."""
 import json
-from typing import Dict, Optional
+from typing import Dict, Iterator, List, Optional
 from urllib.parse import quote
 
 import requests as req
@@ -74,6 +74,35 @@ class MerriamWebsterAPIWrapper(BaseModel):
             else:
                 result += f"Did you mean '{content[0]}'?"
         else:
-            result = response.text  # TODO: Implement this
+            result = self._format_definitions(query, content)
 
         return result
+
+    def _format_definitions(self, query: str, definitions: List[Dict]) -> str:
+        formatted_definitions: List[str] = []
+        for definition in definitions:
+            formatted_definitions.extend(self._format_definition(definition))
+
+        if len(formatted_definitions) == 1:
+            return f"Definition of '{query}':\n" f"{formatted_definitions[0]}"
+
+        result = f"Definitions of '{query}':\n\n"
+        for i, formatted_definition in enumerate(formatted_definitions, 1):
+            result += f"{i}. {formatted_definition}\n"
+
+        return result
+
+    def _format_definition(self, definition: Dict) -> Iterator[str]:
+        if "hwi" in definition:
+            headword = definition["hwi"]["hw"].replace("*", "-")
+        else:
+            headword = definition["meta"]["id"].split(":")[0]
+
+        if "fl" in definition:
+            functional_label = definition["fl"]
+
+        if "shortdef" in definition:
+            for short_def in definition["shortdef"]:
+                yield f"{headword}, {functional_label}: {short_def}"
+        else:
+            yield f"{headword}, {functional_label}"
