@@ -20,10 +20,11 @@ class ZepRetriever(BaseRetriever):
 
     Note: You will need to provide the user's `session_id` to use this retriever.
 
-    More on Zep:
-    Zep provides long-term conversation storage for LLM apps. The server stores,
-    summarizes, embeds, indexes, and enriches conversational AI chat
-    histories, and exposes them via simple, low-latency APIs.
+    Zep - Fast, scalable building blocks for LLM Apps
+    =========
+    Zep is an open source platform for productionizing LLM apps. Go from a prototype
+    built in LangChain or LlamaIndex, or a custom app, to production in minutes without
+    rewriting code.
 
     For server installation instructions, see:
     https://docs.getzep.com/deployment/quickstart/
