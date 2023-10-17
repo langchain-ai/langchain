@@ -157,6 +157,23 @@ def patch_config(
     return config
 
 
+def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
+    base: RunnableConfig = {}
+    for config in (c for c in configs if c is not None):
+        for key in config:
+            if key == "metadata":
+                base[key] = {**base.get(key, {}), **config[key]}  # type: ignore
+            elif key == "tags":
+                base[key] = list(set(base.get(key, []) + config[key]))  # type: ignore
+            elif key == "configurable":
+                base[key] = {**base.get(key, {}), **config[key]}  # type: ignore
+            else:
+                # Even though the keys aren't literals this is correct
+                # because both dicts are same type
+                base[key] = config[key] or base.get(key)  # type: ignore
+    return base
+
+
 def call_func_with_variable_args(
     func: Union[
         Callable[[Input], Output],
