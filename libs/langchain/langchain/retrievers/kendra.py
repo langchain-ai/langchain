@@ -20,7 +20,7 @@ def clean_excerpt(excerpt: str) -> str:
     """
     if not excerpt:
         return excerpt
-    res = re.sub("\s+", " ", excerpt).replace("...", "")
+    res = re.sub(r"\s+", " ", excerpt).replace("...", "")
     return res
 
 
@@ -45,7 +45,7 @@ def combined_text(item: "ResultItem") -> str:
 
 
 DocumentAttributeValueType = Union[str, int, List[str], None]
-"""Possible types of a DocumentAttributeValue. 
+"""Possible types of a DocumentAttributeValue.
 
 Dates are also represented as str.
 """
