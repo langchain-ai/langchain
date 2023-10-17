@@ -108,6 +108,7 @@ class PGVector(VectorStore):
         self,
         connection_string: str,
         embedding_function: Embeddings,
+        engine_args: Optional[dict[str, Any]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         collection_metadata: Optional[dict] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
@@ -117,6 +118,7 @@ class PGVector(VectorStore):
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
+        self.engine_args = engine_args or {}
         self.collection_name = collection_name
         self.collection_metadata = collection_metadata
         self._distance_strategy = distance_strategy
@@ -132,7 +134,7 @@ class PGVector(VectorStore):
         Initialize the store.
         """
         self._conn = self.connect()
-        # self.create_vector_extension()
+        self.create_vector_extension()
         from langchain.vectorstores._pgvector_data_models import (
             CollectionStore,
             EmbeddingStore,
@@ -148,7 +150,7 @@ class PGVector(VectorStore):
         return self.embedding_function
 
     def connect(self) -> sqlalchemy.engine.Connection:
-        engine = sqlalchemy.create_engine(self.connection_string)
+        engine = sqlalchemy.create_engine(self.connection_string, **self.engine_args)
         conn = engine.connect()
         return conn
 
