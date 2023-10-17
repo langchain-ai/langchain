@@ -941,7 +941,8 @@ def test_configurable_fields_example() -> None:
         )
     )
 
-    chain_configurable = prompt | fake_llm
+    # deduplication of configurable fields
+    chain_configurable = prompt | fake_llm | (lambda x: {"name": x}) | prompt | fake_llm
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
