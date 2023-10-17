@@ -11,6 +11,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
+from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
@@ -113,12 +114,14 @@ class PaiEasChatEndpoint(BaseChatModel):
         self, stop_sequences: Optional[List[str]], **kwargs: Any
     ) -> dict:
         params = self._default_params
+        if self.model_kwargs:
+            params.update(self.model_kwargs)
         if self.stop_sequences is not None and stop_sequences is not None:
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop_sequences is not None:
-            params["stop_sequences"] = self.stop_sequences
+            params["stop"] = self.stop_sequences
         else:
-            params["stop_sequences"] = stop_sequences
+            params["stop"] = stop_sequences
         return {**params, **kwargs}
 
     def format_request_payload(
@@ -163,10 +166,15 @@ class PaiEasChatEndpoint(BaseChatModel):
 
         return {**prompt, **model_kwargs}
 
-    def _format_response_payload(self, output: bytes) -> str:
+    def _format_response_payload(
+        self, output: bytes, stop_sequences: Optional[List[str]]
+    ) -> str:
         """Formats response"""
         try:
-            return json.loads(output)["response"]
+            text = json.loads(output)["response"]
+            if stop_sequences:
+                text = enforce_stop_tokens(text, stop_sequences)
+            return text
         except Exception as e:
             if isinstance(e, json.decoder.JSONDecodeError):
                 return output.decode("utf-8")
@@ -195,7 +203,7 @@ class PaiEasChatEndpoint(BaseChatModel):
 
         request_payload = self.format_request_payload(messages, **params)
         response_payload = self._call_eas(request_payload)
-        generated_text = self._format_response_payload(response_payload)
+        generated_text = self._format_response_payload(response_payload, params["stop"])
 
         if run_manager:
             run_manager.on_llm_new_token(generated_text)
@@ -269,9 +277,29 @@ class PaiEasChatEndpoint(BaseChatModel):
         ):
             if chunk:
                 content = self._convert_chunk_to_message_message(chunk)
-                if run_manager:
-                    await run_manager.on_llm_new_token(content.content)
-                yield ChatGenerationChunk(message=content)
+
+                # identify stop sequence in generated text, if any
+                stop_seq_found: Optional[str] = None
+                for stop_seq in params["stop"]:
+                    if stop_seq in content.content:
+                        stop_seq_found = stop_seq
+
+                # identify text to yield
+                text: Optional[str] = None
+                if stop_seq_found:
+                    content.content = content.content[
+                        : content.content.index(stop_seq_found)
+                    ]
+
+                # yield text, if any
+                if text:
+                    if run_manager:
+                        await run_manager.on_llm_new_token(content.content)
+                    yield ChatGenerationChunk(message=content)
+
+                # break if stop sequence found
+                if stop_seq_found:
+                    break
 
     async def _agenerate(
         self,

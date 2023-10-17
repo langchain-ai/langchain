@@ -87,7 +87,7 @@ class PaiEasEndpoint(LLM):
         return {
             "eas_service_url": self.eas_service_url,
             "eas_service_token": self.eas_service_token,
-            **{"model_kwargs": _model_kwargs},
+            **_model_kwargs,
         }
 
     def _invocation_params(
@@ -97,9 +97,11 @@ class PaiEasEndpoint(LLM):
         if self.stop_sequences is not None and stop_sequences is not None:
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop_sequences is not None:
-            params["stop_sequences"] = self.stop_sequences
+            params["stop"] = self.stop_sequences
         else:
-            params["stop_sequences"] = stop_sequences
+            params["stop"] = stop_sequences
+        if self.model_kwargs:
+            params.update(self.model_kwargs)
         return {**params, **kwargs}
 
     @staticmethod
@@ -133,7 +135,7 @@ class PaiEasEndpoint(LLM):
                 return completion
             else:
                 response = self._call_eas(prompt, params)
-                _stop = params.get("stop_sequences")
+                _stop = params.get("stop")
                 return self._process_response(response, _stop, self.version)
         except Exception as error:
             raise ValueError(f"Error raised by the service: {error}")
@@ -215,7 +217,7 @@ class PaiEasEndpoint(LLM):
                     output = data["response"]
                     # identify stop sequence in generated text, if any
                     stop_seq_found: Optional[str] = None
-                    for stop_seq in invocation_params["stop_sequences"]:
+                    for stop_seq in invocation_params["stop"]:
                         if stop_seq in output:
                             stop_seq_found = stop_seq
 
