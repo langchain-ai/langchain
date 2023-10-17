@@ -103,6 +103,9 @@ class ZepRetriever(BaseRetriever):
     ) -> List[Document]:
         from zep_python import MemorySearchPayload
 
+        if not self.zep_client:
+            raise RuntimeError("Zep client not initialized.")
+
         payload: MemorySearchPayload = MemorySearchPayload(
             text=query,
             metadata=metadata,
@@ -124,6 +127,9 @@ class ZepRetriever(BaseRetriever):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         from zep_python import MemorySearchPayload
+
+        if not self.zep_client:
+            raise RuntimeError("Zep client not initialized.")
 
         payload: MemorySearchPayload = MemorySearchPayload(
             text=query,
