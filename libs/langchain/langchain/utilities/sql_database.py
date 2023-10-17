@@ -1,11 +1,11 @@
 """SQLAlchemy wrapper around a database."""
 from __future__ import annotations
 
+import asyncio
 import warnings
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
 
 import sqlalchemy
-from async_property import async_property
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
@@ -40,6 +40,56 @@ def truncate_word(content: Any, *, length: int, suffix: str = "...") -> str:
 
 class SQLDatabase:
     """SQLAlchemy wrapper around a database."""
+
+    def __init__(
+        self,
+        engine: Union[Engine, AsyncEngine],
+        schema: Optional[str] = None,
+        metadata: Optional[MetaData] = None,
+        ignore_tables: Optional[List[str]] = None,
+        include_tables: Optional[List[str]] = None,
+        sample_rows_in_table_info: int = 3,
+        indexes_in_table_info: bool = False,
+        custom_table_info: Optional[dict] = None,
+        view_support: bool = False,
+        max_string_length: int = 300,
+    ):
+        self._schema = schema
+        self._max_string_length = max_string_length
+        if isinstance(engine, Engine):
+            self.__init_sync(
+                engine,
+                metadata,
+                ignore_tables,
+                include_tables,
+                sample_rows_in_table_info,
+                indexes_in_table_info,
+                custom_table_info,
+                view_support,
+            )
+        else:
+            try:
+                import nest_asyncio
+
+                nest_asyncio.apply()
+                asyncio.run(
+                    self.__init_async(
+                        engine,
+                        metadata,
+                        ignore_tables,
+                        include_tables,
+                        sample_rows_in_table_info,
+                        indexes_in_table_info,
+                        custom_table_info,
+                        view_support,
+                    )
+                )
+            except ImportError:
+                raise ImportError(
+                    """`nest_asyncio` package not found.
+                    please install with `pip install nest_asyncio`
+                    """
+                )
 
     def __init_sync(
         self,
@@ -128,7 +178,6 @@ class SQLDatabase:
         if include_tables and ignore_tables:
             raise ValueError("Cannot specify both include_tables and ignore_tables")
         self._async_engine = async_engine
-
         async with self._async_engine.connect() as conn:
             tables = await conn.run_sync(
                 lambda sync_conn: inspect(sync_conn).get_table_names()
@@ -189,15 +238,6 @@ class SQLDatabase:
                 schema=self._schema,
             )
 
-    def __init__(
-        self,
-        schema: Optional[str] = None,
-        max_string_length: int = 300,
-    ):
-        """Create engine from database URI."""
-        self._schema = schema
-        self._max_string_length = max_string_length
-
     @classmethod
     async def from_uri_async(
         cls,
@@ -218,13 +258,9 @@ class SQLDatabase:
         from sqlalchemy.ext.asyncio import create_async_engine
 
         engine = create_async_engine(database_uri, **_engine_args)
-        print(type(engine))
         obj = cls(
-            schema,
-            max_string_length,
-        )
-        await obj.__init_async(
             engine,
+            schema,
             metadata,
             ignore_tables,
             include_tables,
@@ -232,6 +268,7 @@ class SQLDatabase:
             indexes_in_table_info,
             custom_table_info,
             view_support,
+            max_string_length,
         )
         return obj
 
@@ -253,11 +290,8 @@ class SQLDatabase:
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
         obj = cls(
-            schema,
-            max_string_length,
-        )
-        obj.__init_sync(
             create_engine(database_uri, **_engine_args),
+            schema,
             metadata,
             ignore_tables,
             include_tables,
@@ -265,6 +299,7 @@ class SQLDatabase:
             indexes_in_table_info,
             custom_table_info,
             view_support,
+            max_string_length,
         )
         return obj
 
@@ -427,7 +462,7 @@ class SQLDatabase:
         )
         return self.get_usable_table_names()
 
-    @async_property
+    @property
     async def table_info_async(self) -> str:
         """Information about all tables in the database."""
         return await self.get_table_info_async()

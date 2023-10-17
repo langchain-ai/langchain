@@ -47,8 +47,7 @@ def test_table_info() -> None:
     engine = create_engine("duckdb:///:memory:")
     metadata_obj.create_all(engine)
 
-    db = SQLDatabase(schema="schema_a")
-    db.__init_sync(engine=engine, metadata=metadata_obj)
+    db = SQLDatabase(engine, schema="schema_a", metadata=metadata_obj)
     output = db.table_info
     expected_output = """
     CREATE TABLE schema_a."user" (
@@ -74,8 +73,7 @@ def test_sql_database_run() -> None:
         conn.execute(stmt)
 
     with pytest.warns(Warning) as records:
-        db = SQLDatabase(schema="schema_a")
-        db.__init_sync(engine=engine)
+        db = SQLDatabase(engine, schema="schema_a")
 
     # Metadata creation with duckdb raises a warning at the moment about reflection.
     # As a stop-gap to increase strictness of pytest to fail on warnings, we'll
