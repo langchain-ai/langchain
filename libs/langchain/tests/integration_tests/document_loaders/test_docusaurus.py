@@ -2,7 +2,7 @@ from pathlib import Path
 
 from langchain.document_loaders import DocusaurusLoader
 
-DOCS_URL = Path(__file__).parent.parent / "examples/docusaurus-sitemap.xml"
+DOCS_URL = str(Path(__file__).parent.parent / "examples/docusaurus-sitemap.xml")
 
 
 def test_docusarus() -> None:

@@ -44,6 +44,9 @@ class DocusaurusLoader(BaseLoader):
         loader = SitemapLoader(
             web_path=self.url,
             parsing_function=self._parsing_function,
+            blocknum=self.kwargs.get("blocknum") or 0,
+            is_local=self.kwargs.get("is_local") or False,
+            continue_on_failure=self.kwargs.get("continue_on_failure") or False,
             **self.kwargs,
         )
         return loader.load()
