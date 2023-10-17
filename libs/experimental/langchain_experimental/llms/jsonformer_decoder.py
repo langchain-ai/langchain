@@ -37,7 +37,9 @@ class JsonFormer(HuggingFacePipeline):
     )
     debug: bool = Field(default=False, description="Debug mode.")
 
-    @root_validator
+    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
+    #       and causes mypy type-checking failures (hence the `type: ignore`)
+    @root_validator  # type: ignore[call-overload]
     def check_jsonformer_installation(cls, values: dict) -> dict:
         import_jsonformer()
         return values
