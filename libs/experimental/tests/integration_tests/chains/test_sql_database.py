@@ -25,7 +25,8 @@ def test_sql_database_run() -> None:
     stmt = insert(user).values(user_id=13, user_name="Harrison", user_company="Foo")
     with engine.connect() as conn:
         conn.execute(stmt)
-    db = SQLDatabase(engine)
+    db = SQLDatabase()
+    db.__init_sync(engine)
     db_chain = SQLDatabaseChain.from_llm(OpenAI(temperature=0), db)
     output = db_chain.run("What company does Harrison work at?")
     expected_output = " Harrison works at Foo."
@@ -39,7 +40,8 @@ def test_sql_database_run_update() -> None:
     stmt = insert(user).values(user_id=13, user_name="Harrison", user_company="Foo")
     with engine.connect() as conn:
         conn.execute(stmt)
-    db = SQLDatabase(engine)
+    db = SQLDatabase()
+    db.__init_sync(engine=engine)
     db_chain = SQLDatabaseChain.from_llm(OpenAI(temperature=0), db)
     output = db_chain.run("Update Harrison's workplace to Bar")
     expected_output = " Harrison's workplace has been updated to Bar."
@@ -57,7 +59,8 @@ def test_sql_database_sequential_chain_run() -> None:
     stmt = insert(user).values(user_id=13, user_name="Harrison", user_company="Foo")
     with engine.connect() as conn:
         conn.execute(stmt)
-    db = SQLDatabase(engine)
+    db = SQLDatabase()
+    db.__init_sync(engine)
     db_chain = SQLDatabaseSequentialChain.from_llm(OpenAI(temperature=0), db)
     output = db_chain.run("What company does Harrison work at?")
     expected_output = " Harrison works at Foo."
@@ -72,7 +75,8 @@ def test_sql_database_sequential_chain_intermediate_steps() -> None:
     stmt = insert(user).values(user_id=13, user_name="Harrison", user_company="Foo")
     with engine.connect() as conn:
         conn.execute(stmt)
-    db = SQLDatabase(engine)
+    db = SQLDatabase()
+    db.__init_sync(engine=engine)
     db_chain = SQLDatabaseSequentialChain.from_llm(
         OpenAI(temperature=0), db, return_intermediate_steps=True
     )

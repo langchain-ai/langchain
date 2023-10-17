@@ -36,7 +36,8 @@ def test_table_info() -> None:
     """Test that table info is constructed properly."""
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
-    db = SQLDatabase(engine)
+    db = SQLDatabase()
+    db.__init_sync(engine=engine)
     output = db.table_info
     expected_output = """
     CREATE TABLE user (
@@ -77,7 +78,8 @@ def test_table_info_w_sample_rows() -> None:
     with engine.begin() as conn:
         conn.execute(stmt)
 
-    db = SQLDatabase(engine, sample_rows_in_table_info=2)
+    db = SQLDatabase()
+    db.__init_sync(engine=engine, sample_rows_in_table_info=2)
 
     output = db.table_info
 
@@ -118,7 +120,8 @@ def test_sql_database_run() -> None:
     )
     with engine.begin() as conn:
         conn.execute(stmt)
-    db = SQLDatabase(engine)
+    db = SQLDatabase()
+    db.__init_sync(engine=engine)
     command = "select user_id, user_name, user_bio from user where user_id = 13"
     output = db.run(command)
     user_bio = "That is my Bio " * 19 + "That is my..."
@@ -133,7 +136,8 @@ def test_sql_database_run_update() -> None:
     stmt = insert(user).values(user_id=13, user_name="Harrison")
     with engine.begin() as conn:
         conn.execute(stmt)
-    db = SQLDatabase(engine)
+    db = SQLDatabase()
+    db.__init_sync(engine=engine)
     command = "update user set user_name='Updated' where user_id = 13"
     output = db.run(command)
     expected_output = ""

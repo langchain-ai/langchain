@@ -5,9 +5,11 @@ import warnings
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
 
 import sqlalchemy
+from async_property import async_property
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
+from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.types import NullType
 
@@ -39,10 +41,9 @@ def truncate_word(content: Any, *, length: int, suffix: str = "...") -> str:
 class SQLDatabase:
     """SQLAlchemy wrapper around a database."""
 
-    def __init__(
+    def __init_sync(
         self,
         engine: Engine,
-        schema: Optional[str] = None,
         metadata: Optional[MetaData] = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
@@ -50,21 +51,20 @@ class SQLDatabase:
         indexes_in_table_info: bool = False,
         custom_table_info: Optional[dict] = None,
         view_support: bool = False,
-        max_string_length: int = 300,
-    ):
-        """Create engine from database URI."""
-        self._engine = engine
-        self._schema = schema
+    ) -> None:
         if include_tables and ignore_tables:
             raise ValueError("Cannot specify both include_tables and ignore_tables")
-
+        self._engine = engine
         self._inspector = inspect(self._engine)
-
         # including view support by adding the views as well as tables to the all
         # tables list if view_support is True
         self._all_tables = set(
-            self._inspector.get_table_names(schema=schema)
-            + (self._inspector.get_view_names(schema=schema) if view_support else [])
+            self._inspector.get_table_names(schema=self._schema)
+            + (
+                self._inspector.get_view_names(schema=self._schema)
+                if view_support
+                else []
+            )
         )
 
         self._include_tables = set(include_tables) if include_tables else set()
@@ -105,8 +105,6 @@ class SQLDatabase:
                 if table in intersection
             )
 
-        self._max_string_length = max_string_length
-
         self._metadata = metadata or MetaData()
         # including view support if view_support = true
         self._metadata.reflect(
@@ -116,13 +114,159 @@ class SQLDatabase:
             schema=self._schema,
         )
 
+    async def __init_async(
+        self,
+        async_engine: AsyncEngine,
+        metadata: Optional[MetaData] = None,
+        ignore_tables: Optional[List[str]] = None,
+        include_tables: Optional[List[str]] = None,
+        sample_rows_in_table_info: int = 3,
+        indexes_in_table_info: bool = False,
+        custom_table_info: Optional[dict] = None,
+        view_support: bool = False,
+    ) -> None:
+        if include_tables and ignore_tables:
+            raise ValueError("Cannot specify both include_tables and ignore_tables")
+        self._async_engine = async_engine
+
+        async with self._async_engine.connect() as conn:
+            tables = await conn.run_sync(
+                lambda sync_conn: inspect(sync_conn).get_table_names()
+            )
+            if view_support:
+                views = await conn.run_sync(
+                    lambda sync_conn: inspect(sync_conn).get_view_names()
+                )
+            else:
+                views = []
+            # including view support by adding the views as well as tables to the all
+            # tables list if view_support is True
+            self._all_tables = set(tables + views)
+            self._include_tables = set(include_tables) if include_tables else set()
+            if self._include_tables:
+                missing_tables = self._include_tables - self._all_tables
+                if missing_tables:
+                    raise ValueError(
+                        f"include_tables {missing_tables} not found in database"
+                    )
+            self._ignore_tables = set(ignore_tables) if ignore_tables else set()
+            if self._ignore_tables:
+                missing_tables = self._ignore_tables - self._all_tables
+                if missing_tables:
+                    raise ValueError(
+                        f"ignore_tables {missing_tables} not found in database"
+                    )
+            usable_tables = self.get_usable_table_names()
+            self._usable_tables = (
+                set(usable_tables) if usable_tables else self._all_tables
+            )
+            if not isinstance(sample_rows_in_table_info, int):
+                raise TypeError("sample_rows_in_table_info must be an integer")
+
+            self._sample_rows_in_table_info = sample_rows_in_table_info
+            self._indexes_in_table_info = indexes_in_table_info
+
+            self._custom_table_info = custom_table_info
+            if self._custom_table_info:
+                if not isinstance(self._custom_table_info, dict):
+                    raise TypeError(
+                        "table_info must be a dictionary with table names as keys and "
+                        "the desired table info as values"
+                    )
+                # only keep the tables that are also present in the database
+                intersection = set(self._custom_table_info).intersection(
+                    self._all_tables
+                )
+                self._custom_table_info = dict(
+                    (table, self._custom_table_info[table])
+                    for table in self._custom_table_info
+                    if table in intersection
+                )
+            self._metadata = metadata or MetaData()
+            await conn.run_sync(
+                self._metadata.reflect,
+                only=list(self._usable_tables),
+                schema=self._schema,
+            )
+
+    def __init__(
+        self,
+        schema: Optional[str] = None,
+        max_string_length: int = 300,
+    ):
+        """Create engine from database URI."""
+        self._schema = schema
+        self._max_string_length = max_string_length
+
     @classmethod
-    def from_uri(
-        cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
+    async def from_uri_async(
+        cls,
+        database_uri: str,
+        engine_args: Optional[dict] = None,
+        schema: Optional[str] = None,
+        metadata: Optional[MetaData] = None,
+        ignore_tables: Optional[List[str]] = None,
+        include_tables: Optional[List[str]] = None,
+        sample_rows_in_table_info: int = 3,
+        indexes_in_table_info: bool = False,
+        custom_table_info: Optional[dict] = None,
+        view_support: bool = False,
+        max_string_length: int = 300,
     ) -> SQLDatabase:
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
-        return cls(create_engine(database_uri, **_engine_args), **kwargs)
+        from sqlalchemy.ext.asyncio import create_async_engine
+
+        engine = create_async_engine(database_uri, **_engine_args)
+        print(type(engine))
+        obj = cls(
+            schema,
+            max_string_length,
+        )
+        await obj.__init_async(
+            engine,
+            metadata,
+            ignore_tables,
+            include_tables,
+            sample_rows_in_table_info,
+            indexes_in_table_info,
+            custom_table_info,
+            view_support,
+        )
+        return obj
+
+    @classmethod
+    def from_uri(
+        cls,
+        database_uri: str,
+        engine_args: Optional[dict] = None,
+        schema: Optional[str] = None,
+        metadata: Optional[MetaData] = None,
+        ignore_tables: Optional[List[str]] = None,
+        include_tables: Optional[List[str]] = None,
+        sample_rows_in_table_info: int = 3,
+        indexes_in_table_info: bool = False,
+        custom_table_info: Optional[dict] = None,
+        view_support: bool = False,
+        max_string_length: int = 300,
+    ) -> SQLDatabase:
+        """Construct a SQLAlchemy engine from URI."""
+        _engine_args = engine_args or {}
+        obj = cls(
+            schema,
+            max_string_length,
+        )
+        obj.__init_sync(
+            create_engine(database_uri, **_engine_args),
+            metadata,
+            ignore_tables,
+            include_tables,
+            sample_rows_in_table_info,
+            indexes_in_table_info,
+            custom_table_info,
+            view_support,
+        )
+        return obj
 
     @classmethod
     def from_databricks(
@@ -265,7 +409,10 @@ class SQLDatabase:
     @property
     def dialect(self) -> str:
         """Return string representation of dialect to use."""
-        return self._engine.dialect.name
+        if hasattr(self, "_engine"):
+            return self._engine.dialect.name
+        else:
+            return self._async_engine.dialect.name
 
     def get_usable_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
@@ -280,10 +427,71 @@ class SQLDatabase:
         )
         return self.get_usable_table_names()
 
+    @async_property
+    async def table_info_async(self) -> str:
+        """Information about all tables in the database."""
+        return await self.get_table_info_async()
+
     @property
     def table_info(self) -> str:
         """Information about all tables in the database."""
         return self.get_table_info()
+
+    async def get_table_info_async(
+        self, table_names: Optional[List[str]] = None
+    ) -> str:
+        """Get information about specified tables.
+
+        Follows best practices as specified in: Rajkumar et al, 2022
+        (https://arxiv.org/abs/2204.00498)
+
+        If `sample_rows_in_table_info`, the specified number of sample rows will be
+        appended to each table description. This can increase performance as
+        demonstrated in the paper.
+        """
+        all_table_names = self.get_usable_table_names()
+        if table_names is not None:
+            missing_tables = set(table_names).difference(all_table_names)
+            if missing_tables:
+                raise ValueError(f"table_names {missing_tables} not found in database")
+            all_table_names = table_names
+        meta_tables = [
+            tbl
+            for tbl in self._metadata.sorted_tables
+            if tbl.name in set(all_table_names)
+            and not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
+        ]
+
+        tables = []
+        for table in meta_tables:
+            if self._custom_table_info and table.name in self._custom_table_info:
+                tables.append(self._custom_table_info[table.name])
+                continue
+
+            # Ignore JSON datatyped columns
+            for k, v in table.columns.items():
+                if type(v.type) is NullType:
+                    table._columns.remove(v)
+
+            async with self._async_engine.connect() as conn:
+                create_table_stmt = CreateTable(table)
+                create_table = str(await conn.run_sync(create_table_stmt.compile))
+            table_info = f"{create_table.rstrip()}"
+            has_extra_info = (
+                self._indexes_in_table_info or self._sample_rows_in_table_info
+            )
+            if has_extra_info:
+                table_info += "\n\n/*"
+            if self._indexes_in_table_info:
+                table_info += f"\n{await self._get_table_indexes_async(table)}\n"
+            if self._sample_rows_in_table_info:
+                table_info += f"\n{await self._get_sample_rows_async(table)}\n"
+            if has_extra_info:
+                table_info += "*/"
+            tables.append(table_info)
+        tables.sort()
+        final_str = "\n\n".join(tables)
+        return final_str
 
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
         """Get information about specified tables.
@@ -339,10 +547,49 @@ class SQLDatabase:
         final_str = "\n\n".join(tables)
         return final_str
 
+    async def _get_table_indexes_async(self, table: Table) -> str:
+        async with self._async_engine.connect() as conn:
+            indexes = await conn.run_sync(
+                lambda sync_conn: inspect(sync_conn).get_indexes(table.name)
+            )
+        indexes = self._inspector.get_indexes(table.name)
+        indexes_formatted = "\n".join(map(_format_index, indexes))
+        return f"Table Indexes:\n{indexes_formatted}"
+
     def _get_table_indexes(self, table: Table) -> str:
         indexes = self._inspector.get_indexes(table.name)
         indexes_formatted = "\n".join(map(_format_index, indexes))
         return f"Table Indexes:\n{indexes_formatted}"
+
+    async def _get_sample_rows_async(self, table: Table) -> str:
+        # build the select command
+        command = select(table).limit(self._sample_rows_in_table_info)
+
+        # save the columns in string format
+        columns_str = "\t".join([col.name for col in table.columns])
+
+        try:
+            # get the sample rows
+            async with self._async_engine.begin() as connection:
+                sample_rows_result = await connection.execute(command)  # type: ignore
+                # shorten values in the sample rows
+                sample_rows = list(
+                    map(lambda ls: [str(i)[:100] for i in ls], sample_rows_result)
+                )
+
+            # save the sample rows in string format
+            sample_rows_str = "\n".join(["\t".join(row) for row in sample_rows])
+
+        # in some dialects when there are no rows in the table a
+        # 'ProgrammingError' is returned
+        except ProgrammingError:
+            sample_rows_str = ""
+
+        return (
+            f"{self._sample_rows_in_table_info} rows from {table.name} table:\n"
+            f"{columns_str}\n"
+            f"{sample_rows_str}"
+        )
 
     def _get_sample_rows(self, table: Table) -> str:
         # build the select command
@@ -373,6 +620,54 @@ class SQLDatabase:
             f"{columns_str}\n"
             f"{sample_rows_str}"
         )
+
+    async def _aexecute(
+        self,
+        command: str,
+        fetch: Union[Literal["all"], Literal["one"]] = "all",
+    ) -> Sequence[Dict[str, Any]]:
+        """
+        Executes SQL command through underlying engine.
+
+        If the statement returns no rows, an empty list is returned.
+        """
+        async with self._async_engine.begin() as connection:
+            if self._schema is not None:
+                if self.dialect == "snowflake":
+                    await connection.exec_driver_sql(
+                        "ALTER SESSION SET search_path = %s", (self._schema,)
+                    )
+                elif self.dialect == "bigquery":
+                    await connection.exec_driver_sql(
+                        "SET @@dataset_id=?", (self._schema,)
+                    )
+                elif self.dialect == "mssql":
+                    pass
+                elif self.dialect == "trino":
+                    await connection.exec_driver_sql("USE ?", (self._schema,))
+                elif self.dialect == "duckdb":
+                    # Unclear which parameterized argument syntax duckdb supports.
+                    # The docs for the duckdb client say they support multiple,
+                    # but `duckdb_engine` seemed to struggle with all of them:
+                    # https://github.com/Mause/duckdb_engine/issues/796
+                    await connection.exec_driver_sql(
+                        f"SET search_path TO {self._schema}"
+                    )
+                else:  # postgresql and other compatible dialects
+                    await connection.exec_driver_sql(
+                        "SET search_path TO %s", (self._schema,)
+                    )
+            cursor = await connection.execute(text(command))
+            if cursor.returns_rows:
+                if fetch == "all":
+                    result = [x._asdict() for x in cursor.fetchall()]
+                elif fetch == "one":
+                    first_result = cursor.fetchone()
+                    result = [] if first_result is None else [first_result._asdict()]
+                else:
+                    raise ValueError("Fetch parameter must be either 'one' or 'all'")
+                return result
+        return []
 
     def _execute(
         self,
@@ -415,6 +710,28 @@ class SQLDatabase:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
                 return result
         return []
+
+    async def arun(
+        self,
+        command: str,
+        fetch: Union[Literal["all"], Literal["one"]] = "all",
+    ) -> str:
+        """Execute a SQL command and return a string representing the results.
+
+        If the statement returns rows, a string of the results is returned.
+        If the statement returns no rows, an empty string is returned.
+        """
+        result = await self._aexecute(command, fetch)
+        # Convert columns values to string to avoid issues with sqlalchemy
+        # truncating text
+        res = [
+            tuple(truncate_word(c, length=self._max_string_length) for c in r.values())
+            for r in result
+        ]
+        if not res:
+            return ""
+        else:
+            return str(res)
 
     def run(
         self,
