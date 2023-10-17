@@ -3,6 +3,7 @@ import unittest
 import pytest
 from langchain.schema import LLMResult
 
+generation_config = {"max_new_tokens": 5}
 
 class TestDeepSparse(unittest.TestCase):
     def test_deepsparse_call(self) -> None:
@@ -11,7 +12,7 @@ class TestDeepSparse(unittest.TestCase):
 
         llm = DeepSparse(
             model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base-none",
-            config=config,
+            generation_config=generation_config,
         )
 
         output = llm("def ")
@@ -20,11 +21,11 @@ class TestDeepSparse(unittest.TestCase):
 
     def test_deepsparse_streaming(self) -> None:
         """Test valid call to DeepSparse with streaming."""
-        config = {"max_generated_tokens": 5}
+        generation_config=generation_config
 
         llm = DeepSparse(
             model="hf:neuralmagic/mpt-7b-chat-pruned50-quant",
-            config=config,
+            generation_config=generation_config,
             streaming=True,
         )
 
@@ -39,7 +40,7 @@ class TestDeepSparse(unittest.TestCase):
 config = {"max_generated_tokens": 5}
 llm = DeepSparse(
     model="hf:neuralmagic/mpt-7b-chat-pruned50-quant",
-    config=config,
+    generation_config=generation_config,
 )
 
 
