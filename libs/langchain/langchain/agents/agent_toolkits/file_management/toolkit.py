@@ -29,7 +29,25 @@ _FILE_TOOLS = {
 
 
 class FileManagementToolkit(BaseToolkit):
-    """Toolkit for interacting with a Local Files."""
+    """Toolkit for interacting with local files.
+
+    *Security Notice*: This toolkit provides methods to interact with local files.
+        If providing this toolkit to an agent on an LLM, ensure you scope
+        the agent's permissions to only include the necessary permissions
+        to perform the desired operations.
+
+        By **default** the agent will have access to all files within
+        the root dir and will be able to Copy, Delete, Move, Read, Write
+        and List files in that directory.
+
+        Consider the following:
+        - Limit access to particular directories using `root_dir`.
+        - Use filesystem permissions to restrict access and permissions to only
+          the files and directories required by the agent.
+        - Limit the tools available to the agent to only the file operations
+          necessary for the agent's intended use.
+        - Sandbox the agent by running it in a container.
+    """
 
     root_dir: Optional[str] = None
     """If specified, all file operations are made relative to root_dir."""
