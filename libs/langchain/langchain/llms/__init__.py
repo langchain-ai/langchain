@@ -480,6 +480,12 @@ def _import_xinference() -> Any:
     return Xinference
 
 
+def _import_yandex_gpt() -> Any:
+    from langchain.llms.yandex import YandexGPT
+
+    return YandexGPT
+
+
 def __getattr__(name: str) -> Any:
     if name == "AI21":
         return _import_ai21()
@@ -633,6 +639,8 @@ def __getattr__(name: str) -> Any:
         return _import_writer()
     elif name == "Xinference":
         return _import_xinference()
+    elif name == "YandexGPT":
+        return _import_yandex_gpt()
     elif name == "type_to_cls_dict":
         # for backwards compatibility
         type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -719,6 +727,7 @@ __all__ = [
     "Xinference",
     "JavelinAIGateway",
     "QianfanLLMEndpoint",
+    "YandexGPT",
 ]
 
 
@@ -794,4 +803,5 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,
         "qianfan_endpoint": _import_baidu_qianfan_endpoint,
+        "yandex_gpt": _import_yandex_gpt,
     }
