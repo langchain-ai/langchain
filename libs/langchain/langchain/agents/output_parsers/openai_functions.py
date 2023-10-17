@@ -1,3 +1,4 @@
+import asyncio
 import json
 from json import JSONDecodeError
 from typing import List, Union
@@ -74,11 +75,20 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
             return_values={"output": message.content}, log=message.content
         )
 
-    def parse_result(self, result: List[Generation]) -> Union[AgentAction, AgentFinish]:
+    def parse_result(
+        self, result: List[Generation], *, partial: bool = False
+    ) -> Union[AgentAction, AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             raise ValueError("This output parser only works on ChatGeneration output")
         message = result[0].message
         return self._parse_ai_message(message)
+
+    async def aparse_result(
+        self, result: List[Generation], *, partial: bool = False
+    ) -> Union[AgentAction, AgentFinish]:
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self.parse_result, result
+        )
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         raise ValueError("Can only parse messages")

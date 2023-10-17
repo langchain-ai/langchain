@@ -6,8 +6,7 @@ import time
 import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
 
-from langchain.docstore.document import Document
-from langchain.embeddings import TensorflowHubEmbeddings
+from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
 
@@ -15,6 +14,8 @@ if TYPE_CHECKING:
     from google.cloud import storage
     from google.cloud.aiplatform import MatchingEngineIndex, MatchingEngineIndexEndpoint
     from google.oauth2.service_account import Credentials
+
+    from langchain.embeddings import TensorflowHubEmbeddings
 
 logger = logging.getLogger()
 
@@ -115,15 +116,24 @@ class MatchingEngine(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+        texts = list(texts)
+        if metadatas is not None and len(texts) != len(metadatas):
+            raise ValueError(
+                "texts and metadatas do not have the same length. Received "
+                f"{len(texts)} texts and {len(metadatas)} metadatas."
+            )
         logger.debug("Embedding documents.")
-        embeddings = self.embedding.embed_documents(list(texts))
+        embeddings = self.embedding.embed_documents(texts)
         jsons = []
         ids = []
         # Could be improved with async.
-        for embedding, text in zip(embeddings, texts):
+        for idx, (embedding, text) in enumerate(zip(embeddings, texts)):
             id = str(uuid.uuid4())
             ids.append(id)
-            jsons.append({"id": id, "embedding": embedding})
+            json_: dict = {"id": id, "embedding": embedding}
+            if metadatas is not None:
+                json_["metadata"] = metadatas[idx]
+            jsons.append(json)
             self._upload_to_gcs(text, f"documents/{id}")
 
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")
@@ -443,10 +453,13 @@ class MatchingEngine(VectorStore):
         )
 
     @classmethod
-    def _get_default_embeddings(cls) -> TensorflowHubEmbeddings:
+    def _get_default_embeddings(cls) -> "TensorflowHubEmbeddings":
         """This function returns the default embedding.
 
         Returns:
             Default TensorflowHubEmbeddings to use.
         """
+
+        from langchain.embeddings import TensorflowHubEmbeddings
+
         return TensorflowHubEmbeddings()
