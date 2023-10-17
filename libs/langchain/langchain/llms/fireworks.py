@@ -45,7 +45,10 @@ class Fireworks(LLM):
         try:
             import fireworks.client
         except ImportError as e:
-            raise ImportError("") from e
+            raise ImportError(
+                "Could not import fireworks-ai python package. "
+                "Please install it with `pip install fireworks-ai`."
+            ) from e
         fireworks_api_key = get_from_dict_or_env(
             values, "fireworks_api_key", "FIREWORKS_API_KEY"
         )
@@ -113,6 +116,8 @@ class Fireworks(LLM):
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     async def _astream(
         self,
@@ -132,6 +137,8 @@ class Fireworks(LLM):
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
+            if run_manager:
+                await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     def stream(
         self,
