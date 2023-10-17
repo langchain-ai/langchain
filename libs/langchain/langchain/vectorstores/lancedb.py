@@ -7,6 +7,7 @@ from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
 
+
 class LanceDB(VectorStore):
     """`LanceDB` vector store.
 
@@ -14,7 +15,8 @@ class LanceDB(VectorStore):
     You can install it with ``pip install lancedb``.
 
     Args:
-        connection: LanceDB connection to use. If not provided, a new connection will be created.
+        connection: LanceDB connection to use. If not provided, a new connection
+                    will be created.
         embedding: Embedding to use for the vectorstore.
         vector_key: Key to use for the vector in the database. Defaults to ``vector``.
         id_key: Key to use for the id in the database. Defaults to ``id``.
@@ -35,8 +37,8 @@ class LanceDB(VectorStore):
 
     def __init__(
         self,
-        connection: Any = None,
-        embedding: Embeddings = None,
+        connection: Optional[Any] = None,
+        embedding: Optional[Embeddings] = None,
         vector_key: Optional[str] = "vector",
         id_key: Optional[str] = "id",
         text_key: Optional[str] = "text",
@@ -66,9 +68,8 @@ class LanceDB(VectorStore):
         else:
             self._connection = self._init_table()
 
-
     @property
-    def embeddings(self) -> Embeddings:
+    def embeddings(self) -> Optional[Embeddings]:
         return self._embedding
 
     def add_texts(
@@ -119,16 +120,23 @@ class LanceDB(VectorStore):
             List of documents most similar to the query.
         """
         embedding = self._embedding.embed_query(query)
-        docs = self._connection.search(embedding, vector_column_name=self._vector_key).limit(k).to_arrow()
+        docs = (
+            self._connection.search(embedding, vector_column_name=self._vector_key)
+            .limit(k)
+            .to_arrow()
+        )
         columns = docs.schema.names
         return [
             Document(
                 page_content=docs[self._text_key][idx].as_py(),
-                metadata= {col: docs[col][idx].as_py() for col in columns if col != self._text_key},
+                metadata={
+                    col: docs[col][idx].as_py()
+                    for col in columns
+                    if col != self._text_key
+                },
             )
             for idx in range(len(docs))
         ]
-
 
     @classmethod
     def from_texts(
@@ -154,16 +162,20 @@ class LanceDB(VectorStore):
         return instance
 
     def _init_table(self) -> Any:
-        import lancedb
         import pyarrow as pa
-        from lancedb.pydantic import LanceModel, Vector
+
+        import lancedb
 
         schema = pa.schema(
-        [
-            pa.field(self._vector_key, pa.list_(pa.float32(), len(self.embeddings.embed_query("test")))),
-            pa.field(self._id_key, pa.string()),
-            pa.field(self._text_key, pa.string()),
-        ])
+            [
+                pa.field(
+                    self._vector_key,
+                    pa.list_(pa.float32(), len(self.embeddings.embed_query("test"))),
+                ),
+                pa.field(self._id_key, pa.string()),
+                pa.field(self._text_key, pa.string()),
+            ]
+        )
         db = lancedb.connect("./lancedb")
         tbl = db.create_table(self._table_name, schema=schema, mode="overwrite")
         return tbl

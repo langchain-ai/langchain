@@ -22,9 +22,8 @@ def test_lancedb_with_connection() -> None:
     result_texts = [doc.page_content for doc in result]
     assert "text 1" in result_texts
 
-def test_lancedb_without_connection() -> None:
-    import lancedb
 
+def test_lancedb_without_connection() -> None:
     embeddings = FakeEmbeddings()
     texts = ["text 1", "text 2", "item 3"]
 
@@ -36,11 +35,7 @@ def test_lancedb_without_connection() -> None:
 
 
 def test_lancedb_add_texts() -> None:
-    import lancedb
-
     embeddings = FakeEmbeddings()
-    db = lancedb.connect("/tmp/lancedb")
-    texts = ["text 1"]
 
     store = LanceDB(embedding=embeddings)
     store.add_texts(["text 2"])
