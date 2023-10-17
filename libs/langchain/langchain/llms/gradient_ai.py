@@ -1,4 +1,7 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, TypedDict, Union
+import asyncio
+import logging
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Dict, List, Mapping, Optional, Sequence, TypedDict
 
 import aiohttp
 import requests
@@ -7,9 +10,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain.pydantic_v1 import Extra, Field, root_validator
+from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 
@@ -17,7 +21,7 @@ class TrainResult(TypedDict):
     loss: float
 
 
-class GradientLLM(LLM):
+class GradientLLM(BaseLLM):
     """Gradient.ai LLM Endpoints.
 
     GradientLLM is a class to interact with LLMs on gradient.ai
@@ -29,11 +33,11 @@ class GradientLLM(LLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms.gradientai_endpoint import GradientAIEndpoint
+            from langchain.llms import GradientLLM
             GradientLLM(
-                model_id="cad6644_base_ml_model",
+                model="99148c6d-c2a0-4fbe-a4a7-e7c05bdb8a09_base_ml_model",
                 model_kwargs={
-                    "max_generated_token_count": 200,
+                    "max_generated_token_count": 128,
                     "temperature": 0.75,
                     "top_p": 0.95,
                     "top_k": 20,
@@ -45,7 +49,7 @@ class GradientLLM(LLM):
 
     """
 
-    model_id: str
+    model_id: str = Field(alias="model", min_length=2)
     "Underlying gradient.ai model id (base or fine-tuned)."
 
     gradient_workspace_id: Optional[str] = None
@@ -63,13 +67,14 @@ class GradientLLM(LLM):
     gradient_api_url: str = "https://api.gradient.ai/api"
     """Endpoint URL to use."""
 
-    aiosession: Optional[aiohttp.ClientSession] = None
-    """ClientSession, in case we want to reuse connection for better performance."""
+    aiosession: Optional[aiohttp.ClientSession] = None  #: :meta private:
+    """ClientSession, private, subject to change in upcoming releases."""
 
     # LLM call kwargs
     class Config:
         """Configuration for this pydantic object."""
 
+        allow_population_by_field_name = True
         extra = Extra.forbid
 
     @root_validator(allow_reuse=True)
@@ -112,6 +117,16 @@ class GradientLLM(LLM):
         values["gradient_api_url"] = get_from_dict_or_env(
             values, "gradient_api_url", "GRADIENT_API_URL"
         )
+
+        try:
+            import gradientai  # noqa
+        except ImportError:
+            logging.warning(
+                "DeprecationWarning: `GradientLLM` will use "
+                "`pip install gradientai` in future releases of langchain."
+            )
+        except Exception:
+            pass
 
         return values
 
@@ -243,8 +258,8 @@ class GradientLLM(LLM):
     async def _acall(
         self,
         prompt: str,
-        stop: Union[List[str], None] = None,
-        run_manager: Union[AsyncCallbackManagerForLLMRun, None] = None,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         """Async Call to Gradients API `model/{id}/complete`.
@@ -283,6 +298,49 @@ class GradientLLM(LLM):
             text = enforce_stop_tokens(text, stop)
 
         return text
+
+    def _generate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+
+        # same thing with threading
+        def _inner_generate(prompt: str) -> List[Generation]:
+            return [
+                Generation(
+                    text=self._call(
+                        prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+                    )
+                )
+            ]
+
+        if len(prompts) <= 1:
+            generations = list(map(_inner_generate, prompts))
+        else:
+            with ThreadPoolExecutor(min(8, len(prompts))) as p:
+                generations = list(p.map(_inner_generate, prompts))
+
+        return LLMResult(generations=generations)
+
+    async def _agenerate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+        generations = []
+        for generation in asyncio.gather(
+            [self._acall(prompt, stop=stop, run_manager=run_manager, **kwargs)]
+            for prompt in prompts
+        ):
+            generations.append([Generation(text=generation)])
+        return LLMResult(generations=generations)
 
     def train_unsupervised(
         self,
