@@ -24,9 +24,9 @@ from typing import (
     Union,
 )
 
-Input = TypeVar("Input")
+Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
-Output = TypeVar("Output")
+Output = TypeVar("Output", covariant=True)
 
 
 async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
