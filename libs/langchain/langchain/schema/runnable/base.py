@@ -2296,6 +2296,25 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     class Config:
         arbitrary_types_allowed = True
 
+    def __init__(
+        self,
+        *,
+        bound: Runnable[Input, Output],
+        kwargs: Mapping[str, Any],
+        config: Optional[Mapping[str, Any]] = None,
+        **other_kwargs: Any,
+    ) -> None:
+        config = config or {}
+        if configurable := config.get("configurable", None):
+            allowed_keys = set(s.id for s in bound.config_specs)
+            for key in configurable:
+                if key not in allowed_keys:
+                    raise ValueError(
+                        f"Configurable key '{key}' not found in runnable with"
+                        f" config keys: {allowed_keys}"
+                    )
+        super().__init__(bound=bound, kwargs=kwargs, config=config, **other_kwargs)
+
     @property
     def InputType(self) -> Type[Input]:
         return self.bound.InputType
