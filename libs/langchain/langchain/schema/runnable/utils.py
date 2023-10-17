@@ -250,6 +250,9 @@ class ConfigurableField(NamedTuple):
     description: Optional[str] = None
     annotation: Optional[Any] = None
 
+    def __hash__(self) -> int:
+        return hash((self.id, self.annotation))
+
 
 class ConfigurableFieldSingleOption(NamedTuple):
     """A field that can be configured by the user with a default value."""
@@ -261,6 +264,9 @@ class ConfigurableFieldSingleOption(NamedTuple):
     name: Optional[str] = None
     description: Optional[str] = None
 
+    def __hash__(self) -> int:
+        return hash((self.id, tuple(self.options.items()), self.default))
+
 
 class ConfigurableFieldMultiOption(NamedTuple):
     """A field that can be configured by the user with multiple default values."""
@@ -271,6 +277,9 @@ class ConfigurableFieldMultiOption(NamedTuple):
 
     name: Optional[str] = None
     description: Optional[str] = None
+
+    def __hash__(self) -> int:
+        return hash((self.id, tuple(self.options.items()), tuple(self.default)))
 
 
 AnyConfigurableField = Union[
