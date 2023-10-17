@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from langchain.schema.runnable.base import Input, Output, RunnableBinding
 
@@ -16,9 +16,17 @@ class HubRunnable(RunnableBinding[Input, Output]):
         *,
         api_url: Optional[str] = None,
         api_key: Optional[str] = None,
+        **kwargs: Any,
     ) -> None:
         from langchain.hub import pull
 
-        self.owner_repo_commit = owner_repo_commit
         pulled = pull(owner_repo_commit, api_url=api_url, api_key=api_key)
-        super().__init__(bound=pulled, kwargs={}, config={})
+        print("pulled", owner_repo_commit, pulled)
+        super_kwargs = {
+            "kwargs": {},
+            "config": {},
+            **kwargs,
+            "bound": pulled,
+            "owner_repo_commit": owner_repo_commit,
+        }
+        super().__init__(**super_kwargs)
