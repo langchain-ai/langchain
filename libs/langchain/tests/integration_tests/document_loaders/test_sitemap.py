@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 
 from langchain.document_loaders import SitemapLoader
-from langchain.document_loaders.sitemap import _extract_domain_and_scheme
+from langchain.document_loaders.sitemap import _extract_scheme_and_domain
 
 
 def test_sitemap() -> None:
@@ -137,19 +137,19 @@ def test_local_sitemap() -> None:
 
 def test_extract_domain() -> None:
     """Test domain extraction."""
-    assert (
-        _extract_domain_and_scheme("https://js.langchain.com/sitemap.xml")
-        == "https://js.langchain.com"
+    assert _extract_scheme_and_domain("https://js.langchain.com/sitemap.xml") == (
+        "https",
+        "js.langchain.com",
     )
-    assert (
-        _extract_domain_and_scheme("http://example.com/path/to/page")
-        == "http://example.com"
+    assert _extract_scheme_and_domain("http://example.com/path/to/page") == (
+        "http",
+        "example.com",
     )
-    assert (
-        _extract_domain_and_scheme("ftp://files.example.com")
-        == "ftp://files.example.com"
+    assert _extract_scheme_and_domain("ftp://files.example.com") == (
+        "ftp",
+        "files.example.com",
     )
-    assert (
-        _extract_domain_and_scheme("https://deep.subdomain.example.com")
-        == "https://deep.subdomain.example.com"
+    assert _extract_scheme_and_domain("https://deep.subdomain.example.com") == (
+        "https",
+        "deep.subdomain.example.com",
     )

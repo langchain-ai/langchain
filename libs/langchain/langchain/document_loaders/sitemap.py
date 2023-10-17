@@ -1,6 +1,6 @@
 import itertools
 import re
-from typing import Any, Callable, Generator, Iterable, List, Optional
+from typing import Any, Callable, Generator, Iterable, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from langchain.document_loaders.web_base import WebBaseLoader
@@ -21,18 +21,17 @@ def _batch_block(iterable: Iterable, size: int) -> Generator[List[dict], None, N
         yield item
 
 
-def _extract_domain_and_scheme(url: str) -> str:
-    """Extract the base URL (i.e., scheme + domain) from a given URL.
+def _extract_scheme_and_domain(url: str) -> Tuple[str, str]:
+    """Extract the scheme + domain from a given URL.
 
     Args:
         url (str): The input URL.
 
     Returns:
-        str: The extracted domain name.
+        return a 2-tuple of schema and domain
     """
     parsed_uri = urlparse(url)
-    domain = "{uri.scheme}://{uri.netloc}".format(uri=parsed_uri)
-    return domain
+    return parsed_uri.scheme, parsed_uri.netloc
 
 
 class SitemapLoader(WebBaseLoader):
@@ -47,14 +46,19 @@ class SitemapLoader(WebBaseLoader):
         may not immediately gain access to this data, this data could leak
         into downstream systems (e.g., data loader is used to load data for indexing).
 
-        To mitigate this risk, you can use the filter_urls argument to limit
-        which URLs can be loaded.
+        This loader is a crawler and web crawlers should generally NOT be deployed
+        with network access to any internal servers.
 
-        When the sitemap is described by a URL, the filter_urls argument
-        defaults to the domain of the sitemap.
+        Control access to who can submit crawling requests and what network access
+        the crawler has.
 
-        When the sitemap is a local file, the filter_urls argument defaults
-        to None, which means that all URLs will be loaded by default.
+        By default, the loader will only load URLs from the same domain as the sitemap
+        if the site map is not a local file. This can be disabled by setting
+        restrict_to_same_domain to False (not recommended).
+
+        If the site map is a local file, no such risk mitigation is applied by default.
+
+        Use the filter URLs argument to limit which URLs can be loaded.
 
         See https://python.langchain.com/docs/security
     """
@@ -69,21 +73,20 @@ class SitemapLoader(WebBaseLoader):
         meta_function: Optional[Callable] = None,
         is_local: bool = False,
         continue_on_failure: bool = False,
+        restrict_to_same_domain: bool = True,
         **kwargs: Any,
     ):
         """Initialize with webpage path and optional filter URLs.
 
         Args:
             web_path: url of the sitemap. can also be a local path
-            filter_urls: an allow list of strings or regexes. If specified, only
+            filter_urls: a list of regexes. If specified, only
                 URLS that match one of the filter URLs will be loaded.
-                If None, a DEFAULT filter URL will be used when the sitemap is not a
-                local file. The default filter URL is the domain of the sitemap.
-                To allow all URLs (not recommended), pass an empty list -- which
-                will disable matching URLs against an allow list.
-                Warning: If the sitemap is a local file, then all urls will be loaded
-                  by default.
-                See security note.
+                *WARNING* The filter URLs are interpreted as regular expressions.
+                Remember to escape special characters if you do not want them to be
+                interpreted as regular expression syntax. For example, `.` appears
+                frequently in URLs and should be escaped if you want to match a literal
+                `.` rather than any character.
             parsing_function: Function to parse bs4.Soup output
             blocksize: number of sitemap locations per block
             blocknum: the number of the block that should be loaded - zero indexed.
@@ -96,6 +99,9 @@ class SitemapLoader(WebBaseLoader):
                 occurs loading a url, emitting a warning instead of raising an
                 exception. Setting this to True makes the loader more robust, but also
                 may result in missing data. Default: False
+            restrict_to_same_domain: whether to restrict loading to URLs to the same
+                domain as the sitemap. Attention: This is only applied if the sitemap
+                is not a local file!
         """
 
         if blocksize is not None and blocksize < 1:
@@ -113,12 +119,12 @@ class SitemapLoader(WebBaseLoader):
 
         super().__init__(web_paths=[web_path], **kwargs)
 
-        if filter_urls is None and not is_local:
-            self.filter_urls: Optional[List[str]] = [
-                _extract_domain_and_scheme(web_path)
-            ]
-        else:
-            self.filter_urls = filter_urls
+        # Define a list of URL patterns (interpreted as regular expressions) that
+        # will be allowed to be loaded.
+        # restrict_to_same_domain takes precedence over filter_urls when
+        # restrict_to_same_domain is True and the sitemap is not a local file.
+        self.allow_url_patterns = filter_urls
+        self.restrict_to_same_domain = restrict_to_same_domain
         self.parsing_function = parsing_function or _default_parsing_function
         self.meta_function = meta_function or _default_meta_function
         self.blocksize = blocksize
@@ -144,8 +150,15 @@ class SitemapLoader(WebBaseLoader):
             # Strip leading and trailing whitespace and newlines
             loc_text = loc.text.strip()
 
-            if self.filter_urls and not any(
-                re.match(r, loc_text) for r in self.filter_urls
+            if self.restrict_to_same_domain and not self.is_local:
+                if _extract_scheme_and_domain(loc_text) != _extract_scheme_and_domain(
+                    self.web_path
+                ):
+                    continue
+
+            if self.allow_url_patterns and not any(
+                re.match(regexp_pattern, loc_text)
+                for regexp_pattern in self.allow_url_patterns
             ):
                 continue
 
