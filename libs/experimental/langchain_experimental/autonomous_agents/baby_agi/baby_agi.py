@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.vectorstore import VectorStore
 
 from langchain_experimental.autonomous_agents.baby_agi.task_creation import (
     TaskCreationChain,
@@ -19,7 +19,27 @@ from langchain_experimental.autonomous_agents.baby_agi.task_prioritization impor
 from langchain_experimental.pydantic_v1 import BaseModel, Field
 
 
-class BabyAGI(Chain, BaseModel):
+# This class has a metaclass conflict: both `Chain` and `BaseModel` define a metaclass
+# to use, and the two metaclasses attempt to define the same functions but
+# in mutually-incompatible ways. It isn't clear how to resolve this,
+# and this code predates mypy beginning to perform that check.
+#
+# Mypy errors:
+# ```
+# Definition of "__repr_str__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Definition of "__repr_name__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Definition of "__rich_repr__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Definition of "__pretty__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Metaclass conflict: the metaclass of a derived class must be
+#   a (non-strict) subclass of the metaclasses of all its bases  [misc]
+# ```
+#
+# TODO: look into refactoring this class in a way that avoids the mypy type errors
+class BabyAGI(Chain, BaseModel):  # type: ignore[misc]
     """Controller model for the BabyAGI agent."""
 
     task_list: deque = Field(default_factory=deque)

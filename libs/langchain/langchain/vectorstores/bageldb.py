@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import xor_args
-from langchain.vectorstores.base import VectorStore
 
 DEFAULT_K = 5
 
@@ -108,7 +108,7 @@ class Bagel(VectorStore):
         try:
             import bagel  # noqa: F401
         except ImportError:
-            raise ValueError("Please install bagel `pip install betabageldb`.")
+            raise ImportError("Please install bagel `pip install betabageldb`.")
         return self._cluster.find(
             query_texts=query_texts,
             query_embeddings=query_embeddings,

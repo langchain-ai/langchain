@@ -33,6 +33,7 @@ from langchain.embeddings.ernie import ErnieEmbeddings
 from langchain.embeddings.fake import DeterministicFakeEmbedding, FakeEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.gpt4all import GPT4AllEmbeddings
+from langchain.embeddings.gradient_ai import GradientEmbeddings
 from langchain.embeddings.huggingface import (
     HuggingFaceBgeEmbeddings,
     HuggingFaceEmbeddings,
@@ -75,6 +76,7 @@ __all__ = [
     "ElasticsearchEmbeddings",
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
+    "GradientEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
     "HuggingFaceHubEmbeddings",

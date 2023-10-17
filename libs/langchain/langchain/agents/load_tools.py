@@ -22,6 +22,7 @@ from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.metaphor_search.tool import MetaphorSearchResults
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
+from langchain.tools.searchapi.tool import SearchAPIResults, SearchAPIRun
 from langchain.tools.graphql.tool import BaseGraphQLTool
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
@@ -42,9 +43,9 @@ from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchResults
-from langchain.utilities import ArxivAPIWrapper
-from langchain.utilities import GoldenQueryAPIWrapper
-from langchain.utilities import PubMedAPIWrapper
+from langchain.utilities.arxiv import ArxivAPIWrapper
+from langchain.utilities.golden_query import GoldenQueryAPIWrapper
+from langchain.utilities.pubmed import PubMedAPIWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
@@ -52,6 +53,7 @@ from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.graphql import GraphQLAPIWrapper
+from langchain.utilities.searchapi import SearchApiAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.twilio import TwilioAPIWrapper
@@ -118,7 +120,7 @@ def _get_llm_math(llm: BaseLanguageModel) -> BaseTool:
 def _get_open_meteo_api(llm: BaseLanguageModel) -> BaseTool:
     chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
     return Tool(
-        name="Open Meteo API",
+        name="Open-Meteo-API",
         description="Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -136,7 +138,7 @@ def _get_news_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
     )
     return Tool(
-        name="News API",
+        name="News-API",
         description="Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -150,7 +152,7 @@ def _get_tmdb_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         headers={"Authorization": f"Bearer {tmdb_bearer_token}"},
     )
     return Tool(
-        name="TMDB API",
+        name="TMDB-API",
         description="Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -164,7 +166,7 @@ def _get_podcast_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         headers={"X-ListenAPI-Key": listen_api_key},
     )
     return Tool(
-        name="Podcast API",
+        name="Podcast-API",
         description="Use the Listen Notes Podcast API to search all podcasts or episodes. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -214,6 +216,14 @@ def _get_google_search_results_json(**kwargs: Any) -> BaseTool:
     return GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
 
 
+def _get_searchapi(**kwargs: Any) -> BaseTool:
+    return SearchAPIRun(api_wrapper=SearchApiAPIWrapper(**kwargs))
+
+
+def _get_searchapi_results_json(**kwargs: Any) -> BaseTool:
+    return SearchAPIResults(api_wrapper=SearchApiAPIWrapper(**kwargs))
+
+
 def _get_serpapi(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Search",
@@ -225,7 +235,7 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
 
 def _get_dalle_image_generator(**kwargs: Any) -> Tool:
     return Tool(
-        "Dall-E Image Generator",
+        "Dall-E-Image-Generator",
         DallEAPIWrapper(**kwargs).run,
         "A wrapper around OpenAI DALL-E API. Useful for when you need to generate images from a text description. Input should be an image description.",
     )
@@ -233,7 +243,7 @@ def _get_dalle_image_generator(**kwargs: Any) -> Tool:
 
 def _get_twilio(**kwargs: Any) -> BaseTool:
     return Tool(
-        name="Text Message",
+        name="Text-Message",
         description="Useful for when you need to send a text message to a provided phone number.",
         func=TwilioAPIWrapper(**kwargs).run,
     )
@@ -298,7 +308,6 @@ _EXTRA_LLM_TOOLS: Dict[
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
     "podcast-api": (_get_podcast_api, ["listen_api_key"]),
 }
-
 _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[str]]] = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
@@ -317,6 +326,11 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "google-serper-results-json": (
         _get_google_serper_results_json,
         ["serper_api_key", "aiosession"],
+    ),
+    "searchapi": (_get_searchapi, ["searchapi_api_key", "aiosession"]),
+    "searchapi-results-json": (
+        _get_searchapi_results_json,
+        ["searchapi_api_key", "aiosession"],
     ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "dalle-image-generator": (_get_dalle_image_generator, ["openai_api_key"]),

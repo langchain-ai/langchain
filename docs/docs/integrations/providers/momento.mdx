@@ -1,0 +1,59 @@
+# Momento
+
+> [Momento Cache](https://docs.momentohq.com/) is the world's first truly serverless caching service, offering instant elasticity, scale-to-zero
+> capability, and blazing-fast performance.
+>
+> [Momento Vector Index](https://docs.momentohq.com/vector-index) stands out as the most productive, easiest-to-use, fully serverless vector index.
+>
+> For both services, simply grab the SDK, obtain an API key, input a few lines into your code, and you're set to go. Together, they provide a comprehensive solution for your LLM data needs.
+
+This page covers how to use the [Momento](https://gomomento.com) ecosystem within LangChain.
+
+## Installation and Setup
+
+- Sign up for a free account [here](https://console.momentohq.com) to get an API key
+- Install the Momento Python SDK with `pip install momento`
+
+## Cache
+
+Use Momento as a serverless, distributed, low-latency cache for LLM prompts and responses. The standard cache is the primary use case for Momento users in any environment.
+
+To integrate Momento Cache into your application:
+
+```python
+from langchain.cache import MomentoCache
+```
+
+Then, set it up with the following code:
+
+```python
+from datetime import timedelta
+from momento import CacheClient, Configurations, CredentialProvider
+from langchain.globals import set_llm_cache
+
+# Instantiate the Momento client
+cache_client = CacheClient(
+    Configurations.Laptop.v1(),
+    CredentialProvider.from_environment_variable("MOMENTO_API_KEY"),
+    default_ttl=timedelta(days=1))
+
+# Choose a Momento cache name of your choice
+cache_name = "langchain"
+
+# Instantiate the LLM cache
+set_llm_cache(MomentoCache(cache_client, cache_name))
+```
+
+## Memory
+
+Momento can be used as a distributed memory store for LLMs.
+
+### Chat Message History Memory
+
+See [this notebook](/docs/integrations/memory/momento_chat_message_history.html) for a walkthrough of how to use Momento as a memory store for chat message history.
+
+## Vector Store
+
+Momento Vector Index (MVI) can be used as a vector store.
+
+See [this notebook](/docs/integrations/vectorstores/momento_vector_index.html) for a walkthrough of how to use MVI as a vector store.
