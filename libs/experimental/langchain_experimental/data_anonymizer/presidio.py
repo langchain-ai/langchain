@@ -174,14 +174,20 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
             )
 
         # Check supported entities for given language
-        # For example, IT_FISCAL_CODE is not supported for English in Presidio by default
+        # e.g. IT_FISCAL_CODE is not supported for English in Presidio by default
         # If you want to use it, you need to add a recognizer manually
-        supported_entities = [
-            recognizer.to_dict().get("supported_entity")
-            or recognizer.to_dict()["supported_entities"]
-            for recognizer in self._analyzer.get_recognizers(language)
-        ]
-        entities_to_analyze = list(set(supported_entities) & set(self.analyzed_fields))
+        supported_entities = []
+        for recognizer in self._analyzer.get_recognizers(language):
+            recognizer_dict = recognizer.to_dict()
+            supported_entities.extend(
+                [recognizer_dict["supported_entity"]]
+                if "supported_entity" in recognizer_dict
+                else recognizer_dict["supported_entities"]
+            )
+
+        entities_to_analyze = list(
+            set(supported_entities).intersection(set(self.analyzed_fields))
+        )
 
         analyzer_results = self._analyzer.analyze(
             text,
@@ -279,15 +285,20 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             )
 
         # Check supported entities for given language
-        # For example, IT_FISCAL_CODE is not supported for English in Presidio by default
+        # e.g. IT_FISCAL_CODE is not supported for English in Presidio by default
         # If you want to use it, you need to add a recognizer manually
-        supported_entities = [
-            recognizer.to_dict().get("supported_entity")
-            or recognizer.to_dict()["supported_entities"]
-            for recognizer in self._analyzer.get_recognizers(language)
-        ]
+        supported_entities = []
+        for recognizer in self._analyzer.get_recognizers(language):
+            recognizer_dict = recognizer.to_dict()
+            supported_entities.extend(
+                [recognizer_dict["supported_entity"]]
+                if "supported_entity" in recognizer_dict
+                else recognizer_dict["supported_entities"]
+            )
 
-        entities_to_analyze = list(set(supported_entities) & set(self.analyzed_fields))
+        entities_to_analyze = list(
+            set(supported_entities).intersection(set(self.analyzed_fields))
+        )
 
         analyzer_results = self._analyzer.analyze(
             text,
