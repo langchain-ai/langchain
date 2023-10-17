@@ -1,11 +1,11 @@
 import itertools
 import re
 from typing import Any, Callable, Generator, Iterable, List, Optional
+from urllib.parse import urlparse
 
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.schema import Document
 
-from urllib.parse import urlparse
 
 def _default_parsing_function(content: Any) -> str:
     return str(content.get_text())
@@ -21,8 +21,8 @@ def _batch_block(iterable: Iterable, size: int) -> Generator[List[dict], None, N
         yield item
 
 
-def _extract_domain(url: str) -> str:
-    """Extract the domain name from a given URL.
+def _extract_domain_and_scheme(url: str) -> str:
+    """Extract the base URL (i.e., scheme + domain) from a given URL.
 
     Args:
         url (str): The input URL.
@@ -31,13 +31,33 @@ def _extract_domain(url: str) -> str:
         str: The extracted domain name.
     """
     parsed_uri = urlparse(url)
-    domain = '{uri.netloc}'.format(uri=parsed_uri)
+    domain = "{uri.scheme}://{uri.netloc}".format(uri=parsed_uri)
     return domain
 
 
-
 class SitemapLoader(WebBaseLoader):
-    """Load a sitemap and its URLs."""
+    """Load a sitemap and its URLs.
+
+    **Security Note**: This loader can be used to load all URLs specified in a sitemap.
+        If a malicious actor gets access to the sitemap, they could force
+        the server to load URLs from other domains by modifying the sitemap.
+        This could lead to server-side request forgery (SSRF) attacks; e.g.,
+        with the attacker forcing the server to load URLs from internal
+        service endpoints that are not publicly accessible. While the attacker
+        may not immediately gain access to this data, this data could leak
+        into downstream systems (e.g., data loader is used to load data for indexing).
+
+        To mitigate this risk, you can use the filter_urls argument to limit
+        which URLs can be loaded.
+
+        When the sitemap is described by a URL, the filter_urls argument
+        defaults to the domain of the sitemap.
+
+        When the sitemap is a local file, the filter_urls argument defaults
+        to None, which means that all URLs will be loaded by default.
+
+        See https://python.langchain.com/docs/security
+    """
 
     def __init__(
         self,
@@ -55,8 +75,15 @@ class SitemapLoader(WebBaseLoader):
 
         Args:
             web_path: url of the sitemap. can also be a local path
-            filter_urls: list of strings or regexes that will be applied to filter the
-                urls that are parsed and loaded
+            filter_urls: an allow list of strings or regexes. If specified, only
+                URLS that match one of the filter URLs will be loaded.
+                If None, a DEFAULT filter URL will be used when the sitemap is not a
+                local file. The default filter URL is the domain of the sitemap.
+                To allow all URLs (not recommended), pass an empty list -- which
+                will disable matching URLs against an allow list.
+                Warning: If the sitemap is a local file, then all urls will be loaded
+                  by default.
+                See security note.
             parsing_function: Function to parse bs4.Soup output
             blocksize: number of sitemap locations per block
             blocknum: the number of the block that should be loaded - zero indexed.
@@ -86,7 +113,12 @@ class SitemapLoader(WebBaseLoader):
 
         super().__init__(web_paths=[web_path], **kwargs)
 
-        self.filter_urls = filter_urls
+        if filter_urls is None and not is_local:
+            self.filter_urls: Optional[List[str]] = [
+                _extract_domain_and_scheme(web_path)
+            ]
+        else:
+            self.filter_urls = filter_urls
         self.parsing_function = parsing_function or _default_parsing_function
         self.meta_function = meta_function or _default_meta_function
         self.blocksize = blocksize
