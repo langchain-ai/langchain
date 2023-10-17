@@ -398,8 +398,8 @@ class GoogleVertexAIMultiTurnSearchRetriever(
 
         if self.engine_data_type == 1:
             raise NotImplementedError(
-                "Only data store type 0 (Unstructured) or 2 (Website with Advanced"
-                "Indexing) are supported for multi-turn search currently."
+                "Data store type 1 (Structured)"
+                "is not currently supported for multi-turn search."
                 + f" Got {self.engine_data_type}"
             )
 
