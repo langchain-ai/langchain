@@ -25,10 +25,21 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
     """Vertex AI Search data store ID."""
     location_id: str = "global"
     """Vertex AI Search data store location."""
+    serving_config_id: str = "default_config"
+    """Vertex AI Search serving config ID."""
     credentials: Any = None
     """The default custom credentials (google.auth.credentials.Credentials) to use
     when making API calls. If not provided, credentials will be ascertained from
     the environment."""
+    engine_data_type: int = Field(default=0, ge=0, le=2)
+    """ Defines the Vertex AI Search data type
+    0 - Unstructured data 
+    1 - Structured data
+    2 - Website data (with Advanced Website Indexing)
+    """
+
+    _serving_config: str
+    """Full path of serving config."""
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -144,92 +155,6 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
 
         return documents
 
-
-class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetriever):
-    """`Google Vertex AI Search` retriever.
-
-    For a detailed explanation of the Vertex AI Search concepts
-    and configuration parameters, refer to the product documentation.
-    https://cloud.google.com/generative-ai-app-builder/docs/enterprise-search-introduction
-    """
-
-    serving_config_id: str = "default_config"
-    """Vertex AI Search serving config ID."""
-    filter: Optional[str] = None
-    """Filter expression."""
-    get_extractive_answers: bool = False
-    """If True return Extractive Answers, otherwise return Extractive Segments."""
-    max_documents: int = Field(default=5, ge=1, le=100)
-    """The maximum number of documents to return."""
-    max_extractive_answer_count: int = Field(default=1, ge=1, le=5)
-    """The maximum number of extractive answers returned in each search result.
-    At most 5 answers will be returned for each SearchResult.
-    """
-    max_extractive_segment_count: int = Field(default=1, ge=1, le=1)
-    """The maximum number of extractive segments returned in each search result.
-    Currently one segment will be returned for each SearchResult.
-    """
-    query_expansion_condition: int = Field(default=1, ge=0, le=2)
-    """Specification to determine under which conditions query expansion should occur.
-    0 - Unspecified query expansion condition. In this case, server behavior defaults 
-        to disabled
-    1 - Disabled query expansion. Only the exact search query is used, even if 
-        SearchResponse.total_size is zero.
-    2 - Automatic query expansion built by the Search API.
-    """
-    spell_correction_mode: int = Field(default=2, ge=0, le=2)
-    """Specification to determine under which conditions query expansion should occur.
-    0 - Unspecified spell correction mode. In this case, server behavior defaults 
-        to auto.
-    1 - Suggestion only. Search API will try to find a spell suggestion if there is any
-        and put in the `SearchResponse.corrected_query`.
-        The spell suggestion will not be used as the search query.
-    2 - Automatic spell correction built by the Search API.
-        Search will be based on the corrected query if found.
-    """
-
-    engine_data_type: int = Field(default=0, ge=0, le=2)
-    """ Defines the Vertex AI Search data type
-    0 - Unstructured data 
-    1 - Structured data
-    2 - Website data (with Advanced Website Indexing)
-    """
-
-    _client: SearchServiceClient
-    _serving_config: str
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.ignore
-        arbitrary_types_allowed = True
-        underscore_attrs_are_private = True
-
-    def __init__(self, **kwargs: Any) -> None:
-        """Initializes private fields."""
-        try:
-            from google.cloud.discoveryengine_v1beta import SearchServiceClient
-        except ImportError as exc:
-            raise ImportError(
-                "google.cloud.discoveryengine is not installed."
-                "Please install it with pip install google-cloud-discoveryengine"
-            ) from exc
-
-        super().__init__(**kwargs)
-
-        #  For more information, refer to:
-        # https://cloud.google.com/generative-ai-app-builder/docs/locations#specify_a_multi-region_for_your_data_store
-        self._client = SearchServiceClient(
-            credentials=self.credentials, client_options=self.client_options
-        )
-
-        self._serving_config = self._client.serving_config_path(
-            project=self.project_id,
-            location=self.location_id,
-            data_store=self.data_store_id,
-            serving_config=self.serving_config_id,
-        )
-
     def _convert_website_search_response(
         self, results: Sequence[SearchResult]
     ) -> List[Document]:
@@ -270,6 +195,82 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
             )
 
         return documents
+
+
+class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetriever):
+    """`Google Vertex AI Search` retriever.
+
+    For a detailed explanation of the Vertex AI Search concepts
+    and configuration parameters, refer to the product documentation.
+    https://cloud.google.com/generative-ai-app-builder/docs/enterprise-search-introduction
+    """
+
+    filter: Optional[str] = None
+    """Filter expression."""
+    get_extractive_answers: bool = False
+    """If True return Extractive Answers, otherwise return Extractive Segments."""
+    max_documents: int = Field(default=5, ge=1, le=100)
+    """The maximum number of documents to return."""
+    max_extractive_answer_count: int = Field(default=1, ge=1, le=5)
+    """The maximum number of extractive answers returned in each search result.
+    At most 5 answers will be returned for each SearchResult.
+    """
+    max_extractive_segment_count: int = Field(default=1, ge=1, le=1)
+    """The maximum number of extractive segments returned in each search result.
+    Currently one segment will be returned for each SearchResult.
+    """
+    query_expansion_condition: int = Field(default=1, ge=0, le=2)
+    """Specification to determine under which conditions query expansion should occur.
+    0 - Unspecified query expansion condition. In this case, server behavior defaults 
+        to disabled
+    1 - Disabled query expansion. Only the exact search query is used, even if 
+        SearchResponse.total_size is zero.
+    2 - Automatic query expansion built by the Search API.
+    """
+    spell_correction_mode: int = Field(default=2, ge=0, le=2)
+    """Specification to determine under which conditions query expansion should occur.
+    0 - Unspecified spell correction mode. In this case, server behavior defaults 
+        to auto.
+    1 - Suggestion only. Search API will try to find a spell suggestion if there is any
+        and put in the `SearchResponse.corrected_query`.
+        The spell suggestion will not be used as the search query.
+    2 - Automatic spell correction built by the Search API.
+        Search will be based on the corrected query if found.
+    """
+
+    _client: SearchServiceClient
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.ignore
+        arbitrary_types_allowed = True
+        underscore_attrs_are_private = True
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initializes private fields."""
+        try:
+            from google.cloud.discoveryengine_v1beta import SearchServiceClient
+        except ImportError as exc:
+            raise ImportError(
+                "google.cloud.discoveryengine is not installed."
+                "Please install it with pip install google-cloud-discoveryengine"
+            ) from exc
+
+        super().__init__(**kwargs)
+
+        #  For more information, refer to:
+        # https://cloud.google.com/generative-ai-app-builder/docs/locations#specify_a_multi-region_for_your_data_store
+        self._client = SearchServiceClient(
+            credentials=self.credentials, client_options=self.client_options
+        )
+
+        self._serving_config = self._client.serving_config_path(
+            project=self.project_id,
+            location=self.location_id,
+            data_store=self.data_store_id,
+            serving_config=self.serving_config_id,
+        )
 
     def _create_search_request(self, query: str) -> SearchRequest:
         """Prepares a SearchRequest object."""
@@ -366,6 +367,9 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
 class GoogleVertexAIMultiTurnSearchRetriever(
     BaseRetriever, _BaseGoogleVertexAISearchRetriever
 ):
+    conversation_id: str = "-"
+    """Vertex AI Search Conversation ID."""
+
     _client: ConversationalSearchServiceClient
 
     class Config:
@@ -385,6 +389,20 @@ class GoogleVertexAIMultiTurnSearchRetriever(
             credentials=self.credentials, client_options=self.client_options
         )
 
+        self._serving_config = self._client.serving_config_path(
+            project=self.project_id,
+            location=self.location_id,
+            data_store=self.data_store_id,
+            serving_config=self.serving_config_id,
+        )
+
+        if self.engine_data_type == 1:
+            raise NotImplementedError(
+                "Only data store type 0 (Unstructured) or 2 (Website with Advanced"
+                "Indexing) are supported for multi-turn search currently."
+                + f" Got {self.engine_data_type}"
+            )
+
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
@@ -396,11 +414,19 @@ class GoogleVertexAIMultiTurnSearchRetriever(
 
         request = ConverseConversationRequest(
             name=self._client.conversation_path(
-                self.project_id, self.location_id, self.data_store_id, "-"
+                self.project_id,
+                self.location_id,
+                self.data_store_id,
+                self.conversation_id,
             ),
+            serving_config=self._serving_config,
             query=TextInput(input=query),
         )
         response = self._client.converse_conversation(request)
+
+        if self.engine_data_type == 2:
+            return self._convert_website_search_response(response.search_results)
+
         return self._convert_unstructured_search_response(
             response.search_results, "extractive_answers"
         )
