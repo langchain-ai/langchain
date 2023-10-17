@@ -51,8 +51,12 @@ def get_cohere_chat_request(
     )
     kwargs.pop("source_documents", None)
     maybe_connectors = connectors if documents is None else None
-    # by enabling automatic prompt truncation, the probability of request failure is reduced with minimal impact on response quality
-    prompt_truncation = "AUTO" if documents is not None or connectors is not None else None
+
+    # by enabling automatic prompt truncation, the probability of request failure is
+    # reduced with minimal impact on response quality
+    prompt_truncation = (
+        "AUTO" if documents is not None or connectors is not None else None
+    )
 
     return {
         "message": messages[0].content,
