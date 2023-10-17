@@ -1,10 +1,12 @@
+from langchain.schema.embeddings import Embeddings
 from transwarp_hippo_api.hippo_client import HippoTable, HippoClient, HippoField  # type: ignore
 from transwarp_hippo_api.hippo_type import HippoType, MetricType, IndexType  # type: ignore
 import logging
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 from typing import Any, Iterable, List, Optional, Tuple, Dict
+from langchain.utils.utils import guard_import
+guard_import("hippo-api")
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,61 @@ DEFAULT_HIPPO_CONNECTION = {
 
 
 class Hippo(VectorStore):
+    """`Hippo` vector store.
+
+    You need to install `hippo-api` and run Hippo.
+
+    Please visit our official website for how to run a Hippo instance:
+    https://www.transwarp.cn/starwarp
+
+    Args:
+        embedding_function (Embeddings): Function used to embed the text.
+        table_name (str): Which Hippo table to use. Defaults to
+            "test".
+        database_name (str): Which Hippo database to use. Defaults to
+            "default".
+        number_of_shards (int): The number of shards for the Hippo table.Defaults to
+            1.
+        number_of_replicas (int): The number of replicas for the Hippo table.Defaults to
+            1.
+        connection_args (Optional[dict[str, any]]): The connection args used for
+            this class comes in the form of a dict.
+        index_params (Optional[dict]): Which index params to use. Defaults to
+            IVF_FLAT.
+        drop_old (Optional[bool]): Whether to drop the current collection. Defaults
+            to False.
+        primary_field (str): Name of the primary key field. Defaults to "pk".
+        text_field (str): Name of the text field. Defaults to "text".
+        vector_field (str): Name of the vector field. Defaults to "vector".
+
+    The connection args used for this class comes in the form of a dict,
+    here are a few of the options:
+        host (str): The host of Hippo instance. Default at "localhost".
+        port (str/int): The port of Hippo instance. Default at 7788.
+        user (str): Use which user to connect to Hippo instance. If user and
+            password are provided, we will add related header in every RPC call.
+        password (str): Required when user is provided. The password
+            corresponding to the user.
+
+    Example:
+        .. code-block:: python
+
+        from langchain.vectorstores import Hippo
+        from langchain.embeddings import OpenAIEmbeddings
+
+        embedding = OpenAIEmbeddings()
+        # Connect to a hippo instance on localhost
+        vector_store = Hippo.from_documents(
+            docs,
+            embedding=embeddings,
+            table_name="langchain_test",
+            connection_args=HIPPO_CONNECTION
+        )
+
+    Raises:
+        ValueError: If the hippo-api python package is not installed.
+    """
+
     def __init__(
             self,
             embedding_function: Embeddings,
@@ -38,7 +95,7 @@ class Hippo(VectorStore):
         self.database_name = database_name
         self.index_params = index_params
 
-        # In order for a collection to be compatible, pk needs to be auto'id and int
+        # In order for a collection to be compatible, 'pk' should be an auto-increment primary key and string
         self._primary_field = "pk"
         # In order for compatiblility, the text field will need to be called "text"
         self._text_field = "text"
@@ -56,18 +113,18 @@ class Hippo(VectorStore):
             if self.hc.check_table_exists(self.table_name, self.database_name) and drop_old:
                 self.hc.delete_table(self.table_name, self.database_name)
         except Exception as e:
-            logging.error(f"An error occurred while deleting the table: {e}")
+            logging.error(f"An error occurred while deleting the table {self.table_name}: {e}")
             raise
 
         try:
             if self.hc.check_table_exists(self.table_name, self.database_name):
                 self.col = self.hc.get_table(self.table_name, self.database_name)
         except Exception as e:
-            logging.error(f"An error occurred while getting the table: {e}")
+            logging.error(f"An error occurred while getting the table {self.table_name}: {e}")
             raise
 
         # Initialize the vector database
-        self._init()
+        self._get_env()
 
     def _create_connection_alias(self, connection_args: dict) -> HippoClient:
         """Create the connection to the Hippo server."""
@@ -85,7 +142,7 @@ class Hippo(VectorStore):
             else:
                 given_address = str(host) + ":" + str(port)
         else:
-            logger.debug("Missing standard address type for reuse atttempt")
+            raise ValueError("Missing standard address type for reuse attempt")
 
         try:
             logger.info(f"create HippoClient[{given_address}]")
@@ -94,7 +151,7 @@ class Hippo(VectorStore):
             logger.error("Failed to create new connection")
             raise e
 
-    def _init(
+    def _get_env(
             self, embeddings: Optional[list] = None, metadatas: Optional[List[dict]] = None
     ) -> None:
         logger.info("init ...")
@@ -131,7 +188,6 @@ class Hippo(VectorStore):
             )
         )
         # to In Hippo,there is no method similar to the infer_type_data
-        # method in Milvus for inferring data
         # types, so currently all non-vector data is converted to string type.
 
         if metadatas:
@@ -360,7 +416,7 @@ class Hippo(VectorStore):
 
         # 如果还没有创建collection则创建collection
         if not isinstance(self.col, HippoTable):
-            self._init(embeddings, metadatas)
+            self._get_env(embeddings, metadatas)
 
         # Dict to hold all insert columns
         insert_dict: Dict[str, list] = {
