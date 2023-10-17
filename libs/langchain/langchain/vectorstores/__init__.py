@@ -540,6 +540,7 @@ def __getattr__(name: str) -> Any:
     else:
         raise AttributeError(f"Could not find: {name}")
 
+
 __all__ = [
     "AlibabaCloudOpenSearch",
     "AlibabaCloudOpenSearchSettings",
