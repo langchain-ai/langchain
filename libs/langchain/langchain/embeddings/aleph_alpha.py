@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import asyncio
 from abc import ABC
 from types import TracebackType
-from typing import Any, Coroutine, Dict, Iterable, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Coroutine, Dict, Iterable, List, Optional, Type
 
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
+
+if TYPE_CHECKING:
+    from aleph_alpha_client import SemanticRepresentation
 
 
 class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
@@ -16,14 +21,6 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
     To learn more, check out:
     https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
     """
-
-    try:
-        from aleph_alpha_client import SemanticRepresentation
-    except ImportError:
-        raise ValueError(
-            "Could not import aleph_alpha_client python package. "
-            "Please install it with `pip install aleph_alpha_client`."
-        )
 
     document_representation: SemanticRepresentation
     """Either Document or Symmetric, specified in the child class"""
@@ -158,7 +155,7 @@ class AlephAlphaSemanticEmbeddingAbstractClass(BaseModel, Embeddings, ABC):
         n: int,
         *,
         tasks: Iterable[Coroutine[Any, Any, Any]],
-        show_progress: bool = False
+        show_progress: bool = False,
     ) -> List[Any]:
         semaphore = asyncio.Semaphore(n)
 
