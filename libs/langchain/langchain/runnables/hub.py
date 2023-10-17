@@ -21,7 +21,6 @@ class HubRunnable(RunnableBinding[Input, Output]):
         from langchain.hub import pull
 
         pulled = pull(owner_repo_commit, api_url=api_url, api_key=api_key)
-        print("pulled", owner_repo_commit, pulled)
         super_kwargs = {
             "kwargs": {},
             "config": {},
