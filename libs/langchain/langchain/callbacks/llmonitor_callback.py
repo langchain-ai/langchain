@@ -307,7 +307,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         try:
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
-            name = (kwargs.get("invocation_params", {}).get("model_name"),)
+            name = kwargs.get("invocation_params", {}).get("model_name")
             input = _parse_lc_messages(messages[0])
 
             self.__track_event(
