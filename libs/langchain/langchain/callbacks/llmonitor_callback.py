@@ -266,8 +266,6 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         if _app_id is None:
             warnings.warn(
                 """[LLMonitor] app_id must be provided either as an argument or as 
-            warnings.warn(
-                """[LLMonitor] app_id must be provided either as an argument or as 
                 an environment variable"""
             )
             self.__has_valid_config = False
@@ -431,16 +429,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     ) -> None:
         if self.__has_valid_config is False:
             return
-        try:
-            run_id = str(run_id)
-            parent_run_id = str(parent_run_id) if parent_run_id else None
-            token_usage = (response.llm_output or {}).get("token_usage", {})
-            token_usage = {
-                "prompt": token_usage.get("prompt_tokens"),
-                "completion": token_usage.get("completion_tokens"),
-            }
-        if self.__has_valid_config is False:
-            return
+
         try:
             run_id = str(run_id)
             parent_run_id = str(parent_run_id) if parent_run_id else None
@@ -617,12 +606,6 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> Any:
-        if self.__has_valid_config is False:
-            return
-        try:
-            name = serialized.get("id", [None, None, None, None])[3]
-            type = "chain"
-            metadata = metadata or {}
         if self.__has_valid_config is False:
             return
         try:
