@@ -307,20 +307,6 @@ def get_unique_config_specs(
     for id, dupes in grouped:
         first = next(dupes)
         others = list(dupes)
-        if len(others) > 0:
-            print(
-                first,
-                others,
-                [
-                    (
-                        o.id == first.id,
-                        o.annotation == first.annotation,
-                        o.default == first.default,
-                        o.name == first.name,
-                    )
-                    for o in others
-                ],
-            )
         if len(others) == 0:
             unique.append(first)
         elif all(o == first for o in others):
