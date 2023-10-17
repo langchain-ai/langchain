@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import Callable, List
 
 from langchain.document_loaders.parsers.language.code_segmenter import CodeSegmenter
 
@@ -31,9 +31,9 @@ class CobolSegmenter(CodeSegmenter):
         # Add additional conditions for relevant sections if needed
         return False
 
-    def _process_lines(self, func) -> List[str]:
+    def _process_lines(self, func: Callable) -> List[str]:
         """A generic function to process COBOL lines based on provided func."""
-        elements = []
+        elements: List[str] = []
         start_idx = None
         inside_relevant_section = False
 
@@ -56,7 +56,7 @@ class CobolSegmenter(CodeSegmenter):
         return elements
 
     def extract_functions_classes(self) -> List[str]:
-        def extract_func(elements, start_idx, end_idx):
+        def extract_func(elements: List[str], start_idx: int, end_idx: int) -> None:
             elements.append(self._extract_code(start_idx, end_idx))
 
         return self._process_lines(extract_func)
@@ -79,14 +79,17 @@ class CobolSegmenter(CodeSegmenter):
 
             if is_header:
                 inside_relevant_section = True
-                omitted_code_added = False  # Reset the flag since we're entering a new section/division or paragraph
+                # Reset the flag since we're entering a new section/division or
+                # paragraph
+                omitted_code_added = False
 
             if inside_relevant_section:
                 if is_header:
                     # Add header and reset the omitted code added flag
                     simplified_lines.append(line)
                 elif not omitted_code_added:
-                    # Add omitted code comment only if it hasn't been added directly after the last header
+                    # Add omitted code comment only if it hasn't been added directly
+                    # after the last header
                     simplified_lines.append("* OMITTED CODE *")
                     omitted_code_added = True
 

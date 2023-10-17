@@ -35,7 +35,7 @@ A100-PROCESS-PARA.
 """
 
         self.expected_extracted_code = [
-            "A000-INITIALIZE-PARA.\n    DISPLAY 'Initialization Paragraph'.\n    MOVE 'New Value' TO SAMPLE-VAR.",
+            "A000-INITIALIZE-PARA.\n    DISPLAY 'Initialization Paragraph'.\n    MOVE 'New Value' TO SAMPLE-VAR.",  # noqa: E501
             "A100-PROCESS-PARA.\n    DISPLAY SAMPLE-VAR.\n    STOP RUN.",
         ]
 
