@@ -653,7 +653,6 @@ class StructuredTool(BaseTool):
             )
         return await asyncio.get_running_loop().run_in_executor(
             None,
-            self._run,
             partial(self._run, run_manager=run_manager, **kwargs),
             *args,
         )

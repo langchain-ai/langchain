@@ -64,6 +64,15 @@ class DocAIParser(BaseBlobParser):
                 "a client."
             )
 
+        if processor_name and not processor_name.isalnum():
+            raise ValueError(
+                f"Processor name {processor_name} has a wrong format. Use only ID from"
+                "the `Basic information` section on the GCP console. E.g., if your "
+                "prediction endpoint looks like https://us-documentai.googleapis.com"
+                "/v1/projects/PROJECT_ID/locations/us/processors/PROCESSOR_ID:process"
+                ", use only PROCESSOR_ID part."
+            )
+
         self._gcs_output_path = gcs_output_path
         self._processor_name = processor_name
         if client:

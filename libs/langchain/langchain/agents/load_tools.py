@@ -120,7 +120,7 @@ def _get_llm_math(llm: BaseLanguageModel) -> BaseTool:
 def _get_open_meteo_api(llm: BaseLanguageModel) -> BaseTool:
     chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
     return Tool(
-        name="Open Meteo API",
+        name="Open-Meteo-API",
         description="Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -138,7 +138,7 @@ def _get_news_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
     )
     return Tool(
-        name="News API",
+        name="News-API",
         description="Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -152,7 +152,7 @@ def _get_tmdb_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         headers={"Authorization": f"Bearer {tmdb_bearer_token}"},
     )
     return Tool(
-        name="TMDB API",
+        name="TMDB-API",
         description="Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -166,7 +166,7 @@ def _get_podcast_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         headers={"X-ListenAPI-Key": listen_api_key},
     )
     return Tool(
-        name="Podcast API",
+        name="Podcast-API",
         description="Use the Listen Notes Podcast API to search all podcasts or episodes. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -235,7 +235,7 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
 
 def _get_dalle_image_generator(**kwargs: Any) -> Tool:
     return Tool(
-        "Dall-E Image Generator",
+        "Dall-E-Image-Generator",
         DallEAPIWrapper(**kwargs).run,
         "A wrapper around OpenAI DALL-E API. Useful for when you need to generate images from a text description. Input should be an image description.",
     )
@@ -243,7 +243,7 @@ def _get_dalle_image_generator(**kwargs: Any) -> Tool:
 
 def _get_twilio(**kwargs: Any) -> BaseTool:
     return Tool(
-        name="Text Message",
+        name="Text-Message",
         description="Useful for when you need to send a text message to a provided phone number.",
         func=TwilioAPIWrapper(**kwargs).run,
     )

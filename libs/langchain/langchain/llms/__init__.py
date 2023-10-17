@@ -432,6 +432,12 @@ def _import_titan_takeoff() -> Any:
     return TitanTakeoff
 
 
+def _import_together() -> Any:
+    from langchain.llms.together import Together
+
+    return Together
+
+
 def _import_tongyi() -> Any:
     from langchain.llms.tongyi import Tongyi
 
@@ -472,6 +478,12 @@ def _import_xinference() -> Any:
     from langchain.llms.xinference import Xinference
 
     return Xinference
+
+
+def _import_yandex_gpt() -> Any:
+    from langchain.llms.yandex import YandexGPT
+
+    return YandexGPT
 
 
 def __getattr__(name: str) -> Any:
@@ -611,6 +623,8 @@ def __getattr__(name: str) -> Any:
         return _import_textgen()
     elif name == "TitanTakeoff":
         return _import_titan_takeoff()
+    elif name == "Together":
+        return _import_together()
     elif name == "Tongyi":
         return _import_tongyi()
     elif name == "VertexAI":
@@ -625,6 +639,8 @@ def __getattr__(name: str) -> Any:
         return _import_writer()
     elif name == "Xinference":
         return _import_xinference()
+    elif name == "YandexGPT":
+        return _import_yandex_gpt()
     elif name == "type_to_cls_dict":
         # for backwards compatibility
         type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -711,6 +727,7 @@ __all__ = [
     "Xinference",
     "JavelinAIGateway",
     "QianfanLLMEndpoint",
+    "YandexGPT",
 ]
 
 
@@ -773,6 +790,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "self_hosted": _import_self_hosted,
         "self_hosted_hugging_face": _import_self_hosted_hugging_face,
         "stochasticai": _import_stochasticai,
+        "together": _import_together,
         "tongyi": _import_tongyi,
         "titan_takeoff": _import_titan_takeoff,
         "vertexai": _import_vertex,
@@ -785,4 +803,5 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,
         "qianfan_endpoint": _import_baidu_qianfan_endpoint,
+        "yandex_gpt": _import_yandex_gpt,
     }

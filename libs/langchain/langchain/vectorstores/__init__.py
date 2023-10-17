@@ -36,6 +36,12 @@ def _import_alibaba_cloud_open_search_settings() -> Any:
     return AlibabaCloudOpenSearchSettings
 
 
+def _import_azure_cosmos_db() -> Any:
+    from langchain.vectorstores.azure_cosmos_db import AzureCosmosDBVectorSearch
+
+    return AzureCosmosDBVectorSearch
+
+
 def _import_elastic_knn_search() -> Any:
     from langchain.vectorstores.elastic_vector_search import ElasticKnnSearch
 
@@ -294,6 +300,12 @@ def _import_scann() -> Any:
     return ScaNN
 
 
+def _import_semadb() -> Any:
+    from langchain.vectorstores.semadb import SemaDB
+
+    return SemaDB
+
+
 def _import_singlestoredb() -> Any:
     from langchain.vectorstores.singlestoredb import SingleStoreDB
 
@@ -403,6 +415,8 @@ def __getattr__(name: str) -> Any:
         return _import_alibaba_cloud_open_search()
     elif name == "AlibabaCloudOpenSearchSettings":
         return _import_alibaba_cloud_open_search_settings()
+    elif name == "AzureCosmosDBVectorSearch":
+        return _import_azure_cosmos_db()
     elif name == "ElasticKnnSearch":
         return _import_elastic_knn_search()
     elif name == "ElasticVectorSearch":
@@ -485,6 +499,8 @@ def __getattr__(name: str) -> Any:
         return _import_rocksetdb()
     elif name == "ScaNN":
         return _import_scann()
+    elif name == "SemaDB":
+        return _import_semadb()
     elif name == "SingleStoreDB":
         return _import_singlestoredb()
     elif name == "SKLearnVectorStore":
@@ -523,3 +539,77 @@ def __getattr__(name: str) -> Any:
         return _import_vespa()
     else:
         raise AttributeError(f"Could not find: {name}")
+
+__all__ = [
+    "AlibabaCloudOpenSearch",
+    "AlibabaCloudOpenSearchSettings",
+    "AnalyticDB",
+    "Annoy",
+    "Annoy",
+    "AtlasDB",
+    "AtlasDB",
+    "AwaDB",
+    "AzureSearch",
+    "Bagel",
+    "Cassandra",
+    "Chroma",
+    "Chroma",
+    "Clarifai",
+    "Clickhouse",
+    "ClickhouseSettings",
+    "DashVector",
+    "DeepLake",
+    "DeepLake",
+    "Dingo",
+    "DocArrayHnswSearch",
+    "DocArrayInMemorySearch",
+    "ElasticKnnSearch",
+    "ElasticVectorSearch",
+    "ElasticsearchStore",
+    "Epsilla",
+    "FAISS",
+    "Hologres",
+    "LanceDB",
+    "LLMRails",
+    "Marqo",
+    "MatchingEngine",
+    "Meilisearch",
+    "Milvus",
+    "MomentoVectorIndex",
+    "MongoDBAtlasVectorSearch",
+    "MyScale",
+    "MyScaleSettings",
+    "Neo4jVector",
+    "OpenSearchVectorSearch",
+    "OpenSearchVectorSearch",
+    "PGEmbedding",
+    "PGVector",
+    "Pinecone",
+    "Qdrant",
+    "Redis",
+    "Rockset",
+    "SKLearnVectorStore",
+    "ScaNN",
+    "SemaDB",
+    "SingleStoreDB",
+    "SingleStoreDB",
+    "SQLiteVSS",
+    "StarRocks",
+    "SupabaseVectorStore",
+    "Tair",
+    "Tigris",
+    "TimescaleVector",
+    "Typesense",
+    "USearch",
+    "Vald",
+    "Vearch",
+    "Vectara",
+    "VectorStore",
+    "VespaStore",
+    "Weaviate",
+    "ZepVectorStore",
+    "Zilliz",
+    "TencentVectorDB",
+    "AzureCosmosDBVectorSearch",
+]
+>>>>>>> eca8a5e5b8c12d668eb046f5b9bef9eda41c0543
