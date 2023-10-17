@@ -2305,6 +2305,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         **other_kwargs: Any,
     ) -> None:
         config = config or {}
+        # config_specs contains the list of valid `configurable` keys
         if configurable := config.get("configurable", None):
             allowed_keys = set(s.id for s in bound.config_specs)
             for key in configurable:
