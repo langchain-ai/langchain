@@ -1,8 +1,9 @@
 """Test ElasticSearch functionality."""
 import logging
 import os
+import re
 import uuid
-from typing import Generator, List, Union
+from typing import Any, Dict, Generator, List, Union
 
 import pytest
 
@@ -58,19 +59,20 @@ class TestElasticsearch:
         es_password = os.environ.get("ES_PASSWORD", "changeme")
 
         if cloud_id:
+            es = Elasticsearch(
+                cloud_id=cloud_id,
+                basic_auth=(es_username, es_password),
+            )
             yield {
                 "es_cloud_id": cloud_id,
                 "es_user": es_username,
                 "es_password": es_password,
             }
-            es = Elasticsearch(cloud_id=cloud_id, basic_auth=(es_username, es_password))
 
         else:
             # Running this integration test with local docker instance
-            yield {
-                "es_url": es_url,
-            }
             es = Elasticsearch(hosts=es_url)
+            yield {"es_url": es_url}
 
         # Clear all indexes
         index_names = es.indices.get(index="_all").keys()
@@ -91,6 +93,37 @@ class TestElasticsearch:
                     print(f"Pipeline error: {e}")
         except Exception:
             pass
+
+    @pytest.fixture(scope="function")
+    def es_client(self) -> Any:
+        # Running this integration test with Elastic Cloud
+        # Required for in-stack inference testing (ELSER + model_id)
+        from elastic_transport import Transport
+        from elasticsearch import Elasticsearch
+
+        class CustomTransport(Transport):
+            requests = []
+
+            def perform_request(self, *args, **kwargs):  # type: ignore
+                self.requests.append(kwargs)
+                return super().perform_request(*args, **kwargs)
+
+        es_url = os.environ.get("ES_URL", "http://localhost:9200")
+        cloud_id = os.environ.get("ES_CLOUD_ID")
+        es_username = os.environ.get("ES_USERNAME", "elastic")
+        es_password = os.environ.get("ES_PASSWORD", "changeme")
+
+        if cloud_id:
+            es = Elasticsearch(
+                cloud_id=cloud_id,
+                basic_auth=(es_username, es_password),
+                transport_class=CustomTransport,
+            )
+            return es
+        else:
+            # Running this integration test with local docker instance
+            es = Elasticsearch(hosts=es_url, transport_class=CustomTransport)
+            return es
 
     @pytest.fixture(scope="function")
     def index_name(self) -> str:
@@ -115,7 +148,6 @@ class TestElasticsearch:
             return query_body
 
         texts = ["foo", "bar", "baz"]
-        print(elasticsearch_connection)
         docsearch = ElasticsearchStore.from_texts(
             texts,
             FakeEmbeddings(),
@@ -131,7 +163,6 @@ class TestElasticsearch:
     ) -> None:
         """Test end to end construction and search without metadata."""
         texts = ["foo", "bar", "baz"]
-        print(elasticsearch_connection)
         docsearch = ElasticsearchStore.from_texts(
             texts,
             FakeEmbeddings(),
@@ -353,6 +384,39 @@ class TestElasticsearch:
                 strategy=ElasticsearchStore.ExactRetrievalStrategy(),
                 distance_strategy="NOT_A_STRATEGY",
             )
+
+    def test_max_marginal_relevance_search(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test max marginal relevance search."""
+        texts = ["foo", "bar", "baz"]
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+            strategy=ElasticsearchStore.ExactRetrievalStrategy(),
+        )
+
+        mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=3, fetch_k=3)
+        sim_output = docsearch.similarity_search(texts[0], k=3)
+        assert mmr_output == sim_output
+
+        mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=2, fetch_k=3)
+        assert len(mmr_output) == 2
+        assert mmr_output[0].page_content == texts[0]
+        assert mmr_output[1].page_content == texts[1]
+
+        mmr_output = docsearch.max_marginal_relevance_search(
+            texts[0], k=2, fetch_k=3, lambda_mult=0.1  # more diversity
+        )
+        assert len(mmr_output) == 2
+        assert mmr_output[0].page_content == texts[0]
+        assert mmr_output[1].page_content == texts[2]
+
+        # if fetch_k < k, then the output will be less than k
+        mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=3, fetch_k=2)
+        assert len(mmr_output) == 2
 
     def test_similarity_search_approx_with_hybrid_search(
         self, elasticsearch_connection: dict, index_name: str
@@ -607,3 +671,60 @@ class TestElasticsearch:
         log_message = f"First error reason: {error_reason}"
 
         assert log_message in caplog.text
+
+    def test_elasticsearch_with_user_agent(
+        self, es_client: Any, index_name: str
+    ) -> None:
+        """Test to make sure the user-agent is set correctly."""
+
+        texts = ["foo", "bob", "baz"]
+        ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            es_connection=es_client,
+            index_name=index_name,
+        )
+
+        user_agent = es_client.transport.requests[0]["headers"]["User-Agent"]
+        pattern = r"^langchain-py-vs/\d+\.\d+\.\d+$"
+        match = re.match(pattern, user_agent)
+
+        assert (
+            match is not None
+        ), f"The string '{user_agent}' does not match the expected pattern."
+
+    def test_elasticsearch_with_internal_user_agent(
+        self, elasticsearch_connection: Dict, index_name: str
+    ) -> None:
+        """Test to make sure the user-agent is set correctly."""
+
+        texts = ["foo"]
+        store = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+        )
+
+        user_agent = store.client._headers["User-Agent"]
+        pattern = r"^langchain-py-vs/\d+\.\d+\.\d+$"
+        match = re.match(pattern, user_agent)
+
+        assert (
+            match is not None
+        ), f"The string '{user_agent}' does not match the expected pattern."
+
+    def test_bulk_args(self, es_client: Any, index_name: str) -> None:
+        """Test to make sure the user-agent is set correctly."""
+
+        texts = ["foo", "bob", "baz"]
+        ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            es_connection=es_client,
+            index_name=index_name,
+            bulk_kwargs={"chunk_size": 1},
+        )
+
+        # 1 for index exist, 1 for index create, 3 for index docs
+        assert len(es_client.transport.requests) == 5  # type: ignore

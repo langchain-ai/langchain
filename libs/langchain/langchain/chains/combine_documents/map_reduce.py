@@ -9,7 +9,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain.pydantic_v1 import BaseModel, Extra, create_model, root_validator
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
@@ -97,6 +97,19 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     If only one variable in the llm_chain, this need not be provided."""
     return_intermediate_steps: bool = False
     """Return the results of the map steps in the output."""
+
+    @property
+    def output_schema(self) -> type[BaseModel]:
+        if self.return_intermediate_steps:
+            return create_model(
+                "MapReduceDocumentsOutput",
+                **{
+                    self.output_key: (str, None),
+                    "intermediate_steps": (List[str], None),
+                },  # type: ignore[call-overload]
+            )
+
+        return super().output_schema
 
     @property
     def output_keys(self) -> List[str]:

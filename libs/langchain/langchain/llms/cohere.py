@@ -17,7 +17,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -61,7 +62,42 @@ def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
     return _completion_with_retry(**kwargs)
 
 
-class Cohere(LLM):
+class BaseCohere(Serializable):
+    client: Any  #: :meta private:
+    async_client: Any  #: :meta private:
+    model: Optional[str] = Field(default=None)
+    """Model name to use."""
+
+    temperature: float = 0.75
+    """A non-negative float that tunes the degree of randomness in generation."""
+
+    cohere_api_key: Optional[str] = None
+
+    stop: Optional[List[str]] = None
+
+    streaming: bool = Field(default=False)
+    """Whether to stream the results."""
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that api key and python package exists in environment."""
+        try:
+            import cohere
+        except ImportError:
+            raise ImportError(
+                "Could not import cohere python package. "
+                "Please install it with `pip install cohere`."
+            )
+        else:
+            cohere_api_key = get_from_dict_or_env(
+                values, "cohere_api_key", "COHERE_API_KEY"
+            )
+            values["client"] = cohere.Client(cohere_api_key)
+            values["async_client"] = cohere.AsyncClient(cohere_api_key)
+        return values
+
+
+class Cohere(LLM, BaseCohere):
     """Cohere large language models.
 
     To use, you should have the ``cohere`` python package installed, and the
@@ -72,19 +108,12 @@ class Cohere(LLM):
         .. code-block:: python
 
             from langchain.llms import Cohere
+
             cohere = Cohere(model="gptd-instruct-tft", cohere_api_key="my-api-key")
     """
 
-    client: Any  #: :meta private:
-    async_client: Any  #: :meta private:
-    model: Optional[str] = None
-    """Model name to use."""
-
     max_tokens: int = 256
     """Denotes the number of tokens to predict per generation."""
-
-    temperature: float = 0.75
-    """A non-negative float that tunes the degree of randomness in generation."""
 
     k: int = 0
     """Number of most likely tokens to consider at each step."""
@@ -105,32 +134,10 @@ class Cohere(LLM):
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
 
-    cohere_api_key: Optional[str] = None
-
-    stop: Optional[List[str]] = None
-
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-        cohere_api_key = get_from_dict_or_env(
-            values, "cohere_api_key", "COHERE_API_KEY"
-        )
-        try:
-            import cohere
-
-            values["client"] = cohere.Client(cohere_api_key)
-            values["async_client"] = cohere.AsyncClient(cohere_api_key)
-        except ImportError:
-            raise ImportError(
-                "Could not import cohere python package. "
-                "Please install it with `pip install cohere`."
-            )
-        return values
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -144,6 +151,10 @@ class Cohere(LLM):
             "presence_penalty": self.presence_penalty,
             "truncate": self.truncate,
         }
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"cohere_api_key": "COHERE_API_KEY"}
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

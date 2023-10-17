@@ -470,3 +470,147 @@ def test_neo4jvector_hybrid_from_existing() -> None:
     assert output == [Document(page_content="foo")]
 
     drop_vector_indexes(existing)
+
+
+def test_neo4jvector_from_existing_graph() -> None:
+    """Test from_existing_graph with a single property."""
+    graph = Neo4jVector.from_texts(
+        texts=["test"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        node_label="Foo",
+        embedding_node_property="vector",
+        text_node_property="info",
+        pre_delete_collection=True,
+    )
+
+    graph.query("MATCH (n) DETACH DELETE n")
+
+    graph.query("CREATE (:Test {name:'Foo'})," "(:Test {name:'Bar'})")
+
+    existing = Neo4jVector.from_existing_graph(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="vector",
+        node_label="Test",
+        text_node_properties=["name"],
+        embedding_node_property="embedding",
+    )
+
+    output = existing.similarity_search("foo", k=1)
+    assert output == [Document(page_content="\nname: Foo")]
+
+    drop_vector_indexes(existing)
+
+
+def test_neo4jvector_from_existing_graph_hybrid() -> None:
+    """Test from_existing_graph hybrid with a single property."""
+    graph = Neo4jVector.from_texts(
+        texts=["test"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        node_label="Foo",
+        embedding_node_property="vector",
+        text_node_property="info",
+        pre_delete_collection=True,
+    )
+
+    graph.query("MATCH (n) DETACH DELETE n")
+
+    graph.query("CREATE (:Test {name:'foo'})," "(:Test {name:'Bar'})")
+
+    existing = Neo4jVector.from_existing_graph(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="vector",
+        node_label="Test",
+        text_node_properties=["name"],
+        embedding_node_property="embedding",
+        search_type=SearchType.HYBRID,
+    )
+
+    output = existing.similarity_search("foo", k=1)
+    assert output == [Document(page_content="\nname: foo")]
+
+    drop_vector_indexes(existing)
+
+
+def test_neo4jvector_from_existing_graph_multiple_properties() -> None:
+    """Test from_existing_graph with a two property."""
+    graph = Neo4jVector.from_texts(
+        texts=["test"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        node_label="Foo",
+        embedding_node_property="vector",
+        text_node_property="info",
+        pre_delete_collection=True,
+    )
+    graph.query("MATCH (n) DETACH DELETE n")
+
+    graph.query("CREATE (:Test {name:'Foo', name2: 'Fooz'})," "(:Test {name:'Bar'})")
+
+    existing = Neo4jVector.from_existing_graph(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="vector",
+        node_label="Test",
+        text_node_properties=["name", "name2"],
+        embedding_node_property="embedding",
+    )
+
+    output = existing.similarity_search("foo", k=1)
+    assert output == [Document(page_content="\nname: Foo\nname2: Fooz")]
+
+    drop_vector_indexes(existing)
+
+
+def test_neo4jvector_from_existing_graph_multiple_properties_hybrid() -> None:
+    """Test from_existing_graph with a two property."""
+    graph = Neo4jVector.from_texts(
+        texts=["test"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="foo",
+        node_label="Foo",
+        embedding_node_property="vector",
+        text_node_property="info",
+        pre_delete_collection=True,
+    )
+    graph.query("MATCH (n) DETACH DELETE n")
+
+    graph.query("CREATE (:Test {name:'Foo', name2: 'Fooz'})," "(:Test {name:'Bar'})")
+
+    existing = Neo4jVector.from_existing_graph(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="vector",
+        node_label="Test",
+        text_node_properties=["name", "name2"],
+        embedding_node_property="embedding",
+        search_type=SearchType.HYBRID,
+    )
+
+    output = existing.similarity_search("foo", k=1)
+    assert output == [Document(page_content="\nname: Foo\nname2: Fooz")]
+
+    drop_vector_indexes(existing)

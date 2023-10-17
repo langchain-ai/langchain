@@ -7,15 +7,28 @@ pip install google-cloud-aiplatform>=1.25.0
 Your end-user credentials would be used to make the calls (make sure you've run 
 `gcloud auth login` first).
 """
+from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
 from langchain.chat_models import ChatVertexAI
 from langchain.chat_models.vertexai import _parse_chat_history, _parse_examples
+from langchain.schema import LLMResult
 from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
+@pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
+def test_vertexai_instantiation(model_name: str) -> None:
+    if model_name:
+        model = ChatVertexAI(model_name=model_name)
+    else:
+        model = ChatVertexAI()
+    assert model._llm_type == "vertexai"
+    assert model.model_name == model.client._model_id
+
+
+@pytest.mark.scheduled
 @pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
 def test_vertexai_single_call(model_name: str) -> None:
     if model_name:
@@ -26,10 +39,31 @@ def test_vertexai_single_call(model_name: str) -> None:
     response = model([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert model._llm_type == "vertexai"
-    assert model.model_name == model.client._model_id
 
 
+def test_candidates() -> None:
+    model = ChatVertexAI(model_name="chat-bison@001", temperature=0.3, n=2)
+    message = HumanMessage(content="Hello")
+    response = model.generate(messages=[[message]])
+    assert isinstance(response, LLMResult)
+    assert len(response.generations) == 1
+    assert len(response.generations[0]) == 2
+
+
+@pytest.mark.scheduled
+@pytest.mark.asyncio
+async def test_vertexai_agenerate() -> None:
+    model = ChatVertexAI(temperature=0)
+    message = HumanMessage(content="Hello")
+    response = await model.agenerate([[message]])
+    assert isinstance(response, LLMResult)
+    assert isinstance(response.generations[0][0].message, AIMessage)  # type: ignore
+
+    sync_response = model.generate([[message]])
+    assert response.generations[0][0] == sync_response.generations[0][0]
+
+
+@pytest.mark.scheduled
 def test_vertexai_single_call_with_context() -> None:
     model = ChatVertexAI()
     raw_context = (
@@ -46,6 +80,7 @@ def test_vertexai_single_call_with_context() -> None:
     assert isinstance(response.content, str)
 
 
+@pytest.mark.scheduled
 def test_vertexai_single_call_with_examples() -> None:
     model = ChatVertexAI()
     raw_context = "My name is Ned. You are my personal assistant."
@@ -60,6 +95,7 @@ def test_vertexai_single_call_with_examples() -> None:
     assert isinstance(response.content, str)
 
 
+@pytest.mark.scheduled
 @pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
 def test_vertexai_single_call_with_history(model_name: str) -> None:
     if model_name:
@@ -104,7 +140,7 @@ def test_parse_chat_history_correct() -> None:
     ]
 
 
-def test_vertexai_single_call_failes_no_message() -> None:
+def test_vertexai_single_call_fails_no_message() -> None:
     chat = ChatVertexAI()
     with pytest.raises(ValueError) as exc_info:
         _ = chat([])
@@ -114,7 +150,8 @@ def test_vertexai_single_call_failes_no_message() -> None:
     )
 
 
-def test_vertexai_args_passed() -> None:
+@pytest.mark.parametrize("stop", [None, "stop1"])
+def test_vertexai_args_passed(stop: Optional[str]) -> None:
     response_text = "Goodbye"
     user_prompt = "Hello"
     prompt_params = {
@@ -128,7 +165,8 @@ def test_vertexai_args_passed() -> None:
     with patch(
         "vertexai.language_models._language_models.ChatModel.start_chat"
     ) as start_chat:
-        mock_response = Mock(text=response_text)
+        mock_response = MagicMock()
+        mock_response.candidates = [Mock(text=response_text)]
         mock_chat = MagicMock()
         start_chat.return_value = mock_chat
         mock_send_message = MagicMock(return_value=mock_response)
@@ -136,12 +174,19 @@ def test_vertexai_args_passed() -> None:
 
         model = ChatVertexAI(**prompt_params)
         message = HumanMessage(content=user_prompt)
-        response = model([message])
+        if stop:
+            response = model([message], stop=[stop])
+        else:
+            response = model([message])
 
         assert response.content == response_text
-        mock_send_message.assert_called_once_with(user_prompt)
+        mock_send_message.assert_called_once_with(user_prompt, candidate_count=1)
+        expected_stop_sequence = [stop] if stop else None
         start_chat.assert_called_once_with(
-            context=None, message_history=[], **prompt_params
+            context=None,
+            message_history=[],
+            **prompt_params,
+            stop_sequences=expected_stop_sequence
         )
 
 

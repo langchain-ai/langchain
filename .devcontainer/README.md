@@ -5,10 +5,10 @@ This project includes a [dev container](https://containers.dev/), which lets you
 You can use the dev container configuration in this folder to build and run the app without needing to install any of its tools locally! You can use it in [GitHub Codespaces](https://github.com/features/codespaces) or the [VS Code Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
 ## GitHub Codespaces
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/hwchase17/langchain)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/langchain-ai/langchain)
 
 You may use the button above, or follow these steps to open this repo in a Codespace:
-1. Click the **Code** drop-down menu at the top of https://github.com/hwchase17/langchain.
+1. Click the **Code** drop-down menu at the top of https://github.com/langchain-ai/langchain.
 1. Click on the **Codespaces** tab.
 1. Click **Create codespace on master** .
 
