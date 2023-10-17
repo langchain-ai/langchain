@@ -1,38 +1,29 @@
 name: release
 
 on:
-  pull_request:
-    types:
-      - closed
-    branches:
-      - master
-    paths:
-      - 'pyproject.toml'
+  workflow_dispatch:  # Allows triggering the workflow manually in GitHub UI
 
 env:
-  POETRY_VERSION: "1.4.2"
+  POETRY_VERSION: "1.6.1"
 
 jobs:
-  if_release:
-    if: |
-        ${{ github.event.pull_request.merged == true }}
-        && ${{ contains(github.event.pull_request.labels.*.name, 'release') }}
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Install poetry
-        run: pipx install poetry==$POETRY_VERSION
-      - name: Set up Python 3.10
+        run: pipx install poetry=="$POETRY_VERSION"
+      - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.11"
           cache: "poetry"
       - name: Build project for distribution
         run: poetry build
       - name: Check Version
         id: check-version
         run: |
-          echo version=$(poetry version --short) >> $GITHUB_OUTPUT
+          echo version="$(poetry version --short)" >> $GITHUB_OUTPUT
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
