@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 
 from langchain.document_loaders import SitemapLoader
+from langchain.document_loaders.sitemap import _extract_domain
 
 
 def test_sitemap() -> None:
@@ -132,3 +133,17 @@ def test_local_sitemap() -> None:
     documents = loader.load()
     assert len(documents) > 1
     assert "🦜️🔗" in documents[0].page_content
+
+
+def test_extract_domain() -> None:
+    """Test domain extraction."""
+    assert _extract_domain("https://js.langchain.com/sitemap.xml") == "js.langchain.com"
+    assert _extract_domain("http://example.com/path/to/page") == "example.com"
+    assert _extract_domain("ftp://files.example.com") == "files.example.com"
+    assert (
+        _extract_domain("https://deep.subdomain.example.com")
+        == "deep.subdomain.example.com"
+    )
+
+    with pytest.raises(ValueError):
+        _extract_domain("not_a_valid_url")

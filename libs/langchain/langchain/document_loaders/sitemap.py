@@ -5,6 +5,7 @@ from typing import Any, Callable, Generator, Iterable, List, Optional
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.schema import Document
 
+from urllib.parse import urlparse
 
 def _default_parsing_function(content: Any) -> str:
     return str(content.get_text())
@@ -18,6 +19,21 @@ def _batch_block(iterable: Iterable, size: int) -> Generator[List[dict], None, N
     it = iter(iterable)
     while item := list(itertools.islice(it, size)):
         yield item
+
+
+def _extract_domain(url: str) -> str:
+    """Extract the domain name from a given URL.
+
+    Args:
+        url (str): The input URL.
+
+    Returns:
+        str: The extracted domain name.
+    """
+    parsed_uri = urlparse(url)
+    domain = '{uri.netloc}'.format(uri=parsed_uri)
+    return domain
+
 
 
 class SitemapLoader(WebBaseLoader):
