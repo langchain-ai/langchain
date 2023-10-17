@@ -24,6 +24,7 @@ from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetr
 from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.chaindesk import ChaindeskRetriever
 from langchain.retrievers.chatgpt_plugin_retriever import ChatGPTPluginRetriever
+from langchain.retrievers.cohere_rag_retriever import CohereRagRetriever
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.docarray import DocArrayRetriever
 from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
@@ -77,6 +78,7 @@ __all__ = [
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
     "ChaindeskRetriever",
+    "CohereRagRetriever",
     "ElasticSearchBM25Retriever",
     "GoogleDocumentAIWarehouseRetriever",
     "GoogleCloudEnterpriseSearchRetriever",
