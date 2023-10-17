@@ -1,8 +1,6 @@
 """Load Documents from Docusarus Documentation"""
 from typing import Any, List, Optional
 
-from bs4 import BeautifulSoup
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -38,20 +36,36 @@ class DocusaurusLoader(BaseLoader):
         """Load documents."""
         from langchain.document_loaders.sitemap import SitemapLoader
 
+        # The SitemapLoader has a blend of required and optional kwargs, so we need to
+        # filter out the required args from the kwargs to avoid errors when we pass
+        # them in explicitly below.
+        filtered_kwargs = {
+            key: value
+            for key, value in self.kwargs.items()
+            if key
+            not in [
+                "blocknum",
+                "is_local",
+                "parsing_function",
+                "continue_on_failure",
+            ]
+        }
+
         if not self.kwargs.get("is_local"):
             self.url = f"{self.url}/sitemap.xml"
 
         loader = SitemapLoader(
             web_path=self.url,
-            parsing_function=self._parsing_function,
+            parsing_function=self.kwargs.get("parsing_function")
+            or self._parsing_function,
             blocknum=self.kwargs.get("blocknum") or 0,
             is_local=self.kwargs.get("is_local") or False,
             continue_on_failure=self.kwargs.get("continue_on_failure") or False,
-            **self.kwargs,
+            **filtered_kwargs,
         )
         return loader.load()
 
-    def _parsing_function(self, content: BeautifulSoup) -> str:
+    def _parsing_function(self, content: Any) -> str:
         """Parses specific elements from a Docusarus page."""
         relevant_elements = content.select(",".join(self.custom_html_tags))
 
