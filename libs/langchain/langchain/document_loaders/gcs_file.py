@@ -23,7 +23,7 @@ class GCSFileLoader(BaseLoader):
             project_name: The name of the project to load
             bucket: The name of the GCS bucket.
             blob: The name of the GCS blob to load.
-            loader_func: A loader function that instatiates a loader based on a
+            loader_func: A loader function that instantiates a loader based on a
                 file_path argument. If nothing is provided, the
                 UnstructuredFileLoader is used.
 
@@ -62,6 +62,8 @@ class GCSFileLoader(BaseLoader):
         bucket = storage_client.get_bucket(self.bucket)
         # Create a blob object from the filepath
         blob = bucket.blob(self.blob)
+        # retrieve custom metadata associated with the blob
+        metadata = bucket.get_blob(self.blob).metadata
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{self.blob}"
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -72,4 +74,6 @@ class GCSFileLoader(BaseLoader):
             for doc in docs:
                 if "source" in doc.metadata:
                     doc.metadata["source"] = f"gs://{self.bucket}/{self.blob}"
+                if metadata:
+                    doc.metadata.update(metadata)
             return docs

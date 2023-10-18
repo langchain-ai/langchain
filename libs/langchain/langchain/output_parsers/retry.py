@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
-from langchain.chains.llm import LLMChain
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseOutputParser,
@@ -46,7 +45,8 @@ class RetryOutputParser(BaseOutputParser[T]):
 
     parser: BaseOutputParser[T]
     """The parser to use to parse the output."""
-    retry_chain: LLMChain
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
+    retry_chain: Any
     """The LLMChain to use to retry the completion."""
 
     @classmethod
@@ -56,6 +56,8 @@ class RetryOutputParser(BaseOutputParser[T]):
         parser: BaseOutputParser[T],
         prompt: BasePromptTemplate = NAIVE_RETRY_PROMPT,
     ) -> RetryOutputParser[T]:
+        from langchain.chains.llm import LLMChain
+
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 
@@ -123,7 +125,8 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     """
 
     parser: BaseOutputParser[T]
-    retry_chain: LLMChain
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
+    retry_chain: Any
 
     @classmethod
     def from_llm(
@@ -142,6 +145,8 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
         Returns:
             A RetryWithErrorOutputParser.
         """
+        from langchain.chains.llm import LLMChain
+
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 

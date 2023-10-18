@@ -31,12 +31,12 @@ def reduce_openapi_spec(spec: dict, dereference: bool = True) -> ReducedOpenAPIS
     I was hoping https://openapi.tools/ would have some useful bits
     to this end, but doesn't seem so.
     """
-    # 1. Consider only get, post, patch, delete endpoints.
+    # 1. Consider only get, post, patch, put, delete endpoints.
     endpoints = [
         (f"{operation_name.upper()} {route}", docs.get("description"), docs)
         for route, operation in spec["paths"].items()
         for operation_name, docs in operation.items()
-        if operation_name in ["get", "post", "patch", "delete"]
+        if operation_name in ["get", "post", "patch", "put", "delete"]
     ]
 
     # 2. Replace any refs so that complete docs are retrieved.

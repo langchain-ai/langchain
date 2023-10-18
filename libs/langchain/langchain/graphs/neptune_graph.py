@@ -1,7 +1,4 @@
-import json
-from typing import Any, Dict, List, Tuple, Union
-
-import requests
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 class NeptuneQueryException(Exception):
@@ -23,8 +20,16 @@ class NeptuneQueryException(Exception):
 
 
 class NeptuneGraph:
-    """Neptune wrapper for graph operations. This version
-    does not support Sigv4 signing of requests.
+    """Neptune wrapper for graph operations.
+
+    Args:
+        host: endpoint for the database instance
+        port: port number for the database instance, default is 8182
+        use_https: whether to use secure connection, default is True
+        client: optional boto3 Neptune client
+        credentials_profile_name: optional AWS profile name
+        region_name: optional AWS region, e.g., us-west-2
+        service: optional service name, default is neptunedata
 
     Example:
         .. code-block:: python
@@ -33,27 +38,78 @@ class NeptuneGraph:
             host='<my-cluster>',
             port=8182
         )
+
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
     """
 
-    def __init__(self, host: str, port: int = 8182, use_https: bool = True) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int = 8182,
+        use_https: bool = True,
+        client: Any = None,
+        credentials_profile_name: Optional[str] = None,
+        region_name: Optional[str] = None,
+        service: str = "neptunedata",
+    ) -> None:
         """Create a new Neptune graph wrapper instance."""
 
-        if use_https:
-            self.summary_url = (
-                f"https://{host}:{port}/pg/statistics/summary?mode=detailed"
-            )
-            self.query_url = f"https://{host}:{port}/openCypher"
-        else:
-            self.summary_url = (
-                f"http://{host}:{port}/pg/statistics/summary?mode=detailed"
-            )
-            self.query_url = f"http://{host}:{port}/openCypher"
+        try:
+            if client is not None:
+                self.client = client
+            else:
+                import boto3
 
-        # Set schema
+                if credentials_profile_name is not None:
+                    session = boto3.Session(profile_name=credentials_profile_name)
+                else:
+                    # use default credentials
+                    session = boto3.Session()
+
+                client_params = {}
+                if region_name:
+                    client_params["region_name"] = region_name
+
+                protocol = "https" if use_https else "http"
+
+                client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
+
+                self.client = session.client(service, **client_params)
+
+        except ImportError:
+            raise ModuleNotFoundError(
+                "Could not import boto3 python package. "
+                "Please install it with `pip install boto3`."
+            )
+        except Exception as e:
+            if type(e).__name__ == "UnknownServiceError":
+                raise ModuleNotFoundError(
+                    "NeptuneGraph requires a boto3 version 1.28.38 or greater."
+                    "Please install it with `pip install -U boto3`."
+                ) from e
+            else:
+                raise ValueError(
+                    "Could not load credentials to authenticate with AWS client. "
+                    "Please check that credentials in the specified "
+                    "profile name are valid."
+                ) from e
+
         try:
             self._refresh_schema()
-        except NeptuneQueryException:
-            raise ValueError("Could not get schema for Neptune database")
+        except Exception as e:
+            raise NeptuneQueryException(
+                {
+                    "message": "Could not get schema for Neptune database",
+                    "detail": str(e),
+                }
+            )
 
     @property
     def get_schema(self) -> str:
@@ -62,32 +118,24 @@ class NeptuneGraph:
 
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
         """Query Neptune database."""
-        response = requests.post(url=self.query_url, data={"query": query})
-        if response.ok:
-            results = json.loads(response.content.decode())
-            return results
-        else:
-            raise NeptuneQueryException(
-                {
-                    "message": "The generated query failed to execute",
-                    "details": response.content.decode(),
-                }
-            )
+        return self.client.execute_open_cypher_query(openCypherQuery=query)
 
     def _get_summary(self) -> Dict:
-        response = requests.get(url=self.summary_url)
-        if not response.ok:
+        try:
+            response = self.client.get_propertygraph_summary()
+        except Exception as e:
             raise NeptuneQueryException(
                 {
                     "message": (
                         "Summary API is not available for this instance of Neptune,"
                         "ensure the engine version is >=1.2.1.0"
                     ),
-                    "details": response.content.decode(),
+                    "details": str(e),
                 }
             )
+
         try:
-            summary = response.json()["payload"]["graphSummary"]
+            summary = response["payload"]["graphSummary"]
         except Exception:
             raise NeptuneQueryException(
                 {
@@ -107,13 +155,13 @@ class NeptuneGraph:
 
     def _get_triples(self, e_labels: List[str]) -> List[str]:
         triple_query = """
-        MATCH (a)-[e:{e_label}]->(b)
+        MATCH (a)-[e:`{e_label}`]->(b)
         WITH a,e,b LIMIT 3000
         RETURN DISTINCT labels(a) AS from, type(e) AS edge, labels(b) AS to
         LIMIT 10
         """
 
-        triple_template = "(:{a})-[:{e}]->(:{b})"
+        triple_template = "(:`{a}`)-[:`{e}`]->(:`{b}`)"
         triple_schema = []
         for label in e_labels:
             q = triple_query.format(e_label=label)
@@ -128,7 +176,7 @@ class NeptuneGraph:
 
     def _get_node_properties(self, n_labels: List[str], types: Dict) -> List:
         node_properties_query = """
-        MATCH (a:{n_label})
+        MATCH (a:`{n_label}`)
         RETURN properties(a) AS props
         LIMIT 100
         """
@@ -151,7 +199,7 @@ class NeptuneGraph:
 
     def _get_edge_properties(self, e_labels: List[str], types: Dict[str, Any]) -> List:
         edge_properties_query = """
-        MATCH ()-[e:{e_label}]->()
+        MATCH ()-[e:`{e_label}`]->()
         RETURN properties(e) AS props
         LIMIT 100
         """
@@ -183,6 +231,7 @@ class NeptuneGraph:
             "int": "INTEGER",
             "list": "LIST",
             "dict": "MAP",
+            "bool": "BOOLEAN",
         }
         n_labels, e_labels = self._get_labels()
         triple_schema = self._get_triples(e_labels)
