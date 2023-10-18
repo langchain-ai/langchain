@@ -257,7 +257,7 @@ def _process_input_variables(
     partial_variables: Optional[Dict[str, Any]] = None,
 ) -> List[str]:
     """Get the input variables from the template."""
-    input_variable = get_template_variables(template, template_format)
+    input_variables = get_template_variables(template, template_format)
 
     if partial_variables:
         input_variables = {
