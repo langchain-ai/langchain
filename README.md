@@ -133,21 +133,21 @@ while(True):
 
 - [Ответы на вопросы по статьям из wikipedia](docs/docs/integrations/retrievers/wikipedia.ipynb)
 - [Суммаризация по алгоритму MapReduce](docs/extras/use_cases/summarization.ipynb) (см. раздел map/reduce)
-- [Игра Blade Runner: GPT-4 и GigaChat выясняют, кто из них бот](docs/extras/use_cases/more/fun/blade_runner.ipynb)
+- [Игра Blade Runner: GPT-4 и GigaChat выясняют, кто из них бот](docs/docs/use_cases/fun/blade_runner.ipynb)
 - [Работа с хабом промптов, цепочками и парсером JSON](docs/extras/modules/model_io/output_parsers/json.ipynb)
-- [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/extras/use_cases/agent_simulations/multi_llm_thre_player_dnd.ipynb)
+- [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/docs/use_cases/question_answering/agent_simulations/multi_llm_thre_player_dnd.ipynb)
 - [Парсинг списков, содержащихся в ответе](docs/extras/modules/model_io/output_parsers/list.ipynb)
-- [Асинхронная работа с LLM](docs/extras/modules/model_io/models/llms/async_llm.ipynb)
+- [Асинхронная работа с LLM](docs/docs/modules/model_io/models/llms/async_llm.ipynb)
 - [Использование Elastic для поиска ответов по документам](docs/extras/integrations/retrievers/elastic_qna.ipynb)
-- [Генерация и выполнение кода с помощью PythonREPL](docs/extras/expression_language/cookbook/code_writing.ipynb)
+- [Генерация и выполнение кода с помощью PythonREPL](docs/docs/expression_language/cookbook/code_writing.ipynb)
 - [Работа с кэшем в GigaChain](docs/extras/integrations/llms/gigachain_caching.ipynb)
-- [Автономный агент AutoGPT с использованием GigaChat](docs/extras/use_cases/more/agents/autonomous_agents/autogpt.ipynb)
+- [Автономный агент AutoGPT с использованием GigaChat](cookbook/autogpt/autogpt.ipynb)
 - [Генерация плейлистов с помощью GigaChain и Spotify](docs/extras/modules/agents/how_to/playlists.ipynb)
 
 ### Примеры работы с другими LLM
 
-- [Агент-менеджер по продажам с автоматическим поиском по каталогу и формированием заказа](docs/extras/modules/agents/how_to/add_memory_openai_functions.ipynb)
-- [Поиск ответов в интернете с автоматическими промежуточными вопросами (self-ask)](docs/extras/modules/agents/agent_types/self_ask_with_search.ipynb)
+- [Агент-менеджер по продажам с автоматическим поиском по каталогу и формированием заказа](docs/docs/modules/agents/how_to/add_memory_openai_functions.ipynb)
+- [Поиск ответов в интернете с автоматическими промежуточными вопросами (self-ask)](docs/docs/modules/agents/agent_types/self_ask_with_search.ipynb)
 -  [Пример использования YandexGPT](docs/docs/integrations/chat/yandex.ipynb)
 
 ### Примеры приложений для Streamlit
