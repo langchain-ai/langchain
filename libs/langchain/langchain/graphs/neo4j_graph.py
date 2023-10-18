@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 from langchain.graphs.graph_document import GraphDocument
+from langchain.graphs.graph_store import GraphStore
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -28,7 +29,7 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 
-class Neo4jGraph:
+class Neo4jGraph(GraphStore):
     """Neo4j wrapper for graph operations.
 
     *Security note*: Make sure that the database connection uses credentials
@@ -79,6 +80,16 @@ class Neo4jGraph:
                 "Please ensure the APOC plugin is installed in Neo4j and that "
                 "'apoc.meta.data()' is allowed in Neo4j configuration "
             )
+
+    @property
+    def get_schema(self) -> str:
+        """Returns the schema of the Graph"""
+        return self.schema
+
+    @property
+    def get_structured_schema(self) -> Dict[str, Any]:
+        """Returns the structured schema of the Graph"""
+        return self.structured_schema
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""
