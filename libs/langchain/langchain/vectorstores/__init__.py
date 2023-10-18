@@ -605,7 +605,6 @@ __all__ = [
     "Vald",
     "Vearch",
     "Vectara",
-    "VectorStore",
     "VespaStore",
     "Weaviate",
     "ZepVectorStore",
