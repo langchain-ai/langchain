@@ -7,7 +7,7 @@ from typing import Iterable, List, Tuple
 import pytest
 
 # Keep at top of file to ensure that pydantic test can be skipped before
-# pydantic v1 related imports are attempted by openapi_schema_pydantic.
+# pydantic v1 related imports are attempted by openapi_pydantic.
 from langchain.pydantic_v1 import _PYDANTIC_MAJOR_VERSION
 
 if _PYDANTIC_MAJOR_VERSION != 1:
@@ -78,7 +78,7 @@ def http_paths_and_methods() -> List[Tuple[str, OpenAPISpec, str, str]]:
     return http_paths_and_methods
 
 
-@pytest.mark.requires("openapi_schema_pydantic")
+@pytest.mark.requires("openapi_pydantic")
 def test_parse_api_operations() -> None:
     """Test the APIOperation class."""
     for spec_name, spec, path, method in http_paths_and_methods():
