@@ -1137,6 +1137,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "ElasticsearchStore",
         "FAISS",
         "MomentoVectorIndex",
+        "MyScale",
         "PGVector",
         "Pinecone",
         "Qdrant",

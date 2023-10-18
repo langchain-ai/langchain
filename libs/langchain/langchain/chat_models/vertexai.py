@@ -120,6 +120,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
     model_name: str = "chat-bison"
     "Underlying model name."
+    examples: Optional[List[BaseMessage]] = None
 
     @classmethod
     def is_lc_serializable(self) -> bool:
@@ -175,7 +176,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
         params = self._prepare_params(stop=stop, stream=False, **kwargs)
-        examples = kwargs.get("examples", None)
+        examples = kwargs.get("examples") or self.examples
         if examples:
             params["examples"] = _parse_examples(examples)
 
