@@ -5,7 +5,6 @@ from langchain.pydantic_v1 import Field
 from langchain.schema import BaseRetriever, BaseStore, Document
 from langchain.schema.vectorstore import VectorStore
 
-
 class MultiVectorRetriever(BaseRetriever):
     """Retrieve from a set of multiple embeddings for the same document."""
 
