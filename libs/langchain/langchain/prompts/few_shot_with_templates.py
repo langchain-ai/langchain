@@ -78,7 +78,6 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
                 | set(values["prefix"].input_variables if values["prefix"] else [])
                 - set(values["partial_variables"])
             )
-            print(values["input_variables"])
         return values
 
     class Config:
