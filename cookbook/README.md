@@ -1,6 +1,7 @@
 # LangChain cookbook
 
 Example code for building applications with LangChain, with an emphasis on more applied and end-to-end examples than contained in the [main documentation](https://python.langchain.com).
+
 Notebook | Description
 :- | :-
 [LLaMA2_sql_chat.ipynb](https://github.com/langchain-ai/langchain/tree/master/cookbook/LLaMA2_sql_chat.ipynb) | Build a chat application that interacts with a sql database using an open source llm (llama2), specifically demonstrated on a sqlite database containing nba rosters.
