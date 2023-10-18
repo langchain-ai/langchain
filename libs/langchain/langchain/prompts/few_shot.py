@@ -1,6 +1,7 @@
 """Prompt template that contains few shot examples."""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.prompts.base import (
@@ -151,11 +152,10 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         """Return the prompt type key."""
         return "few_shot"
 
-    def dict(self, **kwargs: Any) -> Dict:
-        """Return a dictionary of the prompt."""
+    def save(self, file_path: Union[Path, str]) -> None:
         if self.example_selector:
             raise ValueError("Saving an example selector is not currently supported")
-        return super().dict(**kwargs)
+        return super().save(file_path)
 
 
 class FewShotChatMessagePromptTemplate(
