@@ -111,9 +111,9 @@ def fix_filter_directive(
     attribute_names = []
     if attributes:
         for n in attributes:
-            if type(n) is AttributeInfo:
+            if isinstance(n, AttributeInfo):
                 attribute_names.append(n.name)
-            elif type(n) is dict:
+            elif isinstance(n, dict):
                 attribute_names.append(n["name"])
     if (not (allowed_comparators or allowed_operators or attributes)) or not filter:
         return filter

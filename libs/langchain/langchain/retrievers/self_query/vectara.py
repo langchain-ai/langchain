@@ -54,9 +54,9 @@ class VectaraTranslator(Visitor):
         return "( " + operator.join(args) + " )"
 
     def visit_comparison(self, comparison: Comparison) -> str:
-        if type(comparison.attribute) is VirtualColumnName:
+        if isinstance(comparison.attribute, VirtualColumnName):
             attribute = comparison.attribute()
-        elif type(comparison.attribute) is str:
+        elif isinstance(comparison.attribute, str):
             attribute = comparison.attribute
         else:
             raise TypeError(

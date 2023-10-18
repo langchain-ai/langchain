@@ -41,9 +41,9 @@ class PineconeTranslator(Visitor):
             comparison.value, list
         ):
             comparison.value = [comparison.value]
-        if type(comparison.attribute) is VirtualColumnName:
+        if isinstance(comparison.attribute, VirtualColumnName):
             attribute = comparison.attribute()
-        elif type(comparison.attribute) is str:
+        elif isinstance(comparison.attribute, str):
             attribute = comparison.attribute
         else:
             raise TypeError(

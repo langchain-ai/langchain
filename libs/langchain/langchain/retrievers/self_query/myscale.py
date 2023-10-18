@@ -104,9 +104,9 @@ class MyScaleTranslator(Visitor):
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
         # NOTE: now the arbitrary function column is replaced by virtual column names
-        if type(comparison.attribute) is VirtualColumnName:
+        if isinstance(comparison.attribute, VirtualColumnName):
             attr = comparison.attribute()
-        elif type(comparison.attribute) is str:
+        elif isinstance(comparison.attribute, str):
             if self.metadata_key:
                 regex = "\((.*?)\)"
                 matched = re.search("\(\w+\)", comparison.attribute)

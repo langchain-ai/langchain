@@ -57,9 +57,9 @@ class QdrantTranslator(Visitor):
                 "qdrant-client`."
             ) from e
 
-        if type(comparison.attribute) is VirtualColumnName:
+        if isinstance(comparison.attribute, VirtualColumnName):
             attribute = comparison.attribute()
-        elif type(comparison.attribute) is str:
+        elif isinstance(comparison.attribute, str):
             attribute = comparison.attribute
         else:
             raise TypeError(

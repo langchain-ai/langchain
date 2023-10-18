@@ -72,9 +72,9 @@ class QueryTransformer(Transformer):
         self.virtual_column_names: Optional[Dict[str, VirtualColumnName]]
         if attributes:
             for n in attributes:
-                if type(n) is AttributeInfo:
+                if isinstance(n, AttributeInfo):
                     self.allowed_attributes.append(str(n.name))
-                elif type(n) is dict:
+                elif isinstance(n, dict):
                     self.allowed_attributes.append(n["name"])
             self.virtual_column_names = {
                 str(i.name): i.name

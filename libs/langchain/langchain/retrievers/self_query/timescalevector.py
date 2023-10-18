@@ -10,6 +10,7 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+from langchain.chains.query_constructor.schema import VirtualColumnName
 
 if TYPE_CHECKING:
     from timescale_vector import client
@@ -59,6 +60,14 @@ class TimescaleVectorTranslator(Visitor):
         return client.Predicates(*args, operator=self._format_func(operation.operator))
 
     def visit_comparison(self, comparison: Comparison) -> client.Predicates:
+        if isinstance(comparison.attribute, VirtualColumnName):
+            attribute = comparison.attribute()
+        elif isinstance(comparison.attribute, str):
+            attribute = comparison.attribute
+        else:
+            raise TypeError(
+                f"Unknown type {type(comparison.attribute)} for `comparison.attribute`!"
+            )
         try:
             from timescale_vector import client
         except ImportError as e:
@@ -68,7 +77,7 @@ class TimescaleVectorTranslator(Visitor):
             ) from e
         return client.Predicates(
             (
-                comparison.attribute,
+                attribute,
                 self._format_func(comparison.comparator),
                 comparison.value,
             )

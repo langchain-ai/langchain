@@ -50,9 +50,9 @@ class ElasticsearchTranslator(Visitor):
         return {"bool": {self._format_func(operation.operator): args}}
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
-        if type(comparison.attribute) is VirtualColumnName:
+        if isinstance(comparison.attribute, VirtualColumnName):
             attribute = comparison.attribute()
-        elif type(comparison.attribute) is str:
+        elif isinstance(comparison.attribute, str):
             attribute = comparison.attribute
         else:
             raise TypeError(

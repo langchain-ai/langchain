@@ -8,6 +8,7 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+from langchain.chains.query_constructor.schema import VirtualColumnName
 
 
 class OpenSearchTranslator(Visitor):
@@ -50,6 +51,11 @@ class OpenSearchTranslator(Visitor):
         return {"bool": {self._format_func(operation.operator): args}}
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
+        if isinstance(comparison.attribute, VirtualColumnName):
+            raise TypeError(
+                f"Virtual Column {type(comparison.attribute)} "
+                "is not supported for OpenSearch!"
+            )
         field = f"metadata.{comparison.attribute}"
 
         if comparison.comparator in [
