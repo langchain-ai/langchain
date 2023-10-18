@@ -117,9 +117,15 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
         self,
         query_model_id: Optional[str] = None,
         hybrid: Optional[bool] = False,
+        rrf: Optional[dict] = {},
     ):
         self.query_model_id = query_model_id
         self.hybrid = hybrid
+        
+        # RRF has two optional parameters
+        # 'rank_constant', 'window_size'
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/rrf.html
+        self.rrf = rrf
 
     def query(
         self,
@@ -161,7 +167,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
 
         # If hybrid, add a query to the knn query
         # RRF is used to even the score from the knn query and text query
-        if self.hybrid:
+        if self.hybrid:            
             return {
                 "knn": knn,
                 "query": {
@@ -178,7 +184,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
                         "filter": filter,
                     }
                 },
-                "rank": {"rrf": {}},
+                "rank": {"rrf": self.rrf},
             }
         else:
             return {"knn": knn}
@@ -1136,6 +1142,7 @@ class ElasticsearchStore(VectorStore):
     def ApproxRetrievalStrategy(
         query_model_id: Optional[str] = None,
         hybrid: Optional[bool] = False,
+        rrf: Optional[dict] = {},
     ) -> "ApproxRetrievalStrategy":
         """Used to perform approximate nearest neighbor search
         using the HNSW algorithm.
@@ -1158,8 +1165,13 @@ class ElasticsearchStore(VectorStore):
             hybrid: Optional. If True, will perform a hybrid search
                     using both the knn query and a text query.
                     Defaults to False.
+            rrf: Optional. If the hybrid argument is True, rrf(Reciprocal Rank Fusion) argument 
+                 could be passed for adjusting 'rank_constant' and 'window_size' 
+                 to combine multiple result sets with different relevance indicators 
+                 into a single result set.
+                 Defaults to {}.
         """
-        return ApproxRetrievalStrategy(query_model_id=query_model_id, hybrid=hybrid)
+        return ApproxRetrievalStrategy(query_model_id=query_model_id, hybrid=hybrid, rrf=rrf)
 
     @staticmethod
     def SparseVectorRetrievalStrategy(
