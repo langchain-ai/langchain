@@ -37,6 +37,8 @@ from langchain.schema.runnable.utils import (
 
 
 class DynamicRunnable(RunnableSerializable[Input, Output]):
+    """A Serializable Runnable that can be dynamically configured."""
+
     default: RunnableSerializable[Input, Output]
 
     class Config:
@@ -198,6 +200,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
 
 class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
+    """A Runnable that can be dynamically configured."""
+
     fields: Dict[str, AnyConfigurableField]
 
     @property
@@ -261,6 +265,8 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
 # Before Python 3.11 native StrEnum is not available
 class StrEnum(str, enum.Enum):
+    """A string enum."""
+
     pass
 
 
@@ -275,6 +281,8 @@ _enums_for_spec_lock = threading.Lock()
 
 
 class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
+    """A Runnable that can be dynamically configured."""
+
     which: ConfigurableField
 
     alternatives: Dict[str, RunnableSerializable[Input, Output]]
@@ -332,6 +340,8 @@ def make_options_spec(
     spec: Union[ConfigurableFieldSingleOption, ConfigurableFieldMultiOption],
     description: Optional[str],
 ) -> ConfigurableFieldSpec:
+    """Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or
+    ConfigurableFieldMultiOption."""
     with _enums_for_spec_lock:
         if enum := _enums_for_spec.get(spec):
             pass
