@@ -109,9 +109,8 @@ class HuggingFacePipeline(BaseLLM):
             ) from e
 
         if (
-            model.is_quantized
-            or model.model.is_loaded_in_4bit
-            or model.model.is_loaded_in_8bit
+            getattr(model, "is_loaded_in_4bit", False)
+            or getattr(model, "is_loaded_in_8bit", False)
         ) and device is not None:
             logger.warning(
                 f"Setting the `device` argument to None from {device} to avoid "

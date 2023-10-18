@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import threading
 from abc import abstractmethod
 from typing import (
     Any,
@@ -14,6 +15,7 @@ from typing import (
     Union,
     cast,
 )
+from weakref import WeakValueDictionary
 
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.runnable.base import Runnable, RunnableSerializable
@@ -262,6 +264,16 @@ class StrEnum(str, enum.Enum):
     pass
 
 
+_enums_for_spec: WeakValueDictionary[
+    Union[
+        ConfigurableFieldSingleOption, ConfigurableFieldMultiOption, ConfigurableField
+    ],
+    Type[StrEnum],
+] = WeakValueDictionary()
+
+_enums_for_spec_lock = threading.Lock()
+
+
 class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     which: ConfigurableField
 
@@ -271,10 +283,18 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
-        which_enum = StrEnum(  # type: ignore[call-overload]
-            self.which.name or self.which.id,
-            ((v, v) for v in list(self.alternatives.keys()) + [self.default_key]),
-        )
+        with _enums_for_spec_lock:
+            if which_enum := _enums_for_spec.get(self.which):
+                pass
+            else:
+                which_enum = StrEnum(  # type: ignore[call-overload]
+                    self.which.name or self.which.id,
+                    (
+                        (v, v)
+                        for v in list(self.alternatives.keys()) + [self.default_key]
+                    ),
+                )
+                _enums_for_spec[self.which] = cast(Type[StrEnum], which_enum)
         return [
             ConfigurableFieldSpec(
                 id=self.which.id,
@@ -312,10 +332,15 @@ def make_options_spec(
     spec: Union[ConfigurableFieldSingleOption, ConfigurableFieldMultiOption],
     description: Optional[str],
 ) -> ConfigurableFieldSpec:
-    enum = StrEnum(  # type: ignore[call-overload]
-        spec.name or spec.id,
-        ((v, v) for v in list(spec.options.keys())),
-    )
+    with _enums_for_spec_lock:
+        if enum := _enums_for_spec.get(spec):
+            pass
+        else:
+            enum = StrEnum(  # type: ignore[call-overload]
+                spec.name or spec.id,
+                ((v, v) for v in list(spec.options.keys())),
+            )
+            _enums_for_spec[spec] = cast(Type[StrEnum], enum)
     if isinstance(spec, ConfigurableFieldSingleOption):
         return ConfigurableFieldSpec(
             id=spec.id,
