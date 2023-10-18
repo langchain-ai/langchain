@@ -62,18 +62,24 @@ class QueryTransformer(Transformer):
         *args: Any,
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
-        attribute_info: Optional[Sequence[AttributeInfo]] = None,
+        attributes: Optional[Sequence[Union[AttributeInfo, dict]]] = None,
         **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
         self.allowed_comparators = allowed_comparators
         self.allowed_operators = allowed_operators
+        self.allowed_attributes = []
         self.virtual_column_names: Optional[Dict[str, VirtualColumnName]]
-        if attribute_info:
+        if attributes:
+            for n in attributes:
+                if type(n) is AttributeInfo:
+                    self.allowed_attributes.append(n.name)
+                elif type(n) is dict:
+                    self.allowed_attributes.append(n["name"])
             self.virtual_column_names = {
                 str(i.name): i.name
-                for i in attribute_info
-                if type(i.name) is VirtualColumnName
+                for i in attributes
+                if type(i) is AttributeInfo and type(i.name) is VirtualColumnName
             }
         else:
             self.virtual_column_names = None
@@ -84,6 +90,11 @@ class QueryTransformer(Transformer):
     def func_call(self, func_name: Any, args: list) -> FilterDirective:
         func = self._match_func_name(str(func_name))
         if isinstance(func, Comparator):
+            if self.allowed_attributes and args[0] not in self.allowed_attributes:
+                raise ValueError(
+                    f"Received invalid attributes {args[0]}. Allowed attributes are "
+                    f"{self.allowed_attributes}"
+                )
             _attr_name = args[0]
             if self.virtual_column_names:
                 if args[0] in self.virtual_column_names:
@@ -149,7 +160,7 @@ class QueryTransformer(Transformer):
 def get_parser(
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
-    attribute_info: Optional[Sequence[AttributeInfo]] = None,
+    attributes: Optional[Sequence[Union[AttributeInfo, dict]]] = None,
 ) -> Lark:
     """
     Returns a parser for the query language.
@@ -169,6 +180,6 @@ def get_parser(
     transformer = QueryTransformer(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,
-        attribute_info=attribute_info,
+        attributes=attributes,
     )
     return Lark(GRAMMAR, parser="lalr", transformer=transformer, start="program")

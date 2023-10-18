@@ -11,10 +11,10 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Union,
     cast,
 )
 
-import langchain
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -23,6 +23,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
+from langchain.globals import get_llm_cache
 from langchain.load.dump import dumpd, dumps
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
@@ -39,14 +40,43 @@ from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     BaseMessageChunk,
+    ChatMessage,
+    FunctionMessage,
     HumanMessage,
+    SystemMessage,
 )
 from langchain.schema.output import ChatGenerationChunk
 from langchain.schema.runnable import RunnableConfig
 
 
 def _get_verbosity() -> bool:
-    return langchain.verbose
+    from langchain.globals import get_verbose
+
+    return get_verbose()
+
+
+def _generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
+    generation: Optional[ChatGenerationChunk] = None
+    for chunk in stream:
+        if generation is None:
+            generation = chunk
+        else:
+            generation += chunk
+    assert generation is not None
+    return ChatResult(generations=[generation])
+
+
+async def _agenerate_from_stream(
+    stream: AsyncIterator[ChatGenerationChunk],
+) -> ChatResult:
+    generation: Optional[ChatGenerationChunk] = None
+    async for chunk in stream:
+        if generation is None:
+            generation = chunk
+        else:
+            generation += chunk
+    assert generation is not None
+    return ChatResult(generations=[generation])
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
@@ -83,6 +113,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
 
     # --- Runnable methods ---
 
+    @property
+    def OutputType(self) -> Any:
+        """Get the output type for this runnable."""
+        return Union[
+            HumanMessage, AIMessage, ChatMessage, FunctionMessage, SystemMessage
+        ]
+
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
         if isinstance(input, PromptValue):
             return input
@@ -115,6 +152,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                     callbacks=config.get("callbacks"),
                     tags=config.get("tags"),
                     metadata=config.get("metadata"),
+                    run_name=config.get("run_name"),
                     **kwargs,
                 ).generations[0][0],
             ).message,
@@ -128,12 +166,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> BaseMessageChunk:
-        if type(self)._agenerate == BaseChatModel._agenerate:
-            # model doesn't implement async generation, so use default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, stop=stop, **kwargs)
-            )
-
         config = config or {}
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
@@ -141,6 +173,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
             **kwargs,
         )
         return cast(
@@ -173,7 +206,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_chat_model_start(
-                dumpd(self), [messages], invocation_params=params, options=options
+                dumpd(self),
+                [messages],
+                invocation_params=params,
+                options=options,
+                name=config.get("run_name"),
             )
             try:
                 generation: Optional[ChatGenerationChunk] = None
@@ -186,7 +223,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                     else:
                         generation += chunk
                 assert generation is not None
-            except (KeyboardInterrupt, Exception) as e:
+            except BaseException as e:
                 run_manager.on_llm_error(e)
                 raise e
             else:
@@ -220,7 +257,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 self.metadata,
             )
             (run_manager,) = await callback_manager.on_chat_model_start(
-                dumpd(self), [messages], invocation_params=params, options=options
+                dumpd(self),
+                [messages],
+                invocation_params=params,
+                options=options,
+                name=config.get("run_name"),
             )
             try:
                 generation: Optional[ChatGenerationChunk] = None
@@ -233,7 +274,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                     else:
                         generation += chunk
                 assert generation is not None
-            except (KeyboardInterrupt, Exception) as e:
+            except BaseException as e:
                 await run_manager.on_llm_error(e)
                 raise e
             else:
@@ -256,7 +297,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         return {**params, **kwargs}
 
     def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
-        if self.lc_serializable:
+        if self.is_lc_serializable():
             params = {**kwargs, **{"stop": stop}}
             param_string = str(sorted([(k, v) for k, v in params.items()]))
             llm_string = dumps(self)
@@ -274,6 +315,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
@@ -290,7 +332,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
             self.metadata,
         )
         run_managers = callback_manager.on_chat_model_start(
-            dumpd(self), messages, invocation_params=params, options=options
+            dumpd(self),
+            messages,
+            invocation_params=params,
+            options=options,
+            name=run_name,
         )
         results = []
         for i, m in enumerate(messages):
@@ -303,7 +349,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                         **kwargs,
                     )
                 )
-            except (KeyboardInterrupt, Exception) as e:
+            except BaseException as e:
                 if run_managers:
                     run_managers[i].on_llm_error(e)
                 raise e
@@ -330,6 +376,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
@@ -347,7 +394,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         )
 
         run_managers = await callback_manager.on_chat_model_start(
-            dumpd(self), messages, invocation_params=params, options=options
+            dumpd(self),
+            messages,
+            invocation_params=params,
+            options=options,
+            name=run_name,
         )
 
         results = await asyncio.gather(
@@ -364,7 +415,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         )
         exceptions = []
         for i, res in enumerate(results):
-            if isinstance(res, Exception):
+            if isinstance(res, BaseException):
                 if run_managers:
                     await run_managers[i].on_llm_error(res)
                 exceptions.append(res)
@@ -436,7 +487,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
             "run_manager"
         )
         disregard_cache = self.cache is not None and not self.cache
-        if langchain.llm_cache is None or disregard_cache:
+        llm_cache = get_llm_cache()
+        if llm_cache is None or disregard_cache:
             # This happens when langchain.cache is None, but self.cache is True
             if self.cache is not None and self.cache:
                 raise ValueError(
@@ -451,7 +503,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         else:
             llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
-            cache_val = langchain.llm_cache.lookup(prompt, llm_string)
+            cache_val = llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 return ChatResult(generations=cache_val)
             else:
@@ -461,7 +513,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                     )
                 else:
                     result = self._generate(messages, stop=stop, **kwargs)
-                langchain.llm_cache.update(prompt, llm_string, result.generations)
+                llm_cache.update(prompt, llm_string, result.generations)
                 return result
 
     async def _agenerate_with_cache(
@@ -475,7 +527,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
             "run_manager"
         )
         disregard_cache = self.cache is not None and not self.cache
-        if langchain.llm_cache is None or disregard_cache:
+        llm_cache = get_llm_cache()
+        if llm_cache is None or disregard_cache:
             # This happens when langchain.cache is None, but self.cache is True
             if self.cache is not None and self.cache:
                 raise ValueError(
@@ -490,7 +543,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         else:
             llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
-            cache_val = langchain.llm_cache.lookup(prompt, llm_string)
+            cache_val = llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 return ChatResult(generations=cache_val)
             else:
@@ -500,7 +553,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                     )
                 else:
                     result = await self._agenerate(messages, stop=stop, **kwargs)
-                langchain.llm_cache.update(prompt, llm_string, result.generations)
+                llm_cache.update(prompt, llm_string, result.generations)
                 return result
 
     @abstractmethod
@@ -521,7 +574,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call"""
-        raise NotImplementedError()
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self._generate, **kwargs), messages, stop, run_manager
+        )
 
     def _stream(
         self,

@@ -30,6 +30,12 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+# Google GitHub Actions credentials files created by:
+# https://github.com/google-github-actions/auth
+#
+# That action recommends adding this gitignore to prevent accidentally committing keys.
+gha-creds-*.json
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -168,6 +174,7 @@ docs/api_reference/*/
 !docs/api_reference/_static/
 !docs/api_reference/templates/
 !docs/api_reference/themes/
-docs/docs_skeleton/build
-docs/docs_skeleton/node_modules
-docs/docs_skeleton/yarn.lock
+docs/docs/build
+docs/docs/node_modules
+docs/docs/yarn.lock
+_dist

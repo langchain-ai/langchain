@@ -5,12 +5,14 @@ import functools
 import logging
 import os
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
+    Coroutine,
     Dict,
     Generator,
     List,
@@ -25,7 +27,6 @@ from uuid import UUID
 
 from tenacity import RetryCallState
 
-import langchain
 from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -39,7 +40,9 @@ from langchain.callbacks.base import (
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import run_collector
-from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.tracers.langchain import (
+    LangChainTracer,
+)
 from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.callbacks.tracers.wandb import WandbTracer
@@ -84,7 +87,9 @@ run_collector_var: ContextVar[
 
 
 def _get_debug() -> bool:
-    return langchain.debug
+    from langchain.globals import get_debug
+
+    return get_debug()
 
 
 @contextmanager
@@ -159,7 +164,7 @@ def tracing_v2_enabled(
     example_id: Optional[Union[str, UUID]] = None,
     tags: Optional[List[str]] = None,
     client: Optional[LangSmithClient] = None,
-) -> Generator[None, None, None]:
+) -> Generator[LangChainTracer, None, None]:
     """Instruct LangChain to log all runs in context to LangSmith.
 
     Args:
@@ -176,6 +181,12 @@ def tracing_v2_enabled(
     Example:
         >>> with tracing_v2_enabled():
         ...     # LangChain code will automatically be traced
+
+        You can use this to fetch the LangSmith run URL:
+
+        >>> with tracing_v2_enabled() as cb:
+        ...     chain.invoke("foo")
+        ...     run_url = cb.get_run_url()
     """
     if isinstance(example_id, str):
         example_id = UUID(example_id)
@@ -186,7 +197,7 @@ def tracing_v2_enabled(
         client=client,
     )
     tracing_v2_callback_var.set(cb)
-    yield
+    yield cb
     tracing_v2_callback_var.set(None)
 
 
@@ -213,17 +224,20 @@ def trace_as_chain_group(
     group_name: str,
     callback_manager: Optional[CallbackManager] = None,
     *,
+    inputs: Optional[Dict[str, Any]] = None,
     project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
     run_id: Optional[UUID] = None,
     tags: Optional[List[str]] = None,
-) -> Generator[CallbackManager, None, None]:
+) -> Generator[CallbackManagerForChainGroup, None, None]:
     """Get a callback manager for a chain group in a context manager.
     Useful for grouping different calls together as a single run even if
     they aren't composed in a single chain.
 
     Args:
         group_name (str): The name of the chain group.
+        callback_manager (CallbackManager, optional): The callback manager to use.
+        inputs (Dict[str, Any], optional): The inputs to the chain group.
         project_name (str, optional): The name of the project.
             Defaults to None.
         example_id (str or UUID, optional): The ID of the example.
@@ -233,13 +247,17 @@ def trace_as_chain_group(
             Defaults to None.
 
     Returns:
-        CallbackManager: The callback manager for the chain group.
+        CallbackManagerForChainGroup: The callback manager for the chain group.
 
     Example:
-        >>> with trace_as_chain_group("group_name") as manager:
-        ...     # Use the callback manager for the chain group
-        ...     llm.predict("Foo", callbacks=manager)
-    """
+        .. code-block:: python
+
+            llm_input = "Foo"
+            with trace_as_chain_group("group_name", inputs={"input": llm_input}) as manager:
+                # Use the callback manager for the chain group
+                res = llm.predict(llm_input, callbacks=manager)
+                manager.on_chain_end({"output": res})
+    """  # noqa: E501
     cb = cast(
         Callbacks,
         [
@@ -256,9 +274,27 @@ def trace_as_chain_group(
         inheritable_tags=tags,
     )
 
-    run_manager = cm.on_chain_start({"name": group_name}, {}, run_id=run_id)
-    yield run_manager.get_child()
-    run_manager.on_chain_end({})
+    run_manager = cm.on_chain_start({"name": group_name}, inputs or {}, run_id=run_id)
+    child_cm = run_manager.get_child()
+    group_cm = CallbackManagerForChainGroup(
+        child_cm.handlers,
+        child_cm.inheritable_handlers,
+        child_cm.parent_run_id,
+        parent_run_manager=run_manager,
+        tags=child_cm.tags,
+        inheritable_tags=child_cm.inheritable_tags,
+        metadata=child_cm.metadata,
+        inheritable_metadata=child_cm.inheritable_metadata,
+    )
+    try:
+        yield group_cm
+    except Exception as e:
+        if not group_cm.ended:
+            run_manager.on_chain_error(e)
+        raise e
+    else:
+        if not group_cm.ended:
+            run_manager.on_chain_end({})
 
 
 @asynccontextmanager
@@ -266,17 +302,20 @@ async def atrace_as_chain_group(
     group_name: str,
     callback_manager: Optional[AsyncCallbackManager] = None,
     *,
+    inputs: Optional[Dict[str, Any]] = None,
     project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
     run_id: Optional[UUID] = None,
     tags: Optional[List[str]] = None,
-) -> AsyncGenerator[AsyncCallbackManager, None]:
+) -> AsyncGenerator[AsyncCallbackManagerForChainGroup, None]:
     """Get an async callback manager for a chain group in a context manager.
     Useful for grouping different async calls together as a single run even if
     they aren't composed in a single chain.
 
     Args:
         group_name (str): The name of the chain group.
+        callback_manager (AsyncCallbackManager, optional): The async callback manager to use,
+            which manages tracing and other callback behavior.
         project_name (str, optional): The name of the project.
             Defaults to None.
         example_id (str or UUID, optional): The ID of the example.
@@ -288,10 +327,14 @@ async def atrace_as_chain_group(
         AsyncCallbackManager: The async callback manager for the chain group.
 
     Example:
-        >>> async with atrace_as_chain_group("group_name") as manager:
-        ...     # Use the async callback manager for the chain group
-        ...     await llm.apredict("Foo", callbacks=manager)
-    """
+        .. code-block:: python
+
+            llm_input = "Foo"
+            async with atrace_as_chain_group("group_name", inputs={"input": llm_input}) as manager:
+                # Use the async callback manager for the chain group
+                res = await llm.apredict(llm_input, callbacks=manager)
+                await manager.on_chain_end({"output": res})
+    """  # noqa: E501
     cb = cast(
         Callbacks,
         [
@@ -305,11 +348,29 @@ async def atrace_as_chain_group(
     )
     cm = AsyncCallbackManager.configure(inheritable_callbacks=cb, inheritable_tags=tags)
 
-    run_manager = await cm.on_chain_start({"name": group_name}, {}, run_id=run_id)
+    run_manager = await cm.on_chain_start(
+        {"name": group_name}, inputs or {}, run_id=run_id
+    )
+    child_cm = run_manager.get_child()
+    group_cm = AsyncCallbackManagerForChainGroup(
+        child_cm.handlers,
+        child_cm.inheritable_handlers,
+        child_cm.parent_run_id,
+        parent_run_manager=run_manager,
+        tags=child_cm.tags,
+        inheritable_tags=child_cm.inheritable_tags,
+        metadata=child_cm.metadata,
+        inheritable_metadata=child_cm.inheritable_metadata,
+    )
     try:
-        yield run_manager.get_child()
-    finally:
-        await run_manager.on_chain_end({})
+        yield group_cm
+    except Exception as e:
+        if not group_cm.ended:
+            await run_manager.on_chain_error(e)
+        raise e
+    else:
+        if not group_cm.ended:
+            await run_manager.on_chain_end({})
 
 
 def _handle_event(
@@ -320,37 +381,84 @@ def _handle_event(
     **kwargs: Any,
 ) -> None:
     """Generic event handler for CallbackManager."""
-    message_strings: Optional[List[str]] = None
-    for handler in handlers:
-        try:
-            if ignore_condition_name is None or not getattr(
-                handler, ignore_condition_name
-            ):
-                getattr(handler, event_name)(*args, **kwargs)
-        except NotImplementedError as e:
-            if event_name == "on_chat_model_start":
-                if message_strings is None:
-                    message_strings = [get_buffer_string(m) for m in args[1]]
-                _handle_event(
-                    [handler],
-                    "on_llm_start",
-                    "ignore_llm",
-                    args[0],
-                    message_strings,
-                    *args[2:],
-                    **kwargs,
-                )
-            else:
+    coros: List[Coroutine[Any, Any, Any]] = []
+
+    try:
+        message_strings: Optional[List[str]] = None
+        for handler in handlers:
+            try:
+                if ignore_condition_name is None or not getattr(
+                    handler, ignore_condition_name
+                ):
+                    event = getattr(handler, event_name)(*args, **kwargs)
+                    if asyncio.iscoroutine(event):
+                        coros.append(event)
+            except NotImplementedError as e:
+                if event_name == "on_chat_model_start":
+                    if message_strings is None:
+                        message_strings = [get_buffer_string(m) for m in args[1]]
+                    _handle_event(
+                        [handler],
+                        "on_llm_start",
+                        "ignore_llm",
+                        args[0],
+                        message_strings,
+                        *args[2:],
+                        **kwargs,
+                    )
+                else:
+                    handler_name = handler.__class__.__name__
+                    logger.warning(
+                        f"NotImplementedError in {handler_name}.{event_name}"
+                        f" callback: {e}"
+                    )
+            except Exception as e:
                 logger.warning(
-                    f"NotImplementedError in {handler.__class__.__name__}.{event_name}"
-                    f" callback: {e}"
+                    f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
                 )
-        except Exception as e:
-            logger.warning(
-                f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
-            )
-            if handler.raise_error:
-                raise e
+                if handler.raise_error:
+                    raise e
+    finally:
+        if coros:
+            try:
+                # Raises RuntimeError if there is no current event loop.
+                asyncio.get_running_loop()
+                loop_running = True
+            except RuntimeError:
+                loop_running = False
+
+            if loop_running:
+                # If we try to submit this coroutine to the running loop
+                # we end up in a deadlock, as we'd have gotten here from a
+                # running coroutine, which we cannot interrupt to run this one.
+                # The solution is to create a new loop in a new thread.
+                with ThreadPoolExecutor(1) as executor:
+                    executor.submit(_run_coros, coros).result()
+            else:
+                _run_coros(coros)
+
+
+def _run_coros(coros: List[Coroutine[Any, Any, Any]]) -> None:
+    if hasattr(asyncio, "Runner"):
+        # Python 3.11+
+        # Run the coroutines in a new event loop, taking care to
+        # - install signal handlers
+        # - run pending tasks scheduled by `coros`
+        # - close asyncgens and executors
+        # - close the loop
+        with asyncio.Runner() as runner:
+            # Run the coroutine, get the result
+            for coro in coros:
+                runner.run(coro)
+
+            # Run pending tasks scheduled by coros until they are all done
+            while pending := asyncio.all_tasks(runner.get_loop()):
+                runner.run(asyncio.wait(pending))
+    else:
+        # Before Python 3.11 we need to run each coroutine in a new event loop
+        # as the Runner api is not available.
+        for coro in coros:
+            asyncio.run(coro)
 
 
 async def _ahandle_event_for_handler(
@@ -657,7 +765,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
     def on_llm_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when LLM errors.
@@ -723,7 +831,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
     async def on_llm_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when LLM errors.
@@ -935,7 +1043,7 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
 
     def on_tool_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when tool errors.
@@ -977,7 +1085,7 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
 
     async def on_tool_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when tool errors.
@@ -1019,7 +1127,7 @@ class CallbackManagerForRetrieverRun(ParentRunManager, RetrieverManagerMixin):
 
     def on_retriever_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when retriever errors."""
@@ -1058,7 +1166,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
     async def on_retriever_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when retriever errors."""
@@ -1075,7 +1183,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
 
 class CallbackManager(BaseCallbackManager):
-    """Callback manager that handles callbacks from langchain."""
+    """Callback manager that handles callbacks from LangChain."""
 
     def on_llm_start(
         self,
@@ -1340,6 +1448,50 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata,
             local_metadata,
         )
+
+
+class CallbackManagerForChainGroup(CallbackManager):
+    """Callback manager for the chain group."""
+
+    def __init__(
+        self,
+        handlers: List[BaseCallbackHandler],
+        inheritable_handlers: List[BaseCallbackHandler] | None = None,
+        parent_run_id: UUID | None = None,
+        *,
+        parent_run_manager: CallbackManagerForChainRun,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            handlers,
+            inheritable_handlers,
+            parent_run_id,
+            **kwargs,
+        )
+        self.parent_run_manager = parent_run_manager
+        self.ended = False
+
+    def on_chain_end(self, outputs: Union[Dict[str, Any], Any], **kwargs: Any) -> None:
+        """Run when traced chain group ends.
+
+        Args:
+            outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
+        """
+        self.ended = True
+        return self.parent_run_manager.on_chain_end(outputs, **kwargs)
+
+    def on_chain_error(
+        self,
+        error: BaseException,
+        **kwargs: Any,
+    ) -> None:
+        """Run when chain errors.
+
+        Args:
+            error (Exception or KeyboardInterrupt): The error.
+        """
+        self.ended = True
+        return self.parent_run_manager.on_chain_error(error, **kwargs)
 
 
 class AsyncCallbackManager(BaseCallbackManager):
@@ -1634,6 +1786,52 @@ class AsyncCallbackManager(BaseCallbackManager):
         )
 
 
+class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
+    """Async callback manager for the chain group."""
+
+    def __init__(
+        self,
+        handlers: List[BaseCallbackHandler],
+        inheritable_handlers: List[BaseCallbackHandler] | None = None,
+        parent_run_id: UUID | None = None,
+        *,
+        parent_run_manager: AsyncCallbackManagerForChainRun,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            handlers,
+            inheritable_handlers,
+            parent_run_id,
+            **kwargs,
+        )
+        self.parent_run_manager = parent_run_manager
+        self.ended = False
+
+    async def on_chain_end(
+        self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
+    ) -> None:
+        """Run when traced chain group ends.
+
+        Args:
+            outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
+        """
+        self.ended = True
+        await self.parent_run_manager.on_chain_end(outputs, **kwargs)
+
+    async def on_chain_error(
+        self,
+        error: BaseException,
+        **kwargs: Any,
+    ) -> None:
+        """Run when chain errors.
+
+        Args:
+            error (Exception or KeyboardInterrupt): The error.
+        """
+        self.ended = True
+        await self.parent_run_manager.on_chain_error(error, **kwargs)
+
+
 T = TypeVar("T", CallbackManager, AsyncCallbackManager)
 
 
@@ -1694,13 +1892,13 @@ def _configure(
             )
         else:
             callback_manager = callback_manager_cls(
-                handlers=inheritable_callbacks.handlers,
-                inheritable_handlers=inheritable_callbacks.inheritable_handlers,
+                handlers=inheritable_callbacks.handlers.copy(),
+                inheritable_handlers=inheritable_callbacks.inheritable_handlers.copy(),
                 parent_run_id=inheritable_callbacks.parent_run_id,
-                tags=inheritable_callbacks.tags,
-                inheritable_tags=inheritable_callbacks.inheritable_tags,
-                metadata=inheritable_callbacks.metadata,
-                inheritable_metadata=inheritable_callbacks.inheritable_metadata,
+                tags=inheritable_callbacks.tags.copy(),
+                inheritable_tags=inheritable_callbacks.inheritable_tags.copy(),
+                metadata=inheritable_callbacks.metadata.copy(),
+                inheritable_metadata=inheritable_callbacks.inheritable_metadata.copy(),
             )
         local_handlers_ = (
             local_callbacks
@@ -1794,7 +1992,7 @@ def _configure(
                         e,
                     )
         if open_ai is not None and not any(
-            isinstance(handler, OpenAICallbackHandler)
+            handler is open_ai  # direct pointer comparison
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(open_ai, True)

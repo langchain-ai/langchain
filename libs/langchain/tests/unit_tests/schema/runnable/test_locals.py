@@ -2,11 +2,12 @@ from typing import Any, Callable, Type
 
 import pytest
 
-from langchain import PromptTemplate
 from langchain.llms import FakeListLLM
+from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import (
     GetLocalVar,
     PutLocalVar,
+    Runnable,
     RunnablePassthrough,
     RunnableSequence,
 )
@@ -52,12 +53,12 @@ def test_incorrect_usage(runnable: RunnableSequence, error: Type[Exception]) -> 
 
 
 def test_get_in_map() -> None:
-    runnable: RunnableSequence = PutLocalVar("input") | {"bar": GetLocalVar("input")}
+    runnable: Runnable = PutLocalVar("input") | {"bar": GetLocalVar("input")}
     assert runnable.invoke("foo") == {"bar": "foo"}
 
 
 def test_put_in_map() -> None:
-    runnable: RunnableSequence = {"bar": PutLocalVar("input")} | GetLocalVar("input")
+    runnable: Runnable = {"bar": PutLocalVar("input")} | GetLocalVar("input")
     with pytest.raises(KeyError):
         runnable.invoke("foo")
 

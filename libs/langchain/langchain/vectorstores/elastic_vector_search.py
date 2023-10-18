@@ -1,4 +1,3 @@
-"""[DEPRECATED] Please use ElasticsearchStore instead."""
 from __future__ import annotations
 
 import uuid
@@ -17,9 +16,9 @@ from typing import (
 
 from langchain._api import deprecated
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -51,9 +50,19 @@ def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> 
     }
 
 
-@deprecated("0.0.265", alternative="ElasticsearchStore class.", pending=True)
 class ElasticVectorSearch(VectorStore):
-    """[DEPRECATED] `Elasticsearch` vector store.
+    """
+
+    ElasticVectorSearch uses the brute force method of searching on vectors.
+
+    Recommended to use ElasticsearchStore instead, which gives you the option
+    to uses the approx  HNSW algorithm which performs better on large datasets.
+
+    ElasticsearchStore also supports metadata filtering, customising the
+    query retriever and much more!
+
+    You can read more on ElasticsearchStore:
+    https://python.langchain.com/docs/integrations/vectorstores/elasticsearch
 
     To connect to an `Elasticsearch` instance that does not require
     login credentials, pass the Elasticsearch URL and index name along with the
@@ -62,7 +71,7 @@ class ElasticVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain import ElasticVectorSearch
+            from langchain.vectorstores import ElasticVectorSearch
             from langchain.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
@@ -98,7 +107,7 @@ class ElasticVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain import ElasticVectorSearch
+            from langchain.vectorstores import ElasticVectorSearch
             from langchain.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
@@ -282,7 +291,7 @@ class ElasticVectorSearch(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import ElasticVectorSearch
+                from langchain.vectorstores import ElasticVectorSearch
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 elastic_vector_search = ElasticVectorSearch.from_texts(
@@ -339,9 +348,16 @@ class ElasticVectorSearch(VectorStore):
             self.client.delete(index=self.index_name, id=id)
 
 
+@deprecated("0.0.265", alternative="ElasticsearchStore class.", pending=True)
 class ElasticKnnSearch(VectorStore):
     """[DEPRECATED] `Elasticsearch` with k-nearest neighbor search
     (`k-NN`) vector store.
+
+    Recommended to use ElasticsearchStore instead, which supports
+    metadata filtering, customising the query retriever and much more!
+
+    You can read more on ElasticsearchStore:
+    https://python.langchain.com/docs/integrations/vectorstores/elasticsearch
 
     It creates an Elasticsearch index of text data that
     can be searched using k-NN search. The text data is transformed into

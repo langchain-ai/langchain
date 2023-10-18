@@ -21,7 +21,7 @@ class GoogleSerperAPIWrapper(BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import GoogleSerperAPIWrapper
+            from langchain.utilities import GoogleSerperAPIWrapper
             google_serper = GoogleSerperAPIWrapper()
     """
 

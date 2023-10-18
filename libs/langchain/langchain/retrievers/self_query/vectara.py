@@ -12,6 +12,7 @@ from langchain.chains.query_constructor.schema import VirtualColumnName
 
 
 def process_value(value: Union[int, float, str]) -> str:
+    """Convert a value to a string and add single quotes if it is a string."""
     if isinstance(value, str):
         return f"'{value}'"
     else:

@@ -23,12 +23,17 @@ import numpy as np
 import sqlalchemy
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.orm import Session
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -523,7 +528,7 @@ class PGVector(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import PGVector
+                from langchain.vectorstores import PGVector
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
@@ -555,7 +560,7 @@ class PGVector(VectorStore):
         **kwargs: Any,
     ) -> PGVector:
         """
-        Get intsance of an existing PGVector store.This method will
+        Get instance of an existing PGVector store.This method will
         return the instance of the store without inserting any new
         embeddings
         """

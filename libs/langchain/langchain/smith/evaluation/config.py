@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional, Union
 
 from langsmith import RunEvaluator
 
-from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
 from langchain.evaluation.embedding_distance.base import (
     EmbeddingDistance as EmbeddingDistanceEnum,
@@ -14,6 +13,7 @@ from langchain.evaluation.string_distance.base import (
     StringDistance as StringDistanceEnum,
 )
 from langchain.pydantic_v1 import BaseModel, Field
+from langchain.schema.embeddings import Embeddings
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 
@@ -261,4 +261,70 @@ class RunEvalConfig(BaseModel):
 
         evaluator_type: EvaluatorType = EvaluatorType.JSON_EQUALITY
 
-    # TODO: Trajectory
+    class ExactMatch(EvalConfig):
+        """Configuration for an exact match string evaluator.
+
+        Parameters
+        ----------
+        ignore_case : bool
+            Whether to ignore case when comparing strings.
+        ignore_punctuation : bool
+            Whether to ignore punctuation when comparing strings.
+        ignore_numbers : bool
+            Whether to ignore numbers when comparing strings.
+        """
+
+        evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
+        ignore_case: bool = False
+        ignore_punctuation: bool = False
+        ignore_numbers: bool = False
+
+    class RegexMatch(EvalConfig):
+        """Configuration for a regex match string evaluator.
+
+        Parameters
+        ----------
+        flags : int
+            The flags to pass to the regex. Example: re.IGNORECASE.
+        """
+
+        evaluator_type: EvaluatorType = EvaluatorType.REGEX_MATCH
+        flags: int = 0
+
+    class ScoreString(EvalConfig):
+        """Configuration for a score string evaluator.
+        This is like the criteria evaluator but it is configured by
+        default to return a score on the scale from 1-10.
+
+        It is recommended to normalize these scores
+        by setting `normalize_by` to 10.
+
+        Parameters
+        ----------
+        criteria : Optional[CRITERIA_TYPE]
+            The criteria to evaluate.
+        llm : Optional[BaseLanguageModel]
+            The language model to use for the evaluation chain.
+        normalize_by: Optional[int] = None
+            If you want to normalize the score, the denominator to use.
+            If not provided, the score will be between 1 and 10 (by default).
+        prompt : Optional[BasePromptTemplate]
+
+        """
+
+        evaluator_type: EvaluatorType = EvaluatorType.SCORE_STRING
+        criteria: Optional[CRITERIA_TYPE] = None
+        llm: Optional[BaseLanguageModel] = None
+        normalize_by: Optional[float] = None
+        prompt: Optional[BasePromptTemplate] = None
+
+        def __init__(
+            self,
+            criteria: Optional[CRITERIA_TYPE] = None,
+            normalize_by: Optional[float] = None,
+            **kwargs: Any
+        ) -> None:
+            super().__init__(criteria=criteria, normalize_by=normalize_by, **kwargs)
+
+    class LabeledScoreString(ScoreString):
+        evaluator_type: EvaluatorType = EvaluatorType.LABELED_SCORE_STRING

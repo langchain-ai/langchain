@@ -24,7 +24,7 @@ CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE type = "RELATIONSHIP" AND elementType = "node"
 UNWIND other AS other_node
-RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other_node) + ")" AS output
+RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 
@@ -45,7 +45,8 @@ class Neo4jGraph:
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
-        self.schema = ""
+        self.schema: str = ""
+        self.structured_schema: Dict[str, Any] = {}
         # Verify connection
         try:
             self._driver.verify_connectivity()
@@ -69,11 +70,6 @@ class Neo4jGraph:
                 "'apoc.meta.data()' is allowed in Neo4j configuration "
             )
 
-    @property
-    def get_schema(self) -> str:
-        """Returns the schema of the Neo4j database"""
-        return self.schema
-
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""
         from neo4j.exceptions import CypherSyntaxError
@@ -89,17 +85,22 @@ class Neo4jGraph:
         """
         Refreshes the Neo4j graph schema information.
         """
-        node_properties = self.query(node_properties_query)
-        relationships_properties = self.query(rel_properties_query)
-        relationships = self.query(rel_query)
+        node_properties = [el["output"] for el in self.query(node_properties_query)]
+        rel_properties = [el["output"] for el in self.query(rel_properties_query)]
+        relationships = [el["output"] for el in self.query(rel_query)]
 
+        self.structured_schema = {
+            "node_props": {el["labels"]: el["properties"] for el in node_properties},
+            "rel_props": {el["type"]: el["properties"] for el in rel_properties},
+            "relationships": relationships,
+        }
         self.schema = f"""
         Node properties are the following:
-        {[el['output'] for el in node_properties]}
+        {node_properties}
         Relationship properties are the following:
-        {[el['output'] for el in relationships_properties]}
+        {rel_properties}
         The relationships are the following:
-        {[el['output'] for el in relationships]}
+        {[f"(:{el['start']})-[:{el['type']}]->(:{el['end']})" for el in relationships]}
         """
 
     def add_graph_documents(

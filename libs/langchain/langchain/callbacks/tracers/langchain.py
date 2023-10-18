@@ -6,13 +6,20 @@ import os
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
+from langsmith.utils import LangSmithError
+from tenacity import (
+    Retrying,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run, TracerSession
+from langchain.callbacks.tracers.schemas import Run
 from langchain.env import get_runtime_environment
 from langchain.load.dump import dumpd
 from langchain.schema.messages import BaseMessage
@@ -21,8 +28,7 @@ logger = logging.getLogger(__name__)
 _LOGGED = set()
 _TRACERS: weakref.WeakSet[LangChainTracer] = weakref.WeakSet()
 _CLIENT: Optional[Client] = None
-_MAX_EXECUTORS = 10  # TODO: Remove once write queue is implemented
-_EXECUTORS: List[ThreadPoolExecutor] = []
+_EXECUTOR: Optional[ThreadPoolExecutor] = None
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -50,6 +56,14 @@ def get_client() -> Client:
     return _CLIENT
 
 
+def _get_executor() -> ThreadPoolExecutor:
+    """Get the executor."""
+    global _EXECUTOR
+    if _EXECUTOR is None:
+        _EXECUTOR = ThreadPoolExecutor()
+    return _EXECUTOR
+
+
 class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
@@ -64,28 +78,17 @@ class LangChainTracer(BaseTracer):
     ) -> None:
         """Initialize the LangChain tracer."""
         super().__init__(**kwargs)
-        self.session: Optional[TracerSession] = None
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
         self.project_name = project_name or os.getenv(
             "LANGCHAIN_PROJECT", os.getenv("LANGCHAIN_SESSION", "default")
         )
-        if use_threading:
-            global _MAX_EXECUTORS
-            if len(_EXECUTORS) < _MAX_EXECUTORS:
-                self.executor: Optional[ThreadPoolExecutor] = ThreadPoolExecutor(
-                    max_workers=1
-                )
-                _EXECUTORS.append(self.executor)
-            else:
-                self.executor = _EXECUTORS.pop(0)
-                _EXECUTORS.append(self.executor)
-        else:
-            self.executor = None
         self.client = client or get_client()
-        self._futures: Set[Future] = set()
+        self._futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.tags = tags or []
+        self.executor = _get_executor() if use_threading else None
+        self.latest_run: Optional[Run] = None
         global _TRACERS
         _TRACERS.add(self)
 
@@ -98,6 +101,7 @@ class LangChainTracer(BaseTracer):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
@@ -118,12 +122,33 @@ class LangChainTracer(BaseTracer):
             child_execution_order=execution_order,
             run_type="llm",
             tags=tags,
+            name=name,
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
 
     def _persist_run(self, run: Run) -> None:
-        """The Langchain Tracer uses Post/Patch rather than persist."""
+        run_ = run.copy()
+        run_.reference_example_id = self.example_id
+        self.latest_run = run_
+
+    def get_run_url(self) -> str:
+        """Get the LangSmith root run URL"""
+        if not self.latest_run:
+            raise ValueError("No traced run found.")
+        # If this is the first run in a project, the project may not yet be created.
+        # This method is only really useful for debugging flows, so we will assume
+        # there is some tolerace for latency.
+        for attempt in Retrying(
+            stop=stop_after_attempt(5),
+            wait=wait_exponential_jitter(),
+            retry=retry_if_exception_type(LangSmithError),
+        ):
+            with attempt:
+                return self.client.get_run_url(
+                    run=self.latest_run, project_name=self.project_name
+                )
+        raise ValueError("Failed to get run URL.")
 
     def _get_tags(self, run: Run) -> List[str]:
         """Get combined tags for a run."""
@@ -227,7 +252,4 @@ class LangChainTracer(BaseTracer):
 
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
-        futures = list(self._futures)
-        wait(futures)
-        for future in futures:
-            self._futures.remove(future)
+        wait(self._futures)

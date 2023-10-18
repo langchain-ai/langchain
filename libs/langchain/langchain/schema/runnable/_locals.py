@@ -11,8 +11,7 @@ from typing import (
     Union,
 )
 
-from langchain.load.serializable import Serializable
-from langchain.schema.runnable.base import Input, Output, Runnable
+from langchain.schema.runnable.base import Input, Output, RunnableSerializable
 from langchain.schema.runnable.config import RunnableConfig
 from langchain.schema.runnable.passthrough import RunnablePassthrough
 
@@ -48,10 +47,10 @@ class PutLocalVar(RunnablePassthrough):
                 "therefore always receive a non-null config."
             )
         if isinstance(self.key, str):
-            if self.key not in config["_locals"] or replace:
-                config["_locals"][self.key] = input
+            if self.key not in config["locals"] or replace:
+                config["locals"][self.key] = input
             else:
-                config["_locals"][self.key] += input
+                config["locals"][self.key] += input
         elif isinstance(self.key, Mapping):
             if not isinstance(input, Mapping):
                 raise TypeError(
@@ -59,10 +58,10 @@ class PutLocalVar(RunnablePassthrough):
                     f"input is expected to be of type Mapping when key is Mapping."
                 )
             for input_key, put_key in self.key.items():
-                if put_key not in config["_locals"] or replace:
-                    config["_locals"][put_key] = input[input_key]
+                if put_key not in config["locals"] or replace:
+                    config["locals"][put_key] = input[input_key]
                 else:
-                    config["_locals"][put_key] += input[input_key]
+                    config["locals"][put_key] += input[input_key]
         else:
             raise TypeError(
                 f"`key` should be a string or Mapping[str, str], received type "
@@ -104,7 +103,7 @@ class PutLocalVar(RunnablePassthrough):
 
 
 class GetLocalVar(
-    Serializable, Runnable[Input, Union[Output, Dict[str, Union[Input, Output]]]]
+    RunnableSerializable[Input, Union[Output, Dict[str, Union[Input, Output]]]]
 ):
     key: str
     """The key to extract from the local state."""
@@ -127,11 +126,11 @@ class GetLocalVar(
     ) -> Union[Output, Dict[str, Union[Input, Output]]]:
         if self.passthrough_key:
             return {
-                self.key: config["_locals"][self.key],
+                self.key: config["locals"][self.key],
                 self.passthrough_key: input,
             }
         else:
-            return config["_locals"][self.key]
+            return config["locals"][self.key]
 
     async def _aget(
         self,

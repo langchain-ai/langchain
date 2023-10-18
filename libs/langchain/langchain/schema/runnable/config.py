@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
-from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,6 +12,7 @@ from typing import (
     List,
     Optional,
     Union,
+    cast,
 )
 
 from typing_extensions import TypedDict
@@ -32,6 +32,10 @@ if TYPE_CHECKING:
         CallbackManager,
         CallbackManagerForChainRun,
     )
+
+
+class EmptyDict(TypedDict, total=False):
+    pass
 
 
 class RunnableConfig(TypedDict, total=False):
@@ -60,9 +64,11 @@ class RunnableConfig(TypedDict, total=False):
     Name for the tracer run for this call. Defaults to the name of the class.
     """
 
-    _locals: Dict[str, Any]
+    locals: Dict[str, Any]
     """
-    Local variables
+    Variables scoped to this call and any sub-calls. Usually used with
+    GetLocalVar() and PutLocalVar(). Care should be taken when placing mutable
+    objects in locals, as they will be shared between parallel sub-calls.
     """
 
     max_concurrency: Optional[int]
@@ -76,17 +82,26 @@ class RunnableConfig(TypedDict, total=False):
     Maximum number of times a call can recurse. If not provided, defaults to 10.
     """
 
+    configurable: Dict[str, Any]
+    """
+    Runtime values for attributes previously made configurable by this Runnable,
+    or sub-Runnables, through .make_configurable(). Check .output_schema for
+    a description of the attributes that have been made configurable.
+    """
+
 
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     empty = RunnableConfig(
         tags=[],
         metadata={},
         callbacks=None,
-        _locals={},
+        locals={},
         recursion_limit=10,
     )
     if config is not None:
-        empty.update(config)
+        empty.update(
+            cast(RunnableConfig, {k: v for k, v in config.items() if v is not None})
+        )
     return empty
 
 
@@ -97,8 +112,8 @@ def get_config_list(
     Helper method to get a list of configs from a single config or a list of
     configs, useful for subclasses overriding batch() or abatch().
     """
-    if length < 1:
-        raise ValueError(f"length must be >= 1, but got {length}")
+    if length < 0:
+        raise ValueError(f"length must be >= 0, but got {length}")
     if isinstance(config, list) and len(config) != length:
         raise ValueError(
             f"config must be a list of the same length as inputs, "
@@ -108,22 +123,23 @@ def get_config_list(
     return (
         list(map(ensure_config, config))
         if isinstance(config, list)
-        else [patch_config(config, deep_copy_locals=True) for _ in range(length)]
+        else [patch_config(config, copy_locals=True) for _ in range(length)]
     )
 
 
 def patch_config(
     config: Optional[RunnableConfig],
     *,
-    deep_copy_locals: bool = False,
+    copy_locals: bool = False,
     callbacks: Optional[BaseCallbackManager] = None,
     recursion_limit: Optional[int] = None,
     max_concurrency: Optional[int] = None,
     run_name: Optional[str] = None,
+    configurable: Optional[Dict[str, Any]] = None,
 ) -> RunnableConfig:
     config = ensure_config(config)
-    if deep_copy_locals:
-        config["_locals"] = deepcopy(config["_locals"])
+    if copy_locals:
+        config["locals"] = config["locals"].copy()
     if callbacks is not None:
         # If we're replacing callbacks we need to unset run_name
         # As that should apply only to the same run as the original callbacks
@@ -136,6 +152,8 @@ def patch_config(
         config["max_concurrency"] = max_concurrency
     if run_name is not None:
         config["run_name"] = run_name
+    if configurable is not None:
+        config["configurable"] = {**config.get("configurable", {}), **configurable}
     return config
 
 
@@ -148,9 +166,9 @@ def call_func_with_variable_args(
     input: Input,
     run_manager: CallbackManagerForChainRun,
     config: RunnableConfig,
+    **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config."""
-    kwargs: Dict[str, Any] = {}
     if accepts_config(func):
         kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
     if accepts_run_manager(func):
@@ -170,9 +188,9 @@ async def acall_func_with_variable_args(
     input: Input,
     run_manager: AsyncCallbackManagerForChainRun,
     config: RunnableConfig,
+    **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config."""
-    kwargs: Dict[str, Any] = {}
     if accepts_config(func):
         kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
     if accepts_run_manager(func):
