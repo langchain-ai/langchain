@@ -23,7 +23,7 @@ def create_python_agent(
     verbose: bool = False,
     prefix: str = PREFIX,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a python agent from an LLM and tool."""
     warn_deprecated(
