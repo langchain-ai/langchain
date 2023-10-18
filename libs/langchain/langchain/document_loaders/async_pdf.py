@@ -4,7 +4,7 @@ import os
 import tempfile
 import warnings
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, List, Union, Optional
+from typing import Any, List, Optional, Union
 
 import requests
 
@@ -74,7 +74,7 @@ class AsyncPdfLoader(BaseLoader):
         # Resolve temp filename for the downloaded PDF.
         temp_dir = tempfile.TemporaryDirectory()
         self.temp_dirs.append(temp_dir)
-        temp_pdf = os.path.join(temp_dir.name, f"tmp.pdf")
+        temp_pdf = os.path.join(temp_dir.name, "tmp.pdf")
 
         # Download the PDF.
         with requests.get(
