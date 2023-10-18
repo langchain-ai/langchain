@@ -6,7 +6,7 @@ import requests
 
 from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstores import VectorStore
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_env
 from langchain.vectorstores.utils import DistanceStrategy
 
