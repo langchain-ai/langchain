@@ -367,6 +367,8 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
 class GoogleVertexAIMultiTurnSearchRetriever(
     BaseRetriever, _BaseGoogleVertexAISearchRetriever
 ):
+    """`Google Vertex AI Search` retriever for multi-turn conversations."""
+
     conversation_id: str = "-"
     """Vertex AI Search Conversation ID."""
 
