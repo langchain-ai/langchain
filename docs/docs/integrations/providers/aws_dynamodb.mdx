@@ -1,0 +1,23 @@
+# AWS DynamoDB
+
+>[AWS DynamoDB](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/dynamodb/index.html) 
+> is a fully managed `NoSQL` database service that provides fast and predictable performance with seamless scalability.
+ 
+## Installation and Setup
+
+We have to configur the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html). 
+
+We need to install the `boto3` library.
+
+```bash
+pip install boto3
+```
+
+
+## Memory
+
+See a [usage example](/docs/integrations/memory/aws_dynamodb).
+
+```python
+from langchain.memory import DynamoDBChatMessageHistory
+```

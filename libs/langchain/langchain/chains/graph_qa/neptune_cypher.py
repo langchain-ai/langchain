@@ -21,6 +21,7 @@ INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 
 def trim_query(query: str) -> str:
+    """Trim the query to only include Cypher keywords."""
     keywords = (
         "CALL",
         "CREATE",
@@ -68,7 +69,7 @@ def use_simple_prompt(llm: BaseLanguageModel) -> bool:
         return True
 
     # Bedrock anthropic
-    if llm.model_id and "anthropic" in llm.model_id:  # type: ignore
+    if hasattr(llm, "model_id") and "anthropic" in llm.model_id:  # type: ignore
         return True
 
     return False

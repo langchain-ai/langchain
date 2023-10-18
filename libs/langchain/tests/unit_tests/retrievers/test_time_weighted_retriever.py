@@ -11,7 +11,7 @@ from langchain.retrievers.time_weighted_retriever import (
 )
 from langchain.schema import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.vectorstore import VectorStore
 
 
 def _get_example_memories(k: int = 4) -> List[Document]:
