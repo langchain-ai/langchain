@@ -29,7 +29,7 @@ def create_xorbits_agent(
     max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a xorbits agent from an LLM and dataframe."""
     warn_deprecated(
