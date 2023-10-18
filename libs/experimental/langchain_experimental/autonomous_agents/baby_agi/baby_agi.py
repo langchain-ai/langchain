@@ -203,7 +203,7 @@ class BabyAGI(Chain, BaseModel):  # type: ignore[misc]
         vectorstore: VectorStore,
         verbose: bool = False,
         task_execution_chain: Optional[Chain] = None,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> "BabyAGI":
         """Initialize the BabyAGI Controller."""
         task_creation_chain = TaskCreationChain.from_llm(llm, verbose=verbose)

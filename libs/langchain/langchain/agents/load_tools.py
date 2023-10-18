@@ -1,5 +1,19 @@
 # flake8: noqa
-"""Load tools."""
+"""Tools provide access to various resources and services.
+
+LangChain has a large ecosystem of integrations with various external resources
+like local and remote file systems, APIs and databases.
+
+These integrations allow developers to create versatile applications that combine the
+power of LLMs with the ability to access, interact with and manipulate external
+resources.
+
+When developing an application, developers should inspect the capabilities and
+permissions of the tools that underlie the given agent toolkit, and determine
+whether permissions of the given toolkit are appropriate for the application.
+
+See [Security](https://python.langchain.com/docs/security) for more information.
+"""
 import warnings
 from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
@@ -397,7 +411,6 @@ def load_huggingface_tool(
 
     Returns:
         A tool.
-
     """
     try:
         from transformers import load_tool
@@ -433,6 +446,22 @@ def load_tools(
     **kwargs: Any,
 ) -> List[BaseTool]:
     """Load tools based on their name.
+
+    Tools allow agents to interact with various resources and services like
+    APIs, databases, file systems, etc.
+
+    Please scope the permissions of each tools to the minimum required for the
+    application.
+
+    For example, if an application only needs to read from a database,
+    the database tool should not be given write permissions. Moreover
+    consider scoping the permissions to only allow accessing specific
+    tables and impose user-level quota for limiting resource usage.
+
+    Please read the APIs of the individual tools to determine which configuration
+    they support.
+
+    See [Security](https://python.langchain.com/docs/security) for more information.
 
     Args:
         tool_names: name of tools to load.

@@ -25,6 +25,7 @@ from typing import (
 )
 from uuid import UUID
 
+from langsmith.run_helpers import get_run_tree_context
 from tenacity import RetryCallState
 
 from langchain.callbacks.base import (
@@ -1882,7 +1883,9 @@ def _configure(
     Returns:
         T: The configured callback manager.
     """
-    callback_manager = callback_manager_cls(handlers=[])
+    run_tree = get_run_tree_context()
+    parent_run_id = None if run_tree is None else getattr(run_tree, "id")
+    callback_manager = callback_manager_cls(handlers=[], parent_run_id=parent_run_id)
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
             inheritable_callbacks_ = inheritable_callbacks or []
