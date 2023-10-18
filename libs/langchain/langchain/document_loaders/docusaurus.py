@@ -1,11 +1,10 @@
 """Load Documents from Docusarus Documentation"""
 from typing import Any, List, Optional
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.sitemap import SitemapLoader
 
 
-class DocusaurusLoader(BaseLoader):
+class DocusaurusLoader(SitemapLoader):
     """
     Loader that leverages the SitemapLoader to loop through the generated pages of a
     Docusaurus Documentation website and extracts the content by looking for specific
@@ -17,8 +16,8 @@ class DocusaurusLoader(BaseLoader):
     def __init__(
         self,
         url: str,
-        custom_html_tags: List[str] = ["main article"],
-        **kwargs: Optional[Any],
+        custom_html_tags: Optional[List[str]] = None,
+        **kwargs: Any,
     ):
         """
         Initialize DocusaurusLoader
@@ -28,42 +27,16 @@ class DocusaurusLoader(BaseLoader):
             kwargs: Additional args to extend the underlying SitemapLoader, for example:
                 filter_urls, blocksize, meta_function, is_local, continue_on_failure
         """
-        self.url = url
-        self.custom_html_tags = custom_html_tags
-        self.kwargs = kwargs
+        if not kwargs.get("is_local"):
+            url = f"{url}/sitemap.xml"
 
-    def load(self) -> List[Document]:
-        """Load documents."""
-        from langchain.document_loaders.sitemap import SitemapLoader
+        self.custom_html_tags = custom_html_tags or ["main article"]
 
-        # The SitemapLoader has a blend of required and optional kwargs, so we need to
-        # filter out the required args from the kwargs to avoid errors when we pass
-        # them in explicitly below.
-        filtered_kwargs = {
-            key: value
-            for key, value in self.kwargs.items()
-            if key
-            not in [
-                "blocknum",
-                "is_local",
-                "parsing_function",
-                "continue_on_failure",
-            ]
-        }
-
-        if not self.kwargs.get("is_local"):
-            self.url = f"{self.url}/sitemap.xml"
-
-        loader = SitemapLoader(
-            web_path=self.url,
-            parsing_function=self.kwargs.get("parsing_function")
-            or self._parsing_function,
-            blocknum=self.kwargs.get("blocknum") or 0,
-            is_local=self.kwargs.get("is_local") or False,
-            continue_on_failure=self.kwargs.get("continue_on_failure") or False,
-            **filtered_kwargs,
+        super().__init__(
+            url,
+            parsing_function=kwargs.get("parsing_function") or self._parsing_function,
+            **kwargs,
         )
-        return loader.load()
 
     def _parsing_function(self, content: Any) -> str:
         """Parses specific elements from a Docusarus page."""
