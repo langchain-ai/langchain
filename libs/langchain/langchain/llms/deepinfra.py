@@ -1,10 +1,13 @@
-from typing import Any, Dict, List, Mapping, Optional
+import json
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
+
+import aiohttp
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
+from langchain.llms.base import LLM, GenerationChunk
 from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utilities.requests import Requests
 from langchain.utils import get_from_dict_or_env
@@ -134,3 +137,82 @@ class DeepInfra(LLM):
             self._handle_status(response.status, response.text)
             data = await response.json()
             return data["results"][0]["generated_text"]
+
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        request = Requests(headers=self._headers())
+        response = request.post(
+            url=self._url(), data=self._body(prompt, {**kwargs, "stream": True})
+        )
+
+        self._handle_status(response.status_code, response.text)
+        for line in _parse_stream(response.iter_lines()):
+            chunk = _handle_sse_line(line)
+            if chunk:
+                yield chunk
+                if run_manager:
+                    run_manager.on_llm_new_token(chunk.text)
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        request = Requests(headers=self._headers())
+        async with request.apost(
+            url=self._url(), data=self._body(prompt, {**kwargs, "stream": True})
+        ) as response:
+            self._handle_status(response.status, response.text)
+            async for line in _parse_stream_async(response.content):
+                chunk = _handle_sse_line(line)
+                if chunk:
+                    yield chunk
+                    if run_manager:
+                        await run_manager.on_llm_new_token(chunk.text)
+
+
+def _parse_stream(rbody: Iterator[bytes]) -> Iterator[str]:
+    for line in rbody:
+        _line = _parse_stream_helper(line)
+        if _line is not None:
+            yield _line
+
+
+async def _parse_stream_async(rbody: aiohttp.StreamReader) -> AsyncIterator[str]:
+    async for line in rbody:
+        _line = _parse_stream_helper(line)
+        if _line is not None:
+            yield _line
+
+
+def _parse_stream_helper(line: bytes) -> Optional[str]:
+    if line and line.startswith(b"data:"):
+        if line.startswith(b"data: "):
+            # SSE event may be valid when it contain whitespace
+            line = line[len(b"data: ") :]
+        else:
+            line = line[len(b"data:") :]
+        if line.strip() == b"[DONE]":
+            # return here will cause GeneratorExit exception in urllib3
+            # and it will close http connection with TCP Reset
+            return None
+        else:
+            return line.decode("utf-8")
+    return None
+
+
+def _handle_sse_line(line: str) -> Optional[GenerationChunk]:
+    try:
+        obj = json.loads(line)
+        return GenerationChunk(
+            text=obj.get("token", {}).get("text"),
+        )
+    except Exception:
+        return None
