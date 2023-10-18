@@ -129,13 +129,11 @@ while(True):
 
 Ниже представлен список примеров использования GigaChain.
 
-### Примеры работы с GigaChat
+### Базовые примеры работы с GigaChat
 
 - [Ответы на вопросы по статьям из wikipedia](docs/docs/integrations/retrievers/wikipedia.ipynb)
 - [Суммаризация по алгоритму MapReduce](docs/extras/use_cases/summarization.ipynb) (см. раздел map/reduce)
-- [Игра Blade Runner: GPT-4 и GigaChat выясняют, кто из них бот](docs/docs/use_cases/fun/blade_runner.ipynb)
 - [Работа с хабом промптов, цепочками и парсером JSON](docs/extras/modules/model_io/output_parsers/json.ipynb)
-- [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/docs/use_cases/question_answering/agent_simulations/multi_llm_thre_player_dnd.ipynb)
 - [Парсинг списков, содержащихся в ответе](docs/extras/modules/model_io/output_parsers/list.ipynb)
 - [Асинхронная работа с LLM](docs/docs/modules/model_io/models/llms/async_llm.ipynb)
 - [Использование Elastic для поиска ответов по документам](docs/extras/integrations/retrievers/elastic_qna.ipynb)
@@ -143,6 +141,11 @@ while(True):
 - [Работа с кэшем в GigaChain](docs/extras/integrations/llms/gigachain_caching.ipynb)
 - [Автономный агент AutoGPT с использованием GigaChat](cookbook/autogpt/autogpt.ipynb)
 - [Генерация плейлистов с помощью GigaChain и Spotify](docs/extras/modules/agents/how_to/playlists.ipynb)
+
+### Развлекательные примеры
+- [Площадка для споров между GigaChat и YandexGPT с судьей GPT-4](docs/docs/use_cases/fun/debates.ipynb)
+- [Игра Blade Runner: GPT-4 и GigaChat выясняют, кто из них бот](docs/docs/use_cases/fun/blade_runner.ipynb)
+- [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/docs/use_cases/question_answering/agent_simulations/multi_llm_thre_player_dnd.ipynb)
 
 ### Примеры работы с другими LLM
 
