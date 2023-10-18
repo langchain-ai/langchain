@@ -15,7 +15,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import BaseModel, Extra, Field, PrivateAttr, root_validator
+from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,7 @@ class _MinimaxEndpointClient(BaseModel):
     api_key: str
     api_url: str
 
-    @root_validator(pre=True)
+    @root_validator(pre=True, allow_reuse=True)
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "api_url" not in values:
             host = values["host"]
@@ -52,19 +53,8 @@ class _MinimaxEndpointClient(BaseModel):
         return response.json()["reply"]
 
 
-class Minimax(LLM):
-    """Wrapper around Minimax large language models.
-    To use, you should have the environment variable
-    ``MINIMAX_API_KEY`` and ``MINIMAX_GROUP_ID`` set with your API key,
-    or pass them as a named parameter to the constructor.
-    Example:
-     .. code-block:: python
-         from langchain.llms.minimax import Minimax
-         minimax = Minimax(model="<model_name>", minimax_api_key="my-api-key",
-          minimax_group_id="my-group-id")
-    """
-
-    _client: _MinimaxEndpointClient = PrivateAttr()
+class MinimaxCommon(BaseModel):
+    _client: _MinimaxEndpointClient
     model: str = "abab5.5-chat"
     """Model name to use."""
     max_tokens: int = 256
@@ -78,11 +68,6 @@ class Minimax(LLM):
     minimax_api_host: Optional[str] = None
     minimax_group_id: Optional[str] = None
     minimax_api_key: Optional[str] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -131,6 +116,19 @@ class Minimax(LLM):
             group_id=self.minimax_group_id,
         )
 
+
+class Minimax(MinimaxCommon, LLM):
+    """Wrapper around Minimax large language models.
+    To use, you should have the environment variable
+    ``MINIMAX_API_KEY`` and ``MINIMAX_GROUP_ID`` set with your API key,
+    or pass them as a named parameter to the constructor.
+    Example:
+     . code-block:: python
+         from langchain.llms.minimax import Minimax
+         minimax = Minimax(model="<model_name>", minimax_api_key="my-api-key",
+          minimax_group_id="my-group-id")
+    """
+
     def _call(
         self,
         prompt: str,
@@ -150,6 +148,10 @@ class Minimax(LLM):
         request = self._default_params
         request["messages"] = [{"sender_type": "USER", "text": prompt}]
         request.update(kwargs)
-        response = self._client.post(request)
+        text = self._client.post(request)
+        if stop is not None:
+            # This is required since the stop tokens
+            # are not enforced by the model parameters
+            text = enforce_stop_tokens(text, stop)
 
-        return response
+        return text

@@ -17,6 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import (
     BaseModel,
     Extra,
@@ -25,7 +26,7 @@ from langchain.pydantic_v1 import (
     root_validator,
     validate_arguments,
 )
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import Runnable, RunnableConfig, RunnableSerializable
 
 
 class SchemaAnnotationError(TypeError):
@@ -97,7 +98,7 @@ class ToolException(Exception):
     pass
 
 
-class BaseTool(BaseModel, Runnable[Union[str, Dict], Any]):
+class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
     """Interface LangChain tools must implement."""
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -165,10 +166,9 @@ class ChildTool(BaseTool):
     ] = False
     """Handle the content of the ToolException thrown."""
 
-    class Config:
+    class Config(Serializable.Config):
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @property
@@ -187,6 +187,14 @@ class ChildTool(BaseTool):
 
     # --- Runnable ---
 
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        """The tool's input schema."""
+        if self.args_schema is not None:
+            return self.args_schema
+        else:
+            return create_schema_from_function(self.name, self._run)
+
     def invoke(
         self,
         input: Union[str, Dict],
@@ -199,6 +207,7 @@ class ChildTool(BaseTool):
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
             **kwargs,
         )
 
@@ -208,16 +217,13 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        if type(self)._arun == BaseTool._arun:
-            # If the tool does not implement async, fall back to default implementation
-            return super().ainvoke(input, config, **kwargs)
-
         config = config or {}
         return await self.arun(
             input,
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
             **kwargs,
         )
 
@@ -297,6 +303,7 @@ class ChildTool(BaseTool):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -320,6 +327,7 @@ class ChildTool(BaseTool):
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
+            name=run_name,
             **kwargs,
         )
         try:
@@ -370,6 +378,7 @@ class ChildTool(BaseTool):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -392,6 +401,7 @@ class ChildTool(BaseTool):
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
+            name=run_name,
             **kwargs,
         )
         try:
@@ -461,7 +471,7 @@ class Tool(BaseTool):
                 None, partial(self.invoke, input, config, **kwargs)
             )
 
-        return super().ainvoke(input, config, **kwargs)
+        return await super().ainvoke(input, config, **kwargs)
 
     # --- Tool ---
 
@@ -643,7 +653,6 @@ class StructuredTool(BaseTool):
             )
         return await asyncio.get_running_loop().run_in_executor(
             None,
-            self._run,
             partial(self._run, run_manager=run_manager, **kwargs),
             *args,
         )
@@ -720,7 +729,7 @@ class StructuredTool(BaseTool):
 
 
 def tool(
-    *args: Union[str, Callable],
+    *args: Union[str, Callable, Runnable],
     return_direct: bool = False,
     args_schema: Optional[Type[BaseModel]] = None,
     infer_schema: bool = True,
@@ -755,21 +764,46 @@ def tool(
     """
 
     def _make_with_name(tool_name: str) -> Callable:
-        def _make_tool(dec_func: Callable) -> BaseTool:
-            if inspect.iscoroutinefunction(dec_func):
+        def _make_tool(dec_func: Union[Callable, Runnable]) -> BaseTool:
+            if isinstance(dec_func, Runnable):
+                runnable = dec_func
+
+                if runnable.input_schema.schema().get("type") != "object":
+                    raise ValueError("Runnable must have an object schema.")
+
+                async def ainvoke_wrapper(
+                    callbacks: Optional[Callbacks] = None, **kwargs: Any
+                ) -> Any:
+                    return await runnable.ainvoke(kwargs, {"callbacks": callbacks})
+
+                def invoke_wrapper(
+                    callbacks: Optional[Callbacks] = None, **kwargs: Any
+                ) -> Any:
+                    return runnable.invoke(kwargs, {"callbacks": callbacks})
+
+                coroutine = ainvoke_wrapper
+                func = invoke_wrapper
+                schema: Optional[Type[BaseModel]] = runnable.input_schema
+                description = repr(runnable)
+            elif inspect.iscoroutinefunction(dec_func):
                 coroutine = dec_func
                 func = None
+                schema = args_schema
+                description = None
             else:
                 coroutine = None
                 func = dec_func
+                schema = args_schema
+                description = None
 
             if infer_schema or args_schema is not None:
                 return StructuredTool.from_function(
                     func,
                     coroutine,
                     name=tool_name,
+                    description=description,
                     return_direct=return_direct,
-                    args_schema=args_schema,
+                    args_schema=schema,
                     infer_schema=infer_schema,
                 )
             # If someone doesn't want a schema applied, we must treat it as
@@ -789,7 +823,9 @@ def tool(
 
         return _make_tool
 
-    if len(args) == 1 and isinstance(args[0], str):
+    if len(args) == 2 and isinstance(args[0], str) and isinstance(args[1], Runnable):
+        return _make_with_name(args[0])(args[1])
+    elif len(args) == 1 and isinstance(args[0], str):
         # if the argument is a string, then we use the string as the tool name
         # Example usage: @tool("search", return_direct=True)
         return _make_with_name(args[0])

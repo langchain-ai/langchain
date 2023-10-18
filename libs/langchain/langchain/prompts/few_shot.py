@@ -71,13 +71,9 @@ class _FewShotPromptTemplateMixin(BaseModel):
 class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
     """Prompt template that contains few shot examples."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Return whether the prompt template is lc_serializable.
-
-        Returns:
-            Boolean indicating whether the prompt template is lc_serializable.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return False
 
     validate_template: bool = True
@@ -278,13 +274,9 @@ class FewShotChatMessagePromptTemplate(
             chain.invoke({"input": "What's 3+3?"})
     """
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Return whether the prompt template is lc_serializable.
-
-        Returns:
-            Boolean indicating whether the prompt template is lc_serializable.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return False
 
     input_variables: List[str] = Field(default_factory=list)

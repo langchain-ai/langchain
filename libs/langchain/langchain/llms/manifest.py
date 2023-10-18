@@ -34,7 +34,10 @@ class ManifestWrapper(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         kwargs = self.llm_kwargs or {}
-        return {**self.client.client.get_model_params(), **kwargs}
+        return {
+            **self.client.client_pool.get_current_client().get_model_params(),
+            **kwargs,
+        }
 
     @property
     def _llm_type(self) -> str:

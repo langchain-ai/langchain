@@ -58,15 +58,7 @@ class SelfAskWithSearchAgent(Agent):
 
 
 class SelfAskWithSearchChain(AgentExecutor):
-    """Chain that does self-ask with search.
-
-    Example:
-        .. code-block:: python
-
-            from langchain import SelfAskWithSearchChain, OpenAI, GoogleSerperAPIWrapper
-            search_chain = GoogleSerperAPIWrapper()
-            self_ask = SelfAskWithSearchChain(llm=OpenAI(), search_chain=search_chain)
-    """
+    """[Deprecated] Chain that does self-ask with search."""
 
     def __init__(
         self,

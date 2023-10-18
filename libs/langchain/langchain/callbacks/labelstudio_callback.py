@@ -17,6 +17,8 @@ from langchain.schema import (
 
 
 class LabelStudioMode(Enum):
+    """Label Studio mode enumerator."""
+
     PROMPT = "prompt"
     CHAT = "chat"
 
@@ -24,6 +26,13 @@ class LabelStudioMode(Enum):
 def get_default_label_configs(
     mode: Union[str, LabelStudioMode]
 ) -> Tuple[str, LabelStudioMode]:
+    """Get default Label Studio configs for the given mode.
+
+    Parameters:
+        mode: Label Studio mode ("prompt" or "chat")
+
+    Returns: Tuple of Label Studio config and mode
+    """
     _default_label_configs = {
         LabelStudioMode.PROMPT.value: """
 <View>
@@ -334,9 +343,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         # Pop current run from `self.runs`
         self.payload.pop(run_id)
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when LLM outputs an error."""
         pass
 
@@ -348,9 +355,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         pass
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when LLM chain outputs an error."""
         pass
 
@@ -377,9 +382,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         """Do nothing when tool ends."""
         pass
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when tool outputs an error."""
         pass
 

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union
+
+from typing_extensions import Literal
 
 from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field
+from langchain.pydantic_v1 import Extra, Field
 
 if TYPE_CHECKING:
     from langchain.prompts.chat import ChatPromptTemplate
@@ -69,14 +70,14 @@ class BaseMessage(Serializable):
     additional_kwargs: dict = Field(default_factory=dict)
     """Any additional information."""
 
-    @property
-    @abstractmethod
-    def type(self) -> str:
-        """Type of the Message, used for serialization."""
+    type: str
 
-    @property
-    def lc_serializable(self) -> bool:
-        """Whether this class is LangChain serializable."""
+    class Config:
+        extra = Extra.allow
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
         return True
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
@@ -117,6 +118,14 @@ class BaseMessageChunk(BaseMessage):
             # If both are (subclasses of) BaseMessageChunk,
             # concat into a single BaseMessageChunk
 
+            if isinstance(self, ChatMessageChunk):
+                return self.__class__(
+                    role=self.role,
+                    content=self.content + other.content,
+                    additional_kwargs=self._merge_kwargs_dict(
+                        self.additional_kwargs, other.additional_kwargs
+                    ),
+                )
             return self.__class__(
                 content=self.content + other.content,
                 additional_kwargs=self._merge_kwargs_dict(
@@ -139,16 +148,19 @@ class HumanMessage(BaseMessage):
         conversation.
     """
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "human"
+    type: Literal["human"] = "human"
+
+
+HumanMessage.update_forward_refs()
 
 
 class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     """A Human Message chunk."""
 
-    pass
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["HumanMessageChunk"] = "HumanMessageChunk"  # type: ignore[assignment] # noqa: E501
 
 
 class AIMessage(BaseMessage):
@@ -159,16 +171,36 @@ class AIMessage(BaseMessage):
         conversation.
     """
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "ai"
+    type: Literal["ai"] = "ai"
+
+
+AIMessage.update_forward_refs()
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     """A Message chunk from an AI."""
 
-    pass
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment] # noqa: E501
+
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+        if isinstance(other, AIMessageChunk):
+            if self.example != other.example:
+                raise ValueError(
+                    "Cannot concatenate AIMessageChunks with different example values."
+                )
+
+            return self.__class__(
+                example=self.example,
+                content=self.content + other.content,
+                additional_kwargs=self._merge_kwargs_dict(
+                    self.additional_kwargs, other.additional_kwargs
+                ),
+            )
+
+        return super().__add__(other)
 
 
 class SystemMessage(BaseMessage):
@@ -176,16 +208,19 @@ class SystemMessage(BaseMessage):
     of input messages.
     """
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "system"
+    type: Literal["system"] = "system"
+
+
+SystemMessage.update_forward_refs()
 
 
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     """A System Message chunk."""
 
-    pass
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["SystemMessageChunk"] = "SystemMessageChunk"  # type: ignore[assignment] # noqa: E501
 
 
 class FunctionMessage(BaseMessage):
@@ -194,16 +229,38 @@ class FunctionMessage(BaseMessage):
     name: str
     """The name of the function that was executed."""
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "function"
+    type: Literal["function"] = "function"
+
+
+FunctionMessage.update_forward_refs()
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     """A Function Message chunk."""
 
-    pass
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal[
+        "FunctionMessageChunk"
+    ] = "FunctionMessageChunk"  # type: ignore[assignment]
+
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+        if isinstance(other, FunctionMessageChunk):
+            if self.name != other.name:
+                raise ValueError(
+                    "Cannot concatenate FunctionMessageChunks with different names."
+                )
+
+            return self.__class__(
+                name=self.name,
+                content=self.content + other.content,
+                additional_kwargs=self._merge_kwargs_dict(
+                    self.additional_kwargs, other.additional_kwargs
+                ),
+            )
+
+        return super().__add__(other)
 
 
 class ChatMessage(BaseMessage):
@@ -212,16 +269,39 @@ class ChatMessage(BaseMessage):
     role: str
     """The speaker / role of the Message."""
 
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "chat"
+    type: Literal["chat"] = "chat"
+
+
+ChatMessage.update_forward_refs()
 
 
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     """A Chat Message chunk."""
 
-    pass
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore
+
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+        if isinstance(other, ChatMessageChunk):
+            if self.role != other.role:
+                raise ValueError(
+                    "Cannot concatenate ChatMessageChunks with different roles."
+                )
+
+            return self.__class__(
+                role=self.role,
+                content=self.content + other.content,
+                additional_kwargs=self._merge_kwargs_dict(
+                    self.additional_kwargs, other.additional_kwargs
+                ),
+            )
+
+        return super().__add__(other)
+
+
+AnyMessage = Union[AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage]
 
 
 def _message_to_dict(message: BaseMessage) -> dict:

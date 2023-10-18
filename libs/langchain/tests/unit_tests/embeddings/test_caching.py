@@ -4,7 +4,7 @@ from typing import List
 import pytest
 
 from langchain.embeddings import CacheBackedEmbeddings
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.storage.in_memory import InMemoryStore
 
 

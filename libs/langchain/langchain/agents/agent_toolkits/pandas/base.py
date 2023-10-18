@@ -1,6 +1,7 @@
 """Agent for working with pandas objects."""
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from langchain._api import warn_deprecated
 from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.agent_toolkits.pandas.prompt import (
     FUNCTIONS_WITH_DF,
@@ -21,6 +22,7 @@ from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import SystemMessage
+from langchain.tools import BaseTool
 from langchain.tools.python.tool import PythonAstREPLTool
 
 
@@ -280,12 +282,23 @@ def create_pandas_dataframe_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-    **kwargs: Dict[str, Any],
+    extra_tools: Sequence[BaseTool] = (),
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe."""
+    warn_deprecated(
+        since="0.0.314",
+        message=(
+            "On 2023-10-27 this module will be be deprecated from langchain, and "
+            "will be available from the langchain-experimental package."
+            "This code is already available in langchain-experimental."
+            "See https://github.com/langchain-ai/langchain/discussions/11680."
+        ),
+        pending=True,
+    )
     agent: BaseSingleActionAgent
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
-        prompt, tools = _get_prompt_and_tools(
+        prompt, base_tools = _get_prompt_and_tools(
             df,
             prefix=prefix,
             suffix=suffix,
@@ -293,6 +306,7 @@ def create_pandas_dataframe_agent(
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
         )
+        tools = base_tools + list(extra_tools)
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
@@ -306,7 +320,7 @@ def create_pandas_dataframe_agent(
             **kwargs,
         )
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
-        _prompt, tools = _get_functions_prompt_and_tools(
+        _prompt, base_tools = _get_functions_prompt_and_tools(
             df,
             prefix=prefix,
             suffix=suffix,
@@ -314,6 +328,7 @@ def create_pandas_dataframe_agent(
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
         )
+        tools = base_tools + list(extra_tools)
         agent = OpenAIFunctionsAgent(
             llm=llm,
             prompt=_prompt,

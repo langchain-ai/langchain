@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     from google.auth.credentials import Credentials
 
 
-def raise_vertex_import_error(minimum_expected_version: str = "1.26.1") -> None:
+def raise_vertex_import_error(minimum_expected_version: str = "1.35.0") -> None:
     """Raise ImportError related to Vertex SDK being not available.
 
     Args:
@@ -30,8 +30,8 @@ def init_vertexai(
         project: The default GCP project to use when making Vertex API calls.
         location: The default location to use when making API calls.
         credentials: The default custom
-                credentials to use when making API calls. If not provided credentials
-                will be ascertained from the environment.
+            credentials to use when making API calls. If not provided credentials
+            will be ascertained from the environment.
 
     Raises:
         ImportError: If importing vertexai SDK did not succeed.

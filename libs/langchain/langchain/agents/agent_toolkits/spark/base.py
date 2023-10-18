@@ -1,6 +1,7 @@
 """Agent for working with pandas objects."""
 from typing import Any, Dict, List, Optional
 
+from langchain._api import warn_deprecated
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.spark.prompt import PREFIX, SUFFIX
 from langchain.agents.mrkl.base import ZeroShotAgent
@@ -41,9 +42,19 @@ def create_spark_dataframe_agent(
     max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a Spark agent from an LLM and dataframe."""
+    warn_deprecated(
+        since="0.0.314",
+        message=(
+            "On 2023-10-27 this module will be be deprecated from langchain, and "
+            "will be available from the langchain-experimental package."
+            "This code is already available in langchain-experimental."
+            "See https://github.com/langchain-ai/langchain/discussions/11680."
+        ),
+        pending=True,
+    )
 
     if not _validate_spark_df(df) and not _validate_spark_connect_df(df):
         raise ImportError("Spark is not installed. run `pip install pyspark`.")

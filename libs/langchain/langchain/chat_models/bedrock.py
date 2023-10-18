@@ -1,15 +1,18 @@
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.anthropic import convert_messages_to_prompt_anthropic
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.bedrock import BedrockBase
 from langchain.pydantic_v1 import Extra
-from langchain.schema.messages import AIMessage, BaseMessage
+from langchain.schema.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain.utilities.anthropic import (
+    get_num_tokens_anthropic,
+    get_token_ids_anthropic,
+)
 
 
 class ChatPromptAdapter:
@@ -48,20 +51,16 @@ class BedrockChat(BaseChatModel, BedrockBase):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        raise NotImplementedError(
-            """Bedrock doesn't support stream requests at the moment."""
+        provider = self._get_provider()
+        prompt = ChatPromptAdapter.convert_messages_to_prompt(
+            provider=provider, messages=messages
         )
 
-    def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        raise NotImplementedError(
-            """Bedrock doesn't support async requests at the moment."""
-        )
+        for chunk in self._prepare_input_and_invoke_stream(
+            prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+        ):
+            delta = chunk.text
+            yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
 
     def _generate(
         self,
@@ -70,29 +69,36 @@ class BedrockChat(BaseChatModel, BedrockBase):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        provider = self._get_provider()
-        prompt = ChatPromptAdapter.convert_messages_to_prompt(
-            provider=provider, messages=messages
-        )
+        completion = ""
 
-        params: Dict[str, Any] = {**kwargs}
-        if stop:
-            params["stop_sequences"] = stop
+        if self.streaming:
+            for chunk in self._stream(messages, stop, run_manager, **kwargs):
+                completion += chunk.text
+        else:
+            provider = self._get_provider()
+            prompt = ChatPromptAdapter.convert_messages_to_prompt(
+                provider=provider, messages=messages
+            )
 
-        completion = self._prepare_input_and_invoke(
-            prompt=prompt, stop=stop, run_manager=run_manager, **params
-        )
+            params: Dict[str, Any] = {**kwargs}
+            if stop:
+                params["stop_sequences"] = stop
+
+            completion = self._prepare_input_and_invoke(
+                prompt=prompt, stop=stop, run_manager=run_manager, **params
+            )
 
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        raise NotImplementedError(
-            """Bedrock doesn't support async stream requests at the moment."""
-        )
+    def get_num_tokens(self, text: str) -> int:
+        if self._model_is_anthropic:
+            return get_num_tokens_anthropic(text)
+        else:
+            return super().get_num_tokens(text)
+
+    def get_token_ids(self, text: str) -> List[int]:
+        if self._model_is_anthropic:
+            return get_token_ids_anthropic(text)
+        else:
+            return super().get_token_ids(text)

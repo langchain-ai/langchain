@@ -17,9 +17,9 @@ from typing import (
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import xor_args
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -217,7 +217,7 @@ class Chroma(VectorStore):
                     if "Expected metadata value to be" in str(e):
                         msg = (
                             "Try filtering complex metadata from the document using "
-                            "langchain.vectorstore.utils.filter_complex_metadata."
+                            "langchain.vectorstores.utils.filter_complex_metadata."
                         )
                         raise ValueError(e.args[0] + "\n\n" + msg)
                     else:
@@ -541,20 +541,48 @@ class Chroma(VectorStore):
             document_id (str): ID of the document to update.
             document (Document): Document to update.
         """
-        text = document.page_content
-        metadata = document.metadata
+        return self.update_documents([document_id], [document])
+
+    def update_documents(self, ids: List[str], documents: List[Document]) -> None:
+        """Update a document in the collection.
+
+        Args:
+            ids (List[str]): List of ids of the document to update.
+            documents (List[Document]): List of documents to update.
+        """
+        text = [document.page_content for document in documents]
+        metadata = [document.metadata for document in documents]
         if self._embedding_function is None:
             raise ValueError(
                 "For update, you must specify an embedding function on creation."
             )
-        embeddings = self._embedding_function.embed_documents([text])
+        embeddings = self._embedding_function.embed_documents(text)
 
-        self._collection.update(
-            ids=[document_id],
-            embeddings=embeddings,
-            documents=[text],
-            metadatas=[metadata],
-        )
+        if hasattr(
+            self._collection._client, "max_batch_size"
+        ):  # for Chroma 0.4.10 and above
+            from chromadb.utils.batch_utils import create_batches
+
+            for batch in create_batches(
+                api=self._collection._client,
+                ids=ids,
+                metadatas=metadata,
+                documents=text,
+                embeddings=embeddings,
+            ):
+                self._collection.update(
+                    ids=batch[0],
+                    embeddings=batch[1],
+                    documents=batch[3],
+                    metadatas=batch[2],
+                )
+        else:
+            self._collection.update(
+                ids=ids,
+                embeddings=embeddings,
+                documents=text,
+                metadatas=metadata,
+            )
 
     @classmethod
     def from_texts(
@@ -598,7 +626,24 @@ class Chroma(VectorStore):
             collection_metadata=collection_metadata,
             **kwargs,
         )
-        chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
+        if hasattr(
+            chroma_collection._client, "max_batch_size"
+        ):  # for Chroma 0.4.10 and above
+            from chromadb.utils.batch_utils import create_batches
+
+            for batch in create_batches(
+                api=chroma_collection._client,
+                ids=ids,
+                metadatas=metadatas,
+                documents=texts,
+            ):
+                chroma_collection.add_texts(
+                    texts=batch[3] if batch[3] else [],
+                    metadatas=batch[2] if batch[2] else None,
+                    ids=batch[0],
+                )
+        else:
+            chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
 
     @classmethod

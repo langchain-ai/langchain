@@ -1,6 +1,7 @@
 """Generic utility functions."""
 import contextlib
 import datetime
+import functools
 import importlib
 import warnings
 from importlib.metadata import version
@@ -14,7 +15,8 @@ def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
     """Validate specified keyword args are mutually exclusive."""
 
     def decorator(func: Callable) -> Callable:
-        def wrapper(*args: Any, **kwargs: Any) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             """Validate exactly one arg in each group is not None."""
             counts = [
                 sum(1 for arg in arg_group if kwargs.get(arg) is not None)

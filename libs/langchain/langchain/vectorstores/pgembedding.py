@@ -7,12 +7,17 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 import sqlalchemy
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import JSON, UUID
-from sqlalchemy.orm import Session, declarative_base, relationship
+from sqlalchemy.orm import Session, relationship
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 
 Base = declarative_base()  # type: Any
 
@@ -358,6 +363,13 @@ class PGEmbedding(VectorStore):
                         }
                         filter_by_metadata = EmbeddingStore.cmetadata[key].astext.in_(
                             value_case_insensitive[IN]
+                        )
+                        filter_clauses.append(filter_by_metadata)
+                    elif isinstance(value, dict) and "substring" in map(
+                        str.lower, value
+                    ):
+                        filter_by_metadata = EmbeddingStore.cmetadata[key].astext.ilike(
+                            f"%{value['substring']}%"
                         )
                         filter_clauses.append(filter_by_metadata)
                     else:

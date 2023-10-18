@@ -1,0 +1,51 @@
+# Motherduck
+
+>[Motherduck](https://motherduck.com/) is a managed DuckDB-in-the-cloud service.
+
+## Installation and Setup
+
+First, you need to install `duckdb` python package.
+
+```bash
+pip install duckdb
+```
+
+You will also need to sign up for an account at [Motherduck](https://motherduck.com/)
+
+After that, you should set up a connection string - we mostly integrate with Motherduck through SQLAlchemy.
+The connection string is likely in the form:
+
+```
+token="..."
+
+conn_str = f"duckdb:///md:{token}@my_db"
+```
+
+## SQLChain
+
+You can use the SQLChain to query data in your Motherduck instance in natural language.
+
+```
+from langchain.llms import OpenAI, SQLDatabase, SQLDatabaseChain
+db = SQLDatabase.from_uri(conn_str)
+db_chain = SQLDatabaseChain.from_llm(OpenAI(temperature=0), db, verbose=True)
+```
+
+From here, see the [SQL Chain](/docs/use_cases/tabular/sqlite.html) documentation on how to use.
+
+
+## LLMCache
+
+You can also easily use Motherduck to cache LLM requests.
+Once again this is done through the SQLAlchemy wrapper.
+
+```
+import sqlalchemy
+from langchain.globals import set_llm_cache
+eng = sqlalchemy.create_engine(conn_str)
+set_llm_cache(SQLAlchemyCache(engine=eng))
+```
+
+From here, see the [LLM Caching](/docs/modules/model_io/models/llms/how_to/llm_caching) documentation on how to use.
+
+
