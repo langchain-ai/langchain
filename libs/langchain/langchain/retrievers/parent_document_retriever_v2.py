@@ -1,30 +1,58 @@
 import uuid
-from typing import List, Optional, Sequence, Iterable, Any, Type, TypeVar, Dict
+from typing import List, Optional, Sequence
 
 from langchain.retrievers import MultiVectorRetriever
-from langchain.schema import BaseRetriever, BaseStore
-from langchain.schema.document import Document, BaseDocumentTransformer
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
+from langchain.schema.document import BaseDocumentTransformer, Document
 
-from langchain.pydantic_v1 import BaseModel,Field,Extra
 
-# %%
-VST = TypeVar("VST", bound="VectorStore")
-class ParentDocumentVectorStore(VectorStore,BaseModel):
+class ParentDocumentRetriever(MultiVectorRetriever):
+    """Retrieve small chunks then retrieve their parent documents.
 
-    class Config:
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    When transform documents for retrieval, there are often conflicting desires:
 
-    vectorstore: VectorStore
-    """The underlying vectorstore to use to store small chunks
-    and their embedding vectors"""
-    docstore: BaseStore[str, Document]
-    """The storage layer for the parent documents"""
-    id_key: str = "doc_id"
-    search_kwargs: dict = Field(default_factory=dict)
-    """Keyword arguments to pass to the search function."""
+    1. You may want to have small documents, so that their embeddings can most
+        accurately reflect their meaning. If too long, then the embeddings can
+        lose meaning.
+    2. You want to have long enough documents that the context of each chunk is
+        retained.
+
+    The NewParentDocumentRetriever strikes that balance by transforming and storing
+    small chunks of data. During retrieval, it first fetches the small chunks
+    but then looks up the parent ids for those chunks and returns those larger
+    documents.
+
+    Note that "parent document" refers to the document that a small chunk
+    originated from. This can either be the whole raw document OR a larger
+    chunk.
+
+    Examples:
+
+        .. code-block:: python
+
+            # Imports
+            from langchain.vectorstores import Chroma
+            from langchain.embeddings import OpenAIEmbeddings
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
+            from langchain.storage import InMemoryStore
+
+            # This text splitter is used to create the parent documents
+            parent_transformer = RecursiveCharacterTextSplitter(chunk_size=2000)
+            # This text splitter is used to create the child documents
+            # It should create documents smaller than the parent
+            child_transformer = RecursiveCharacterTextSplitter(chunk_size=400)
+            # The vectorstore to use to index the child chunks
+            vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
+            # The storage layer for the parent documents
+            store = InMemoryStore()
+
+            # Initialize the retriever
+            retriever = ParentDocumentRetriever(
+                vectorstore=vectorstore,
+                docstore=store,
+                child_transformer=child_transformer,
+                parent_transformer=parent_transformer,
+            )
+    """
 
     child_transformer: BaseDocumentTransformer
     """The transformer to use to create child documents."""
@@ -35,21 +63,13 @@ class ParentDocumentVectorStore(VectorStore,BaseModel):
     """The transformer to use to create parent documents.
     If none, then the parent documents will be the raw documents passed in."""
 
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        return MultiVectorRetriever(
-            vectorstore=self.vectorstore,
-            docstore=self.docstore,
-            id_key = self.id_key,
-            search_kwargs=self.search_kwargs,
-            **kwargs)
-
     def add_documents(
-            self,
-            documents: Sequence[Document],
-            *,
-            ids: Optional[List[str]] = None,
-            add_to_docstore: bool = True,
-    ) -> None:
+        self,
+        documents: Sequence[Document],
+        *,
+        ids: Optional[List[str]] = None,
+        add_to_docstore: bool = True,
+    ) -> List[Document]:
         """Adds documents to the docstore and vectorstores.
 
         Args:
@@ -64,7 +84,6 @@ class ParentDocumentVectorStore(VectorStore,BaseModel):
                 to set this to False if the documents are already in the docstore
                 and you don't want to re-add them.
         """
-        # FIXME un bug si on livre des ids. On ne peut pas alors faire un master split
         if self.parent_transformer is not None:
             documents = self.parent_transformer.transform_documents(documents)
 
@@ -82,7 +101,7 @@ class ParentDocumentVectorStore(VectorStore,BaseModel):
                 )
             doc_ids = ids
 
-        docs = []
+        docs: List[Document] = []
         full_docs = []
         for i, doc in enumerate(documents):
             _id = doc_ids[i]
@@ -94,34 +113,4 @@ class ParentDocumentVectorStore(VectorStore,BaseModel):
         self.vectorstore.add_documents(docs)
         if add_to_docstore:
             self.docstore.mset(full_docs)
-
-
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
-        return self.vectorstore.delete(ids, **kwargs)
-
-    def similarity_search(
-            self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        return self.vectorstore.similarity_search(query, k, **kwargs)
-
-    """
-    A VectorStoreWrapper to manage multiple associated documents.
-    Then, it's possible to use an instance in `index()`
-    """
-    def add_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
-            **kwargs: Any,
-    ) -> List[str]:
-        self.vectorstore.add_texts(texts, metadatas, **kwargs)
-
-    @classmethod
-    def from_texts(
-            cls: Type[VST],
-            texts: List[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[dict]] = None,
-            **kwargs: Any,
-    ) -> VST:
-        raise NotImplemented("from_texts not implemented")
+        return [doc for _, doc in full_docs]
