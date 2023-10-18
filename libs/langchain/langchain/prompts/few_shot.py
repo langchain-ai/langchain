@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
     check_valid_template,
+    get_template_variables,
 )
 from langchain.prompts.chat import BaseChatPromptTemplate, BaseMessagePromptTemplate
 from langchain.prompts.example_selector.base import BaseExampleSelector
@@ -77,7 +78,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         """Return whether or not the class is serializable."""
         return False
 
-    validate_template: bool = True
+    validate_template: bool = False
     """Whether or not to try validating the template."""
 
     input_variables: List[str]
@@ -95,7 +96,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
     prefix: str = ""
     """A prompt template string to put before the examples."""
 
-    template_format: str = "f-string"
+    template_format: Union[Literal["f-string"], Literal["jinja2"]] = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
     @root_validator()
@@ -107,6 +108,14 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
                 values["template_format"],
                 values["input_variables"] + list(values["partial_variables"]),
             )
+        elif values.get("template_format"):
+            values["input_variables"] = [
+                var
+                for var in get_template_variables(
+                    values["prefix"] + values["suffix"], values["template_format"]
+                )
+                if var not in values["partial_variables"]
+            ]
         return values
 
     class Config:
