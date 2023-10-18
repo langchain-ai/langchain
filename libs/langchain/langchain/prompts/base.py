@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
+from string import Formatter
 from typing import Any, Callable, Dict, List, Literal, Set
 
 from langchain.schema.messages import BaseMessage, HumanMessage
@@ -97,6 +98,20 @@ def check_valid_template(
             "Invalid prompt schema; check for mismatched or missing input parameters. "
             + str(e)
         )
+
+
+def get_template_variables(template: str, template_format: str) -> List[str]:
+    if template_format == "jinja2":
+        # Get the variables for the template
+        input_variables = _get_jinja2_variables_from_template(template)
+    elif template_format == "f-string":
+        input_variables = {
+            v for _, v, _, _ in Formatter().parse(template) if v is not None
+        }
+    else:
+        raise ValueError(f"Unsupported template format: {template_format}")
+
+    return sorted(input_variables)
 
 
 class StringPromptValue(PromptValue):

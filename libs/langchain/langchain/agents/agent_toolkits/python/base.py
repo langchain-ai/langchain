@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, Optional
 
+from langchain._api import warn_deprecated
 from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.agent_toolkits.python.prompt import PREFIX
 from langchain.agents.mrkl.base import ZeroShotAgent
@@ -22,9 +23,19 @@ def create_python_agent(
     verbose: bool = False,
     prefix: str = PREFIX,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a python agent from an LLM and tool."""
+    warn_deprecated(
+        since="0.0.314",
+        message=(
+            "On 2023-10-27 this module will be be deprecated from langchain, and "
+            "will be available from the langchain-experimental package."
+            "This code is already available in langchain-experimental."
+            "See https://github.com/langchain-ai/langchain/discussions/11680."
+        ),
+        pending=True,
+    )
     tools = [tool]
     agent: BaseSingleActionAgent
 
