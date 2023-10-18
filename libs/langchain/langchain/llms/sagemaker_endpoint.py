@@ -49,10 +49,10 @@ class LineIterator:
         self.buffer = io.BytesIO()
         self.read_pos = 0
 
-    def __iter__(self) -> "LineIterator":
+    def __iter__(self):
         return self
 
-    def __next__(self) -> Any:
+    def __next__(self):
         while True:
             self.buffer.seek(self.read_pos)
             line = self.buffer.readline()
@@ -66,7 +66,7 @@ class LineIterator:
                     continue
                 raise
             if "PayloadPart" not in chunk:
-                # Unknown Event Type
+                print("Unknown event type:" + chunk)
                 continue
             self.buffer.seek(0, io.SEEK_END)
             self.buffer.write(chunk["PayloadPart"]["Bytes"])
@@ -91,7 +91,7 @@ class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
                 def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
                     input_str = json.dumps({prompt: prompt, **model_kwargs})
                     return input_str.encode('utf-8')
-                
+
                 def transform_output(self, output: bytes) -> str:
                     response_json = json.loads(output.read().decode("utf-8"))
                     return response_json[0]["generated_text"]
@@ -141,7 +141,7 @@ class SagemakerEndpoint(LLM):
     """
 
     """
-    Args:        
+    Args:
 
         region_name: The aws region e.g., `us-west-2`.
             Fallsback to AWS_DEFAULT_REGION env variable
@@ -154,7 +154,7 @@ class SagemakerEndpoint(LLM):
 
         client: boto3 client for Sagemaker Endpoint
 
-        content_handler: Implementation for model specific LLMContentHandler 
+        content_handler: Implementation for model specific LLMContentHandler
 
 
     Example:
@@ -228,7 +228,7 @@ class SagemakerEndpoint(LLM):
                 def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
                     input_str = json.dumps({prompt: prompt, **model_kwargs})
                     return input_str.encode('utf-8')
-                
+
                 def transform_output(self, output: bytes) -> str:
                     response_json = json.loads(output.read().decode("utf-8"))
                     return response_json[0]["generated_text"]
@@ -338,14 +338,16 @@ class SagemakerEndpoint(LLM):
                 )
                 iterator = LineIterator(resp["Body"])
                 current_completion: str = ""
+                start_json = b"{"
                 for line in iterator:
-                    resp = json.loads(line)
-                    resp_output = resp.get("outputs")[0]
-                    if stop is not None:
-                        # Uses same approach as below
-                        resp_output = enforce_stop_tokens(resp_output, stop)
-                    current_completion += resp_output
-                    run_manager.on_llm_new_token(resp_output)
+                    if line != b"" and start_json in line:
+                        token = json.loads(
+                            line[line.find(start_json) :].decode("utf-8")
+                        )["token"]
+                        resp_output = token["text"]
+                        if not token["special"]:
+                            current_completion += resp_output
+                            run_manager.on_llm_new_token(resp_output)
                 return current_completion
             except Exception as e:
                 raise ValueError(f"Error raised by streaming inference endpoint: {e}")
