@@ -260,13 +260,12 @@ def _process_input_variables(
     input_variables = get_template_variables(template, template_format)
 
     if partial_variables:
-        input_variables = {
+        _input_variables = {
             var for var in input_variables if var not in partial_variables
         }
+        input_variables = list(_input_variables)
 
-    _input_variables = list(input_variables)
-
-    return _input_variables
+    return input_variables
 
 
 # For backwards compatibility.
