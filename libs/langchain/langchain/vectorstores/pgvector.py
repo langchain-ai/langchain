@@ -77,6 +77,7 @@ class PGVector(VectorStore):
         connection_string: Postgres connection string.
         embedding_function: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
+        engine_args: SQLAlchemy's create engine arguments.
         collection_name: The name of the collection to use. (default: langchain)
             NOTE: This is not the name of the table, but the name of the collection.
             The tables will be created when initializing the store (if not exists)
@@ -161,7 +162,7 @@ class PGVector(VectorStore):
                 session.execute(statement)
                 session.commit()
         except Exception as e:
-            self.logger.exception(e)
+            raise Exception(f"Failed to create vector extension: {e}")
 
     def create_tables_if_not_exists(self) -> None:
         with self._conn.begin():
