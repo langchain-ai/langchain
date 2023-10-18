@@ -24,6 +24,7 @@ def _get_default_python_repl() -> PythonREPL:
 
 def sanitize_input(query: str) -> str:
     """Sanitize input to the python REPL.
+
     Remove whitespace, backtick & python (if llm mistakes python console as terminal)
 
     Args:
@@ -99,6 +100,8 @@ class PythonREPLTool(BaseTool):
 
 
 class PythonInputs(BaseModel):
+    """Python inputs."""
+
     query: str = Field(description="code snippet to run")
 
 
