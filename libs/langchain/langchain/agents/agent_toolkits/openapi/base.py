@@ -28,7 +28,7 @@ def create_openapi_agent(
     verbose: bool = False,
     return_intermediate_steps: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct an OpenAPI agent from an LLM and tools."""
     tools = toolkit.get_tools()
