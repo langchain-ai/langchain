@@ -37,7 +37,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
-    validate_template: bool = True
+    validate_template: bool = False
     """Whether or not to try validating the template."""
 
     @root_validator(pre=True)
@@ -72,6 +72,13 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
                     f"Got input_variables={input_variables}, but based on "
                     f"prefix/suffix expected {expected_input_variables}"
                 )
+        else:
+            values["input_variables"] = sorted(
+                set(values["suffix"].input_variables)
+                | set(values["prefix"].input_variables if values["prefix"] else [])
+                - set(values["partial_variables"])
+            )
+            print(values["input_variables"])
         return values
 
     class Config:
