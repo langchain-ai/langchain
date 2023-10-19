@@ -319,6 +319,8 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
 class GoogleVertexAIMultiTurnSearchRetriever(
     BaseRetriever, _BaseGoogleVertexAISearchRetriever
 ):
+    """`Google Vertex AI Search` retriever for multi-turn conversations."""
+
     _client: ConversationalSearchServiceClient
 
     class Config:
