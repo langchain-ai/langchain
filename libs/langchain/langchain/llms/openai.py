@@ -138,6 +138,20 @@ class BaseOpenAI(BaseLLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
 
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+        if self.openai_api_base != "":
+            attributes["openai_api_base"] = self.openai_api_base
+
+        if self.openai_organization != "":
+            attributes["openai_organization"] = self.openai_organization
+
+        if self.openai_proxy != "":
+            attributes["openai_proxy"] = self.openai_proxy
+
+        return attributes
+
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
@@ -691,6 +705,13 @@ class AzureOpenAI(BaseOpenAI):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "azure"
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        return {
+            "openai_api_type": self.openai_api_type,
+            "openai_api_version": self.openai_api_version,
+        }
 
 
 class OpenAIChat(BaseLLM):

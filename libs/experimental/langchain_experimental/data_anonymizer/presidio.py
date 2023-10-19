@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 import yaml
 
 from langchain_experimental.data_anonymizer.base import (
+    DEFAULT_DEANONYMIZER_MATCHING_STRATEGY,
     AnonymizerBase,
     ReversibleAnonymizerBase,
 )
@@ -16,7 +17,7 @@ from langchain_experimental.data_anonymizer.deanonymizer_mapping import (
     create_anonymizer_mapping,
 )
 from langchain_experimental.data_anonymizer.deanonymizer_matching_strategies import (
-    default_matching_strategy,
+    exact_matching_strategy,
 )
 from langchain_experimental.data_anonymizer.faker_presidio_mapping import (
     get_pseudoanonymizer_mapping,
@@ -138,7 +139,12 @@ class PresidioAnonymizerBase(AnonymizerBase):
 
 
 class PresidioAnonymizer(PresidioAnonymizerBase):
-    def _anonymize(self, text: str, language: Optional[str] = None) -> str:
+    def _anonymize(
+        self,
+        text: str,
+        language: Optional[str] = None,
+        allow_list: Optional[List[str]] = None,
+    ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
         Each time fake values will be different, as they are generated randomly.
@@ -167,10 +173,27 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
                 "Change your language configuration file to add more languages."
             )
 
+        # Check supported entities for given language
+        # e.g. IT_FISCAL_CODE is not supported for English in Presidio by default
+        # If you want to use it, you need to add a recognizer manually
+        supported_entities = []
+        for recognizer in self._analyzer.get_recognizers(language):
+            recognizer_dict = recognizer.to_dict()
+            supported_entities.extend(
+                [recognizer_dict["supported_entity"]]
+                if "supported_entity" in recognizer_dict
+                else recognizer_dict["supported_entities"]
+            )
+
+        entities_to_analyze = list(
+            set(supported_entities).intersection(set(self.analyzed_fields))
+        )
+
         analyzer_results = self._analyzer.analyze(
             text,
-            entities=self.analyzed_fields,
+            entities=entities_to_analyze,
             language=language,
+            allow_list=allow_list,
         )
 
         filtered_analyzer_results = (
@@ -190,7 +213,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
             filtered_analyzer_results,
             anonymizer_results,
         )
-        return default_matching_strategy(text, anonymizer_mapping)
+        return exact_matching_strategy(text, anonymizer_mapping)
 
 
 class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerBase):
@@ -225,7 +248,12 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
             for key, inner_dict in self.deanonymizer_mapping.items()
         }
 
-    def _anonymize(self, text: str, language: Optional[str] = None) -> str:
+    def _anonymize(
+        self,
+        text: str,
+        language: Optional[str] = None,
+        allow_list: Optional[List[str]] = None,
+    ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
         Each time fake values will be different, as they are generated randomly.
@@ -256,10 +284,27 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
                 "Change your language configuration file to add more languages."
             )
 
+        # Check supported entities for given language
+        # e.g. IT_FISCAL_CODE is not supported for English in Presidio by default
+        # If you want to use it, you need to add a recognizer manually
+        supported_entities = []
+        for recognizer in self._analyzer.get_recognizers(language):
+            recognizer_dict = recognizer.to_dict()
+            supported_entities.extend(
+                [recognizer_dict["supported_entity"]]
+                if "supported_entity" in recognizer_dict
+                else recognizer_dict["supported_entities"]
+            )
+
+        entities_to_analyze = list(
+            set(supported_entities).intersection(set(self.analyzed_fields))
+        )
+
         analyzer_results = self._analyzer.analyze(
             text,
-            entities=self.analyzed_fields,
+            entities=entities_to_analyze,
             language=language,
+            allow_list=allow_list,
         )
 
         filtered_analyzer_results = (
@@ -282,14 +327,14 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         )
         self._deanonymizer_mapping.update(new_deanonymizer_mapping)
 
-        return default_matching_strategy(text, self.anonymizer_mapping)
+        return exact_matching_strategy(text, self.anonymizer_mapping)
 
     def _deanonymize(
         self,
         text_to_deanonymize: str,
         deanonymizer_matching_strategy: Callable[
             [str, MappingDataType], str
-        ] = default_matching_strategy,
+        ] = DEFAULT_DEANONYMIZER_MATCHING_STRATEGY,
     ) -> str:
         """Deanonymize text.
         Each anonymized entity is replaced with its original value.
@@ -311,6 +356,10 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         )
 
         return text_to_deanonymize
+
+    def reset_deanonymizer_mapping(self) -> None:
+        """Reset the deanonymizer mapping"""
+        self._deanonymizer_mapping = DeanonymizerMapping()
 
     def save_deanonymizer_mapping(self, file_path: Union[Path, str]) -> None:
         """Save the deanonymizer mapping to a JSON or YAML file.

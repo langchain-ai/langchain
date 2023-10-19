@@ -1,5 +1,19 @@
 # flake8: noqa
-"""Load tools."""
+"""Tools provide access to various resources and services.
+
+LangChain has a large ecosystem of integrations with various external resources
+like local and remote file systems, APIs and databases.
+
+These integrations allow developers to create versatile applications that combine the
+power of LLMs with the ability to access, interact with and manipulate external
+resources.
+
+When developing an application, developers should inspect the capabilities and
+permissions of the tools that underlie the given agent toolkit, and determine
+whether permissions of the given toolkit are appropriate for the application.
+
+See [Security](https://python.langchain.com/docs/security) for more information.
+"""
 import warnings
 from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
@@ -43,9 +57,9 @@ from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchResults
-from langchain.utilities import ArxivAPIWrapper
-from langchain.utilities import GoldenQueryAPIWrapper
-from langchain.utilities import PubMedAPIWrapper
+from langchain.utilities.arxiv import ArxivAPIWrapper
+from langchain.utilities.golden_query import GoldenQueryAPIWrapper
+from langchain.utilities.pubmed import PubMedAPIWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
@@ -120,7 +134,7 @@ def _get_llm_math(llm: BaseLanguageModel) -> BaseTool:
 def _get_open_meteo_api(llm: BaseLanguageModel) -> BaseTool:
     chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
     return Tool(
-        name="Open Meteo API",
+        name="Open-Meteo-API",
         description="Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -138,7 +152,7 @@ def _get_news_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
     )
     return Tool(
-        name="News API",
+        name="News-API",
         description="Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -152,7 +166,7 @@ def _get_tmdb_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         headers={"Authorization": f"Bearer {tmdb_bearer_token}"},
     )
     return Tool(
-        name="TMDB API",
+        name="TMDB-API",
         description="Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -166,7 +180,7 @@ def _get_podcast_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         headers={"X-ListenAPI-Key": listen_api_key},
     )
     return Tool(
-        name="Podcast API",
+        name="Podcast-API",
         description="Use the Listen Notes Podcast API to search all podcasts or episodes. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -235,7 +249,7 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
 
 def _get_dalle_image_generator(**kwargs: Any) -> Tool:
     return Tool(
-        "Dall-E Image Generator",
+        "Dall-E-Image-Generator",
         DallEAPIWrapper(**kwargs).run,
         "A wrapper around OpenAI DALL-E API. Useful for when you need to generate images from a text description. Input should be an image description.",
     )
@@ -243,7 +257,7 @@ def _get_dalle_image_generator(**kwargs: Any) -> Tool:
 
 def _get_twilio(**kwargs: Any) -> BaseTool:
     return Tool(
-        name="Text Message",
+        name="Text-Message",
         description="Useful for when you need to send a text message to a provided phone number.",
         func=TwilioAPIWrapper(**kwargs).run,
     )
@@ -397,7 +411,6 @@ def load_huggingface_tool(
 
     Returns:
         A tool.
-
     """
     try:
         from transformers import load_tool
@@ -433,6 +446,22 @@ def load_tools(
     **kwargs: Any,
 ) -> List[BaseTool]:
     """Load tools based on their name.
+
+    Tools allow agents to interact with various resources and services like
+    APIs, databases, file systems, etc.
+
+    Please scope the permissions of each tools to the minimum required for the
+    application.
+
+    For example, if an application only needs to read from a database,
+    the database tool should not be given write permissions. Moreover
+    consider scoping the permissions to only allow accessing specific
+    tables and impose user-level quota for limiting resource usage.
+
+    Please read the APIs of the individual tools to determine which configuration
+    they support.
+
+    See [Security](https://python.langchain.com/docs/security) for more information.
 
     Args:
         tool_names: name of tools to load.

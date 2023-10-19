@@ -1,0 +1,20 @@
+# LLMChain
+
+You can use the existing LLMChain in a very similar way to before - provide a prompt and a model.
+
+```python
+chain = LLMChain(llm=chat, prompt=chat_prompt)
+```
+
+
+```python
+chain.run(input_language="English", output_language="French", text="I love programming.")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    "J'adore la programmation."
+```
+
+</CodeOutputBlock>

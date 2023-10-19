@@ -6,7 +6,8 @@ from langchain.schema.embeddings import Embeddings
 
 class XinferenceEmbeddings(Embeddings):
 
-    """Wrapper around xinference embedding models.
+    """Xinference embedding models.
+
     To use, you should have the xinference library installed:
 
     .. code-block:: bash
