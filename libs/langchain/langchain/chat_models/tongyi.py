@@ -327,10 +327,8 @@ class ChatTongyi(BaseChatModel):
             raise ValueError("Last message should be user message.")
         
         params = {**params, **kwargs}
-        prompt = message_dicts[-1]['content']
-        message_dicts = message_dicts[:-1]
         response = self.completion_with_retry(
-            messages=message_dicts, prompt=prompt, run_manager=run_manager, **params
+            messages=message_dicts, run_manager=run_manager, **params
         )
         return self._create_chat_result(response)
 
