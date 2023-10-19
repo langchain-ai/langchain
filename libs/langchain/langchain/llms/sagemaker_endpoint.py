@@ -49,10 +49,10 @@ class LineIterator:
         self.buffer = io.BytesIO()
         self.read_pos = 0
 
-    def __iter__(self):
+    def __iter__(self) -> "LineIterator":
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         while True:
             self.buffer.seek(self.read_pos)
             line = self.buffer.readline()
@@ -66,7 +66,7 @@ class LineIterator:
                     continue
                 raise
             if "PayloadPart" not in chunk:
-                print("Unknown event type:" + chunk)
+                # Unknown Event Type
                 continue
             self.buffer.seek(0, io.SEEK_END)
             self.buffer.write(chunk["PayloadPart"]["Bytes"])
