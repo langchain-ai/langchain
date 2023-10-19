@@ -38,7 +38,9 @@ class ModerationPromptSafetyConfig(BaseModel):
 
 class BaseModerationConfig(BaseModel):
     filters: List[
-        Union[ModerationPiiConfig, ModerationToxicityConfig, ModerationPromptSafetyConfig]
+        Union[
+            ModerationPiiConfig, ModerationToxicityConfig, ModerationPromptSafetyConfig
+        ]
     ] = [
         ModerationPiiConfig(),
         ModerationToxicityConfig(),

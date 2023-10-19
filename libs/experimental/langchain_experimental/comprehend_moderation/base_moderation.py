@@ -6,8 +6,10 @@ from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
 from langchain.schema import AIMessage, HumanMessage
 
-from langchain_experimental.comprehend_moderation.prompt_safety import ComprehendPromptSafety
 from langchain_experimental.comprehend_moderation.pii import ComprehendPII
+from langchain_experimental.comprehend_moderation.prompt_safety import (
+    ComprehendPromptSafety,
+)
 from langchain_experimental.comprehend_moderation.toxicity import ComprehendToxicity
 
 
@@ -109,13 +111,13 @@ class BaseModeration:
 
     def moderate(self, prompt: Any) -> str:
         from langchain_experimental.comprehend_moderation.base_moderation_config import (  # noqa: E501
-            ModerationPromptSafetyConfig,
             ModerationPiiConfig,
+            ModerationPromptSafetyConfig,
             ModerationToxicityConfig,
         )
         from langchain_experimental.comprehend_moderation.base_moderation_exceptions import (  # noqa: E501
-            ModerationPromptSafetyError,
             ModerationPiiError,
+            ModerationPromptSafetyError,
             ModerationToxicityError,
         )
 

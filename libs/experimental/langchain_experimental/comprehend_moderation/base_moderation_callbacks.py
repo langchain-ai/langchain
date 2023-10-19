@@ -11,7 +11,8 @@ class BaseModerationCallbackHandler:
                 BaseModerationCallbackHandler.on_after_toxicity, self.on_after_toxicity
             )
             and self._is_method_unchanged(
-                BaseModerationCallbackHandler.on_after_prompt_safety, self.on_after_prompt_safety
+                BaseModerationCallbackHandler.on_after_prompt_safety,
+                self.on_after_prompt_safety,
             )
         ):
             raise NotImplementedError(
