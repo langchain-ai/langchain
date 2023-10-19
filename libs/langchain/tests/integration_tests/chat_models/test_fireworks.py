@@ -72,12 +72,33 @@ def test_chat_fireworks_llm_output_contains_model_id() -> None:
     assert llm_result.llm_output["model"] == chat.model
 
 
+def test_chat_fireworks_llm_output_stop_words() -> None:
+    """Test llm_output contains model_id."""
+    chat = ChatFireworks()
+    message = HumanMessage(content="Hello")
+    llm_result = chat.generate([[message]], stop=[","])
+    assert llm_result.llm_output is not None
+    assert llm_result.llm_output["model"] == chat.model
+    assert llm_result.generations[0][0].text[-1] == ","
+
+
 def test_fireworks_streaming() -> None:
     """Test streaming tokens from Fireworks."""
     llm = ChatFireworks()
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
+
+
+def test_fireworks_streaming_stop_words() -> None:
+    """Test streaming tokens with stop words."""
+    llm = ChatFireworks()
+
+    last_token = ""
+    for token in llm.stream("I'm Pickle Rick", stop=[","]):
+        last_token = token.content
+        assert isinstance(token.content, str)
+    assert last_token[-1] == ","
 
 
 @pytest.mark.asyncio

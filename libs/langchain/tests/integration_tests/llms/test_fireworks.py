@@ -16,7 +16,7 @@ from langchain.schema import LLMResult
 def test_fireworks_call() -> None:
     """Test valid call to fireworks."""
     llm = Fireworks()
-    output = llm("Who's the best quarterback in the NFL?")
+    output = llm("How is the weather in New York today?")
     assert isinstance(output, str)
 
 
@@ -50,6 +50,15 @@ def test_fireworks_multiple_prompts() -> None:
     assert len(output.generations) == 2
 
 
+def test_fireworks_stop_words() -> None:
+    """Test completion with stop words."""
+    llm = Fireworks()
+    output = llm.generate(["How is the weather in New York today?"], stop=[","])
+    assert isinstance(output, LLMResult)
+    assert isinstance(output.generations, list)
+    assert output.generations[0][0].text[-1] == ","
+
+
 def test_fireworks_streaming() -> None:
     """Test stream completion."""
     llm = Fireworks()
@@ -58,6 +67,19 @@ def test_fireworks_streaming() -> None:
 
     for token in generator:
         assert isinstance(token, str)
+
+
+def test_fireworks_streaming_stop_words() -> None:
+    """Test stream completion with stop words."""
+    llm = Fireworks()
+    generator = llm.stream("Who's the best quarterback in the NFL?", stop=[","])
+    assert isinstance(generator, Generator)
+
+    last_token = ""
+    for token in generator:
+        last_token = token
+        assert isinstance(token, str)
+    assert last_token[-1] == ","
 
 
 @pytest.mark.asyncio
