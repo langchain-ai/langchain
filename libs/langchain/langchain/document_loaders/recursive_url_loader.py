@@ -16,7 +16,6 @@ from typing import (
 )
 
 import requests
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.utils.html import extract_sub_links
@@ -82,19 +81,19 @@ class RecursiveUrlLoader(BaseLoader):
     """
 
     def __init__(
-        self,
-        url: str,
-        max_depth: Optional[int] = 2,
-        use_async: Optional[bool] = None,
-        extractor: Optional[Callable[[str], str]] = None,
-        metadata_extractor: Optional[Callable[[str, str], str]] = None,
-        exclude_dirs: Optional[Sequence[str]] = (),
-        timeout: Optional[int] = 10,
-        multiple_attempts: Optional[bool] = False,
-        prevent_outside: bool = True,
-        link_regex: Union[str, re.Pattern, None] = None,
-        headers: Optional[dict] = None,
-        check_response_status: bool = False,
+            self,
+            url: str,
+            max_depth: Optional[int] = 2,
+            use_async: Optional[bool] = None,
+            extractor: Optional[Callable[[str], str]] = None,
+            metadata_extractor: Optional[Callable[[str, str], str]] = None,
+            exclude_dirs: Optional[Sequence[str]] = (),
+            timeout: Optional[int] = 10,
+            multiple_attempts: Optional[bool] = False,
+            prevent_outside: bool = True,
+            link_regex: Union[str, re.Pattern, None] = None,
+            headers: Optional[dict] = None,
+            check_response_status: bool = False,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
@@ -179,7 +178,7 @@ class RecursiveUrlLoader(BaseLoader):
         return response
 
     def _get_child_links_recursive(
-        self, url: str, visited: Set[str], *, depth: int = 0
+            self, url: str, visited: Set[str], *, depth: int = 0
     ) -> Iterator[Document]:
         """Recursively get all child links starting with the path of the input URL.
 
@@ -228,12 +227,12 @@ class RecursiveUrlLoader(BaseLoader):
                 )
 
     async def _async_get_child_links_recursive(
-        self,
-        url: str,
-        visited: Set[str],
-        *,
-        session: Optional[aiohttp.ClientSession] = None,
-        depth: int = 0,
+            self,
+            url: str,
+            visited: Set[str],
+            *,
+            session: Optional[aiohttp.ClientSession] = None,
+            depth: int = 0,
     ) -> List[Document]:
         """Recursively get all child links starting with the path of the input URL.
 
