@@ -52,7 +52,7 @@ def _get_chat_history(chat_history: List[CHAT_TURN_TYPE]) -> str:
 
 class InputType(BaseModel):
     question: str
-    chat_history: List[CHAT_TURN_TYPE]
+    chat_history: List[CHAT_TURN_TYPE] = Field(default_factory=list)
 
 
 class BaseConversationalRetrievalChain(Chain):
