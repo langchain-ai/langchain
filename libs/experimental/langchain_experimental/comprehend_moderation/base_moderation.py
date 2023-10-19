@@ -59,7 +59,7 @@ class BaseModeration:
                 input_text = message.content
         else:
             raise ValueError(
-                f"Invalid input type {type(input)}. "
+                f"Invalid input type {type(input_text)}. "
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
         return input_text
