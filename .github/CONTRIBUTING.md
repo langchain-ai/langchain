@@ -289,6 +289,13 @@ make docs_linkcheck
 make api_docs_linkcheck
 ```
 
+### Verify Documentation changes
+
+After pushing documentation changes to the repository, you can preview and verify that the changes are 
+what you wanted by clicking the `View deployment` or `Visit Preview` buttons on the pull request `Conversation` page. 
+This will take you to a preview of the documentation changes.
+This preview is created by [Vercel](https://vercel.com/docs/getting-started-with-vercel).
+
 ## 🏭 Release Process
 
 As of now, LangChain has an ad hoc release process: releases are cut with high frequency by
