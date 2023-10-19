@@ -84,6 +84,7 @@ class Redis(VectorStore):
     search API available.
 
     .. code-block:: bash
+
         # to run redis stack in docker locally
         docker run -d -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
 
@@ -248,7 +249,7 @@ class Redis(VectorStore):
         index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
         vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
-        key_prefix: str = "doc",
+        key_prefix: Optional[str] = None,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
@@ -275,7 +276,7 @@ class Redis(VectorStore):
         self.client = redis_client
         self.relevance_score_fn = relevance_score_fn
         self._schema = self._get_schema_with_defaults(index_schema, vector_schema)
-        self._key_prefix = key_prefix
+        self.key_prefix = key_prefix if key_prefix is not None else f"doc:{index_name}"
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -653,10 +654,6 @@ class Redis(VectorStore):
             # Index not exist
             return False
 
-    @property
-    def _full_key_prefix(self) -> str:
-        return f"{self._key_prefix}:{self.index_name}"
-
     def add_texts(
         self,
         texts: Iterable[str],
@@ -702,8 +699,8 @@ class Redis(VectorStore):
         for i, text in enumerate(texts):
             # Use provided values by default or fallback
             key = keys_or_ids[i] if keys_or_ids else str(uuid.uuid4().hex)
-            if not key.startswith(self._full_key_prefix + ":"):
-                key = self._full_key_prefix + ":" + key
+            if not key.startswith(self.key_prefix + ":"):
+                key = self.key_prefix + ":" + key
             metadata = metadatas[i] if metadatas else {}
             metadata = _prepare_metadata(metadata) if clean_metadata else metadata
             pipeline.hset(
@@ -1227,7 +1224,7 @@ class Redis(VectorStore):
             self.client.ft(self.index_name).create_index(
                 fields=self._schema.get_fields(),
                 definition=IndexDefinition(
-                    prefix=[self._full_key_prefix], index_type=IndexType.HASH
+                    prefix=[self.key_prefix], index_type=IndexType.HASH
                 ),
             )
 
