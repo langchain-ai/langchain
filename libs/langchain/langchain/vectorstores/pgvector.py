@@ -115,7 +115,7 @@ class PGVector(VectorStore):
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         *,
-        connection: sqlalchemy.engine.Connection = None,
+        connection: Union[sqlalchemy.engine.Connection, None] = None,
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
