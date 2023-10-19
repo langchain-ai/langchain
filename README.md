@@ -141,6 +141,7 @@ while(True):
 - [Работа с кэшем в GigaChain](docs/extras/integrations/llms/gigachain_caching.ipynb)
 - [Автономный агент AutoGPT с использованием GigaChat](cookbook/autogpt/autogpt.ipynb)
 - [Генерация плейлистов с помощью GigaChain и Spotify](docs/extras/modules/agents/how_to/playlists.ipynb)
+- Работа с LlamaIndex: [с помощью ретривера и QA цепочки](docs/docs/integrations/retrievers/llama_index_retriever.ipynb) / с помощью тула (In process...)
 
 ### Развлекательные примеры
 - [Площадка для споров между GigaChat и YandexGPT с судьей GPT-4](docs/docs/use_cases/fun/debates.ipynb)
