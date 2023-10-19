@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -10,7 +10,6 @@ from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.pydantic_v1 import BaseModel, Extra, create_model, root_validator
-from langchain.schema.runnable.config import RunnableConfig
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
@@ -99,9 +98,8 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     return_intermediate_steps: bool = False
     """Return the results of the map steps in the output."""
 
-    def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    @property
+    def output_schema(self) -> type[BaseModel]:
         if self.return_intermediate_steps:
             return create_model(
                 "MapReduceDocumentsOutput",
@@ -111,7 +109,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 },  # type: ignore[call-overload]
             )
 
-        return super().get_output_schema(config)
+        return super().output_schema
 
     @property
     def output_keys(self) -> List[str]:

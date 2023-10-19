@@ -60,15 +60,13 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     def OutputType(self) -> Type[Output]:
         return self.default.OutputType
 
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
-        return self._prepare(config).get_input_schema(config)
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        return self.default.input_schema
 
-    def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
-        return self._prepare(config).get_output_schema(config)
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        return self.default.output_schema
 
     @abstractmethod
     def _prepare(

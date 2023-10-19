@@ -800,17 +800,6 @@ def test_configurable_fields() -> None:
         text="Hello, John! John!"
     )
 
-    assert prompt_configurable.with_config(
-        configurable={"prompt_template": "Hello {name} in {lang}"}
-    ).input_schema.schema() == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {
-            "lang": {"title": "Lang", "type": "string"},
-            "name": {"title": "Name", "type": "string"},
-        },
-    }
-
     chain_configurable = prompt_configurable | fake_llm_configurable | StrOutputParser()
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
@@ -845,26 +834,12 @@ def test_configurable_fields() -> None:
     assert (
         chain_configurable.with_config(
             configurable={
-                "prompt_template": "A very good morning to you, {name} {lang}!",
+                "prompt_template": "A very good morning to you, {name}!",
                 "llm_responses": ["c"],
             }
-        ).invoke({"name": "John", "lang": "en"})
+        ).invoke({"name": "John"})
         == "c"
     )
-
-    assert chain_configurable.with_config(
-        configurable={
-            "prompt_template": "A very good morning to you, {name} {lang}!",
-            "llm_responses": ["c"],
-        }
-    ).input_schema.schema() == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {
-            "lang": {"title": "Lang", "type": "string"},
-            "name": {"title": "Name", "type": "string"},
-        },
-    }
 
     chain_with_map_configurable: Runnable = prompt_configurable | {
         "llm1": fake_llm_configurable | StrOutputParser(),
