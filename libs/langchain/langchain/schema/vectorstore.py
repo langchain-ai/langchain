@@ -475,7 +475,7 @@ class VectorStore(ABC):
 
     def _get_retriever_metadata(self) -> Dict[str, Any]:
         """Get metadata for retriever."""
-        metadata = {"vectorstore": self.__class__.__name__}
+        metadata = {"vectorstore_provider": self.__class__.__name__}
         if self.embeddings:
             metadata["embedding_provider"] = self.embeddings.__class__.__name__
             metadata["embedding_model"] = getattr(
