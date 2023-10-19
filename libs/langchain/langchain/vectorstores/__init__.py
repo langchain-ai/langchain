@@ -295,6 +295,12 @@ def _import_scann() -> Any:
     return ScaNN
 
 
+def _import_semadb() -> Any:
+    from langchain.vectorstores.semadb import SemaDB
+
+    return SemaDB
+
+
 def _import_singlestoredb() -> Any:
     from langchain.vectorstores.singlestoredb import SingleStoreDB
 
@@ -486,6 +492,8 @@ def __getattr__(name: str) -> Any:
         return _import_rocksetdb()
     elif name == "ScaNN":
         return _import_scann()
+    elif name == "SemaDB":
+        return _import_semadb()
     elif name == "SingleStoreDB":
         return _import_singlestoredb()
     elif name == "SKLearnVectorStore":
@@ -531,20 +539,16 @@ __all__ = [
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
-    "Annoy",
-    "AtlasDB",
     "AtlasDB",
     "AwaDB",
     "AzureSearch",
     "Bagel",
     "Cassandra",
     "Chroma",
-    "Chroma",
     "Clarifai",
     "Clickhouse",
     "ClickhouseSettings",
     "DashVector",
-    "DeepLake",
     "DeepLake",
     "Dingo",
     "DocArrayHnswSearch",
@@ -567,7 +571,6 @@ __all__ = [
     "MyScaleSettings",
     "Neo4jVector",
     "OpenSearchVectorSearch",
-    "OpenSearchVectorSearch",
     "PGEmbedding",
     "PGVector",
     "Pinecone",
@@ -576,7 +579,7 @@ __all__ = [
     "Rockset",
     "SKLearnVectorStore",
     "ScaNN",
-    "SingleStoreDB",
+    "SemaDB",
     "SingleStoreDB",
     "SQLiteVSS",
     "StarRocks",
@@ -593,7 +596,6 @@ __all__ = [
     "VespaStore",
     "Weaviate",
     "ZepVectorStore",
-    "Zilliz",
     "Zilliz",
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",

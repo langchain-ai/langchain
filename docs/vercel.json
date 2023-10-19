@@ -1,8 +1,12 @@
 {
   "redirects": [
     {
-    "source": "/docs/use_cases/more/agents/autonomous_agents/:path*",
-    "destination": "/cookbook"
+      "source": "/docs/modules/data_connection/retrievers/self_query/:path*",
+      "destination": "/docs/integrations/retrievers/self_query/:path*"
+    },
+    {
+      "source": "/docs/use_cases/more/agents/autonomous_agents/:path*",
+      "destination": "/cookbook"
     },
     {
       "source": "/docs/use_cases/more/agents/agent_simulations/:path*",
@@ -3844,8 +3848,8 @@
       "destination": "/docs/additional_resources/dependents"
     },
     {
-      "source": "docs/integrations/retrievers/google_cloud_enterprise_search",
-      "destination": "docs/integrations/retrievers/google_vertex_ai_search"
+      "source": "/docs/integrations/retrievers/google_cloud_enterprise_search",
+      "destination": "/docs/integrations/retrievers/google_vertex_ai_search"
     }
   ]
 }

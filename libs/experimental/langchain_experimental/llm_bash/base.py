@@ -56,7 +56,9 @@ class LLMBashChain(Chain):
                 values["llm_chain"] = LLMChain(llm=values["llm"], prompt=prompt)
         return values
 
-    @root_validator
+    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
+    #       and causes mypy type-checking failures (hence the `type: ignore`)
+    @root_validator  # type: ignore[call-overload]
     def validate_prompt(cls, values: Dict) -> Dict:
         if values["llm_chain"].prompt.output_parser is None:
             raise ValueError(
