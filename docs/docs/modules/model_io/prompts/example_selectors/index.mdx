@@ -4,6 +4,13 @@ If you have a large number of examples, you may need to select which ones to inc
 
 The base interface is defined as below:
 
-import GetStarted from "@snippets/modules/model_io/prompts/example_selectors/get_started.mdx"
+```python
+class BaseExampleSelector(ABC):
+    """Interface for selecting examples to include in prompts."""
 
-<GetStarted/>
+    @abstractmethod
+    def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+        """Select which examples to use based on the inputs."""
+```
+
+The only method it needs to define is a ``select_examples`` method. This takes in the input variables and then returns a list of examples. It is up to each specific implementation as to how those examples are selected.

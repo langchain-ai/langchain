@@ -308,7 +308,6 @@ __all__ = [
     "SparkSQL",
     "TensorflowDatasets",
     "TextRequestsWrapper",
-    "TextRequestsWrapper",
     "TwilioAPIWrapper",
     "WikipediaAPIWrapper",
     "WolframAlphaAPIWrapper",
