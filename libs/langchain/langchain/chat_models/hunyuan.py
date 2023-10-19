@@ -4,14 +4,14 @@ import hmac
 import json
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Type, Union
 from urllib.parse import urlparse
 
 import requests
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel, _generate_from_stream
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -86,6 +86,13 @@ def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
     return ChatResult(generations=generations, llm_output=llm_output)
 
 
+def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
+    """Convert a string to a SecretStr if needed."""
+    if isinstance(value, SecretStr):
+        return value
+    return SecretStr(value)
+
+
 class ChatHunyuan(BaseChatModel):
     """Tencent Hunyuan chat models API by Tencent.
 
@@ -110,18 +117,22 @@ class ChatHunyuan(BaseChatModel):
     """Hunyuan App ID"""
     hunyuan_secret_id: Optional[str] = None
     """Hunyuan Secret ID"""
-    hunyuan_secret_key: Optional[str] = None
+    hunyuan_secret_key: Optional[SecretStr] = None
     """Hunyuan Secret Key"""
-    streaming: Optional[bool] = False
-    """streaming mode."""
-    request_timeout: Optional[int] = 60
-    """request timeout for chat http requests"""
+    streaming: bool = False
+    """Whether to stream the results or not."""
+    request_timeout: int = 60
+    """Timeout for requests to OpenAI completion API. Default is 60 seconds."""
 
     query_id: Optional[str] = None
+    """Query id for troubleshooting"""
     temperature: float = 1.0
+    """What sampling temperature to use."""
     top_p: float = 1.0
+    """What probability mass to use."""
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for Hunyuan call not explicitly specified."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -171,10 +182,12 @@ class ChatHunyuan(BaseChatModel):
             "hunyuan_secret_id",
             "HUNYUAN_SECRET_ID",
         )
-        values["hunyuan_secret_key"] = get_from_dict_or_env(
-            values,
-            "hunyuan_secret_key",
-            "HUNYUAN_SECRET_KEY",
+        values["hunyuan_secret_key"] = _to_secret(
+            get_from_dict_or_env(
+                values,
+                "hunyuan_secret_key",
+                "HUNYUAN_SECRET_KEY",
+            )
         )
 
         return values
@@ -215,7 +228,7 @@ class ChatHunyuan(BaseChatModel):
         sign_str = sign_str[:-1]
 
         hmacstr = hmac.new(
-            key=self.hunyuan_secret_key.encode("utf-8"),
+            key=self.hunyuan_secret_key.get_secret_value().encode("utf-8"),
             msg=sign_str.encode("utf-8"),
             digestmod=hashlib.sha1,
         ).digest()
