@@ -40,6 +40,8 @@ class Neo4jGraph(GraphStore):
         data is present in the database.
         The best way to guard against such negative outcomes is to (as appropriate)
         limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
     """
 
     def __init__(
