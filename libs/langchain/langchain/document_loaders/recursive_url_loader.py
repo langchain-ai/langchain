@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import time
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -26,9 +27,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _metadata_extractor(raw_html: str, url: str) -> dict:
+def _metadata_extractor(raw_html: str, status_code: int, url: str) -> dict:
     """Extract metadata from raw html using BeautifulSoup."""
-    metadata = {"source": url}
+    metadata = {"source": url, "status_code": status_code}
 
     try:
         from bs4 import BeautifulSoup
@@ -89,6 +90,7 @@ class RecursiveUrlLoader(BaseLoader):
         metadata_extractor: Optional[Callable[[str, str], str]] = None,
         exclude_dirs: Optional[Sequence[str]] = (),
         timeout: Optional[int] = 10,
+        multiple_attempts: Optional[bool] = False,
         prevent_outside: bool = True,
         link_regex: Union[str, re.Pattern, None] = None,
         headers: Optional[dict] = None,
@@ -112,6 +114,7 @@ class RecursiveUrlLoader(BaseLoader):
             exclude_dirs: A list of subdirectories to exclude.
             timeout: The timeout for the requests, in the unit of seconds. If None then
                 connection will not timeout.
+            multiple_attempts: If True, try to get the url content 5 times before giving up.
             prevent_outside: If True, prevent loading from urls which are not children
                 of the root url.
             link_regex: Regex for extracting sub-links from the raw html of a web page.
@@ -121,6 +124,7 @@ class RecursiveUrlLoader(BaseLoader):
 
         self.url = url
         self.max_depth = max_depth if max_depth is not None else 2
+        self.tries = 5 if multiple_attempts else 0
         self.use_async = use_async if use_async is not None else False
         self.extractor = extractor if extractor is not None else lambda x: x
         self.metadata_extractor = (
@@ -143,6 +147,34 @@ class RecursiveUrlLoader(BaseLoader):
         self.headers = headers
         self.check_response_status = check_response_status
 
+    def _get_url_with_multiple_attempts(self, url: str):
+        """This function will try to get the url content 5 more times before giving up.
+        Each time exponentially waiting for a certain amount of time
+        """
+        response = requests.get(url, timeout=self.timeout, headers=self.headers)
+        if response.status_code == 200:
+            return response
+        for i in range(self.tries):
+            try:
+                sleep_time = 2 ** i
+                time.sleep(sleep_time)
+                logger.warning(f"Unable to load from {url}. Will try in {sleep_time} seconds.")
+                response = requests.get(url, timeout=self.timeout, headers=self.headers)
+                if response.status_code != 200:
+                    logger.warning(
+                        f"Unable to load from {url}. Received error {response.status_code} of type "
+                        f"{response.status_code}"
+                    )
+                else:
+                    return response
+            except Exception as e:
+                logger.warning(
+                    f"Unable to load from {url}. Received error {e} of type "
+                    f"{e.__class__.__name__}"
+                )
+        logger.warning(f"Failed to retrive {url} after {self.tries}. attempts.")
+        return response
+
     def _get_child_links_recursive(
         self, url: str, visited: Set[str], *, depth: int = 0
     ) -> Iterator[Document]:
@@ -160,7 +192,7 @@ class RecursiveUrlLoader(BaseLoader):
         # Get all links that can be accessed from the current URL
         visited.add(url)
         try:
-            response = requests.get(url, timeout=self.timeout, headers=self.headers)
+            response = self._get_url_with_multiple_attempts(url)
             if self.check_response_status and 400 <= response.status_code <= 599:
                 raise ValueError(f"Received HTTP status {response.status_code}")
         except Exception as e:
