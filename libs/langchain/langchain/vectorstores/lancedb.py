@@ -162,9 +162,8 @@ class LanceDB(VectorStore):
         return instance
 
     def _init_table(self) -> Any:
-        import pyarrow as pa
-
         import lancedb
+        import pyarrow as pa
 
         schema = pa.schema(
             [
