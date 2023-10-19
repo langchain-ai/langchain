@@ -47,6 +47,8 @@ class FileManagementToolkit(BaseToolkit):
         - Limit the tools available to the agent to only the file operations
           necessary for the agent's intended use.
         - Sandbox the agent by running it in a container.
+
+        See https://python.langchain.com/docs/security for more information.
     """
 
     root_dir: Optional[str] = None

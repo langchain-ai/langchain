@@ -382,6 +382,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     """List of input variables in template messages. Used for validation."""
     messages: List[MessageLike]
     """List of messages consisting of either message prompt templates or messages."""
+    validate_template: bool = False
+    """Whether or not to try validating the template."""
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
@@ -432,7 +434,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                     input_types[message.variable_name] = List[AnyMessage]
         if "partial_variables" in values:
             input_vars = input_vars - set(values["partial_variables"])
-        if "input_variables" in values:
+        if "input_variables" in values and values.get("validate_template"):
             if input_vars != set(values["input_variables"]):
                 raise ValueError(
                     "Got mismatched input_variables. "

@@ -25,7 +25,7 @@ class MRKLOutputParser(AgentOutputParser):
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         text = re.sub(r"Observation:.*", "", text, 0, re.MULTILINE | re.DOTALL)
-        includes_answer = FINAL_ANSWER_ACTION.lower() in text.lower()
+        includes_answer = FINAL_ANSWER_ACTION in text
         regex = (
             r"Action\s*\d*\s*:[\s]*(.*?)[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
         )

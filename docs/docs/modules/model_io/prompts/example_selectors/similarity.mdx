@@ -26,15 +26,6 @@ examples = [
 
 ```python
 example_selector = SemanticSimilarityExampleSelector.from_examples(
-<<<<<<< HEAD:docs/snippets/modules/model_io/prompts/example_selectors/similarity.mdx
-    # This is the list of examples available to select from.
-    examples, 
-    # This is the embedding class used to produce embeddings which are used to measure semantic similarity.
-    OpenAIEmbeddings(), 
-    # This is the VectorStore class that is used to store the embeddings and do a similarity search over.
-    Chroma, 
-    # This is the number of examples to produce.
-=======
     # The list of examples available to select from.
     examples,
     # The embedding class used to produce embeddings which are used to measure semantic similarity.
@@ -42,7 +33,6 @@ example_selector = SemanticSimilarityExampleSelector.from_examples(
     # The VectorStore class that is used to store the embeddings and do a similarity search over.
     Chroma,
     # The number of examples to produce.
->>>>>>> ece22b6b6ac890c8b6c41c4953a56c7f8d69802c:docs/docs/modules/model_io/prompts/example_selectors/similarity.mdx
     k=1
 )
 similar_prompt = FewShotPromptTemplate(

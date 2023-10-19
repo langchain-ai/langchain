@@ -20,6 +20,7 @@ an interface where "chat messages" are the inputs and outputs.
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.anyscale import ChatAnyscale
 from langchain.chat_models.azure_openai import AzureChatOpenAI
+from langchain.chat_models.baichuan import ChatBaichuan
 from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from langchain.chat_models.bedrock import BedrockChat
 from langchain.chat_models.cohere import ChatCohere
@@ -38,6 +39,7 @@ from langchain.chat_models.minimax import MiniMaxChat
 from langchain.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
 from langchain.chat_models.ollama import ChatOllama
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.vertexai import ChatVertexAI
 from langchain.chat_models.yandex import ChatYandexGPT
@@ -64,7 +66,9 @@ __all__ = [
     "GigaChat",
     "ChatJavelinAIGateway",
     "ChatKonko",
+    "PaiEasChatEndpoint",
     "QianfanChatEndpoint",
     "ChatFireworks",
     "ChatYandexGPT",
+    "ChatBaichuan",
 ]

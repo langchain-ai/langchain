@@ -26,5 +26,5 @@ Observation: результат действия
 ... (этот цикл Thought/Action/Action Input/Observation может повторяться N раз)
 Thought: теперь я знаю окончательный ответ
 Final answer: окончательный ответ на исходный вопрос"""
-SYSTEM_MESSAGE_SUFFIX = """Начни! Напоминаю, что всегда нужно использовать точные символы `Окончательный ответ` при ответе."""
+SYSTEM_MESSAGE_SUFFIX = """Начни! Напоминаю, что всегда нужно использовать точные символы `Final answer` при ответе."""
 HUMAN_MESSAGE = "{input}\n\n{agent_scratchpad}"

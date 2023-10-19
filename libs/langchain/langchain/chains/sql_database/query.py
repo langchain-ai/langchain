@@ -33,6 +33,21 @@ def create_sql_query_chain(
 ) -> Runnable[Union[SQLInput, SQLInputWithTables], str]:
     """Create a chain that generates SQL queries.
 
+    *Security Note*: This chain generates SQL queries for the given database.
+
+        The SQLDatabase class provides a get_table_info method that can be used
+        to get column information as well as sample data from the table.
+
+        To mitigate risk of leaking sensitive data, limit permissions
+        to read and scope to the tables that are needed.
+
+        Optionally, use the SQLInputWithTables input type to specify which tables
+        are allowed to be accessed.
+
+        Control access to who can submit requests to this chain.
+
+        See https://python.langchain.com/docs/security for more information.
+
     Args:
         llm: The language model to use
         db: The SQLDatabase to generate the query for
