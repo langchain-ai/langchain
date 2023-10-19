@@ -150,7 +150,7 @@ class Fireworks(LLM):
     ) -> Iterator[str]:
         prompt = self._convert_input(input).to_string()
         generation: Optional[GenerationChunk] = None
-        for chunk in self._stream(prompt):
+        for chunk in self._stream(prompt, stop=stop):
             yield chunk.text
             if generation is None:
                 generation = chunk
@@ -168,7 +168,7 @@ class Fireworks(LLM):
     ) -> AsyncIterator[str]:
         prompt = self._convert_input(input).to_string()
         generation: Optional[GenerationChunk] = None
-        async for chunk in self._astream(prompt):
+        async for chunk in self._astream(prompt, stop=stop):
             yield chunk.text
             if generation is None:
                 generation = chunk
