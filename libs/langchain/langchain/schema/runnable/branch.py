@@ -130,9 +130,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         """The namespace of a RunnableBranch is the namespace of its default branch."""
         return cls.__module__.split(".")[:-1]
 
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    @property
+    def input_schema(self) -> Type[BaseModel]:
         runnables = (
             [self.default]
             + [r for _, r in self.branches]
@@ -140,10 +139,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         )
 
         for runnable in runnables:
-            if runnable.get_input_schema(config).schema().get("type") is not None:
-                return runnable.get_input_schema(config)
+            if runnable.input_schema.schema().get("type") is not None:
+                return runnable.input_schema
 
-        return super().get_input_schema(config)
+        return super().input_schema
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:

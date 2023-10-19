@@ -187,9 +187,8 @@ class ChildTool(BaseTool):
 
     # --- Runnable ---
 
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    @property
+    def input_schema(self) -> Type[BaseModel]:
         """The tool's input schema."""
         if self.args_schema is not None:
             return self.args_schema

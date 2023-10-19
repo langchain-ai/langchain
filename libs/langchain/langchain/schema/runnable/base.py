@@ -163,12 +163,6 @@ class Runnable(Generic[Input, Output], ABC):
     @property
     def input_schema(self) -> Type[BaseModel]:
         """The type of input this runnable accepts specified as a pydantic model."""
-        return self.get_input_schema()
-
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
-        """The type of input this runnable accepts specified as a pydantic model."""
         root_type = self.InputType
 
         if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
@@ -180,12 +174,6 @@ class Runnable(Generic[Input, Output], ABC):
 
     @property
     def output_schema(self) -> Type[BaseModel]:
-        """The type of output this runnable produces specified as a pydantic model."""
-        return self.get_output_schema()
-
-    def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
         """The type of output this runnable produces specified as a pydantic model."""
         root_type = self.OutputType
 
@@ -1056,15 +1044,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     def OutputType(self) -> Type[Output]:
         return self.last.OutputType
 
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
-        return self.first.get_input_schema(config)
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        return self.first.input_schema
 
-    def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
-        return self.last.get_output_schema(config)
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        return self.last.output_schema
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
@@ -1565,11 +1551,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
 
         return Any
 
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    @property
+    def input_schema(self) -> Type[BaseModel]:
         if all(
-            s.get_input_schema(config).schema().get("type", "object") == "object"
+            s.input_schema.schema().get("type", "object") == "object"
             for s in self.steps.values()
         ):
             # This is correct, but pydantic typings/mypy don't think so.
@@ -1578,16 +1563,15 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                 **{
                     k: (v.annotation, v.default)
                     for step in self.steps.values()
-                    for k, v in step.get_input_schema(config).__fields__.items()
+                    for k, v in step.input_schema.__fields__.items()
                     if k != "__root__"
                 },
             )
 
-        return super().get_input_schema(config)
+        return super().input_schema
 
-    def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    @property
+    def output_schema(self) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "RunnableParallelOutput",
@@ -2056,9 +2040,8 @@ class RunnableLambda(Runnable[Input, Output]):
         except ValueError:
             return Any
 
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    @property
+    def input_schema(self) -> Type[BaseModel]:
         """The pydantic schema for the input to this runnable."""
         func = getattr(self, "func", None) or getattr(self, "afunc")
 
@@ -2083,7 +2066,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 **{key: (Any, None) for key in dict_keys},  # type: ignore
             )
 
-        return super().get_input_schema(config)
+        return super().input_schema
 
     @property
     def OutputType(self) -> Any:
@@ -2232,13 +2215,12 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
     def InputType(self) -> Any:
         return List[self.bound.InputType]  # type: ignore[name-defined]
 
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    @property
+    def input_schema(self) -> Type[BaseModel]:
         return create_model(
             "RunnableEachInput",
             __root__=(
-                List[self.bound.get_input_schema(config)],  # type: ignore
+                List[self.bound.input_schema],  # type: ignore[name-defined]
                 None,
             ),
         )
@@ -2247,14 +2229,12 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
     def OutputType(self) -> Type[List[Output]]:
         return List[self.bound.OutputType]  # type: ignore[name-defined]
 
-    def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
-        schema = self.bound.get_output_schema(config)
+    @property
+    def output_schema(self) -> Type[BaseModel]:
         return create_model(
             "RunnableEachOutput",
             __root__=(
-                List[schema],  # type: ignore
+                List[self.bound.output_schema],  # type: ignore[name-defined]
                 None,
             ),
         )
@@ -2352,15 +2332,13 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     def OutputType(self) -> Type[Output]:
         return self.bound.OutputType
 
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
-        return self.bound.get_input_schema(merge_configs(self.config, config))
+    @property
+    def input_schema(self) -> Type[BaseModel]:
+        return self.bound.input_schema
 
-    def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
-        return self.bound.get_output_schema(merge_configs(self.config, config))
+    @property
+    def output_schema(self) -> Type[BaseModel]:
+        return self.bound.output_schema
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
