@@ -558,12 +558,31 @@ class Chroma(VectorStore):
             )
         embeddings = self._embedding_function.embed_documents(text)
 
-        self._collection.update(
-            ids=ids,
-            embeddings=embeddings,
-            documents=text,
-            metadatas=metadata,
-        )
+        if hasattr(
+            self._collection._client, "max_batch_size"
+        ):  # for Chroma 0.4.10 and above
+            from chromadb.utils.batch_utils import create_batches
+
+            for batch in create_batches(
+                api=self._collection._client,
+                ids=ids,
+                metadatas=metadata,
+                documents=text,
+                embeddings=embeddings,
+            ):
+                self._collection.update(
+                    ids=batch[0],
+                    embeddings=batch[1],
+                    documents=batch[3],
+                    metadatas=batch[2],
+                )
+        else:
+            self._collection.update(
+                ids=ids,
+                embeddings=embeddings,
+                documents=text,
+                metadatas=metadata,
+            )
 
     @classmethod
     def from_texts(
@@ -607,7 +626,26 @@ class Chroma(VectorStore):
             collection_metadata=collection_metadata,
             **kwargs,
         )
-        chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
+        if ids is None:
+            ids = [str(uuid.uuid1()) for _ in texts]
+        if hasattr(
+            chroma_collection._client, "max_batch_size"
+        ):  # for Chroma 0.4.10 and above
+            from chromadb.utils.batch_utils import create_batches
+
+            for batch in create_batches(
+                api=chroma_collection._client,
+                ids=ids,
+                metadatas=metadatas,
+                documents=texts,
+            ):
+                chroma_collection.add_texts(
+                    texts=batch[3] if batch[3] else [],
+                    metadatas=batch[2] if batch[2] else None,
+                    ids=batch[0],
+                )
+        else:
+            chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
 
     @classmethod
