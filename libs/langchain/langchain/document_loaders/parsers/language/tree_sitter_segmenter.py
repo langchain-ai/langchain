@@ -13,10 +13,10 @@ class TreeSitterSegmenter(CodeSegmenter):
 
         try:
             import tree_sitter  # noqa: F401
-            
+
             # TODO: Document this as a manual step if needed
             # https://til.simonwillison.net/python/tree-sitter
-            
+
             # The below auto-downloading business could potentially work when using the library,
             # but it's blocked while running tests
 
@@ -25,18 +25,16 @@ class TreeSitterSegmenter(CodeSegmenter):
             # # TODO: Make the path configurable
             # # TODO: Error handling
             # urlretrieve("https://github.com/tree-sitter/tree-sitter-cpp/archive/refs/heads/master.zip", "/tmp/tree-sitter-cpp")
-            
+
             # tree_sitter.Language.build_library('/tmp/tree-sitter-cpp.so', ['/tmp/tree-sitter-cpp'])
         except ImportError as e:
             # TODO: Real error message
-            raise ImportError(
-                str(e)
-            )
+            raise ImportError(str(e))
 
     def is_valid(self) -> bool:
         parser = self.get_parser()
         try:
-            parser.parse(bytes(self.code, encoding='UTF-8'))
+            parser.parse(bytes(self.code, encoding="UTF-8"))
             return True
             # TODO: Find real error type and only catch that
         except:
@@ -45,42 +43,66 @@ class TreeSitterSegmenter(CodeSegmenter):
     def extract_functions_classes(self) -> List[str]:
         language = self.get_language()
         query = language.query(self.get_chunk_query())
-        
+
         parser = self.get_parser()
-        tree = parser.parse(bytes(self.code, encoding='UTF-8'))
+        tree = parser.parse(bytes(self.code, encoding="UTF-8"))
 
         captures = query.captures(tree.root_node)
 
-        return [node.text.decode('UTF-8') for (node, name) in captures]
+        processed_lines = set()
+        chunks = []
+
+        for node, name in captures:
+            start_line = node.start_point[0]
+            end_line = node.end_point[0]
+            lines = list(range(start_line, end_line + 1))
+
+            if any(line in processed_lines for line in lines):
+                continue
+
+            processed_lines.update(lines)
+            chunk_text = node.text.decode("UTF-8")
+            chunks.append(chunk_text)
+
+        return chunks
 
     def simplify_code(self) -> str:
         language = self.get_language()
         query = language.query(self.get_chunk_query())
 
         parser = self.get_parser()
-        tree = parser.parse(bytes(self.code, encoding='UTF-8'))
+        tree = parser.parse(bytes(self.code, encoding="UTF-8"))
+        processed_lines = set()
 
-        # TODO: Track which lines already marked & blanked,
-        #       to keep from processing chunks inside other chunks
         simplified_lines = self.source_lines[:]
-        for (node, name) in query.captures(tree.root_node):
+        for node, name in query.captures(tree.root_node):
             start_line = node.start_point[0]
             end_line = node.end_point[0]
 
-            simplified_lines[start_line] = self.make_line_comment(f"Code for: {self.source_lines[start_line]}")
+            lines = list(range(start_line, end_line + 1))
+            if any(line in processed_lines for line in lines):
+                continue
+
+            simplified_lines[start_line] = self.make_line_comment(
+                f"Code for: {self.source_lines[start_line]}"
+            )
 
             for line_num in range(start_line + 1, end_line + 1):
                 simplified_lines[line_num] = None  # type: ignore
+
+            processed_lines.update(lines)
 
         return "\n".join(line for line in simplified_lines if line is not None)
 
     # TODO: Make abstract
     def get_language(self):
         from tree_sitter import Language
-        return Language('/tmp/tree-sitter-cpp.so', 'cpp')
+
+        return Language("/tmp/tree-sitter-cpp.so", "cpp")
 
     def get_parser(self):
         from tree_sitter import Parser
+
         parser = Parser()
         parser.set_language(self.get_language())
         return parser
