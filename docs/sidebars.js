@@ -54,6 +54,11 @@ module.exports = {
       },
     },
     {
+      type: "doc",
+      label: "Security",
+      id: "security",
+    },
+    {
       type: "category",
       label: "Guides",
       collapsed: true,
