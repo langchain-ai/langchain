@@ -96,7 +96,7 @@ class QianfanLLMEndpoint(LLM):
 
             values["client"] = qianfan.Completion(**params)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "qianfan package not found, please install it with "
                 "`pip install qianfan`"
             )
