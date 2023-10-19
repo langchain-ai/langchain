@@ -3127,6 +3127,19 @@ files = [
 numpy = ">=1.17.3"
 
 [[package]]
+name = "hippo-api"
+version = "1.1.0rc3"
+description = "Transwarp Hippo API"
+optional = true
+python-versions = ">=3.8.0"
+files = [
+    {file = "hippo_api-1.1.0rc3-py3-none-any.whl", hash = "sha256:68f8da5e3cbb3e06617b6bc41d321200809a83d6dec1bd96eabcdf5110ff076b"},
+]
+
+[package.dependencies]
+pyyaml = ">=6.0"
+
+[[package]]
 name = "hnswlib"
 version = "0.7.0"
 description = "hnswlib"
