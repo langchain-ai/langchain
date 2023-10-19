@@ -8,7 +8,7 @@ import requests
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel, _generate_from_stream
-from langchain.pydantic_v1 import Field, root_validator, SecretStr
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -168,11 +168,13 @@ class ChatBaichuan(BaseChatModel):
             "baichuan_api_key",
             "BAICHUAN_API_KEY",
         )
-        values["baichuan_secret_key"] = _to_secret(get_from_dict_or_env(
-            values,
-            "baichuan_secret_key",
-            "BAICHUAN_SECRET_KEY",
-        ))
+        values["baichuan_secret_key"] = _to_secret(
+            get_from_dict_or_env(
+                values,
+                "baichuan_secret_key",
+                "BAICHUAN_SECRET_KEY",
+            )
+        )
 
         return values
 
@@ -187,15 +189,6 @@ class ChatBaichuan(BaseChatModel):
         }
 
         return {**normal_params, **self.model_kwargs}
-
-    def _signature(self, data: Dict[str, Any], timestamp: int) -> str:
-        if self.baichuan_secret_key is None:
-            raise ValueError("Baichuan secret key is not set.")
-
-        input_str = self.baichuan_secret_key + json.dumps(data) + str(timestamp)
-        md5 = hashlib.md5()
-        md5.update(input_str.encode("utf-8"))
-        return md5.hexdigest()
 
     def _generate(
         self,
@@ -274,7 +267,7 @@ class ChatBaichuan(BaseChatModel):
                 "X-BC-Signature": _signature(
                     secret_key=self.baichuan_secret_key,
                     payload=payload,
-                    timestamp=timestamp
+                    timestamp=timestamp,
                 ),
                 "X-BC-Sign-Algo": "MD5",
                 **headers,
