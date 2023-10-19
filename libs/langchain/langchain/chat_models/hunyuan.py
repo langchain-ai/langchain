@@ -152,7 +152,7 @@ class ChatHunyuan(BaseChatModel):
     streaming: bool = False
     """Whether to stream the results or not."""
     request_timeout: int = 60
-    """Timeout for requests to OpenAI completion API. Default is 60 seconds."""
+    """Timeout for requests to Hunyuan API. Default is 60 seconds."""
 
     query_id: Optional[str] = None
     """Query id for troubleshooting"""
@@ -162,7 +162,7 @@ class ChatHunyuan(BaseChatModel):
     """What probability mass to use."""
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Holds any model parameters valid for Hunyuan call not explicitly specified."""
+    """Holds any model parameters valid for API call not explicitly specified."""
 
     class Config:
         """Configuration for this pydantic object."""
