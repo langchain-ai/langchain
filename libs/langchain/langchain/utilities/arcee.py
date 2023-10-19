@@ -12,18 +12,22 @@ from langchain.schema.retriever import Document
 
 
 class ArceeRoute(str, Enum):
+    """Routes available for the Arcee API as enumerator."""
+
     generate = "models/generate"
     retrieve = "models/retrieve"
     model_training_status = "models/status/{id_or_name}"
 
 
 class DALMFilterType(str, Enum):
+    """Filter types available for a DALM retrieval as enumerator."""
+
     fuzzy_search = "fuzzy_search"
     strict_search = "strict_search"
 
 
 class DALMFilter(BaseModel):
-    """Filters available for a dalm retrieval and generation
+    """Filters available for a DALM retrieval and generation.
 
     Arguments:
         field_name: The field to filter on. Can be 'document' or 'name' to filter
@@ -56,6 +60,8 @@ class DALMFilter(BaseModel):
 
 
 class ArceeWrapper:
+    """Wrapper for Arcee API."""
+
     def __init__(
         self,
         arcee_api_key: str,
@@ -64,6 +70,16 @@ class ArceeWrapper:
         model_kwargs: Optional[Dict[str, Any]],
         model_name: str,
     ):
+        """Initialize ArceeWrapper.
+
+        Arguments:
+            arcee_api_key: API key for Arcee API.
+            arcee_api_url: URL for Arcee API.
+            arcee_api_version: Version of Arcee API.
+            model_kwargs: Keyword arguments for Arcee API.
+            model_name: Name of an Arcee model.
+
+        """
         self.arcee_api_key = arcee_api_key
         self.model_kwargs = model_kwargs
         self.arcee_api_url = arcee_api_url
@@ -150,7 +166,7 @@ class ArceeWrapper:
         Args:
             prompt: Prompt to generate text from.
             size: The max number of context results to retrieve. Defaults to 3.
-            (Can be less if filters are provided).
+              (Can be less if filters are provided).
             filters: Filters to apply to the context dataset.
         """
 
@@ -174,7 +190,7 @@ class ArceeWrapper:
         Args:
             query: Query to submit to the model
             size: The max number of context results to retrieve. Defaults to 3.
-            (Can be less if filters are provided).
+              (Can be less if filters are provided).
             filters: Filters to apply to the context dataset.
         """
 
