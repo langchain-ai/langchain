@@ -650,44 +650,5 @@ class Hippo(VectorStore):
         vector_db.add_texts(texts=texts, metadatas=metadatas)
         return vector_db
 
-# if __name__ == '__main__':
-#     import os
-#     os.environ['http_proxy'] = 'http://172.16.2.16:3128'
-#     os.environ['https_proxy'] = 'http://172.16.2.16:3128'
-#
-#
-#     # from langchain.document_loaders import TextLoader
-#     # loader = TextLoader("./hippo_content/Chip War.txt")
-#     # docs = loader.load()
-#     #
-#     # from langchain.text_splitter import RecursiveCharacterTextSplitter
-#     # text_splitter = RecursiveCharacterTextSplitter(
-#     #     chunk_size=1024,
-#     #     chunk_overlap=200,
-#     #     length_function=len,
-#     # )
-#     # docs = text_splitter.split_documents(docs)
-#     #
-#     connection = {
-#         "host": "172.18.128.45",
-#         "port": "8922",
-#         "username": "shiva",
-#         "password": "shiva"
-#     }
-#
-#     from langchain.embeddings import OpenAIEmbeddings
-#     embeddings = OpenAIEmbeddings(openai_api_key="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",
-#                                   model="text-embedding-ada-002")
-#
-#     vector_store = Hippo.from_documents(
-#         [Document(page_content="", metadata={})],
-#         # docs,
-#         embedding=embeddings,
-#         table_name="langchain_test",
-#         database_name="default",
-#         connection_args=connection
-#     )
-#
-#     res = vector_store.similarity_search("author", 1)
-#
-#     print(res)
+
+
