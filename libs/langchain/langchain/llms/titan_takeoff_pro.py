@@ -11,7 +11,7 @@ from langchain.schema.output import GenerationChunk
 
 class TitanTakeoffPro(LLM):
     base_url: str = "http://localhost:3000"
-    """Specifies the baseURL to use for the Titan Takeoff Pro API. 
+    """Specifies the baseURL to use for the Titan Takeoff Pro API.
     Default = http://localhost:3000.
     """
 
