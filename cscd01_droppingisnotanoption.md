@@ -7,10 +7,12 @@ For our [issue](https://github.com/langchain-ai/langchain/issues/11747), we will
 `toolkit.py` in (`/workspaces/langchain/libs/langchain/langchain/agents/agent_toolkits/slack/toolkit.py`)
 ```
 class SlackToolkit(BaseToolkit):
-    
+    """Toolkit for interacting with Slack."""
+
     client: WebClient=Field(default_factory=authenticate)
     
     def get_tools(self) -> List[BaseTool]:
+        """Get the tools in the toolkit."""
         return [SlackSendMessage(), 
                 SlackGetMessage()]
 ```
@@ -117,6 +119,50 @@ class SlackGetMessages:
         # You can return or process the conversation history as needed
         return conversation_history
 ```
+
+# Mock Examples
+
+`slack.ipynb`
+
+## Slack
+```
+!pip install slack_sdk
+```
+
+## Assign environmental variables
+```
+```
+
+## Create the Toolkit and Get Tools
+```
+from langchain.agents.agent_toolkits import SlackToolkit
+
+toolkit = SlackToolkit()
+tools = toolkit.get_tools()
+tools
+```
+
+## Use within an agent
+```
+from langchain.llms import OpenAI
+from langchain.agents import initialize_agent, AgentType
+```
+```
+llm = OpenAI(temperature=0)
+agent = initialize_agent(
+    tools=toolkit.get_tools(),
+    llm=llm,
+    verbose=False,
+    agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+)
+```
+```
+agent.run(
+    "Please send the following message to #general in the CSCD01 workspace: 'Hello world!'"
+)
+```
+
+
 
 # Discussions with Community
 
