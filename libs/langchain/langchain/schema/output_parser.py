@@ -298,7 +298,10 @@ class BaseOutputParser(
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().dict(**kwargs)
-        output_parser_dict["_type"] = self._type
+        try:
+            output_parser_dict["_type"] = self._type
+        except NotImplementedError:
+            pass
         return output_parser_dict
 
 
