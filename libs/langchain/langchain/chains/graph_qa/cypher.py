@@ -9,7 +9,7 @@ from langchain.chains.base import Chain
 from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.graphs.neo4j_graph import Neo4jGraph
+from langchain.graphs.graph_store import GraphStore
 from langchain.pydantic_v1 import Field
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
@@ -77,9 +77,21 @@ def construct_schema(
 
 
 class GraphCypherQAChain(Chain):
-    """Chain for question-answering against a graph by generating Cypher statements."""
+    """Chain for question-answering against a graph by generating Cypher statements.
 
-    graph: Neo4jGraph = Field(exclude=True)
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
+
+    graph: GraphStore = Field(exclude=True)
     cypher_generation_chain: LLMChain
     qa_chain: LLMChain
     graph_schema: str
@@ -151,7 +163,7 @@ class GraphCypherQAChain(Chain):
             )
 
         graph_schema = construct_schema(
-            kwargs["graph"].structured_schema, include_types, exclude_types
+            kwargs["graph"].get_structured_schema, include_types, exclude_types
         )
 
         cypher_query_corrector = None

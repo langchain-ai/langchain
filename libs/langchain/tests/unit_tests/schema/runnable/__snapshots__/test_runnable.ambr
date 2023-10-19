@@ -2163,19 +2163,19 @@
   dict({
     'anyOf': list([
       dict({
-        '$ref': '#/definitions/HumanMessage',
+        '$ref': '#/definitions/AIMessage',
       }),
       dict({
-        '$ref': '#/definitions/AIMessage',
+        '$ref': '#/definitions/HumanMessage',
       }),
       dict({
         '$ref': '#/definitions/ChatMessage',
       }),
       dict({
-        '$ref': '#/definitions/FunctionMessage',
+        '$ref': '#/definitions/SystemMessage',
       }),
       dict({
-        '$ref': '#/definitions/SystemMessage',
+        '$ref': '#/definitions/FunctionMessage',
       }),
     ]),
     'definitions': dict({

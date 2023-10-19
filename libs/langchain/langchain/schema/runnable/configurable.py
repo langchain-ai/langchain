@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import threading
 from abc import abstractmethod
 from typing import (
     Any,
@@ -14,6 +15,7 @@ from typing import (
     Union,
     cast,
 )
+from weakref import WeakValueDictionary
 
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.runnable.base import Runnable, RunnableSerializable
@@ -35,6 +37,8 @@ from langchain.schema.runnable.utils import (
 
 
 class DynamicRunnable(RunnableSerializable[Input, Output]):
+    """A Serializable Runnable that can be dynamically configured."""
+
     default: RunnableSerializable[Input, Output]
 
     class Config:
@@ -56,13 +60,15 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     def OutputType(self) -> Type[Output]:
         return self.default.OutputType
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
-        return self.default.input_schema
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        return self._prepare(config).get_input_schema(config)
 
-    @property
-    def output_schema(self) -> Type[BaseModel]:
-        return self.default.output_schema
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        return self._prepare(config).get_output_schema(config)
 
     @abstractmethod
     def _prepare(
@@ -196,6 +202,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
 
 class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
+    """A Runnable that can be dynamically configured."""
+
     fields: Dict[str, AnyConfigurableField]
 
     @property
@@ -259,10 +267,24 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
 # Before Python 3.11 native StrEnum is not available
 class StrEnum(str, enum.Enum):
+    """A string enum."""
+
     pass
 
 
+_enums_for_spec: WeakValueDictionary[
+    Union[
+        ConfigurableFieldSingleOption, ConfigurableFieldMultiOption, ConfigurableField
+    ],
+    Type[StrEnum],
+] = WeakValueDictionary()
+
+_enums_for_spec_lock = threading.Lock()
+
+
 class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
+    """A Runnable that can be dynamically configured."""
+
     which: ConfigurableField
 
     alternatives: Dict[str, RunnableSerializable[Input, Output]]
@@ -271,10 +293,18 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
-        which_enum = StrEnum(  # type: ignore[call-overload]
-            self.which.name or self.which.id,
-            ((v, v) for v in list(self.alternatives.keys()) + [self.default_key]),
-        )
+        with _enums_for_spec_lock:
+            if which_enum := _enums_for_spec.get(self.which):
+                pass
+            else:
+                which_enum = StrEnum(  # type: ignore[call-overload]
+                    self.which.name or self.which.id,
+                    (
+                        (v, v)
+                        for v in list(self.alternatives.keys()) + [self.default_key]
+                    ),
+                )
+                _enums_for_spec[self.which] = cast(Type[StrEnum], which_enum)
         return [
             ConfigurableFieldSpec(
                 id=self.which.id,
@@ -312,10 +342,17 @@ def make_options_spec(
     spec: Union[ConfigurableFieldSingleOption, ConfigurableFieldMultiOption],
     description: Optional[str],
 ) -> ConfigurableFieldSpec:
-    enum = StrEnum(  # type: ignore[call-overload]
-        spec.name or spec.id,
-        ((v, v) for v in list(spec.options.keys())),
-    )
+    """Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or
+    ConfigurableFieldMultiOption."""
+    with _enums_for_spec_lock:
+        if enum := _enums_for_spec.get(spec):
+            pass
+        else:
+            enum = StrEnum(  # type: ignore[call-overload]
+                spec.name or spec.id,
+                ((v, v) for v in list(spec.options.keys())),
+            )
+            _enums_for_spec[spec] = cast(Type[StrEnum], enum)
     if isinstance(spec, ConfigurableFieldSingleOption):
         return ConfigurableFieldSpec(
             id=spec.id,

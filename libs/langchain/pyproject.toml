@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.313"
+version = "0.0.319"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -20,7 +20,7 @@ PyYAML = ">=5.3"
 numpy = "^1"
 azure-core = {version = "^1.26.4", optional=true}
 tqdm = {version = ">=4.48.0", optional = true}
-openapi-schema-pydantic = {version = "^1.2", optional = true}
+openapi-pydantic = {version = "^0.3.2", optional = true}
 faiss-cpu = {version = "^1", optional = true}
 wikipedia = {version = "^1", optional = true}
 elasticsearch = {version = "^8", optional = true}
@@ -138,6 +138,8 @@ timescale-vector = {version = "^0.0.1", optional = true}
 typer = {version= "^0.9.0", optional = true}
 anthropic = {version = "^0.3.11", optional = true}
 aiosqlite = {version = "^0.19.0", optional = true}
+rspace_client = {version = "^2.5.0", optional = true}
+upstash-redis = {version = "^0.15.0", optional = true}
 
 
 [tool.poetry.group.test.dependencies]
@@ -189,11 +191,11 @@ tiktoken = "^0.3.2"
 anthropic = "^0.3.11"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.0.249"
+ruff = "^0.1"
 types-toml = "^0.10.8.1"
 types-redis = "^4.3.21.6"
 types-pytz = "^2023.3.0.0"
-black = "^23.1.0"
+black = "^23.10.0"
 types-chardet = "^5.0.4.6"
 mypy-protobuf = "^3.0.0"
 
@@ -357,7 +359,7 @@ extended_testing = [
  "xata",
  "xmltodict",
  "faiss-cpu",
- "openapi-schema-pydantic",
+ "openapi-pydantic",
  "markdownify",
  "arxiv",
  "dashvector",
@@ -366,6 +368,8 @@ extended_testing = [
  "motor",
  "timescale-vector",
  "anthropic",
+ "upstash-redis",
+ "rspace_client",
 ]
 
 [tool.ruff]

@@ -67,7 +67,7 @@ class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
     def check_dependencies(cls, values: Dict) -> Dict:
         """Check that valid dependencies exist."""
         try:
-            from nltk.translate.bleu_score import (  # noqa: disable=F401
+            from nltk.translate.bleu_score import (  # noqa: F401
                 SmoothingFunction,
                 sentence_bleu,
             )
