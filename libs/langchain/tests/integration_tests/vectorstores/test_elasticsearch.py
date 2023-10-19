@@ -531,7 +531,7 @@ class TestElasticsearch:
                     },
                 }
             },
-            settings={"index": {"default_pipeline": "pipeline"}},
+            settings={"index": {"default_pipeline": "test_pipeline"}},
         )
 
         # adding documents to the index
