@@ -114,7 +114,8 @@ class RecursiveUrlLoader(BaseLoader):
             exclude_dirs: A list of subdirectories to exclude.
             timeout: The timeout for the requests, in the unit of seconds. If None then
                 connection will not timeout.
-            multiple_attempts: If True, try to get the url content 5 times before giving up.
+            multiple_attempts: If True, try to get the url content 5 times before
+            giving up.
             prevent_outside: If True, prevent loading from urls which are not children
                 of the root url.
             link_regex: Regex for extracting sub-links from the raw html of a web page.
@@ -158,11 +159,13 @@ class RecursiveUrlLoader(BaseLoader):
             try:
                 sleep_time = 2 ** i
                 time.sleep(sleep_time)
-                logger.warning(f"Unable to load from {url}. Will try in {sleep_time} seconds.")
+                logger.warning(f"Unable to load from {url}. "
+                               f"Will try in {sleep_time} seconds.")
                 response = requests.get(url, timeout=self.timeout, headers=self.headers)
                 if response.status_code != 200:
                     logger.warning(
-                        f"Unable to load from {url}. Received error {response.status_code} of type "
+                        f"Unable to load from {url}. "
+                        f"Received error {response.status_code} of type "
                         f"{response.status_code}"
                     )
                 else:
