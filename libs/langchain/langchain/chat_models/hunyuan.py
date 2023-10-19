@@ -32,7 +32,7 @@ from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 logger = logging.getLogger(__name__)
 
 DEFAULT_HUNYUAN_API_BASE = "https://hunyuan.cloud.tencent.com"
-DEFAULT_HUNYUAN_PATH = "/hyllm/v1/chat/completions3"
+DEFAULT_HUNYUAN_PATH = "/hyllm/v1/chat/completions"
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -73,6 +73,36 @@ def _convert_delta_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)
     else:
         return default_class(content=content)
+
+
+# signature generation
+# https://cloud.tencent.com/document/product/1729/97732#532252ce-e960-48a7-8821-940a9ce2ccf3
+def _signature(secret_key: SecretStr, url: str, payload: Dict[str, Any]) -> str:
+    sorted_keys = sorted(payload.keys())
+
+    url_info = urlparse(url)
+
+    sign_str = url_info.netloc + url_info.path + "?"
+
+    for key in sorted_keys:
+        value = payload[key]
+
+        if isinstance(value, list) or isinstance(value, dict):
+            value = json.dumps(value, separators=(",", ":"))
+        elif isinstance(value, float):
+            value = "%g" % value
+
+        sign_str = sign_str + key + "=" + str(value) + "&"
+
+    sign_str = sign_str[:-1]
+
+    hmacstr = hmac.new(
+        key=secret_key.get_secret_value().encode("utf-8"),
+        msg=sign_str.encode("utf-8"),
+        digestmod=hashlib.sha1,
+    ).digest()
+
+    return base64.b64encode(hmacstr).decode("utf-8")
 
 
 def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
@@ -207,34 +237,6 @@ class ChatHunyuan(BaseChatModel):
 
         return {**normal_params, **self.model_kwargs}
 
-    def _signature(self, url: str, payload: Dict[str, Any]) -> str:
-        if self.hunyuan_secret_key is None:
-            raise ValueError("Hunyuan secret key is not set.")
-
-        sorted_keys = sorted(payload.keys())
-
-        sign_str = urlparse(url).netloc + DEFAULT_HUNYUAN_PATH + "?"
-
-        for key in sorted_keys:
-            value = payload[key]
-
-            if isinstance(value, list) or isinstance(value, dict):
-                value = json.dumps(value, separators=(",", ":"))
-            elif isinstance(value, float):
-                value = "%g" % value
-
-            sign_str = sign_str + key + "=" + str(value) + "&"
-
-        sign_str = sign_str[:-1]
-
-        hmacstr = hmac.new(
-            key=self.hunyuan_secret_key.get_secret_value().encode("utf-8"),
-            msg=sign_str.encode("utf-8"),
-            digestmod=hashlib.sha1,
-        ).digest()
-
-        return base64.b64encode(hmacstr).decode("utf-8")
-
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -282,6 +284,9 @@ class ChatHunyuan(BaseChatModel):
                     run_manager.on_llm_new_token(chunk.content)
 
     def _chat(self, messages: List[BaseMessage], **kwargs: Any) -> requests.Response:
+        if self.hunyuan_secret_key is None:
+            raise ValueError("Hunyuan secret key is not set.")
+
         parameters = {**self._default_params, **kwargs}
 
         headers = parameters.pop("headers", {})
@@ -305,7 +310,9 @@ class ChatHunyuan(BaseChatModel):
             timeout=self.request_timeout,
             headers={
                 "Content-Type": "application/json",
-                "Authorization": self._signature(url, payload),
+                "Authorization": _signature(
+                    secret_key=self.hunyuan_secret_key, url=url, payload=payload
+                ),
                 **headers,
             },
             json=payload,
