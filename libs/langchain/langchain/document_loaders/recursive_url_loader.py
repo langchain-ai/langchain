@@ -49,7 +49,36 @@ def _metadata_extractor(raw_html: str, url: str) -> dict:
 
 
 class RecursiveUrlLoader(BaseLoader):
-    """Load all child links from a URL page."""
+    """Load all child links from a URL page.
+
+    **Security Note**: This loader is a crawler that will start crawling
+        at a given URL and then expand to crawl child links recursively.
+
+        Web crawlers should generally NOT be deployed with network access
+        to any internal servers.
+
+        Control access to who can submit crawling requests and what network access
+        the crawler has.
+
+        While crawling, the crawler may encounter malicious URLs that would lead to a
+        server-side request forgery (SSRF) attack.
+
+        To mitigate risks, the crawler by default will only load URLs from the same
+        domain as the start URL (controlled via prevent_outside named argument).
+
+        This will mitigate the risk of SSRF attacks, but will not eliminate it.
+
+        For example, if crawling a host which hosts several sites:
+
+        https://some_host/alice_site/
+        https://some_host/bob_site/
+
+        A malicious URL on Alice's site could cause the crawler to make a malicious
+        GET request to an endpoint on Bob's site. Both sites are hosted on the
+        same host, so such a request would not be prevented by default.
+
+        See https://python.langchain.com/docs/security
+    """
 
     def __init__(
         self,
@@ -60,12 +89,13 @@ class RecursiveUrlLoader(BaseLoader):
         metadata_extractor: Optional[Callable[[str, str], str]] = None,
         exclude_dirs: Optional[Sequence[str]] = (),
         timeout: Optional[int] = 10,
-        prevent_outside: Optional[bool] = True,
+        prevent_outside: bool = True,
         link_regex: Union[str, re.Pattern, None] = None,
         headers: Optional[dict] = None,
         check_response_status: bool = False,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
+
         Args:
             url: The URL to crawl.
             max_depth: The max depth of the recursive loading.
