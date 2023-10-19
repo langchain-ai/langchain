@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 import os
@@ -19,6 +20,7 @@ from langchain.document_loaders.parsers.pdf import (
     DocumentIntelligenceParser,
     PDFMinerParser,
     PDFPlumberParser,
+    PyMuPDFBytesParser,
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
@@ -347,6 +349,44 @@ class PyMuPDFLoader(BasePDFLoader):
         )
         blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
+
+
+class PyMuPDFBytesLoader(BaseLoader):
+    """Load `PDF` byte buffers using `PyMuPDF`."""
+
+    def __init__(
+        self,
+        stream: io.BytesIO,
+        *,
+        extract_images: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize with a file path."""
+        try:
+            import fitz  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "`PyMuPDF` package not found, please install it with "
+                "`pip install pymupdf`"
+            )
+        super().__init__()
+        self.stream = stream
+        self.extract_images = extract_images
+        self.text_kwargs = kwargs
+
+    def load(self, **kwargs: Any) -> List[Document]:
+        """Load file."""
+        if kwargs:
+            logger.warning(
+                f"Received runtime arguments {kwargs}. Passing runtime args to `load`"
+                f" is deprecated. Please pass arguments during initialization instead."
+            )
+
+        text_kwargs = {**self.text_kwargs, **kwargs}
+        parser = PyMuPDFBytesParser(
+            text_kwargs=text_kwargs, extract_images=self.extract_images
+        )
+        return parser.parse(self.stream)
 
 
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:
