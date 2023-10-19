@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from typing import List
 
@@ -31,6 +32,17 @@ class LineListOutputParser(PydanticOutputParser):
 
     def parse(self, text: str) -> LineList:
         lines = text.strip().split("\n")
+        return LineList(lines=lines)
+
+
+class JSONLineListOutputParser(PydanticOutputParser):
+    """Output parser for a list of lines."""
+
+    def __init__(self) -> None:
+        super().__init__(pydantic_object=LineList)
+
+    def parse(self, text: str) -> LineList:
+        lines = json.loads(text)
         return LineList(lines=lines)
 
 
