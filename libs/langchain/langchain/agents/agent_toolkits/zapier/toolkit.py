@@ -1,6 +1,7 @@
-"""Zapier Toolkit."""
+"""[DEPRECATED] Zapier Toolkit."""
 from typing import List
 
+from langchain._api import warn_deprecated
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
 from langchain.tools.zapier.tool import ZapierNLARunAction
@@ -48,4 +49,11 @@ class ZapierToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
+        warn_deprecated(
+            since="0.0.319",
+            message=(
+                "This tool will be deprecated on 2023-11-17. See "
+                "https://nla.zapier.com/sunset/ for details"
+            ),
+        )
         return self.tools

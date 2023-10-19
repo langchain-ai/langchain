@@ -116,8 +116,28 @@ class EvaluatorCallbackHandler(BaseTracer):
                 eval_result = self.client.evaluate_run(run, evaluator)
             with manager.tracing_v2_enabled(
                 project_name=self.project_name, tags=["eval"], client=self.client
-            ):
-                eval_result = self.client.evaluate_run(run, evaluator)
+            ) as cb:
+                reference_example = (
+                    self.client.read_example(run.reference_example_id)
+                    if run.reference_example_id
+                    else None
+                )
+                evaluation_result = evaluator.evaluate_run(
+                    run,
+                    example=reference_example,
+                )
+                run_id = cb.latest_run.id if cb.latest_run is not None else None
+                self.client.create_feedback(
+                    run.id,
+                    evaluation_result.key,
+                    score=evaluation_result.score,
+                    value=evaluation_result.value,
+                    comment=evaluation_result.comment,
+                    correction=evaluation_result.correction,
+                    source_info=evaluation_result.evaluator_info,
+                    source_run_id=evaluation_result.source_run_id or run_id,
+                    feedback_source_type=langsmith.schemas.FeedbackSourceType.MODEL,
+                )
         except Exception as e:
             logger.error(
                 f"Error evaluating run {run.id} with "
