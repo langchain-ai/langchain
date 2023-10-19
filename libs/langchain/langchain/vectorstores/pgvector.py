@@ -114,6 +114,7 @@ class PGVector(VectorStore):
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
+        *,
         connection: sqlalchemy.engine.Connection = None,
     ) -> None:
         self.connection_string = connection_string
