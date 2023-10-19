@@ -74,6 +74,7 @@ class TreeSitterSegmenter(CodeSegmenter):
 
         return "\n".join(line for line in simplified_lines if line is not None)
 
+    # TODO: Make abstract
     def get_language(self):
         from tree_sitter import Language
         return Language('/tmp/tree-sitter-cpp.so', 'cpp')
