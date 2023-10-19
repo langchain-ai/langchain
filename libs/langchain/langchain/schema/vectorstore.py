@@ -475,10 +475,17 @@ class VectorStore(ABC):
 
     def _get_retriever_tags(self) -> List[str]:
         """Get tags for retriever."""
-        tags = [self.__class__.__name__]
+        return [self.__class__.__name__]
+
+    def _get_retriever_metadata(self) -> Dict[str, Any]:
+        """Get metadata for retriever."""
+        metadata = {}
         if self.embeddings:
-            tags.append(self.embeddings.__class__.__name__)
-        return tags
+            metadata["embedding_provider"] = self.embeddings.__class__.__name__
+            metadata["embedding_model"] = getattr(
+                self.embeddings, "model", getattr(self.embeddings, "model_name", None)
+            )
+        return metadata
 
     def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
         """Return VectorStoreRetriever initialized from this VectorStore.
@@ -536,8 +543,12 @@ class VectorStore(ABC):
         """
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
+        metadata = kwargs.pop("metadata", None) or []
+        metadata = {**self._get_retriever_metadata(), **metadata}
 
-        return VectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
+        return VectorStoreRetriever(
+            vectorstore=self, **kwargs, tags=tags, metadata=metadata
+        )
 
 
 class VectorStoreRetriever(BaseRetriever):
