@@ -2,13 +2,13 @@ import hashlib
 import json
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Type, Union
 
 import requests
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel, _generate_from_stream
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -29,7 +29,7 @@ from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 logger = logging.getLogger(__name__)
 
 
-def convert_message_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -69,6 +69,21 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
+def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
+    """Convert a string to a SecretStr if needed."""
+    if isinstance(value, SecretStr):
+        return value
+    return SecretStr(value)
+
+
+# signature generation
+def _signature(secret_key: SecretStr, payload: Dict[str, Any], timestamp: int) -> str:
+    input_str = secret_key.get_secret_value() + json.dumps(payload) + str(timestamp)
+    md5 = hashlib.md5()
+    md5.update(input_str.encode("utf-8"))
+    return md5.hexdigest()
+
+
 class ChatBaichuan(BaseChatModel):
     """Baichuan chat models API by Baichuan Intelligent Technology.
 
@@ -90,21 +105,25 @@ class ChatBaichuan(BaseChatModel):
     """Baichuan custom endpoints"""
     baichuan_api_key: Optional[str] = None
     """Baichuan API Key"""
-    baichuan_secret_key: Optional[str] = None
+    baichuan_secret_key: Optional[SecretStr] = None
     """Baichuan Secret Key"""
-    streaming: Optional[bool] = False
-    """streaming mode."""
-    request_timeout: Optional[int] = 60
+    streaming: bool = False
+    """Whether to stream the results or not."""
+    request_timeout: int = 60
     """request timeout for chat http requests"""
 
     model = "Baichuan2-53B"
     """model name of Baichuan, default is `Baichuan2-53B`."""
     temperature: float = 0.3
+    """What sampling temperature to use."""
     top_k: int = 5
+    """What search sampling control to use."""
     top_p: float = 0.85
+    """What probability mass to use."""
     with_search_enhance: bool = False
     """Whether to use search enhance, default is False."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for API call not explicitly specified."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -149,10 +168,12 @@ class ChatBaichuan(BaseChatModel):
             "baichuan_api_key",
             "BAICHUAN_API_KEY",
         )
-        values["baichuan_secret_key"] = get_from_dict_or_env(
-            values,
-            "baichuan_secret_key",
-            "BAICHUAN_SECRET_KEY",
+        values["baichuan_secret_key"] = _to_secret(
+            get_from_dict_or_env(
+                values,
+                "baichuan_secret_key",
+                "BAICHUAN_SECRET_KEY",
+            )
         )
 
         return values
@@ -168,15 +189,6 @@ class ChatBaichuan(BaseChatModel):
         }
 
         return {**normal_params, **self.model_kwargs}
-
-    def _signature(self, data: Dict[str, Any], timestamp: int) -> str:
-        if self.baichuan_secret_key is None:
-            raise ValueError("Baichuan secret key is not set.")
-
-        input_str = self.baichuan_secret_key + json.dumps(data) + str(timestamp)
-        md5 = hashlib.md5()
-        md5.update(input_str.encode("utf-8"))
-        return md5.hexdigest()
 
     def _generate(
         self,
@@ -224,6 +236,9 @@ class ChatBaichuan(BaseChatModel):
                     run_manager.on_llm_new_token(chunk.content)
 
     def _chat(self, messages: List[BaseMessage], **kwargs: Any) -> requests.Response:
+        if self.baichuan_secret_key is None:
+            raise ValueError("Baichuan secret key is not set.")
+
         parameters = {**self._default_params, **kwargs}
 
         model = parameters.pop("model")
@@ -231,7 +246,7 @@ class ChatBaichuan(BaseChatModel):
 
         payload = {
             "model": model,
-            "messages": [convert_message_to_dict(m) for m in messages],
+            "messages": [_convert_message_to_dict(m) for m in messages],
             "parameters": parameters,
         }
 
@@ -249,7 +264,11 @@ class ChatBaichuan(BaseChatModel):
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.baichuan_api_key}",
                 "X-BC-Timestamp": str(timestamp),
-                "X-BC-Signature": self._signature(payload, timestamp),
+                "X-BC-Signature": _signature(
+                    secret_key=self.baichuan_secret_key,
+                    payload=payload,
+                    timestamp=timestamp,
+                ),
                 "X-BC-Sign-Algo": "MD5",
                 **headers,
             },
