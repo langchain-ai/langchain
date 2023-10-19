@@ -1,7 +1,6 @@
 from deepsparse_llm import DeepSparse
 import unittest
 import pytest
-from langchain.schema import LLMResult
 
 generation_config = {"max_new_tokens": 5}
 
