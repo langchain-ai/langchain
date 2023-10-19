@@ -41,6 +41,38 @@ class LlamaIndexRetriever(BaseRetriever):
         return docs
 
 
+class LlamaQueryEngineRetriever(BaseRetriever):
+    """`LlamaIndex` retriever.
+
+    It is used for the question-answering with sources over
+    an LlamaIndex query engine."""
+
+    query_engine: Any
+    """LlamaIndex Query Engine to query."""
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        """Get documents relevant for a query."""
+        try:
+            from llama_index.indices.base import BaseQueryEngine
+            from llama_index.response.schema import Response
+        except ImportError:
+            raise ImportError(
+                "You need to install `pip install llama-index` to use this retriever."
+            )
+        query_engine = cast(BaseQueryEngine, self.query_engine)
+
+        response = query_engine.query(query)
+        response = cast(Response, response)
+        # parse source nodes
+        docs = []
+        for source_node in response.source_nodes:
+            metadata = source_node.metadata or {}
+            docs.append(Document(page_content=source_node.text, metadata=metadata))
+        return docs
+
+
 class LlamaIndexGraphRetriever(BaseRetriever):
     """`LlamaIndex` graph data structure retriever.
 
