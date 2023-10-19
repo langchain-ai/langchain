@@ -114,6 +114,7 @@ class PGVector(VectorStore):
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
+        connection: sqlalchemy.engine.Connection = None,
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
@@ -123,6 +124,7 @@ class PGVector(VectorStore):
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
+        self._conn = connection
         self.__post_init__()
 
     def __post_init__(
@@ -131,7 +133,8 @@ class PGVector(VectorStore):
         """
         Initialize the store.
         """
-        self._conn = self.connect()
+        if not self._conn:
+            self._conn = self.connect()
         # self.create_vector_extension()
         from langchain.vectorstores._pgvector_data_models import (
             CollectionStore,
