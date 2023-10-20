@@ -1,7 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain.graphs.graph_document import GraphDocument
 from langchain.graphs.graph_store import GraphStore
+from langchain.utils import get_from_env
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -45,7 +46,11 @@ class Neo4jGraph(GraphStore):
     """
 
     def __init__(
-        self, url: str, username: str, password: str, database: str = "neo4j"
+        self,
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        database: str = "neo4j",
     ) -> None:
         """Create a new Neo4j graph wrapper instance."""
         try:
@@ -55,6 +60,11 @@ class Neo4jGraph(GraphStore):
                 "Could not import neo4j python package. "
                 "Please install it with `pip install neo4j`."
             )
+
+        url = get_from_env("url", "NEO4J_URI", url)
+        username = get_from_env("username", "NEO4J_USERNAME", username)
+        password = get_from_env("password", "NEO4J_PASSWORD", password)
+        database = get_from_env("database", "NEO4J_DATABASE", database)
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
