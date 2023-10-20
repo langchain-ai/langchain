@@ -11,7 +11,6 @@ from functools import partial
 from pathlib import Path
 from typing import (
     Any,
-    Awaitable,
     Callable,
     Dict,
     Iterable,
@@ -89,16 +88,16 @@ class FAISS(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Union[Callable[[str], List[float]], Embeddings],
+        embedding_function: Union[
+            Callable[[str], List[float]],
+            Embeddings,
+        ],
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         normalize_L2: bool = False,
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
-        async_embedding_function: Optional[
-            Callable[[str], Awaitable[List[float]]]
-        ] = None,
     ):
         """Initialize with necessary components."""
         if not isinstance(embedding_function, Embeddings):
@@ -107,7 +106,6 @@ class FAISS(VectorStore):
                 "for passing in a function will soon be removed."
             )
         self.embedding_function = embedding_function
-        self.async_embedding_function = async_embedding_function
         self.index = index
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
@@ -138,11 +136,33 @@ class FAISS(VectorStore):
         else:
             return [self.embedding_function(text) for text in texts]
 
+    async def _aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        if isinstance(self.embedding_function, Embeddings):
+            return await self.embedding_function.aembed_documents(texts)
+        else:
+            # return await asyncio.gather(
+            #     [self.embedding_function(text) for text in texts]
+            # )
+            raise Exception(
+                "`embedding_function` is expected to be an Embeddings object, support "
+                "for passing in a function will soon be removed."
+            )
+
     def _embed_query(self, text: str) -> List[float]:
         if isinstance(self.embedding_function, Embeddings):
             return self.embedding_function.embed_query(text)
         else:
             return self.embedding_function(text)
+
+    async def _aembed_query(self, text: str) -> List[float]:
+        if isinstance(self.embedding_function, Embeddings):
+            return await self.embedding_function.aembed_query(text)
+        else:
+            # return await self.embedding_function(text)
+            raise Exception(
+                "`embedding_function` is expected to be an Embeddings object, support "
+                "for passing in a function will soon be removed."
+            )
 
     def __add(
         self,
@@ -221,10 +241,8 @@ class FAISS(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        assert self.async_embedding_function is not None
-        embeddings = await asyncio.gather(
-            *[self.async_embedding_function(text) for text in texts]
-        )
+        texts = list(texts)
+        embeddings = await self._aembed_documents(texts)
         return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
 
     def add_embeddings(
@@ -400,8 +418,7 @@ class FAISS(VectorStore):
             List of documents most similar to the query text with
             L2 distance in float. Lower score represents more similarity.
         """
-        assert self.async_embedding_function is not None
-        embedding = await self.async_embedding_function(query)
+        embedding = await self._aembed_query(query)
         docs = await self.asimilarity_search_with_score_by_vector(
             embedding,
             k,
@@ -757,8 +774,7 @@ class FAISS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        assert self.async_embedding_function is not None
-        embedding = await self.async_embedding_function(query)
+        embedding = await self._aembed_query(query)
         docs = await self.amax_marginal_relevance_search_by_vector(
             embedding,
             k=k,
@@ -858,7 +874,6 @@ class FAISS(VectorStore):
             index,
             InMemoryDocstore(),
             {},
-            async_embedding_function=embedding.aembed_query,
             normalize_L2=normalize_L2,
             distance_strategy=distance_strategy,
             **kwargs,
