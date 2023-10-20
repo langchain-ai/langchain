@@ -46,7 +46,7 @@ jobs:
 
       - name: Check integration tests compile
         shell: bash
-        run: poetry run pytest -m foo tests/integration_tests
+        run: poetry run pytest -m compile tests/integration_tests
 
       - name: Ensure the tests did not create any additional files
         shell: bash
