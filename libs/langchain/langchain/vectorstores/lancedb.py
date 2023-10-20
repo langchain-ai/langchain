@@ -7,6 +7,8 @@ from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
 
+from ..embeddings.openai import OpenAIEmbeddings
+
 
 class LanceDB(VectorStore):
     """`LanceDB` vector store.
@@ -58,6 +60,9 @@ class LanceDB(VectorStore):
         self._text_key = text_key
         self._table_name = table_name
 
+        if self._embedding is None:
+            self._embedding = OpenAIEmbeddings()
+
         if connection is not None:
             if not isinstance(connection, lancedb.db.LanceTable):
                 raise ValueError(
@@ -92,7 +97,7 @@ class LanceDB(VectorStore):
         # Embed texts and create documents
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
-        embeddings = self._embedding.embed_documents(list(texts))
+        embeddings = self._embedding.embed_documents(list(texts))  # type: ignore
         for idx, text in enumerate(texts):
             embedding = embeddings[idx]
             metadata = metadatas[idx] if metadatas else {}
@@ -119,7 +124,7 @@ class LanceDB(VectorStore):
         Returns:
             List of documents most similar to the query.
         """
-        embedding = self._embedding.embed_query(query)
+        embedding = self._embedding.embed_query(query)  # type: ignore
         docs = (
             self._connection.search(embedding, vector_column_name=self._vector_key)
             .limit(k)
@@ -162,15 +167,17 @@ class LanceDB(VectorStore):
         return instance
 
     def _init_table(self) -> Any:
-        import pyarrow as pa
-
         import lancedb
+        import pyarrow as pa
 
         schema = pa.schema(
             [
                 pa.field(
                     self._vector_key,
-                    pa.list_(pa.float32(), len(self.embeddings.embed_query("test"))),
+                    pa.list_(
+                        pa.float32(),
+                        len(self.embeddings.embed_query("test")),  # type: ignore
+                    ),
                 ),
                 pa.field(self._id_key, pa.string()),
                 pa.field(self._text_key, pa.string()),
