@@ -10,7 +10,7 @@ from langchain.schema.output import GenerationChunk
 
 
 class TitanTakeoffPro(LLM):
-    base_url: str = "http://localhost:3000"
+    base_url: Optional[str] = "http://localhost:3000"
     """Specifies the baseURL to use for the Titan Takeoff Pro API.
     Default = http://localhost:3000.
     """
@@ -50,25 +50,66 @@ class TitanTakeoffPro(LLM):
     @property
     def _default_params(self) -> Mapping[str, Any]:
         """Get the default parameters for calling Titan Takeoff Server (Pro)."""
-        params = {}
-        if self.max_new_tokens is not None:
-            params["max_new_tokens"] = self.max_new_tokens
-        if self.min_new_tokens is not None:
-            params["min_new_tokens"] = self.min_new_tokens
-        if self.sampling_topk is not None:
-            params["sampling_topk"] = self.sampling_topk
-        if self.sampling_topp is not None:
-            params["sampling_topp"] = self.sampling_topp
-        if self.sampling_temperature is not None:
-            params["sampling_temperature"] = self.sampling_temperature
-        if self.repetition_penalty is not None:
-            params["repetition_penalty"] = self.repetition_penalty
-        if self.regex_string is not None:
-            params["regex_string"] = self.regex_string
-        if self.no_repeat_ngram_size is not None:
-            params["no_repeat_ngram_size"] = self.no_repeat_ngram_size
-        return params
-
+        return {
+            **(
+                {"regex_string": self.regex_string}
+                if self.regex_string is not None
+                else {}
+            ),
+            **(
+                {"sampling_temperature": self.sampling_temperature}
+                if self.sampling_temperature is not None
+                else {}
+            ),
+            **(
+                {"sampling_topp": self.sampling_topp}
+                if self.sampling_topp is not None
+                else {}
+            ),
+            **(
+                {"repetition_penalty": self.repetition_penalty}
+                if self.repetition_penalty is not None
+                else {}
+            ),
+            **(
+                {"max_new_tokens": self.max_new_tokens}
+                if self.max_new_tokens is not None
+                else {}
+            ),
+            **(
+                {"min_new_tokens": self.min_new_tokens}
+                if self.min_new_tokens is not None
+                else {}
+            ),
+            **(
+                {"sampling_topk": self.sampling_topk}
+                if self.sampling_topk is not None
+                else {}
+            ),
+            **(
+                {"no_repeat_ngram_size": self.no_repeat_ngram_size}
+                if self.no_repeat_ngram_size is not None
+                else {}
+            ),
+        }
+        # params: Mapping[str, Any] = {}
+        # if self.regex_string is not None:
+        #     params["regex_string"] = self.regex_string
+        # if self.sampling_temperature is not None:
+        #     params["sampling_temperature"] = self.sampling_temperature
+        # if self.sampling_topp is not None:
+        #     params["sampling_topp"] = self.sampling_topp
+        # if self.repetition_penalty is not None:
+        #     params["repetition_penalty"] = self.repetition_penalty
+        # if self.max_new_tokens is not None:
+        #     params["max_new_tokens"] = self.max_new_tokens
+        # if self.min_new_tokens is not None:
+        #     params["min_new_tokens"] = self.min_new_tokens
+        # if self.sampling_topk is not None:
+        #     params["sampling_topk"] = self.sampling_topk
+        # if self.no_repeat_ngram_size is not None:
+        #     params["no_repeat_ngram_size"] = self.no_repeat_ngram_size
+        # return params
 
     @property
     def _llm_type(self) -> str:
@@ -170,7 +211,7 @@ class TitanTakeoffPro(LLM):
                     buffer = ""
                 if len(buffer.split("data:", 1)) == 2:
                     content, _ = buffer.split("data:", 1)
-                    buffer = content.rstrip('\n')
+                    buffer = content.rstrip("\n")
                 # Trim the buffer to only have content after the "data:" part.
                 if buffer:  # Ensure that there's content to process.
                     chunk = GenerationChunk(text=buffer)

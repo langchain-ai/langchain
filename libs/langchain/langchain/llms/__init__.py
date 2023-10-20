@@ -431,6 +431,7 @@ def _import_titan_takeoff() -> Any:
 
     return TitanTakeoff
 
+
 def _import_titan_takeoff_pro() -> Any:
     from langchain.llms.titan_takeoff_pro import TitanTakeoffPro
 
