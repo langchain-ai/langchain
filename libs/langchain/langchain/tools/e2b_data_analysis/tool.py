@@ -19,7 +19,7 @@ If you have any files outputted write them to "/home/user" directory \
 path."""
 
 
-def add_last_line_print(self, code: str):
+def add_last_line_print(code: str):
     """Add print statement to the last line if it's missing.
 
     Sometimes, the LLM-generated code doesn't have `print(variable_name)`, instead the LLM tries to print the variable only by writing `variable_name` (as you would in REPL, for example).
@@ -123,6 +123,7 @@ class E2BDataAnalysisTool:
         #     on_artifact=lambda artifact: print(f"New chart file: {artifact.name}"),
         # )
 
+        python_code = add_last_line_print(python_code)
         # Artifacts are charts created by mytplotlib when `plt.show()` is called
         stdout, stderr, artifacts = self._session.run_python(python_code)
 
