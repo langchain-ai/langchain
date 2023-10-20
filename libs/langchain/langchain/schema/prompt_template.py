@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Type, Union
 
 import yaml
 
@@ -19,6 +19,9 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
+    input_types: Dict[str, Any] = Field(default_factory=dict)
+    """A dictionary of the types of the variables the prompt template expects.
+    If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
@@ -42,11 +45,13 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
 
         return Union[StringPromptValue, ChatPromptValueConcrete]
 
-    @property
-    def input_schema(self) -> type[BaseModel]:
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
-            "PromptInput", **{k: (Any, None) for k in self.input_variables}
+            "PromptInput",
+            **{k: (self.input_types.get(k, str), None) for k in self.input_variables},
         )
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:
@@ -128,7 +133,10 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of prompt."""
         prompt_dict = super().dict(**kwargs)
-        prompt_dict["_type"] = self._prompt_type
+        try:
+            prompt_dict["_type"] = self._prompt_type
+        except NotImplementedError:
+            pass
         return prompt_dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -144,6 +152,12 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
         """
         if self.partial_variables:
             raise ValueError("Cannot save prompt with partial variables.")
+
+        # Fetch dictionary to save
+        prompt_dict = self.dict()
+        if "_type" not in prompt_dict:
+            raise NotImplementedError(f"Prompt {self} does not support saving.")
+
         # Convert file to Path object.
         if isinstance(file_path, str):
             save_path = Path(file_path)
@@ -152,9 +166,6 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
-
-        # Fetch dictionary to save
-        prompt_dict = self.dict()
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:

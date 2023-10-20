@@ -34,7 +34,7 @@ class ApifyWrapper(BaseModel):
             values["apify_client"] = ApifyClient(apify_api_token)
             values["apify_client_async"] = ApifyClientAsync(apify_api_token)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import apify-client Python package. "
                 "Please install it with `pip install apify-client`."
             )

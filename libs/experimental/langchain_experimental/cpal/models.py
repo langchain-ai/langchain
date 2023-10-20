@@ -139,7 +139,9 @@ class StoryModel(BaseModel):
         # TODO: when langchain adopts pydantic.v2 replace w/ `__post_init__`
         # misses hints github.com/pydantic/pydantic/issues/1729#issuecomment-1300576214
 
-    @root_validator
+    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
+    #       and causes mypy type-checking failures (hence the `type: ignore`)
+    @root_validator  # type: ignore[call-overload]
     def check_intervention_is_valid(cls, values: dict) -> dict:
         valid_names = [e.name for e in values["causal_operations"].entities]
         for setting in values["intervention"].entity_settings:
