@@ -320,12 +320,12 @@ class ChatTongyi(BaseChatModel):
 
         if not messages:
             raise ValueError("No messages provided.")
-        
+
         message_dicts, params = self._create_message_dicts(messages, stop)
 
-        if message_dicts[-1]['role'] != 'user':
+        if message_dicts[-1]["role"] != "user":
             raise ValueError("Last message should be user message.")
-        
+
         params = {**params, **kwargs}
         response = self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
