@@ -318,7 +318,14 @@ class ChatTongyi(BaseChatModel):
             )
             return _generate_from_stream(stream_iter)
 
+        if not messages:
+            raise ValueError("No messages provided.")
+
         message_dicts, params = self._create_message_dicts(messages, stop)
+
+        if message_dicts[-1]["role"] != "user":
+            raise ValueError("Last message should be user message.")
+
         params = {**params, **kwargs}
         response = self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
@@ -374,7 +381,7 @@ class ChatTongyi(BaseChatModel):
     def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
         creds: Dict[str, Any] = {
-            "dashscope_api_key": self.dashscope_api_key,
+            "api_key": self.dashscope_api_key,
         }
         return {**self._default_params, **creds}
 
