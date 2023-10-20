@@ -1,4 +1,5 @@
 import sys
+from functools import partial
 from operator import itemgetter
 from typing import (
     Any,
@@ -923,6 +924,17 @@ def test_configurable_fields() -> None:
             "other_responses": ["d"],
         }
     ).invoke({"name": "John"}) == {"llm1": "c", "llm2": "c", "llm3": "d"}
+
+
+def test_configurable_alts_factory() -> None:
+    fake_llm = FakeListLLM(responses=["a"]).configurable_alternatives(
+        ConfigurableField(id="llm", name="LLM"),
+        chat=partial(FakeListLLM, responses=["b"]),
+    )
+
+    assert fake_llm.invoke("...") == "a"
+
+    assert fake_llm.with_config(configurable={"llm": "chat"}).invoke("...") == "b"
 
 
 def test_configurable_fields_example() -> None:
