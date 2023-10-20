@@ -222,6 +222,7 @@ class StoryModel(BaseModel):
         if self.query.llm_error_msg == "":
             try:
                 import duckdb
+
                 df = self._outcome_table  # noqa
                 query_result = duckdb.sql(self.query.expression).df()
                 self.query._result_table = query_result
