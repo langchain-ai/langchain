@@ -549,7 +549,7 @@ async def test_faiss_async_add_texts() -> None:
 @pytest.mark.requires("faiss")
 def test_faiss_add_texts_not_supported() -> None:
     """Test adding of texts to a docstore that doesn't support it."""
-    docsearch = FAISS(FakeEmbeddings().embed_query, None, FakeDocstore(), {})
+    docsearch = FAISS(FakeEmbeddings(), None, FakeDocstore(), {})
     with pytest.raises(ValueError):
         docsearch.add_texts(["foo"])
 
@@ -558,13 +558,7 @@ def test_faiss_add_texts_not_supported() -> None:
 @pytest.mark.asyncio
 async def test_faiss_async_add_texts_not_supported() -> None:
     """Test adding of texts to a docstore that doesn't support it."""
-    docsearch = FAISS(
-        FakeEmbeddings().embed_query,
-        None,
-        FakeDocstore(),
-        {},
-        async_embedding_function=FakeEmbeddings().aembed_query,
-    )
+    docsearch = FAISS(FakeEmbeddings(), None, FakeDocstore(), {})
     with pytest.raises(ValueError):
         await docsearch.aadd_texts(["foo"])
 
