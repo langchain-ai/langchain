@@ -44,6 +44,10 @@ jobs:
         shell: bash
         run: make test
 
+      - name: Compile integration tests
+	shell: bash
+	run: make check_integration_tests
+
       - name: Ensure the tests did not create any additional files
         shell: bash
         run: |
