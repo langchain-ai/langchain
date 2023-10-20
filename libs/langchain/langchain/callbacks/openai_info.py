@@ -1,8 +1,14 @@
-"""Callback Handler that prints to std out."""
-from typing import Any, Dict, List
+"""Callback Handler that collects token usage from OpenAI models."""
+import warnings
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Union
+from uuid import UUID
 
+from langchain.adapters.openai import convert_message_to_dict
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import LLMResult
+from langchain.schema import BaseMessage, LLMResult
+
+if TYPE_CHECKING:
+    import tiktoken
 
 MODEL_COST_PER_1K_TOKENS = {
     # GPT-4 input
@@ -117,59 +123,304 @@ def get_openai_token_cost_for_model(
     return MODEL_COST_PER_1K_TOKENS[model_name] * (num_tokens / 1000)
 
 
+def _import_tiktoken() -> Union["tiktoken", None]:
+    try:
+        import tiktoken
+    except ImportError:
+        warnings.warn(
+            "tiktoken is not installed. "
+            "Streaming functionality of OpenAICallbackHandler will not work."
+            "Please install tiktoken to enable streaming support."
+        )
+        return None
+    return tiktoken
+
+
 class OpenAICallbackHandler(BaseCallbackHandler):
     """Callback Handler that tracks OpenAI info."""
 
-    total_tokens: int = 0
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    successful_requests: int = 0
-    total_cost: float = 0.0
+    def __init__(self) -> None:
+        super().__init__()
+        self.current_model_name: Dict[UUID, str] = {}
+        self.token_count: Dict[str, Dict[UUID, Dict[str, Any]]] = {}
+        self.tokens: Dict[UUID, List[str]] = {}
+        self.tiktoken_ = _import_tiktoken()
 
-    def __repr__(self) -> str:
-        return (
-            f"Tokens Used: {self.total_tokens}\n"
-            f"\tPrompt Tokens: {self.prompt_tokens}\n"
-            f"\tCompletion Tokens: {self.completion_tokens}\n"
-            f"Successful Requests: {self.successful_requests}\n"
-            f"Total Cost (USD): ${self.total_cost}"
-        )
+    @property
+    def total_tokens(self) -> int:
+        if len(self.token_count) > 1:
+            warnings.warn(
+                "You are using multiple models. "
+                "The token count will be inaccurate. "
+                "Please use get_total_tokens_for_model "
+                "to get the token count for a specific model name."
+            )
+        total_tokens = 0
+        for model_name, token_count in self.token_count.items():
+            for run_id in token_count:
+                total_tokens += token_count[run_id]["prompt_tokens"]
+                total_tokens += token_count[run_id]["completion_tokens"]
+        return total_tokens
+
+    @property
+    def prompt_tokens(self) -> int:
+        if len(self.token_count) > 1:
+            warnings.warn(
+                "You are using multiple models. "
+                "The token count will be inaccurate. "
+                "Please use get_prompt_tokens_for_model "
+                "to get the token count for a specific model name."
+            )
+        prompt_tokens = 0
+        for model_name in self.token_count.keys():
+            prompt_tokens += self.get_prompt_tokens_for_model(model_name)
+        return prompt_tokens
+
+    @property
+    def completion_tokens(self) -> int:
+        if len(self.token_count) > 1:
+            warnings.warn(
+                "You are using multiple models. "
+                "The token count will be inaccurate. "
+                "Please use get_completion_tokens_for_model "
+                "to get the token count for a specific model name."
+            )
+        completion_tokens = 0
+        for model_name in self.token_count.keys():
+            completion_tokens += self.get_completion_tokens_for_model(model_name)
+        return completion_tokens
+
+    @property
+    def successful_requests(self) -> int:
+        successful_requests = 0
+        for model_name in self.token_count.keys():
+            for run_id in self.token_count[model_name]:
+                successful_requests += self.token_count[model_name][run_id][
+                    "successful_requests"
+                ]
+        return successful_requests
+
+    @property
+    def total_cost(self) -> float:
+        total_cost = 0.0
+        for model_name in self.token_count.keys():
+            if model_name in MODEL_COST_PER_1K_TOKENS:
+                total_cost += get_openai_token_cost_for_model(
+                    model_name,
+                    self.get_prompt_tokens_for_model(model_name),
+                    is_completion=False,
+                )
+                total_cost += get_openai_token_cost_for_model(
+                    model_name,
+                    self.get_completion_tokens_for_model(model_name),
+                    is_completion=True,
+                )
+        return total_cost
 
     @property
     def always_verbose(self) -> bool:
         """Whether to call verbose callbacks even if verbose is False."""
         return True
 
+    def get_prompt_tokens_for_model(self, model_name: str) -> int:
+        """Get the number of prompt tokens for a given model."""
+        model_name = standardize_model_name(model_name)
+        prompt_tokens = 0
+        for run_id in self.token_count[model_name]:
+            prompt_tokens += self.token_count[model_name][run_id]["prompt_tokens"]
+        return prompt_tokens
+
+    def get_completion_tokens_for_model(self, model_name: str) -> int:
+        """Get the number of completion tokens for a given model."""
+        model_name = standardize_model_name(model_name)
+        completion_tokens = 0
+        for run_id in self.token_count[model_name]:
+            completion_tokens += self.token_count[model_name][run_id][
+                "completion_tokens"
+            ]
+        return completion_tokens
+
+    def get_total_tokens_for_model(self, model_name: str) -> int:
+        """Get the total number of tokens for a given model."""
+        return self.get_prompt_tokens_for_model(
+            model_name
+        ) + self.get_completion_tokens_for_model(model_name)
+
+    def get_total_cost_for_model(self, model_name: str) -> float:
+        """Get the total cost in USD for a given model."""
+        prompt_tokens = self.get_prompt_tokens_for_model(model_name)
+        completion_tokens = self.get_completion_tokens_for_model(model_name)
+        return get_openai_token_cost_for_model(
+            model_name, prompt_tokens, is_completion=False
+        ) + get_openai_token_cost_for_model(
+            model_name, completion_tokens, is_completion=True
+        )
+
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+        self,
+        serialized: Dict[str, Any],
+        prompts: List[str],
+        *,
+        run_id: UUID,
+        **kwargs: Any,
     ) -> None:
-        """Print out the prompts."""
-        pass
-
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        """Print out the token."""
-        pass
-
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Collect token usage."""
-        if response.llm_output is None:
-            return None
-        self.successful_requests += 1
-        if "token_usage" not in response.llm_output:
-            return None
-        token_usage = response.llm_output["token_usage"]
-        completion_tokens = token_usage.get("completion_tokens", 0)
-        prompt_tokens = token_usage.get("prompt_tokens", 0)
-        model_name = standardize_model_name(response.llm_output.get("model_name", ""))
-        if model_name in MODEL_COST_PER_1K_TOKENS:
-            completion_cost = get_openai_token_cost_for_model(
-                model_name, completion_tokens, is_completion=True
+        is_streaming = serialized.get("kwargs", {}).get("streaming", False)
+        if is_streaming:
+            model_name = standardize_model_name(
+                kwargs.get("invocation_params", {}).get("model_name")
             )
-            prompt_cost = get_openai_token_cost_for_model(model_name, prompt_tokens)
-            self.total_cost += prompt_cost + completion_cost
-        self.total_tokens += token_usage.get("total_tokens", 0)
-        self.prompt_tokens += prompt_tokens
-        self.completion_tokens += completion_tokens
+            self.current_model_name[run_id] = model_name
+            self._prepare_model_run(model_name, run_id)
+            self.token_count[model_name][run_id][
+                "prompt_tokens"
+            ] += self._get_num_tokens_from_prompts(prompts, run_id)
+
+    def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        *,
+        run_id: UUID,
+        **kwargs: Any,
+    ) -> Any:
+        is_streaming = serialized.get("kwargs", {}).get("streaming", False)
+        if is_streaming:
+            model_name = standardize_model_name(
+                kwargs.get("invocation_params", {}).get("model_name")
+            )
+            self.current_model_name[run_id] = model_name
+            self._prepare_model_run(model_name, run_id)
+            for message in messages:
+                self.token_count[model_name][run_id][
+                    "prompt_tokens"
+                ] += self._get_num_tokens_from_messages(message, run_id)
+
+    def on_llm_new_token(self, token: str, *, run_id: UUID, **kwargs: Any) -> None:
+        if (
+            self.current_model_name[run_id]
+            and self.current_model_name[run_id] in MODEL_COST_PER_1K_TOKENS
+        ):
+            self._prepare_model_run(self.current_model_name[run_id], run_id)
+            if not self.tokens.get(run_id):
+                self.tokens[run_id] = []
+            self.tokens[run_id].append(token)
+
+    def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> None:
+        """Collect token usage."""
+        if response.llm_output:
+            model_name = standardize_model_name(
+                response.llm_output.get("model_name", "")
+            )
+            if not model_name:
+                return None
+            self._prepare_model_run(model_name, run_id)
+            if model_name in MODEL_COST_PER_1K_TOKENS:
+                token_usage = response.llm_output.get("token_usage", {}).get(
+                    "completion_tokens", 0
+                )
+                prompt_token_usage = response.llm_output.get("token_usage", {}).get(
+                    "prompt_tokens", 0
+                )
+                self.token_count[model_name][run_id]["completion_tokens"] += token_usage
+                if self.token_count[model_name][run_id]["prompt_tokens"] == 0:
+                    self.token_count[model_name][run_id][
+                        "prompt_tokens"
+                    ] = prompt_token_usage
+            self.token_count[model_name][run_id]["successful_requests"] += 1
+        if self.tokens.get(run_id):
+            completion_tokens = len(self.tokens[run_id])
+            model_name = self.current_model_name[run_id]
+            if completion_tokens > 0:
+                # OpenAI will send empty first and last tokens for completion.
+                if self.tokens[run_id][0] == "":
+                    completion_tokens -= 1
+                if self.tokens[run_id][-1] == "":
+                    completion_tokens -= 1
+                self.token_count[model_name][run_id][
+                    "completion_tokens"
+                ] += completion_tokens
+                del self.tokens[run_id]
+        if run_id in self.current_model_name:
+            del self.current_model_name[run_id]
+
+    def _prepare_model_run(self, model_name: Union[str, None], run_id: UUID) -> None:
+        if model_name is None:
+            return
+        if model_name not in self.token_count:
+            self.token_count[model_name] = {}
+        if run_id not in self.token_count[model_name]:
+            self.token_count[model_name][run_id] = {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "successful_requests": 0,
+            }
+
+    def _get_encoding_model(self, run_id: UUID) -> Tuple[str, "tiktoken.Encoding"]:
+        if not self.tiktoken_:
+            raise ImportError("tiktoken is not installed.")
+        model = self.current_model_name[run_id]
+        if model is None:
+            raise ValueError("Model name should be set.")
+        if model.startswith("gpt-35-turbo"):
+            model = "gpt-3.5-turbo"
+        try:
+            encoding = self.tiktoken_.encoding_for_model(model)
+        except KeyError:
+            warnings.warn("Warning: model not found. Using cl100k_base encoding.")
+            model = "cl100k_base"
+            encoding = self.tiktoken_.get_encoding(model)
+        return model, encoding
+
+    def _get_num_tokens_from_messages(
+        self, messages: List[BaseMessage], run_id: UUID
+    ) -> int:
+        try:
+            model, encoding = self._get_encoding_model(run_id)
+        except ImportError:
+            return 0
+        if model.startswith("gpt-3.5-turbo-0301"):
+            tokens_per_message = 4
+            tokens_per_name = -1
+        elif model.startswith("gpt-3.5-turbo") or model.startswith("gpt-4"):
+            tokens_per_message = 3
+            tokens_per_name = 1
+        else:
+            tokens_per_message = 3
+            tokens_per_name = 1
+        num_tokens = 0
+        messages_dict = [convert_message_to_dict(m) for m in messages]
+        for message in messages_dict:
+            num_tokens += tokens_per_message
+            for key, value in message.items():
+                num_tokens += len(encoding.encode(str(value)))
+                if key == "name":
+                    num_tokens += tokens_per_name
+        num_tokens += 3
+        return num_tokens
+
+    def _get_num_tokens_from_prompts(self, prompts: List[str], run_id: UUID) -> int:
+        try:
+            model, encoding = self._get_encoding_model(run_id)
+        except ImportError:
+            return 0
+        num_tokens = 0
+        for prompt in prompts:
+            num_tokens += len(encoding.encode(prompt))
+        return num_tokens
+
+    def __repr__(self) -> str:
+        result = "OpenAI Token Usage:\n"
+        for model_name in self.token_count:
+            result += f"{model_name}:\n"
+            result += (
+                f"\tPrompt tokens: {self.get_prompt_tokens_for_model(model_name)}\n"
+            )
+            result += (
+                f"\tCompletion tokens: "
+                f"{self.get_completion_tokens_for_model(model_name)}\n"
+            )
+        result += f"Total cost (USD): ${self.total_cost}"
+        return result
 
     def __copy__(self) -> "OpenAICallbackHandler":
         """Return a copy of the callback handler."""
