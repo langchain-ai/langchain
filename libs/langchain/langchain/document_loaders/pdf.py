@@ -154,8 +154,10 @@ class PyPDFLoader(BasePDFLoader):
             raise ImportError(
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
-        self.parser = PyPDFParser(password=password, extract_images=extract_images)
         super().__init__(file_path, headers=headers)
+        self.parser = PyPDFParser(
+            password=password, extract_images=extract_images, web_path=self.web_path
+        )
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
