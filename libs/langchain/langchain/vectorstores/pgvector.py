@@ -148,7 +148,7 @@ class PGVector(VectorStore):
         return self.embedding_function
 
     def connect(self) -> sqlalchemy.engine.Connection:
-        engine = sqlalchemy.create_engine(self.connection_string)
+        engine = sqlalchemy.create_engine(self.connection_string, future=True)
         conn = engine.connect()
         return conn
 
