@@ -2,18 +2,18 @@ from __future__ import annotations
 
 # import typing
 import uuid
-# from typing import (
-#     Any,
-#     Callable,
-#     Dict,
-#     Iterable,
-#     List,
-#     Optional,
-#     Tuple,
-#     Type,
-#     TypeVar,
-#     Union,
-# )
+from typing import (
+    # Any,
+    # Callable,
+    # Dict,
+    # Iterable,
+    # List,
+    # Optional,
+    # Tuple,
+    # Type,
+    TypeVar,
+    # Union,
+)
 
 # import numpy as np
 
@@ -25,10 +25,10 @@ from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
-ADBVST = TypeVar("ADBVST", bound="AstraDb")
+ADBVST = TypeVar("ADBVST", bound="AstraDB")
 
 
-class AstraDb(VectorStore):
+class AstraDB(VectorStore):
     """Wrapper around DataStax Astra DB for vector-store workloads.
 
     To use it, you need a recent installation of the `astrapy` library
@@ -40,7 +40,7 @@ class AstraDb(VectorStore):
     Example:
         .. code-block:: python
 
-                from langchain.vectorstores import AstraDb
+                from langchain.vectorstores import AstraDB
                 from langchain.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
@@ -268,7 +268,7 @@ class AstraDb(VectorStore):
                 hit["$similarity"],
                 hit["_id"],
             )
-            for hit in hits
+            for hit in hits["data"]["documents"]
         ]
 
     def similarity_search_with_score_id(
