@@ -290,10 +290,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     alternatives: Dict[
         str,
-        Union[
-            RunnableSerializable[Input, Output],
-            Callable[[], RunnableSerializable[Input, Output]],
-        ],
+        Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ]
 
     default_key: str = "default"
@@ -346,7 +343,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             return self.default
         elif which in self.alternatives:
             alt = self.alternatives[which]
-            if isinstance(alt, RunnableSerializable):
+            if isinstance(alt, Runnable):
                 return alt
             else:
                 return alt()

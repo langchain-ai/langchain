@@ -1,5 +1,5 @@
-from functools import partial
 import sys
+from functools import partial
 from operator import itemgetter
 from typing import (
     Any,
