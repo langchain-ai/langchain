@@ -77,7 +77,6 @@ class PGVector(VectorStore):
         connection_string: Postgres connection string.
         embedding_function: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
-        engine_args: SQLAlchemy's create engine arguments.
         collection_name: The name of the collection to use. (default: langchain)
             NOTE: This is not the name of the table, but the name of the collection.
             The tables will be created when initializing the store (if not exists)
@@ -85,6 +84,7 @@ class PGVector(VectorStore):
         distance_strategy: The distance strategy to use. (default: COSINE)
         pre_delete_collection: If True, will delete the collection if it exists.
             (default: False). Useful for testing.
+        engine_args: SQLAlchemy's create engine arguments.
 
     Example:
         .. code-block:: python
@@ -109,23 +109,23 @@ class PGVector(VectorStore):
         self,
         connection_string: str,
         embedding_function: Embeddings,
-        engine_args: Optional[dict[str, Any]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         collection_metadata: Optional[dict] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
+        **engine_args: Optional[dict[str, Any]],
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
-        self.engine_args = engine_args or {}
         self.collection_name = collection_name
         self.collection_metadata = collection_metadata
         self._distance_strategy = distance_strategy
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
+        self.engine_args = engine_args
         self.__post_init__()
 
     def __post_init__(
