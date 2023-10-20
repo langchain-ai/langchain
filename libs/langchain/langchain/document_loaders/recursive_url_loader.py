@@ -176,7 +176,7 @@ class RecursiveUrlLoader(BaseLoader):
                     f"Unable to load from {url}. Received error {e} of type "
                     f"{e.__class__.__name__}"
                 )
-        logger.warning(f"Failed to retrive {url} after {self.tries}. attempts.")
+        logger.warning(f"Failed to retrieve {url} after {self.tries}. attempts.")
         return response
 
     def _get_child_links_recursive(
