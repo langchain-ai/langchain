@@ -9,7 +9,7 @@ from langchain.chains.base import Chain
 from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.graphs.neo4j_graph import Neo4jGraph
+from langchain.graphs.graph_store import GraphStore
 from langchain.pydantic_v1 import Field
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
@@ -79,7 +79,7 @@ def construct_schema(
 class GraphCypherQAChain(Chain):
     """Chain for question-answering against a graph by generating Cypher statements."""
 
-    graph: Neo4jGraph = Field(exclude=True)
+    graph: GraphStore = Field(exclude=True)
     cypher_generation_chain: LLMChain
     qa_chain: LLMChain
     graph_schema: str
@@ -151,7 +151,7 @@ class GraphCypherQAChain(Chain):
             )
 
         graph_schema = construct_schema(
-            kwargs["graph"].structured_schema, include_types, exclude_types
+            kwargs["graph"].get_structured_schema, include_types, exclude_types
         )
 
         cypher_query_corrector = None
