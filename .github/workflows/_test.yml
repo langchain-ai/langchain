@@ -38,11 +38,15 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: poetry install --with=test_integration
+        run: poetry install
 
       - name: Run core tests
         shell: bash
         run: make test
+
+      - name: Install integration dependencies
+        shell: bash
+        run: poetry install --with=test_integration
 
       - name: Check integration tests compile
         shell: bash
