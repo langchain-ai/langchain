@@ -268,19 +268,21 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     def get_lc_namespace(cls) -> List[str]:
         return cls.__module__.split(".")[:-1]
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
-        map_input_schema = self.mapper.input_schema
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        map_input_schema = self.mapper.get_input_schema(config)
         if not map_input_schema.__custom_root_type__:
             # ie. it's a dict
             return map_input_schema
 
-        return super().input_schema
+        return super().get_input_schema(config)
 
-    @property
-    def output_schema(self) -> Type[BaseModel]:
-        map_input_schema = self.mapper.input_schema
-        map_output_schema = self.mapper.output_schema
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        map_input_schema = self.mapper.get_input_schema(config)
+        map_output_schema = self.mapper.get_output_schema(config)
         if (
             not map_input_schema.__custom_root_type__
             and not map_output_schema.__custom_root_type__
@@ -295,7 +297,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
                 },
             )
 
-        return super().output_schema
+        return super().get_output_schema(config)
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:

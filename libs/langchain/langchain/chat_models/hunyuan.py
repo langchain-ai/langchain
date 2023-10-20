@@ -1,8 +1,11 @@
+import base64
 import hashlib
+import hmac
 import json
 import logging
 import time
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Type, Union
+from urllib.parse import urlparse
 
 import requests
 
@@ -27,6 +30,9 @@ from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_HUNYUAN_API_BASE = "https://hunyuan.cloud.tencent.com"
+DEFAULT_HUNYUAN_PATH = "/hyllm/v1/chat/completions"
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -69,6 +75,47 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
+# signature generation
+# https://cloud.tencent.com/document/product/1729/97732#532252ce-e960-48a7-8821-940a9ce2ccf3
+def _signature(secret_key: SecretStr, url: str, payload: Dict[str, Any]) -> str:
+    sorted_keys = sorted(payload.keys())
+
+    url_info = urlparse(url)
+
+    sign_str = url_info.netloc + url_info.path + "?"
+
+    for key in sorted_keys:
+        value = payload[key]
+
+        if isinstance(value, list) or isinstance(value, dict):
+            value = json.dumps(value, separators=(",", ":"))
+        elif isinstance(value, float):
+            value = "%g" % value
+
+        sign_str = sign_str + key + "=" + str(value) + "&"
+
+    sign_str = sign_str[:-1]
+
+    hmacstr = hmac.new(
+        key=secret_key.get_secret_value().encode("utf-8"),
+        msg=sign_str.encode("utf-8"),
+        digestmod=hashlib.sha1,
+    ).digest()
+
+    return base64.b64encode(hmacstr).decode("utf-8")
+
+
+def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
+    generations = []
+    for choice in response["choices"]:
+        message = _convert_dict_to_message(choice["messages"])
+        generations.append(ChatGeneration(message=message))
+
+    token_usage = response["usage"]
+    llm_output = {"token_usage": token_usage}
+    return ChatResult(generations=generations, llm_output=llm_output)
+
+
 def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
     """Convert a string to a SecretStr if needed."""
     if isinstance(value, SecretStr):
@@ -76,52 +123,44 @@ def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
     return SecretStr(value)
 
 
-# signature generation
-def _signature(secret_key: SecretStr, payload: Dict[str, Any], timestamp: int) -> str:
-    input_str = secret_key.get_secret_value() + json.dumps(payload) + str(timestamp)
-    md5 = hashlib.md5()
-    md5.update(input_str.encode("utf-8"))
-    return md5.hexdigest()
+class ChatHunyuan(BaseChatModel):
+    """Tencent Hunyuan chat models API by Tencent.
 
-
-class ChatBaichuan(BaseChatModel):
-    """Baichuan chat models API by Baichuan Intelligent Technology.
-
-    For more information, see https://platform.baichuan-ai.com/docs/api
+    For more information, see https://cloud.tencent.com/document/product/1729
     """
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {
-            "baichuan_api_key": "BAICHUAN_API_KEY",
-            "baichuan_secret_key": "BAICHUAN_SECRET_KEY",
+            "hunyuan_app_id": "HUNYUAN_APP_ID",
+            "hunyuan_secret_id": "HUNYUAN_SECRET_ID",
+            "hunyuan_secret_key": "HUNYUAN_SECRET_KEY",
         }
 
     @property
     def lc_serializable(self) -> bool:
         return True
 
-    baichuan_api_base: str = "https://api.baichuan-ai.com"
-    """Baichuan custom endpoints"""
-    baichuan_api_key: Optional[str] = None
-    """Baichuan API Key"""
-    baichuan_secret_key: Optional[SecretStr] = None
-    """Baichuan Secret Key"""
+    hunyuan_api_base: str = "https://hunyuan.cloud.tencent.com"
+    """Hunyuan custom endpoints"""
+    hunyuan_app_id: Optional[str] = None
+    """Hunyuan App ID"""
+    hunyuan_secret_id: Optional[str] = None
+    """Hunyuan Secret ID"""
+    hunyuan_secret_key: Optional[SecretStr] = None
+    """Hunyuan Secret Key"""
     streaming: bool = False
     """Whether to stream the results or not."""
     request_timeout: int = 60
-    """request timeout for chat http requests"""
+    """Timeout for requests to Hunyuan API. Default is 60 seconds."""
 
-    model = "Baichuan2-53B"
-    """model name of Baichuan, default is `Baichuan2-53B`."""
-    temperature: float = 0.3
+    query_id: Optional[str] = None
+    """Query id for troubleshooting"""
+    temperature: float = 1.0
     """What sampling temperature to use."""
-    top_k: int = 5
-    """What search sampling control to use."""
-    top_p: float = 0.85
+    top_p: float = 1.0
     """What probability mass to use."""
-    with_search_enhance: bool = False
-    """Whether to use search enhance, default is False."""
+
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for API call not explicitly specified."""
 
@@ -158,21 +197,26 @@ class ChatBaichuan(BaseChatModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        values["baichuan_api_base"] = get_from_dict_or_env(
+        values["hunyuan_api_base"] = get_from_dict_or_env(
             values,
-            "baichuan_api_base",
-            "BAICHUAN_API_BASE",
+            "hunyuan_api_base",
+            "HUNYUAN_API_BASE",
         )
-        values["baichuan_api_key"] = get_from_dict_or_env(
+        values["hunyuan_app_id"] = get_from_dict_or_env(
             values,
-            "baichuan_api_key",
-            "BAICHUAN_API_KEY",
+            "hunyuan_app_id",
+            "HUNYUAN_APP_ID",
         )
-        values["baichuan_secret_key"] = _to_secret(
+        values["hunyuan_secret_id"] = get_from_dict_or_env(
+            values,
+            "hunyuan_secret_id",
+            "HUNYUAN_SECRET_ID",
+        )
+        values["hunyuan_secret_key"] = _to_secret(
             get_from_dict_or_env(
                 values,
-                "baichuan_secret_key",
-                "BAICHUAN_SECRET_KEY",
+                "hunyuan_secret_key",
+                "HUNYUAN_SECRET_KEY",
             )
         )
 
@@ -180,13 +224,16 @@ class ChatBaichuan(BaseChatModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Baichuan API."""
+        """Get the default parameters for calling Hunyuan API."""
         normal_params = {
-            "model": self.model,
+            "app_id": self.hunyuan_app_id,
+            "secret_id": self.hunyuan_secret_id,
+            "temperature": self.temperature,
             "top_p": self.top_p,
-            "top_k": self.top_k,
-            "with_search_enhance": self.with_search_enhance,
         }
+
+        if self.query_id is not None:
+            normal_params["query_id"] = self.query_id
 
         return {**normal_params, **self.model_kwargs}
 
@@ -207,10 +254,10 @@ class ChatBaichuan(BaseChatModel):
 
         response = res.json()
 
-        if response.get("code") != 0:
-            raise ValueError(f"Error from Baichuan api response: {response}")
+        if "error" in response:
+            raise ValueError(f"Error from Hunyuan api response: {response}")
 
-        return self._create_chat_result(response)
+        return _create_chat_result(response)
 
     def _stream(
         self,
@@ -224,52 +271,48 @@ class ChatBaichuan(BaseChatModel):
         default_chunk_class = AIMessageChunk
         for chunk in res.iter_lines():
             response = json.loads(chunk)
-            if response.get("code") != 0:
-                raise ValueError(f"Error from Baichuan api response: {response}")
+            if "error" in response:
+                raise ValueError(f"Error from Hunyuan api response: {response}")
 
-            data = response.get("data")
-            for m in data.get("messages"):
-                chunk = _convert_delta_to_message_chunk(m, default_chunk_class)
+            for choice in response["choices"]:
+                chunk = _convert_delta_to_message_chunk(
+                    choice["delta"], default_chunk_class
+                )
                 default_chunk_class = chunk.__class__
                 yield ChatGenerationChunk(message=chunk)
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.content)
 
     def _chat(self, messages: List[BaseMessage], **kwargs: Any) -> requests.Response:
-        if self.baichuan_secret_key is None:
-            raise ValueError("Baichuan secret key is not set.")
+        if self.hunyuan_secret_key is None:
+            raise ValueError("Hunyuan secret key is not set.")
 
         parameters = {**self._default_params, **kwargs}
 
-        model = parameters.pop("model")
         headers = parameters.pop("headers", {})
+        timestamp = parameters.pop("timestamp", int(time.time()))
+        expired = parameters.pop("expired", timestamp + 24 * 60 * 60)
 
         payload = {
-            "model": model,
+            "timestamp": timestamp,
+            "expired": expired,
             "messages": [_convert_message_to_dict(m) for m in messages],
-            "parameters": parameters,
+            **parameters,
         }
 
-        timestamp = int(time.time())
-
-        url = f"{self.baichuan_api_base}/v1"
         if self.streaming:
-            url = f"{url}/stream"
-        url = f"{url}/chat"
+            payload["stream"] = 1
+
+        url = self.hunyuan_api_base + DEFAULT_HUNYUAN_PATH
 
         res = requests.post(
             url=url,
             timeout=self.request_timeout,
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.baichuan_api_key}",
-                "X-BC-Timestamp": str(timestamp),
-                "X-BC-Signature": _signature(
-                    secret_key=self.baichuan_secret_key,
-                    payload=payload,
-                    timestamp=timestamp,
+                "Authorization": _signature(
+                    secret_key=self.hunyuan_secret_key, url=url, payload=payload
                 ),
-                "X-BC-Sign-Algo": "MD5",
                 **headers,
             },
             json=payload,
@@ -277,17 +320,6 @@ class ChatBaichuan(BaseChatModel):
         )
         return res
 
-    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
-        generations = []
-        for m in response["data"]["messages"]:
-            message = _convert_dict_to_message(m)
-            gen = ChatGeneration(message=message)
-            generations.append(gen)
-
-        token_usage = response["usage"]
-        llm_output = {"token_usage": token_usage, "model": self.model}
-        return ChatResult(generations=generations, llm_output=llm_output)
-
     @property
     def _llm_type(self) -> str:
-        return "baichuan-chat"
+        return "hunyuan-chat"
