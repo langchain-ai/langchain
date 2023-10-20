@@ -49,9 +49,9 @@ class AcreomLoader(BaseLoader):
     def _process_acreom_content(self, content: str) -> str:
         # remove acreom specific elements from content that
         # do not contribute to the context of current document
-        content = re.sub("\s*-\s\[\s\]\s.*|\s*\[\s\]\s.*", "", content)  # rm tasks
-        content = re.sub("#", "", content)  # rm hashtags
-        content = re.sub("\[\[.*?\]\]", "", content)  # rm doclinks
+        content = re.sub(r"\s*-\s\[\s\]\s.*|\s*\[\s\]\s.*", "", content)  # rm tasks
+        content = re.sub(r"#", "", content)  # rm hashtags
+        content = re.sub(r"\[\[.*?\]\]", "", content)  # rm doclinks
         return content
 
     def lazy_load(self) -> Iterator[Document]:

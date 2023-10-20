@@ -1,6 +1,7 @@
 """Agent for working with pandas objects."""
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from langchain._api import warn_deprecated
 from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.agent_toolkits.pandas.prompt import (
     FUNCTIONS_WITH_DF,
@@ -282,9 +283,19 @@ def create_pandas_dataframe_agent(
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
     extra_tools: Sequence[BaseTool] = (),
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe."""
+    warn_deprecated(
+        since="0.0.314",
+        message=(
+            "On 2023-10-27 this module will be be deprecated from langchain, and "
+            "will be available from the langchain-experimental package."
+            "This code is already available in langchain-experimental."
+            "See https://github.com/langchain-ai/langchain/discussions/11680."
+        ),
+        pending=True,
+    )
     agent: BaseSingleActionAgent
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
         prompt, base_tools = _get_prompt_and_tools(
