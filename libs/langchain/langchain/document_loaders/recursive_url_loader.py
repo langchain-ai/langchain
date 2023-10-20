@@ -87,10 +87,10 @@ class RecursiveUrlLoader(BaseLoader):
         max_depth: Optional[int] = 2,
         use_async: Optional[bool] = None,
         extractor: Optional[Callable[[str], str]] = None,
-        metadata_extractor: Optional[Callable[[str, str], str]] = None,
+        metadata_extractor: Optional[Callable[[str, int, str], str]] = None,
         exclude_dirs: Optional[Sequence[str]] = (),
         timeout: Optional[int] = 10,
-        multiple_attempts: Optional[bool] = False,
+        multiple_attempts: Optional[int] = False,
         prevent_outside: bool = True,
         link_regex: Union[str, re.Pattern, None] = None,
         headers: Optional[dict] = None,
@@ -107,15 +107,15 @@ class RecursiveUrlLoader(BaseLoader):
             extractor: A function to extract document contents from raw html.
                 When extract function returns an empty string, the document is
                 ignored.
-            metadata_extractor: A function to extract metadata from raw html and the
-                source url (args in that order). Default extractor will attempt
-                to use BeautifulSoup4 to extract the title, description and language
-                of the page.
+            metadata_extractor: A function to extract metadata from raw html,
+                http status code and the source url (args in that order). Default
+                extractor will attempt to use BeautifulSoup4 to extract the title,
+                description and language of the page.
             exclude_dirs: A list of subdirectories to exclude.
             timeout: The timeout for the requests, in the unit of seconds. If None then
                 connection will not timeout.
-            multiple_attempts: If True, try to get the url content 5 times before
-            giving up.
+            multiple_attempts: If True, try to get the url content 5 times
+                before giving up.
             prevent_outside: If True, prevent loading from urls which are not children
                 of the root url.
             link_regex: Regex for extracting sub-links from the raw html of a web page.
@@ -148,7 +148,7 @@ class RecursiveUrlLoader(BaseLoader):
         self.headers = headers
         self.check_response_status = check_response_status
 
-    def _get_url_with_multiple_attempts(self, url: str):
+    def _get_url_with_multiple_attempts(self, url: str) -> requests.Response:
         """This function will try to get the url content 5 more times before giving up.
         Each time exponentially waiting for a certain amount of time
         """
@@ -160,7 +160,7 @@ class RecursiveUrlLoader(BaseLoader):
                 sleep_time = 2**i
                 time.sleep(sleep_time)
                 logger.warning(
-                    f"Unable to load from {url}. " f"Will try in {sleep_time} seconds."
+                    f"Unable to load from {url}. Will try in {sleep_time} seconds."
                 )
                 response = requests.get(url, timeout=self.timeout, headers=self.headers)
                 if response.status_code != 200:
@@ -176,7 +176,7 @@ class RecursiveUrlLoader(BaseLoader):
                     f"Unable to load from {url}. Received error {e} of type "
                     f"{e.__class__.__name__}"
                 )
-        logger.warning(f"Failed to retrieve {url} after {self.tries}. attempts.")
+        logger.warning(f"Failed to retrive {url} after {self.tries}. attempts.")
         return response
 
     def _get_child_links_recursive(
@@ -197,6 +197,7 @@ class RecursiveUrlLoader(BaseLoader):
         visited.add(url)
         try:
             response = self._get_url_with_multiple_attempts(url)
+            # response = requests.get(url, timeout=self.timeout, headers=self.headers)
             if self.check_response_status and 400 <= response.status_code <= 599:
                 raise ValueError(f"Received HTTP status {response.status_code}")
         except Exception as e:
@@ -209,7 +210,9 @@ class RecursiveUrlLoader(BaseLoader):
         if content:
             yield Document(
                 page_content=content,
-                metadata=self.metadata_extractor(response.text, url),
+                metadata=self.metadata_extractor(
+                    response.text, response.status_code, url
+                ),
             )
 
         # Store the visited links and recursively visit the children
@@ -270,6 +273,7 @@ class RecursiveUrlLoader(BaseLoader):
         try:
             async with session.get(url) as response:
                 text = await response.text()
+                status_code = response.status
                 if self.check_response_status and 400 <= response.status <= 599:
                     raise ValueError(f"Received HTTP status {response.status}")
         except (aiohttp.client_exceptions.InvalidURL, Exception) as e:
@@ -286,7 +290,7 @@ class RecursiveUrlLoader(BaseLoader):
             results.append(
                 Document(
                     page_content=content,
-                    metadata=self.metadata_extractor(text, url),
+                    metadata=self.metadata_extractor(text, status_code, url),
                 )
             )
         if depth < self.max_depth - 1:
