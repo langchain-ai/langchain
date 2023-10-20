@@ -29,7 +29,7 @@ Then, set it up with the following code:
 ```python
 from datetime import timedelta
 from momento import CacheClient, Configurations, CredentialProvider
-import langchain
+from langchain.globals import set_llm_cache
 
 # Instantiate the Momento client
 cache_client = CacheClient(
@@ -41,7 +41,7 @@ cache_client = CacheClient(
 cache_name = "langchain"
 
 # Instantiate the LLM cache
-langchain.llm_cache = MomentoCache(cache_client, cache_name)
+set_llm_cache(MomentoCache(cache_client, cache_name))
 ```
 
 ## Memory

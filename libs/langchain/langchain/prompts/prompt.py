@@ -2,14 +2,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from string import Formatter
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
-    _get_jinja2_variables_from_template,
     check_valid_template,
+    get_template_variables,
 )
 from langchain.pydantic_v1 import root_validator
 
@@ -53,10 +52,10 @@ class PromptTemplate(StringPromptTemplate):
     template: str
     """The prompt template."""
 
-    template_format: str = "f-string"
+    template_format: Union[Literal["f-string"], Literal["jinja2"]] = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
-    validate_template: bool = True
+    validate_template: bool = False
     """Whether or not to try validating the template."""
 
     def __add__(self, other: Any) -> PromptTemplate:
@@ -127,6 +126,14 @@ class PromptTemplate(StringPromptTemplate):
             check_valid_template(
                 values["template"], values["template_format"], all_inputs
             )
+        elif values.get("template_format"):
+            values["input_variables"] = [
+                var
+                for var in get_template_variables(
+                    values["template"], values["template_format"]
+                )
+                if var not in values["partial_variables"]
+            ]
         return values
 
     @classmethod
@@ -202,25 +209,17 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt template loaded from the template.
         """
-        if template_format == "jinja2":
-            # Get the variables for the template
-            input_variables = _get_jinja2_variables_from_template(template)
-        elif template_format == "f-string":
-            input_variables = {
-                v for _, v, _, _ in Formatter().parse(template) if v is not None
-            }
-        else:
-            raise ValueError(f"Unsupported template format: {template_format}")
 
+        input_variables = get_template_variables(template, template_format)
         _partial_variables = partial_variables or {}
 
         if _partial_variables:
-            input_variables = {
+            input_variables = [
                 var for var in input_variables if var not in _partial_variables
-            }
+            ]
 
         return cls(
-            input_variables=sorted(input_variables),
+            input_variables=input_variables,
             template=template,
             template_format=template_format,
             partial_variables=_partial_variables,
