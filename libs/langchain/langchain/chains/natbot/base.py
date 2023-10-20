@@ -16,6 +16,19 @@ from langchain.schema.language_model import BaseLanguageModel
 class NatBotChain(Chain):
     """Implement an LLM driven browser.
 
+    **Security Note**: This toolkit provides code to control a web-browser.
+
+        The web-browser can be used to navigate to:
+
+        - Any URL (including any internal network URLs)
+        - And local files
+
+        Exercise care if exposing this chain to end-users. Control who is able to
+        access and use this chain, and isolate the network access of the server
+        that hosts this chain.
+
+        See https://python.langchain.com/docs/security for more information.
+
     Example:
         .. code-block:: python
 

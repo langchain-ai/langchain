@@ -7,7 +7,7 @@ from typing import Iterable, List, Tuple
 import pytest
 
 # Keep at top of file to ensure that pydantic test can be skipped before
-# pydantic v1 related imports are attempted by openapi_schema_pydantic.
+# pydantic v1 related imports are attempted by openapi_pydantic.
 from langchain.pydantic_v1 import _PYDANTIC_MAJOR_VERSION
 
 if _PYDANTIC_MAJOR_VERSION != 1:
@@ -78,7 +78,7 @@ def http_paths_and_methods() -> List[Tuple[str, OpenAPISpec, str, str]]:
     return http_paths_and_methods
 
 
-@pytest.mark.requires("openapi_schema_pydantic")
+@pytest.mark.requires("openapi_pydantic")
 def test_parse_api_operations() -> None:
     """Test the APIOperation class."""
     for spec_name, spec, path, method in http_paths_and_methods():
@@ -88,21 +88,21 @@ def test_parse_api_operations() -> None:
             raise AssertionError(f"Error processing {spec_name}: {e} ") from e
 
 
-@pytest.mark.requires("openapi_schema_pydantic")
+@pytest.mark.requires("openapi_pydantic")
 @pytest.fixture
 def raw_spec() -> OpenAPISpec:
     """Return a raw OpenAPI spec."""
-    from openapi_schema_pydantic import Info
+    from openapi_pydantic import Info
 
     return OpenAPISpec(
         info=Info(title="Test API", version="1.0.0"),
     )
 
 
-@pytest.mark.requires("openapi_schema_pydantic")
+@pytest.mark.requires("openapi_pydantic")
 def test_api_request_body_from_request_body_with_ref(raw_spec: OpenAPISpec) -> None:
     """Test instantiating APIRequestBody from RequestBody with a reference."""
-    from openapi_schema_pydantic import (
+    from openapi_pydantic import (
         Components,
         MediaType,
         Reference,
@@ -140,10 +140,10 @@ def test_api_request_body_from_request_body_with_ref(raw_spec: OpenAPISpec) -> N
     assert api_request_body.media_type == "application/json"
 
 
-@pytest.mark.requires("openapi_schema_pydantic")
+@pytest.mark.requires("openapi_pydantic")
 def test_api_request_body_from_request_body_with_schema(raw_spec: OpenAPISpec) -> None:
     """Test instantiating APIRequestBody from RequestBody with a schema."""
-    from openapi_schema_pydantic import (
+    from openapi_pydantic import (
         MediaType,
         RequestBody,
         Schema,
@@ -171,9 +171,9 @@ def test_api_request_body_from_request_body_with_schema(raw_spec: OpenAPISpec) -
     assert api_request_body.media_type == "application/json"
 
 
-@pytest.mark.requires("openapi_schema_pydantic")
+@pytest.mark.requires("openapi_pydantic")
 def test_api_request_body_property_from_schema(raw_spec: OpenAPISpec) -> None:
-    from openapi_schema_pydantic import (
+    from openapi_pydantic import (
         Components,
         Reference,
         Schema,

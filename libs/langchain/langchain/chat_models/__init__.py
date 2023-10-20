@@ -30,6 +30,7 @@ from langchain.chat_models.fake import FakeListChatModel
 from langchain.chat_models.fireworks import ChatFireworks
 from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.human import HumanInputChatModel
+from langchain.chat_models.hunyuan import ChatHunyuan
 from langchain.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
 from langchain.chat_models.jinachat import JinaChat
 from langchain.chat_models.konko import ChatKonko
@@ -38,6 +39,7 @@ from langchain.chat_models.minimax import MiniMaxChat
 from langchain.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
 from langchain.chat_models.ollama import ChatOllama
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.vertexai import ChatVertexAI
 from langchain.chat_models.yandex import ChatYandexGPT
@@ -63,8 +65,10 @@ __all__ = [
     "ErnieBotChat",
     "ChatJavelinAIGateway",
     "ChatKonko",
+    "PaiEasChatEndpoint",
     "QianfanChatEndpoint",
     "ChatFireworks",
     "ChatYandexGPT",
     "ChatBaichuan",
+    "ChatHunyuan",
 ]
