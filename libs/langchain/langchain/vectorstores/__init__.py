@@ -97,6 +97,12 @@ def _import_cassandra() -> Any:
     return Cassandra
 
 
+def _import_astradb
+    from langchain.vectorstores.astradb import AstraDb
+
+    return AstraDb
+
+
 def _import_chroma() -> Any:
     from langchain.vectorstores.chroma import Chroma
 
@@ -428,6 +434,8 @@ def __getattr__(name: str) -> Any:
         return _import_bageldb()
     elif name == "Cassandra":
         return _import_cassandra()
+    elif name == "AstraDb":
+        return _import_astradb()
     elif name == "Chroma":
         return _import_chroma()
     elif name == "Clarifai":
@@ -544,6 +552,7 @@ __all__ = [
     "AzureSearch",
     "Bagel",
     "Cassandra",
+    "AstraDb",
     "Chroma",
     "Clarifai",
     "Clickhouse",

@@ -1,0 +1,502 @@
+from __future__ import annotations
+
+# import typing
+import uuid
+# from typing import (
+#     Any,
+#     Callable,
+#     Dict,
+#     Iterable,
+#     List,
+#     Optional,
+#     Tuple,
+#     Type,
+#     TypeVar,
+#     Union,
+# )
+
+# import numpy as np
+
+# if typing.TYPE_CHECKING:
+#     from cassandra.cluster import Session
+
+from langchain.docstore.document import Document
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
+from langchain.vectorstores.utils import maximal_marginal_relevance
+
+ADBVST = TypeVar("ADBVST", bound="AstraDb")
+
+
+class AstraDb(VectorStore):
+    """Wrapper around DataStax Astra DB for vector-store workloads.
+
+    To use it, you need a recent installation of the `astrapy` library
+    and an Astra DB cloud database.
+
+    For quickstart and details, visit:
+        docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html
+
+    Example:
+        .. code-block:: python
+
+                from langchain.vectorstores import AstraDb
+                from langchain.embeddings.openai import OpenAIEmbeddings
+
+                embeddings = OpenAIEmbeddings()
+                TODO change this example
+                session = ...             # create your Cassandra session object
+                keyspace = 'my_keyspace'  # the keyspace should exist already
+                table_name = 'my_vector_store'
+                vectorstore = Cassandra(embeddings, session, keyspace, table_name)
+    """
+
+    _embedding_dimension: Union[int, None]
+
+    @staticmethod
+    def _filter_to_metadata(filter_dict: Optional[Dict[str, str]]) -> Dict[str, Any]:
+        if filter_dict is None:
+            return {}
+        else:
+            return {
+                f"metadata.{mdk}": mdv
+                for mdk, mdv in filter_dict.items()
+            }
+
+    def _get_embedding_dimension(self) -> int:
+        if self._embedding_dimension is None:
+            self._embedding_dimension = len(
+                self.embedding.embed_query("This is a sample sentence.")
+            )
+        return self._embedding_dimension
+
+    def __init__(
+        self,
+        embedding: Embeddings,
+        database_id: str,  # TODO: param name not final
+        token: str,  # TODO: param name not final?
+        collection_name: str,  # TODO: param name not final?
+        namespace: Optional[str] = None,  # TODO: param name not final/signature tbd
+    ) -> None:
+        try:
+            from astrapy.collections import AstraDb, AstraDbCollection
+        except (ImportError, ModuleNotFoundError):
+            raise ImportError(
+                "Could not import a recent astrapy python package. "
+                "Please install it with `pip install --upgrade astrapy`."
+            )
+        """Create a vector table."""
+        self.embedding = embedding
+        self.database_id = database_id
+        self.token = token
+        self.collection_name = collection_name
+        self.namespace = namespace
+        #
+        self._embedding_dimension = None
+        #
+        # TODO: depending on handling of namespace optionality, reduce this if away
+        if self.namespace is None:
+            self.astra_db = AstraDb(
+                db_id=self.database_id,
+                token=self.token,
+            )
+        else:
+            self.astra_db = AstraDb(
+                db_id=self.database_id,
+                token=self.token,
+                namespace=self.namespace,
+            )
+        #
+        create_collection_response = self.astra_db.create_collection(
+            size=self._get_embedding_dimension(),
+            name=self.collection_name,
+        )
+        self.collection = AstraDbCollection(
+            collection=self.collection_name,
+            astra_db=self.astra_db,
+        )
+
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding
+
+    @staticmethod
+    def _dont_flip_the_cos_score(similarity0to1: float) -> float:
+        # the identity
+        return similarity0to1
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The underlying API calls already returns a "score proper",
+        i.e. one in [0, 1] where higher means more *similar*,
+        so here the final score transformation is not reversing the interval:
+        """
+        return self._dont_flip_the_cos_score
+
+    # def delete_collection(self) -> None:
+    #     """
+    #     Just an alias for `clear`
+    #     (to better align with other VectorStore implementations).
+    #     """
+    #     self.clear()
+
+    def clear(self) -> None:
+        """Empty the collection."""
+        # TODO - not available here, what do to?
+        raise NotImplementedError
+
+    def delete_by_document_id(self, document_id: str) -> bool:
+        deletion_response = self.collection.delete(document_id)
+        return ((deletion_response or {}).get("status") or {}).get("deletedCount", 0) == 1
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+
+        # TODO a gentle warning if kwargs is something as we swallow them
+
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
+        deletion_responses = [
+            self.delete_by_document_id(document_id)
+            for document_id in ids
+        ]
+        return all(deletion_responses)
+
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        batch_size: int = 16,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts (Iterable[str]): Texts to add to the vectorstore.
+            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
+            ids (Optional[List[str]], optional): Optional list of IDs.
+            batch_size (int): Number of documents in each API call
+
+        Returns:
+            List[str]: List of IDs of the added texts.
+        """
+
+        # TODO a gentle warning if kwargs is something as we swallow them
+
+        _texts = list(texts)  # lest it be a generator or something
+        if ids is None:
+            ids = [uuid.uuid4().hex for _ in _texts]
+        if metadatas is None:
+            metadatas = [{} for _ in _texts]
+        #
+        embedding_vectors = self.embedding.embed_documents(_texts)
+        #
+        all_ids = []
+        for i in range(0, len(_texts), batch_size):
+            batch_texts = _texts[i : i + batch_size]
+            batch_embedding_vectors = embedding_vectors[i : i + batch_size]
+            batch_ids = ids[i : i + batch_size]
+            batch_metadatas = metadatas[i : i + batch_size]
+
+            batch_documents = [
+                {
+                    "content": b_txt,
+                    "_id": b_id,
+                    "$vector": b_emb,
+                    "metadata": b_md,
+                }
+                for b_txt, b_emb, b_id, b_md in zip(
+                    batch_texts,
+                    batch_embedding_vectors,
+                    batch_ids,
+                    batch_metadatas,
+                )
+            ]
+
+            batch_result = self.collection.insert_many(batch_documents)
+            all_ids += batch_result.get("status", {}).get("insertedIds", [])
+
+        return all_ids
+
+    # id-returning search facilities
+    def similarity_search_with_score_id_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+    ) -> List[Tuple[Document, float, str]]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding (str): Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+        Returns:
+            List of (Document, score, id), the most similar to the query vector.
+        """
+        metadata_parameter = self._filter_to_metadata(filter)
+        #
+        # TODO: handle pagination (if the sdk does not do, as would seem)
+        #
+        hits = self.collection.find(
+            filter=metadata_parameter,
+            sort={"$vector": embedding},
+            options={"limit": k},
+            projection={
+                "_id": 1,
+                "content": 1,
+                "metadata": 1,
+                "$similarity": 1,
+            }
+        )
+        #
+        return [
+            (
+                Document(
+                    page_content=hit["content"],
+                    metadata=hit["metadata"],
+                ),
+                hit["$similarity"],
+                hit["_id"],
+            )
+            for hit in hits
+        ]
+
+    def similarity_search_with_score_id(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+    ) -> List[Tuple[Document, float, str]]:
+        embedding_vector = self.embedding.embed_query(query)
+        return self.similarity_search_with_score_id_by_vector(
+            embedding=embedding_vector,
+            k=k,
+            filter=filter,
+        )
+
+    # id-unaware search facilities
+    def similarity_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding (str): Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+        Returns:
+            List of (Document, score), the most similar to the query vector.
+        """
+        return [
+            (doc, score)
+            for (doc, score, docId) in self.similarity_search_with_score_id_by_vector(
+                embedding=embedding,
+                k=k,
+                filter=filter,
+            )
+        ]
+
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        embedding_vector = self.embedding.embed_query(query)
+        return self.similarity_search_by_vector(
+            embedding_vector,
+            k,
+            filter=filter,
+        )
+
+    def similarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        return [
+            doc
+            for doc, _ in self.similarity_search_with_score_by_vector(
+                embedding,
+                k,
+                filter=filter,
+            )
+        ]
+
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+    ) -> List[Tuple[Document, float]]:
+        embedding_vector = self.embedding.embed_query(query)
+        return self.similarity_search_with_score_by_vector(
+            embedding_vector,
+            k,
+            filter=filter,
+        )
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        metadata_parameter = self._filter_to_metadata(filter)
+
+        prefetch_hits = self.collection.find(
+            filter=metadata_parameter,
+            sort={"$vector": embedding},
+            options={"limit": fetch_k},
+            projection={
+                "_id": 1,
+                "content": 1,
+                "metadata": 1,
+                "$similarity": 1,
+                "$vector": 1,
+            }
+        )
+
+        # let the mmr utility pick the *indices* in the above array
+        mmr_chosen_indices = maximal_marginal_relevance(
+            np.array(embedding, dtype=np.float32),
+            [prefetch_hit["$vector"] for prefetch_hit in prefetch_hits],
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+        mmr_hits = [
+            prefetch_hit
+            for prefetch_index, prefetch_hit in enumerate(prefetch_hits)
+            if prefetch_index in mmr_chosen_indices
+        ]
+        return [
+            Document(
+                page_content=hit["content"],
+                metadata=hit["metadata"],
+            )
+            for hit in mmr_hits
+        ]
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Optional.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        embedding_vector = self.embedding.embed_query(query)
+        return self.max_marginal_relevance_search_by_vector(
+            embedding_vector,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+        )
+
+    @classmethod
+    def from_texts(
+        cls: Type[ADBVST],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        batch_size: int = 16,
+        **kwargs: Any,
+    ) -> ADBVST:
+        """Create an Astra DB vectorstore from raw texts.
+
+        No support for specifying text IDs
+
+        Returns:
+            an `AstraDb` vectorstore.
+        """
+        # TODO: these params, optional, etc - see init
+        database_id = kwargs["database_id"]
+        token = kwargs["token"]
+        collection_name = kwargs["collection_name"]
+        namespace = kwargs.get("namespace")
+        #
+        astra_db_store = cls(
+            embedding=embedding,
+            database_id=database_id,
+            token=token,
+            collection_name=collection_name,
+            namespace=namespace,
+        )
+        astra_db_store.add_texts(
+            texts=texts,
+            metadatas=metadatas,
+            batch_size=batch_size,
+        )
+        return astra_db_store
+
+    @classmethod
+    def from_documents(
+        cls: Type[ADBVST],
+        documents: List[Document],
+        embedding: Embeddings,
+        batch_size: int = 16,
+        **kwargs: Any,
+    ) -> ADBVST:
+        """Create an Astra Db vectorstore from a document list.
+
+        No support for specifying text IDs
+
+        Returns:
+            an `AstraDb` vectorstore.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return cls.from_texts(
+            texts=texts,
+            embedding=embedding,
+            metadatas=metadatas,
+            batch_size=batch_size,
+            **kwargs,
+        )
