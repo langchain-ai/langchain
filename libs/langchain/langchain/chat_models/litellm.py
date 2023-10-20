@@ -12,6 +12,7 @@ from typing import (
     Mapping,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 
@@ -37,6 +38,8 @@ from langchain.schema.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
+    FunctionMessage,
+    FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
@@ -50,39 +53,6 @@ logger = logging.getLogger(__name__)
 
 class ChatLiteLLMException(Exception):
     """Error with the `LiteLLM I/O` library"""
-
-
-def _truncate_at_stop_tokens(
-    text: str,
-    stop: Optional[List[str]],
-) -> str:
-    """Truncates text at the earliest stop token found."""
-    if stop is None:
-        return text
-
-    for stop_token in stop:
-        stop_token_idx = text.find(stop_token)
-        if stop_token_idx != -1:
-            text = text[:stop_token_idx]
-    return text
-
-
-class FunctionMessage(BaseMessage):
-    """Message for passing the result of executing a function back to a model."""
-
-    name: str
-    """The name of the function that was executed."""
-
-    @property
-    def type(self) -> str:
-        """Type of the message, used for serialization."""
-        return "function"
-
-
-class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
-    """Message Chunk for passing the result of executing a function back to a model."""
-
-    pass
 
 
 def _create_retry_decorator(
@@ -144,7 +114,7 @@ async def acompletion_with_retry(
 
 
 def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
@@ -192,6 +162,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class ChatLiteLLM(BaseChatModel):
+    """A chat model that uses the LiteLLM API."""
+
     client: Any  #: :meta private:
     model: str = "gpt-3.5-turbo"
     model_name: Optional[str] = None
@@ -237,6 +209,7 @@ class ChatLiteLLM(BaseChatModel):
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            "custom_llm_provider": self.custom_llm_provider,
             **self.model_kwargs,
         }
 

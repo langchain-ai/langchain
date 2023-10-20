@@ -1,15 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Iterator, List, Sequence, TypedDict
+from typing import Iterator, List
 
-from langchain.schema.messages import BaseMessage
-
-
-class ChatSession(TypedDict):
-    """Chat Session represents a single
-    conversation, channel, or other group of messages."""
-
-    messages: Sequence[BaseMessage]
-    """The LangChain chat messages loaded from the source."""
+from langchain.schema.chat import ChatSession
 
 
 class BaseChatLoader(ABC):

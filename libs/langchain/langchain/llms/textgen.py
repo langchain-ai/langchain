@@ -175,7 +175,7 @@ class TextGen(LLM):
             params = {"preset": self.preset}
 
         # then sets it as configured, or default to an empty list:
-        params["stop"] = self.stopping_strings or stop or []
+        params["stopping_strings"] = self.stopping_strings or stop or []
 
         return params
 

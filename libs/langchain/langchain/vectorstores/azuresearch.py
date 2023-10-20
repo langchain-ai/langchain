@@ -26,8 +26,8 @@ from langchain.docstore.document import Document
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever
 from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_env
-from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
 
@@ -77,7 +77,7 @@ def _get_search_client(
 ) -> SearchClient:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
-    from azure.identity import DefaultAzureCredential
+    from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
@@ -93,6 +93,9 @@ def _get_search_client(
     default_fields = default_fields or []
     if key is None:
         credential = DefaultAzureCredential()
+    elif key.upper() == "INTERACTIVE":
+        credential = InteractiveBrowserCredential()
+        credential.get_token("https://search.azure.com/.default")
     else:
         credential = AzureKeyCredential(key)
     index_client: SearchIndexClient = SearchIndexClient(

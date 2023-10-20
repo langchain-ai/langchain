@@ -9,7 +9,7 @@ on:
         description: "From which folder this pipeline executes"
 
 env:
-  POETRY_VERSION: "1.5.1"
+  POETRY_VERSION: "1.6.1"
   WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
 
 jobs:
