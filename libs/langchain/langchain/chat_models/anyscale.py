@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Dict, Optional, Set
 
 import requests
 
-from langchain.adapters.openai import convert_message_to_dict
 from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
@@ -16,6 +15,7 @@ from langchain.chat_models.openai import (
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema.messages import BaseMessage
 from langchain.utils import get_from_dict_or_env
+from langchain.utils.openai import convert_message_to_dict
 
 if TYPE_CHECKING:
     import tiktoken

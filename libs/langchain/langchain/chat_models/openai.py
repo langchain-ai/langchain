@@ -18,7 +18,6 @@ from typing import (
     Union,
 )
 
-from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -42,6 +41,7 @@ from langchain.schema.messages import (
 )
 from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils.openai import convert_dict_to_message, convert_message_to_dict
 
 if TYPE_CHECKING:
     import tiktoken

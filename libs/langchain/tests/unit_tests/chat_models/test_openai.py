@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from langchain.adapters.openai import convert_dict_to_message
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema.messages import (
     AIMessage,
@@ -13,6 +12,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain.utils.openai import convert_dict_to_message
 
 
 @pytest.mark.requires("openai")

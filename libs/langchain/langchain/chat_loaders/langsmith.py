@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Unio
 from langchain.chat_loaders.base import BaseChatLoader
 from langchain.load import load
 from langchain.schema.chat import ChatSession
+from langchain.utils.openai import convert_dict_to_message
 
 if TYPE_CHECKING:
     from langsmith.client import Client
@@ -141,7 +142,6 @@ class LangSmithDatasetChatLoader(BaseChatLoader):
 
         :return: Iterator of chat sessions containing messages.
         """
-        from langchain.adapters import openai as oai_adapter  # noqa: E402
 
         data = self.client.read_dataset_openai_finetuning(
             dataset_name=self.dataset_name
@@ -149,8 +149,7 @@ class LangSmithDatasetChatLoader(BaseChatLoader):
         for data_point in data:
             yield ChatSession(
                 messages=[
-                    oai_adapter.convert_dict_to_message(m)
-                    for m in data_point.get("messages", [])
+                    convert_dict_to_message(m) for m in data_point.get("messages", [])
                 ],
                 functions=data_point.get("functions"),
             )

@@ -17,7 +17,6 @@ from typing import (
 
 import requests
 
-from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
@@ -28,6 +27,7 @@ from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import AIMessageChunk, BaseMessage
 from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env
+from langchain.utils.openai import convert_dict_to_message, convert_message_to_dict
 
 DEFAULT_API_BASE = "https://api.konko.ai/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-13b-chat-hf"

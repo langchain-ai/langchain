@@ -10,7 +10,6 @@ from typing import (
     Union,
 )
 
-from langchain.adapters.openai import convert_message_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -34,6 +33,7 @@ from langchain.schema.messages import (
 )
 from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain.utils.env import get_from_dict_or_env
+from langchain.utils.openai import convert_message_to_dict
 
 
 def _convert_delta_to_message_chunk(

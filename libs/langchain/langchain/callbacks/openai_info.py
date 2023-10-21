@@ -3,9 +3,9 @@ import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Union
 from uuid import UUID
 
-from langchain.adapters.openai import convert_message_to_dict
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import BaseMessage, LLMResult
+from langchain.utils.openai import convert_message_to_dict
 
 if TYPE_CHECKING:
     import tiktoken
