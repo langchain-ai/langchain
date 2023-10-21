@@ -76,6 +76,7 @@ from langchain.chains.router import (
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.chains.sql_database.query import create_sql_query_chain
 from langchain.chains.transform import TransformChain
+from langchain.chains.sentimental_analysis.base import SentimentAnalysisChain
 
 __all__ = [
     "APIChain",
@@ -133,4 +134,6 @@ __all__ = [
     "generate_example",
     "load_chain",
     "create_sql_query_chain",
+    "SentimentAnalysisChain",
 ]
+
