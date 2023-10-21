@@ -1,12 +1,19 @@
+from __future__ import annotations
+
 import ast
 import os
-from typing import IO, Any, Callable, List, Optional, Type
+from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type
 
-from e2b import DataAnalysis, EnvVars
-from e2b.templates.data_analysis import Artifact
-
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools import Tool
+from langchain.tools import BaseTool, Tool
+
+if TYPE_CHECKING:
+    from e2b import EnvVars
+    from e2b.templates.data_analysis import Artifact
 
 base_description = """Evaluates python code in a sandbox environment. \
 The environment is long running and exists accross multiple executions. \
@@ -20,11 +27,15 @@ If you have any files outputted write them to "/home/user" directory \
 path."""
 
 
-def add_last_line_print(code: str):
+def add_last_line_print(code: str) -> str:
     """Add print statement to the last line if it's missing.
 
-    Sometimes, the LLM-generated code doesn't have `print(variable_name)`, instead the LLM tries to print the variable only by writing `variable_name` (as you would in REPL, for example).
-    This methods checks the AST of the generated Python code and adds the print statement to the last line if it's missing.
+    Sometimes, the LLM-generated code doesn't have `print(variable_name)`, instead the
+        LLM tries to print the variable only by writing `variable_name` (as you would in
+        REPL, for example).
+
+    This methods checks the AST of the generated Python code and adds the print
+        statement to the last line if it's missing.
     """
     tree = ast.parse(code)
     node = tree.body[-1]
@@ -63,13 +74,13 @@ class E2BDataAnalysisToolArguments(BaseModel):
     )
 
 
-class E2BDataAnalysisTool:
-    """Tool for running python code in a sandboxed environment for data analysis over data files."""
+class E2BDataAnalysisTool(BaseTool):
+    """Tool for running python code in a sandboxed environment for data analysis."""
 
     name = "e2b_data_analysis"
     args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
-    session: DataAnalysis
-    _uploaded_files: List[str] = []
+    session: Any
+    _uploaded_files: List[str] = Field(default_factory=list)
 
     def __init__(
         self,
@@ -80,9 +91,18 @@ class E2BDataAnalysisTool:
         on_stderr: Optional[Callable[[str], Any]] = None,
         on_artifact: Optional[Callable[[Artifact], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
+        **kwargs: Any,
     ):
-        # If no API key is provided, E2B will try to read it from the environment variable E2B_API_KEY
-        self.session = DataAnalysis(
+        try:
+            from e2b import DataAnalysis
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import e2b, please install with `pip install e2b`."
+            ) from e
+
+        # If no API key is provided, E2B will try to read it from the environment
+        # variable E2B_API_KEY
+        session = DataAnalysis(
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,
@@ -91,15 +111,15 @@ class E2BDataAnalysisTool:
             on_exit=on_exit,
             on_artifact=on_artifact,
         )
+        super().__init__(session=session, **kwargs)
+        self.description = (
+            base_description + "\n\n" + self.uploaded_files_description
+        ).strip()
 
-    def close(self):
+    def close(self) -> None:
         """Close the cloud sandbox."""
         self._uploaded_files = []
         self.session.close()
-
-    @property
-    def description(self) -> str:
-        return (base_description + "\n\n" + self.uploaded_files_description).strip()
 
     @property
     def uploaded_files_description(self) -> str:
@@ -116,15 +136,9 @@ class E2BDataAnalysisTool:
                 )
         return "\n".join(lines)
 
-    def _run(self, python_code: str) -> dict:
-        # TODO: Alternatively, we could stream outputs and artifacts
-        # self._session.run_python(
-        #     code=python_code,
-        #     on_stderr=print,
-        #     on_stdout=print,
-        #     on_artifact=lambda artifact: print(f"New chart file: {artifact.name}"),
-        # )
-
+    def _run(
+        self, python_code: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> dict:
         python_code = add_last_line_print(python_code)
         stdout, stderr, _ = self.session.run_python(python_code)
 
@@ -133,7 +147,11 @@ class E2BDataAnalysisTool:
             "stderr": stderr,
         }
 
-    async def _arun(self, python_code: str) -> str:
+    async def _arun(
+        self,
+        python_code: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         raise NotImplementedError("e2b_data_analysis does not support async")
 
     def run_command(
@@ -162,7 +180,9 @@ class E2BDataAnalysisTool:
         return self.session.download_file(remote_path)
 
     def upload_file(self, file: IO, description: str) -> UploadedFile:
-        """Upload file to the sandbox. The file is uploaded to the '/home/user/<filename>' path."""
+        """Upload file to the sandbox.
+
+        The file is uploaded to the '/home/user/<filename>' path."""
         remote_path = self.session.upload_file(file)
 
         f = UploadedFile(
