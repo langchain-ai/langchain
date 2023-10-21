@@ -1,4 +1,5 @@
 import ast
+import os
 from typing import IO, Any, Callable, List, Optional, Type
 
 from e2b import DataAnalysis, EnvVars
@@ -44,8 +45,8 @@ class UploadedFile(BaseModel):
     """Description of the uploaded path with its remote path."""
 
     name: str
-    description: str
     remote_path: str
+    description: str
 
 
 class E2BDataAnalysisToolArguments(BaseModel):
@@ -93,6 +94,7 @@ class E2BDataAnalysisTool:
 
     def close(self):
         """Close the cloud sandbox."""
+        self._uploaded_files = []
         self._session.close()
 
     @property
@@ -124,24 +126,11 @@ class E2BDataAnalysisTool:
         # )
 
         python_code = add_last_line_print(python_code)
-        # Artifacts are charts created by mytplotlib when `plt.show()` is called
-        stdout, stderr, artifacts = self._session.run_python(python_code)
-
-        # Matplotlib charts created by `plt.show()`
-        # We return them as `bytes` and leave it up to the user to display them (on frontend, for example)
-        charts: List[dict] = []
-        for artifact in artifacts:
-            charts.push(
-                {
-                    "name": artifact.name,
-                    "bytes": artifact.download(),
-                }
-            )
+        stdout, stderr, _ = self._session.run_python(python_code)
 
         return {
             "stdout": stdout,
             "stderr": stderr,
-            "charts": charts,
         }
 
     async def _arun(self, python_code: str) -> str:
@@ -177,7 +166,9 @@ class E2BDataAnalysisTool:
         remote_path = self._session.upload_file(file)
 
         f = UploadedFile(
-            name=file.name, description=description, remote_path=remote_path
+            name=os.path.basename(file.name),
+            remote_path=remote_path,
+            description=description,
         )
         self._uploaded_files.append(f)
         return f
