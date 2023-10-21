@@ -68,7 +68,7 @@ class E2BDataAnalysisTool:
 
     name = "e2b_data_analysis"
     args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
-    _session: DataAnalysis
+    session: DataAnalysis
     _uploaded_files: List[str] = []
 
     def __init__(
@@ -82,7 +82,7 @@ class E2BDataAnalysisTool:
         on_exit: Optional[Callable[[int], Any]] = None,
     ):
         # If no API key is provided, E2B will try to read it from the environment variable E2B_API_KEY
-        self._session = DataAnalysis(
+        self.session = DataAnalysis(
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,
@@ -95,7 +95,7 @@ class E2BDataAnalysisTool:
     def close(self):
         """Close the cloud sandbox."""
         self._uploaded_files = []
-        self._session.close()
+        self.session.close()
 
     @property
     def description(self) -> str:
@@ -126,7 +126,7 @@ class E2BDataAnalysisTool:
         # )
 
         python_code = add_last_line_print(python_code)
-        stdout, stderr, _ = self._session.run_python(python_code)
+        stdout, stderr, _ = self.session.run_python(python_code)
 
         return {
             "stdout": stdout,
@@ -141,7 +141,7 @@ class E2BDataAnalysisTool:
         cmd: str,
     ) -> dict:
         """Run shell command in the sandbox."""
-        proc = self._session.process.start(cmd)
+        proc = self.session.process.start(cmd)
         output = proc.wait()
         return {
             "stdout": output.stdout,
@@ -151,19 +151,19 @@ class E2BDataAnalysisTool:
 
     def install_python_packages(self, package_names: str | List[str]) -> None:
         """Install python packages in the sandbox."""
-        self._session.install_python_packages(package_names)
+        self.session.install_python_packages(package_names)
 
     def install_system_packages(self, package_names: str | List[str]) -> None:
         """Install system packages (via apt) in the sandbox."""
-        self._session.install_system_packages(package_names)
+        self.session.install_system_packages(package_names)
 
     def download_file(self, remote_path: str) -> bytes:
         """Download file from the sandbox."""
-        return self._session.download_file(remote_path)
+        return self.session.download_file(remote_path)
 
     def upload_file(self, file: IO, description: str) -> UploadedFile:
         """Upload file to the sandbox. The file is uploaded to the '/home/user/<filename>' path."""
-        remote_path = self._session.upload_file(file)
+        remote_path = self.session.upload_file(file)
 
         f = UploadedFile(
             name=os.path.basename(file.name),
@@ -175,7 +175,7 @@ class E2BDataAnalysisTool:
 
     def remove_uploaded_file(self, uploaded_file: UploadedFile) -> None:
         """Remove uploaded file from the sandbox."""
-        self._session.filesystem.remove(uploaded_file.remote_path)
+        self.session.filesystem.remove(uploaded_file.remote_path)
         self._uploaded_files.filter(
             lambda f: f.remote_path != uploaded_file.remote_path
         )
