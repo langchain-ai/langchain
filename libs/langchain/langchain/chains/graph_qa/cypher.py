@@ -161,13 +161,25 @@ class GraphCypherQAChain(Chain):
                 ", and 'llm_kwargs', but not all three simultaneously."
             )
 
-        use_qa_llm_kwargs = qa_llm_kwargs if qa_llm_kwargs is not None else llm_kwargs if llm_kwargs is not None else {"prompt": qa_prompt}
-        use_cypher_llm_kwargs = cypher_llm_kwargs if cypher_llm_kwargs is not None else llm_kwargs if llm_kwargs is not None else {"prompt": cypher_prompt}
-        print (use_qa_llm_kwargs)
-        print (use_cypher_llm_kwargs)
+        use_qa_llm_kwargs = (
+            qa_llm_kwargs
+            if qa_llm_kwargs is not None
+            else llm_kwargs
+            if llm_kwargs is not None
+            else {"prompt": qa_prompt}
+        )
+        use_cypher_llm_kwargs = (
+            cypher_llm_kwargs
+            if cypher_llm_kwargs is not None
+            else llm_kwargs
+            if llm_kwargs is not None
+            else {"prompt": cypher_prompt}
+        )
         qa_chain = LLMChain(llm=qa_llm or llm, **use_qa_llm_kwargs)
 
-        cypher_generation_chain = LLMChain(llm=cypher_llm or llm, **use_cypher_llm_kwargs)
+        cypher_generation_chain = LLMChain(
+            llm=cypher_llm or llm, **use_cypher_llm_kwargs
+        )
 
         if exclude_types and include_types:
             raise ValueError(
