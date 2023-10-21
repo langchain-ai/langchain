@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from e2b.templates.data_analysis import Artifact
 
 base_description = """Evaluates python code in a sandbox environment. \
-The environment is long running and exists accross multiple executions. \
+The environment is long running and exists across multiple executions. \
 You must send the whole script every time and print your outputs. \
 Script should be pure python code that can be evaluated. \
 It should be in python format NOT markdown. \
