@@ -41,7 +41,8 @@ class Epsilla(VectorStore):
             embeddings = OpenAIEmbeddings()
             db_path = "/tmp/vectorstore"
             db_name = "langchain_store"
-            epsilla = Epsilla(client, embeddings, db_path, db_name)
+            collection_name = "langchain_collecction"
+            epsilla = Epsilla(client, embeddings, db_path, db_name, collection_name)
     """
 
     _LANGCHAIN_DEFAULT_DB_NAME = "langchain_store"
@@ -54,6 +55,7 @@ class Epsilla(VectorStore):
         embeddings: Embeddings,
         db_path: Optional[str] = _LANGCHAIN_DEFAULT_DB_PATH,
         db_name: Optional[str] = _LANGCHAIN_DEFAULT_DB_NAME,
+        collection_name: Optional[str] = _LANGCHAIN_DEFAULT_TABLE_NAME
     ):
         """Initialize with necessary components."""
         try:
@@ -73,7 +75,7 @@ class Epsilla(VectorStore):
         self._client: vectordb.Client = client
         self._db_name = db_name
         self._embeddings = embeddings
-        self._collection_name = Epsilla._LANGCHAIN_DEFAULT_TABLE_NAME
+        self._collection_name = collection_name
         self._client.load_db(db_name=db_name, db_path=db_path)
         self._client.use_db(db_name=db_name)
 
