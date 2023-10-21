@@ -80,7 +80,7 @@ class E2BDataAnalysisTool(BaseTool):
     name = "e2b_data_analysis"
     args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
     session: Any
-    _uploaded_files: List[str] = Field(default_factory=list)
+    _uploaded_files: List[UploadedFile] = Field(default_factory=list)
 
     def __init__(
         self,
