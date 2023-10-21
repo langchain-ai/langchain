@@ -42,14 +42,16 @@ def add_last_line_print(code: str) -> str:
     node = tree.body[-1]
     if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
         if isinstance(node.value.func, ast.Name) and node.value.func.id == "print":
-            return tree
-    tree.body[-1] = ast.Expr(
-        value=ast.Call(
-            func=ast.Name(id="print", ctx=ast.Load()),
-            args=[node.value],
-            keywords=[],
+            return ast.unparse(tree)
+
+    if isinstance(node, ast.Expr):
+        tree.body[-1] = ast.Expr(
+            value=ast.Call(
+                func=ast.Name(id="print", ctx=ast.Load()),
+                args=[node.value],
+                keywords=[],
+            )
         )
-    )
     return ast.unparse(tree)
 
 
@@ -139,7 +141,7 @@ class E2BDataAnalysisTool(BaseTool):
 
     def _run(
         self, python_code: str, run_manager: Optional[CallbackManagerForToolRun] = None
-    ) -> dict:
+    ) -> str:
         python_code = add_last_line_print(python_code)
         stdout, stderr, _ = self.session.run_python(python_code)
 
@@ -198,9 +200,11 @@ class E2BDataAnalysisTool(BaseTool):
     def remove_uploaded_file(self, uploaded_file: UploadedFile) -> None:
         """Remove uploaded file from the sandbox."""
         self.session.filesystem.remove(uploaded_file.remote_path)
-        self._uploaded_files.filter(
-            lambda f: f.remote_path != uploaded_file.remote_path
-        )
+        self._uploaded_files = [
+            f
+            for f in self._uploaded_files
+            if f.remote_path != uploaded_file.remote_path
+        ]
 
     def as_tool(self) -> Tool:
         return Tool.from_function(
