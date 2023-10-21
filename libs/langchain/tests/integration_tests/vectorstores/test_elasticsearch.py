@@ -172,6 +172,34 @@ class TestElasticsearch:
         output = await docsearch.asimilarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
 
+    def test_add_embeddings(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """
+        Test add_embeddings, which accepts pre-built embeddings instead of
+         using inference for the texts.
+        This allows you to separate the embeddings text and the page_content
+         for better proximity between user's question and embedded text.
+        For example, your embedding text can be a question, whereas page_content
+         is the answer.
+        """
+        embeddings = ConsistentFakeEmbeddings()
+        text_input = ["foo1", "foo2", "foo3"]
+        metadatas = [{"page": i} for i in range(len(text_input))]
+
+        """In real use case, embedding_input can be questions for each text"""
+        embedding_input = ["foo2", "foo3", "foo1"]
+        embedding_vectors = embeddings.embed_documents(embedding_input)
+
+        docsearch = ElasticsearchStore._create_cls_from_kwargs(
+            embeddings,
+            **elasticsearch_connection,
+            index_name=index_name,
+        )
+        docsearch.add_embeddings(list(zip(text_input, embedding_vectors)), metadatas)
+        output = docsearch.similarity_search("foo1", k=1)
+        assert output == [Document(page_content="foo3", metadata={"page": 2})]
+
     def test_similarity_search_with_metadata(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
@@ -531,7 +559,7 @@ class TestElasticsearch:
                     },
                 }
             },
-            settings={"index": {"default_pipeline": "pipeline"}},
+            settings={"index": {"default_pipeline": "test_pipeline"}},
         )
 
         # adding documents to the index

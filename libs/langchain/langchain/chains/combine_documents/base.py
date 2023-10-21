@@ -10,6 +10,7 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.docstore.document import Document
 from langchain.pydantic_v1 import BaseModel, Field, create_model
+from langchain.schema.runnable.config import RunnableConfig
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
@@ -28,15 +29,17 @@ class BaseCombineDocumentsChain(Chain, ABC):
     input_key: str = "input_documents"  #: :meta private:
     output_key: str = "output_text"  #: :meta private:
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         return create_model(
             "CombineDocumentsInput",
             **{self.input_key: (List[Document], None)},  # type: ignore[call-overload]
         )
 
-    @property
-    def output_schema(self) -> Type[BaseModel]:
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         return create_model(
             "CombineDocumentsOutput",
             **{self.output_key: (str, None)},  # type: ignore[call-overload]
@@ -167,16 +170,18 @@ class AnalyzeDocumentChain(Chain):
         """
         return self.combine_docs_chain.output_keys
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         return create_model(
             "AnalyzeDocumentChain",
             **{self.input_key: (str, None)},  # type: ignore[call-overload]
         )
 
-    @property
-    def output_schema(self) -> Type[BaseModel]:
-        return self.combine_docs_chain.output_schema
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        return self.combine_docs_chain.get_output_schema(config)
 
     def _call(
         self,

@@ -1,6 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain.graphs.graph_document import GraphDocument
+from langchain.graphs.graph_store import GraphStore
+from langchain.utils import get_from_env
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -28,7 +30,7 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 
-class Neo4jGraph:
+class Neo4jGraph(GraphStore):
     """Neo4j wrapper for graph operations.
 
     *Security note*: Make sure that the database connection uses credentials
@@ -39,10 +41,16 @@ class Neo4jGraph:
         data is present in the database.
         The best way to guard against such negative outcomes is to (as appropriate)
         limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
     """
 
     def __init__(
-        self, url: str, username: str, password: str, database: str = "neo4j"
+        self,
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        database: str = "neo4j",
     ) -> None:
         """Create a new Neo4j graph wrapper instance."""
         try:
@@ -52,6 +60,11 @@ class Neo4jGraph:
                 "Could not import neo4j python package. "
                 "Please install it with `pip install neo4j`."
             )
+
+        url = get_from_env("url", "NEO4J_URI", url)
+        username = get_from_env("username", "NEO4J_USERNAME", username)
+        password = get_from_env("password", "NEO4J_PASSWORD", password)
+        database = get_from_env("database", "NEO4J_DATABASE", database)
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
@@ -79,6 +92,16 @@ class Neo4jGraph:
                 "Please ensure the APOC plugin is installed in Neo4j and that "
                 "'apoc.meta.data()' is allowed in Neo4j configuration "
             )
+
+    @property
+    def get_schema(self) -> str:
+        """Returns the schema of the Graph"""
+        return self.schema
+
+    @property
+    def get_structured_schema(self) -> Dict[str, Any]:
+        """Returns the structured schema of the Graph"""
+        return self.structured_schema
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""

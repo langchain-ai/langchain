@@ -29,9 +29,14 @@ if TYPE_CHECKING:
 
 # Before Python 3.11 native StrEnum is not available
 class CosmosDBSimilarityType(str, Enum):
-    COS = "COS"  # CosineSimilarity
-    IP = "IP"  # inner - product
-    L2 = "L2"  # Euclidean distance
+    """Cosmos DB Similarity Type as enumerator."""
+
+    COS = "COS"
+    """CosineSimilarity"""
+    IP = "IP"
+    """inner - product"""
+    L2 = "L2"
+    """Euclidean distance"""
 
 
 CosmosDBDocumentType = TypeVar("CosmosDBDocumentType", bound=Dict[str, Any])
