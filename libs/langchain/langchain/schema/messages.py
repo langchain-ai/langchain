@@ -264,7 +264,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
 
 
 class ChatMessage(BaseMessage):
-    """A Message that can be assigned an arbitrary role."""
+    """A Message that can be assigned an arbitrary speaker (i.e. role)."""
 
     role: str
     """The speaker / role of the Message."""
