@@ -412,6 +412,7 @@ addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused
 markers = [
   "requires: mark tests as requiring a specific library",
   "scheduled: mark tests to run in scheduled testing",
+  "compile: mark placeholder test used to compile integration tests without running them"
 ]
 
 [tool.codespell]
