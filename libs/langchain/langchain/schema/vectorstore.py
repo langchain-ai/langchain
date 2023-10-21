@@ -553,6 +553,7 @@ class VectorStoreRetriever(BaseRetriever):
         "similarity",
         "similarity_score_threshold",
         "mmr",
+        "similarity_score"
     )
 
     class Config:
@@ -590,6 +591,11 @@ class VectorStoreRetriever(BaseRetriever):
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
+        elif self.search_type == "similarity_score":
+            docs_and_scores = self.vectorstore.similarity_search_with_score(query,**self.search_kwargs)
+            for doc, score in docs_and_scores:
+                doc.metadata = {**doc.metadata, **{"score": score}}
+            docs = [doc for doc,_ in docs_and_scores]
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
                 query, **self.search_kwargs
