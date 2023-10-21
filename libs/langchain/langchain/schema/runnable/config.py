@@ -135,6 +135,7 @@ def patch_config(
     recursion_limit: Optional[int] = None,
     max_concurrency: Optional[int] = None,
     run_name: Optional[str] = None,
+    configurable: Optional[Dict[str, Any]] = None,
 ) -> RunnableConfig:
     config = ensure_config(config)
     if copy_locals:
@@ -151,7 +152,34 @@ def patch_config(
         config["max_concurrency"] = max_concurrency
     if run_name is not None:
         config["run_name"] = run_name
+    if configurable is not None:
+        config["configurable"] = {**config.get("configurable", {}), **configurable}
     return config
+
+
+def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
+    base: RunnableConfig = {}
+    # Even though the keys aren't literals this is correct
+    # because both dicts are same type
+    for config in (c for c in configs if c is not None):
+        for key in config:
+            if key == "metadata":
+                base[key] = {  # type: ignore
+                    **base.get(key, {}),  # type: ignore
+                    **(config.get(key) or {}),  # type: ignore
+                }
+            elif key == "tags":
+                base[key] = list(  # type: ignore
+                    set(base.get(key, []) + (config.get(key) or [])),  # type: ignore
+                )
+            elif key == "configurable":
+                base[key] = {  # type: ignore
+                    **base.get(key, {}),  # type: ignore
+                    **(config.get(key) or {}),  # type: ignore
+                }
+            else:
+                base[key] = config[key] or base.get(key)  # type: ignore
+    return base
 
 
 def call_func_with_variable_args(

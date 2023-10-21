@@ -49,14 +49,14 @@ def test_visit_comparison_range_lte() -> None:
 
 def test_visit_comparison_range_match() -> None:
     comp = Comparison(comparator=Comparator.CONTAIN, attribute="foo", value="1")
-    expected = {"match": {"metadata.foo": "1"}}
+    expected = {"match": {"metadata.foo": {"query": "1"}}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
 
 def test_visit_comparison_range_like() -> None:
     comp = Comparison(comparator=Comparator.LIKE, attribute="foo", value="bar")
-    expected = {"fuzzy": {"metadata.foo": {"value": "bar", "fuzziness": "AUTO"}}}
+    expected = {"match": {"metadata.foo": {"query": "bar", "fuzziness": "AUTO"}}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
@@ -200,9 +200,9 @@ def test_visit_structured_query_complex() -> None:
                                     "should": [
                                         {"range": {"metadata.bar": {"lt": 1}}},
                                         {
-                                            "fuzzy": {
+                                            "match": {
                                                 "metadata.bar": {
-                                                    "value": "10",
+                                                    "query": "10",
                                                     "fuzziness": "AUTO",
                                                 }
                                             }
