@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import ast
 import os
 from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type
@@ -142,10 +143,11 @@ class E2BDataAnalysisTool(BaseTool):
         python_code = add_last_line_print(python_code)
         stdout, stderr, _ = self.session.run_python(python_code)
 
-        return {
+        out = {
             "stdout": stdout,
             "stderr": stderr,
         }
+        return json.dumps(out)
 
     async def _arun(
         self,
