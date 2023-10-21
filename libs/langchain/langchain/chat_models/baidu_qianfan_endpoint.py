@@ -162,7 +162,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
+        """Get the default parameters for calling Qianfan API."""
         normal_params = {
             "stream": self.streaming,
             "request_timeout": self.request_timeout,
