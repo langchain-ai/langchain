@@ -25,15 +25,15 @@ class TavilySearchAPIWrapper(BaseModel):
         extra = Extra.forbid
 
     def _tavily_search_results(
-            self,
-            query: str,
-            max_results: Optional[int] = 5,
-            search_depth: Optional[str] = "advanced",
-            include_domains: Optional[List[str]] = [],
-            exclude_domains: Optional[List[str]] = [],
-            include_answer: Optional[bool] = False,
-            include_raw_content: Optional[bool] = False,
-            include_images: Optional[bool] = False,
+        self,
+        query: str,
+        max_results: Optional[int] = 5,
+        search_depth: Optional[str] = "advanced",
+        include_domains: Optional[List[str]] = [],
+        exclude_domains: Optional[List[str]] = [],
+        include_answer: Optional[bool] = False,
+        include_raw_content: Optional[bool] = False,
+        include_images: Optional[bool] = False,
     ) -> List[dict]:
         params = {
             "api_key": self.tavily_api_key,
@@ -67,15 +67,15 @@ class TavilySearchAPIWrapper(BaseModel):
         return values
 
     def results(
-            self,
-            query: str,
-            max_results: Optional[int] = 5,
-            search_depth: Optional[str] = "advanced",
-            include_domains: Optional[List[str]] = [],
-            exclude_domains: Optional[List[str]] = [],
-            include_answer: Optional[bool] = False,
-            include_raw_content: Optional[bool] = False,
-            include_images: Optional[bool] = False,
+        self,
+        query: str,
+        max_results: Optional[int] = 5,
+        search_depth: Optional[str] = "advanced",
+        include_domains: Optional[List[str]] = [],
+        exclude_domains: Optional[List[str]] = [],
+        include_answer: Optional[bool] = False,
+        include_raw_content: Optional[bool] = False,
+        include_images: Optional[bool] = False,
     ) -> List[Dict]:
         """Run query through Tavily Search and return metadata.
 
@@ -117,15 +117,15 @@ class TavilySearchAPIWrapper(BaseModel):
         return raw_search_results
 
     async def results_async(
-            self,
-            query: str,
-            max_results: Optional[int] = 5,
-            search_depth: Optional[str] = "advanced",
-            include_domains: Optional[List[str]] = [],
-            exclude_domains: Optional[List[str]] = [],
-            include_answer: Optional[bool] = False,
-            include_raw_content: Optional[bool] = False,
-            include_images: Optional[bool] = False,
+        self,
+        query: str,
+        max_results: Optional[int] = 5,
+        search_depth: Optional[str] = "advanced",
+        include_domains: Optional[List[str]] = [],
+        exclude_domains: Optional[List[str]] = [],
+        include_answer: Optional[bool] = False,
+        include_raw_content: Optional[bool] = False,
+        include_images: Optional[bool] = False,
     ) -> List[Dict]:
         """Get results from the Tavily Search API asynchronously."""
 
@@ -143,9 +143,7 @@ class TavilySearchAPIWrapper(BaseModel):
                 "include_images": include_images,
             }
             async with aiohttp.ClientSession() as session:
-                async with session.post(
-                        f"{TAVILY_API_URL}/search", json=params
-                ) as res:
+                async with session.post(f"{TAVILY_API_URL}/search", json=params) as res:
                     if res.status == 200:
                         data = await res.text()
                         return data
@@ -167,4 +165,3 @@ class TavilySearchAPIWrapper(BaseModel):
                 }
             )
         return clean_results
-

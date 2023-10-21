@@ -14,13 +14,11 @@ class TavilySearchResults(BaseTool):
     """Tool that queries the Tavily Search API and gets back json."""
 
     name: str = "tavily_search_results_json"
-    description: str = (
-        """"
+    description: str = """"
         "A search engine optimized for comprehensive, accurate, and trusted results. "
         "Useful for when you need to answer questions about current events. "
         "Input should be a search query."
         """
-    )
     api_wrapper: TavilySearchAPIWrapper
     max_results: int = 5
 
