@@ -139,6 +139,9 @@ class GraphCypherQAChain(Chain):
         exclude_types: List[str] = [],
         include_types: List[str] = [],
         validate_cypher: bool = False,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        qa_llm_kwargs: Optional[Dict[str, Any]] = None,
+        cypher_llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> GraphCypherQAChain:
         """Initialize from LLM."""
@@ -152,9 +155,19 @@ class GraphCypherQAChain(Chain):
                 "You can specify up to two of 'cypher_llm', 'qa_llm'"
                 ", and 'llm', but not all three simultaneously."
             )
+        if cypher_llm_kwargs and qa_llm_kwargs and llm_kwargs:
+            raise ValueError(
+                "You can specify up to two of 'cypher_llm_kwargs', 'qa_llm_kwargs'"
+                ", and 'llm_kwargs', but not all three simultaneously."
+            )
 
-        qa_chain = LLMChain(llm=qa_llm or llm, prompt=qa_prompt)
-        cypher_generation_chain = LLMChain(llm=cypher_llm or llm, prompt=cypher_prompt)
+        use_qa_llm_kwargs = qa_llm_kwargs if qa_llm_kwargs is not None else llm_kwargs if llm_kwargs is not None else {"prompt": qa_prompt}
+        use_cypher_llm_kwargs = cypher_llm_kwargs if cypher_llm_kwargs is not None else llm_kwargs if llm_kwargs is not None else {"prompt": cypher_prompt}
+        print (use_qa_llm_kwargs)
+        print (use_cypher_llm_kwargs)
+        qa_chain = LLMChain(llm=qa_llm or llm, **use_qa_llm_kwargs)
+
+        cypher_generation_chain = LLMChain(llm=cypher_llm or llm, **use_cypher_llm_kwargs)
 
         if exclude_types and include_types:
             raise ValueError(

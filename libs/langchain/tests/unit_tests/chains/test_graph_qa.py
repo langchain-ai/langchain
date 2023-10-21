@@ -1,9 +1,78 @@
 from typing import List
 
 import pandas as pd
+from typing import Any, Dict, List
 
-from langchain.chains.graph_qa.cypher import construct_schema, extract_cypher
+from langchain.graphs.graph_document import GraphDocument
+from langchain.memory import ConversationBufferMemory, ReadOnlySharedMemory
+from langchain.chains.graph_qa.cypher import construct_schema, extract_cypher, GraphCypherQAChain
 from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
+from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain.graphs.graph_store import GraphStore
+from langchain.prompts import PromptTemplate
+
+class FakeGraphStore(GraphStore):
+    @property
+    def get_schema(self) -> str:
+        """Returns the schema of the Graph database"""
+        return ""
+
+    @property
+    def get_structured_schema(self) -> Dict[str, Any]:
+        """Returns the schema of the Graph database"""
+        return {}
+
+    def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
+        """Query the graph."""
+        return []
+
+    def refresh_schema(self) -> None:
+        """Refreshes the graph schema information."""
+        pass
+
+    def add_graph_documents(
+        self, graph_documents: List[GraphDocument], include_source: bool = False
+    ) -> None:
+        """Take GraphDocument as input as uses it to construct a graph."""
+        pass
+
+def test_graph_cypher_qa_chain() -> None:
+    template = """You are a nice chatbot having a conversation with a human.
+
+    Schema:
+    {schema}
+
+    Previous conversation:
+    {chat_history}
+
+    New human question: {question}
+    Response:"""
+
+    prompt = PromptTemplate(
+        input_variables=["schema", "question", "chat_history"],
+        template=template
+    )
+
+    memory = ConversationBufferMemory(memory_key="chat_history")
+    readonlymemory = ReadOnlySharedMemory(memory=memory)
+    prompt1 = 'You are a nice chatbot having a conversation with a human.\n\n    Schema:\n    Node properties are the following: \n {}\nRelationships properties are the following: \n {}\nRelationships are: \n[]\n\n    Previous conversation:\n    \n\n    New human question: Test question\n    Response:'
+
+    prompt2 = 'You are a nice chatbot having a conversation with a human.\n\n    Schema:\n    Node properties are the following: \n {}\nRelationships properties are the following: \n {}\nRelationships are: \n[]\n\n    Previous conversation:\n    Human: Test question\nAI: foo\n\n    New human question: Test new question\n    Response:'
+
+    llm = FakeLLM(queries = {prompt1: "answer1", prompt2: "answer2"})
+    chain = GraphCypherQAChain.from_llm(
+        cypher_llm=llm,
+        qa_llm = FakeLLM(),
+        graph=FakeGraphStore(),
+        verbose=True,
+        return_intermediate_steps=False,
+        cypher_llm_kwargs = {"prompt": prompt, "memory": readonlymemory},
+        memory=memory
+    )
+    chain.run("Test question")
+    chain.run("Test new question")
+    //If we get here without a key error, that means memory was used properly to create prompts.
+    assert True
 
 
 def test_no_backticks() -> None:
