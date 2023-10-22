@@ -36,6 +36,11 @@ setuptools = "^67.6.1"
 # Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
 
+
+[tool.poetry.group.test_integration]
+optional = true
+dependencies = {}
+
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
@@ -84,5 +89,6 @@ addopts = "--strict-markers --strict-config --durations=5"
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
   "requires: mark tests as requiring a specific library",
-  "asyncio: mark tests as requiring asyncio"
+  "asyncio: mark tests as requiring asyncio",
+  "compile: mark placeholder test used to compile integration tests without running them",
 ]
