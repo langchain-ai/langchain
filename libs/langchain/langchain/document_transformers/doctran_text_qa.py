@@ -33,18 +33,6 @@ class DoctranQATransformer(BaseDocumentTransformer):
             "openai_api_model", "OPENAI_API_MODEL"
         )
 
-    def _init_doctran(self):
-        try:
-            from doctran import Doctran
-
-            return Doctran(
-                openai_api_key=self.openai_api_key, openai_model=self.openai_api_model
-            )
-        except ImportError:
-            raise ImportError(
-                "Install doctran to use this parser. (pip install doctran)"
-            )
-
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
