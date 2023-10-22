@@ -517,11 +517,6 @@ class TestElasticsearch:
             rank={"rrf": {"rank_constant": 1, "window_size": 5}},
         )
 
-        print(f"similarity_search output: {[o.page_content for o in output]}")
-        print(
-            f"es_client.search  output: {[e['_source']['text'] for e in es_output['hits']['hits']]}"
-        )
-
         assert [o.page_content for o in output] == [
             e["_source"]["text"] for e in es_output["hits"]["hits"]
         ]

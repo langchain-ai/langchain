@@ -604,7 +604,7 @@ class ElasticsearchStore(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            fetch_k (int): Number of Documents to fetch to pass to knn num_candidates. Defaults to 50.
+            fetch_k (int): Number of Documents to fetch to pass to knn num_candidates.
             filter: Array of Elasticsearch filter clauses to apply to the query.
 
         Returns:
