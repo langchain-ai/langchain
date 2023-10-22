@@ -1013,7 +1013,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         self,
         which: ConfigurableField,
         default_key: str = "default",
-        **kwargs: Runnable[Input, Output],
+        **kwargs: Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ) -> RunnableSerializable[Input, Output]:
         from langchain.schema.runnable.configurable import (
             RunnableConfigurableAlternatives,
