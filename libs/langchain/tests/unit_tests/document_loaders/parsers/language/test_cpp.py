@@ -33,14 +33,16 @@ auto T::bar() const -> int {
             "auto T::bar() const -> int {\n    return 1;\n}",
         ]
 
+    def test_is_valid(self) -> None:
+        self.assertTrue(CPPSegmenter("int a;").is_valid())
+        self.assertFalse(CPPSegmenter("a b c 1 2 3").is_valid())
+
     def test_extract_functions_classes(self) -> None:
         segmenter = CPPSegmenter(self.example_code)
         extracted_code = segmenter.extract_functions_classes()
-        print(extracted_code)
         self.assertEqual(extracted_code, self.expected_extracted_code)
 
     def test_simplify_code(self) -> None:
         segmenter = CPPSegmenter(self.example_code)
         simplified_code = segmenter.simplify_code()
-        print(simplified_code)
         self.assertEqual(simplified_code, self.expected_simplified_code)

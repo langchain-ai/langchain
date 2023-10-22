@@ -20,13 +20,13 @@ class TreeSitterSegmenter(CodeSegmenter):
             )
 
     def is_valid(self) -> bool:
+        language = self.get_language()
+        error_query = language.query("(ERROR) @error")
+
         parser = self.get_parser()
-        try:
-            parser.parse(bytes(self.code, encoding="UTF-8"))
-            return True
-            # TODO: Find real error type and only catch that
-        except:
-            raise
+        tree = parser.parse(bytes(self.code, encoding="UTF-8"))
+
+        return len(error_query.captures(tree.root_node)) == 0
 
     def extract_functions_classes(self) -> List[str]:
         language = self.get_language()
