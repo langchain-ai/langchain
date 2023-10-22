@@ -94,44 +94,5 @@ class BaseBlobParser(ABC):
             List of documents
         """
         return list(self.lazy_parse(blob))
-
-
-class BaseBytesParser(ABC):
-    """Abstract interface for bytes parsers.
-
-    A bytes parser provides a way to parse raw data stored in a bytes buffer into one
-    or more documents.
-
-    The parser can be composed with bytes loaders, making it easy to reuse
-    a parser independent of how the bytes buffer was originally loaded.
-    """
-
-    @abstractmethod
-    def lazy_parse(self, stream: io.BytesIO) -> Iterator[Document]:
-        """Lazy parsing interface.
-
-        Subclasses are required to implement this method.
-
-        Args:
-            stream: io.BytesIO instance
-
-        Returns:
-            Generator of documents
-        """
-
-    def parse(self, stream: io.BytesIO) -> List[Document]:
-        """Eagerly parse the bytes buffer into a document or documents.
-
-        This is a convenience method for interactive development environment.
-
-        Production applications should favor the lazy_parse method instead.
-
-        Subclasses should generally not over-ride this parse method.
-
-        Args:
-            stream: io.BytesIO instance
-
-        Returns:
-            List of documents
-        """
-        return list(self.lazy_parse(stream))
+    
+    
