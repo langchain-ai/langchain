@@ -5,7 +5,7 @@ import os
 import tempfile
 import time
 from abc import ABC
-from io import StringIO
+from io import StringIO, BytesIO
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 from urllib.parse import urlparse
@@ -20,7 +20,6 @@ from langchain.document_loaders.parsers.pdf import (
     DocumentIntelligenceParser,
     PDFMinerParser,
     PDFPlumberParser,
-    PyMuPDFBytesParser,
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
@@ -68,16 +67,20 @@ class BasePDFLoader(BaseLoader, ABC):
         clean up the temporary file after completion.
     """
 
-    def __init__(self, file_path: str, *, headers: Optional[Dict] = None):
+    def __init__(self, file_path: Union[str, BytesIO], *, headers: Optional[Dict] = None):
         """Initialize with a file path.
 
         Args:
-            file_path: Either a local, S3 or web path to a PDF file.
+            file_path: Either a local, S3 or web path to a PDF file or a bytes buffer of a PDF.
             headers: Headers to use for GET request to download a file from a web path.
         """
         self.file_path = file_path
         self.web_path = None
         self.headers = headers
+
+        if isinstance(self.file_path, BytesIO):
+            return
+
         if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
@@ -125,7 +128,7 @@ class BasePDFLoader(BaseLoader, ABC):
     @property
     def source(self) -> str:
         return self.web_path if self.web_path is not None else self.file_path
-
+    
 
 class OnlinePDFLoader(BasePDFLoader):
     """Load online `PDF`."""
@@ -317,7 +320,7 @@ class PyMuPDFLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, BytesIO],
         *,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
@@ -331,6 +334,8 @@ class PyMuPDFLoader(BasePDFLoader):
                 "`PyMuPDF` package not found, please install it with "
                 "`pip install pymupdf`"
             )
+        
+        
         super().__init__(file_path, headers=headers)
         self.extract_images = extract_images
         self.text_kwargs = kwargs
@@ -347,46 +352,11 @@ class PyMuPDFLoader(BasePDFLoader):
         parser = PyMuPDFParser(
             text_kwargs=text_kwargs, extract_images=self.extract_images
         )
-        blob = Blob.from_path(self.file_path)
+        if isinstance(self.file_path, str):
+            blob = Blob.from_path(self.file_path)
+        elif isinstance(self.file_path, BytesIO):
+            blob = Blob.from_data(self.file_path.read())
         return parser.parse(blob)
-
-
-class PyMuPDFBytesLoader(BaseLoader):
-    """Load `PDF` byte buffers using `PyMuPDF`."""
-
-    def __init__(
-        self,
-        stream: io.BytesIO,
-        *,
-        extract_images: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize with a file path."""
-        try:
-            import fitz  # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "`PyMuPDF` package not found, please install it with "
-                "`pip install pymupdf`"
-            )
-        super().__init__()
-        self.stream = stream
-        self.extract_images = extract_images
-        self.text_kwargs = kwargs
-
-    def load(self, **kwargs: Any) -> List[Document]:
-        """Load file."""
-        if kwargs:
-            logger.warning(
-                f"Received runtime arguments {kwargs}. Passing runtime args to `load`"
-                f" is deprecated. Please pass arguments during initialization instead."
-            )
-
-        text_kwargs = {**self.text_kwargs, **kwargs}
-        parser = PyMuPDFBytesParser(
-            text_kwargs=text_kwargs, extract_images=self.extract_images
-        )
-        return parser.parse(self.stream)
 
 
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:
