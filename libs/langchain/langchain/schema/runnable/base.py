@@ -2295,18 +2295,8 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
 
     def with_config(
         self, config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> Runnable[List[Input], List[Output]]:
+    ) -> RunnableEach[Input, Output]:
         return RunnableEach(bound=self.bound.with_config(config, **kwargs))
-
-    def with_types(
-        self,
-        *,
-        input_type: Optional[type[List[Input]]] = None,
-        output_type: Optional[type[List[Output]]] = None,
-    ) -> Runnable[List[Input], List[Output]]:
-        return RunnableEach(
-            bound=self.bound.with_types(input_type=input_type, output_type=output_type)
-        )
 
     def _invoke(
         self,
@@ -2391,7 +2381,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     @property
     def InputType(self) -> Type[Input]:
         return (
-            self.custom_input_type
+            cast(Type[Input], self.custom_input_type)
             if self.custom_input_type is not None
             else self.bound.InputType
         )
@@ -2399,7 +2389,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     @property
     def OutputType(self) -> Type[Output]:
         return (
-            self.custom_output_type
+            cast(Type[Output], self.custom_output_type)
             if self.custom_output_type is not None
             else self.bound.OutputType
         )
