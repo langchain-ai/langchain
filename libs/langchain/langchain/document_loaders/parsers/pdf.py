@@ -207,28 +207,31 @@ class PyMuPDFParser(BaseBlobParser):
         import fitz
 
         with blob.as_bytes_io() as file_path:
-            doc = fitz.open(file_path)  # open document
+            if isinstance(blob.data, bytes):
+                doc = fitz.open(stream=file_path)
+            else:   
+                doc = fitz.open(filename=file_path)  # open document
 
-            yield from [
-                Document(
-                    page_content=page.get_text(**self.text_kwargs)
-                    + self._extract_images_from_page(doc, page),
-                    metadata=dict(
-                        {
-                            "source": blob.source,
-                            "file_path": blob.source,
-                            "page": page.number,
-                            "total_pages": len(doc),
-                        },
-                        **{
-                            k: doc.metadata[k]
-                            for k in doc.metadata
-                            if type(doc.metadata[k]) in [str, int]
-                        },
-                    ),
-                )
-                for page in doc
-            ]
+        yield from [
+            Document(
+                page_content=page.get_text(**self.text_kwargs)
+                + self._extract_images_from_page(doc, page),
+                metadata=dict(
+                    {
+                        "source": blob.source,
+                        "file_path": blob.source,
+                        "page": page.number,
+                        "total_pages": len(doc),
+                    },
+                    **{
+                        k: doc.metadata[k]
+                        for k in doc.metadata
+                        if type(doc.metadata[k]) in [str, int]
+                    },
+                ),
+            )
+            for page in doc
+        ]
 
     def _extract_images_from_page(
         self, doc: fitz.fitz.Document, page: fitz.fitz.Page
@@ -249,7 +252,7 @@ class PyMuPDFParser(BaseBlobParser):
                 )
             )
         return extract_from_images_with_rapidocr(imgs)
-
+    
 
 class PyPDFium2Parser(BaseBlobParser):
     """Parse `PDF` with `PyPDFium2`."""
@@ -498,65 +501,4 @@ class DocumentIntelligenceParser(BaseBlobParser):
             docs = self._generate_docs(blob, result)
 
             yield from docs
-
-
-class PyMuPDFBytesParser(BaseBytesParser):
-    """Parse `PDF` bytes using `PyMuPDF`."""
-
-    def __init__(
-        self,
-        text_kwargs: Optional[Mapping[str, Any]] = None,
-        extract_images: bool = False,
-    ) -> None:
-        """Initialize the parser.
-
-        Args:
-            text_kwargs: Keyword arguments to pass to ``fitz.Page.get_text()``.
-        """
-        self.text_kwargs = text_kwargs or {}
-        self.extract_images = extract_images
-
-    def lazy_parse(self, stream: io.BytesIO) -> Iterator[Document]:
-        """Lazily parse the byte buffer."""
-        import fitz
-
-        doc = fitz.open(stream=stream)  # open document
-
-        yield from [
-            Document(
-                page_content=page.get_text(**self.text_kwargs)
-                + self._extract_images_from_page(doc, page),
-                metadata=dict(
-                    {
-                        "page": page.number,
-                        "total_pages": len(doc),
-                    },
-                    **{
-                        k: doc.metadata[k]
-                        for k in doc.metadata
-                        if type(doc.metadata[k]) in [str, int]
-                    },
-                ),
-            )
-            for page in doc
-        ]
-
-    def _extract_images_from_page(
-        self, doc: fitz.fitz.Document, page: fitz.fitz.Page
-    ) -> str:
-        """Extract images from page and get the text with RapidOCR."""
-        if not self.extract_images:
-            return ""
-        import fitz
-
-        img_list = page.get_images()
-        imgs = []
-        for img in img_list:
-            xref = img[0]
-            pix = fitz.Pixmap(doc, xref)
-            imgs.append(
-                np.frombuffer(pix.samples, dtype=np.uint8).reshape(
-                    pix.height, pix.width, -1
-                )
-            )
-        return extract_from_images_with_rapidocr(imgs)
+            
