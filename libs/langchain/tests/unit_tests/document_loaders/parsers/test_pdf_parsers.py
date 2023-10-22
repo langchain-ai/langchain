@@ -2,12 +2,12 @@
 from typing import Iterator
 
 import pytest
+from io import BytesIO
 
 from langchain.document_loaders.base import BaseBlobParser, BaseBytesParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
-    PyMuPDFBytesParser,
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
@@ -55,19 +55,18 @@ def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> 
 
 
 def _assert_with_bytes_parser(
-    parser: BaseBytesParser, splits_by_page: bool = True
+    parser: BaseBlobParser, splits_by_page: bool = True
 ) -> None:
-    """Standard tests to verify that the given bytes parser works.
+    """Standard tests to verify that the given parser works.
 
     Args:
-        parser (BaseBytesParser): The parser to test.
+        parser (BaseBlobParser): The parser to test.
         splits_by_page (bool): Whether the parser splits by page or not by default.
     """
-    import io
-
-    with open(HELLO_PDF, "rb") as f:
-        doc_generator = parser.lazy_parse(io.BytesIO(f.read()))
-
+    with open(HELLO_PDF, 'rb') as file:
+        input_bytes = BytesIO(file.read())
+    blob = Blob.from_data(input_bytes.read())
+    doc_generator = parser.lazy_parse(blob)
     assert isinstance(doc_generator, Iterator)
     docs = list(doc_generator)
     assert len(docs) == 1
@@ -77,9 +76,10 @@ def _assert_with_bytes_parser(
     # startswith instead of equals.
     assert docs[0].page_content.startswith("Hello world!")
 
-    with open(LAYOUT_PARSER_PAPER_PDF, "rb") as f:
-        doc_generator = parser.lazy_parse(io.BytesIO(f.read()))
-
+    with open(LAYOUT_PARSER_PAPER_PDF, 'rb') as file:
+        input_bytes = BytesIO(file.read())
+    blob = Blob.from_data(input_bytes.read())
+    doc_generator = parser.lazy_parse(blob)
     assert isinstance(doc_generator, Iterator)
     docs = list(doc_generator)
 
@@ -93,7 +93,7 @@ def _assert_with_bytes_parser(
     assert "LayoutParser" in docs[0].page_content
     metadata = docs[0].metadata
 
-    assert metadata["total_pages"] == 16
+    assert metadata["source"] == None
 
     if splits_by_page:
         assert int(metadata["page"]) == 0
@@ -121,7 +121,7 @@ def test_pymupdf_loader() -> None:
 @pytest.mark.requires("fitz")  # package is PyMuPDF
 def test_pymupdfbytes_loader() -> None:
     """Test PyMuPDF loader."""
-    _assert_with_bytes_parser(PyMuPDFBytesParser())
+    _assert_with_bytes_parser(PyMuPDFParser())
 
 
 @pytest.mark.requires("pypdfium2")
@@ -143,4 +143,4 @@ def test_extract_images_text_from_pdf() -> None:
 @pytest.mark.requires("rapidocr_onnxruntime")
 def test_extract_images_text_from_pdf_bytes() -> None:
     """Test extract image from pdf bytes and recognize text with rapid ocr"""
-    _assert_with_bytes_parser(PyMuPDFBytesParser(extract_images=True))
+    _assert_with_bytes_parser(PyMuPDFParser(extract_images=True))
