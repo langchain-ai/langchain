@@ -117,9 +117,15 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
         self,
         query_model_id: Optional[str] = None,
         hybrid: Optional[bool] = False,
+        rrf: Optional[dict] = {},
     ):
         self.query_model_id = query_model_id
         self.hybrid = hybrid
+
+        # RRF has two optional parameters
+        # 'rank_constant', 'window_size'
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/rrf.html
+        self.rrf = rrf
 
     def query(
         self,
@@ -131,7 +137,6 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
         text_field: str,
         filter: List[dict],
         similarity: Union[DistanceStrategy, None],
-        rrf: dict,
     ) -> Dict:
         knn = {
             "filter": filter,
@@ -181,7 +186,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
                         "filter": filter,
                     }
                 },
-                "rank": {"rrf": rrf},
+                "rank": {"rrf": self.rrf},
             }
         else:
             return {"knn": knn}
@@ -590,6 +595,7 @@ class ElasticsearchStore(VectorStore):
         self,
         query: str,
         k: int = 4,
+        fetch_k: Optional[int] = 50,
         filter: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -598,6 +604,7 @@ class ElasticsearchStore(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to knn num_candidates. Defaults to 50.
             filter: Array of Elasticsearch filter clauses to apply to the query.
 
         Returns:
@@ -605,7 +612,9 @@ class ElasticsearchStore(VectorStore):
             in descending order of similarity.
         """
 
-        results = self._search(query=query, k=k, filter=filter, **kwargs)
+        results = self._search(
+            query=query, k=k, fetch_k=fetch_k, filter=filter, **kwargs
+        )
         return [doc for doc, _ in results]
 
     def max_marginal_relevance_search(
@@ -712,7 +721,6 @@ class ElasticsearchStore(VectorStore):
         fields: Optional[List[str]] = None,
         filter: Optional[List[dict]] = None,
         custom_query: Optional[Callable[[Dict, Union[str, None]], Dict]] = None,
-        rrf: Optional[dict] = {},
     ) -> List[Tuple[Document, float]]:
         """Return Elasticsearch documents most similar to query, along with scores.
 
@@ -727,11 +735,6 @@ class ElasticsearchStore(VectorStore):
             filter: Array of Elasticsearch filter clauses to apply to the query.
             custom_query: Function to modify the Elasticsearch
                          query body before it is sent to Elasticsearch.
-            rrf: Optional. If the hybrid is True, rrf(Reciprocal Rank Fusion)
-                 could be passed for adjusting 'rank_constant' and 'window_size'
-                 to combine multiple result sets with different relevance indicators
-                 into a single result set.
-                 Defaults to {}.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -757,7 +760,6 @@ class ElasticsearchStore(VectorStore):
             text_field=self.query_field,
             filter=filter or [],
             similarity=self.distance_strategy,
-            rrf=rrf,
         )
 
         logger.debug(f"Query body: {query_body}")
@@ -1146,6 +1148,7 @@ class ElasticsearchStore(VectorStore):
     def ApproxRetrievalStrategy(
         query_model_id: Optional[str] = None,
         hybrid: Optional[bool] = False,
+        rrf: Optional[dict] = {},
     ) -> "ApproxRetrievalStrategy":
         """Used to perform approximate nearest neighbor search
         using the HNSW algorithm.
@@ -1168,8 +1171,15 @@ class ElasticsearchStore(VectorStore):
             hybrid: Optional. If True, will perform a hybrid search
                     using both the knn query and a text query.
                     Defaults to False.
+            rrf: Optional. If the hybrid is True, rrf(Reciprocal Rank Fusion)
+                 could be passed for adjusting 'rank_constant' and 'window_size'
+                 to combine multiple result sets with different relevance indicators
+                 into a single result set.
+                 Defaults to {}.
         """
-        return ApproxRetrievalStrategy(query_model_id=query_model_id, hybrid=hybrid)
+        return ApproxRetrievalStrategy(
+            query_model_id=query_model_id, hybrid=hybrid, rrf=rrf
+        )
 
     @staticmethod
     def SparseVectorRetrievalStrategy(

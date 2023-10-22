@@ -453,6 +453,79 @@ class TestElasticsearch:
         output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
 
+    def test_similarity_search_approx_with_hybrid_search_rrf(
+        self, es_client: Any, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test end to end construction and rrf hybrid search with metadata."""
+
+        # 1. check query_body is okay
+        texts = ["foo", "bar", "baz"]
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+            strategy=ElasticsearchStore.ApproxRetrievalStrategy(
+                hybrid=True, rrf={"rank_constant": 1, "window_size": 5}
+            ),
+        )
+
+        def assert_query(query_body: dict, query: str) -> dict:
+            assert query_body == {
+                "knn": {
+                    "field": "vector",
+                    "filter": [],
+                    "k": 3,
+                    "num_candidates": 50,
+                    "query_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+                },
+                "query": {
+                    "bool": {
+                        "filter": [],
+                        "must": [{"match": {"text": {"query": "foo"}}}],
+                    }
+                },
+                "rank": {"rrf": {"rank_constant": 1, "window_size": 5}},
+            }
+            return query_body
+
+        ## without fetch_k parameter
+        output = docsearch.similarity_search("foo", k=3, custom_query=assert_query)
+
+        ## with fetch_k parameter
+        output = docsearch.similarity_search(
+            "foo", k=3, fetch_k=50, custom_query=assert_query
+        )
+
+        # 2. check query result is okay
+        es_output = es_client.search(
+            index=index_name,
+            query={
+                "bool": {
+                    "filter": [],
+                    "must": [{"match": {"text": {"query": "foo"}}}],
+                }
+            },
+            knn={
+                "field": "vector",
+                "filter": [],
+                "k": 3,
+                "num_candidates": 50,
+                "query_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+            },
+            size=3,
+            rank={"rrf": {"rank_constant": 1, "window_size": 5}},
+        )
+
+        print(f"similarity_search output: {[o.page_content for o in output]}")
+        print(
+            f"es_client.search  output: {[e['_source']['text'] for e in es_output['hits']['hits']]}"
+        )
+
+        assert [o.page_content for o in output] == [
+            e["_source"]["text"] for e in es_output["hits"]["hits"]
+        ]
+
     def test_similarity_search_approx_with_custom_query_fn(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
