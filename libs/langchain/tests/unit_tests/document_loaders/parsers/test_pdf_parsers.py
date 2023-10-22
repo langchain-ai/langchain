@@ -1,5 +1,5 @@
 """Tests for the various PDF parsers."""
-from typing import Any, Iterator
+from typing import Iterator
 
 import pytest
 
@@ -54,7 +54,9 @@ def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> 
         assert int(metadata["page"]) == 0
 
 
-def _assert_with_bytes_parser(parser: BaseBytesParser, splits_by_page: bool = True) -> None:
+def _assert_with_bytes_parser(
+    parser: BaseBytesParser, splits_by_page: bool = True
+) -> None:
     """Standard tests to verify that the given bytes parser works.
 
     Args:
