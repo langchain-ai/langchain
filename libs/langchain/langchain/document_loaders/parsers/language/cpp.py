@@ -1,10 +1,11 @@
 from langchain.document_loaders.parsers.language.tree_sitter_segmenter import TreeSitterSegmenter
 
-# TODO: Write the real query
 CHUNK_QUERY = """
     [
         (class_specifier
             body: (field_declaration_list)) @class
+        (struct_specifier
+            body: (field_declaration_list)) @struct
         (function_definition) @function
     ]
 """.strip()

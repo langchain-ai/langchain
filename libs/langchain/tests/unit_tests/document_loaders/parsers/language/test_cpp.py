@@ -17,6 +17,9 @@ class T {
     }
 };
 
+struct S {
+};
+
 auto T::bar() const -> int {
     return 1;
 }"""
@@ -25,11 +28,14 @@ auto T::bar() const -> int {
 
 // Code for: class T {
 
+// Code for: struct S {
+
 // Code for: auto T::bar() const -> int {"""
 
         self.expected_extracted_code = [
             "int foo() {\n    return 1;\n}",
             "class T {\n    auto bar() const -> int;\n    template<class U>\n    void baz(U) {\n    }\n}",
+            "struct S {\n}",
             "auto T::bar() const -> int {\n    return 1;\n}",
         ]
 
