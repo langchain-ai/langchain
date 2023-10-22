@@ -1,11 +1,10 @@
-import io
 import json
 import logging
 import os
 import tempfile
 import time
 from abc import ABC
-from io import StringIO, BytesIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 from urllib.parse import urlparse
@@ -67,11 +66,14 @@ class BasePDFLoader(BaseLoader, ABC):
         clean up the temporary file after completion.
     """
 
-    def __init__(self, file_path: Union[str, BytesIO], *, headers: Optional[Dict] = None):
+    def __init__(
+        self, file_path: Union[str, BytesIO], *, headers: Optional[Dict] = None
+    ):
         """Initialize with a file path.
 
         Args:
-            file_path: Either a local, S3 or web path to a PDF file or a bytes buffer of a PDF.
+            file_path: Either a local, S3 or web path to a PDF file 
+            or a bytes buffer of a PDF.
             headers: Headers to use for GET request to download a file from a web path.
         """
         self.file_path = file_path
@@ -128,7 +130,7 @@ class BasePDFLoader(BaseLoader, ABC):
     @property
     def source(self) -> str:
         return self.web_path if self.web_path is not None else self.file_path
-    
+
 
 class OnlinePDFLoader(BasePDFLoader):
     """Load online `PDF`."""
@@ -334,8 +336,7 @@ class PyMuPDFLoader(BasePDFLoader):
                 "`PyMuPDF` package not found, please install it with "
                 "`pip install pymupdf`"
             )
-        
-        
+
         super().__init__(file_path, headers=headers)
         self.extract_images = extract_images
         self.text_kwargs = kwargs

@@ -1,7 +1,6 @@
 """Module contains common parsers for PDFs."""
 from __future__ import annotations
 
-import io
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -17,7 +16,7 @@ from urllib.parse import urlparse
 
 import numpy as np
 
-from langchain.document_loaders.base import BaseBlobParser, BaseBytesParser
+from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.schema import Document
 
@@ -209,7 +208,7 @@ class PyMuPDFParser(BaseBlobParser):
         with blob.as_bytes_io() as file_path:
             if isinstance(blob.data, bytes):
                 doc = fitz.open(stream=file_path)
-            else:   
+            else:
                 doc = fitz.open(filename=file_path)  # open document
 
         yield from [
@@ -252,7 +251,7 @@ class PyMuPDFParser(BaseBlobParser):
                 )
             )
         return extract_from_images_with_rapidocr(imgs)
-    
+
 
 class PyPDFium2Parser(BaseBlobParser):
     """Parse `PDF` with `PyPDFium2`."""
@@ -501,4 +500,3 @@ class DocumentIntelligenceParser(BaseBlobParser):
             docs = self._generate_docs(blob, result)
 
             yield from docs
-            

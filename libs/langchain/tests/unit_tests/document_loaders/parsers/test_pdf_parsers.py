@@ -1,10 +1,10 @@
 """Tests for the various PDF parsers."""
+from io import BytesIO
 from typing import Iterator
 
 import pytest
-from io import BytesIO
 
-from langchain.document_loaders.base import BaseBlobParser, BaseBytesParser
+from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
@@ -63,7 +63,7 @@ def _assert_with_bytes_parser(
         parser (BaseBlobParser): The parser to test.
         splits_by_page (bool): Whether the parser splits by page or not by default.
     """
-    with open(HELLO_PDF, 'rb') as file:
+    with open(HELLO_PDF, "rb") as file:
         input_bytes = BytesIO(file.read())
     blob = Blob.from_data(input_bytes.read())
     doc_generator = parser.lazy_parse(blob)
@@ -76,7 +76,7 @@ def _assert_with_bytes_parser(
     # startswith instead of equals.
     assert docs[0].page_content.startswith("Hello world!")
 
-    with open(LAYOUT_PARSER_PAPER_PDF, 'rb') as file:
+    with open(LAYOUT_PARSER_PAPER_PDF, "rb") as file:
         input_bytes = BytesIO(file.read())
     blob = Blob.from_data(input_bytes.read())
     doc_generator = parser.lazy_parse(blob)
@@ -93,7 +93,7 @@ def _assert_with_bytes_parser(
     assert "LayoutParser" in docs[0].page_content
     metadata = docs[0].metadata
 
-    assert metadata["source"] == None
+    assert metadata["source"] is None
 
     if splits_by_page:
         assert int(metadata["page"]) == 0
