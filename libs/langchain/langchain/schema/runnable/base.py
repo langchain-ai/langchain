@@ -666,7 +666,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
         try:
             output = call_func_with_variable_args(
-                func, input, run_manager, config, **kwargs
+                func, input, config, run_manager, **kwargs
             )
         except BaseException as e:
             run_manager.on_chain_error(e)
@@ -702,7 +702,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
         try:
             output = await acall_func_with_variable_args(
-                func, input, run_manager, config, **kwargs
+                func, input, config, run_manager, **kwargs
             )
         except BaseException as e:
             await run_manager.on_chain_error(e)
@@ -2027,8 +2027,34 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __init__(
         self,
-        func: Union[Callable[[Input], Output], Callable[[Input], Awaitable[Output]]],
-        afunc: Optional[Callable[[Input], Awaitable[Output]]] = None,
+        func: Union[
+            Union[
+                Callable[[Input], Output],
+                Callable[[Input, RunnableConfig], Output],
+                Callable[[Input, CallbackManagerForChainRun], Output],
+                Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
+            ],
+            Union[
+                Callable[[Input], Awaitable[Output]],
+                Callable[[Input, RunnableConfig], Awaitable[Output]],
+                Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
+                Callable[
+                    [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+                    Awaitable[Output],
+                ],
+            ],
+        ],
+        afunc: Optional[
+            Union[
+                Callable[[Input], Awaitable[Output]],
+                Callable[[Input, RunnableConfig], Awaitable[Output]],
+                Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
+                Callable[
+                    [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+                    Awaitable[Output],
+                ],
+            ]
+        ] = None,
     ) -> None:
         """Create a RunnableLambda from a callable, and async callable or both.
 
@@ -2136,7 +2162,7 @@ class RunnableLambda(Runnable[Input, Output]):
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> Output:
-        output = call_func_with_variable_args(self.func, input, run_manager, config)
+        output = call_func_with_variable_args(self.func, input, config, run_manager)
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
@@ -2161,7 +2187,7 @@ class RunnableLambda(Runnable[Input, Output]):
         config: RunnableConfig,
     ) -> Output:
         output = await acall_func_with_variable_args(
-            self.afunc, input, run_manager, config
+            self.afunc, input, config, run_manager
         )
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
