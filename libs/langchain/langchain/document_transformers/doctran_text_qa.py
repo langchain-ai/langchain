@@ -33,6 +33,18 @@ class DoctranQATransformer(BaseDocumentTransformer):
             "openai_api_model", "OPENAI_API_MODEL"
         )
 
+    def _init_doctran(self):
+        try:
+            from doctran import Doctran
+
+            return Doctran(
+                openai_api_key=self.openai_api_key, openai_model=self.openai_api_model
+            )
+        except ImportError:
+            raise ImportError(
+                "Install doctran to use this parser. (pip install doctran)"
+            )
+
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
@@ -53,9 +65,14 @@ class DoctranQATransformer(BaseDocumentTransformer):
                 "Install doctran to use this parser. (pip install doctran)"
             )
         for d in documents:
-            doctran_doc = (
-                await doctran.parse(content=d.page_content).interrogate().execute()
-            )
+            try:
+                doctran_doc = (
+                    await doctran.parse(content=d.page_content).interrogate().execute()
+                )
+            except TypeError:
+                doctran_doc = (
+                    doctran.parse(content=d.page_content).interrogate().execute()
+                )
             questions_and_answers = doctran_doc.extracted_properties.get(
                 "questions_and_answers"
             )

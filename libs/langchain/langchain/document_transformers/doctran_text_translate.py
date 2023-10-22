@@ -60,7 +60,10 @@ class DoctranTextTranslator(BaseDocumentTransformer):
             for doc in documents
         ]
         for i, doc in enumerate(doctran_docs):
-            doctran_docs[i] = await doc.translate(language=self.language).execute()
+            try:
+                doctran_docs[i] = await doc.translate(language=self.language).execute()
+            except TypeError:
+                doctran_docs[i] = doc.translate(language=self.language).execute()
         return [
             Document(page_content=doc.transformed_content, metadata=doc.metadata)
             for doc in doctran_docs
