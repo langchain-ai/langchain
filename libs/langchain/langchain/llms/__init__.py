@@ -342,6 +342,12 @@ def _import_openlm() -> Any:
     return OpenLM
 
 
+def _import_pai_eas_endpoint() -> Any:
+    from langchain.llms.pai_eas_endpoint import PaiEasEndpoint
+
+    return PaiEasEndpoint
+
+
 def _import_petals() -> Any:
     from langchain.llms.petals import Petals
 
@@ -593,6 +599,8 @@ def __getattr__(name: str) -> Any:
         return _import_openllm()
     elif name == "OpenLM":
         return _import_openlm()
+    elif name == "PaiEasEndpoint":
+        return _import_pai_eas_endpoint()
     elif name == "Petals":
         return _import_petals()
     elif name == "PipelineAI":
@@ -703,6 +711,7 @@ __all__ = [
     "OpenAIChat",
     "OpenLLM",
     "OpenLM",
+    "PaiEasEndpoint",
     "Petals",
     "PipelineAI",
     "Predibase",
@@ -780,6 +789,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,
+        "pai_eas_endpoint": _import_pai_eas_endpoint,
         "petals": _import_petals,
         "pipelineai": _import_pipelineai,
         "predibase": _import_predibase,
