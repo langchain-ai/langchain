@@ -12,6 +12,10 @@ CHUNK_QUERY = """
 class CPPSegmenter(TreeSitterSegmenter):
     """Code segmenter for C++."""
 
+    def get_language(self):
+        from tree_sitter_languages import get_language
+        return get_language("cpp")
+
     def get_chunk_query(self) -> str:
         return CHUNK_QUERY
 

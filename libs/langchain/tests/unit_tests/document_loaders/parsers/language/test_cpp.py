@@ -3,7 +3,7 @@ import unittest
 from langchain.document_loaders.parsers.language.cpp import CPPSegmenter
 
 
-# @pytest.mark.requires("tree-sitter")
+# @pytest.mark.requires("tree-sitter", "tree-sitter-languages")
 class TestCPPSegmenter(unittest.TestCase):
     def setUp(self) -> None:
         self.example_code = """int foo() {

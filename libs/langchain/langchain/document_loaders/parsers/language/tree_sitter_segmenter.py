@@ -12,24 +12,12 @@ class TreeSitterSegmenter(CodeSegmenter):
         self.source_lines = self.code.splitlines()
 
         try:
-            import tree_sitter  # noqa: F401
-
-            # TODO: Document this as a manual step if needed
-            # https://til.simonwillison.net/python/tree-sitter
-
-            # The below auto-downloading business could potentially work when using the library,
-            # but it's blocked while running tests
-
-            # from urllib.request import urlretrieve
-
-            # # TODO: Make the path configurable
-            # # TODO: Error handling
-            # urlretrieve("https://github.com/tree-sitter/tree-sitter-cpp/archive/refs/heads/master.zip", "/tmp/tree-sitter-cpp")
-
-            # tree_sitter.Language.build_library('/tmp/tree-sitter-cpp.so', ['/tmp/tree-sitter-cpp'])
+            import tree_sitter, tree_sitter_languages  # noqa: F401
         except ImportError as e:
-            # TODO: Real error message
-            raise ImportError(str(e))
+            raise ImportError(
+                "Could not import tree_sitter/tree_sitter_languages Python packages. "
+                "Please install them with `pip install tree_sitter tree_sitter_languages`."
+            )
 
     def is_valid(self) -> bool:
         parser = self.get_parser()
@@ -94,18 +82,16 @@ class TreeSitterSegmenter(CodeSegmenter):
 
         return "\n".join(line for line in simplified_lines if line is not None)
 
-    # TODO: Make abstract
-    def get_language(self):
-        from tree_sitter import Language
-
-        return Language("/tmp/tree-sitter-cpp.so", "cpp")
-
     def get_parser(self):
         from tree_sitter import Parser
 
         parser = Parser()
         parser.set_language(self.get_language())
         return parser
+
+    @abstractmethod
+    def get_language(self):
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def get_chunk_query(self) -> str:
