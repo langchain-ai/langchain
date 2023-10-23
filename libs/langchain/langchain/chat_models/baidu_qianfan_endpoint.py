@@ -169,7 +169,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
+        """Get the default parameters for calling Qianfan API."""
         normal_params = {
             "model": self.model,
             "endpoint": self.endpoint,

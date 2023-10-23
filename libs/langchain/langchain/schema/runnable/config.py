@@ -74,19 +74,20 @@ class RunnableConfig(TypedDict, total=False):
     max_concurrency: Optional[int]
     """
     Maximum number of parallel calls to make. If not provided, defaults to 
-    ThreadPoolExecutor's default. This is ignored if an executor is provided.
+    ThreadPoolExecutor's default.
     """
 
     recursion_limit: int
     """
-    Maximum number of times a call can recurse. If not provided, defaults to 10.
+    Maximum number of times a call can recurse. If not provided, defaults to 25.
     """
 
     configurable: Dict[str, Any]
     """
-    Runtime values for attributes previously made configurable by this Runnable,
-    or sub-Runnables, through .make_configurable(). Check .output_schema for
-    a description of the attributes that have been made configurable.
+    Runtime values for attributes previously made configurable on this Runnable,
+    or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
+    Check .output_schema() for a description of the attributes that have been made 
+    configurable.
     """
 
 
@@ -96,7 +97,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         metadata={},
         callbacks=None,
         locals={},
-        recursion_limit=10,
+        recursion_limit=25,
     )
     if config is not None:
         empty.update(
