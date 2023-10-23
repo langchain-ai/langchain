@@ -18,7 +18,7 @@ from langchain.schema.runnable.passthrough import RunnablePassthrough
 from langchain.schema.runnable.utils import Input, Output
 
 
-class RunnableWithMessageHistory(RunnableBinding):
+class RunnableWithChatHistory(RunnableBinding):
     factory: Callable[[str], BaseChatMessageHistory]
 
     input_key: str
@@ -31,10 +31,15 @@ class RunnableWithMessageHistory(RunnableBinding):
         factory: Callable[[str], BaseChatMessageHistory],
         input_key: str,
         output_key: Optional[str] = None,
+        history_key: str = "history",
     ) -> None:
         bound = (
             RunnablePassthrough.assign(
-                history=RunnableLambda(self._enter_history, self._aenter_history)
+                **{
+                    history_key: RunnableLambda(
+                        self._enter_history, self._aenter_history
+                    )
+                }
             )
             | runnable
             | RunnablePassthrough(self._exit_history, self._aexit_history)
