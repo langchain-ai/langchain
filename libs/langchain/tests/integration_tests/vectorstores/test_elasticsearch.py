@@ -457,8 +457,8 @@ class TestElasticsearch:
         self, es_client: Any, elasticsearch_connection: dict, index_name: str
     ) -> None:
         """Test end to end construction and rrf hybrid search with metadata."""
-        from typing import Optional
         from functools import partial
+        from typing import Optional
 
         # 1. check query_body is okay
         for rrf_option in [True, False, {"rank_constant": 1, "window_size": 5}]:

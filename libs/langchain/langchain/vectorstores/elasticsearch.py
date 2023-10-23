@@ -1177,11 +1177,11 @@ class ElasticsearchStore(VectorStore):
             hybrid: Optional. If True, will perform a hybrid search
                     using both the knn query and a text query.
                     Defaults to False.
-            rrf: Optional. rrf is rrf(Reciprocal Rank Fusion).
-                 When `hybrid` is True
+            rrf: Optional. rrf is Reciprocal Rank Fusion.
+                 When `hybrid` is True,
                     and `rrf` is True, then rrf: {}.
                     and `rrf` is False, then rrf is omitted.
-                    and isinstance(rrf, dict) is True, then pass in the dict values to the rrf key.
+                    and isinstance(rrf, dict) is True, then pass in the dict values.
                  rrf could be passed for adjusting 'rank_constant' and 'window_size'.
         """
         return ApproxRetrievalStrategy(
