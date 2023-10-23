@@ -6,9 +6,17 @@ To install LangChain run:
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-import Install from "@snippets/get_started/quickstart/installation.mdx"
+import CodeBlock from "@theme/CodeBlock";
 
-<Install/>
+<Tabs>
+  <TabItem value="pip" label="Pip" default>
+    <CodeBlock language="bash">pip install langchain</CodeBlock>
+  </TabItem>
+  <TabItem value="conda" label="Conda">
+    <CodeBlock language="bash">conda install langchain -c conda-forge</CodeBlock>
+  </TabItem>
+</Tabs>
+
 
 For more details, see our [Installation guide](/docs/get_started/installation.html).
 
@@ -16,9 +24,26 @@ For more details, see our [Installation guide](/docs/get_started/installation.ht
 
 Using LangChain will usually require integrations with one or more model providers, data stores, APIs, etc. For this example, we'll use OpenAI's model APIs.
 
-import OpenAISetup from "@snippets/get_started/quickstart/openai_setup.mdx"
+First we'll need to install their Python package:
 
-<OpenAISetup/>
+```bash
+pip install openai
+```
+
+Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
+
+```bash
+export OPENAI_API_KEY="..."
+```
+
+If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
+
+```python
+from langchain.llms import OpenAI
+
+llm = OpenAI(openai_api_key="...")
+```
+
 
 ## Building an application
 
@@ -66,24 +91,49 @@ The standard interface that LangChain provides has two methods:
 Let's see how to work with these different types of models and these different types of inputs.
 First, let's import an LLM and a ChatModel.
 
-import ImportLLMs from "@snippets/get_started/quickstart/import_llms.mdx"
+```python
+from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
 
-<ImportLLMs/>
+llm = OpenAI()
+chat_model = ChatOpenAI()
+
+llm.predict("hi!")
+>>> "Hi"
+
+chat_model.predict("hi!")
+>>> "Hi"
+```
 
 The `OpenAI` and `ChatOpenAI` objects are basically just configuration objects.
 You can initialize them with parameters like `temperature` and others, and pass them around.
 
 Next, let's use the `predict` method to run over a string input.
 
-import InputString from "@snippets/get_started/quickstart/input_string.mdx"
+```python
+text = "What would be a good company name for a company that makes colorful socks?"
 
-<InputString/>
+llm.predict(text)
+# >> Feetful of Fun
+
+chat_model.predict(text)
+# >> Socks O'Color
+```
 
 Finally, let's use the `predict_messages` method to run over a list of messages.
 
-import InputMessages from "@snippets/get_started/quickstart/input_messages.mdx"
+```python
+from langchain.schema import HumanMessage
 
-<InputMessages/>
+text = "What would be a good company name for a company that makes colorful socks?"
+messages = [HumanMessage(content=text)]
+
+llm.predict_messages(messages)
+# >> Feetful of Fun
+
+chat_model.predict_messages(messages)
+# >> Socks O'Color
+```
 
 For both these methods, you can also pass in parameters as keyword arguments.
 For example, you could pass in `temperature=0` to adjust the temperature that is used from what the object was configured with.
@@ -100,10 +150,16 @@ PromptTemplates help with exactly this!
 They bundle up all the logic for going from user input into a fully formatted prompt.
 This can start off very simple - for example, a prompt to produce the above string would just be:
 
-import PromptTemplateLLM from "@snippets/get_started/quickstart/prompt_templates_llms.mdx"
-import PromptTemplateChatModel from "@snippets/get_started/quickstart/prompt_templates_chat_models.mdx"
+```python
+from langchain.prompts import PromptTemplate
 
-<PromptTemplateLLM/>
+prompt = PromptTemplate.from_template("What is a good name for a company that makes {product}?")
+prompt.format(product="colorful socks")
+```
+
+```pycon
+What is a good name for a company that makes colorful socks?
+```
 
 However, the advantages of using these over raw string formatting are several.
 You can "partial" out variables - e.g. you can format only some of the variables at a time.
@@ -116,7 +172,27 @@ Here, what happens most often is a ChatPromptTemplate is a list of ChatMessageTe
 Each ChatMessageTemplate contains instructions for how to format that ChatMessage - its role, and then also its content.
 Let's take a look at this below:
 
-<PromptTemplateChatModel/>
+```python
+from langchain.prompts.chat import ChatPromptTemplate
+
+template = "You are a helpful assistant that translates {input_language} to {output_language}."
+human_template = "{text}"
+
+chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", template),
+    ("human", human_template),
+])
+
+chat_prompt.format_messages(input_language="English", output_language="French", text="I love programming.")
+```
+
+```pycon
+[
+    SystemMessage(content="You are a helpful assistant that translates English to French.", additional_kwargs={}),
+    HumanMessage(content="I love programming.")
+]
+```
+
 
 ChatPromptTemplates can also be constructed in other ways - see the [section on prompts](/docs/modules/model_io/prompts) for more detail.
 
@@ -133,9 +209,20 @@ For full information on this, see the [section on output parsers](/docs/modules/
 
 In this getting started guide, we will write our own output parser - one that converts a comma separated list into a list.
 
-import OutputParser from "@snippets/get_started/quickstart/output_parser.mdx"
+```python
+from langchain.schema import BaseOutputParser
 
-<OutputParser/>
+class CommaSeparatedListOutputParser(BaseOutputParser):
+    """Parse the output of an LLM call to a comma-separated list."""
+
+
+    def parse(self, text: str):
+        """Parse the output of an LLM call."""
+        return text.strip().split(", ")
+
+CommaSeparatedListOutputParser().parse("hi, bye")
+# >> ['hi', 'bye']
+```
 
 ## PromptTemplate + LLM + OutputParser
 
@@ -144,9 +231,33 @@ This chain will take input variables, pass those to a prompt template to create 
 This is a convenient way to bundle up a modular piece of logic.
 Let's see it in action!
 
-import LLMChain from "@snippets/get_started/quickstart/llm_chain.mdx"
+```python
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts.chat import ChatPromptTemplate
+from langchain.schema import BaseOutputParser
 
-<LLMChain/>
+class CommaSeparatedListOutputParser(BaseOutputParser):
+    """Parse the output of an LLM call to a comma-separated list."""
+
+
+    def parse(self, text: str):
+        """Parse the output of an LLM call."""
+        return text.strip().split(", ")
+
+template = """You are a helpful assistant who generates comma separated lists.
+A user will pass in a category, and you should generate 5 objects in that category in a comma separated list.
+ONLY return a comma separated list, and nothing more."""
+human_template = "{text}"
+
+chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", template),
+    ("human", human_template),
+])
+chain = chat_prompt | ChatOpenAI() | CommaSeparatedListOutputParser()
+chain.invoke({"text": "colors"})
+# >> ['red', 'blue', 'green', 'yellow', 'orange']
+```
+
 
 Note that we are using the `|` syntax to join these components together.
 This `|` syntax is called the LangChain Expression Language.
