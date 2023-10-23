@@ -61,6 +61,7 @@ def add_last_line_print(code: str) -> str:
         s = StringIO()
         Unparser(tree, file=s)
         source_code = s.getvalue()
+        s.close()
     else:
         source_code = ast.unparse(tree)
     return source_code
