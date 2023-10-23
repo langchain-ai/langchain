@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.schema import BaseRetriever, Document
-from langchain.utils import get_from_dict_or_env
 from langchain.utilities.vertexai import get_client_info
+from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     from google.api_core.client_options import ClientOptions

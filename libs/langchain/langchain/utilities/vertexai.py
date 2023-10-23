@@ -2,10 +2,9 @@
 from importlib import metadata
 from typing import TYPE_CHECKING, Optional
 
-
 if TYPE_CHECKING:
-    from google.auth.credentials import Credentials
     from google.api_core.gapic_v1.client_info import ClientInfo
+    from google.auth.credentials import Credentials
 
 
 def raise_vertex_import_error(minimum_expected_version: str = "1.35.0") -> None:

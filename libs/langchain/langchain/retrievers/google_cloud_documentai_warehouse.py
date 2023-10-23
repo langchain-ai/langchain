@@ -5,8 +5,8 @@ from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever
-from langchain.utils import get_from_dict_or_env
 from langchain.utilities.vertexai import get_client_info
+from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     from google.cloud.contentwarehouse_v1 import (
@@ -34,7 +34,8 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
     project_number: str
     """Google Cloud project number, should contain digits only."""
     schema_id: Optional[str] = None
-    """Document AI Warehouse schema to query against. If nothing is provided, all documents in the project will be searched."""
+    """Document AI Warehouse schema to query against.
+    If nothing is provided, all documents in the project will be searched."""
     qa_size_limit: int = 5
     """The limit on the number of documents returned."""
     client: "DocumentServiceClient" = None  #: :meta private:
@@ -43,9 +44,7 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates the environment."""
         try:  # noqa: F401
-            from google.cloud.contentwarehouse_v1 import (
-                DocumentServiceClient,
-            )
+            from google.cloud.contentwarehouse_v1 import DocumentServiceClient
         except ImportError as exc:
             raise ImportError(
                 "google.cloud.contentwarehouse is not installed."
