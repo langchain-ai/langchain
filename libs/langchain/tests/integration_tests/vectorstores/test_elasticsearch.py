@@ -517,19 +517,6 @@ class TestElasticsearch:
                 "foo", k=3, custom_query=partial(assert_query, rrf=rrf_option)
             )
 
-        docsearch = ElasticsearchStore.from_texts(
-            texts,
-            FakeEmbeddings(),
-            **elasticsearch_connection,
-            index_name=index_name,
-            strategy=ElasticsearchStore.ApproxRetrievalStrategy(hybrid=True),
-        )
-
-        ## with fetch_k parameter
-        output = docsearch.similarity_search(
-            "foo", k=3, fetch_k=50, custom_query=assert_query
-        )
-
         # 2. check query result is okay
         es_output = es_client.search(
             index=index_name,
@@ -553,6 +540,20 @@ class TestElasticsearch:
         assert [o.page_content for o in output] == [
             e["_source"]["text"] for e in es_output["hits"]["hits"]
         ]
+
+        # 3. check rrf default option is okay
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+            strategy=ElasticsearchStore.ApproxRetrievalStrategy(hybrid=True),
+        )
+
+        ## with fetch_k parameter
+        output = docsearch.similarity_search(
+            "foo", k=3, fetch_k=50, custom_query=assert_query
+        )
 
     def test_similarity_search_approx_with_custom_query_fn(
         self, elasticsearch_connection: dict, index_name: str
