@@ -38,9 +38,6 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
     2 - Website data (with Advanced Website Indexing)
     """
 
-    _serving_config: str
-    """Full path of serving config."""
-
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates the environment."""
@@ -239,6 +236,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
     """
 
     _client: SearchServiceClient
+    _serving_config: str
 
     class Config:
         """Configuration for this pydantic object."""
@@ -373,6 +371,7 @@ class GoogleVertexAIMultiTurnSearchRetriever(
     """Vertex AI Search Conversation ID."""
 
     _client: ConversationalSearchServiceClient
+    _serving_config: str
 
     class Config:
         """Configuration for this pydantic object."""

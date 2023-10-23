@@ -1,4 +1,5 @@
 import sys
+from functools import partial
 from operator import itemgetter
 from typing import (
     Any,
@@ -38,6 +39,7 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.document import Document
 from langchain.schema.messages import (
     AIMessage,
@@ -586,6 +588,26 @@ def test_schema_complex_seq() -> None:
         "type": "string",
     }
 
+    assert chain2.with_types(input_type=str).input_schema.schema() == {
+        "title": "RunnableBindingInput",
+        "type": "string",
+    }
+
+    assert chain2.with_types(input_type=int).output_schema.schema() == {
+        "title": "StrOutputParserOutput",
+        "type": "string",
+    }
+
+    class InputType(BaseModel):
+        person: str
+
+    assert chain2.with_types(input_type=InputType).input_schema.schema() == {
+        "title": "InputType",
+        "type": "object",
+        "properties": {"person": {"title": "Person", "type": "string"}},
+        "required": ["person"],
+    }
+
 
 def test_schema_chains() -> None:
     model = FakeListChatModel(responses=[""])
@@ -925,6 +947,17 @@ def test_configurable_fields() -> None:
     ).invoke({"name": "John"}) == {"llm1": "c", "llm2": "c", "llm3": "d"}
 
 
+def test_configurable_alts_factory() -> None:
+    fake_llm = FakeListLLM(responses=["a"]).configurable_alternatives(
+        ConfigurableField(id="llm", name="LLM"),
+        chat=partial(FakeListLLM, responses=["b"]),
+    )
+
+    assert fake_llm.invoke("...") == "a"
+
+    assert fake_llm.with_config(configurable={"llm": "chat"}).invoke("...") == "b"
+
+
 def test_configurable_fields_example() -> None:
     fake_chat = FakeListChatModel(responses=["b"]).configurable_fields(
         responses=ConfigurableFieldMultiOption(
@@ -1258,7 +1291,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
         mocker.call(
@@ -1268,7 +1301,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
     ]

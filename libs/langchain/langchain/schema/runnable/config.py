@@ -74,19 +74,20 @@ class RunnableConfig(TypedDict, total=False):
     max_concurrency: Optional[int]
     """
     Maximum number of parallel calls to make. If not provided, defaults to 
-    ThreadPoolExecutor's default. This is ignored if an executor is provided.
+    ThreadPoolExecutor's default.
     """
 
     recursion_limit: int
     """
-    Maximum number of times a call can recurse. If not provided, defaults to 10.
+    Maximum number of times a call can recurse. If not provided, defaults to 25.
     """
 
     configurable: Dict[str, Any]
     """
-    Runtime values for attributes previously made configurable by this Runnable,
-    or sub-Runnables, through .make_configurable(). Check .output_schema for
-    a description of the attributes that have been made configurable.
+    Runtime values for attributes previously made configurable on this Runnable,
+    or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
+    Check .output_schema() for a description of the attributes that have been made 
+    configurable.
     """
 
 
@@ -96,7 +97,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         metadata={},
         callbacks=None,
         locals={},
-        recursion_limit=10,
+        recursion_limit=25,
     )
     if config is not None:
         empty.update(
@@ -185,18 +186,22 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
 def call_func_with_variable_args(
     func: Union[
         Callable[[Input], Output],
+        Callable[[Input, RunnableConfig], Output],
         Callable[[Input, CallbackManagerForChainRun], Output],
         Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
     ],
     input: Input,
-    run_manager: CallbackManagerForChainRun,
     config: RunnableConfig,
+    run_manager: Optional[CallbackManagerForChainRun] = None,
     **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config."""
     if accepts_config(func):
-        kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
-    if accepts_run_manager(func):
+        if run_manager is not None:
+            kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
+        else:
+            kwargs["config"] = config
+    if run_manager is not None and accepts_run_manager(func):
         kwargs["run_manager"] = run_manager
     return func(input, **kwargs)  # type: ignore[call-arg]
 
@@ -204,6 +209,7 @@ def call_func_with_variable_args(
 async def acall_func_with_variable_args(
     func: Union[
         Callable[[Input], Awaitable[Output]],
+        Callable[[Input, RunnableConfig], Awaitable[Output]],
         Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
         Callable[
             [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
@@ -211,14 +217,17 @@ async def acall_func_with_variable_args(
         ],
     ],
     input: Input,
-    run_manager: AsyncCallbackManagerForChainRun,
     config: RunnableConfig,
+    run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config."""
     if accepts_config(func):
-        kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
-    if accepts_run_manager(func):
+        if run_manager is not None:
+            kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
+        else:
+            kwargs["config"] = config
+    if run_manager is not None and accepts_run_manager(func):
         kwargs["run_manager"] = run_manager
     return await func(input, **kwargs)  # type: ignore[call-arg]
 
