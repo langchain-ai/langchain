@@ -9,5 +9,5 @@ jobs:
     uses:
       ./.github/workflows/_test_release.yml
     with:
-      working-directory: .
+      working-directory: libs/langchain
     secrets: inherit
