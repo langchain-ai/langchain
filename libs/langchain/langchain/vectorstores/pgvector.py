@@ -128,18 +128,13 @@ class PGVector(VectorStore):
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
         self.engine_args = engine_args or {}
-        self._conn = connection
-        self.__post_init__()
+        # Create a connection if not provided, otherwise use the provided connection
+        self._conn = connection if connection else self.connect()
 
     def __post_init__(
         self,
     ) -> None:
-        """
-        Initialize the store.
-        """
-        if not self._conn:
-            self._conn = self.connect()
-        self._conn = self.connect()
+        """Initialize the store."""
         self.create_vector_extension()
         from langchain.vectorstores._pgvector_data_models import (
             CollectionStore,
