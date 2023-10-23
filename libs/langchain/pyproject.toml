@@ -222,6 +222,7 @@ cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
 javascript = ["esprima"]
+tree_sitter = ["tree-sitter", "tree-sitter-languages"]
 azure = [
     "azure-identity",
     "azure-cosmos",
@@ -307,6 +308,7 @@ all = [
     "librosa",
     "python-arango",
     "tree-sitter",
+    "tree-sitter-languages",
 ]
 
 cli = [
@@ -369,6 +371,8 @@ extended_testing = [
  "motor",
  "timescale-vector",
  "anthropic",
+ "tree-sitter",
+ "tree-sitter-languages"
 ]
 
 [tool.ruff]
