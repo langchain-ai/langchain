@@ -1,7 +1,7 @@
 # Contributing to LangChain
 
 Hi there! Thank you for even being interested in contributing to LangChain.
-As an open source project in a rapidly developing field, we are extremely open
+As an open-source project in a rapidly developing field, we are extremely open
 to contributions, whether they be in the form of new features, improved infra, better documentation, or bug fixes.
 
 ## 🗺️ Guidelines
@@ -14,7 +14,7 @@ Please do not try to push directly to this repo unless you are a maintainer.
 Please follow the checked-in pull request template when opening pull requests. Note related issues and tag relevant
 maintainers.
 
-Pull requests cannot land without passing the formatting, linting and testing checks first. See [Testing](#testing) and
+Pull requests cannot land without passing the formatting, linting, and testing checks first. See [Testing](#testing) and
 [Formatting and Linting](#formatting-and-linting) for how to run these checks locally.
 
 It's essential that we maintain great documentation and testing. If you:
@@ -79,7 +79,7 @@ There are two separate projects in this repository:
 - `langchain`: core langchain code, abstractions, and use cases
 - `langchain.experimental`: see the [Experimental README](../libs/experimental/README.md) for more information.
 
-Each of these has their own development environment. Docs are run from the top-level makefile, but development
+Each of these has its own development environment. Docs are run from the top-level makefile, but development
 is split across separate test & release flows.
 
 For this quickstart, start with langchain core:

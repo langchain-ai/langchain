@@ -1291,7 +1291,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
         mocker.call(
@@ -1301,7 +1301,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
     ]

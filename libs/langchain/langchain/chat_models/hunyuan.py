@@ -31,8 +31,8 @@ from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_HUNYUAN_API_BASE = "https://hunyuan.cloud.tencent.com"
-DEFAULT_HUNYUAN_PATH = "/hyllm/v1/chat/completions"
+DEFAULT_API_BASE = "https://hunyuan.cloud.tencent.com"
+DEFAULT_PATH = "/hyllm/v1/chat/completions"
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -141,7 +141,7 @@ class ChatHunyuan(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    hunyuan_api_base: str = "https://hunyuan.cloud.tencent.com"
+    hunyuan_api_base: str = Field(default=DEFAULT_API_BASE)
     """Hunyuan custom endpoints"""
     hunyuan_app_id: Optional[str] = None
     """Hunyuan App ID"""
@@ -201,6 +201,7 @@ class ChatHunyuan(BaseChatModel):
             values,
             "hunyuan_api_base",
             "HUNYUAN_API_BASE",
+            DEFAULT_API_BASE,
         )
         values["hunyuan_app_id"] = get_from_dict_or_env(
             values,
@@ -303,7 +304,7 @@ class ChatHunyuan(BaseChatModel):
         if self.streaming:
             payload["stream"] = 1
 
-        url = self.hunyuan_api_base + DEFAULT_HUNYUAN_PATH
+        url = self.hunyuan_api_base + DEFAULT_PATH
 
         res = requests.post(
             url=url,
