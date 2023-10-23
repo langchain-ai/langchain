@@ -25,6 +25,7 @@ from typing import (
 )
 from uuid import UUID
 
+from langsmith.run_helpers import get_run_tree_context
 from tenacity import RetryCallState
 
 from langchain.callbacks.base import (
@@ -410,11 +411,12 @@ def _handle_event(
                     handler_name = handler.__class__.__name__
                     logger.warning(
                         f"NotImplementedError in {handler_name}.{event_name}"
-                        f" callback: {e}"
+                        f" callback: {repr(e)}"
                     )
             except Exception as e:
                 logger.warning(
-                    f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+                    f"Error in {handler.__class__.__name__}.{event_name} callback:"
+                    f" {repr(e)}"
                 )
                 if handler.raise_error:
                     raise e
@@ -495,11 +497,12 @@ async def _ahandle_event_for_handler(
         else:
             logger.warning(
                 f"NotImplementedError in {handler.__class__.__name__}.{event_name}"
-                f" callback: {e}"
+                f" callback: {repr(e)}"
             )
     except Exception as e:
         logger.warning(
-            f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+            f"Error in {handler.__class__.__name__}.{event_name} callback:"
+            f" {repr(e)}"
         )
         if handler.raise_error:
             raise e
@@ -1882,13 +1885,16 @@ def _configure(
     Returns:
         T: The configured callback manager.
     """
-    callback_manager = callback_manager_cls(handlers=[])
+    run_tree = get_run_tree_context()
+    parent_run_id = None if run_tree is None else getattr(run_tree, "id")
+    callback_manager = callback_manager_cls(handlers=[], parent_run_id=parent_run_id)
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
             inheritable_callbacks_ = inheritable_callbacks or []
             callback_manager = callback_manager_cls(
                 handlers=inheritable_callbacks_.copy(),
                 inheritable_handlers=inheritable_callbacks_.copy(),
+                parent_run_id=parent_run_id,
             )
         else:
             callback_manager = callback_manager_cls(

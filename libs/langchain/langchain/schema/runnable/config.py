@@ -157,21 +157,50 @@ def patch_config(
     return config
 
 
+def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
+    base: RunnableConfig = {}
+    # Even though the keys aren't literals this is correct
+    # because both dicts are same type
+    for config in (c for c in configs if c is not None):
+        for key in config:
+            if key == "metadata":
+                base[key] = {  # type: ignore
+                    **base.get(key, {}),  # type: ignore
+                    **(config.get(key) or {}),  # type: ignore
+                }
+            elif key == "tags":
+                base[key] = list(  # type: ignore
+                    set(base.get(key, []) + (config.get(key) or [])),  # type: ignore
+                )
+            elif key == "configurable":
+                base[key] = {  # type: ignore
+                    **base.get(key, {}),  # type: ignore
+                    **(config.get(key) or {}),  # type: ignore
+                }
+            else:
+                base[key] = config[key] or base.get(key)  # type: ignore
+    return base
+
+
 def call_func_with_variable_args(
     func: Union[
         Callable[[Input], Output],
+        Callable[[Input, RunnableConfig], Output],
         Callable[[Input, CallbackManagerForChainRun], Output],
         Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
     ],
     input: Input,
-    run_manager: CallbackManagerForChainRun,
     config: RunnableConfig,
+    run_manager: Optional[CallbackManagerForChainRun] = None,
     **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config."""
     if accepts_config(func):
-        kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
-    if accepts_run_manager(func):
+        if run_manager is not None:
+            kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
+        else:
+            kwargs["config"] = config
+    if run_manager is not None and accepts_run_manager(func):
         kwargs["run_manager"] = run_manager
     return func(input, **kwargs)  # type: ignore[call-arg]
 
@@ -179,6 +208,7 @@ def call_func_with_variable_args(
 async def acall_func_with_variable_args(
     func: Union[
         Callable[[Input], Awaitable[Output]],
+        Callable[[Input, RunnableConfig], Awaitable[Output]],
         Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
         Callable[
             [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
@@ -186,14 +216,17 @@ async def acall_func_with_variable_args(
         ],
     ],
     input: Input,
-    run_manager: AsyncCallbackManagerForChainRun,
     config: RunnableConfig,
+    run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config."""
     if accepts_config(func):
-        kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
-    if accepts_run_manager(func):
+        if run_manager is not None:
+            kwargs["config"] = patch_config(config, callbacks=run_manager.get_child())
+        else:
+            kwargs["config"] = config
+    if run_manager is not None and accepts_run_manager(func):
         kwargs["run_manager"] = run_manager
     return await func(input, **kwargs)  # type: ignore[call-arg]
 
