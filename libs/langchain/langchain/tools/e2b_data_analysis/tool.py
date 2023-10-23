@@ -3,6 +3,8 @@ from __future__ import annotations
 import ast
 import json
 import os
+from io import StringIO
+from sys import version_info
 from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type
 
 from langchain.callbacks.manager import (
@@ -11,6 +13,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools import BaseTool, Tool
+from langchain.tools.e2b_data_analysis.unparser import Unparser
 
 if TYPE_CHECKING:
     from e2b import EnvVars
@@ -52,7 +55,15 @@ def add_last_line_print(code: str) -> str:
                 keywords=[],
             )
         )
-    return ast.unparse(tree)
+
+    source_code = ""
+    if version_info.minor < 9:
+        s = StringIO()
+        Unparser(tree, file=s)
+        source_code = s.getvalue()
+    else:
+        source_code = ast.unparse(tree)
+    return source_code
 
 
 class UploadedFile(BaseModel):
