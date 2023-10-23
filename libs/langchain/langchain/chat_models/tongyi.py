@@ -10,6 +10,7 @@ from typing import (
     Mapping,
     Optional,
     Tuple,
+    Type,
 )
 
 from requests.exceptions import HTTPError
@@ -153,7 +154,7 @@ def _create_retry_decorator(
 
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any],
-    default_class: type[BaseMessageChunk],
+    default_class: Type[BaseMessageChunk],
     length: int,
 ) -> BaseMessageChunk:
     role = _dict.get("role")
