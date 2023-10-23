@@ -3747,7 +3747,9 @@
                     "Thought:"
                   ]
                 },
-                "config": {}
+                "config": {},
+                "custom_input_type": null,
+                "custom_output_type": null
               }
             },
             "llm": {
