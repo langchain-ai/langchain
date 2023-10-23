@@ -457,40 +457,73 @@ class TestElasticsearch:
         self, es_client: Any, elasticsearch_connection: dict, index_name: str
     ) -> None:
         """Test end to end construction and rrf hybrid search with metadata."""
+        from typing import Optional
+        from functools import partial
 
         # 1. check query_body is okay
-        texts = ["foo", "bar", "baz"]
+        for rrf_option in [True, False, {"rank_constant": 1, "window_size": 5}]:
+            texts = ["foo", "bar", "baz"]
+            docsearch = ElasticsearchStore.from_texts(
+                texts,
+                FakeEmbeddings(),
+                **elasticsearch_connection,
+                index_name=index_name,
+                strategy=ElasticsearchStore.ApproxRetrievalStrategy(
+                    hybrid=True, rrf=rrf_option
+                ),
+            )
+
+            def assert_query(
+                query_body: dict, query: str, rrf: Optional[Union[dict, bool]] = True
+            ) -> dict:
+                cmp_query_body = {
+                    "knn": {
+                        "field": "vector",
+                        "filter": [],
+                        "k": 3,
+                        "num_candidates": 50,
+                        "query_vector": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0,
+                        ],
+                    },
+                    "query": {
+                        "bool": {
+                            "filter": [],
+                            "must": [{"match": {"text": {"query": "foo"}}}],
+                        }
+                    },
+                }
+
+                if isinstance(rrf, dict):
+                    cmp_query_body["rank"] = {"rrf": rrf}
+                elif isinstance(rrf, bool) and rrf is True:
+                    cmp_query_body["rank"] = {"rrf": {}}
+
+                assert query_body == cmp_query_body
+
+                return query_body
+
+            ## without fetch_k parameter
+            output = docsearch.similarity_search(
+                "foo", k=3, custom_query=partial(assert_query, rrf=rrf_option)
+            )
+
         docsearch = ElasticsearchStore.from_texts(
             texts,
             FakeEmbeddings(),
             **elasticsearch_connection,
             index_name=index_name,
-            strategy=ElasticsearchStore.ApproxRetrievalStrategy(
-                hybrid=True, rrf={"rank_constant": 1, "window_size": 5}
-            ),
+            strategy=ElasticsearchStore.ApproxRetrievalStrategy(hybrid=True),
         )
-
-        def assert_query(query_body: dict, query: str) -> dict:
-            assert query_body == {
-                "knn": {
-                    "field": "vector",
-                    "filter": [],
-                    "k": 3,
-                    "num_candidates": 50,
-                    "query_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
-                },
-                "query": {
-                    "bool": {
-                        "filter": [],
-                        "must": [{"match": {"text": {"query": "foo"}}}],
-                    }
-                },
-                "rank": {"rrf": {"rank_constant": 1, "window_size": 5}},
-            }
-            return query_body
-
-        ## without fetch_k parameter
-        output = docsearch.similarity_search("foo", k=3, custom_query=assert_query)
 
         ## with fetch_k parameter
         output = docsearch.similarity_search(

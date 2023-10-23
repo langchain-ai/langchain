@@ -117,7 +117,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
         self,
         query_model_id: Optional[str] = None,
         hybrid: Optional[bool] = False,
-        rrf: Optional[dict] = {},
+        rrf: Optional[Union[dict, bool]] = True,
     ):
         self.query_model_id = query_model_id
         self.hybrid = hybrid
@@ -170,7 +170,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
         # RRF has two optional parameters: {'rank_constant':int, 'window_size':int}
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/rrf.html
         if self.hybrid:
-            return {
+            query_body = {
                 "knn": knn,
                 "query": {
                     "bool": {
@@ -186,8 +186,14 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
                         "filter": filter,
                     }
                 },
-                "rank": {"rrf": self.rrf},
             }
+
+            if isinstance(self.rrf, dict):
+                query_body["rank"] = {"rrf": self.rrf}
+            elif isinstance(self.rrf, bool) and self.rrf is True:
+                query_body["rank"] = {"rrf": {}}
+
+            return query_body
         else:
             return {"knn": knn}
 
@@ -1148,7 +1154,7 @@ class ElasticsearchStore(VectorStore):
     def ApproxRetrievalStrategy(
         query_model_id: Optional[str] = None,
         hybrid: Optional[bool] = False,
-        rrf: Optional[dict] = {},
+        rrf: Optional[Union[dict, bool]] = True,
     ) -> "ApproxRetrievalStrategy":
         """Used to perform approximate nearest neighbor search
         using the HNSW algorithm.
@@ -1171,11 +1177,12 @@ class ElasticsearchStore(VectorStore):
             hybrid: Optional. If True, will perform a hybrid search
                     using both the knn query and a text query.
                     Defaults to False.
-            rrf: Optional. If the hybrid is True, rrf(Reciprocal Rank Fusion)
-                 could be passed for adjusting 'rank_constant' and 'window_size'
-                 to combine multiple result sets with different relevance indicators
-                 into a single result set.
-                 Defaults to {}.
+            rrf: Optional. rrf is rrf(Reciprocal Rank Fusion).
+                 When `hybrid` is True
+                    and `rrf` is True, then rrf: {}.
+                    and `rrf` is False, then rrf is omitted.
+                    and isinstance(rrf, dict) is True, then pass in the dict values to the rrf key.
+                 rrf could be passed for adjusting 'rank_constant' and 'window_size'.
         """
         return ApproxRetrievalStrategy(
             query_model_id=query_model_id, hybrid=hybrid, rrf=rrf
