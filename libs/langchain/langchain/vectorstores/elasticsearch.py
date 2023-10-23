@@ -601,7 +601,7 @@ class ElasticsearchStore(VectorStore):
         self,
         query: str,
         k: int = 4,
-        fetch_k: Optional[int] = 50,
+        fetch_k: int = 50,
         filter: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[Document]:
