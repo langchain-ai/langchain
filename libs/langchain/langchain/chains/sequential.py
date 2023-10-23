@@ -52,7 +52,7 @@ class SequentialChain(Chain):
             if set(input_variables).intersection(set(memory_keys)):
                 overlapping_keys = set(input_variables) & set(memory_keys)
                 raise ValueError(
-                    f"The the input key(s) {''.join(overlapping_keys)} are found "
+                    f"The input key(s) {''.join(overlapping_keys)} are found "
                     f"in the Memory keys ({memory_keys}) - please use input and "
                     f"memory keys that don't overlap."
                 )
