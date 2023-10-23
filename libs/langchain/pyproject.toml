@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.315"
+version = "0.0.320"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -20,7 +20,7 @@ PyYAML = ">=5.3"
 numpy = "^1"
 azure-core = {version = "^1.26.4", optional=true}
 tqdm = {version = ">=4.48.0", optional = true}
-openapi-schema-pydantic = {version = "^1.2", optional = true}
+openapi-pydantic = {version = "^0.3.2", optional = true}
 faiss-cpu = {version = "^1", optional = true}
 wikipedia = {version = "^1", optional = true}
 elasticsearch = {version = "^8", optional = true}
@@ -191,11 +191,11 @@ tiktoken = "^0.3.2"
 anthropic = "^0.3.11"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.0.249"
+ruff = "^0.1"
 types-toml = "^0.10.8.1"
 types-redis = "^4.3.21.6"
 types-pytz = "^2023.3.0.0"
-black = "^23.1.0"
+black = "^23.10.0"
 types-chardet = "^5.0.4.6"
 mypy-protobuf = "^3.0.0"
 
@@ -359,7 +359,7 @@ extended_testing = [
  "xata",
  "xmltodict",
  "faiss-cpu",
- "openapi-schema-pydantic",
+ "openapi-pydantic",
  "markdownify",
  "arxiv",
  "dashvector",
@@ -412,6 +412,7 @@ addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused
 markers = [
   "requires: mark tests as requiring a specific library",
   "scheduled: mark tests to run in scheduled testing",
+  "compile: mark placeholder test used to compile integration tests without running them"
 ]
 
 [tool.codespell]
