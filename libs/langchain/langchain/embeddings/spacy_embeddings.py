@@ -6,10 +6,10 @@ from langchain.schema.embeddings import Embeddings
 
 
 class SpacyEmbeddings(BaseModel, Embeddings):
-    """Embeddings by SpaCy models.
+    """Embeddings by spaCy models.
 
     Attributes:
-        nlp (Any): The Spacy model loaded into memory.
+        nlp (Any): The spaCy model loaded into memory.
 
     Methods:
         embed_documents(texts: List[str]) -> List[List[float]]:
@@ -20,7 +20,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
 
     nlp: Optional[
         Any
-    ] = "en_core_web_sm"  # The SpaCy model loaded into memory, defaulting to "en_core_web_sm"
+    ] = "en_core_web_sm"  # The spaCy model loaded into memory, defaulting to "en_core_web_sm"
 
     class Config:
         """Configuration for this pydantic object."""
@@ -30,7 +30,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """
-        Validates that the Spacy package and the model are installed.
+        Validates that the spaCy package and the model are installed.
 
         Args:
             values (Dict): The values provided to the class constructor.
@@ -39,28 +39,28 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             The validated values.
 
         Raises:
-            ValueError: If the Spacy package or the
+            ValueError: If the spaCy package or the
             model are not installed.
         """
         nlp = values.get("nlp")
 
-        # Check if the Spacy package is installed
+        # Check if the spaCy package is installed
         if importlib.util.find_spec("spacy") is None:
             raise ValueError(
-                "Spacy package not found. "
+                "SpaCy package not found. "
                 "Please install it with `pip install spacy`."
             )
         try:
-            # Try to load the Spacy model
+            # Try to load the spaCy model
             import spacy
 
             values["nlp"] = spacy.load(nlp)
         except OSError:
             # If the model is not found, raise a ValueError
             raise ValueError(
-                f"Spacy model '{nlp}' not found. "
+                f"SpaCy model '{nlp}' not found. "
                 f"Please install it with"
-                " `python -m spacy download {nlp}` or provide a valid Spacy model name."
+                " `python -m spacy download {nlp}` or provide a valid spaCy model name."
             )
         return values  # Return the validated values
 
