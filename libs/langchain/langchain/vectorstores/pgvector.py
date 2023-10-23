@@ -115,7 +115,8 @@ class PGVector(VectorStore):
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
-        **engine_args: Optional[dict[str, Any]],
+        *,
+        engine_args: Optional[dict[str, Any]] = None,
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
@@ -162,7 +163,7 @@ class PGVector(VectorStore):
                 session.execute(statement)
                 session.commit()
         except Exception as e:
-            raise Exception(f"Failed to create vector extension: {e}")
+            raise Exception(f"Failed to create vector extension: {e}") from e
 
     def create_tables_if_not_exists(self) -> None:
         with self._conn.begin():
