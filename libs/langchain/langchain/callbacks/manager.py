@@ -1892,6 +1892,7 @@ def _configure(
             callback_manager = callback_manager_cls(
                 handlers=inheritable_callbacks_.copy(),
                 inheritable_handlers=inheritable_callbacks_.copy(),
+                parent_run_id=parent_run_id,
             )
         else:
             callback_manager = callback_manager_cls(
