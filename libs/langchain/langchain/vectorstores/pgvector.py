@@ -126,7 +126,7 @@ class PGVector(VectorStore):
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
-        self.engine_args = engine_args
+        self.engine_args = engine_args or {}
         self.__post_init__()
 
     def __post_init__(
