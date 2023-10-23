@@ -88,7 +88,12 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
                     is_public=not name.startswith("_"),
                 )
             )
-        elif inspect.isfunction(type_):
+        elif inspect.isfunction(type_) and name != "create_conversational_retrieval_agent":
+            """TODO: find a better solution.
+            'agents.agent_toolkits.conversational_retrieval.openai_functions
+            .create_conversational_retrieval_agent' is a too long name.
+            It makes the 'agents/functions' table inside API Reference unreadable.
+            This is a temporary solution to hide this function from API Reference."""
             functions.append(
                 FunctionInfo(
                     name=name,
