@@ -31,7 +31,7 @@ from langchain.schema.messages import (
 async def aenumerate(
     iterable: AsyncIterator[Any], start: int = 0
 ) -> AsyncIterator[tuple[int, Any]]:
-    """Async version of enumerator."""
+    """Async version of enumerate function."""
     i = start
     async for x in iterable:
         yield i, x
