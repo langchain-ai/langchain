@@ -203,7 +203,7 @@ class FAISS(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Add the given texts and embeddings to the vectorstore.
 
         Args:
             text_embeddings: Iterable pairs of string and embedding to

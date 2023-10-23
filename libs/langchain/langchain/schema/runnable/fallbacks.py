@@ -53,13 +53,15 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def OutputType(self) -> Type[Output]:
         return self.runnable.OutputType
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
-        return self.runnable.input_schema
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        return self.runnable.get_input_schema(config)
 
-    @property
-    def output_schema(self) -> Type[BaseModel]:
-        return self.runnable.output_schema
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        return self.runnable.get_output_schema(config)
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:

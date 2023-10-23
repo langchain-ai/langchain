@@ -502,7 +502,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             )
 
         try:
-            metadata = {"langchain_version": str(langchain.__version__)}
+            metadata = {"gigachain_version": str(langchain.__version__)}
             # Log the langchain low-level records as a JSON file directly
             self.experiment.log_asset_data(
                 self.action_records, "langchain-action_records.json", metadata=metadata
