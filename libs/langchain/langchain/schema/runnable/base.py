@@ -2627,6 +2627,14 @@ RunnableLike = Union[
 
 
 def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
+    """Coerce a runnable-like object into a Runnable.
+
+    Args:
+        thing: A runnable-like object.
+
+    Returns:
+        A Runnable.
+    """
     if isinstance(thing, Runnable):
         return thing
     elif inspect.isasyncgenfunction(thing) or inspect.isgeneratorfunction(thing):
