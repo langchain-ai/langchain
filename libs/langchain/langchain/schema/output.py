@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Literal
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.messages import BaseMessage, BaseMessageChunk
-from langchain.pydantic_v1 import ValidationError
 
 
 class Generation(Serializable):
@@ -57,7 +56,8 @@ class ChatGeneration(Generation):
     """*SHOULD NOT BE SET DIRECTLY* The text contents of the output message."""
     message: BaseMessage
     """The message output by the chat model."""
-    type: Literal["ChatGeneration"] = "ChatGeneration"
+    # Override type to be ChatGeneration, ignore mypy error as this is intentional
+    type: Literal["ChatGeneration"] = "ChatGeneration"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
     @root_validator
@@ -79,7 +79,8 @@ class ChatGenerationChunk(ChatGeneration):
     """
 
     message: BaseMessageChunk
-    type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"
+    # Override type to be ChatGeneration, ignore mypy error as this is intentional
+    type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment] # noqa: E501
     """Type is used exclusively for serialization purposes."""
 
     def __add__(self, other: ChatGenerationChunk) -> ChatGenerationChunk:
