@@ -132,13 +132,15 @@ class GraphCypherQAChain(Chain):
         cls,
         llm: Optional[BaseLanguageModel] = None,
         *,
-        qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
-        cypher_prompt: BasePromptTemplate = CYPHER_GENERATION_PROMPT,
+        qa_prompt: Optional[BasePromptTemplate] = None,
+        cypher_prompt: Optional[BasePromptTemplate] = None,
         cypher_llm: Optional[BaseLanguageModel] = None,
         qa_llm: Optional[BaseLanguageModel] = None,
         exclude_types: List[str] = [],
         include_types: List[str] = [],
         validate_cypher: bool = False,
+        qa_llm_kwargs: Optional[Dict[str, Any]] = None,
+        cypher_llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> GraphCypherQAChain:
         """Initialize from LLM."""
@@ -152,9 +154,34 @@ class GraphCypherQAChain(Chain):
                 "You can specify up to two of 'cypher_llm', 'qa_llm'"
                 ", and 'llm', but not all three simultaneously."
             )
+        if cypher_prompt and cypher_llm_kwargs:
+            raise ValueError(
+                "Specifying cypher_prompt and cypher_llm_kwargs together is"
+                " not allowed. Please pass prompt via cypher_llm_kwargs."
+            )
+        if qa_prompt and qa_llm_kwargs:
+            raise ValueError(
+                "Specifying qa_prompt and qa_llm_kwargs together is"
+                " not allowed. Please pass prompt via qa_llm_kwargs."
+            )
+        use_qa_llm_kwargs = qa_llm_kwargs if qa_llm_kwargs is not None else {}
+        use_cypher_llm_kwargs = (
+            cypher_llm_kwargs if cypher_llm_kwargs is not None else {}
+        )
+        if "prompt" not in use_qa_llm_kwargs:
+            use_qa_llm_kwargs["prompt"] = (
+                qa_prompt if qa_prompt is not None else CYPHER_QA_PROMPT
+            )
+        if "prompt" not in use_cypher_llm_kwargs:
+            use_cypher_llm_kwargs["prompt"] = (
+                cypher_prompt if cypher_prompt is not None else CYPHER_GENERATION_PROMPT
+            )
 
-        qa_chain = LLMChain(llm=qa_llm or llm, prompt=qa_prompt)
-        cypher_generation_chain = LLMChain(llm=cypher_llm or llm, prompt=cypher_prompt)
+        qa_chain = LLMChain(llm=qa_llm or llm, **use_qa_llm_kwargs)
+
+        cypher_generation_chain = LLMChain(
+            llm=cypher_llm or llm, **use_cypher_llm_kwargs
+        )
 
         if exclude_types and include_types:
             raise ValueError(

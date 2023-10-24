@@ -25,6 +25,7 @@ from langchain.schema import (
 )
 from langchain.schema.output import GenerationChunk
 from langchain.utilities.vertexai import (
+    get_client_info,
     init_vertexai,
     raise_vertex_import_error,
 )
@@ -298,7 +299,12 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 res = completion_with_retry(
                     self, prompt, run_manager=run_manager, **params
                 )
-                generations.append([_response_to_generation(r) for r in res.candidates])
+                if self.is_codey_model:
+                    generations.append([_response_to_generation(res)])
+                else:
+                    generations.append(
+                        [_response_to_generation(r) for r in res.candidates]
+                    )
         return LLMResult(generations=generations)
 
     async def _agenerate(
@@ -370,9 +376,12 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         client_options = ClientOptions(
             api_endpoint=f"{values['location']}-aiplatform.googleapis.com"
         )
-        values["client"] = PredictionServiceClient(client_options=client_options)
+        client_info = get_client_info(module="vertex-ai-model-garden")
+        values["client"] = PredictionServiceClient(
+            client_options=client_options, client_info=client_info
+        )
         values["async_client"] = PredictionServiceAsyncClient(
-            client_options=client_options
+            client_options=client_options, client_info=client_info
         )
         return values
 
