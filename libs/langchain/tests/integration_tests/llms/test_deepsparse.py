@@ -7,8 +7,6 @@ generation_config = {"max_new_tokens": 5}
 class TestDeepSparse(unittest.TestCase):
     def test_deepsparse_call(self) -> None:
         """Test valid call to DeepSparse."""
-        config = {"max_generated_tokens": 5}
-
         llm = DeepSparse(
             model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base-none",
             generation_config=generation_config,
@@ -36,7 +34,6 @@ class TestDeepSparse(unittest.TestCase):
         self.assertGreater(len(output), 1)
 
 
-config = {"max_generated_tokens": 5}
 llm = DeepSparse(
     model="hf:neuralmagic/mpt-7b-chat-pruned50-quant",
     generation_config=generation_config,
