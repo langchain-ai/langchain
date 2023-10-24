@@ -318,12 +318,6 @@ def _import_opaqueprompts() -> Any:
     return OpaquePrompts
 
 
-def _import_gigachat() -> Any:
-    from langchain.llms.gigachat import GigaChat
-
-    return GigaChat
-
-
 def _import_azure_openai() -> Any:
     from langchain.llms.openai import AzureOpenAI
 
@@ -603,8 +597,6 @@ def __getattr__(name: str) -> Any:
         return _import_ollama()
     elif name == "OpaquePrompts":
         return _import_opaqueprompts()
-    elif name == "GigaChat":
-        return _import_gigachat()
     elif name == "AzureOpenAI":
         return _import_azure_openai()
     elif name == "OpenAI":
@@ -724,7 +716,6 @@ __all__ = [
     "NIBittensorLLM",
     "NLPCloud",
     "Ollama",
-    "GigaChat",
     "OpenAI",
     "OpenAIChat",
     "OpenLLM",
@@ -807,7 +798,6 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nibittensor": _import_bittensor,
         "nlpcloud": _import_nlpcloud,
         "ollama": _import_ollama,
-        "gigachat": _import_gigachat,
         "openai": _import_openai,
         "openlm": _import_openlm,
         "pai_eas_endpoint": _import_pai_eas_endpoint,
