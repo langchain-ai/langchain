@@ -160,29 +160,57 @@ const config = {
             label: "Integrations",
           },
           {
-            to: "https://api.python.langchain.com",
+            type: "link",
+            href: "https://api.python.langchain.com",
             label: "API",
             position: "left",
           },
           {
-            to: "/docs/community",
-            label: "Community",
+            type: "dropdown",
+            label: "More",
             position: "left",
+            items: [
+              {
+                to: "/docs/community",
+                label: "Community",
+              },
+              "/docs/additional_resources/dependents",
+              "/docs/additional_resources/tutorials",
+              "/docs/additional_resources/youtube",
+              { type: "link", label: "Gallery", href: "https://github.com/kyrolabs/awesome-langchain" }
+            ]
           },
           {
-            to: "https://chat.langchain.com",
-            label: "Chat our docs",
+            type: "dropdown",
+            label: "Also by LangChain",
             position: "right",
-          },
-          {
-            to: "https://smith.langchain.com",
-            label: "LangSmith",
-            position: "right",
-          },
-          {
-            to: "https://js.langchain.com/docs",
-            label: "JS/TS",
-            position: "right",
+            items: [
+              {
+                type: "link",
+                href: "https://chat.langchain.com",
+                label: "Chat our docs",
+              },
+              {
+                type: "link",
+                href: "https://smith.langchain.com",
+                label: "LangSmith",
+              },
+              {
+                type: "link",
+                href: "https://smith.langchain.com/hub",
+                label: "LangChain Hub",
+              },
+              {
+                type: "link",
+                href: "https://github.com/langchain-ai/langserve",
+                label: "LangServe",
+              },
+              {
+                type: "link",
+                href: "https://js.langchain.com/docs",
+                label: "JS/TS",
+              },
+            ]
           },
           // Please keep GitHub link to the right for consistency.
           {
