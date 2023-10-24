@@ -97,7 +97,7 @@ class GigaChat(BaseChatModel):
 
     @property
     def _llm_type(self) -> str:
-        return "giga-chat-model"
+        return "gigachat"
 
     @property
     def lc_secrets(self) -> Dict[str, str]:

@@ -5050,4 +5050,4 @@ extended-testing = ["faker", "presidio-analyzer", "presidio-anonymizer", "senten
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "c810f31340b8e6aaa90ade52afc9f787a372e91eb584bee522df2a33909ef2a6"
+content-hash = "e0162e610ed65ed47309a9e0d8b66a81ff396aae2c315ad22b07f36078fdcfe1"

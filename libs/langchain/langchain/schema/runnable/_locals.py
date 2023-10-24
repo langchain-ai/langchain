@@ -68,9 +68,11 @@ class PutLocalVar(RunnablePassthrough):
                 f"{(type(self.key))}."
             )
 
-    def invoke(self, input: Other, config: Optional[RunnableConfig] = None) -> Other:
+    def invoke(
+        self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Other:
         self._concat_put(input, config=config, replace=True)
-        return super().invoke(input, config=config)
+        return super().invoke(input, config=config, **kwargs)
 
     async def ainvoke(
         self,
@@ -79,7 +81,7 @@ class PutLocalVar(RunnablePassthrough):
         **kwargs: Optional[Any],
     ) -> Other:
         self._concat_put(input, config=config, replace=True)
-        return await super().ainvoke(input, config=config)
+        return await super().ainvoke(input, config=config, **kwargs)
 
     def transform(
         self,
@@ -87,7 +89,7 @@ class PutLocalVar(RunnablePassthrough):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Other]:
-        for chunk in super().transform(input, config=config):
+        for chunk in super().transform(input, config=config, **kwargs):
             self._concat_put(chunk, config=config)
             yield chunk
 
@@ -97,7 +99,7 @@ class PutLocalVar(RunnablePassthrough):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Other]:
-        async for chunk in super().atransform(input, config=config):
+        async for chunk in super().atransform(input, config=config, **kwargs):
             self._concat_put(chunk, config=config)
             yield chunk
 
