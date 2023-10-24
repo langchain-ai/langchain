@@ -18,39 +18,24 @@ class BaseCubeTool(BaseModel):
     class Config(BaseTool.Config):
         pass
 
-def get_format_instructions(parser:PydanticOutputParser) -> str:
-        schema = parser.pydantic_object.schema()
-
-        # Remove extraneous fields.
-        reduced_schema = schema
-        if "title" in reduced_schema:
-            del reduced_schema["title"]
-        if "type" in reduced_schema:
-            del reduced_schema["type"]
-        # Ensure json in context is well-formed with double quotes.
-        schema_str = json.dumps(reduced_schema)
-
-        return """Example Input Format:
-
-As an example, for the schema {{"properties": {{"foo": {{"title": "Foo", "description": "a list of strings", "type": "array", "items": {{"type": "string"}}}}}}, "required": ["foo"]}}
-the object {{"foo": ["bar", "baz"]}} is a well-formatted instance of the schema. The object {{"properties": {{"foo": ["bar", "baz"]}}}} is not well-formatted.
-
-Here is the output schema:
-```
-{schema}
-```""".format(schema=schema_str)
-
 class LoadCubeTool(BaseCubeTool, BaseTool):
     """Tool for loading a Cube Semantic Layer."""
 
-    parser: PydanticOutputParser = PydanticOutputParser(pydantic_object=Query)
-
     name: str = "load_cube"
-    description: str = f"""
+    description: str = """
     Input to this tool is a detailed and correct Cube query, query format is JSON, output is a result from the Cube.
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
-    {get_format_instructions(parser).replace("{", "{{").replace("}", "}}")}    
+    
+    The input should be formatted as a JSON instance that conforms to the JSON schema below.
+
+    As an example, for the schema {{"properties": {{"foo": {{"title": "Foo", "description": "a list of strings", "type": "array", "items": {{"type": "string"}}}}}}, "required": ["foo"]}}
+    the object {{"foo": ["bar", "baz"]}} is a well-formatted instance of the schema. The object {{"properties": {{"foo": ["bar", "baz"]}}}} is not well-formatted.
+    
+    Here is the input schema:
+    ```
+    {{"properties": {{"measures": {{"title": "measure columns", "type": "array", "items": {{"type": "string"}}}}, "dimensions": {{"title": "dimension columns", "type": "array", "items": {{"type": "string"}}}}, "filters": {{"title": "Filters", "type": "array", "items": {{"$ref": "#/definitions/Filter"}}}}, "timeDimensions": {{"title": "Timedimensions", "type": "array", "items": {{"$ref": "#/definitions/TimeDimension"}}}}, "limit": {{"title": "Limit", "type": "integer"}}, "offset": {{"title": "Offset", "type": "integer"}}, "order": {{"description": "The keys are measures columns or dimensions columns to order by.", "type": "object", "additionalProperties": {{"$ref": "#/definitions/Order"}}}}}}, "definitions": {{"Operator": {{"title": "Operator", "description": "An enumeration.", "enum": ["equals", "notEquals", "contains", "notContains", "startsWith", "endsWith", "gt", "gte", "lt", "lte", "set", "notSet", "inDateRange", "notInDateRange", "beforeDate", "afterDate", "measureFilter"]}}, "Filter": {{"title": "Filter", "type": "object", "properties": {{"member": {{"title": "dimension or measure column", "type": "string"}}, "operator": {{"$ref": "#/definitions/Operator"}}, "values": {{"title": "Values", "type": "array", "items": {{"type": "string"}}}}}}, "required": ["member", "operator", "values"]}}, "Granularity": {{"title": "Granularity", "description": "An enumeration.", "enum": ["second", "minute", "hour", "day", "week", "month", "quarter", "year"]}}, "TimeDimension": {{"title": "TimeDimension", "type": "object", "properties": {{"dimension": {{"title": "dimension column", "type": "string"}}, "dateRange": {{"title": "Daterange", "description": "An array of dates with the following format YYYY-MM-DD or in YYYY-MM-DDTHH:mm:ss.SSS format.", "minItems": 2, "maxItems": 2, "type": "array", "items": {{"anyOf": [{{"type": "string", "format": "date-time"}}, {{"type": "string", "format": "date"}}]}}}}, "granularity": {{"description": "A granularity for a time dimension. If you pass null to the granularity, Cube will only perform filtering by a specified time dimension, without grouping.", "allOf": [{{"$ref": "#/definitions/Granularity"}}]}}}}, "required": ["dimension", "dateRange"]}}, "Order": {{"title": "Order", "description": "An enumeration.", "enum": ["asc", "desc"]}}}}}}
+    ```
     """
 
     def _run(
@@ -61,7 +46,11 @@ class LoadCubeTool(BaseCubeTool, BaseTool):
         """Load the Cube Semantic Layer."""
 
         try:
-            data = self.cube.load(self.parser.parse(query))
+            parser = PydanticOutputParser(pydantic_object=Query)
+
+            print("Query: ",parser.parse(query).dict())
+
+            data = self.cube.load(parser.parse(query))
             return json.dumps(data['data'])
         except Exception as e:
             return f"Error: {e}"
