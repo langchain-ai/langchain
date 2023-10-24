@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import requests
 
-from langchain.pydantic_v1 import BaseModel, Field
+from langchain.pydantic_v1 import BaseModel, Field, SecretStr
 
 
 class Operator(Enum):
@@ -118,7 +118,7 @@ class Cube:
     def __init__(
         self,
         cube_api_url: str,
-        cube_api_token: str,
+        cube_api_token: SecretStr,
         ignore_models: Optional[List[str]] = None,
         include_models: Optional[List[str]] = None,
         custom_model_info: Optional[dict] = None,
@@ -167,7 +167,7 @@ class Cube:
         """Metadata of the cube."""
         headers = {
             "Content-Type": "application/json",
-            "Authorization": self.cube_api_token,
+            "Authorization": self.cube_api_token.get_secret_value(),
         }
 
         response = requests.get(f"{self.cube_api_url}/meta", headers=headers)
@@ -269,7 +269,7 @@ class Cube:
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": self.cube_api_token,
+            "Authorization": self.cube_api_token.get_secret_value(),
         }
 
         params = {"query": ""}
@@ -298,7 +298,7 @@ class Cube:
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": self.cube_api_token,
+            "Authorization": self.cube_api_token.get_secret_value(),
         }
 
         params = {"query": ""}
