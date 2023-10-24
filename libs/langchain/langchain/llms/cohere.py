@@ -18,7 +18,7 @@ from langchain.callbacks.manager import (
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Extra, Field, root_validator
+from langchain.pydantic_v1 import Extra, Field, SecretStr, root_validator
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ class BaseCohere(Serializable):
     temperature: float = 0.75
     """A non-negative float that tunes the degree of randomness in generation."""
 
-    cohere_api_key: Optional[str] = None
+    cohere_api_key: Optional[SecretStr] = None
 
     stop: Optional[List[str]] = None
 
@@ -91,8 +91,8 @@ class BaseCohere(Serializable):
                 "Please install it with `pip install cohere`."
             )
         else:
-            cohere_api_key = get_from_dict_or_env(
-                values, "cohere_api_key", "COHERE_API_KEY"
+            cohere_api_key = SecretStr(
+                get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
             )
             values["client"] = cohere.Client(cohere_api_key)
             values["async_client"] = cohere.AsyncClient(cohere_api_key)
@@ -155,8 +155,8 @@ class Cohere(LLM, BaseCohere):
         }
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"cohere_api_key": "COHERE_API_KEY"}
+    def lc_secrets(self) -> Dict[str, SecretStr]:
+        return {"cohere_api_key": SecretStr("COHERE_API_KEY")}
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
