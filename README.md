@@ -81,7 +81,7 @@ Chains go beyond a single LLM call and involve sequences of calls (whether to an
 
 **📚 Data Augmented Generation:**
 
-Data Augmented Generation involves specific types of chains that first interact with an external data source to fetch data for use in the generation step. Examples include summarization of long pieces of text and question/answering over specific data sources.
+Data Augmented Generation encompasses specific types of chains that initially engage with external data sources to retrieve information in the generation step. Examples include summarization of long pieces of text and question/answering over specific data sources.
 
 **🤖 Agents:**
 
@@ -99,6 +99,7 @@ For more information on these concepts, please see our [full documentation](http
 
 ## 💁 Contributing
 
-As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
+As an open-source project in a rapidly developing field, we enthusiastically welcome contributions, whether they come in the form of new features, enhanced infrastructure, or improved documentation.
+
 
 For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).
