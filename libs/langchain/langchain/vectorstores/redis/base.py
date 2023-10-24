@@ -705,6 +705,10 @@ class Redis(VectorStore):
             if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
 
+        # create embeddings if needed
+        if not embeddings:
+            embeddings = self._embeddings.embed_documents(list(texts))
+
         # Write data to redis
         pipeline = self.client.pipeline(transaction=False)
         for i, text in enumerate(texts):
@@ -712,9 +716,7 @@ class Redis(VectorStore):
             key = keys_or_ids[i] if keys_or_ids else _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
             metadata = _prepare_metadata(metadata) if clean_metadata else metadata
-            embedding = (
-                embeddings[i] if embeddings else self._embeddings.embed_query(text)
-            )
+            embedding = embeddings[i]
             pipeline.hset(
                 key,
                 mapping={

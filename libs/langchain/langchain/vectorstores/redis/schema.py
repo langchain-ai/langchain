@@ -52,7 +52,7 @@ class TextFieldSchema(RedisField):
             self.name,
             weight=self.weight,
             no_stem=self.no_stem,
-            phonetic_matcher=self.phonetic_matcher,
+            phonetic_matcher=self.phonetic_matcher,  # type: ignore
             sortable=self.sortable,
             no_index=self.no_index,
         )
