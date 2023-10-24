@@ -8,6 +8,7 @@ from langchain.chains.graph_qa.cypher import (
     extract_cypher,
 )
 from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
+from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.graphs.graph_document import GraphDocument
 from langchain.graphs.graph_store import GraphStore
 from langchain.memory import ConversationBufferMemory, ReadOnlySharedMemory
@@ -39,6 +40,96 @@ class FakeGraphStore(GraphStore):
     ) -> None:
         """Take GraphDocument as input as uses it to construct a graph."""
         pass
+
+
+def test_graph_cypher_qa_chain_prompt_selection_1() -> None:
+    # Pass prompts directly. No kwargs is specified.
+    qa_prompt_template = "QA Prompt"
+    cypher_prompt_template = "Cypher Prompt"
+    qa_prompt = PromptTemplate(template=qa_prompt_template, input_variables=[])
+    cypher_prompt = PromptTemplate(template=cypher_prompt_template, input_variables=[])
+    chain = GraphCypherQAChain.from_llm(
+        llm=FakeLLM(),
+        graph=FakeGraphStore(),
+        verbose=True,
+        return_intermediate_steps=False,
+        qa_prompt=qa_prompt,
+        cypher_prompt=cypher_prompt,
+    )
+    assert chain.qa_chain.prompt == qa_prompt
+    assert chain.cypher_generation_chain.prompt == cypher_prompt
+
+
+def test_graph_cypher_qa_chain_prompt_selection_2() -> None:
+    # Default case. Pass nothing
+    chain = GraphCypherQAChain.from_llm(
+        llm=FakeLLM(),
+        graph=FakeGraphStore(),
+        verbose=True,
+        return_intermediate_steps=False,
+    )
+    assert chain.qa_chain.prompt == CYPHER_QA_PROMPT
+    assert chain.cypher_generation_chain.prompt == CYPHER_GENERATION_PROMPT
+
+
+def test_graph_cypher_qa_chain_prompt_selection_3() -> None:
+    # Pass non-prompt args only to sub-chains via kwargs
+    memory = ConversationBufferMemory(memory_key="chat_history")
+    readonlymemory = ReadOnlySharedMemory(memory=memory)
+    chain = GraphCypherQAChain.from_llm(
+        llm=FakeLLM(),
+        graph=FakeGraphStore(),
+        verbose=True,
+        return_intermediate_steps=False,
+        cypher_llm_kwargs={"memory": readonlymemory},
+        qa_llm_kwargs={"memory": readonlymemory},
+    )
+    assert chain.qa_chain.prompt == CYPHER_QA_PROMPT
+    assert chain.cypher_generation_chain.prompt == CYPHER_GENERATION_PROMPT
+
+
+def test_graph_cypher_qa_chain_prompt_selection_4() -> None:
+    # Pass prompt, non-prompt args to subchains via kwargs
+    qa_prompt_template = "QA Prompt"
+    cypher_prompt_template = "Cypher Prompt"
+    memory = ConversationBufferMemory(memory_key="chat_history")
+    readonlymemory = ReadOnlySharedMemory(memory=memory)
+    qa_prompt = PromptTemplate(template=qa_prompt_template, input_variables=[])
+    cypher_prompt = PromptTemplate(template=cypher_prompt_template, input_variables=[])
+    chain = GraphCypherQAChain.from_llm(
+        llm=FakeLLM(),
+        graph=FakeGraphStore(),
+        verbose=True,
+        return_intermediate_steps=False,
+        cypher_llm_kwargs={"prompt": cypher_prompt, "memory": readonlymemory},
+        qa_llm_kwargs={"prompt": qa_prompt, "memory": readonlymemory},
+    )
+    assert chain.qa_chain.prompt == qa_prompt
+    assert chain.cypher_generation_chain.prompt == cypher_prompt
+
+
+def test_graph_cypher_qa_chain_prompt_selection_5() -> None:
+    # Can't pass both prompt and kwargs at the same time
+    qa_prompt_template = "QA Prompt"
+    cypher_prompt_template = "Cypher Prompt"
+    memory = ConversationBufferMemory(memory_key="chat_history")
+    readonlymemory = ReadOnlySharedMemory(memory=memory)
+    qa_prompt = PromptTemplate(template=qa_prompt_template, input_variables=[])
+    cypher_prompt = PromptTemplate(template=cypher_prompt_template, input_variables=[])
+    try:
+        GraphCypherQAChain.from_llm(
+            llm=FakeLLM(),
+            graph=FakeGraphStore(),
+            verbose=True,
+            return_intermediate_steps=False,
+            qa_prompt=qa_prompt,
+            cypher_prompt=cypher_prompt,
+            cypher_llm_kwargs={"memory": readonlymemory},
+            qa_llm_kwargs={"memory": readonlymemory},
+        )
+        assert False
+    except ValueError:
+        assert True
 
 
 def test_graph_cypher_qa_chain() -> None:
