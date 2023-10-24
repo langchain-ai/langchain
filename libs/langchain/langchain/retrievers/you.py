@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import root_validator
@@ -17,6 +17,7 @@ class YouRetriever(BaseRetriever):
     """
 
     ydc_api_key: str
+    endpoint_type: Optional[str] = "web"
 
     @root_validator(pre=True)
     def validate_client(
@@ -34,13 +35,20 @@ class YouRetriever(BaseRetriever):
         import requests
 
         headers = {"X-API-Key": self.ydc_api_key}
-        results = requests.get(
-            f"https://api.ydc-index.io/search?query={query}",
-            headers=headers,
-        ).json()
+        if self.endpoint_type == "web":
+            results = requests.get(
+                f"https://api.ydc-index.io/search?query={query}",
+                headers=headers,
+            ).json()
 
-        docs = []
-        for hit in results["hits"]:
-            for snippet in hit["snippets"]:
-                docs.append(Document(page_content=snippet))
-        return docs
+            docs = []
+            for hit in results["hits"]:
+                for snippet in hit["snippets"]:
+                    docs.append(Document(page_content=snippet))
+            return docs
+        else:
+            results = requests.get(
+                f"https://api.ydc-index.io/snippet_search?query={query}",
+                headers=headers,
+            ).json()
+            return [Document(page_content=snippet) for snippet in results]
