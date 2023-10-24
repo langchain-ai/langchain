@@ -91,11 +91,14 @@ def standardize_model_name(
     """
     model_name = model_name.lower()
     if "ft-" in model_name:
-        return model_name.split(":")[0] + "-finetuned"
+        return model_name.split(":")[0] + "-finetuned-legacy"
+    if "ft:" in model_name:
+        return model_name.split(":")[1] + "-finetuned"
     elif is_completion and (
         model_name.startswith("gpt-4")
         or model_name.startswith("gpt-3.5")
         or model_name.startswith("gpt-35")
+        or ("finetuned" in model_name and "legacy" not in model_name)
     ):
         return model_name + "-completion"
     else:
