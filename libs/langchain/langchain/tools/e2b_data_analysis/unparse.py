@@ -1,3 +1,4 @@
+# mypy: disable-error-code=no-untyped-def
 # Because Python >3.9 doesn't support ast.unparse,
 # we copied the unparse functionality from here:
 # https://github.com/python/cpython/blob/3.8/Tools/parser/unparse.py
