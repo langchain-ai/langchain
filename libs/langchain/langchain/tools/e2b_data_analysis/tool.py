@@ -5,7 +5,7 @@ import json
 import os
 from io import StringIO
 from sys import version_info
-from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type
+from typing import IO, Any, Callable, List, Optional, Type
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -13,7 +13,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools import BaseTool, Tool
-from langchain.tools.e2b_data_analysis.unparser import Unparser
+from langchain.tools.e2b_data_analysis.unparse import Unparser
 
 if TYPE_CHECKING:
     from e2b import EnvVars
