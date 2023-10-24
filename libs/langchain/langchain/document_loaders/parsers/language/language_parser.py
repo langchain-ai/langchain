@@ -6,18 +6,21 @@ from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.language.cpp import CPPSegmenter
 from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
 from langchain.document_loaders.parsers.language.python import PythonSegmenter
+from langchain.document_loaders.parsers.language.ruby import RubySegmenter
 from langchain.text_splitter import Language
 
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "py": Language.PYTHON,
     "js": Language.JS,
     "cpp": Language.CPP,
+    "rb": Language.RUBY,
 }
 
 LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     Language.PYTHON: PythonSegmenter,
     Language.JS: JavaScriptSegmenter,
     Language.CPP: CPPSegmenter,
+    Language.RUBY: RubySegmenter,
 }
 
 

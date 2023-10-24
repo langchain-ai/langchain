@@ -4,25 +4,26 @@ from langchain.document_loaders.parsers.language.tree_sitter_segmenter import (
 
 CHUNK_QUERY = """
     [
-        (class_specifier
-            body: (field_declaration_list)) @class
-        (struct_specifier
-            body: (field_declaration_list)) @struct
-        (function_definition) @function
+        (method 
+            name: (identifier)) @method
+        (module 
+            name: (constant)) @module
+        (class 
+            name: (constant)) @class
     ]
 """.strip()
 
 
-class CPPSegmenter(TreeSitterSegmenter):
-    """Code segmenter for C++."""
+class RubySegmenter(TreeSitterSegmenter):
+    """Code segmenter for Ruby."""
 
     def get_language(self):
         from tree_sitter_languages import get_language
 
-        return get_language("cpp")
+        return get_language("ruby")
 
     def get_chunk_query(self) -> str:
         return CHUNK_QUERY
 
     def make_line_comment(self, text: str) -> str:
-        return f"// {text}"
+        return f"# {text}"
