@@ -5,14 +5,12 @@ from typing import Any, DefaultDict, Dict, List, Optional
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
-    Callbacks,
 )
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
-    LLMResult,
 )
 from langchain.schema.messages import (
     AIMessage,
