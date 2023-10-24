@@ -181,7 +181,7 @@ const config = {
           },
           {
             to: "https://js.langchain.com/docs",
-            label: "JS/TS Docs",
+            label: "JS/TS",
             position: "right",
           },
           // Please keep GitHub link to the right for consistency.
