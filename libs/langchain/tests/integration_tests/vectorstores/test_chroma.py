@@ -316,7 +316,10 @@ def is_api_accessible(url: str) -> bool:
 
 
 def batch_support_chroma_version() -> bool:
-    import chromadb
+    try:
+        import chromadb
+    except Exception:
+        return False
 
     major, minor, patch = chromadb.__version__.split(".")
     if int(major) == 0 and int(minor) >= 4 and int(patch) >= 10:

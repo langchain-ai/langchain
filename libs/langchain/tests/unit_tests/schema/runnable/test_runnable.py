@@ -39,6 +39,7 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.document import Document
 from langchain.schema.messages import (
     AIMessage,
@@ -585,6 +586,26 @@ def test_schema_complex_seq() -> None:
     assert chain2.output_schema.schema() == {
         "title": "StrOutputParserOutput",
         "type": "string",
+    }
+
+    assert chain2.with_types(input_type=str).input_schema.schema() == {
+        "title": "RunnableBindingInput",
+        "type": "string",
+    }
+
+    assert chain2.with_types(input_type=int).output_schema.schema() == {
+        "title": "StrOutputParserOutput",
+        "type": "string",
+    }
+
+    class InputType(BaseModel):
+        person: str
+
+    assert chain2.with_types(input_type=InputType).input_schema.schema() == {
+        "title": "InputType",
+        "type": "object",
+        "properties": {"person": {"title": "Person", "type": "string"}},
+        "required": ["person"],
     }
 
 
@@ -1188,7 +1209,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -1198,7 +1218,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -1269,8 +1288,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
         mocker.call(
@@ -1279,8 +1297,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
     ]
