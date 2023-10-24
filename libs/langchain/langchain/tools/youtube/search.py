@@ -18,8 +18,8 @@ from langchain.tools import BaseTool
 class YouTubeSearchTool(BaseTool):
     """Tool that queries YouTube."""
 
-    name = "youtube_search"
-    description = (
+    name: str = "youtube_search"
+    description: str = (
         "search for youtube videos associated with a person. "
         "the input to this tool should be a comma separated list, "
         "the first part contains a person name and the second a "
@@ -32,7 +32,9 @@ class YouTubeSearchTool(BaseTool):
 
         results = YoutubeSearch(person, num_results).to_json()
         data = json.loads(results)
-        url_suffix_list = [video["url_suffix"] for video in data["videos"]]
+        url_suffix_list = [
+            "https://www.youtube.com" + video["url_suffix"] for video in data["videos"]
+        ]
         return str(url_suffix_list)
 
     def _run(

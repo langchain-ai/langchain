@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class BigQueryLoader(BaseLoader):
-    """Loads a query result from BigQuery into a list of documents.
+    """Load from the Google Cloud Platform `BigQuery`.
 
     Each document represents one row of the result. The `page_content_columns`
     are written into the `page_content` of the document. The `metadata_columns`
@@ -58,6 +58,14 @@ class BigQueryLoader(BaseLoader):
             ) from ex
 
         bq_client = bigquery.Client(credentials=self.credentials, project=self.project)
+        if not bq_client.project:
+            error_desc = (
+                "GCP project for Big Query is not set! Either provide a "
+                "`project` argument during BigQueryLoader instantiation, "
+                "or set a default project with `gcloud config set project` "
+                "command."
+            )
+            raise ValueError(error_desc)
         query_result = bq_client.query(self.query).result()
         docs: List[Document] = []
 

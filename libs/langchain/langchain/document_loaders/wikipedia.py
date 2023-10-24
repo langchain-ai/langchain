@@ -6,7 +6,8 @@ from langchain.utilities.wikipedia import WikipediaAPIWrapper
 
 
 class WikipediaLoader(BaseLoader):
-    """Loads a query result from www.wikipedia.org into a list of Documents.
+    """Load from `Wikipedia`.
+
     The hard limit on the number of downloaded Documents is 300 for now.
 
     Each wiki page represents one Document.

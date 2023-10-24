@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.loading import load_llm
 from tests.integration_tests.llms.utils import assert_llm_equality
@@ -48,6 +46,8 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
 
 def test_init_with_pipeline() -> None:
     """Test initialization with a HF pipeline."""
+    from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+
     model_id = "gpt2"
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModelForCausalLM.from_pretrained(model_id)

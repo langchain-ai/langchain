@@ -1,0 +1,508 @@
+"statement","schema","correct_query"
+"MATCH (p:Person)-[:KNOWS]->(:Person) RETURN p, count(*) AS count","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)-[:KNOWS]->(:Person) RETURN p, count(*) AS count"
+"MATCH (p:Person)<-[:KNOWS]-(:Person) RETURN p, count(*) AS count","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)<-[:KNOWS]-(:Person) RETURN p, count(*) AS count"
+"MATCH (p:Person {id:""Foo""})<-[:WORKS_AT]-(o:Organization) RETURN o.name AS name","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person {id:""Foo""})-[:WORKS_AT]->(o:Organization) RETURN o.name AS name"
+"MATCH (o:Organization)-[:WORKS_AT]->(p:Person {id:""Foo""}) RETURN o.name AS name","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (o:Organization)<-[:WORKS_AT]-(p:Person {id:""Foo""}) RETURN o.name AS name"
+"MATCH (o:Organization {name:""Bar""})-[:WORKS_AT]->(p:Person {id:""Foo""}) RETURN o.name AS name","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (o:Organization {name:""Bar""})<-[:WORKS_AT]-(p:Person {id:""Foo""}) RETURN o.name AS name"
+"MATCH (o:Organization)-[:WORKS_AT]->(p:Person {id:""Foo""})-[:WORKS_AT]->(o1:Organization) RETURN o.name AS name","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (o:Organization)<-[:WORKS_AT]-(p:Person {id:""Foo""})-[:WORKS_AT]->(o1:Organization) RETURN o.name AS name"
+"MATCH (o:`Organization` {name:""Foo""})-[:WORKS_AT]->(p:Person {id:""Foo""})-[:WORKS_AT]-(o1:Organization {name:""b""})
+WHERE id(o) > id(o1)
+RETURN o.name AS name","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (o:`Organization` {name:""Foo""})<-[:WORKS_AT]-(p:Person {id:""Foo""})-[:WORKS_AT]-(o1:Organization {name:""b""})
+WHERE id(o) > id(o1)
+RETURN o.name AS name"
+"MATCH (p:Person)
+RETURN p,
+       [(p)-[:WORKS_AT]->(o:Organization) | o.name] AS op","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)
+RETURN p,
+       [(p)-[:WORKS_AT]->(o:Organization) | o.name] AS op"
+"MATCH (p:Person)
+RETURN p,
+       [(p)<-[:WORKS_AT]-(o:Organization) | o.name] AS op","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)
+RETURN p,
+       [(p)-[:WORKS_AT]->(o:Organization) | o.name] AS op"
+"MATCH (p:Person {name:""John""}) MATCH (p)-[:WORKS_AT]->(:Organization) RETURN p, count(*)","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person {name:""John""}) MATCH (p)-[:WORKS_AT]->(:Organization) RETURN p, count(*)"
+"MATCH (p:Person) MATCH (p)<-[:WORKS_AT]-(:Organization) RETURN p, count(*)","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person) MATCH (p)-[:WORKS_AT]->(:Organization) RETURN p, count(*)"
+"MATCH (p:Person), (p)<-[:WORKS_AT]-(:Organization) RETURN p, count(*)","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person), (p)-[:WORKS_AT]->(:Organization) RETURN p, count(*)"
+"MATCH (o:Organization)-[:WORKS_AT]->(p:Person {id:""Foo""})-[:WORKS_AT]->(o1:Organization) 
+WHERE id(o) < id(o1) RETURN o.name AS name","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (o:Organization)<-[:WORKS_AT]-(p:Person {id:""Foo""})-[:WORKS_AT]->(o1:Organization) 
+WHERE id(o) < id(o1) RETURN o.name AS name"
+"MATCH (o:Organization)-[:WORKS_AT]-(p:Person {id:""Foo""})-[:WORKS_AT]-(o1:Organization) 
+WHERE id(o) < id(o1) RETURN o.name AS name","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (o:Organization)-[:WORKS_AT]-(p:Person {id:""Foo""})-[:WORKS_AT]-(o1:Organization) 
+WHERE id(o) < id(o1) RETURN o.name AS name"
+"MATCH (p:Person)--(:Organization)--(p1:Person)
+RETURN p1","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)--(:Organization)--(p1:Person)
+RETURN p1"
+"MATCH (p:Person)<--(:Organization)--(p1:Person)
+RETURN p1","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)-->(:Organization)--(p1:Person)
+RETURN p1"
+"MATCH (p:Person)<-[r]-(:Organization)--(p1:Person)
+RETURN p1, r","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)-[r]->(:Organization)--(p1:Person)
+RETURN p1, r"
+"MATCH (person:Person)
+CALL {
+   WITH person
+   MATCH (person)-->(o:Organization)
+   RETURN o LIMIT 3
+}
+RETURN person, o","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (person:Person)
+CALL {
+   WITH person
+   MATCH (person)-->(o:Organization)
+   RETURN o LIMIT 3
+}
+RETURN person, o"
+"MATCH (person:Person)
+CALL {
+   WITH person
+   MATCH (person)<--(o:Organization)
+   RETURN o LIMIT 3
+}
+RETURN person, o","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (person:Person)
+CALL {
+   WITH person
+   MATCH (person)-->(o:Organization)
+   RETURN o LIMIT 3
+}
+RETURN person, o"
+"MATCH (person:Person)
+CALL {
+   WITH person
+   MATCH (person)-[:KNOWS]->(o:Organization)
+   RETURN o LIMIT 3
+}
+RETURN person, o","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)",
+"MATCH (person:Person)
+CALL {
+   WITH person
+   MATCH (person)<-[:WORKS_AT|INVESTOR]-(o:Organization)
+   RETURN o LIMIT 3
+}
+RETURN person, o","(Person, KNOWS, Person), (Person, WORKS_AT, Organization), (Person, INVESTOR, Organization)","MATCH (person:Person)
+CALL {
+   WITH person
+   MATCH (person)-[:WORKS_AT|INVESTOR]->(o:Organization)
+   RETURN o LIMIT 3
+}
+RETURN person, o"
+"MATCH (p:Person)
+WHERE EXISTS { (p)<-[:KNOWS]-()}
+RETURN p","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)
+WHERE EXISTS { (p)<-[:KNOWS]-()}
+RETURN p"
+"MATCH (p:Person)
+WHERE EXISTS { (p)-[:KNOWS]->()}
+RETURN p","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)
+WHERE EXISTS { (p)-[:KNOWS]->()}
+RETURN p"
+"MATCH (p:Person)
+WHERE EXISTS { (p)<-[:WORKS_AT]-()}
+RETURN p","(Person, KNOWS, Person), (Person, WORKS_AT, Organization)","MATCH (p:Person)
+WHERE EXISTS { (p)-[:WORKS_AT]->()}
+RETURN p"
+"MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name = 'Tom Hanks'
+AND m.year = 2013
+RETURN m.title","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name = 'Tom Hanks'
+AND m.year = 2013
+RETURN m.title"
+"MATCH (p:Person)-[:ACTED_IN]-(m:Movie)
+WHERE p.name = 'Tom Hanks'
+AND m.year = 2013
+RETURN m.title","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]-(m:Movie)
+WHERE p.name = 'Tom Hanks'
+AND m.year = 2013
+RETURN m.title"
+"MATCH (p:Person)<-[:ACTED_IN]-(m:Movie)
+WHERE p.name = 'Tom Hanks'
+AND m.year = 2013
+RETURN m.title","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name = 'Tom Hanks'
+AND m.year = 2013
+RETURN m.title"
+"MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name <> 'Tom Hanks'
+AND m.title = 'Captain Phillips'
+RETURN p.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name <> 'Tom Hanks'
+AND m.title = 'Captain Phillips'
+RETURN p.name"
+"MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name <> 'Tom Hanks'
+AND m.title = 'Captain Phillips'
+AND m.year > 2019
+AND m.year < 2030
+RETURN p.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name <> 'Tom Hanks'
+AND m.title = 'Captain Phillips'
+AND m.year > 2019
+AND m.year < 2030
+RETURN p.name"
+"MATCH (p:Person)<-[:ACTED_IN]-(m:Movie)
+WHERE p.name <> 'Tom Hanks'
+AND m.title = 'Captain Phillips'
+AND m.year > 2019
+AND m.year < 2030
+RETURN p.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name <> 'Tom Hanks'
+AND m.title = 'Captain Phillips'
+AND m.year > 2019
+AND m.year < 2030
+RETURN p.name"
+"MATCH (p:Person)<-[:FOLLOWS]-(m:Movie)
+WHERE p.name <> 'Tom Hanks'
+AND m.title = 'Captain Phillips'
+AND m.year > 2019
+AND m.year < 2030
+RETURN p.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)",
+"MATCH (p:Person)-[:`ACTED_IN`]->(m:Movie)<-[:DIRECTED]-(p)
+WHERE  p.born.year > 1960
+RETURN p.name, p.born, labels(p), m.title","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:`ACTED_IN`]->(m:Movie)<-[:DIRECTED]-(p)
+WHERE  p.born.year > 1960
+RETURN p.name, p.born, labels(p), m.title"
+"MATCH (p:Person)-[:ACTED_IN]-(m:Movie)<-[:DIRECTED]-(p)
+WHERE  p.born.year > 1960
+RETURN p.name, p.born, labels(p), m.title","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]-(m:Movie)<-[:DIRECTED]-(p)
+WHERE  p.born.year > 1960
+RETURN p.name, p.born, labels(p), m.title"
+"MATCH (p:Person)-[:ACTED_IN]-(m:Movie)-[:DIRECTED]->(p)
+WHERE  p.born.year > 1960
+RETURN p.name, p.born, labels(p), m.title","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]-(m:Movie)<-[:DIRECTED]-(p)
+WHERE  p.born.year > 1960
+RETURN p.name, p.born, labels(p), m.title"
+"MATCH (p:`Person`)<-[r]-(m:Movie)
+WHERE  p.name = 'Tom Hanks'
+RETURN m.title AS movie, type(r) AS relationshipType","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:`Person`)-[r]->(m:Movie)
+WHERE  p.name = 'Tom Hanks'
+RETURN m.title AS movie, type(r) AS relationshipType"
+"MATCH (d:Person)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre)
+WHERE m.year = 2000 AND g.name = ""Horror""
+RETURN d.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (d:Person)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre)
+WHERE m.year = 2000 AND g.name = ""Horror""
+RETURN d.name"
+"MATCH (d:Person)-[:DIRECTED]->(m:Movie)<--(g:Genre)
+WHERE m.year = 2000 AND g.name = ""Horror""
+RETURN d.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (d:Person)-[:DIRECTED]->(m:Movie)-->(g:Genre)
+WHERE m.year = 2000 AND g.name = ""Horror""
+RETURN d.name"
+"MATCH (d:Person)<--(m:Movie)<--(g:Genre)
+WHERE m.year = 2000 AND g.name = ""Horror""
+RETURN d.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (d:Person)-->(m:Movie)-->(g:Genre)
+WHERE m.year = 2000 AND g.name = ""Horror""
+RETURN d.name"
+"MATCH (d:Person)-[:DIRECTED]-(m:Movie)<-[:IN_GENRE]-(g:Genre)
+WHERE m.year = 2000 AND g.name = ""Horror""
+RETURN d.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (d:Person)-[:DIRECTED]-(m:Movie)-[:IN_GENRE]->(g:Genre)
+WHERE m.year = 2000 AND g.name = ""Horror""
+RETURN d.name"
+"MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE  p.name = 'Tom Hanks'
+AND exists {(p)-[:DIRECTED]->(m)}
+RETURN p.name, labels(p), m.title","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE  p.name = 'Tom Hanks'
+AND exists {(p)-[:DIRECTED]->(m)}
+RETURN p.name, labels(p), m.title"
+"MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE  p.name = 'Tom Hanks'
+AND exists {(p)<-[:DIRECTED]-(m)}
+RETURN p.name, labels(p), m.title","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE  p.name = 'Tom Hanks'
+AND exists {(p)-[:DIRECTED]->(m)}
+RETURN p.name, labels(p), m.title"
+"MATCH (a:Person)-[:ACTED_IN]->(m:Movie)
+WHERE m.year > 2000
+MATCH (m)<-[:DIRECTED]-(d:Person)
+RETURN a.name, m.title, d.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (a:Person)-[:ACTED_IN]->(m:Movie)
+WHERE m.year > 2000
+MATCH (m)<-[:DIRECTED]-(d:Person)
+RETURN a.name, m.title, d.name"
+"MATCH (a:Person)-[:ACTED_IN]-(m:Movie)
+WHERE m.year > 2000
+MATCH (m)-[:DIRECTED]->(d:Person)
+RETURN a.name, m.title, d.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (a:Person)-[:ACTED_IN]-(m:Movie)
+WHERE m.year > 2000
+MATCH (m)<-[:DIRECTED]-(d:Person)
+RETURN a.name, m.title, d.name"
+"MATCH (m:Movie) WHERE m.title = ""Kiss Me Deadly""
+MATCH (m)-[:IN_GENRE]-(g:Genre)-[:IN_GENRE]->(rec:Movie)
+MATCH (m)-[:ACTED_IN]->(a:Person)-[:ACTED_IN]-(rec)
+RETURN rec.title, a.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (m:Movie) WHERE m.title = ""Kiss Me Deadly""
+MATCH (m)-[:IN_GENRE]-(g:Genre)<-[:IN_GENRE]-(rec:Movie)
+MATCH (m)<-[:ACTED_IN]-(a:Person)-[:ACTED_IN]-(rec)
+RETURN rec.title, a.name"
+"MATCH (p:Person)-[:ACTED_IN]->(m:Movie),
+(coActors:Person)-[:ACTED_IN]->(m)
+WHERE p.name = 'Eminem'
+RETURN m.title AS movie ,collect(coActors.name) AS coActors","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]->(m:Movie),
+(coActors:Person)-[:ACTED_IN]->(m)
+WHERE p.name = 'Eminem'
+RETURN m.title AS movie ,collect(coActors.name) AS coActors"
+"MATCH (p:Person)<-[:ACTED_IN]-(m:Movie),
+(coActors:Person)-[:ACTED_IN]->(m)
+WHERE p.name = 'Eminem'
+RETURN m.title AS movie ,collect(coActors.name) AS coActors","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN]->(m:Movie),
+(coActors:Person)-[:ACTED_IN]->(m)
+WHERE p.name = 'Eminem'
+RETURN m.title AS movie ,collect(coActors.name) AS coActors"
+"MATCH p = ((person:Person)<-[]-(movie:Movie))
+WHERE person.name = 'Walt Disney'
+RETURN p","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH p = ((person:Person)-[]->(movie:Movie))
+WHERE person.name = 'Walt Disney'
+RETURN p"
+"MATCH p = ((person:Person)<-[:DIRECTED]-(movie:Movie))
+WHERE person.name = 'Walt Disney'
+RETURN p","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH p = ((person:Person)-[:DIRECTED]->(movie:Movie))
+WHERE person.name = 'Walt Disney'
+RETURN p"
+"MATCH p = shortestPath((p1:Person)-[*]-(p2:Person))
+WHERE p1.name = ""Eminem""
+AND p2.name = ""Charlton Heston""
+RETURN  p","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH p = shortestPath((p1:Person)-[*]-(p2:Person))
+WHERE p1.name = ""Eminem""
+AND p2.name = ""Charlton Heston""
+RETURN  p"
+"MATCH p = ((person:Person)-[:DIRECTED*]->(:Person))
+WHERE person.name = 'Walt Disney'
+RETURN p","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH p = ((person:Person)-[:DIRECTED*]->(:Person))
+WHERE person.name = 'Walt Disney'
+RETURN p"
+"MATCH p = ((person:Person)-[:DIRECTED*1..4]->(:Person))
+WHERE person.name = 'Walt Disney'
+RETURN p","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH p = ((person:Person)-[:DIRECTED*1..4]->(:Person))
+WHERE person.name = 'Walt Disney'
+RETURN p"
+"MATCH (p:Person {name: 'Eminem'})-[:ACTED_IN*2]-(others:Person)
+RETURN  others.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person {name: 'Eminem'})-[:ACTED_IN*2]-(others:Person)
+RETURN  others.name"
+"MATCH (u:User {name: ""Misty Williams""})-[r:RATED]->(:Movie)
+WITH u, avg(r.rating) AS average
+MATCH (u)-[r:RATED]->(m:Movie)
+WHERE r.rating > average
+RETURN average , m.title AS movie,
+r.rating as rating
+ORDER BY rating DESC","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie), (User, RATED, Movie)","MATCH (u:User {name: ""Misty Williams""})-[r:RATED]->(:Movie)
+WITH u, avg(r.rating) AS average
+MATCH (u)-[r:RATED]->(m:Movie)
+WHERE r.rating > average
+RETURN average , m.title AS movie,
+r.rating as rating
+ORDER BY rating DESC"
+"MATCH (u:User {name: ""Misty Williams""})-[r:RATED]->(:Movie)
+WITH u, avg(r.rating) AS average
+MATCH (u)<-[r:RATED]-(m:Movie)
+WHERE r.rating > average
+RETURN average , m.title AS movie,
+r.rating as rating
+ORDER BY rating DESC","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie), (User, RATED, Movie)","MATCH (u:User {name: ""Misty Williams""})-[r:RATED]->(:Movie)
+WITH u, avg(r.rating) AS average
+MATCH (u)-[r:RATED]->(m:Movie)
+WHERE r.rating > average
+RETURN average , m.title AS movie,
+r.rating as rating
+ORDER BY rating DESC"
+"MATCH (p:`Person`)
+WHERE p.born.year = 1980
+WITH p  LIMIT 3
+MATCH (p)<-[:ACTED_IN]-(m:Movie)
+WITH p, collect(m.title) AS movies
+RETURN p.name AS actor,  movies","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:`Person`)
+WHERE p.born.year = 1980
+WITH p  LIMIT 3
+MATCH (p)-[:ACTED_IN]->(m:Movie)
+WITH p, collect(m.title) AS movies
+RETURN p.name AS actor,  movies"
+"MATCH (p:Person)
+WHERE p.born.year = 1980
+WITH p  LIMIT 3
+MATCH (p)-[:ACTED_IN]->(m:Movie)<-[:IN_GENRE]-(g)
+WITH p, collect(DISTINCT g.name) AS genres
+RETURN p.name AS actor, genres","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)
+WHERE p.born.year = 1980
+WITH p  LIMIT 3
+MATCH (p)-[:ACTED_IN]->(m:Movie)-[:IN_GENRE]->(g)
+WITH p, collect(DISTINCT g.name) AS genres
+RETURN p.name AS actor, genres"
+"CALL {
+   MATCH (m:Movie) WHERE m.year = 2000
+   RETURN m ORDER BY m.imdbRating DESC LIMIT 10
+}
+MATCH  (:User)-[r:RATED]->(m)
+RETURN m.title, avg(r.rating)","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (User, RATED, Movie)","CALL {
+   MATCH (m:Movie) WHERE m.year = 2000
+   RETURN m ORDER BY m.imdbRating DESC LIMIT 10
+}
+MATCH  (:User)-[r:RATED]->(m)
+RETURN m.title, avg(r.rating)"
+"CALL {
+   MATCH (m:Movie) WHERE m.year = 2000
+   RETURN m ORDER BY m.imdbRating DESC LIMIT 10
+}
+MATCH  (:User)<-[r:RATED]-(m)
+RETURN m.title, avg(r.rating)","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (User, RATED, Movie)","CALL {
+   MATCH (m:Movie) WHERE m.year = 2000
+   RETURN m ORDER BY m.imdbRating DESC LIMIT 10
+}
+MATCH  (:User)-[r:RATED]->(m)
+RETURN m.title, avg(r.rating)"
+"MATCH (m:Movie)
+CALL {
+    WITH m
+    MATCH (m)-[r:RATED]->(u)
+     WHERE r.rating = 5
+    RETURN count(u) AS numReviews
+}
+RETURN m.title, numReviews
+ORDER BY numReviews DESC","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (m:Movie)
+CALL {
+    WITH m
+    MATCH (m)<-[r:RATED]-(u)
+     WHERE r.rating = 5
+    RETURN count(u) AS numReviews
+}
+RETURN m.title, numReviews
+ORDER BY numReviews DESC"
+"MATCH (p:Person)
+WITH p LIMIT 100
+CALL {
+  WITH p
+  OPTIONAL MATCH (p)<-[:ACTED_IN]-(m)
+  RETURN m.title + "": "" + ""Actor"" AS work
+UNION
+  WITH p
+  OPTIONAL MATCH (p)-[:DIRECTED]->(m:Movie)
+  RETURN m.title+ "": "" +  ""Director"" AS work
+}
+RETURN p.name, collect(work)","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)
+WITH p LIMIT 100
+CALL {
+  WITH p
+  OPTIONAL MATCH (p)-[:ACTED_IN]->(m)
+  RETURN m.title + "": "" + ""Actor"" AS work
+UNION
+  WITH p
+  OPTIONAL MATCH (p)-[:DIRECTED]->(m:Movie)
+  RETURN m.title+ "": "" +  ""Director"" AS work
+}
+RETURN p.name, collect(work)"
+"MATCH (p:Person)<-[:ACTED_IN {role:""Neo""}]-(m:Movie)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN {role:""Neo""}]->(m:Movie)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m"
+"MATCH (p:Person)<-[:ACTED_IN {role:""Neo""}]-(m)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN {role:""Neo""}]->(m)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p"
+"MATCH (p:Person)-[:ACTED_IN {role:""Neo""}]->(m:Movie)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:ACTED_IN {role:""Neo""}]->(m:Movie)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m"
+"MATCH (wallstreet:Movie {title: 'Wall Street'})-[:ACTED_IN {role:""Foo""}]->(actor)
+RETURN actor.name","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (wallstreet:Movie {title: 'Wall Street'})<-[:ACTED_IN {role:""Foo""}]-(actor)
+RETURN actor.name"
+"MATCH (p:Person)<-[:`ACTED_IN` {role:""Neo""}]-(m:Movie)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:`ACTED_IN` {role:""Neo""}]->(m:Movie)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m"
+"MATCH (p:`Person`)<-[:`ACTED_IN` {role:""Neo""}]-(m:Movie)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:`Person`)-[:`ACTED_IN` {role:""Neo""}]->(m:Movie)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m"
+"MATCH (p:`Person`)<-[:`ACTED_IN` {role:""Neo""}]-(m)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:`Person`)-[:`ACTED_IN` {role:""Neo""}]->(m)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m"
+"MATCH (p:Person)<-[:!DIRECTED]-(:Movie) RETURN p, count(*)","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:!DIRECTED]->(:Movie) RETURN p, count(*)"
+"MATCH (p:Person)<-[:`ACTED_IN`|`DIRECTED`]-(m:Movie)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH (p:Person)-[:`ACTED_IN`|`DIRECTED`]->(m:Movie)
+WHERE p.name = $actorName
+AND m.title = $movieName
+RETURN p, m"
+"MATCH (a:Person:Actor)-[:ACTED_IN]->(:Movie)
+RETURN a, count(*)","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie), (Actor, ACTED_IN, Movie)","MATCH (a:Person:Actor)-[:ACTED_IN]->(:Movie)
+RETURN a, count(*)"
+"MATCH (a:Person:Actor)<-[:ACTED_IN]-(:Movie)
+RETURN a, count(*)","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie), (Actor, ACTED_IN, Movie)","MATCH (a:Person:Actor)-[:ACTED_IN]->(:Movie)
+RETURN a, count(*)"
+"MATCH (a:Person:Actor)<-[:ACTED_IN]-()
+RETURN a, count(*)","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie), (Actor, ACTED_IN, Movie)","MATCH (a:Person:Actor)-[:ACTED_IN]->()
+RETURN a, count(*)"
+"MATCH (a:Person:Actor)
+RETURN a, [(a)<-[:`ACTED_IN`]-(m) | m.title] AS movies","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie), (Actor, ACTED_IN, Movie)","MATCH (a:Person:Actor)
+RETURN a, [(a)-[:`ACTED_IN`]->(m) | m.title] AS movies"
+"MATCH (a:Person:Actor)
+RETURN a, [(a)-[:`ACTED_IN`]->(m) | m.title] AS movies","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie), (Actor, ACTED_IN, Movie)","MATCH (a:Person:Actor)
+RETURN a, [(a)-[:`ACTED_IN`]->(m) | m.title] AS movies"
+"MATCH p = ((person:Person)-[:DIRECTED*]->(:Movie)) RETURN p
+","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","MATCH p = ((person:Person)-[:DIRECTED*]->(:Movie)) RETURN p
+"
+"""MATCH p = ((person:Person)-[:DIRECTED*1..3]->(:Movie)) RETURN p""","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","""MATCH p = ((person:Person)-[:DIRECTED*1..3]->(:Movie)) RETURN p"""
+"""MATCH p = ((person:Person)-[:DIRECTED*..3]->(:Movie)) RETURN p""","(Person, FOLLOWS, Person), (Person, ACTED_IN, Movie), (Person, REVIEWED, Movie), (Person, WROTE, Movie), (Person, DIRECTED, Movie), (Movie, IN_GENRE, Genre), (Person, RATED, Movie)","""MATCH p = ((person:Person)-[:DIRECTED*..3]->(:Movie)) RETURN p"""
+"MATCH (p:Person {name:""Emil Eifrem""})-[:HAS_CEO]-(o:Organization)<-[:MENTIONS]-(a:Article)-[:HAS_CHUNK]->(c)
+RETURN o.name AS company, a.title AS title, c.text AS text, a.date AS date
+ORDER BY date DESC LIMIT 3
+","(Person, HAS_CEO, Organization), (Article, MENTIONS, Organization), (Article, HAS_CHUNK, Chunk), (Organization, HAS_COMPETITOR, Organization), (Organization, HAS_SUBSIDIARY, Organization)","MATCH (p:Person {name:""Emil Eifrem""})-[:HAS_CEO]-(o:Organization)<-[:MENTIONS]-(a:Article)-[:HAS_CHUNK]->(c)
+RETURN o.name AS company, a.title AS title, c.text AS text, a.date AS date
+ORDER BY date DESC LIMIT 3
+"
+"MATCH (p:Person {name:""Emil Eifrem""})-[:HAS_CEO]->(o:Organization)<-[:MENTIONS]-(a:Article)-[:HAS_CHUNK]->(c)
+RETURN o.name AS company, a.title AS title, c.text AS text, a.date AS date
+ORDER BY date DESC LIMIT 3
+","(Organization, HAS_CEO, Person), (Article, MENTIONS, Organization), (Article, HAS_CHUNK, Chunk), (Organization, HAS_COMPETITOR, Organization), (Organization, HAS_SUBSIDIARY, Organization)","MATCH (p:Person {name:""Emil Eifrem""})<-[:HAS_CEO]-(o:Organization)<-[:MENTIONS]-(a:Article)-[:HAS_CHUNK]->(c)
+RETURN o.name AS company, a.title AS title, c.text AS text, a.date AS date
+ORDER BY date DESC LIMIT 3
+"
+"MATCH (o:Organization {name: ""Databricks""})-[:HAS_COMPETITOR]->(c:Organization)
+RETURN c.name as Competitor","(Organization, HAS_CEO, Person), (Article, MENTIONS, Organization), (Article, HAS_CHUNK, Chunk), (Organization, HAS_COMPETITOR, Organization), (Organization, HAS_SUBSIDIARY, Organization)","MATCH (o:Organization {name: ""Databricks""})-[:HAS_COMPETITOR]->(c:Organization)
+RETURN c.name as Competitor"
+"MATCH (o:Organization {name: ""Databricks""})<-[:HAS_COMPETITOR]-(c:Organization)
+RETURN c.name as Competitor","(Organization, HAS_CEO, Person), (Article, MENTIONS, Organization), (Article, HAS_CHUNK, Chunk), (Organization, HAS_COMPETITOR, Organization), (Organization, HAS_SUBSIDIARY, Organization)","MATCH (o:Organization {name: ""Databricks""})<-[:HAS_COMPETITOR]-(c:Organization)
+RETURN c.name as Competitor"
+"MATCH p=(o:Organization {name:""Blackstone""})-[:HAS_SUBSIDIARY*]->(t)
+WHERE NOT EXISTS {(t)-[:HAS_SUBSIDIARY]->()}
+RETURN max(length(p)) AS max","(Organization, HAS_CEO, Person), (Article, MENTIONS, Organization), (Article, HAS_CHUNK, Chunk), (Organization, HAS_COMPETITOR, Organization), (Organization, HAS_SUBSIDIARY, Organization)","MATCH p=(o:Organization {name:""Blackstone""})-[:HAS_SUBSIDIARY*]->(t)
+WHERE NOT EXISTS {(t)-[:HAS_SUBSIDIARY]->()}
+RETURN max(length(p)) AS max"
+"MATCH p=(o:Organization {name:""Blackstone""})-[:HAS_SUBSIDIARY*]-(t)
+WHERE NOT EXISTS {(t)-[:HAS_SUBSIDIARY]->()}
+RETURN max(length(p)) AS max","(Organization, HAS_CEO, Person), (Article, MENTIONS, Organization), (Article, HAS_CHUNK, Chunk), (Organization, HAS_COMPETITOR, Organization), (Organization, HAS_SUBSIDIARY, Organization)","MATCH p=(o:Organization {name:""Blackstone""})-[:HAS_SUBSIDIARY*]-(t)
+WHERE NOT EXISTS {(t)-[:HAS_SUBSIDIARY]->()}
+RETURN max(length(p)) AS max"
+"MATCH p=(o:Organization {name:""Blackstone""})-[:HAS_SUBSIDIARY*]-(t:Person)
+WHERE NOT EXISTS {(o)-[:HAS_SUBSIDIARY]->()}
+RETURN max(length(p)) AS max","(Organization, HAS_CEO, Person), (Article, MENTIONS, Organization), (Article, HAS_CHUNK, Chunk), (Organization, HAS_COMPETITOR, Organization), (Organization, HAS_SUBSIDIARY, Organization)","MATCH p=(o:Organization {name:""Blackstone""})-[:HAS_SUBSIDIARY*]-(t:Person)
+WHERE NOT EXISTS {(o)-[:HAS_SUBSIDIARY]->()}
+RETURN max(length(p)) AS max"
+"CALL apoc.ml.openai.embedding([""Are there any news regarding employee satisfaction?""], $openai_api_key) YIELD embedding
+CALL db.index.vector.queryNodes(""news"", 3, embedding) YIELD node,score
+RETURN node.text AS text, score","(Organization, HAS_CEO, Person), (Article, MENTIONS, Organization), (Article, HAS_CHUNK, Chunk), (Organization, HAS_COMPETITOR, Organization), (Organization, HAS_SUBSIDIARY, Organization)","CALL apoc.ml.openai.embedding([""Are there any news regarding employee satisfaction?""], $openai_api_key) YIELD embedding
+CALL db.index.vector.queryNodes(""news"", 3, embedding) YIELD node,score
+RETURN node.text AS text, score"
+"MATCH (o:Organization {name:""Neo4j""})<-[:MENTIONS]-(a:Article)-[:HAS_CHUNK]->(c)
+WHERE toLower(c.text) CONTAINS 'partnership'
+RETURN a.title AS title, c.text AS text, a.date AS date
+ORDER BY date DESC LIMIT 3","(Organization, HAS_CEO, Person), (Article, MENTIONS, Organization), (Article, HAS_CHUNK, Chunk), (Organization, HAS_COMPETITOR, Organization), (Organization, HAS_SUBSIDIARY, Organization)","MATCH (o:Organization {name:""Neo4j""})<-[:MENTIONS]-(a:Article)-[:HAS_CHUNK]->(c)
+WHERE toLower(c.text) CONTAINS 'partnership'
+RETURN a.title AS title, c.text AS text, a.date AS date
+ORDER BY date DESC LIMIT 3"
+"MATCH (n:`Some Label`)-[:`SOME REL TYPE üäß`]->(m:`Sömé Øther Læbel`) RETURN n,m","(Some Label, SOME REL TYPE üäß, Sömé Øther Læbel)","MATCH (n:`Some Label`)-[:`SOME REL TYPE üäß`]->(m:`Sömé Øther Læbel`) RETURN n,m"
+"MATCH (n:`Some Label`)<-[:`SOME REL TYPE üäß`]-(m:`Sömé Øther Læbel`) RETURN n,m","(Some Label, SOME REL TYPE üäß, Sömé Øther Læbel)","MATCH (n:`Some Label`)-[:`SOME REL TYPE üäß`]->(m:`Sömé Øther Læbel`) RETURN n,m"

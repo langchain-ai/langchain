@@ -11,8 +11,8 @@ from typing import Any, Dict, List, Tuple
 
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
-from pydantic import Field
 
+from langchain_experimental.pydantic_v1 import Field
 from langchain_experimental.tot.prompts import COT_PROMPT, PROPOSE_PROMPT
 
 

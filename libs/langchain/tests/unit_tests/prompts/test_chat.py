@@ -186,13 +186,24 @@ def test_chat_prompt_template_with_messages() -> None:
 def test_chat_invalid_input_variables_extra() -> None:
     messages = [HumanMessage(content="foo")]
     with pytest.raises(ValueError):
-        ChatPromptTemplate(messages=messages, input_variables=["foo"])
+        ChatPromptTemplate(
+            messages=messages, input_variables=["foo"], validate_template=True
+        )
+    assert (
+        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables
+        == []
+    )
 
 
 def test_chat_invalid_input_variables_missing() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
     with pytest.raises(ValueError):
-        ChatPromptTemplate(messages=messages, input_variables=[])
+        ChatPromptTemplate(
+            messages=messages, input_variables=[], validate_template=True
+        )
+    assert ChatPromptTemplate(
+        messages=messages, input_variables=[]
+    ).input_variables == ["foo"]
 
 
 def test_infer_variables() -> None:
@@ -280,6 +291,42 @@ def test_convert_to_message(
 ) -> None:
     """Test convert to message."""
     assert _convert_to_message(args) == expected
+
+
+def test_chat_prompt_template_indexing() -> None:
+    message1 = SystemMessage(content="foo")
+    message2 = HumanMessage(content="bar")
+    message3 = HumanMessage(content="baz")
+    template = ChatPromptTemplate.from_messages([message1, message2, message3])
+    assert template[0] == message1
+    assert template[1] == message2
+
+    # Slice starting from index 1
+    slice_template = template[1:]
+    assert slice_template[0] == message2
+    assert len(slice_template) == 2
+
+
+def test_chat_prompt_template_append_and_extend() -> None:
+    """Test append and extend methods of ChatPromptTemplate."""
+    message1 = SystemMessage(content="foo")
+    message2 = HumanMessage(content="bar")
+    message3 = HumanMessage(content="baz")
+    template = ChatPromptTemplate.from_messages([message1])
+    template.append(message2)
+    template.append(message3)
+    assert len(template) == 3
+    template.extend([message2, message3])
+    assert len(template) == 5
+    assert template.messages == [
+        message1,
+        message2,
+        message3,
+        message2,
+        message3,
+    ]
+    template.append(("system", "hello!"))
+    assert template[-1] == SystemMessagePromptTemplate.from_template("hello!")
 
 
 def test_convert_to_message_is_strict() -> None:

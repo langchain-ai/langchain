@@ -1,9 +1,8 @@
 """Toolkit for interacting with an SQL database."""
 from typing import List
 
-from pydantic import Field
-
 from langchain.agents.agent_toolkits.base import BaseToolkit
+from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.sql_database.tool import (
@@ -49,7 +48,7 @@ class SQLDatabaseToolkit(BaseToolkit):
             "result from the database. If the query is not correct, an error message "
             "will be returned. If an error is returned, rewrite the query, check the "
             "query, and try again. If you encounter an issue with Unknown column "
-            f"'xxxx' in 'field list', using {info_sql_database_tool.name} "
+            f"'xxxx' in 'field list', use {info_sql_database_tool.name} "
             "to query the correct table fields."
         )
         query_sql_database_tool = QuerySQLDataBaseTool(

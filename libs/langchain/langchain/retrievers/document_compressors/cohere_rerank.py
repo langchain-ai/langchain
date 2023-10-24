@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, Optional, Sequence
 
-from pydantic import Extra, root_validator
-
 from langchain.callbacks.manager import Callbacks
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.schema import Document
 from langchain.utils import get_from_dict_or_env
@@ -21,7 +20,7 @@ else:
 
 
 class CohereRerank(BaseDocumentCompressor):
-    """DocumentCompressor that uses Cohere's rerank API to compress documents."""
+    """Document compressor that uses `Cohere Rerank API`."""
 
     client: Client
     """Cohere client to use for compressing documents."""
@@ -29,6 +28,8 @@ class CohereRerank(BaseDocumentCompressor):
     """Number of documents to return."""
     model: str = "rerank-english-v2.0"
     """Model to use for reranking."""
+
+    cohere_api_key: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -83,11 +84,3 @@ class CohereRerank(BaseDocumentCompressor):
             doc.metadata["relevance_score"] = r.relevance_score
             final_results.append(doc)
         return final_results
-
-    async def acompress_documents(
-        self,
-        documents: Sequence[Document],
-        query: str,
-        callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
-        raise NotImplementedError()

@@ -1,4 +1,19 @@
-"""Agent toolkits."""
+"""Agent toolkits contain integrations with various resources and services.
+
+LangChain has a large ecosystem of integrations with various external resources
+like local and remote file systems, APIs and databases.
+
+These integrations allow developers to create versatile applications that combine the
+power of LLMs with the ability to access, interact with and manipulate external
+resources.
+
+When developing an application, developers should inspect the capabilities and
+permissions of the tools that underlie the given agent toolkit, and determine
+whether permissions of the given toolkit are appropriate for the application.
+
+See [Security](https://python.langchain.com/docs/security) for more information.
+"""
+from langchain.agents.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
 from langchain.agents.agent_toolkits.amadeus.toolkit import AmadeusToolkit
 from langchain.agents.agent_toolkits.azure_cognitive_services import (
     AzureCognitiveServicesToolkit,
@@ -17,7 +32,7 @@ from langchain.agents.agent_toolkits.gmail.toolkit import GmailToolkit
 from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
 from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
-from langchain.agents.agent_toolkits.multion.base import create_multion_agent
+from langchain.agents.agent_toolkits.multion.toolkit import MultionToolkit
 from langchain.agents.agent_toolkits.nla.toolkit import NLAToolkit
 from langchain.agents.agent_toolkits.office365.toolkit import O365Toolkit
 from langchain.agents.agent_toolkits.openapi.base import create_openapi_agent
@@ -46,12 +61,14 @@ from langchain.agents.agent_toolkits.xorbits.base import create_xorbits_agent
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
 
 __all__ = [
+    "AINetworkToolkit",
     "AmadeusToolkit",
     "AzureCognitiveServicesToolkit",
     "FileManagementToolkit",
     "GmailToolkit",
     "JiraToolkit",
     "JsonToolkit",
+    "MultionToolkit",
     "NLAToolkit",
     "O365Toolkit",
     "OpenAPIToolkit",
@@ -65,7 +82,6 @@ __all__ = [
     "ZapierToolkit",
     "create_csv_agent",
     "create_json_agent",
-    "create_multion_agent",
     "create_openapi_agent",
     "create_pandas_dataframe_agent",
     "create_pbi_agent",

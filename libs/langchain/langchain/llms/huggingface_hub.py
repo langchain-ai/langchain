@@ -1,10 +1,9 @@
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_REPO_ID = "gpt2"
@@ -34,7 +33,7 @@ class HuggingFaceHub(LLM):
     """Task to call the model with.
     Should be a task that returns `generated_text` or `summary_text`."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     huggingfacehub_api_token: Optional[str] = None
 

@@ -1,26 +1,48 @@
 import re
 import warnings
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
-
-from pydantic import root_validator
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Union,
+)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output import GenerationChunk
-from langchain.utils import check_package_version, get_from_dict_or_env
+from langchain.schema.prompt import PromptValue
+from langchain.utils import (
+    check_package_version,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
+from langchain.utils.utils import build_extra_kwargs
+
+
+def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
+    """Convert a string to a SecretStr if needed."""
+    if isinstance(value, SecretStr):
+        return value
+    return SecretStr(value)
 
 
 class _AnthropicCommon(BaseLanguageModel):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
-    model: str = "claude-2"
+    model: str = Field(default="claude-2", alias="model_name")
     """Model name to use."""
 
-    max_tokens_to_sample: int = 256
+    max_tokens_to_sample: int = Field(default=256, alias="max_tokens")
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = None
@@ -40,17 +62,27 @@ class _AnthropicCommon(BaseLanguageModel):
 
     anthropic_api_url: Optional[str] = None
 
-    anthropic_api_key: Optional[str] = None
+    anthropic_api_key: Optional[SecretStr] = None
 
     HUMAN_PROMPT: Optional[str] = None
     AI_PROMPT: Optional[str] = None
     count_tokens: Optional[Callable[[str], int]] = None
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict) -> Dict:
+        extra = values.get("model_kwargs", {})
+        all_required_field_names = get_pydantic_field_names(cls)
+        values["model_kwargs"] = build_extra_kwargs(
+            extra, values, all_required_field_names
+        )
+        return values
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["anthropic_api_key"] = get_from_dict_or_env(
-            values, "anthropic_api_key", "ANTHROPIC_API_KEY"
+        values["anthropic_api_key"] = _to_secret(
+            get_from_dict_or_env(values, "anthropic_api_key", "ANTHROPIC_API_KEY")
         )
         # Get custom api url from environment.
         values["anthropic_api_url"] = get_from_dict_or_env(
@@ -66,17 +98,18 @@ class _AnthropicCommon(BaseLanguageModel):
             check_package_version("anthropic", gte_version="0.3")
             values["client"] = anthropic.Anthropic(
                 base_url=values["anthropic_api_url"],
-                api_key=values["anthropic_api_key"],
+                api_key=values["anthropic_api_key"].get_secret_value(),
                 timeout=values["default_request_timeout"],
             )
             values["async_client"] = anthropic.AsyncAnthropic(
                 base_url=values["anthropic_api_url"],
-                api_key=values["anthropic_api_key"],
+                api_key=values["anthropic_api_key"].get_secret_value(),
                 timeout=values["default_request_timeout"],
             )
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
             values["AI_PROMPT"] = anthropic.AI_PROMPT
             values["count_tokens"] = values["client"].count_tokens
+
         except ImportError:
             raise ImportError(
                 "Could not import anthropic python package. "
@@ -97,7 +130,7 @@ class _AnthropicCommon(BaseLanguageModel):
             d["top_k"] = self.top_k
         if self.top_p is not None:
             d["top_p"] = self.top_p
-        return d
+        return {**d, **self.model_kwargs}
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -129,6 +162,7 @@ class Anthropic(LLM, _AnthropicCommon):
 
             import anthropic
             from langchain.llms import Anthropic
+
             model = Anthropic(model="<model_name>", anthropic_api_key="my-api-key")
 
             # Simplest invocation, automatically wrapped with HUMAN_PROMPT
@@ -141,6 +175,12 @@ class Anthropic(LLM, _AnthropicCommon):
             prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}"
             response = model(prompt)
     """
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @root_validator()
     def raise_warning(cls, values: Dict) -> Dict:
@@ -212,6 +252,9 @@ class Anthropic(LLM, _AnthropicCommon):
         )
         return response.completion
 
+    def convert_prompt(self, prompt: PromptValue) -> str:
+        return self._wrap_prompt(prompt.to_string())
+
     async def _acall(
         self,
         prompt: str,
@@ -267,9 +310,10 @@ class Anthropic(LLM, _AnthropicCommon):
         for token in self.client.completions.create(
             prompt=self._wrap_prompt(prompt), stop_sequences=stop, stream=True, **params
         ):
-            yield GenerationChunk(text=token.completion)
+            chunk = GenerationChunk(text=token.completion)
+            yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(token.completion)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     async def _astream(
         self,
@@ -302,9 +346,10 @@ class Anthropic(LLM, _AnthropicCommon):
             stream=True,
             **params,
         ):
-            yield GenerationChunk(text=token.completion)
+            chunk = GenerationChunk(text=token.completion)
+            yield chunk
             if run_manager:
-                await run_manager.on_llm_new_token(token.completion)
+                await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""

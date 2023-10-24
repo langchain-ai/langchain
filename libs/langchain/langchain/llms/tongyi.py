@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
-from pydantic import Field, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -15,6 +14,7 @@ from tenacity import (
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
@@ -52,7 +52,8 @@ def generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
         else:
             raise HTTPError(
                 f"HTTP error occurred: status_code: {resp.status_code} \n "
-                f"code: {resp.code} \n message: {resp.message}"
+                f"code: {resp.code} \n message: {resp.message}",
+                response=resp,
             )
 
     return _generate_with_retry(**kwargs)
@@ -77,7 +78,8 @@ def stream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
             else:
                 raise HTTPError(
                     f"HTTP error occurred: status_code: {resp.status_code} \n "
-                    f"code: {resp.code} \n message: {resp.message}"
+                    f"code: {resp.code} \n message: {resp.message}",
+                    response=resp,
                 )
         return stream_resps
 
@@ -102,8 +104,8 @@ class Tongyi(LLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"dashscope_api_key": "DASHSCOPE_API_KEY"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     client: Any  #: :meta private:

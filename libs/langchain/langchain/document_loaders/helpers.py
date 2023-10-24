@@ -5,7 +5,7 @@ from typing import List, NamedTuple, Optional, cast
 
 
 class FileEncoding(NamedTuple):
-    """A file encoding as the NamedTuple."""
+    """File encoding as the NamedTuple."""
 
     encoding: Optional[str]
     """The encoding of the file."""

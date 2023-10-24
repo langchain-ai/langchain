@@ -2,10 +2,10 @@
 from typing import Any, Callable, List, Sequence
 
 import numpy as np
-from pydantic import BaseModel, Field
 
-from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseDocumentTransformer, Document
+from langchain.schema.embeddings import Embeddings
 from langchain.utils.math import cosine_similarity
 
 
@@ -152,11 +152,6 @@ class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
         )
         return [stateful_documents[i] for i in sorted(included_idxs)]
 
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        raise NotImplementedError
-
 
 class EmbeddingsClusteringFilter(BaseDocumentTransformer, BaseModel):
     """Perform K-means clustering on document vectors.
@@ -182,7 +177,7 @@ class EmbeddingsClusteringFilter(BaseDocumentTransformer, BaseModel):
     """By default results are re-ordered "grouping" them by cluster, if sorted is true
     result will be ordered by the original position from the retriever"""
 
-    remove_duplicates = False
+    remove_duplicates: bool = False
     """ By default duplicated results are skipped and replaced by the next closest 
     vector in the cluster. If remove_duplicates is true no replacement will be done:
     This could dramatically reduce results when there is a lot of overlap between 
@@ -211,8 +206,3 @@ class EmbeddingsClusteringFilter(BaseDocumentTransformer, BaseModel):
         )
         results = sorted(included_idxs) if self.sorted else included_idxs
         return [stateful_documents[i] for i in results]
-
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        raise NotImplementedError
