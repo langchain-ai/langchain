@@ -184,6 +184,12 @@ def _import_forefrontai() -> Any:
     return ForefrontAI
 
 
+def _import_gigachat() -> Any:
+    from langchain.llms.gigachat import GigaChat
+
+    return GigaChat
+
+
 def _import_google_palm() -> Any:
     from langchain.llms.google_palm import GooglePalm
 
@@ -547,6 +553,8 @@ def __getattr__(name: str) -> Any:
         return _import_fireworks()
     elif name == "ForefrontAI":
         return _import_forefrontai()
+    elif name == "GigaChat":
+        return _import_gigachat()
     elif name == "GooglePalm":
         return _import_google_palm()
     elif name == "GooseAI":
@@ -686,6 +694,7 @@ __all__ = [
     "FakeListLLM",
     "Fireworks",
     "ForefrontAI",
+    "GigaChat",
     "GPT4All",
     "GooglePalm",
     "GooseAI",
@@ -767,6 +776,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "edenai": _import_edenai,
         "fake-list": _import_fake,
         "forefrontai": _import_forefrontai,
+        "giga-chat-model": _import_gigachat,
         "google_palm": _import_google_palm,
         "gooseai": _import_gooseai,
         "gradient": _import_gradient_ai,
