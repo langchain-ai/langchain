@@ -5,7 +5,7 @@ import json
 import os
 from io import StringIO
 from sys import version_info
-from typing import IO, Any, Callable, List, Optional, Type
+from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -56,7 +56,6 @@ def add_last_line_print(code: str) -> str:
             )
         )
 
-    source_code = ""
     if version_info.minor < 9:
         s = StringIO()
         Unparser(tree, file=s)
