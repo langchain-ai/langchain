@@ -25,6 +25,7 @@ from langchain.schema import (
 )
 from langchain.schema.output import GenerationChunk
 from langchain.utilities.vertexai import (
+    get_client_info,
     init_vertexai,
     raise_vertex_import_error,
 )
@@ -370,9 +371,12 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         client_options = ClientOptions(
             api_endpoint=f"{values['location']}-aiplatform.googleapis.com"
         )
-        values["client"] = PredictionServiceClient(client_options=client_options)
+        client_info = get_client_info(module="vertex-ai-model-garden")
+        values["client"] = PredictionServiceClient(
+            client_options=client_options, client_info=client_info
+        )
         values["async_client"] = PredictionServiceAsyncClient(
-            client_options=client_options
+            client_options=client_options, client_info=client_info
         )
         return values
 
