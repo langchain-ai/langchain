@@ -35,11 +35,12 @@ URL_BASE = "https://raw.githubusercontent.com/ai-forever/gigachain/hub/master/ch
 
 def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
     """Load LLM chain from config dict."""
+    llm_settings = kwargs.get("llm_settings", {})
     if "llm" in config:
         llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
+        llm = load_llm_from_config(llm_config, **llm_settings)
     elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+        llm = load_llm(config.pop("llm_path"), **llm_settings)
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
 

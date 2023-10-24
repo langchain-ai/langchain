@@ -1,7 +1,7 @@
 """Base interface for loading large language model APIs."""
 import json
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
 import yaml
 
@@ -9,7 +9,7 @@ from langchain.llms import get_type_to_cls_dict
 from langchain.llms.base import BaseLLM
 
 
-def load_llm_from_config(config: dict) -> BaseLLM:
+def load_llm_from_config(config: dict, **kwargs: Any) -> BaseLLM:
     """Load LLM from Config Dict."""
     if "_type" not in config:
         raise ValueError("Must specify an LLM Type in config")
@@ -21,10 +21,10 @@ def load_llm_from_config(config: dict) -> BaseLLM:
         raise ValueError(f"Loading {config_type} LLM not supported")
 
     llm_cls = type_to_cls_dict[config_type]()
-    return llm_cls(**config)
+    return llm_cls(**config, **kwargs)
 
 
-def load_llm(file: Union[str, Path]) -> BaseLLM:
+def load_llm(file: Union[str, Path], **kwargs: Any) -> BaseLLM:
     """Load LLM from file."""
     # Convert file to Path object.
     if isinstance(file, str):
@@ -41,4 +41,4 @@ def load_llm(file: Union[str, Path]) -> BaseLLM:
     else:
         raise ValueError("File type must be json or yaml")
     # Load the LLM from the config now.
-    return load_llm_from_config(config)
+    return load_llm_from_config(config, **kwargs)
