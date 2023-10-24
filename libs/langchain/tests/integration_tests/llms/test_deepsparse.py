@@ -11,15 +11,12 @@ class TestDeepSparse(unittest.TestCase):
             model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base-none",
             generation_config=generation_config,
         )
-
         output = llm("def ")
         self.assertIsInstance(output, str)
         self.assertGreater(len(output), 1)
 
     def test_deepsparse_streaming(self) -> None:
         """Test valid call to DeepSparse with streaming."""
-        generation_config=generation_config
-
         llm = DeepSparse(
             model="hf:neuralmagic/mpt-7b-chat-pruned50-quant",
             generation_config=generation_config,
