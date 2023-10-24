@@ -8,4 +8,4 @@ RUN pip install poetry && \
   poetry config virtualenvs.create false && \
   poetry install --no-interaction --no-ansi --only main
 
-CMD exec uvicorn ____project_name_identifier.server:app --host 0.0.0.0 --port $PORT
+CMD exec poetry run uvicorn ____project_name_identifier.server:app --host 0.0.0.0 --port $PORT
