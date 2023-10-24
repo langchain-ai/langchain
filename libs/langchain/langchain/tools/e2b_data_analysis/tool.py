@@ -69,7 +69,7 @@ def add_last_line_print(code: str) -> str:
         source_code = s.getvalue()
         s.close()
     else:
-        source_code = ast.unparse(tree)  # mypy: disable-error-code="attr-defined"
+        source_code = ast.unparse(tree)  # type: ignore[attr-defined]
     return source_code
 
 
