@@ -31,6 +31,18 @@ If you have any files outputted write them to "/home/user" directory \
 path."""
 
 
+def _unparse(tree: ast.AST) -> str:
+    """Unparse the AST."""
+    if version_info.minor < 9:
+        s = StringIO()
+        Unparser(tree, file=s)
+        source_code = s.getvalue()
+        s.close()
+    else:
+        source_code = ast.unparse(tree)
+    return source_code
+
+
 def add_last_line_print(code: str) -> str:
     """Add print statement to the last line if it's missing.
 
@@ -45,7 +57,7 @@ def add_last_line_print(code: str) -> str:
     node = tree.body[-1]
     if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
         if isinstance(node.value.func, ast.Name) and node.value.func.id == "print":
-            return ast.unparse(tree)
+            return _unparse(tree)
 
     if isinstance(node, ast.Expr):
         tree.body[-1] = ast.Expr(
@@ -56,14 +68,7 @@ def add_last_line_print(code: str) -> str:
             )
         )
 
-    if version_info.minor < 9:
-        s = StringIO()
-        Unparser(tree, file=s)
-        source_code = s.getvalue()
-        s.close()
-    else:
-        source_code = ast.unparse(tree)
-    return source_code
+    return _unparse(tree)
 
 
 class UploadedFile(BaseModel):
