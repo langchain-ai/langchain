@@ -216,15 +216,26 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
 # Orchestrator, planner, controller.
 #
 def _create_api_planner_tool(
-    api_spec: ReducedOpenAPISpec, llm: BaseLanguageModel
+    api_spec: List[ReducedOpenAPISpec], llm: BaseLanguageModel
 ) -> Tool:
-    endpoint_descriptions = [
-        f"{name} {description}" for name, description, _ in api_spec.endpoints
-    ]
+    endpoint_descriptions = {
+        single_spec.servers[0]["url"]: [
+            f"{name} {description}" for name, description, _ in single_spec.endpoints
+        ]
+        for single_spec in api_spec
+    }
+
     prompt = PromptTemplate(
         template=API_PLANNER_PROMPT,
         input_variables=["query"],
-        partial_variables={"endpoints": "- " + "- ".join(endpoint_descriptions)},
+        partial_variables={
+            "endpoints": str(
+                {
+                    "API base url: " + key: "- " + "- ".join(endpoint_descriptions[key])
+                    for key in endpoint_descriptions.keys()
+                }
+            )
+        },
     )
     chain = LLMChain(llm=llm, prompt=prompt)
     tool = Tool(
@@ -236,8 +247,8 @@ def _create_api_planner_tool(
 
 
 def _create_api_controller_agent(
-    api_url: str,
-    api_docs: str,
+    api_url: List[str],
+    api_docs: Dict[str, str],
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
 ) -> AgentExecutor:
@@ -255,8 +266,8 @@ def _create_api_controller_agent(
         template=API_CONTROLLER_PROMPT,
         input_variables=["input", "agent_scratchpad"],
         partial_variables={
-            "api_url": api_url,
-            "api_docs": api_docs,
+            "api_url": str(api_url),
+            "api_docs": str(api_docs),
             "tool_names": ", ".join([tool.name for tool in tools]),
             "tool_descriptions": "\n".join(
                 [f"{tool.name}: {tool.description}" for tool in tools]
@@ -266,12 +277,19 @@ def _create_api_controller_agent(
     agent = ZeroShotAgent(
         llm_chain=LLMChain(llm=llm, prompt=prompt),
         allowed_tools=[tool.name for tool in tools],
+        handle_parsing_errors="Check your output and make sure it conforms!",
     )
-    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
+    return AgentExecutor.from_agent_and_tools(
+        agent=agent,
+        tools=tools,
+        verbose=True,
+        handle_parsing_errors="Check your output and make sure it conforms!",
+        early_stopping_method="generate",
+    )
 
 
 def _create_api_controller_tool(
-    api_spec: ReducedOpenAPISpec,
+    api_spec: List[ReducedOpenAPISpec],
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
 ) -> Tool:
@@ -282,27 +300,38 @@ def _create_api_controller_tool(
     constrain the context.
     """
 
-    base_url = api_spec.servers[0]["url"]  # TODO: do better.
+    base_url = [
+        single_spec.servers[0]["url"] for single_spec in api_spec
+    ]  # TODO: do better.
 
     def _create_and_run_api_controller_agent(plan_str: str) -> str:
+        docs_str_dict = {}
         pattern = r"\b(GET|POST|PATCH|DELETE)\s+(/\S+)*"
         matches = re.findall(pattern, plan_str)
         endpoint_names = [
             "{method} {route}".format(method=method, route=route.split("?")[0])
             for method, route in matches
         ]
-        docs_str = ""
         for endpoint_name in endpoint_names:
+            docs_str = ""
             found_match = False
-            for name, _, docs in api_spec.endpoints:
-                regex_name = re.compile(re.sub("\{.*?\}", ".*", name))
-                if regex_name.match(endpoint_name):
-                    found_match = True
-                    docs_str += f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
+            for single_spec in api_spec:
+                for name, _, docs in single_spec.endpoints:
+                    regex_name = re.compile(re.sub("\{.*?\}", ".*", name))
+                    if regex_name.match(endpoint_name):
+                        found_match = True
+                        docs_str += (
+                            f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
+                        )
             if not found_match:
-                raise ValueError(f"{endpoint_name} endpoint does not exist.")
+                raise ValueError(
+                    f"{endpoint_name} endpoint does not exist in any of the APIs."
+                )
+            docs_str_dict.update({single_spec.servers[0]["url"]: docs_str})
 
-        agent = _create_api_controller_agent(base_url, docs_str, requests_wrapper, llm)
+        agent = _create_api_controller_agent(
+            base_url, docs_str_dict, requests_wrapper, llm
+        )
         return agent.run(plan_str)
 
     return Tool(
@@ -313,7 +342,7 @@ def _create_api_controller_tool(
 
 
 def create_openapi_agent(
-    api_spec: ReducedOpenAPISpec,
+    api_spec: List[ReducedOpenAPISpec],
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     shared_memory: Optional[ReadOnlySharedMemory] = None,
@@ -347,6 +376,8 @@ def create_openapi_agent(
     agent = ZeroShotAgent(
         llm_chain=LLMChain(llm=llm, prompt=prompt, memory=shared_memory),
         allowed_tools=[tool.name for tool in tools],
+        handle_parsing_errors="Check your output and make sure it conforms!",
+        early_stopping_method="generate",
         **kwargs,
     )
     return AgentExecutor.from_agent_and_tools(
@@ -354,5 +385,7 @@ def create_openapi_agent(
         tools=tools,
         callback_manager=callback_manager,
         verbose=verbose,
+        handle_parsing_errors="Check your output and make sure it conforms!",
+        early_stopping_method="generate",
         **(agent_executor_kwargs or {}),
     )
