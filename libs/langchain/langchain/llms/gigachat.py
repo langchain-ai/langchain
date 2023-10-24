@@ -45,7 +45,7 @@ class _BaseGigaChat(Serializable):
     cert_file: Optional[str] = None
     key_file: Optional[str] = None
     key_file_password: Optional[str] = None
-    # Support for connection to GigaChat trough SSL certificates
+    # Support for connection to GigaChat through SSL certificates
 
     profanity: bool = True
     """ Check for profanity """
