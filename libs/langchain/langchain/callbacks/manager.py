@@ -411,11 +411,12 @@ def _handle_event(
                     handler_name = handler.__class__.__name__
                     logger.warning(
                         f"NotImplementedError in {handler_name}.{event_name}"
-                        f" callback: {e}"
+                        f" callback: {repr(e)}"
                     )
             except Exception as e:
                 logger.warning(
-                    f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+                    f"Error in {handler.__class__.__name__}.{event_name} callback:"
+                    f" {repr(e)}"
                 )
                 if handler.raise_error:
                     raise e
@@ -496,11 +497,12 @@ async def _ahandle_event_for_handler(
         else:
             logger.warning(
                 f"NotImplementedError in {handler.__class__.__name__}.{event_name}"
-                f" callback: {e}"
+                f" callback: {repr(e)}"
             )
     except Exception as e:
         logger.warning(
-            f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+            f"Error in {handler.__class__.__name__}.{event_name} callback:"
+            f" {repr(e)}"
         )
         if handler.raise_error:
             raise e
@@ -1892,6 +1894,7 @@ def _configure(
             callback_manager = callback_manager_cls(
                 handlers=inheritable_callbacks_.copy(),
                 inheritable_handlers=inheritable_callbacks_.copy(),
+                parent_run_id=parent_run_id,
             )
         else:
             callback_manager = callback_manager_cls(

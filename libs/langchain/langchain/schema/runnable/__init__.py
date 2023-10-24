@@ -14,7 +14,6 @@ creating more responsive UX.
 
 This module contains schema and implementation of LangChain Runnables primitives.
 """
-from langchain.schema.runnable._locals import GetLocalVar, PutLocalVar
 from langchain.schema.runnable.base import (
     Runnable,
     RunnableBinding,
@@ -40,9 +39,7 @@ __all__ = [
     "ConfigurableField",
     "ConfigurableFieldSingleOption",
     "ConfigurableFieldMultiOption",
-    "GetLocalVar",
     "patch_config",
-    "PutLocalVar",
     "RouterInput",
     "RouterRunnable",
     "Runnable",

@@ -662,7 +662,7 @@ class ElasticsearchStore(VectorStore):
 
         if remove_vector_query_field_from_metadata:
             for doc in selected_docs:
-                del doc.metadata["vector"]
+                del doc.metadata[self.vector_query_field]
 
         return selected_docs
 
@@ -866,6 +866,78 @@ class ElasticsearchStore(VectorStore):
             )
             self.client.indices.create(index=index_name, **indexSettings)
 
+    def __add(
+        self,
+        texts: Iterable[str],
+        embeddings: Optional[List[List[float]]],
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        ids: Optional[List[str]] = None,
+        refresh_indices: bool = True,
+        create_index_if_not_exists: bool = True,
+        bulk_kwargs: Optional[Dict] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        try:
+            from elasticsearch.helpers import BulkIndexError, bulk
+        except ImportError:
+            raise ImportError(
+                "Could not import elasticsearch python package. "
+                "Please install it with `pip install elasticsearch`."
+            )
+        bulk_kwargs = bulk_kwargs or {}
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
+        requests = []
+
+        if create_index_if_not_exists:
+            if embeddings:
+                dims_length = len(embeddings[0])
+            else:
+                dims_length = None
+
+            self._create_index_if_not_exists(
+                index_name=self.index_name, dims_length=dims_length
+            )
+
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
+
+            request = {
+                "_op_type": "index",
+                "_index": self.index_name,
+                self.query_field: text,
+                "metadata": metadata,
+                "_id": ids[i],
+            }
+            if embeddings:
+                request[self.vector_query_field] = embeddings[i]
+
+            requests.append(request)
+
+        if len(requests) > 0:
+            try:
+                success, failed = bulk(
+                    self.client,
+                    requests,
+                    stats_only=True,
+                    refresh=refresh_indices,
+                    **bulk_kwargs,
+                )
+                logger.debug(
+                    f"Added {success} and failed to add {failed} texts to index"
+                )
+
+                logger.debug(f"added texts {ids} to index")
+                return ids
+            except BulkIndexError as e:
+                logger.error(f"Error adding texts: {e}")
+                firstError = e.errors[0].get("index", {}).get("error", {})
+                logger.error(f"First error reason: {firstError.get('reason')}")
+                raise e
+
+        else:
+            logger.debug("No texts to add to index")
+            return []
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -893,86 +965,65 @@ class ElasticsearchStore(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        try:
-            from elasticsearch.helpers import BulkIndexError, bulk
-        except ImportError:
-            raise ImportError(
-                "Could not import elasticsearch python package. "
-                "Please install it with `pip install elasticsearch`."
-            )
-        bulk_kwargs = bulk_kwargs or {}
-        embeddings = []
-        ids = ids or [str(uuid.uuid4()) for _ in texts]
-        requests = []
-
         if self.embedding is not None:
             # If no search_type requires inference, we use the provided
             # embedding function to embed the texts.
             embeddings = self.embedding.embed_documents(list(texts))
-            dims_length = len(embeddings[0])
-
-            if create_index_if_not_exists:
-                self._create_index_if_not_exists(
-                    index_name=self.index_name, dims_length=dims_length
-                )
-
-            for i, (text, vector) in enumerate(zip(texts, embeddings)):
-                metadata = metadatas[i] if metadatas else {}
-
-                requests.append(
-                    {
-                        "_op_type": "index",
-                        "_index": self.index_name,
-                        self.query_field: text,
-                        self.vector_query_field: vector,
-                        "metadata": metadata,
-                        "_id": ids[i],
-                    }
-                )
-
         else:
             # the search_type doesn't require inference, so we don't need to
             # embed the texts.
-            if create_index_if_not_exists:
-                self._create_index_if_not_exists(index_name=self.index_name)
+            embeddings = None
 
-            for i, text in enumerate(texts):
-                metadata = metadatas[i] if metadatas else {}
+        return self.__add(
+            texts,
+            embeddings,
+            metadatas=metadatas,
+            ids=ids,
+            refresh_indices=refresh_indices,
+            create_index_if_not_exists=create_index_if_not_exists,
+            bulk_kwargs=bulk_kwargs,
+            kwargs=kwargs,
+        )
 
-                requests.append(
-                    {
-                        "_op_type": "index",
-                        "_index": self.index_name,
-                        self.query_field: text,
-                        "metadata": metadata,
-                        "_id": ids[i],
-                    }
-                )
+    def add_embeddings(
+        self,
+        text_embeddings: Iterable[Tuple[str, List[float]]],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        refresh_indices: bool = True,
+        create_index_if_not_exists: bool = True,
+        bulk_kwargs: Optional[Dict] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add the given texts and embeddings to the vectorstore.
 
-        if len(requests) > 0:
-            try:
-                success, failed = bulk(
-                    self.client,
-                    requests,
-                    stats_only=True,
-                    refresh=refresh_indices,
-                    **bulk_kwargs,
-                )
-                logger.debug(
-                    f"Added {success} and failed to add {failed} texts to index"
-                )
+        Args:
+            text_embeddings: Iterable pairs of string and embedding to
+                add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
+            refresh_indices: Whether to refresh the Elasticsearch indices
+                            after adding the texts.
+            create_index_if_not_exists: Whether to create the Elasticsearch
+                                        index if it doesn't already exist.
+            *bulk_kwargs: Additional arguments to pass to Elasticsearch bulk.
+                - chunk_size: Optional. Number of texts to add to the
+                    index at a time. Defaults to 500.
 
-                logger.debug(f"added texts {ids} to index")
-                return ids
-            except BulkIndexError as e:
-                logger.error(f"Error adding texts: {e}")
-                firstError = e.errors[0].get("index", {}).get("error", {})
-                logger.error(f"First error reason: {firstError.get('reason')}")
-                raise e
-
-        else:
-            logger.debug("No texts to add to index")
-            return []
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        texts, embeddings = zip(*text_embeddings)
+        return self.__add(
+            list(texts),
+            list(embeddings),
+            metadatas=metadatas,
+            ids=ids,
+            refresh_indices=refresh_indices,
+            create_index_if_not_exists=create_index_if_not_exists,
+            bulk_kwargs=bulk_kwargs,
+            kwargs=kwargs,
+        )
 
     @classmethod
     def from_texts(
