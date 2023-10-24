@@ -94,7 +94,8 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             .create_conversational_retrieval_agent' is a too long name.
             It makes the 'agents/functions' table inside API Reference unreadable.
             We limit the length of the qualified name to 65 characters.
-            qualified_name = f"{namespace}.{name}"""
+            """
+            qualified_name = f"{namespace}.{name}"
             if len(qualified_name) > 62:
                 qualified_name = '...' + qualified_name[-62:]
             functions.append(
