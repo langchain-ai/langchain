@@ -42,7 +42,7 @@ def create_cube_query_chain(
     inputs = {
         "input": lambda x: x["question"] + "\nCubeQuery: ",
         "top_k": lambda _: k,
-        "model_info": lambda x: cube.get_model_info(
+        "model_mate_information": lambda x: cube.get_model_mate_information(
             model_names=x.get("model_names_to_use")
         ),
         "format_instructions": lambda _: parser.get_format_instructions(),

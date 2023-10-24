@@ -7,7 +7,7 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.cube.tool import (
     ListCubeTool,
-    InfoCubeTool,
+    MetaInformationCubeTool,
     LoadCubeTool,
 )
 from langchain.utilities.cube import Cube
@@ -28,6 +28,6 @@ class CubeToolkit(BaseToolkit):
         """Get the tools in the toolkit."""
         return [
             LoadCubeTool(cube=self.cube),
-            InfoCubeTool(cube=self.cube),
+            MetaInformationCubeTool(cube=self.cube),
             ListCubeTool(cube=self.cube),
         ]

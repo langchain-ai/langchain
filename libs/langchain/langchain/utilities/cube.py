@@ -125,8 +125,8 @@ class Cube:
     ):
         self.cube_api_url = cube_api_url
         self.cube_api_token = cube_api_token
-        self._metadata = self._get_metadata()
-        self._all_models = set([model["name"] for model in self._metadata])
+        self._mate_information = self._get_mate_information()
+        self._all_models = set([model["name"] for model in self._mate_information])
 
         self._include_models = set(include_models) if include_models else set()
         if self._include_models:
@@ -165,9 +165,9 @@ class Cube:
     @property
     def metadata(self):
         """Metadata of the cube."""
-        return self._metadata
+        return self._mate_information
 
-    def _get_metadata(self):
+    def _get_mate_information(self):
         """Metadata of the cube."""
         headers = {
             "Content-Type": "application/json",
@@ -198,7 +198,7 @@ class Cube:
         model_info = "| Model | Description |\n"
         model_info += "| --- | --- |\n"
 
-        for m in self._metadata:
+        for m in self._mate_information:
             model_name = m["name"]
             if model_name not in all_model_names:
                 continue
@@ -208,11 +208,11 @@ class Cube:
         return model_info
 
     @property
-    def model_info(self) -> str:
+    def model_mate_information(self) -> str:
         """Information about all models in the cube."""
-        return self.get_model_info()
+        return self.get_model_mate_information()
 
-    def get_model_info(self, model_names: Optional[List[str]] = None) -> str:
+    def get_model_mate_information(self, model_names: Optional[List[str]] = None) -> str:
         """Get information about specified models."""
 
         all_model_names = self.get_usable_model_names()
@@ -225,7 +225,7 @@ class Cube:
             all_model_names = model_names
 
         models = []
-        for m in self._metadata:
+        for m in self._mate_information:
             model_name = m["name"]
 
             if model_name not in all_model_names:
@@ -234,29 +234,29 @@ class Cube:
             if self._custom_model_info and model_name in self._custom_model_info:
                 models.append(self._custom_model_info[model_name])
                 continue
-            model_info = f"## Model: {model_name}\n"
+            information = f"## Model: {model_name}\n"
 
             if m["measures"]:
-                model_info += "\n### Measures:\n"
-                model_info += "| Title | Description | Column | Type |\n"
-                model_info += "| --- | --- | --- | --- |\n"
+                information += "\n### Measures:\n"
+                information += "| Title | Description | Column | Type |\n"
+                information += "| --- | --- | --- | --- |\n"
 
                 for measure in m["measures"]:
-                    model_info += (
+                    information += (
                         f"| {measure.get('title')} | {measure.get('description')} | {measure.get('name')} | {measure.get('type')} |\n"
                     )
 
             if m["dimensions"]:
-                model_info += "\n### Dimensions:\n"
-                model_info += "| Title | Description | Column | Type |\n"
-                model_info += "| --- | --- | --- | --- |\n"
+                information += "\n### Dimensions:\n"
+                information += "| Title | Description | Column | Type |\n"
+                information += "| --- | --- | --- | --- |\n"
 
                 for dimension in m["dimensions"]:
-                    model_info += (
+                    information += (
                         f"| {dimension.get('title')} | {dimension.get('description')} | {dimension.get('name')} | {dimension.get('type')} |\n"
                     )
 
-            models.append(model_info)
+            models.append(information)
 
         models.sort()
 

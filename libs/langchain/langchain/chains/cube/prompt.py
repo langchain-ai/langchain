@@ -1,9 +1,8 @@
 # flake8: noqa
-from langchain.output_parsers.list import CommaSeparatedListOutputParser
 from langchain.prompts.prompt import PromptTemplate
 
 PROMPT_SUFFIX = """Only use the following meta-information for Cubes defined in the data model:
-{model_info}
+{model_mate_information}
 
 Question: {input}"""
 
@@ -13,7 +12,7 @@ Never query for all the columns from a specific model, only ask for a the few re
 
 Pay attention to use only the column names that you can see in the schema description. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 
-The current date is {today}.
+The current date is {current_date}.
 
 Use the following format:
 
@@ -27,19 +26,6 @@ Answer: Final answer here
 """
 
 PROMPT = PromptTemplate(
-    input_variables=["input", "model_info", "top_k","now"],
+    input_variables=["input", "model_mate_information", "top_k", "current_date"],
     template=_DEFAULT_TEMPLATE + PROMPT_SUFFIX,
-)
-
-_DECIDER_TEMPLATE = """Given the below input question and list of potential models, output a comma separated list of the model names that may be necessary to answer this question.
-
-Question: {query}
-
-Model Names: {model_names}
-
-Relevant Model Names:"""
-DECIDER_PROMPT = PromptTemplate(
-    input_variables=["query", "model_names"],
-    template=_DECIDER_TEMPLATE,
-    output_parser=CommaSeparatedListOutputParser(),
 )
