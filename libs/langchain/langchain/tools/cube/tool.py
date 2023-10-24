@@ -21,6 +21,7 @@ Here is the input schema:
 {schema}
 ```"""
 
+
 class BaseCubeTool(BaseModel):
     """Base tool for interacting with a Cube Semantic Layer."""
 
@@ -63,16 +64,16 @@ class LoadCubeTool(BaseCubeTool, BaseTool):
     """
 
     def _run(
-            self,
-            query: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get the data for a query."""
 
         try:
-            parser = PydanticOutputParser(pydantic_object=Query)
+            parser: PydanticOutputParser = PydanticOutputParser(pydantic_object=Query)
             data = self.cube.load(parser.parse(query))
-            return json.dumps(data['data'])
+            return json.dumps(data["data"])
         except (OutputParserException, ValueError) as e:
             return f"Error: {e}"
 
@@ -89,9 +90,9 @@ class MetaInformationCubeTool(BaseCubeTool, BaseTool):
     """
 
     def _run(
-            self,
-            model_names: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        model_names: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get the meta-information of the Cube Semantic Layer."""
         return self.cube.get_model_mate_information(model_names.split(", "))
@@ -101,12 +102,14 @@ class ListCubeTool(BaseCubeTool, BaseTool):
     """Tool for getting models names and descriptions."""
 
     name: str = "list_models_cube"
-    description: str = "Input is an empty string, output is a Markdown table of models in the Cube."
+    description: str = (
+        "Input is an empty string, output is a Markdown table of models in the Cube."
+    )
 
     def _run(
-            self,
-            tool_input: str = "",
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        tool_input: str = "",
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get the names, descriptions of the models."""
         return self.cube.get_usable_models()

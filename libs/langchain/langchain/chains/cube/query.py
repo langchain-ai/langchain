@@ -27,17 +27,17 @@ class CubeQueryInputWithModels(TypedDict):
 
 
 def create_cube_query_chain(
-        llm: BaseLanguageModel,
-        cube: Cube,
-        prompt: Optional[BasePromptTemplate] = None,
-        k: int = 5,
+    llm: BaseLanguageModel,
+    cube: Cube,
+    prompt: Optional[BasePromptTemplate] = None,
+    k: int = 5,
 ) -> Runnable[Union[CubeQueryInput, CubeQueryInputWithModels], Query]:
     if prompt is not None:
         prompt_to_use = prompt
     else:
         prompt_to_use = PROMPT
 
-    parser = PydanticOutputParser(pydantic_object=Query)
+    parser: PydanticOutputParser = PydanticOutputParser(pydantic_object=Query)
 
     inputs = {
         "input": lambda x: x["question"] + "\nCubeQuery: ",
@@ -50,8 +50,8 @@ def create_cube_query_chain(
     }
 
     return (
-            RunnableParallel(inputs)
-            | prompt_to_use
-            | llm.bind(stop=["\nCubeResult:"])
-            | PydanticOutputParser(pydantic_object=Query)
+        RunnableParallel(inputs)
+        | prompt_to_use
+        | llm.bind(stop=["\nCubeResult:"])
+        | PydanticOutputParser(pydantic_object=Query)
     )

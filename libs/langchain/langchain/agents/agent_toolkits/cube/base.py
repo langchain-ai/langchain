@@ -2,7 +2,11 @@
 from typing import Any, Dict, List, Optional, Sequence
 
 from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
-from langchain.agents.agent_toolkits.cube.prompt import CUBE_PREFIX, CUBE_SUFFIX, CUBE_FUNCTIONS_SUFFIX
+from langchain.agents.agent_toolkits.cube.prompt import (
+    CUBE_FUNCTIONS_SUFFIX,
+    CUBE_PREFIX,
+    CUBE_SUFFIX,
+)
 from langchain.agents.agent_toolkits.cube.toolkit import CubeToolkit
 from langchain.agents.agent_types import AgentType
 from langchain.agents.mrkl.base import ZeroShotAgent
@@ -21,22 +25,22 @@ from langchain.tools import BaseTool
 
 
 def create_cube_agent(
-        llm: BaseLanguageModel,
-        toolkit: CubeToolkit,
-        agent_type: AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        callback_manager: Optional[BaseCallbackManager] = None,
-        prefix: str = CUBE_PREFIX,
-        suffix: Optional[str] = None,
-        format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[List[str]] = None,
-        top_k: int = 10,
-        max_iterations: Optional[int] = 15,
-        max_execution_time: Optional[float] = None,
-        early_stopping_method: str = "force",
-        verbose: bool = False,
-        agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-        extra_tools: Sequence[BaseTool] = (),
-        **kwargs: Any,
+    llm: BaseLanguageModel,
+    toolkit: CubeToolkit,
+    agent_type: AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    callback_manager: Optional[BaseCallbackManager] = None,
+    prefix: str = CUBE_PREFIX,
+    suffix: Optional[str] = None,
+    format_instructions: str = FORMAT_INSTRUCTIONS,
+    input_variables: Optional[List[str]] = None,
+    top_k: int = 10,
+    max_iterations: Optional[int] = 15,
+    max_execution_time: Optional[float] = None,
+    early_stopping_method: str = "force",
+    verbose: bool = False,
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    extra_tools: Sequence[BaseTool] = (),
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a Cube Semantic Layer agent from an LLM and tools."""
     tools = toolkit.get_tools() + list(extra_tools)

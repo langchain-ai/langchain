@@ -7,8 +7,8 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.cube.tool import (
     ListCubeTool,
-    MetaInformationCubeTool,
     LoadCubeTool,
+    MetaInformationCubeTool,
 )
 from langchain.utilities.cube import Cube
 

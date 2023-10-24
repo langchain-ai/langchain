@@ -1,7 +1,7 @@
 import json
 from datetime import date, datetime
 from enum import Enum
-from typing import Optional, List, Dict, Any, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
@@ -58,18 +58,18 @@ class Filter(BaseModel):
 
 
 class TimeDimension(BaseModel):
-    dimension: str = Field(
-        title="dimension column"
-    )
+    dimension: str = Field(title="dimension column")
     dateRange: List[Union[datetime, date]] = Field(
         min_items=2,
         max_items=2,
-        description="An array of dates with the following format YYYY-MM-DD or in YYYY-MM-DDTHH:mm:ss.SSS format."
+        description="An array of dates with the following format YYYY-MM-DD"
+        " or in YYYY-MM-DDTHH:mm:ss.SSS format.",
     )
     granularity: Optional[Granularity] = Field(
         default=None,
-        description="A granularity for a time dimension. If you pass null to the granularity, Cube will only perform"
-                    " filtering by a specified time dimension, without grouping."
+        description="A granularity for a time dimension. If you pass null to the"
+        " granularity, Cube will only perform filtering by a specified"
+        " time dimension, without grouping.",
     )
 
     class Config:
@@ -103,7 +103,7 @@ class Query(BaseModel):
     )
     order: Optional[Dict[str, Order]] = Field(
         default=None,
-        description="The keys are measures columns or dimensions columns to order by."
+        description="The keys are measures columns or dimensions columns to order by.",
     )
 
     class Config:
@@ -116,12 +116,12 @@ class Cube:
     """Cube Client."""
 
     def __init__(
-            self,
-            cube_api_url: str,
-            cube_api_token: str,
-            ignore_models: Optional[List[str]] = None,
-            include_models: Optional[List[str]] = None,
-            custom_model_info: Optional[dict] = None,
+        self,
+        cube_api_url: str,
+        cube_api_token: str,
+        ignore_models: Optional[List[str]] = None,
+        include_models: Optional[List[str]] = None,
+        custom_model_info: Optional[dict] = None,
     ):
         self.cube_api_url = cube_api_url
         self.cube_api_token = cube_api_token
@@ -132,17 +132,13 @@ class Cube:
         if self._include_models:
             missing_models = self._include_models - self._all_models
             if missing_models:
-                raise ValueError(
-                    f"include_models {missing_models} not found in cube"
-                )
+                raise ValueError(f"include_models {missing_models} not found in cube")
 
         self._ignore_models = set(ignore_models) if ignore_models else set()
         if self._ignore_models:
             missing_models = self._ignore_models - self._all_models
             if missing_models:
-                raise ValueError(
-                    f"ignore_models {missing_models} not found in cube"
-                )
+                raise ValueError(f"ignore_models {missing_models} not found in cube")
 
         usable_models = self.get_usable_model_names()
         self._usable_models = set(usable_models) if usable_models else self._all_models
@@ -163,11 +159,11 @@ class Cube:
             )
 
     @property
-    def metadata(self):
+    def mate_information(self) -> List[Dict[str, Any]]:
         """Metadata of the cube."""
         return self._mate_information
 
-    def _get_mate_information(self):
+    def _get_mate_information(self) -> List[Dict[str, Any]]:
         """Metadata of the cube."""
         headers = {
             "Content-Type": "application/json",
@@ -184,13 +180,13 @@ class Cube:
 
         return cubes
 
-    def get_usable_model_names(self):
+    def get_usable_model_names(self) -> List[str]:
         """Get names of models available."""
         if self._include_models:
             return sorted(self._include_models)
         return sorted(self._all_models - self._ignore_models)
 
-    def get_usable_models(self):
+    def get_usable_models(self) -> str:
         """Get available models."""
 
         all_model_names = self.get_usable_model_names()
@@ -212,16 +208,16 @@ class Cube:
         """Information about all models in the cube."""
         return self.get_model_mate_information()
 
-    def get_model_mate_information(self, model_names: Optional[List[str]] = None) -> str:
+    def get_model_mate_information(
+        self, model_names: Optional[List[str]] = None
+    ) -> str:
         """Get information about specified models."""
 
         all_model_names = self.get_usable_model_names()
         if model_names is not None:
             missing_models = set(model_names).difference(all_model_names)
             if missing_models:
-                raise ValueError(
-                    f"model_names {missing_models} not found in cube"
-                )
+                raise ValueError(f"model_names {missing_models} not found in cube")
             all_model_names = model_names
 
         models = []
@@ -243,7 +239,10 @@ class Cube:
 
                 for measure in m["measures"]:
                     information += (
-                        f"| {measure.get('title')} | {measure.get('description')} | {measure.get('name')} | {measure.get('type')} |\n"
+                        f"| {measure.get('title')} "
+                        f"| {measure.get('description')} "
+                        f"| {measure.get('name')} "
+                        f"| {measure.get('type')} |\n"
                     )
 
             if m["dimensions"]:
@@ -253,7 +252,10 @@ class Cube:
 
                 for dimension in m["dimensions"]:
                     information += (
-                        f"| {dimension.get('title')} | {dimension.get('description')} | {dimension.get('name')} | {dimension.get('type')} |\n"
+                        f"| {dimension.get('title')} "
+                        f"| {dimension.get('description')} "
+                        f"| {dimension.get('name')} "
+                        f"| {dimension.get('type')} |\n"
                     )
 
             models.append(information)
@@ -270,9 +272,7 @@ class Cube:
             "Authorization": self.cube_api_token,
         }
 
-        params = {
-            "query": None
-        }
+        params = {"query": ""}
 
         if isinstance(query, Query):
             params["query"] = query.json(exclude_unset=True)
@@ -301,9 +301,7 @@ class Cube:
             "Authorization": self.cube_api_token,
         }
 
-        params = {
-            "query": None
-        }
+        params = {"query": ""}
 
         if isinstance(query, Query):
             params["query"] = query.json(exclude_unset=True)
