@@ -662,7 +662,7 @@ class ElasticsearchStore(VectorStore):
 
         if remove_vector_query_field_from_metadata:
             for doc in selected_docs:
-                del doc.metadata["vector"]
+                del doc.metadata[self.vector_query_field]
 
         return selected_docs
 

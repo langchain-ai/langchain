@@ -64,29 +64,23 @@ class RunnableConfig(TypedDict, total=False):
     Name for the tracer run for this call. Defaults to the name of the class.
     """
 
-    locals: Dict[str, Any]
-    """
-    Variables scoped to this call and any sub-calls. Usually used with
-    GetLocalVar() and PutLocalVar(). Care should be taken when placing mutable
-    objects in locals, as they will be shared between parallel sub-calls.
-    """
-
     max_concurrency: Optional[int]
     """
     Maximum number of parallel calls to make. If not provided, defaults to 
-    ThreadPoolExecutor's default. This is ignored if an executor is provided.
+    ThreadPoolExecutor's default.
     """
 
     recursion_limit: int
     """
-    Maximum number of times a call can recurse. If not provided, defaults to 10.
+    Maximum number of times a call can recurse. If not provided, defaults to 25.
     """
 
     configurable: Dict[str, Any]
     """
-    Runtime values for attributes previously made configurable by this Runnable,
-    or sub-Runnables, through .make_configurable(). Check .output_schema for
-    a description of the attributes that have been made configurable.
+    Runtime values for attributes previously made configurable on this Runnable,
+    or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
+    Check .output_schema() for a description of the attributes that have been made 
+    configurable.
     """
 
 
@@ -95,8 +89,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         tags=[],
         metadata={},
         callbacks=None,
-        locals={},
-        recursion_limit=10,
+        recursion_limit=25,
     )
     if config is not None:
         empty.update(
@@ -123,14 +116,13 @@ def get_config_list(
     return (
         list(map(ensure_config, config))
         if isinstance(config, list)
-        else [patch_config(config, copy_locals=True) for _ in range(length)]
+        else [ensure_config(config) for _ in range(length)]
     )
 
 
 def patch_config(
     config: Optional[RunnableConfig],
     *,
-    copy_locals: bool = False,
     callbacks: Optional[BaseCallbackManager] = None,
     recursion_limit: Optional[int] = None,
     max_concurrency: Optional[int] = None,
@@ -138,8 +130,6 @@ def patch_config(
     configurable: Optional[Dict[str, Any]] = None,
 ) -> RunnableConfig:
     config = ensure_config(config)
-    if copy_locals:
-        config["locals"] = config["locals"].copy()
     if callbacks is not None:
         # If we're replacing callbacks we need to unset run_name
         # As that should apply only to the same run as the original callbacks

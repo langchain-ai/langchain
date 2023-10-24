@@ -1,4 +1,4 @@
-name: release
+name: test-release
 
 on:
   workflow_call:
@@ -12,9 +12,7 @@ env:
   POETRY_VERSION: "1.6.1"
 
 jobs:
-  if_release:
-    # Disallow publishing from branches that aren't `master`.
-    if: github.ref == 'refs/heads/master'
+  publish_to_test_pypi:
     runs-on: ubuntu-latest
     permissions:
       # This permission is used for trusted publishing:
@@ -23,9 +21,6 @@ jobs:
       # Trusted publishing has to also be configured on PyPI for each package:
       # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
       id-token: write
-
-      # This permission is needed by `ncipollo/release-action` to create the GitHub release.
-      contents: write
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -46,19 +41,10 @@ jobs:
         id: check-version
         run: |
           echo version=$(poetry version --short) >> $GITHUB_OUTPUT
-      - name: Create Release
-        uses: ncipollo/release-action@v1
-        if: ${{ inputs.working-directory == 'libs/langchain' }}
-        with:
-          artifacts: "dist/*"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          draft: false
-          generateReleaseNotes: true
-          tag: v${{ steps.check-version.outputs.version }}
-          commit: master
-      - name: Publish package distributions to PyPI
+      - name: Publish package to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          repository-url: https://test.pypi.org/legacy/
           packages-dir: ${{ inputs.working-directory }}/dist/
           verbose: true
           print-hash: true
