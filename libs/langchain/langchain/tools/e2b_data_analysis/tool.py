@@ -39,7 +39,7 @@ def _unparse(tree: ast.AST) -> str:
         source_code = s.getvalue()
         s.close()
     else:
-        source_code = ast.unparse(tree)
+        source_code = ast.unparse(tree)  # type: ignore[attr-defined]
     return source_code
 
 
