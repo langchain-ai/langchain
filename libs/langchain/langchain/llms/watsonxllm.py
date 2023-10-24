@@ -1,12 +1,12 @@
 import logging
 import os
-from typing import Any, List, Mapping, Optional, Dict, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.utils import get_from_dict_or_env
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, root_validator
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ class WatsonxLLM(LLM):
                 project_id="*****"
             )
     """
+
     model_id: str = None
     """Type of model to use."""
 
@@ -64,34 +65,54 @@ class WatsonxLLM(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key, project_id or space_id and python package exists in environment."""
-        if 'cloud.ibm.com' in values['credentials']['url']:
-            values['credentials']['apikey'] = get_from_dict_or_env(values['credentials'], "apikey", "WATSONX_APIKEY")
+        if "cloud.ibm.com" in values["credentials"]["url"]:
+            values["credentials"]["apikey"] = get_from_dict_or_env(
+                values["credentials"], "apikey", "WATSONX_APIKEY"
+            )
         else:
-            if "token" not in values['credentials'] and "TOKEN" not in os.environ and "password" not in values['credentials'] and "PASSWORD" not in os.environ and "apikey" not in values['credentials'] and "APIKEY" not in os.environ:
+            if (
+                "token" not in values["credentials"]
+                and "TOKEN" not in os.environ
+                and "password" not in values["credentials"]
+                and "PASSWORD" not in os.environ
+                and "apikey" not in values["credentials"]
+                and "APIKEY" not in os.environ
+            ):
                 raise ValueError(
                     f"Did not find 'token', 'password' or 'apikey', please add an environment variable"
                     f" `TOKEN`, 'PASSWORD' or 'APIKEY' which contains it, or pass"
                     f" 'token', 'password' or 'apikey' as a named parameter in `credentials`."
                 )
-            elif "token" in values['credentials'] or "TOKEN" in os.environ:
-                values['credentials']['token'] = get_from_dict_or_env(values['credentials'], "token", "TOKEN")
-            elif "password" in values['credentials'] or "PASSWORD" in os.environ:
-                values['credentials']['password'] = get_from_dict_or_env(values['credentials'], "password", "PASSWORD")
-                values['credentials']['username'] = get_from_dict_or_env(values['credentials'], "username", "USERNAME")
-            elif "apikey" in values['credentials'] or "APIKEY" in os.environ:
-                values['credentials']['apikey'] = get_from_dict_or_env(values['credentials'], "apikey", "APIKEY")
-                values['credentials']['username'] = get_from_dict_or_env(values['credentials'], "username", "USERNAME")
+            elif "token" in values["credentials"] or "TOKEN" in os.environ:
+                values["credentials"]["token"] = get_from_dict_or_env(
+                    values["credentials"], "token", "TOKEN"
+                )
+            elif "password" in values["credentials"] or "PASSWORD" in os.environ:
+                values["credentials"]["password"] = get_from_dict_or_env(
+                    values["credentials"], "password", "PASSWORD"
+                )
+                values["credentials"]["username"] = get_from_dict_or_env(
+                    values["credentials"], "username", "USERNAME"
+                )
+            elif "apikey" in values["credentials"] or "APIKEY" in os.environ:
+                values["credentials"]["apikey"] = get_from_dict_or_env(
+                    values["credentials"], "apikey", "APIKEY"
+                )
+                values["credentials"]["username"] = get_from_dict_or_env(
+                    values["credentials"], "username", "USERNAME"
+                )
 
         try:
             from ibm_watson_machine_learning.foundation_models import Model
 
             model = Model(
                 model_id=values["model_id"],
-                credentials=values['credentials'],
+                credentials=values["credentials"],
                 params=values["params"],
-                project_id=values['project_id'],
-                space_id=values['space_id'],
-                verify=values["verify"])
+                project_id=values["project_id"],
+                space_id=values["space_id"],
+                verify=values["verify"],
+            )
             values["model"] = model
 
         except ImportError:
