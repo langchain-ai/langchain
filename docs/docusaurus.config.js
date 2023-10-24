@@ -160,7 +160,6 @@ const config = {
             label: "Integrations",
           },
           {
-            type: "link",
             href: "https://api.python.langchain.com",
             label: "API",
             position: "left",
@@ -174,10 +173,19 @@ const config = {
                 to: "/docs/community",
                 label: "Community",
               },
-              "/docs/additional_resources/dependents",
-              "/docs/additional_resources/tutorials",
-              "/docs/additional_resources/youtube",
-              { type: "link", label: "Gallery", href: "https://github.com/kyrolabs/awesome-langchain" }
+              {
+                to: "/docs/additional_resources/dependents",
+                label: "Dependents",
+              },
+              {
+                to: "/docs/additional_resources/tutorials",
+                label: "Tutorials"
+              },
+              {
+                to: "/docs/additional_resources/youtube",
+                label: "YouTube videos"
+              },
+              { label: "Gallery", href: "https://github.com/kyrolabs/awesome-langchain" }
             ]
           },
           {
@@ -186,27 +194,22 @@ const config = {
             position: "right",
             items: [
               {
-                type: "link",
                 href: "https://chat.langchain.com",
                 label: "Chat our docs",
               },
               {
-                type: "link",
                 href: "https://smith.langchain.com",
                 label: "LangSmith",
               },
               {
-                type: "link",
                 href: "https://smith.langchain.com/hub",
                 label: "LangChain Hub",
               },
               {
-                type: "link",
                 href: "https://github.com/langchain-ai/langserve",
                 label: "LangServe",
               },
               {
-                type: "link",
                 href: "https://js.langchain.com/docs",
                 label: "JS/TS",
               },
