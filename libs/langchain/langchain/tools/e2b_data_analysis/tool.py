@@ -45,7 +45,14 @@ def add_last_line_print(code: str) -> str:
     node = tree.body[-1]
     if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
         if isinstance(node.value.func, ast.Name) and node.value.func.id == "print":
-            return ast.unparse(tree)
+            if version_info.minor < 9:
+                s = StringIO()
+                Unparser(tree, file=s)
+                source_code = s.getvalue()
+                s.close()
+                return source_code
+            else:
+                ast.unparse(tree)  # mypy: disable-error-code=attr-defined
 
     if isinstance(node, ast.Expr):
         tree.body[-1] = ast.Expr(
@@ -62,7 +69,7 @@ def add_last_line_print(code: str) -> str:
         source_code = s.getvalue()
         s.close()
     else:
-        source_code = ast.unparse(tree)
+        source_code = ast.unparse(tree)  # mypy: disable-error-code=attr-defined
     return source_code
 
 
