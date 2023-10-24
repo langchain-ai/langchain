@@ -1,12 +1,18 @@
 """Test formatting functionality."""
-
+import pytest
 import unittest
 from typing import Union
 
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValueConcrete
 from langchain.pydantic_v1 import BaseModel
-from langchain.schema import AgentAction, AgentFinish, Document
+from langchain.schema import (
+    AgentAction,
+    AgentFinish,
+    Document,
+    ChatGeneration,
+    Generation,
+)
 from langchain.schema.agent import AgentActionMessageLog
 from langchain.schema.messages import (
     AIMessage,
@@ -23,6 +29,8 @@ from langchain.schema.messages import (
     messages_from_dict,
     messages_to_dict,
 )
+from langchain.schema.output import ChatGenerationChunk
+from langchain.pydantic_v1 import ValidationError
 
 
 class TestGetBufferString(unittest.TestCase):
@@ -108,6 +116,9 @@ def test_serialization_of_wellknown_objects() -> None:
             AgentFinish,
             AgentAction,
             AgentActionMessageLog,
+            ChatGeneration,
+            Generation,
+            ChatGenerationChunk,
         ]
 
     lc_objects = [
@@ -144,6 +155,16 @@ def test_serialization_of_wellknown_objects() -> None:
             log="",
             message_log=[HumanMessage(content="human")],
         ),
+        Generation(
+            text="hello",
+            generation_info={"info": "info"},
+        ),
+        ChatGeneration(
+            message=HumanMessage(content="human"),
+        ),
+        ChatGenerationChunk(
+            message=HumanMessageChunk(content="cat"),
+        ),
     ]
 
     for lc_object in lc_objects:
@@ -151,3 +172,7 @@ def test_serialization_of_wellknown_objects() -> None:
         assert "type" in d, f"Missing key `type` for {type(lc_object)}"
         obj1 = WellKnownLCObject.parse_obj(d)
         assert type(obj1.__root__) == type(lc_object), f"failed for {type(lc_object)}"
+
+    with pytest.raises(ValidationError):
+        # Make sure that specifically validation error is raised
+        WellKnownLCObject.parse_obj({})
