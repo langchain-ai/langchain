@@ -48,7 +48,10 @@ class GigaChat(BaseLLM):
     verify_ssl_certs: Optional[bool] = None
     """ Check certificates for all requests """
 
-    use_auth: Optional[bool] = None
+    ca_bundle_file: Optional[str] = None
+    cert_file: Optional[str] = None
+    key_file: Optional[str] = None
+    key_file_password: Optional[str] = None
 
     profanity: bool = True
     streaming: bool = False
@@ -67,6 +70,7 @@ class GigaChat(BaseLLM):
             "credentials": "GIGACHAT_CREDENTIALS",
             "access_token": "GIGACHAT_ACCESS_TOKEN",
             "password": "GIGACHAT_PASSWORD",
+            "key_file_password": "GIGACHAT_KEY_FILE_PASSWORD",
         }
 
     @property
@@ -86,7 +90,10 @@ class GigaChat(BaseLLM):
             password=self.password,
             timeout=self.timeout,
             verify_ssl_certs=self.verify_ssl_certs,
-            use_auth=self.use_auth,
+            ca_bundle_file=self.ca_bundle_file,
+            cert_file=self.cert_file,
+            key_file=self.key_file,
+            key_file_password=self.key_file_password,
         )
 
     def _build_payload(self, messages: List[str]) -> Dict[str, Any]:
