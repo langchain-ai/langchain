@@ -123,7 +123,7 @@ def _copy_template_files(
                         project_name_identifier=project_name_identifier,
                         author_name=author_name,
                         author_email=author_email,
-                        langchain_version=langchain.__version__,
+                        gigachain_version=langchain.__version__,
                     )
                 )
 

@@ -61,15 +61,17 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             chains and cannot return as rich of an output as `__call__`.
     """
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "ChainInput", **{k: (Any, None) for k in self.input_keys}
         )
 
-    @property
-    def output_schema(self) -> Type[BaseModel]:
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "ChainOutput", **{k: (Any, None) for k in self.output_keys}
@@ -650,7 +652,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
-                json.dump(chain_dict, f, indent=4)
+                json.dump(chain_dict, f, indent=4, ensure_ascii=False)
         elif save_path.suffix == ".yaml":
             with open(file_path, "w") as f:
                 yaml.dump(chain_dict, f, default_flow_style=False)

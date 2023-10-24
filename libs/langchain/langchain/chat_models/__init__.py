@@ -31,6 +31,7 @@ from langchain.chat_models.fireworks import ChatFireworks
 from langchain.chat_models.gigachat import GigaChat
 from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.human import HumanInputChatModel
+from langchain.chat_models.hunyuan import ChatHunyuan
 from langchain.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
 from langchain.chat_models.jinachat import JinaChat
 from langchain.chat_models.konko import ChatKonko
@@ -71,4 +72,5 @@ __all__ = [
     "ChatFireworks",
     "ChatYandexGPT",
     "ChatBaichuan",
+    "ChatHunyuan",
 ]
