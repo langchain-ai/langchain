@@ -52,7 +52,7 @@ def add_last_line_print(code: str) -> str:
                 s.close()
                 return source_code
             else:
-                ast.unparse(tree)  # mypy: disable-error-code="attr-defined"
+                ast.unparse(tree)  # type: ignore[attr-defined]
 
     if isinstance(node, ast.Expr):
         tree.body[-1] = ast.Expr(
