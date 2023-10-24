@@ -1,5 +1,4 @@
 import pytest
-from pydantic import ValidationError
 
 from langchain.vectorstores.redis.schema import (
     FlatVectorField,
@@ -37,6 +36,8 @@ def test_numeric_field_schema_creation() -> None:
 
 def test_redis_vector_field_validation() -> None:
     """Test validation for RedisVectorField's datatype."""
+    from langchain.pydantic_v1 import ValidationError
+
     with pytest.raises(ValidationError):
         RedisVectorField(
             name="vector", dims=128, algorithm="INVALID_ALGO", datatype="INVALID_TYPE"
@@ -124,7 +125,7 @@ def test_read_schema_dict_input() -> None:
         "tag": [{"name": "tag"}],
         "vector": [{"name": "content_vector", "dims": 100, "algorithm": "FLAT"}],
     }
-    output = read_schema(index_schema)
+    output = read_schema(index_schema=index_schema)  # type: ignore
     assert output == index_schema
 
 
@@ -138,9 +139,9 @@ def test_redis_model_creation() -> None:
     )
 
     assert redis_model.text[0].name == "content"
-    assert redis_model.tag[0].name == "tag"
-    assert redis_model.numeric[0].name == "numeric"
-    assert redis_model.vector[0].name == "flat_vector"
+    assert redis_model.tag[0].name == "tag"  # type: ignore
+    assert redis_model.numeric[0].name == "numeric"  # type: ignore
+    assert redis_model.vector[0].name == "flat_vector"  # type: ignore
 
     # Test the content_vector property
     with pytest.raises(ValueError):
@@ -151,5 +152,5 @@ def test_redis_model_creation() -> None:
 
 def test_read_schema() -> None:
     # Test the read_schema function with invalid input
-    with pytest.raises(FileNotFoundError):
-        read_schema("fake_path")  # non-dict and non-str/pathlike input
+    with pytest.raises(TypeError):
+        read_schema(index_schema=None)  # non-dict and non-str/pathlike input

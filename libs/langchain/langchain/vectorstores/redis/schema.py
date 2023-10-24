@@ -52,7 +52,7 @@ class TextFieldSchema(RedisField):
             self.name,
             weight=self.weight,
             no_stem=self.no_stem,
-            phonetic_matcher=self.phonetic_matcher,
+            phonetic_matcher=self.phonetic_matcher,  # type: ignore
             sortable=self.sortable,
             no_index=self.no_index,
         )
@@ -100,7 +100,7 @@ class RedisVectorField(RedisField):
     initial_cap: Optional[int] = None
 
     @validator("algorithm", "datatype", "distance_metric", pre=True, each_item=True)
-    def uppercase_strings(cls, v) -> str:
+    def uppercase_strings(cls, v: str) -> str:
         return v.upper()
 
     @validator("datatype", pre=True)
@@ -283,7 +283,7 @@ class RedisModel(BaseModel):
 
 
 def read_schema(
-    index_schema: Optional[Union[Dict[str, str], str, os.PathLike]]
+    index_schema: Optional[Union[Dict[str, List[Any]], str, os.PathLike]]
 ) -> Dict[str, Any]:
     """Reads in the index schema from a dict or yaml file.
 
