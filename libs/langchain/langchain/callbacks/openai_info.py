@@ -57,10 +57,19 @@ MODEL_COST_PER_1K_TOKENS = {
     "text-davinci-003": 0.02,
     "text-davinci-002": 0.02,
     "code-davinci-002": 0.02,
-    "ada-finetuned": 0.0016,
-    "babbage-finetuned": 0.0024,
-    "curie-finetuned": 0.012,
-    "davinci-finetuned": 0.12,
+    # Fine Tuned input
+    "babbage-002-finetuned": 0.0016,
+    "davinci-002-finetuned": 0.012,
+    "gpt-3.5-turbo-0613-finetuned": 0.012,
+    # Fine Tuned output
+    "babbage-002-finetuned-completion": 0.0016,
+    "davinci-002-finetuned-completion": 0.012,
+    "gpt-3.5-turbo-0613-finetuned-completion": 0.016,
+    # Legacy fine-tuned models
+    "ada-finetuned-legacy": 0.0016,
+    "babbage-finetuned-legacy": 0.0024,
+    "curie-finetuned-legacy": 0.012,
+    "davinci-finetuned-legacy": 0.12,
 }
 
 
