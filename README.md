@@ -25,7 +25,7 @@ Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) t
 ## 🚨Breaking Changes for select chains (SQLDatabase) on 7/28/23
 
 In an effort to make `langchain` leaner and safer, we are moving select chains to `langchain_experimental`.
-This migration has already started, but we are remaining backwards compatible until 7/28.
+This migration has already started, but we are remaining backward compatible until 7/28.
 On that date, we will remove functionality from `langchain`.
 Read more about the motivation and the progress [here](https://github.com/langchain-ai/langchain/discussions/8043).
 Read how to migrate your code [here](MIGRATE.md).
@@ -89,7 +89,7 @@ Agents involve an LLM making decisions about which Actions to take, taking that 
 
 **🧠 Memory:**
 
-Memory refers to persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
+Memory refers to the persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
 
 **🧐 Evaluation:**
 
