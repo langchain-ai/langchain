@@ -5,11 +5,11 @@ from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 
 # Function output schema
 class Overview(BaseModel):
-    """Summary, langugae, and keywords for input text"""
+    """Summary, language, and keywords for input text"""
 
     summary: str = Field(description="Provide a concise summary of the content.")
-    langugae: str = Field(
-        description="Provide the languge that the content is written in."
+    language: str = Field(
+        description="Provide the language that the content is written in."
     )
     keywords: str = Field(description="Provide keywords related to the content.")
 
