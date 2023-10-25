@@ -13,7 +13,7 @@ fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
 [tool.poetry.group.dev.dependencies]
-langc = {git = "https://github.com/pingpong-templates/cli"}
+langchain-cli = {git = "https://github.com/langchain-ai/langchain.git", rev = "erick/cli", subdirectory = "libs/cli"}
 poethepoet = "^0.24.1"
 
 [tool.langserve]
@@ -21,7 +21,7 @@ export_module = "__package_name__.chain"
 export_attr = "chain"
 
 [tool.poe.tasks.start]
-cmd="uvicorn langc.dev_scripts:create_demo_server --reload --port $port --host $host"
+cmd="uvicorn langchain_cli.dev_scripts:create_demo_server --reload --port $port --host $host"
 args = [
     {name = "port", help = "port to run on", default = "8000"},
     {name = "host", help = "host to run on", default = "127.0.0.1"}
