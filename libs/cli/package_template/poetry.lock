@@ -660,52 +660,43 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 
 [[package]]
 name = "langchain-cli"
-version = "0.0.1"
-description = ""
+version = "0.0.1rc2"
+description = "CLI for interacting with LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
-files = []
-develop = false
+files = [
+    {file = "langchain_cli-0.0.1rc2-py3-none-any.whl", hash = "sha256:5a873c2e4df636bd635b4e670d47b8a225cb5536845c6772d9736427482da74e"},
+    {file = "langchain_cli-0.0.1rc2.tar.gz", hash = "sha256:57b24b118bc99eb2285f66dcf412349ad1e16a0983096dc68e997a4f4f66a73a"},
+]
 
 [package.dependencies]
-fastapi = "^0.104.0"
-gitpython = "^3.1.40"
-langserve = {git = "https://github.com/langchain-ai/langserve"}
-tomli = "^2.0.1"
-typer = {version = "^0.9.0", extras = ["all"]}
-uvicorn = "^0.23.2"
-
-[package.source]
-type = "git"
-url = "https://github.com/langchain-ai/langchain.git"
-reference = "erick/cli"
-resolved_reference = "1ed00fd2c8d408f96d2bfeaa6ea11f4ebcb7f605"
-subdirectory = "libs/cli"
+fastapi = ">=0.104.0,<0.105.0"
+gitpython = ">=3.1.40,<4.0.0"
+langserve = ">=0.0.16,<0.0.17"
+tomli = ">=2.0.1,<3.0.0"
+typer = {version = ">=0.9.0,<0.10.0", extras = ["all"]}
+uvicorn = ">=0.23.2,<0.24.0"
 
 [[package]]
 name = "langserve"
 version = "0.0.16"
 description = ""
 optional = false
-python-versions = "^3.8.1"
-files = []
-develop = false
+python-versions = ">=3.8.1,<4.0.0"
+files = [
+    {file = "langserve-0.0.16-py3-none-any.whl", hash = "sha256:54a9b94e22ed5948f683e24f01939d793c4a07460c58f23a52dab1909a6627e9"},
+    {file = "langserve-0.0.16.tar.gz", hash = "sha256:b38c3524515f5d244dfdead8a0ddda76465966d218d95b002abaefd0470ff4cb"},
+]
 
 [package.dependencies]
 httpx = ">=0.23.0"
 langchain = ">=0.0.322"
-pydantic = "^1"
+pydantic = ">=1,<2"
 
 [package.extras]
 all = ["fastapi (>=0.90.1)", "httpx-sse (>=0.3.1)", "sse-starlette (>=1.3.0,<2.0.0)"]
 client = ["httpx-sse (>=0.3.1)"]
 server = ["fastapi (>=0.90.1)", "sse-starlette (>=1.3.0,<2.0.0)"]
-
-[package.source]
-type = "git"
-url = "https://github.com/langchain-ai/langserve"
-reference = "HEAD"
-resolved_reference = "03c1fd981fcf62be9379449b3c4674c4fa1a5545"
 
 [[package]]
 name = "langsmith"
@@ -1449,4 +1440,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "247cc5be78ddbdb5fe9c73adb3233d14e5c40c14f61ebfb6f7c1a49e5cd191e5"
+content-hash = "96121d80e5ec3a33ba2b75d9fcaf21abea18023fdfb10799aecd222d8e66383f"
