@@ -887,7 +887,8 @@ def _prepare_eval_run(
             f"Project {project_name} already exists. Please use a different name."
         )
     print(
-        f"View the evaluation results for project '{project_name}' at:\n{project.url}",
+        f"View the evaluation results for project '{project_name}'"
+        f" at:\n{project.url}?eval=true",
         flush=True,
     )
     examples = list(client.list_examples(dataset_id=dataset.id))
