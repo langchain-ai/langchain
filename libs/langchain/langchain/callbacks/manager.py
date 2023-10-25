@@ -1958,8 +1958,12 @@ def _configure(
     tracing_v2_enabled_ = (
         env_var_is_set("LANGCHAIN_TRACING_V2") or tracer_v2 is not None
     )
-    tracer_project = os.environ.get(
-        "LANGCHAIN_PROJECT", os.environ.get("LANGCHAIN_SESSION", "default")
+    tracer_project = getattr(
+        run_tree,
+        "session_name",
+        os.environ.get(
+            "LANGCHAIN_PROJECT", os.environ.get("LANGCHAIN_SESSION", "default")
+        ),
     )
     run_collector_ = run_collector_var.get()
     debug = _get_debug()

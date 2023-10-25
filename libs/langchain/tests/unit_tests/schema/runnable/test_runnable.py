@@ -1719,7 +1719,9 @@ async def test_prompt_with_llm(
                 "op": "add",
                 "path": "/logs/FakeListLLM/final_output",
                 "value": {
-                    "generations": [[{"generation_info": None, "text": "foo"}]],
+                    "generations": [
+                        [{"generation_info": None, "text": "foo", "type": "Generation"}]
+                    ],
                     "llm_output": None,
                     "run": None,
                 },

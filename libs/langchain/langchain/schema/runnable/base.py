@@ -116,7 +116,7 @@ class Runnable(Generic[Input, Output], ABC):
 
     For example,
 
-    ..code-block:: python
+    .. code-block:: python
 
         from langchain.schema.runnable import RunnableLambda
 
