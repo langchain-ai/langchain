@@ -1,12 +1,9 @@
 """Test ChatFireworks wrapper."""
 
 import pytest
+
 from langchain.chat_models.fireworks import ChatFireworks
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-    LLMResult,
-)
+from langchain.schema import ChatGeneration, ChatResult, LLMResult
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 
 
