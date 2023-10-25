@@ -22,17 +22,17 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class BESVerctorStore(VectorStore):
+class BESVectorStore(VectorStore):
     """`Baidu Elasticsearch` vector store.
 
     Example:
         .. code-block:: python
 
-            from langchain.vectorstores import BESVerctorStore
+            from langchain.vectorstores import BESVectorStore
             from langchain.embeddings.openai import OpenAIEmbeddings
 
             embeddings = OpenAIEmbeddings()
-            vectorstore = BESVerctorStore(
+            vectorstore = BESVectorStore(
                 embedding=OpenAIEmbeddings(),
                 index_name="langchain-demo",
                 bes_url="http://localhost:9200"
@@ -67,7 +67,7 @@ class BESVerctorStore(VectorStore):
         self.index_params = kwargs.get("index_params") or {}
 
         if bes_url is not None:
-            self.client = BESVerctorStore.bes_client(
+            self.client = BESVectorStore.bes_client(
                 bes_url=bes_url, username=user, password=password
             )
         else:
@@ -346,8 +346,8 @@ class BESVerctorStore(VectorStore):
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         **kwargs: Any,
-    ) -> "BESVerctorStore":
-        """Construct BESVerctorStore wrapper from documents.
+    ) -> "BESVectorStore":
+        """Construct BESVectorStore wrapper from documents.
 
         Args:
             documents: List of documents to add to the Elasticsearch index.
@@ -357,7 +357,7 @@ class BESVerctorStore(VectorStore):
             kwargs: create index key words arguments
         """
 
-        vectorStore = BESVerctorStore._bes_vector_store(embedding=embedding, **kwargs)
+        vectorStore = BESVectorStore._bes_vector_store(embedding=embedding, **kwargs)
         # Encode the provided texts and add them to the newly created index.
         vectorStore.add_documents(documents)
 
@@ -370,8 +370,8 @@ class BESVerctorStore(VectorStore):
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
-    ) -> "BESVerctorStore":
-        """Construct BESVerctorStore wrapper from raw documents.
+    ) -> "BESVectorStore":
+        """Construct BESVectorStore wrapper from raw documents.
 
         Args:
             texts: List of texts to add to the Elasticsearch index.
@@ -381,7 +381,7 @@ class BESVerctorStore(VectorStore):
             kwargs: create index key words arguments
         """
 
-        vectorStore = BESVerctorStore._bes_vector_store(embedding=embedding, **kwargs)
+        vectorStore = BESVectorStore._bes_vector_store(embedding=embedding, **kwargs)
 
         # Encode the provided texts and add them to the newly created index.
         vectorStore.add_texts(texts, metadatas=metadatas, **kwargs)
@@ -478,7 +478,7 @@ class BESVerctorStore(VectorStore):
     @staticmethod
     def _bes_vector_store(
         embedding: Optional[Embeddings] = None, **kwargs: Any
-    ) -> "BESVerctorStore":
+    ) -> "BESVectorStore":
         index_name = kwargs.get("index_name")
 
         if index_name is None:
@@ -488,4 +488,4 @@ class BESVerctorStore(VectorStore):
         if bes_url is None:
             raise ValueError("Please provided a valid bes connection url")
 
-        return BESVerctorStore(embedding=embedding, **kwargs)
+        return BESVectorStore(embedding=embedding, **kwargs)

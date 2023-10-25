@@ -1,8 +1,8 @@
-"""Test BESVerctorStore functionality."""
+"""Test BESVectorStore functionality."""
 from typing import List, Optional
 
 from langchain.docstore.document import Document
-from langchain.vectorstores import BESVerctorStore
+from langchain.vectorstores import BESVectorStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
     fake_texts,
@@ -11,8 +11,8 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 
 def _bes_vector_db_from_texts(
     metadatas: Optional[List[dict]] = None, drop: bool = True
-) -> BESVerctorStore:
-    return BESVerctorStore.from_texts(
+) -> BESVectorStore:
+    return BESVectorStore.from_texts(
         fake_texts,
         FakeEmbeddings(),
         metadatas=metadatas,

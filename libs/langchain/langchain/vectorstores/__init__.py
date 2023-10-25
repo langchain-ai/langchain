@@ -91,9 +91,9 @@ def _import_bageldb() -> Any:
 
 
 def _import_baiducloud_vector_search() -> Any:
-    from langchain.vectorstores.baiducloud_vector_search import BESVerctorStore
+    from langchain.vectorstores.baiducloud_vector_search import BESVectorStore
 
-    return BESVerctorStore
+    return BESVectorStore
 
 
 def _import_cassandra() -> Any:
@@ -431,7 +431,7 @@ def __getattr__(name: str) -> Any:
         return _import_azuresearch()
     elif name == "Bagel":
         return _import_bageldb()
-    elif name == "BESVerctorStore":
+    elif name == "BESVectorStore":
         return _import_baiducloud_vector_search()
     elif name == "Cassandra":
         return _import_cassandra()
