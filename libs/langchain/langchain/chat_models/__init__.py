@@ -73,4 +73,5 @@ __all__ = [
     "ChatYandexGPT",
     "ChatBaichuan",
     "ChatHunyuan",
+    "GigaChat",
 ]
