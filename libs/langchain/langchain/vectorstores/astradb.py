@@ -6,7 +6,7 @@ from typing import (
     # Any,
     # Callable,
     # Dict,
-    # Iterable,
+    Iterable,
     # List,
     # Optional,
     # Tuple,
@@ -26,6 +26,29 @@ from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 ADBVST = TypeVar("ADBVST", bound="AstraDB")
+
+DEFAULT_INSERTION_BATCH_SIZE = 20  # 20 is the current maximum for the JSON API
+
+def _unique_list(lst, key: lambda itm: itm):
+    visited_keys = set()
+    new_lst = []
+    for item in lst:
+        item_key = key(item)
+        if item_key not in visited_keys:
+            visited_keys.add(item_key)
+            new_lst.append(item)
+    return new_lst
+
+
+def _batch_iterable(iterable: Iterable[T], batch_size: int) -> Iterable[Iterable[T]]:
+    this_batch = []
+    for entry in iterable:
+        this_batch.append(entry)
+        if len(this_batch) == batch_size:
+            yield this_batch
+            this_batch = []
+    if this_batch:
+        yield this_batch
 
 
 class AstraDB(VectorStore):
@@ -170,7 +193,7 @@ class AstraDB(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        batch_size: int = 16,
+        batch_size: int = DEFAULT_INSERTION_BATCH_SIZE,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -194,32 +217,61 @@ class AstraDB(VectorStore):
             metadatas = [{} for _ in _texts]
         #
         embedding_vectors = self.embedding.embed_documents(_texts)
-        #
+
+        documents_to_insert = [
+            {
+                "content": b_txt,
+                "_id": b_id,
+                "$vector": b_emb,
+                "metadata": b_md,
+            }
+            for b_txt, b_emb, b_id, b_md in zip(
+                _texts,
+                embedding_vectors,
+                ids,
+                metadatas,
+            )
+        ]
+        # unique by ID, always keep the last
+        uniqued_documents_to_insert = _unique_list(
+            documents_to_insert[::-1],
+            lambda document: document["_id"],
+        )[::-1]
+
         all_ids = []
-        for i in range(0, len(_texts), batch_size):
-            batch_texts = _texts[i : i + batch_size]
-            batch_embedding_vectors = embedding_vectors[i : i + batch_size]
-            batch_ids = ids[i : i + batch_size]
-            batch_metadatas = metadatas[i : i + batch_size]
-
-            batch_documents = [
-                {
-                    "content": b_txt,
-                    "_id": b_id,
-                    "$vector": b_emb,
-                    "metadata": b_md,
-                }
-                for b_txt, b_emb, b_id, b_md in zip(
-                    batch_texts,
-                    batch_embedding_vectors,
-                    batch_ids,
-                    batch_metadatas,
-                )
+        for document_batch in _batch_iterable(
+            uniqued_documents_to_insert,
+            batch_size,
+        ):
+            batch_inserted = []
+            im_result = self.collection.insert_many(
+                documents=document_batch,
+                options={"ordered": False},
+            )
+            batch_inserted = im_result["status"]["insertedIds"]
+            
+            # estimation of the preexisting documents that failed
+            missed_inserted_ids = {document["_id"] for document in document_batch} - set(batch_inserted)
+            errors = im_result.get("errors", [])
+            assert len(missed_inserted_ids) == len(errors)
+            assert all(error["errorCode"] == "DOCUMENT_ALREADY_EXISTS" for error in errors)
+            # deal with the missing insertions as upserts
+            missing_from_batch = [
+                document
+                for document in document_batch
+                if document["_id"] in missed_inserted_ids
             ]
+            batch_replaced = []
+            for missing_document in missing_from_batch:
+                replacement_result = self.collection.find_one_and_replace(
+                    filter={"_id": missing_document["_id"]},
+                    replacement=missing_document,
+                )
+                batch_replaced += [replacement_result["data"]["document"]["_id"]]
 
-            for document in batch_documents:
-                upsert_id = self.collection.upsert(document)
-                all_ids += [upsert_id]
+
+            upsert_ids = batch_inserted + batch_replaced
+            all_ids += upsert_ids
 
         return all_ids
 
@@ -240,9 +292,7 @@ class AstraDB(VectorStore):
         """
         metadata_parameter = self._filter_to_metadata(filter)
         #
-        # TODO: handle pagination (if the sdk does not do, as would seem)
-        #
-        hits = self.collection.find(
+        hits = list(self.collection.paginated_find(
             filter=metadata_parameter,
             sort={"$vector": embedding},
             options={"limit": k},
@@ -252,7 +302,7 @@ class AstraDB(VectorStore):
                 "metadata": 1,
                 "$similarity": 1,
             }
-        )
+        ))
         #
         return [
             (
@@ -263,7 +313,7 @@ class AstraDB(VectorStore):
                 hit["$similarity"],
                 hit["_id"],
             )
-            for hit in hits["data"]["documents"]
+            for hit in hits
         ]
 
     def similarity_search_with_score_id(
@@ -370,7 +420,7 @@ class AstraDB(VectorStore):
         """
         metadata_parameter = self._filter_to_metadata(filter)
 
-        prefetch_hits = self.collection.find(
+        prefetch_hits = list(self.collection.paginated_find(
             filter=metadata_parameter,
             sort={"$vector": embedding},
             options={"limit": fetch_k},
@@ -381,7 +431,7 @@ class AstraDB(VectorStore):
                 "$similarity": 1,
                 "$vector": 1,
             }
-        )
+        ))
 
         # let the mmr utility pick the *indices* in the above array
         mmr_chosen_indices = maximal_marginal_relevance(
