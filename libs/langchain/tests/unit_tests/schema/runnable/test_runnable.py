@@ -565,8 +565,12 @@ def test_with_types_with_type_generics() -> None:
         raise NotImplementedError()
 
     # Try specifying some
-    RunnableLambda(foo).with_types(output_type=List[int], input_type=List[int])
-    RunnableLambda(foo).with_types(output_type=Sequence[int], input_type=Sequence[int])
+    RunnableLambda(foo).with_types(
+        output_type=List[int], input_type=List[int]  # type: ignore
+    )
+    RunnableLambda(foo).with_types(
+        output_type=Sequence[int], input_type=Sequence[int]  # type: ignore[arg-type]
+    )
 
 
 def test_schema_complex_seq() -> None:
