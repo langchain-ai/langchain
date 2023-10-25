@@ -243,8 +243,10 @@ class ChatFireworks(BaseChatModel):
                 await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
 
 
-def conditional_decorator(condition, decorator):
-    def actual_decorator(func):
+def conditional_decorator(
+    condition: bool, decorator: Callable[[Any], Any]
+) -> Callable[[Any], Any]:
+    def actual_decorator(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
         if condition:
             return decorator(func)
         return func

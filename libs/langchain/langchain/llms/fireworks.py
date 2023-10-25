@@ -197,8 +197,10 @@ class Fireworks(BaseLLM):
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
 
-def conditional_decorator(condition, decorator):
-    def actual_decorator(func):
+def conditional_decorator(
+    condition: bool, decorator: Callable[[Any], Any]
+) -> Callable[[Any], Any]:
+    def actual_decorator(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
         if condition:
             return decorator(func)
         return func
