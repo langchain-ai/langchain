@@ -353,6 +353,8 @@ def _create_retry_decorator(
 
     errors = [
         fireworks.client.error.RateLimitError,
+        fireworks.client.error.InternalServerError,
+        fireworks.client.error.BadGatewayError,
         fireworks.client.error.ServiceUnavailableError,
     ]
     return create_base_retry_decorator(
