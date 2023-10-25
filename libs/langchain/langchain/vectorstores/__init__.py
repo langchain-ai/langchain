@@ -18,9 +18,8 @@ and retrieve the data that are 'most similar' to the embedded query.
 
     Embeddings, Document
 """  # noqa: E501
-from typing import Any
 
-from langchain.schema.vectorstore import VectorStore
+from typing import Any
 
 
 def _import_alibaba_cloud_open_search() -> Any:
@@ -89,6 +88,12 @@ def _import_bageldb() -> Any:
     from langchain.vectorstores.bageldb import Bagel
 
     return Bagel
+
+
+def _import_baiducloud_vector_search() -> Any:
+    from langchain.vectorstores.baiducloud_vector_search import BESVectorStore
+
+    return BESVectorStore
 
 
 def _import_cassandra() -> Any:
@@ -426,6 +431,8 @@ def __getattr__(name: str) -> Any:
         return _import_azuresearch()
     elif name == "Bagel":
         return _import_bageldb()
+    elif name == "BESVectorStore":
+        return _import_baiducloud_vector_search()
     elif name == "Cassandra":
         return _import_cassandra()
     elif name == "Chroma":
@@ -592,7 +599,6 @@ __all__ = [
     "Vald",
     "Vearch",
     "Vectara",
-    "VectorStore",
     "VespaStore",
     "Weaviate",
     "ZepVectorStore",
