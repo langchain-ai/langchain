@@ -83,7 +83,16 @@ DEFAULT_VALIDATOR_MAPPING: Dict[str, Callable] = {
 def check_valid_template(
     template: str, template_format: str, input_variables: List[str]
 ) -> None:
-    """Check that template string is valid."""
+    """Check that template string is valid.
+
+    Args:
+        template: The template string.
+        template_format: The template format. Should be one of "f-string" or "jinja2".
+        input_variables: The input variables.
+
+    Raises:
+        ValueError: If the template format is not supported.
+    """
     if template_format not in DEFAULT_FORMATTER_MAPPING:
         valid_formats = list(DEFAULT_FORMATTER_MAPPING)
         raise ValueError(
@@ -101,6 +110,18 @@ def check_valid_template(
 
 
 def get_template_variables(template: str, template_format: str) -> List[str]:
+    """Get the variables from the template.
+
+    Args:
+        template: The template string.
+        template_format: The template format. Should be one of "f-string" or "jinja2".
+
+    Returns:
+        The variables from the template.
+
+    Raises:
+        ValueError: If the template format is not supported.
+    """
     if template_format == "jinja2":
         # Get the variables for the template
         input_variables = _get_jinja2_variables_from_template(template)

@@ -5,7 +5,6 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
-import warnings
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -21,12 +20,7 @@ from typing import (
     cast,
 )
 
-from langsmith.client import Client
-from langsmith.evaluation import RunEvaluator
-from langsmith.run_helpers import is_traceable_function
-from langsmith.run_trees import RunTree
-from langsmith.schemas import Dataset, DataType, Example
-
+from langchain._api import warn_deprecated
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManager,
@@ -54,6 +48,11 @@ from langchain.schema.runnable import utils as runnable_utils
 from langchain.smith import evaluation as smith_eval
 from langchain.smith.evaluation import config as smith_eval_config
 from langchain.smith.evaluation import name_generation, progress
+from langsmith.client import Client
+from langsmith.evaluation import RunEvaluator
+from langsmith.run_helpers import is_traceable_function
+from langsmith.run_trees import RunTree
+from langsmith.schemas import Dataset, DataType, Example
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -1073,17 +1072,15 @@ async def arun_on_dataset(
 ) -> Dict[str, Any]:
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
-        warnings.warn(
-            _INPUT_MAPPER_DEP_WARNING,
-            DeprecationWarning,
-        )
+        warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
 
     if kwargs:
-        warnings.warn(
-            "The following arguments are deprecated and "
+        warn_deprecated(
+            "0.0.305",
+            message="The following arguments are deprecated and "
             "will be removed in a future release: "
             f"{kwargs.keys()}.",
-            DeprecationWarning,
+            removal="0.0.305",
         )
     client = client or Client()
     wrapped_model, project_name, examples, configs = _prepare_run_on_dataset(
@@ -1136,16 +1133,15 @@ def run_on_dataset(
 ) -> Dict[str, Any]:
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
-        warnings.warn(
-            _INPUT_MAPPER_DEP_WARNING,
-            DeprecationWarning,
-        )
+        warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
+
     if kwargs:
-        warnings.warn(
-            "The following arguments are deprecated and "
+        warn_deprecated(
+            "0.0.305",
+            message="The following arguments are deprecated and "
             "will be removed in a future release: "
             f"{kwargs.keys()}.",
-            DeprecationWarning,
+            removal="0.0.305",
         )
     client = client or Client()
     wrapped_model, project_name, examples, configs = _prepare_run_on_dataset(
