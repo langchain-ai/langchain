@@ -308,10 +308,10 @@ class Cube:
         elif isinstance(query, Dict):
             params["query"] = json.dumps(query)
 
-        response = requests.post(
+        response = requests.get(
             url=f"{self.cube_api_url}/sql",
             headers=headers,
-            json=params,
+            params=params,
         )
 
         raw = response.json()
@@ -320,4 +320,4 @@ class Cube:
         else:
             response.raise_for_status()
 
-        return raw
+        return raw["sql"]

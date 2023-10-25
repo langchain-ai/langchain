@@ -31,6 +31,7 @@ from langchain.chains.conversational_retrieval.base import (
     ChatVectorDBChain,
     ConversationalRetrievalChain,
 )
+from langchain.chains.cube.query import create_cube_query_chain
 from langchain.chains.example_generator import generate_example
 from langchain.chains.flare.base import FlareChain
 from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
@@ -133,4 +134,5 @@ __all__ = [
     "generate_example",
     "load_chain",
     "create_sql_query_chain",
+    "create_cube_query_chain",
 ]

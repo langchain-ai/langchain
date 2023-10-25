@@ -46,7 +46,7 @@ def create_cube_query_chain(
             model_names=x.get("model_names_to_use")
         ),
         "format_instructions": lambda _: parser.get_format_instructions(),
-        "today": lambda _: date.today().isoformat(),
+        "current_date": lambda _: date.today().isoformat(),
     }
 
     return (
