@@ -1,5 +1,5 @@
 from langc.utils.git import _parse_dependency_string, DependencySource
-from langc.constants import DEFAULT_GIT_REPO, DEFAULT_GIT_BRANCH
+from langc.constants import DEFAULT_GIT_REPO, DEFAULT_GIT_SUBDIRECTORY
 
 
 def test_dependency_string() -> None:
@@ -7,7 +7,7 @@ def test_dependency_string() -> None:
         "git+ssh://git@github.com/efriis/myrepo.git"
     ) == DependencySource(
         git="ssh://git@github.com/efriis/myrepo.git",
-        ref=DEFAULT_GIT_BRANCH,
+        ref=None,
         subdirectory=None,
     )
 
@@ -16,7 +16,7 @@ def test_dependency_string() -> None:
     ) == DependencySource(
         git="https://github.com/efriis/myrepo.git",
         subdirectory="src",
-        ref=DEFAULT_GIT_BRANCH,
+        ref=None,
     )
 
     assert _parse_dependency_string(
@@ -26,5 +26,7 @@ def test_dependency_string() -> None:
     )
 
     assert _parse_dependency_string("simple-pirate") == DependencySource(
-        git=DEFAULT_GIT_REPO, subdirectory="simple-pirate", ref=DEFAULT_GIT_BRANCH
+        git=DEFAULT_GIT_REPO,
+        subdirectory=f"{DEFAULT_GIT_SUBDIRECTORY}/simple-pirate",
+        ref=None,
     )

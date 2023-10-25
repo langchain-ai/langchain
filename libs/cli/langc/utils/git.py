@@ -3,7 +3,7 @@ from pathlib import Path
 
 import shutil
 import re
-from langc.constants import DEFAULT_GIT_REPO
+from langc.constants import DEFAULT_GIT_REPO, DEFAULT_GIT_SUBDIRECTORY
 import hashlib
 from git import Repo
 
@@ -80,7 +80,7 @@ def _parse_dependency_string(package_string: str) -> DependencySource:
     else:
         # it's a default git repo dependency
         gitstring = DEFAULT_GIT_REPO
-        subdirectory = package_string
+        subdirectory = str(Path(DEFAULT_GIT_SUBDIRECTORY) / package_string)
         return DependencySource(git=gitstring, ref=None, subdirectory=subdirectory)
 
 

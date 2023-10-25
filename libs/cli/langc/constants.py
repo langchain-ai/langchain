@@ -1,2 +1,2 @@
-DEFAULT_GIT_REPO = "https://github.com/pingpong-templates/hub"
-DEFAULT_GIT_BRANCH = "main"
+DEFAULT_GIT_REPO = "https://github.com/langchain-ai/langchain.git"
+DEFAULT_GIT_SUBDIRECTORY = "templates"
