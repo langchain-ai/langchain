@@ -39,6 +39,7 @@ from langchain.agents.agent import (
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_toolkits import (
     create_csv_agent,
+    create_cube_agent,
     create_json_agent,
     create_openapi_agent,
     create_pandas_dataframe_agent,
@@ -109,4 +110,5 @@ __all__ = [
     "tool",
     "create_xorbits_agent",
     "XMLAgent",
+    "create_cube_agent",
 ]

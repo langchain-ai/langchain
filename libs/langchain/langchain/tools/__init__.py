@@ -645,6 +645,24 @@ def _import_e2b_data_analysis() -> Any:
     return E2BDataAnalysisTool
 
 
+def _import_cube_tool_MetaInformationCubeTool() -> Any:
+    from langchain.tools.cube.tool import MetaInformationCubeTool
+
+    return MetaInformationCubeTool
+
+
+def _import_cube_tool_ListCubeTool() -> Any:
+    from langchain.tools.cube.tool import ListCubeTool
+
+    return ListCubeTool
+
+
+def _import_cube_tool_LoadCubeTool() -> Any:
+    from langchain.tools.cube.tool import LoadCubeTool
+
+    return LoadCubeTool
+
+
 def __getattr__(name: str) -> Any:
     if name == "AINAppOps":
         return _import_ainetwork_app()
@@ -854,6 +872,12 @@ def __getattr__(name: str) -> Any:
         return _import_bearly_tool()
     elif name == "E2BDataAnalysisTool":
         return _import_e2b_data_analysis()
+    elif name == "MetaInformationCubeTool":
+        return _import_cube_tool_MetaInformationCubeTool()
+    elif name == "ListCubeTool":
+        return _import_cube_tool_ListCubeTool()
+    elif name == "LoadCubeTool":
+        return _import_cube_tool_LoadCubeTool()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -967,4 +991,7 @@ __all__ = [
     "format_tool_to_openai_function",
     "BearlyInterpreterTool",
     "E2BDataAnalysisTool",
+    "MetaInformationCubeTool",
+    "ListCubeTool",
+    "LoadCubeTool",
 ]

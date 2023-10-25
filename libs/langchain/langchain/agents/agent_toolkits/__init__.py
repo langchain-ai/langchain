@@ -25,6 +25,7 @@ from langchain.agents.agent_toolkits.conversational_retrieval.tool import (
     create_retriever_tool,
 )
 from langchain.agents.agent_toolkits.csv.base import create_csv_agent
+from langchain.agents.agent_toolkits.cube.base import create_cube_agent
 from langchain.agents.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
 )
@@ -95,4 +96,5 @@ __all__ = [
     "create_vectorstore_router_agent",
     "create_xorbits_agent",
     "create_conversational_retrieval_agent",
+    "create_cube_agent",
 ]
