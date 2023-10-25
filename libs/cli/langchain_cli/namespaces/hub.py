@@ -16,10 +16,10 @@ hub = typer.Typer(no_args_is_help=True, add_completion=False)
 @hub.command()
 def new(
     name: Annotated[str, typer.Argument(help="The name of the folder to create")],
-    no_poetry: Annotated[
+    with_poetry: Annotated[
         bool,
         typer.Option(
-            "--no-poetry/--with-poetry", "-n/", help="Don't run poetry install"
+            "--with-poetry/--no-poetry", help="Don't run poetry install"
         ),
     ] = False,
 ):
@@ -64,7 +64,7 @@ def new(
     )
 
     # poetry install
-    if not no_poetry:
+    if with_poetry:
         subprocess.run(["poetry", "install"], cwd=destination_dir)
 
 

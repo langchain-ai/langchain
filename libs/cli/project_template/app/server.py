@@ -1,9 +1,10 @@
 from fastapi import FastAPI
-from langserve.packages import add_package_routes
+from langserve import add_routes
 
 app = FastAPI()
 
-add_package_routes(app, "packages")
+# Edit this to add the chain you want to add
+add_routes(app, NotImplemented)
 
 if __name__ == "__main__":
     import uvicorn
