@@ -1,6 +1,6 @@
-# Summarize PDFs with Anthropic
+# Summarize documents with Anthropic
 
-We can use Claude2, which has a long context window, to summarize PDFs.
+This template uses Anthropic's `Claude2` to summarize documents.
 
 To do this, we can use various prompts from LangChain hub, such as:
 
@@ -9,15 +9,28 @@ To do this, we can use various prompts from LangChain hub, such as:
 
 `Claude2` has a large (100k token) context window, allowing us to summarize documents over 100 pages.
 
-`Add template`
+##  LLM
 
-* When we add a template, we update our LangServe app's Poetry config file with the necessary dependencies.
-* It also automatically installs these template dependencies in your Poetry environment.
+This template will use `Claude2` by default. 
+
+Be sure that `ANTHROPIC_API_KEY` is set in your enviorment.
+
+## Adding the template
+
+Create your LangServe app:
+```
+langchain serve new my-app
+cd my-app
+```
+
+Add template:
 ```
 langchain serve add summarize-anthropic
 ```
 
-`Start FastAPI server`
+Start server:
 ```
 langchain start
 ```
+
+See Jupyter notebook `summarize_anthropic` for various way to connect to the template.

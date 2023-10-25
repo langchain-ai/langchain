@@ -1,6 +1,6 @@
 # SQL with LLaMA2 using Ollama
 
-This template allows you to chat with a SQL database in natural langugae in private, using an open source LLM.
+This template allows you to chat with a SQL database in natural language in private, using an open source LLM.
 
 ## LLama.cpp
  

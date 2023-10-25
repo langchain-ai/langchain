@@ -1,20 +1,39 @@
 # Conversational RAG 
 
-[Conversational](https://python.langchain.com/docs/expression_language/cookbook/retrieval#conversational-retrieval-chain) [retrieval](https://python.langchain.com/docs/use_cases/question_answering/) is one of the most popular LLM use-cases.
+This template performs [conversational](https://python.langchain.com/docs/expression_language/cookbook/retrieval#conversational-retrieval-chain) [retrieval](https://python.langchain.com/docs/use_cases/question_answering/), which is one of the most popular LLM use-cases.
 
 It passes both a conversation history and retrieved documents into an LLM for synthesis.
 
-`Add template`
+##  LLM
 
-* When we add a template, we update our LangServe app's Poetry config file with the necessary dependencies.
-* It also automatically installs these template dependencies in your Poetry environment.
+Be sure that `OPENAI_API_KEY` is set in order to the OpenAI models.
+
+##  Chroma
+
+[Chroma](https://python.langchain.com/docs/integrations/vectorstores/chroma) is an open-source vector database.
+
+This template will create and add documents to the vector database in `chain.py`.
+
+By default, this will load a popular blog post on agents.
+
+However, you can choose from a large number of document loaders [here](https://python.langchain.com/docs/integrations/document_loaders).
+
+## Adding the template
+
+Create your LangServe app:
+```
+langchain serve new my-app
+cd my-app
+```
+
+Add template:
 ```
 langchain serve add rag-conversation
 ```
 
-`Start FastAPI server`
+Start server:
 ```
 langchain start
 ```
 
-See the notebook for various ways to interact with this template.
+See Jupyter notebook `rag-conversation` for various way to connect to the template.

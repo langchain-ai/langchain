@@ -1,6 +1,6 @@
 # SQL with LLaMA2
 
-This template allows you to chat with a SQL database in natural langugae using LLaMA2.
+This template allows you to chat with a SQL database in natural language using LLaMA2.
 
 It is configured to use [Replicate](https://python.langchain.com/docs/integrations/llms/replicate).
 

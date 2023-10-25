@@ -63,7 +63,7 @@ Question: {question}
 SQL Query: {query}
 SQL Response: {response}"""
 prompt_response = ChatPromptTemplate.from_messages([
-    ("system", "Given an input question and SQL response, convert it to a natural langugae answer. No pre-amble."),
+    ("system", "Given an input question and SQL response, convert it to a natural language answer. No pre-amble."),
     ("human", template)
 ])
 
