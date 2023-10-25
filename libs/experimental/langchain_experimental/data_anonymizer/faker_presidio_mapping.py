@@ -52,5 +52,5 @@ def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callab
         "AU_ABN": lambda _: str(fake.random_number(digits=11, fix_len=True)),
         "AU_ACN": lambda _: str(fake.random_number(digits=9, fix_len=True)),
         "AU_TFN": lambda _: str(fake.random_number(digits=9, fix_len=True)),
-        "AU_MEDICARE": lambda _: str(fake.random_number(digits=10, fix_len=True))
+        "AU_MEDICARE": lambda _: str(fake.random_number(digits=10, fix_len=True)),
     }
