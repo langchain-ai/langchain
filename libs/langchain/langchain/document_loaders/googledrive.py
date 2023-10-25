@@ -65,10 +65,11 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
 
         file_types = values.get("file_types")
         if file_types:
-            if values.get("document_ids") or values.get("file_ids"):
+            if values.get("file_ids"):
                 raise ValueError(
-                    "file_types can only be given when folder_id is given,"
-                    " (not when document_ids or file_ids are given)."
+                    "file_types can only be given when folder_id "
+                    "or document_ids are given,"
+                    " (not when file_ids is given)."
                 )
             type_mapping = {
                 "document": "application/vnd.google-apps.document",
@@ -246,15 +247,9 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         for file in _files:
             if file["trashed"] and not self.load_trashed_files:
                 continue
-            elif file["mimeType"] == "application/vnd.google-apps.document":
-                returns.append(self._load_document_from_id(file["id"]))  # type: ignore
-            elif file["mimeType"] == "application/vnd.google-apps.spreadsheet":
-                returns.extend(self._load_sheet_from_id(file["id"]))  # type: ignore
-            elif (
-                file["mimeType"] == "application/pdf"
-                or self.file_loader_cls is not None
-            ):
-                returns.extend(self._load_file_from_id(file["id"]))  # type: ignore
+            results = self._process_document_by_mimetype(file)
+            if results:
+                returns.extend(results)
             else:
                 pass
         return returns
@@ -290,7 +285,34 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         if not self.document_ids:
             raise ValueError("document_ids must be set")
 
-        return [self._load_document_from_id(doc_id) for doc_id in self.document_ids]
+        from googleapiclient.discovery import build
+
+        creds = self._load_credentials()
+        service = build("drive", "v3", credentials=creds)
+
+        documents = []
+        for doc_id in self.document_ids:
+            file_data = (
+                service.files()
+                .get(fileId=doc_id, fields="id,mimeType", supportsAllDrives=True)
+                .execute()
+            )
+            documents.extend(self._process_document_by_mimetype(file_data))
+
+        return documents
+
+    def _process_document_by_mimetype(self, file: Dict[str, Any]) -> List[Document]:
+        """Process document based on its mimeType and return a list of documents."""
+        returns = []
+
+        if file["mimeType"] == "application/vnd.google-apps.document":
+            returns.append(self._load_document_from_id(file["id"]))  # type: ignore
+        elif file["mimeType"] == "application/vnd.google-apps.spreadsheet":
+            returns.extend(self._load_sheet_from_id(file["id"]))  # type: ignore
+        elif file["mimeType"] == "application/pdf" or self.file_loader_cls is not None:
+            returns.extend(self._load_file_from_id(file["id"]))  # type: ignore
+
+        return returns
 
     def _load_file_from_id(self, id: str) -> List[Document]:
         """Load a file from an ID."""
