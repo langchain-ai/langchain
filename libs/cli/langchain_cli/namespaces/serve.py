@@ -29,7 +29,9 @@ def new(
     ] = None,
     with_poetry: Annotated[
         bool,
-        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
+        typer.Option(
+            "--with-poetry/--no-poetry", help="Run poetry install"
+        ),
     ] = False,
 ):
     """
@@ -77,7 +79,9 @@ def add(
     ] = [],
     with_poetry: Annotated[
         bool,
-        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
+        typer.Option(
+            "--with-poetry/--no-poetry", help="Run poetry install"
+        ),
     ] = False,
 ):
     """
@@ -157,7 +161,9 @@ def remove(
     api_paths: Annotated[List[str], typer.Argument(help="The API paths to remove")],
     with_poetry: Annotated[
         bool,
-        typer.Option("--with_poetry/--no-poetry", help="Don't run poetry remove"),
+        typer.Option(
+            "--with_poetry/--no-poetry", help="Don't run poetry remove"
+        ),
     ] = False,
 ):
     """

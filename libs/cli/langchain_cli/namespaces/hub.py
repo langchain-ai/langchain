@@ -18,7 +18,9 @@ def new(
     name: Annotated[str, typer.Argument(help="The name of the folder to create")],
     with_poetry: Annotated[
         bool,
-        typer.Option("--with-poetry/--no-poetry", help="Don't run poetry install"),
+        typer.Option(
+            "--with-poetry/--no-poetry", help="Don't run poetry install"
+        ),
     ] = False,
 ):
     """
