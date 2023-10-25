@@ -49,9 +49,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
         cohere_api_key = get_from_dict_or_env(
             values, "cohere_api_key", "COHERE_API_KEY"
         )
-        max_retries = values.get('max_retries')
-        timeout = values.get('request_timeout')
-        
+        max_retries = values.get("max_retries")
+        timeout = values.get("request_timeout")
+
         try:
             import cohere
 
