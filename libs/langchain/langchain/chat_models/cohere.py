@@ -22,6 +22,17 @@ from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatRes
 
 
 def get_role(message: BaseMessage) -> str:
+    """Get the role of the message.
+
+    Args:
+        message: The message.
+
+    Returns:
+        The role of the message.
+
+    Raises:
+        ValueError: If the message is of an unknown type.
+    """
     if isinstance(message, ChatMessage) or isinstance(message, HumanMessage):
         return "User"
     elif isinstance(message, AIMessage):
@@ -38,6 +49,16 @@ def get_cohere_chat_request(
     connectors: Optional[List[Dict[str, str]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
+    """Get the request for the Cohere chat API.
+
+    Args:
+        messages: The messages.
+        connectors: The connectors.
+        **kwargs: The keyword arguments.
+
+    Returns:
+        The request for the Cohere chat API.
+    """
     documents = (
         None
         if "source_documents" not in kwargs

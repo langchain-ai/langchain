@@ -28,6 +28,7 @@ from langchain.chat_models.ernie import ErnieBotChat
 from langchain.chat_models.everlyai import ChatEverlyAI
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.chat_models.fireworks import ChatFireworks
+from langchain.chat_models.gigachat import GigaChat
 from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.human import HumanInputChatModel
 from langchain.chat_models.hunyuan import ChatHunyuan
@@ -71,4 +72,5 @@ __all__ = [
     "ChatYandexGPT",
     "ChatBaichuan",
     "ChatHunyuan",
+    "GigaChat",
 ]
