@@ -19,7 +19,9 @@ from typing import (
     cast,
 )
 
-from langsmith import Client, RunEvaluator
+from langsmith.client import Client
+from langsmith.evaluation import RunEvaluator
+from langsmith.run_helpers import as_runnable, is_traceable_function
 from langsmith.schemas import Dataset, DataType, Example
 
 from langchain._api import warn_deprecated
@@ -152,6 +154,9 @@ def _wrap_in_chain_factory(
         lcf = llm_or_chain_factory
         return lambda: lcf
     elif callable(llm_or_chain_factory):
+        if is_traceable_function(llm_or_chain_factory):
+            runnable_ = as_runnable(cast(Callable, llm_or_chain_factory))
+            return lambda: runnable_
         try:
             _model = llm_or_chain_factory()  # type: ignore[call-arg]
         except TypeError:
@@ -166,6 +171,9 @@ def _wrap_in_chain_factory(
             # It's not uncommon to do an LLM constructor instead of raw LLM,
             # so we'll unpack it for the user.
             return _model
+        elif is_traceable_function(_model):
+            runnable_ = as_runnable(_model)
+            return lambda: runnable_
         elif not isinstance(_model, Runnable):
             # This is unlikely to happen - a constructor for a model function
             return lambda: RunnableLambda(constructor)
