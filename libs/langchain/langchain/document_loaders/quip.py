@@ -6,8 +6,6 @@ from io import BytesIO
 from typing import List, Optional
 from xml.etree.ElementTree import ElementTree
 
-from PIL import Image
-from pytesseract import pytesseract
 from quip_api.quip import HTTPError, QuipError
 
 from langchain.docstore.document import Document
@@ -30,7 +28,7 @@ class QuipLoader(BaseLoader):
         """
         Args:
             api_url: https://platform.quip.com
-            access_token: token of access quip API. Pleas refer:
+            access_token: token of access quip API. Please refer:
             https://quip.com/dev/automation/documentation/current#section/Authentication/Get-Access-to-Quip's-APIs
             request_timeout: timeout of request, default 60s.
         """
@@ -47,35 +45,52 @@ class QuipLoader(BaseLoader):
 
     def load(
         self,
-        folder_ids: Optional[set[str]] = None,
-        thread_ids: Optional[set[str]] = None,
+        folder_ids: Optional[list[str]] = None,
+        thread_ids: Optional[list[str]] = None,
         max_docs: Optional[int] = 1000,
+        include_all_folders: bool = False,
         include_comments: bool = False,
         include_images: bool = False,
     ) -> List[Document]:
         """
-        :param folder_ids: List of specific folder IDs to load, defaults to None
-        :param thread_ids: List of specific thread IDs to load, defaults to None
-        :param max_docs: Maximum number of docs to retrieve in total, defaults 1000
-        :param include_comments: Include comments, defaults to False
-        :param include_images: Include images, defaults to False
+        Args:
+            :param folder_ids: List of specific folder IDs to load, defaults to None
+            :param thread_ids: List of specific thread IDs to load, defaults to None
+            :param max_docs: Maximum number of docs to retrieve in total, defaults 1000
+            :param include_all_folders: Include all folders that your access_token
+                   can access, but doesn't include your private folder
+            :param include_comments: Include comments, defaults to False
+            :param include_images: Include images, defaults to False
         """
-        if not folder_ids and not thread_ids:
+        if not folder_ids and not thread_ids and not include_all_folders:
             raise ValueError(
-                "Must specify at least one among `folder_ids`, `thread_ids`"
+                "Must specify at least one among `folder_ids`, `thread_ids` "
+                "or set `include_all`_folders as True"
             )
 
         if not thread_ids:
-            thread_ids = set()
+            thread_ids = list()
 
         if folder_ids:
             for folder_id in folder_ids:
                 self.get_thread_ids_by_folder_id(folder_id, 0, thread_ids)
+
+        if include_all_folders:
+            user = self.quip_client.get_authenticated_user()
+            if "group_folder_ids" in user:
+                self.get_thread_ids_by_folder_id(
+                    user["group_folder_ids"], 0, thread_ids
+                )
+            if "shared_folder_ids" in user:
+                self.get_thread_ids_by_folder_id(
+                    user["shared_folder_ids"], 0, thread_ids
+                )
+
         thread_ids = set(list(thread_ids)[:max_docs])
         return self.process_threads(thread_ids, include_images, include_comments)
 
     def get_thread_ids_by_folder_id(
-        self, folder_id: str, depth: int, thread_ids: set[str]
+        self, folder_id: str, depth: int, thread_ids: list[str]
     ) -> None:
         """Get thread ids by folder id and update in thread_ids"""
         try:
@@ -107,7 +122,7 @@ class QuipLoader(BaseLoader):
                     child["folder_id"], depth + 1, thread_ids
                 )
             elif "thread_id" in child:
-                thread_ids.add(child["thread_id"])
+                thread_ids.append(child["thread_id"])
 
     def process_threads(
         self, thread_ids: set[str], include_images: bool, include_messages: bool
@@ -166,6 +181,16 @@ class QuipLoader(BaseLoader):
 
     def process_thread_images(self, tree: ElementTree) -> str:
         text = ""
+
+        try:
+            from PIL import Image
+            from pytesseract import pytesseract
+        except ImportError:
+            raise ImportError(
+                "`Pillow or pytesseract` package not found, "
+                "please run " "`pip install Pillow` or `pip install pytesseract`"
+            )
+
         for img in tree.iter("img"):
             src = img.get("src")
             if not src or not src.startswith("/blob"):

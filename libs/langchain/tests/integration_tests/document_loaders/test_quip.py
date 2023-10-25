@@ -43,7 +43,8 @@ class TestQuipLoader:
 
         with pytest.raises(
             ValueError,
-            match="Must specify at least one among `folder_ids`, `thread_ids`",
+            match="Must specify at least one among `folder_ids`, `thread_ids` or "
+                  "set `include_all`_folders as True",
         ):
             quip_loader.load()
 
@@ -57,7 +58,36 @@ class TestQuipLoader:
         ]
 
         quip_loader = self._get_mock_quip_loader(mock_quip)
-        documents = quip_loader.load(folder_ids={self.MOCK_FOLDER_IDS[0]})
+        documents = quip_loader.load(folder_ids=[self.MOCK_FOLDER_IDS[0]])
+        assert mock_quip.get_folder.call_count == 1
+        assert mock_quip.get_thread.call_count == 2
+        assert len(documents) == 2
+        assert all(isinstance(doc, Document) for doc in documents)
+        assert (
+            documents[0].metadata.get("source")
+            == f"https://example.quip.com/{self.MOCK_THREAD_IDS[0]}"
+        )
+        assert (
+            documents[1].metadata.get("source")
+            == f"https://example.quip.com/{self.MOCK_THREAD_IDS[1]}"
+        )
+
+    def test_quip_loader_load_data_all_folder(self, mock_quip: MagicMock) -> None:
+        mock_quip.get_authenticated_user.side_effect = [
+            self._get_mock_authenticated_user()
+        ]
+
+        mock_quip.get_folder.side_effect = [
+            self._get_mock_folder(self.MOCK_FOLDER_IDS[0]),
+        ]
+
+        mock_quip.get_thread.side_effect = [
+            self._get_mock_thread(self.MOCK_THREAD_IDS[0]),
+            self._get_mock_thread(self.MOCK_THREAD_IDS[1]),
+        ]
+
+        quip_loader = self._get_mock_quip_loader(mock_quip)
+        documents = quip_loader.load(include_all_folders=True)
         assert mock_quip.get_folder.call_count == 1
         assert mock_quip.get_thread.call_count == 2
         assert len(documents) == 2
@@ -78,7 +108,7 @@ class TestQuipLoader:
         ]
 
         quip_loader = self._get_mock_quip_loader(mock_quip)
-        documents = quip_loader.load(thread_ids=set(self.MOCK_THREAD_IDS))
+        documents = quip_loader.load(thread_ids=self.MOCK_THREAD_IDS)
 
         assert mock_quip.get_folder.call_count == 0
         assert mock_quip.get_thread.call_count == 2
@@ -144,3 +174,6 @@ class TestQuipLoader:
             "access_levels": {"ABCD": {"access_level": "OWN"}},
             "html": "<h1 id='temp:C:ABCD'>How to write Python Test </h1>",
         }
+
+    def _get_mock_authenticated_user(self) -> Dict:
+        return {"shared_folder_ids": self.MOCK_FOLDER_IDS, "id": "Test"}
