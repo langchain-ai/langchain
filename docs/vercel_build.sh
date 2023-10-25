@@ -49,4 +49,5 @@ python3.11 -m pip install -r vercel_requirements.txt
 python3.11 scripts/model_feat_table.py
 nbdoc_build --srcdir docs
 cp ../cookbook/README.md src/pages/cookbook.mdx
+cp ../.github/CONTRIBUTING.md docs/contributing.md
 python3.11 scripts/generate_api_reference_links.py
