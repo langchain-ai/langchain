@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from langchain.graphs.graph_document import GraphDocument
-from langchain.graphs.neo4j_graph import Neo4jGraph
+from langchain.graphs.graph_store import GraphStore
 
 node_properties_query = """
 MATCH (n)
@@ -32,7 +32,7 @@ RETURN DISTINCT {start: src_label, type: rel_type, end: dst_label} AS output
 """
 
 
-class FalkorDBGraph(Neo4jGraph):
+class FalkorDBGraph(GraphStore):
     """FalkorDB wrapper for graph operations.
 
     *Security note*: Make sure that the database connection uses credentials
@@ -43,6 +43,8 @@ class FalkorDBGraph(Neo4jGraph):
         data is present in the database.
         The best way to guard against such negative outcomes is to (as appropriate)
         limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
     """
 
     def __init__(
@@ -58,8 +60,8 @@ class FalkorDBGraph(Neo4jGraph):
                 "Please install it with `pip install redis`."
             )
 
-        driver = redis.Redis(host=host, port=port)
-        self._graph = Graph(driver, database)
+        self._driver = redis.Redis(host=host, port=port)
+        self._graph = Graph(self._driver, database)
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
 
