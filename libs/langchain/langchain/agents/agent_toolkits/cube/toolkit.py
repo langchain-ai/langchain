@@ -1,5 +1,5 @@
 """Toolkit for interacting with a Cube Semantic Layer."""
-from typing import List
+from typing import List, Optional
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.pydantic_v1 import Field
@@ -18,6 +18,7 @@ class CubeToolkit(BaseToolkit):
 
     cube: Cube = Field(exclude=True)
     llm: BaseLanguageModel = Field(exclude=True)
+    examples: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -26,8 +27,20 @@ class CubeToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
+
+        load_cube_tool = LoadCubeTool(cube=self.cube)
+
+        if self.examples is not None and self.examples != "":
+            load_cube_tool.description = (
+                load_cube_tool.description
+                + f"""
+            Examples:
+            {self.examples}
+            """
+            )
+
         return [
-            LoadCubeTool(cube=self.cube),
+            load_cube_tool,
             MetaInformationCubeTool(cube=self.cube),
             ListCubeTool(cube=self.cube),
         ]
