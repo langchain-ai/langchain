@@ -9,7 +9,6 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
     Dict,
     List,
@@ -20,11 +19,15 @@ from typing import (
     cast,
 )
 
+from langsmith.client import Client
+from langsmith.evaluation import RunEvaluator
+from langsmith.run_helpers import is_traceable_function
+from langsmith.run_trees import RunTree
+from langsmith.schemas import Dataset, DataType, Example
+
 from langchain._api import warn_deprecated
 from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
     CallbackManager,
-    CallbackManagerForChainRun,
     Callbacks,
 )
 from langchain.callbacks.tracers.evaluation import (
@@ -44,15 +47,11 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, messages_from_dict
 from langchain.schema.runnable import Runnable, RunnableConfig, RunnableLambda
 from langchain.schema.runnable import config as runnable_config
-from langchain.schema.runnable import utils as runnable_utils
+from langchain.schema.runnable.base import ALAMBDA_T, LAMBDA_T
+from langchain.schema.runnable.utils import gather_with_concurrency
 from langchain.smith import evaluation as smith_eval
 from langchain.smith.evaluation import config as smith_eval_config
 from langchain.smith.evaluation import name_generation, progress
-from langsmith.client import Client
-from langsmith.evaluation import RunEvaluator
-from langsmith.run_helpers import is_traceable_function
-from langsmith.run_trees import RunTree
-from langsmith.schemas import Dataset, DataType, Example
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -77,21 +76,15 @@ class InputFormatError(Exception):
 
 
 class RunnableTraceable(RunnableLambda):
+    """RunnableTraceable converts a @traceable decorated function
+
+    to a Runnable in a way that hands off the LangSmith tracing context.
+    """
+
     def __init__(
         self,
-        func: Callable[[Any], Any]
-        | Callable[[Any, RunnableConfig], Any]
-        | Callable[[Any, CallbackManagerForChainRun], Any]
-        | Callable[[Any, CallbackManagerForChainRun, RunnableConfig], Any]
-        | Callable[[Any], Awaitable]
-        | Callable[[Any, RunnableConfig], Awaitable]
-        | Callable[[Any, AsyncCallbackManagerForChainRun], Awaitable]
-        | Callable[[Any, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable],
-        afunc: Callable[[Any], Awaitable]
-        | Callable[[Any, RunnableConfig], Awaitable]
-        | Callable[[Any, AsyncCallbackManagerForChainRun], Awaitable]
-        | Callable[[Any, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable]
-        | None = None,
+        func: LAMBDA_T,
+        afunc: Optional[ALAMBDA_T] = None,
     ) -> None:
         if not is_traceable_function(func):
             raise ValueError(
@@ -115,6 +108,8 @@ class RunnableTraceable(RunnableLambda):
                         name="Wrapping",
                         run_type="chain",
                         inputs={},
+                        tags=callback_manager.tags,
+                        extra={"metadata": callback_manager.metadata},
                     )
             return run_tree
 
@@ -221,9 +216,9 @@ def _wrap_in_chain_factory(
         # Memory may exist here, but it's not elegant to check all those cases.
         lcf = llm_or_chain_factory
         return lambda: lcf
-    elif is_traceable_function(llm_or_chain_factory):
-        return lambda: RunnableTraceable(llm_or_chain_factory)
     elif callable(llm_or_chain_factory):
+        if is_traceable_function(llm_or_chain_factory):
+            return lambda: RunnableTraceable(llm_or_chain_factory)
         try:
             _model = llm_or_chain_factory()  # type: ignore[call-arg]
         except TypeError:
@@ -238,11 +233,11 @@ def _wrap_in_chain_factory(
             # It's not uncommon to do an LLM constructor instead of raw LLM,
             # so we'll unpack it for the user.
             return _model
+        elif is_traceable_function(_model):
+            return lambda: RunnableTraceable(constructor)
         elif not isinstance(_model, Runnable):
             # This is unlikely to happen - a constructor for a model function
             return lambda: RunnableLambda(constructor)
-        elif is_traceable_function(constructor):
-            return lambda: RunnableTraceable(constructor)
         else:
             # Typical correct case
             return constructor  # noqa
@@ -1095,7 +1090,7 @@ async def arun_on_dataset(
         project_metadata=project_metadata,
     )
 
-    batch_results = await runnable_utils.gather_with_concurrency(
+    batch_results = await gather_with_concurrency(
         configs[0].get("max_concurrency"),
         *map(
             functools.partial(
