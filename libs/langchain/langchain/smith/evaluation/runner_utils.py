@@ -171,8 +171,8 @@ def _wrap_in_chain_factory(
             # It's not uncommon to do an LLM constructor instead of raw LLM,
             # so we'll unpack it for the user.
             return _model
-        elif is_traceable_function(_model):
-            runnable_ = as_runnable(_model)
+        elif is_traceable_function(cast(Callable, _model)):
+            runnable_ = as_runnable(cast(Callable, _model))
             return lambda: runnable_
         elif not isinstance(_model, Runnable):
             # This is unlikely to happen - a constructor for a model function
@@ -918,7 +918,7 @@ def _prepare_run_on_dataset(
     )
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
     run_evaluators = _setup_evaluation(
-        wrapped_model, examples, evaluation, dataset.data_type
+        wrapped_model, examples, evaluation, dataset.data_type or DataType.kv
     )
     _validate_example_inputs(examples[0], wrapped_model, input_mapper)
     progress_bar = progress.ProgressBarCallback(len(examples))
