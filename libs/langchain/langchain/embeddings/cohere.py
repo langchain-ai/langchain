@@ -50,7 +50,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
             values, "cohere_api_key", "COHERE_API_KEY"
         )
         max_retries = values.get("max_retries")
-        timeout = values.get("request_timeout")
+        request_timeout = values.get("request_timeout")
 
         try:
             import cohere
