@@ -39,14 +39,7 @@ class Fireworks(BaseLLM):
     fireworks_api_key: Optional[str] = None
     max_retries: int = 20
     batch_size: int = 20
-
-    @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"fireworks_api_key": "FIREWORKS_API_KEY"}
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        return True
+    use_retry: bool = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -91,7 +84,7 @@ class Fireworks(BaseLLM):
         choices = []
         for _prompts in sub_prompts:
             response = completion_with_retry_batching(
-                self, prompt=_prompts, run_manager=run_manager, **params
+                self, self.use_retry, prompt=_prompts, run_manager=run_manager, **params
             )
             choices.extend(response)
 
@@ -113,7 +106,7 @@ class Fireworks(BaseLLM):
         choices = []
         for _prompts in sub_prompts:
             response = await acompletion_with_retry_batching(
-                self, prompt=_prompts, run_manager=run_manager, **params
+                self, self.use_retry, prompt=_prompts, run_manager=run_manager, **params
             )
             choices.extend(response)
 
@@ -167,7 +160,7 @@ class Fireworks(BaseLLM):
             **self.model_kwargs,
         }
         for stream_resp in completion_with_retry(
-            self, run_manager=run_manager, stop=stop, **params
+            self, self.use_retry, run_manager=run_manager, stop=stop, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
@@ -188,7 +181,7 @@ class Fireworks(BaseLLM):
             **self.model_kwargs,
         }
         async for stream_resp in await acompletion_with_retry_streaming(
-            self, run_manager=run_manager, stop=stop, **params
+            self, self.use_retry, run_manager=run_manager, stop=stop, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
@@ -196,8 +189,18 @@ class Fireworks(BaseLLM):
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
 
+def conditional_decorator(condition, decorator):
+    def actual_decorator(func):
+        if condition:
+            return decorator(func)
+        return func
+
+    return actual_decorator
+
+
 def completion_with_retry(
     llm: Fireworks,
+    use_retry: bool,
     *,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -207,7 +210,7 @@ def completion_with_retry(
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
-    @retry_decorator
+    @conditional_decorator(use_retry, retry_decorator)
     def _completion_with_retry(**kwargs: Any) -> Any:
         return fireworks.client.Completion.create(
             **kwargs,
@@ -218,6 +221,7 @@ def completion_with_retry(
 
 async def acompletion_with_retry(
     llm: Fireworks,
+    use_retry: bool,
     *,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -227,7 +231,7 @@ async def acompletion_with_retry(
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
-    @retry_decorator
+    @conditional_decorator(use_retry, retry_decorator)
     async def _completion_with_retry(**kwargs: Any) -> Any:
         return await fireworks.client.Completion.acreate(
             **kwargs,
@@ -238,6 +242,7 @@ async def acompletion_with_retry(
 
 def completion_with_retry_batching(
     llm: Fireworks,
+    use_retry: bool,
     *,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -250,7 +255,7 @@ def completion_with_retry_batching(
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
-    @retry_decorator
+    @conditional_decorator(use_retry, retry_decorator)
     def _completion_with_retry(prompt: str) -> Any:
         return fireworks.client.Completion.create(**kwargs, prompt=prompt)
 
@@ -264,6 +269,7 @@ def completion_with_retry_batching(
 
 async def acompletion_with_retry_batching(
     llm: Fireworks,
+    use_retry: bool,
     *,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -276,7 +282,7 @@ async def acompletion_with_retry_batching(
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
-    @retry_decorator
+    @conditional_decorator(use_retry, retry_decorator)
     async def _completion_with_retry(prompt: str) -> Any:
         return await fireworks.client.Completion.acreate(**kwargs, prompt=prompt)
 
@@ -306,6 +312,7 @@ async def acompletion_with_retry_batching(
 
 async def acompletion_with_retry_streaming(
     llm: Fireworks,
+    use_retry: bool,
     *,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -315,7 +322,7 @@ async def acompletion_with_retry_streaming(
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
-    @retry_decorator
+    @conditional_decorator(use_retry, retry_decorator)
     async def _completion_with_retry(**kwargs: Any) -> Any:
         return fireworks.client.Completion.acreate(
             **kwargs,

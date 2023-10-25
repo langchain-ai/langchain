@@ -1,7 +1,6 @@
 """Test ChatFireworks wrapper."""
 
 import pytest
-
 from langchain.chat_models.fireworks import ChatFireworks
 from langchain.schema import (
     ChatGeneration,
@@ -80,6 +79,42 @@ def test_chat_fireworks_llm_output_stop_words() -> None:
     assert llm_result.llm_output is not None
     assert llm_result.llm_output["model"] == chat.model
     assert llm_result.generations[0][0].text[-1] == ","
+
+
+def test_fireworks_batch() -> None:
+    """Test batch tokens from ChatFireworks."""
+    chat = ChatFireworks()
+    result = chat.batch(
+        [
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+        ],
+        config={"max_concurrency": 5},
+    )
+    for token in result:
+        assert isinstance(token.content, str)
+
+
+async def test_fireworks_abatch() -> None:
+    """Test batch tokens from ChatFireworks."""
+    llm = ChatFireworks()
+    result = await llm.abatch(
+        [
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+        ],
+        config={"max_concurrency": 5},
+    )
+    for token in result:
+        assert isinstance(token.content, str)
 
 
 def test_fireworks_streaming() -> None:
