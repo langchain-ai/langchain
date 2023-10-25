@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.schema import BaseRetriever, Document
+from langchain.utilities.vertexai import get_client_info
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -260,7 +261,9 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         #  For more information, refer to:
         # https://cloud.google.com/generative-ai-app-builder/docs/locations#specify_a_multi-region_for_your_data_store
         self._client = SearchServiceClient(
-            credentials=self.credentials, client_options=self.client_options
+            credentials=self.credentials,
+            client_options=self.client_options,
+            client_info=get_client_info(module="vertex-ai-search"),
         )
 
         self._serving_config = self._client.serving_config_path(
@@ -387,7 +390,9 @@ class GoogleVertexAIMultiTurnSearchRetriever(
         )
 
         self._client = ConversationalSearchServiceClient(
-            credentials=self.credentials, client_options=self.client_options
+            credentials=self.credentials,
+            client_options=self.client_options,
+            client_info=get_client_info(module="vertex-ai-search"),
         )
 
         self._serving_config = self._client.serving_config_path(

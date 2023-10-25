@@ -116,7 +116,7 @@ class Runnable(Generic[Input, Output], ABC):
 
     For example,
 
-    ..code-block:: python
+    .. code-block:: python
 
         from langchain.schema.runnable import RunnableLambda
 
@@ -1656,7 +1656,6 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                         # mark each step as a child run
                         patch_config(
                             config,
-                            copy_locals=True,
                             callbacks=run_manager.get_child(f"map:key:{key}"),
                         ),
                     )
@@ -2534,10 +2533,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
                 [merge_configs(self.config, conf) for conf in config],
             )
         else:
-            configs = [
-                patch_config(merge_configs(self.config, config), copy_locals=True)
-                for _ in range(len(inputs))
-            ]
+            configs = [merge_configs(self.config, config) for _ in range(len(inputs))]
         return self.bound.batch(
             inputs,
             configs,
@@ -2559,10 +2555,7 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
                 [merge_configs(self.config, conf) for conf in config],
             )
         else:
-            configs = [
-                patch_config(merge_configs(self.config, config), copy_locals=True)
-                for _ in range(len(inputs))
-            ]
+            configs = [merge_configs(self.config, config) for _ in range(len(inputs))]
         return await self.bound.abatch(
             inputs,
             configs,
@@ -2634,6 +2627,14 @@ RunnableLike = Union[
 
 
 def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
+    """Coerce a runnable-like object into a Runnable.
+
+    Args:
+        thing: A runnable-like object.
+
+    Returns:
+        A Runnable.
+    """
     if isinstance(thing, Runnable):
         return thing
     elif inspect.isasyncgenfunction(thing) or inspect.isgeneratorfunction(thing):

@@ -109,6 +109,7 @@ _EXPECTED = [
     "format_tool_to_openai_function",
     "tool",
     "BearlyInterpreterTool",
+    "E2BDataAnalysisTool",
 ]
 
 

@@ -1209,7 +1209,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -1219,7 +1218,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -1290,8 +1288,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
         mocker.call(
@@ -1300,8 +1297,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
     ]
@@ -1723,7 +1719,9 @@ async def test_prompt_with_llm(
                 "op": "add",
                 "path": "/logs/FakeListLLM/final_output",
                 "value": {
-                    "generations": [[{"generation_info": None, "text": "foo"}]],
+                    "generations": [
+                        [{"generation_info": None, "text": "foo", "type": "Generation"}]
+                    ],
                     "llm_output": None,
                     "run": None,
                 },
