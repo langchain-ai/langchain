@@ -140,7 +140,7 @@ class PDFMinerParser(BaseBlobParser):
 
             with blob.as_bytes_io() as pdf_file_obj:
                 pages = PDFPage.get_pages(pdf_file_obj)
-                for i, page in enumerate(pages):
+                for i, _ in enumerate(pages):
                     text = extract_text(pdf_file_obj, page_numbers=[i])
                     metadata = {"source": blob.source, "page": str(i)}
                     yield Document(page_content=text, metadata=metadata)
