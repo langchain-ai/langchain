@@ -125,14 +125,14 @@ class DeepLake(VectorStore):
                 to None, which will utilize ``DEFAULT_VECTORSTORE_INDEX_PARAMS`` from
                 ``deeplake.constants``. The specified key-values override the default
                 ones.
-                - threshold: The threshold for the dataset size above which an index will
-                    be created for the embedding tensor. When the threshold value is set
-                    to -1, index creation is turned off. Defaults to -1, which turns off
-                    the index.
+                - threshold: The threshold for the dataset size above which an index
+                    will be created for the embedding tensor. When the threshold value
+                    is set to -1, index creation is turned off. Defaults to -1, which
+                    turns off the index.
                 - distance_metric: This key specifies the method of calculating the
-                    distance between vectors when creating the vector database (VDB) index.
-                    It can either be a string that corresponds to a member of the
-                    DistanceType enumeration, or the string value itself.
+                    distance between vectors when creating the vector database (VDB)
+                    index. It can either be a string that corresponds to a member of
+                    the DistanceType enumeration, or the string value itself.
                     - If no value is provided, it defaults to "L2".
                     - "L2" corresponds to DistanceType.L2_NORM.
                     - "COS" corresponds to DistanceType.COSINE_SIMILARITY.
@@ -359,8 +359,8 @@ class DeepLake(VectorStore):
                 the Vector Store initialization. If True, the distance metric is set
                 to "deepmemory_distance", which represents the metric with which the
                 model was trained. The search is performed using the Deep Memory model.
-                If False, the distance metric is set to "COS" or whatever distance metric
-                user specifies.
+                If False, the distance metric is set to "COS" or whatever distance
+                metric user specifies.
             **kwargs: Additional keyword arguments.
 
         Returns:
