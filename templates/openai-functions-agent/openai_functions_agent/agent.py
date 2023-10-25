@@ -1,0 +1,41 @@
+from langchain.agents import tool
+from langchain.chat_models import ChatOpenAI
+from langchain.agents import AgentExecutor
+from langchain.utilities.tavily_search import TavilySearchAPIWrapper
+from langchain.tools.tavily_search import TavilySearchResults
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.tools.render import format_tool_to_openai_function
+from langchain.agents.format_scratchpad import format_to_openai_functions
+from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
+from langchain.pydantic_v1 import BaseModel
+
+
+# Fake Tool
+search = TavilySearchAPIWrapper()
+tavily_tool = TavilySearchResults(api_wrapper=search)
+
+tools = [tavily_tool]
+
+llm = ChatOpenAI(temperature=0)
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are very powerful assistant, but bad at calculating lengths of words."),
+    ("user", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+llm_with_tools = llm.bind(
+    functions=[format_tool_to_openai_function(t) for t in tools]
+)
+agent = {
+    "input": lambda x: x["input"],
+    "agent_scratchpad": lambda x: format_to_openai_functions(x['intermediate_steps'])
+} | prompt | llm_with_tools | OpenAIFunctionsAgentOutputParser()
+
+class AgentInput(BaseModel):
+    input: str
+
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True).with_types(
+    input_type=AgentInput
+)
+
+agent_executor = agent_executor | (lambda x: x["output"])
