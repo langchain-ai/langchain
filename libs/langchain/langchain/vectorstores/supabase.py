@@ -236,7 +236,7 @@ class SupabaseVectorStore(VectorStore):
                     metadata=search.get("metadata", {}),  # type: ignore
                     page_content=search.get("content", ""),
                 ),
-                        search.get("similarity", 0.0),
+                search.get("similarity", 0.0),
             )
             for search in res.data
             if search.get("content")
@@ -245,11 +245,11 @@ class SupabaseVectorStore(VectorStore):
         return match_result
 
     def similarity_search_by_vector_returning_embeddings(
-            self,
-            query: List[float],
-            k: int,
-            filter: Optional[Dict[str, Any]] = None,
-            postgrest_filter: Optional[str] = None,
+        self,
+        query: List[float],
+        k: int,
+        filter: Optional[Dict[str, Any]] = None,
+        postgrest_filter: Optional[str] = None,
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
         match_documents_params = self.match_args(query, filter)
         query_builder = self._client.rpc(self.query_name, match_documents_params)
@@ -269,12 +269,12 @@ class SupabaseVectorStore(VectorStore):
                     metadata=search.get("metadata", {}),  # type: ignore
                     page_content=search.get("content", ""),
                 ),
-                        search.get("similarity", 0.0),
-                        # Supabase returns a vector type as its string represation (!).
-                        # This is a hack to convert the string to numpy array.
-                        np.fromstring(
-                            search.get("embedding", "").strip("[]"), np.float32, sep=","
-                        ),
+                search.get("similarity", 0.0),
+                # Supabase returns a vector type as its string represation (!).
+                # This is a hack to convert the string to numpy array.
+                np.fromstring(
+                    search.get("embedding", "").strip("[]"), np.float32, sep=","
+                ),
             )
             for search in res.data
             if search.get("content")
@@ -284,8 +284,8 @@ class SupabaseVectorStore(VectorStore):
 
     @staticmethod
     def _texts_to_documents(
-            texts: Iterable[str],
-            metadatas: Optional[Iterable[Dict[Any, Any]]] = None,
+        texts: Iterable[str],
+        metadatas: Optional[Iterable[Dict[Any, Any]]] = None,
     ) -> List[Document]:
         """Return list of Documents from list of texts and metadatas."""
         if metadatas is None:
@@ -300,12 +300,12 @@ class SupabaseVectorStore(VectorStore):
 
     @staticmethod
     def _add_vectors(
-            client: supabase.client.Client,
-            table_name: str,
-            vectors: List[List[float]],
-            documents: List[Document],
-            ids: List[str],
-            chunk_size: int,
+        client: supabase.client.Client,
+        table_name: str,
+        vectors: List[List[float]],
+        documents: List[Document],
+        ids: List[str],
+        chunk_size: int,
     ) -> List[str]:
         """Add vectors to Supabase table."""
 
@@ -339,12 +339,12 @@ class SupabaseVectorStore(VectorStore):
         return id_list
 
     def max_marginal_relevance_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -381,12 +381,12 @@ class SupabaseVectorStore(VectorStore):
         return filtered_documents
 
     def max_marginal_relevance_search(
-            self,
-            query: str,
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
