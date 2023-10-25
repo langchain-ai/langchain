@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "langchain-cli"
-version = "0.0.1"
-description = ""
+version = "0.0.1rc0"
+description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
 include = [
@@ -14,7 +14,7 @@ python = ">=3.8.1,<4.0"
 typer = {extras = ["all"], version = "^0.9.0"}
 tomli = "^2.0.1"
 gitpython = "^3.1.40"
-langserve = {git = "https://github.com/langchain-ai/langserve"}
+langserve = "^0.0.16"
 fastapi = "^0.104.0"
 uvicorn = "^0.23.2"
 
