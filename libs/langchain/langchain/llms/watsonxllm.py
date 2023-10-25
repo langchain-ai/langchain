@@ -67,7 +67,7 @@ class WatsonxLLM(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that credentials and python package exists in environment."""
-        if "cloud.ibm.com" in values["credentials"].get('url', ''):
+        if "cloud.ibm.com" in values["credentials"].get("url", ""):
             values["credentials"]["apikey"] = get_from_dict_or_env(
                 values["credentials"], "apikey", "WATSONX_APIKEY"
             )
