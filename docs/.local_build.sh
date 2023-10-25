@@ -14,7 +14,7 @@ cd ../_dist
 poetry run python scripts/model_feat_table.py
 poetry run nbdoc_build --srcdir docs
 cp ../cookbook/README.md src/pages/cookbook.mdx
-cp ../.github/CONTRIBUTING.md docs/docs/contributing.md
+cp ../.github/CONTRIBUTING.md docs/contributing.md
 poetry run python scripts/generate_api_reference_links.py
 yarn install
 yarn start
