@@ -18,8 +18,8 @@ def concatenate_rows(row: dict) -> str:
     """Combine message information in a readable format ready to be used."""
     date = row["date"]
     sender = row["from"]
-    text = row["text"]
-    return f"{sender} on {date}: {text}\n\n"
+    message = row["text"]
+    return f"{sender} on {date}: {message}\n\n"
 
 
 class TelegramChatFileLoader(BaseLoader):
@@ -113,6 +113,9 @@ class TelegramChatApiLoader(BaseLoader):
             async for message in client.iter_messages(self.chat_entity):
                 is_reply = message.reply_to is not None
                 reply_to_id = message.reply_to.reply_to_msg_id if is_reply else None
+
+             url = f"https://t.me/c/{self.chat_entity.id}/{message.id}"
+
                 data.append(
                     {
                         "sender_id": message.sender_id,
@@ -121,6 +124,7 @@ class TelegramChatApiLoader(BaseLoader):
                         "message.id": message.id,
                         "is_reply": is_reply,
                         "reply_to_id": reply_to_id,
+                        "url": url,
                     }
                 )
 
@@ -139,6 +143,7 @@ class TelegramChatApiLoader(BaseLoader):
                 - message.id
                 - is_reply
                 - reply_to_id
+                - url
 
         Returns:
             dict: A dictionary where the key is the parent message ID and \
@@ -203,6 +208,7 @@ class TelegramChatApiLoader(BaseLoader):
                 - message.id
                 - is_reply
                 - reply_to_id
+                - url
 
         Returns:
             str: A combined string of message texts sorted by date.
