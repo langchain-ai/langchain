@@ -77,6 +77,7 @@ class StructuredOutputParser(BaseOutputParser):
         #     "foo": List[string]  // a list of strings
         #     "bar": string  // a string
         # }
+        # ```
 
         Args:
             only_json (bool): If True, only the json in the Markdown code snippet
