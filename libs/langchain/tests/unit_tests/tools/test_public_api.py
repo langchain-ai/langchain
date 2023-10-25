@@ -32,9 +32,9 @@ _EXPECTED = [
     "EdenAiObjectDetectionTool",
     "EdenAiParsingIDTool",
     "EdenAiParsingInvoiceTool",
+    "EdenAiTextToSpeechTool",
     "EdenAiSpeechToTextTool",
     "EdenAiTextModerationTool",
-    "EdenAiTextToSpeechTool",
     "EdenaiTool",
     "ElevenLabsText2SpeechTool",
     "ExtractHyperlinksTool",
@@ -106,10 +106,13 @@ _EXPECTED = [
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "format_tool_to_openai_function",
     "tool",
+    "format_tool_to_openai_function",
     "BearlyInterpreterTool",
     "E2BDataAnalysisTool",
+    "MetaInformationCubeTool",
+    "ListCubeTool",
+    "LoadCubeTool",
 ]
 
 
