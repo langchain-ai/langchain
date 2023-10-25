@@ -34,7 +34,7 @@ class TreeSitterSegmenter(CodeSegmenter):
 
         parser = self.get_parser()
         tree = parser.parse(bytes(self.code, encoding="UTF-8"))
-
+        # raise RuntimeError(tree.root_node.sexp())
         captures = query.captures(tree.root_node)
 
         processed_lines = set()
