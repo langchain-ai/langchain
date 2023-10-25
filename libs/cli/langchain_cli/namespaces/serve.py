@@ -29,16 +29,14 @@ def new(
     ] = None,
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with-poetry/--no-poetry", help="Run poetry install"
-        ),
+        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
     ] = False,
 ):
     """
     Create a new LangServe application.
     """
     # copy over template from ../project_template
-    project_template_dir = Path(__file__).parent.parent.parent / "project_template"
+    project_template_dir = Path(__file__).parent.parent / "project_template"
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=name == ".")
 
@@ -79,9 +77,7 @@ def add(
     ] = [],
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with-poetry/--no-poetry", help="Run poetry install"
-        ),
+        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
     ] = False,
 ):
     """
@@ -161,9 +157,7 @@ def remove(
     api_paths: Annotated[List[str], typer.Argument(help="The API paths to remove")],
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with_poetry/--no-poetry", help="Don't run poetry remove"
-        ),
+        typer.Option("--with_poetry/--no-poetry", help="Don't run poetry remove"),
     ] = False,
 ):
     """

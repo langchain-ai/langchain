@@ -5,8 +5,8 @@ description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
 include = [
-    {path="project_template/**/*", format="wheel"},
-    {path="package_template/**/*", format="wheel"}
+    {path="langchain_cli/project_template/**/*"},
+    {path="langchain_cli/package_template/**/*"}
 ]
 
 [tool.poetry.dependencies]
