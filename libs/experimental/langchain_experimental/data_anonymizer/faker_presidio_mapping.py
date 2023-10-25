@@ -47,7 +47,7 @@ def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callab
         "IT_DRIVER_LICENSE": lambda _: fake.bothify(text="?A#######?").upper(),
         "IT_VAT_CODE": lambda _: fake.bothify(text="IT???????????"),
         "IT_PASSPORT": lambda _: str(fake.random_number(digits=9, fix_len=True)),
-        "IT_IDENTITY_CARD": lambda _: str(
+        "IT_IDENTITY_CARD": lambda _: lambda _: str(
             fake.random_number(digits=7, fix_len=True)
         ),
         # Singapore-specific entities
