@@ -67,6 +67,8 @@ class WatsonxLLM(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that credentials and python package exists in environment."""
+        if "url" not in values["credentials"]:
+            raise TypeError("`url` is not provided.")
         if "cloud.ibm.com" in values["credentials"].get("url", ""):
             values["credentials"]["apikey"] = get_from_dict_or_env(
                 values["credentials"], "apikey", "WATSONX_APIKEY"
@@ -78,12 +80,12 @@ class WatsonxLLM(LLM):
                 and "password" not in values["credentials"]
                 and "PASSWORD" not in os.environ
                 and "apikey" not in values["credentials"]
-                and "APIKEY" not in os.environ
+                and "WATSONX_APIKEY" not in os.environ
             ):
                 raise ValueError(
                     "Did not find 'token', 'password' or 'apikey',"
                     " please add an environment variable"
-                    " `TOKEN`, 'PASSWORD' or 'APIKEY' which contains it,"
+                    " `TOKEN`, 'PASSWORD' or 'WATSONX_APIKEY' which contains it,"
                     " or pass 'token', 'password' or 'apikey'"
                     " as a named parameter in `credentials`."
                 )
@@ -98,9 +100,9 @@ class WatsonxLLM(LLM):
                 values["credentials"]["username"] = get_from_dict_or_env(
                     values["credentials"], "username", "USERNAME"
                 )
-            elif "apikey" in values["credentials"] or "APIKEY" in os.environ:
+            elif "apikey" in values["credentials"] or "WATSONX_APIKEY" in os.environ:
                 values["credentials"]["apikey"] = get_from_dict_or_env(
-                    values["credentials"], "apikey", "APIKEY"
+                    values["credentials"], "apikey", "WATSONX_APIKEY"
                 )
                 values["credentials"]["username"] = get_from_dict_or_env(
                     values["credentials"], "username", "USERNAME"
