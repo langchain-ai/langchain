@@ -5,6 +5,7 @@ from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever
+from langchain.utilities.vertexai import get_client_info
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -29,23 +30,21 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
     """
 
     location: str = "us"
-    "GCP location where DocAI Warehouse is placed."
+    """Google Cloud location where Document AI Warehouse is placed."""
     project_number: str
-    "GCP project number, should contain digits only."
+    """Google Cloud project number, should contain digits only."""
     schema_id: Optional[str] = None
-    "DocAI Warehouse schema to queary against. If nothing is provided, all documents "
-    "in the project will be searched."
+    """Document AI Warehouse schema to query against.
+    If nothing is provided, all documents in the project will be searched."""
     qa_size_limit: int = 5
-    "The limit on the number of documents returned."
+    """The limit on the number of documents returned."""
     client: "DocumentServiceClient" = None  #: :meta private:
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates the environment."""
         try:  # noqa: F401
-            from google.cloud.contentwarehouse_v1 import (
-                DocumentServiceClient,
-            )
+            from google.cloud.contentwarehouse_v1 import DocumentServiceClient
         except ImportError as exc:
             raise ImportError(
                 "google.cloud.contentwarehouse is not installed."
@@ -55,7 +54,9 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
         values["project_number"] = get_from_dict_or_env(
             values, "project_number", "PROJECT_NUMBER"
         )
-        values["client"] = DocumentServiceClient()
+        values["client"] = DocumentServiceClient(
+            client_info=get_client_info(module="document-ai-warehouse")
+        )
         return values
 
     def _prepare_request_metadata(self, user_ldap: str) -> "RequestMetadata":

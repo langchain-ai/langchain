@@ -49,7 +49,21 @@ def test_on_llm_end_custom_model(handler: OpenAICallbackHandler) -> None:
     assert handler.total_cost == 0
 
 
-def test_on_llm_end_finetuned_model(handler: OpenAICallbackHandler) -> None:
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "ada:ft-your-org:custom-model-name-2022-02-15-04-21-04",
+        "babbage:ft-your-org:custom-model-name-2022-02-15-04-21-04",
+        "curie:ft-your-org:custom-model-name-2022-02-15-04-21-04",
+        "davinci:ft-your-org:custom-model-name-2022-02-15-04-21-04",
+        "ft:babbage-002:your-org:custom-model-name:1abcdefg",
+        "ft:davinci-002:your-org:custom-model-name:1abcdefg",
+        "ft:gpt-3.5-turbo-0613:your-org:custom-model-name:1abcdefg",
+    ],
+)
+def test_on_llm_end_finetuned_model(
+    handler: OpenAICallbackHandler, model_name: str
+) -> None:
     response = LLMResult(
         generations=[],
         llm_output={
@@ -58,7 +72,7 @@ def test_on_llm_end_finetuned_model(handler: OpenAICallbackHandler) -> None:
                 "completion_tokens": 1,
                 "total_tokens": 3,
             },
-            "model_name": "ada:ft-your-org:custom-model-name-2022-02-15-04-21-04",
+            "model_name": model_name,
         },
     )
     handler.on_llm_end(response)

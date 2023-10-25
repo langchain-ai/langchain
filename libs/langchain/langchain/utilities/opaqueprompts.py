@@ -7,6 +7,7 @@ def sanitize(
     """
     Sanitize input string or dict of strings by replacing sensitive data with
     placeholders.
+
     It returns the sanitized input string or dict of strings and the secure
     context as a dict following the format:
     {
@@ -29,6 +30,10 @@ def sanitize(
         }
 
         The `secure_context` needs to be passed to the `desanitize` function.
+
+    Raises:
+        ValueError: If the input is not a string or dict of strings.
+        ImportError: If the `opaqueprompts` Python package is not installed.
     """
     try:
         import opaqueprompts as op

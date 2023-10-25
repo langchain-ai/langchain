@@ -61,7 +61,8 @@ def create_llm_result(
 
 
 class Anyscale(BaseOpenAI):
-    """Wrapper around Anyscale Endpoint.
+    """Anyscale large language models.
+
     To use, you should have the environment variable ``ANYSCALE_API_BASE`` and
     ``ANYSCALE_API_KEY``set with your Anyscale Endpoint, or pass it as a named
     parameter to the constructor.
