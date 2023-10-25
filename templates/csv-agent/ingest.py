@@ -1,5 +1,5 @@
 from langchain.document_loaders import CSVLoader
-from langchain.agents.agent_toolkits.conversational_retrieval.tool import create_retriever_tool
+from langchain.tools.retriever import create_retriever_tool
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.vectorstores import FAISS
 

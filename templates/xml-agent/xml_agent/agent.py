@@ -4,18 +4,18 @@ from langchain.agents.output_parsers import XMLAgentOutputParser
 from langchain.agents.format_scratchpad import format_xml
 from langchain import hub
 from langchain.agents import AgentExecutor
-from langchain.utilities.tavily_search import TavilySearchAPIWrapper
-from langchain.tools.tavily_search import TavilySearchResults
+from langchain.retrievers.you import YouRetriever
+from langchain.agents.agent_toolkits.conversational_retrieval.tool import create_retriever_tool
 from langchain.pydantic_v1 import BaseModel
 
 
 model = ChatAnthropic(model="claude-2")
 
 # Fake Tool
-search = TavilySearchAPIWrapper()
-tavily_tool = TavilySearchResults(api_wrapper=search)
+retriever = YouRetriever(k=5)
+retriever_tool = create_retriever_tool(retriever, "search", "Use this to search for current events.")
 
-tools = [tavily_tool]
+tools = [retriever_tool]
 
 prompt = hub.pull("hwchase17/xml-agent")
 prompt = prompt.partial(

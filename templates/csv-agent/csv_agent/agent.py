@@ -8,7 +8,7 @@ from langchain.smith import RunEvalConfig, run_on_dataset
 from pydantic import BaseModel, Field
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-from langchain.agents.agent_toolkits.conversational_retrieval.tool import create_retriever_tool
+from langchain.tools.retriever import create_retriever_tool
 from pathlib import Path
 
 MAIN_DIR = Path(__file__).parents[1]
