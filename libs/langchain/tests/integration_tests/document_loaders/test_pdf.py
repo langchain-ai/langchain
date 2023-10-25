@@ -54,7 +54,7 @@ def test_pdfminer_loader() -> None:
     loader = PDFMinerLoader(str(file_path))
 
     docs = loader.load()
-    assert len(docs) == 1
+    assert len(docs) == 16
 
 
 def test_pdfminer_pdf_as_html_loader() -> None:

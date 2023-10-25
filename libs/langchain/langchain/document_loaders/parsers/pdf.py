@@ -133,20 +133,22 @@ class PDFMinerParser(BaseBlobParser):
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
+        from pdfminer.pdfpage import PDFPage
         if not self.extract_images:
             from pdfminer.high_level import extract_text
 
             with blob.as_bytes_io() as pdf_file_obj:
-                text = extract_text(pdf_file_obj)
-                metadata = {"source": blob.source}
-                yield Document(page_content=text, metadata=metadata)
+                pages = PDFPage.get_pages(pdf_file_obj)
+                for i, page in enumerate(pages):
+                    text = extract_text(pdf_file_obj, page_numbers=[i])
+                    metadata = {"source": blob.source, "page": str(i)}
+                    yield Document(page_content=text, metadata=metadata)
         else:
             import io
 
             from pdfminer.converter import PDFPageAggregator, TextConverter
             from pdfminer.layout import LAParams
             from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
-            from pdfminer.pdfpage import PDFPage
 
             text_io = io.StringIO()
             with blob.as_bytes_io() as pdf_file_obj:
