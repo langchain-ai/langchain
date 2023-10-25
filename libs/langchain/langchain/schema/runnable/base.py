@@ -1986,37 +1986,6 @@ class RunnableGenerator(Runnable[Input, Output]):
         return cast(Output, final)
 
 
-ALAMBDA_T = Union[
-    Callable[[Input], Awaitable[Output]],
-    Callable[[Input, RunnableConfig], Awaitable[Output]],
-    Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
-    Callable[
-        [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
-        Awaitable[Output],
-    ],
-]
-
-LAMBDA_T = (
-    Union[
-        Union[
-            Callable[[Input], Output],
-            Callable[[Input, RunnableConfig], Output],
-            Callable[[Input, CallbackManagerForChainRun], Output],
-            Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
-        ],
-        Union[
-            Callable[[Input], Awaitable[Output]],
-            Callable[[Input, RunnableConfig], Awaitable[Output]],
-            Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
-            Callable[
-                [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
-                Awaitable[Output],
-            ],
-        ],
-    ],
-)
-
-
 class RunnableLambda(Runnable[Input, Output]):
     """RunnableLambda converts a python callable into a Runnable.
 
@@ -2057,8 +2026,34 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __init__(
         self,
-        func: LAMBDA_T,
-        afunc: Optional[ALAMBDA_T] = None,
+        func: Union[
+            Union[
+                Callable[[Input], Output],
+                Callable[[Input, RunnableConfig], Output],
+                Callable[[Input, CallbackManagerForChainRun], Output],
+                Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
+            ],
+            Union[
+                Callable[[Input], Awaitable[Output]],
+                Callable[[Input, RunnableConfig], Awaitable[Output]],
+                Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
+                Callable[
+                    [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+                    Awaitable[Output],
+                ],
+            ],
+        ],
+        afunc: Optional[
+            Union[
+                Callable[[Input], Awaitable[Output]],
+                Callable[[Input, RunnableConfig], Awaitable[Output]],
+                Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
+                Callable[
+                    [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+                    Awaitable[Output],
+                ],
+            ]
+        ] = None,
     ) -> None:
         """Create a RunnableLambda from a callable, and async callable or both.
 

@@ -9,6 +9,7 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
+    Awaitable,
     Callable,
     Dict,
     List,
@@ -27,6 +28,7 @@ from langsmith.schemas import Dataset, DataType, Example
 
 from langchain._api import warn_deprecated
 from langchain.callbacks.manager import (
+    AsyncCallbackManager,
     CallbackManager,
     Callbacks,
 )
@@ -47,14 +49,14 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, messages_from_dict
 from langchain.schema.runnable import Runnable, RunnableConfig, RunnableLambda
 from langchain.schema.runnable import config as runnable_config
-from langchain.schema.runnable.base import ALAMBDA_T, LAMBDA_T
-from langchain.schema.runnable.utils import gather_with_concurrency
+from langchain.schema.runnable.utils import Input, Output, gather_with_concurrency
 from langchain.smith import evaluation as smith_eval
 from langchain.smith.evaluation import config as smith_eval_config
 from langchain.smith.evaluation import name_generation, progress
 
 if TYPE_CHECKING:
     import pandas as pd
+
 
 logger = logging.getLogger(__name__)
 
@@ -83,54 +85,80 @@ class RunnableTraceable(RunnableLambda):
 
     def __init__(
         self,
-        func: LAMBDA_T,
-        afunc: Optional[ALAMBDA_T] = None,
+        func: Callable,
+        afunc: Optional[Callable[..., Awaitable[Output]]] = None,
     ) -> None:
-        if not is_traceable_function(func):
+        wrapped: Optional[Callable[[Input], Output]] = None
+        awrapped = self._wrap_async(afunc)
+        if inspect.iscoroutinefunction(func):
+            if awrapped is not None:
+                raise TypeError(
+                    "Func was provided as a coroutine function, but afunc was "
+                    "also provided. If providing both, func should be a regular "
+                    "function to avoid ambiguity."
+                )
+            wrapped = self._wrap_async(func)
+        elif is_traceable_function(func):
+            wrapped = self._wrap_sync(func)
+        if wrapped is None:
             raise ValueError(
-                "RunnableTraceable expects a function wrapped by the LangSmith"
-                f" @traceable decorator. Got {afunc}"
+                f"{self.__class__.__name__} expects a function wrapped by the LangSmith"
+                f" @traceable decorator. Got {func}"
             )
 
-        def _configure_run_tree(callback_manager: Any) -> Optional[RunTree]:
-            run_tree: Optional[RunTree] = None
-            if isinstance(callback_manager, CallbackManager):
-                lc_tracers = [
-                    handler
-                    for handler in callback_manager.handlers
-                    if isinstance(handler, LangChainTracer)
-                ]
-                if lc_tracers:
-                    lc_tracer = lc_tracers[0]
-                    run_tree = RunTree(
-                        id=callback_manager.parent_run_id,
-                        session_name=lc_tracer.project_name,
-                        name="Wrapping",
-                        run_type="chain",
-                        inputs={},
-                        tags=callback_manager.tags,
-                        extra={"metadata": callback_manager.metadata},
-                    )
-            return run_tree
+        super().__init__(wrapped, awrapped)
+
+    @staticmethod
+    def _configure_run_tree(callback_manager: Any) -> Optional[RunTree]:
+        run_tree: Optional[RunTree] = None
+        if isinstance(callback_manager, (CallbackManager, AsyncCallbackManager)):
+            lc_tracers = [
+                handler
+                for handler in callback_manager.handlers
+                if isinstance(handler, LangChainTracer)
+            ]
+            if lc_tracers:
+                lc_tracer = lc_tracers[0]
+                run_tree = RunTree(
+                    id=callback_manager.parent_run_id,
+                    session_name=lc_tracer.project_name,
+                    name="Wrapping",
+                    run_type="chain",
+                    inputs={},
+                    tags=callback_manager.tags,
+                    extra={"metadata": callback_manager.metadata},
+                )
+        return run_tree
+
+    @staticmethod
+    def _wrap_sync(func: Callable[[Input], Output]) -> Callable[[Input], Output]:
+        """Wrap a synchronous function to make it asynchronous."""
 
         def wrap_traceable(inputs: dict, config: dict):
-            run_tree = _configure_run_tree(config.get("callbacks"))
+            run_tree = RunnableTraceable._configure_run_tree(config.get("callbacks"))
             return func(**inputs, langsmith_extra={"run_tree": run_tree})
 
+        return wrap_traceable
+
+    @staticmethod
+    def _wrap_async(
+        afunc: Optional[Callable[[Input], Awaitable[Output]]]
+    ) -> Optional[Callable[[Input], Output]]:
+        """Wrap an async function to make it synchronous."""
+
         async def awrap_traceable(inputs: dict, config: dict):
-            run_tree = _configure_run_tree(config.get("callbacks"))
+            run_tree = RunnableTraceable._configure_run_tree(config.get("callbacks"))
             return await afunc(**inputs, langsmith_extra={"run_tree": run_tree})
 
-        awrapped = None
         if afunc is not None:
             if not is_traceable_function(afunc):
                 raise ValueError(
                     "RunnableTraceable expects a function wrapped by the LangSmith"
                     f" @traceable decorator. Got {afunc}"
                 )
-            awrapped = awrap_traceable
+            return awrap_traceable
 
-        super().__init__(wrap_traceable, awrapped)
+        return None
 
 
 class TestResult(dict):
