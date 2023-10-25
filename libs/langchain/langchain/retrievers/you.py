@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import root_validator
@@ -17,7 +17,7 @@ class YouRetriever(BaseRetriever):
     """
 
     ydc_api_key: str
-    endpoint_type: Optional[str] = "web"
+    endpoint_type: str = "web"
 
     @root_validator(pre=True)
     def validate_client(
@@ -46,9 +46,11 @@ class YouRetriever(BaseRetriever):
                 for snippet in hit["snippets"]:
                     docs.append(Document(page_content=snippet))
             return docs
-        else:
+        elif self.endpoint_type == "snippet":
             results = requests.get(
                 f"https://api.ydc-index.io/snippet_search?query={query}",
                 headers=headers,
             ).json()
             return [Document(page_content=snippet) for snippet in results]
+        else:
+            raise RuntimeError(f"Invalid endpoint type provided {self.endpoint_type}")
