@@ -37,6 +37,15 @@ def test_vertex_generate() -> None:
 
 
 @pytest.mark.scheduled
+def test_vertex_generate_code() -> None:
+    llm = VertexAI(temperature=0.3, n=2, model_name="code-bison@001")
+    output = llm.generate(["generate a python method that says foo:"])
+    assert isinstance(output, LLMResult)
+    assert len(output.generations) == 1
+    assert len(output.generations[0]) == 2
+
+
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_vertex_agenerate() -> None:
     llm = VertexAI(temperature=0)

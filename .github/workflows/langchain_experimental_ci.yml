@@ -44,6 +44,13 @@ jobs:
       working-directory: libs/experimental
     secrets: inherit
 
+  compile-integration-tests:
+    uses:
+      ./.github/workflows/_compile_integration_test.yml
+    with:
+      working-directory: libs/experimental
+    secrets: inherit
+
   # It's possible that langchain-experimental works fine with the latest *published* langchain,
   # but is broken with the langchain on `master`.
   #
