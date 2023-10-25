@@ -1,8 +1,10 @@
-from deepsparse_llm import DeepSparse
 import unittest
+
 import pytest
+from deepsparse_llm import DeepSparse
 
 generation_config = {"max_new_tokens": 5}
+
 
 class TestDeepSparse(unittest.TestCase):
     def test_deepsparse_call(self) -> None:
