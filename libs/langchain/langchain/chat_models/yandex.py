@@ -63,11 +63,11 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         """Generate next turn in the conversation.
         Args:
             messages: The history of the conversation as a list of messages.
@@ -96,28 +96,31 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
             raise ValueError(
                 "You should provide at least one message to start the chat!"
             )
-        message_history, instruction = _parse_chat_history(messages)
-        channel_credentials = grpc.ssl_channel_credentials()
-        channel = grpc.secure_channel(self.url, channel_credentials)
-        request = ChatRequest(
-            model=self.model_name,
-            generation_options=GenerationOptions(
-                temperature=DoubleValue(value=self.temperature),
-                max_tokens=Int64Value(value=self.max_tokens),
-            ),
-            instruction_text=instruction,
-            messages=[Message(**message) for message in message_history],
-        )
-        stub = TextGenerationServiceStub(channel)
-        if self.iam_token:
-            metadata = (("authorization", f"Bearer {self.iam_token}"),)
-        else:
-            metadata = (("authorization", f"Api-Key {self.api_key}"),)
-        res = stub.Chat(request, metadata=metadata)
-        text = list(res)[0].message.text
-        text = text if stop is None else enforce_stop_tokens(text, stop)
-        message = AIMessage(content=text)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        results = []
+        for msgs_prompt in messages:
+            message_history, instruction = _parse_chat_history(msgs_prompt)
+            channel_credentials = grpc.ssl_channel_credentials()
+            channel = grpc.secure_channel(self.url, channel_credentials)
+            request = ChatRequest(
+                model=self.model_name,
+                generation_options=GenerationOptions(
+                    temperature=DoubleValue(value=self.temperature),
+                    max_tokens=Int64Value(value=self.max_tokens),
+                ),
+                instruction_text=instruction,
+                messages=[Message(**message) for message in message_history],
+            )
+            stub = TextGenerationServiceStub(channel)
+            if self.iam_token:
+                metadata = (("authorization", f"Bearer {self.iam_token}"),)
+            else:
+                metadata = (("authorization", f"Api-Key {self.api_key}"),)
+            res = stub.Chat(request, metadata=metadata)
+            text = list(res)[0].message.text
+            text = text if stop is None else enforce_stop_tokens(text, stop)
+            message = AIMessage(content=text)
+            results.append(ChatResult(generations=[ChatGeneration(message=message)]))
+        return results
 
     async def _agenerate(
         self,

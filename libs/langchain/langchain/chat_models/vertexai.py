@@ -145,12 +145,12 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         stream: Optional[bool] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         """Generate next turn in the conversation.
 
         Args:
@@ -167,11 +167,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             ValueError: if the last message in the list is not from human.
         """
         should_stream = stream if stream is not None else self.streaming
-        if should_stream:
+        if should_stream and len(messages) == 1:
             stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages[0], stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return [_generate_from_stream(stream_iter)]
 
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])

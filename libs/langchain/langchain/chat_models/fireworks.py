@@ -113,22 +113,25 @@ class ChatFireworks(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
-        message_dicts = self._create_message_dicts(messages)
+    ) -> List[ChatResult]:
+        results = []
+        for msgs_prompt in messages:
+            message_dicts = self._create_message_dicts(msgs_prompt)
 
-        params = {
-            "model": self.model,
-            "messages": message_dicts,
-            **self.model_kwargs,
-        }
-        response = completion_with_retry(
-            self, run_manager=run_manager, stop=stop, **params
-        )
-        return self._create_chat_result(response)
+            params = {
+                "model": self.model,
+                "messages": message_dicts,
+                **self.model_kwargs,
+            }
+            response = completion_with_retry(
+                self, run_manager=run_manager, stop=stop, **params
+            )
+            results.append(self._create_chat_result(response))
+        return results
 
     async def _agenerate(
         self,

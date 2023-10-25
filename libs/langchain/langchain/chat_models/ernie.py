@@ -150,33 +150,37 @@ class ErnieBotChat(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         if self.streaming:
             raise ValueError("`streaming` option currently unsupported.")
 
         if not self.access_token:
             self._refresh_access_token_with_lock()
-        payload = {
-            "messages": [_convert_message_to_dict(m) for m in messages],
-            "top_p": self.top_p,
-            "temperature": self.temperature,
-            "penalty_score": self.penalty_score,
-            **kwargs,
-        }
-        logger.debug(f"Payload for ernie api is {payload}")
-        resp = self._chat(payload)
-        if resp.get("error_code"):
-            if resp.get("error_code") == 111:
-                logger.debug("access_token expired, refresh it")
-                self._refresh_access_token_with_lock()
-                resp = self._chat(payload)
-            else:
-                raise ValueError(f"Error from ErnieChat api response: {resp}")
-        return self._create_chat_result(resp)
+
+        results = []
+        for msgs_prompt in messages:
+            payload = {
+                "messages": [_convert_message_to_dict(m) for m in msgs_prompt],
+                "top_p": self.top_p,
+                "temperature": self.temperature,
+                "penalty_score": self.penalty_score,
+                **kwargs,
+            }
+            logger.debug(f"Payload for ernie api is {payload}")
+            resp = self._chat(payload)
+            if resp.get("error_code"):
+                if resp.get("error_code") == 111:
+                    logger.debug("access_token expired, refresh it")
+                    self._refresh_access_token_with_lock()
+                    resp = self._chat(payload)
+                else:
+                    raise ValueError(f"Error from ErnieChat api response: {resp}")
+            results.append(self._create_chat_result(resp))
+        return results
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = [

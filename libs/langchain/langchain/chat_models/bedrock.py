@@ -66,21 +66,22 @@ class BedrockChat(BaseChatModel, BedrockBase):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         completion = ""
 
-        if self.streaming:
-            for chunk in self._stream(messages, stop, run_manager, **kwargs):
+        if self.streaming and len(messages) == 1:
+            for chunk in self._stream(messages[0], stop, run_manager, **kwargs):
                 completion += chunk.text
-        else:
-            provider = self._get_provider()
-            prompt = ChatPromptAdapter.convert_messages_to_prompt(
-                provider=provider, messages=messages
-            )
+            message = AIMessage(content=completion)
+            return [ChatResult(generations=[ChatGeneration(message=message)])]
+        provider = self._get_provider()
+        results = []
+        for msgs_prompt in messages:
+            prompt = ChatPromptAdapter.convert_messages_to_prompt(provider, msgs_prompt)
 
             params: Dict[str, Any] = {**kwargs}
             if stop:
@@ -89,9 +90,9 @@ class BedrockChat(BaseChatModel, BedrockBase):
             completion = self._prepare_input_and_invoke(
                 prompt=prompt, stop=stop, run_manager=run_manager, **params
             )
-
-        message = AIMessage(content=completion)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+            message = AIMessage(content=completion)
+            results.append(ChatResult(generations=[ChatGeneration(message=message)]))
+        return results
 
     def get_num_tokens(self, text: str) -> int:
         if self._model_is_anthropic:

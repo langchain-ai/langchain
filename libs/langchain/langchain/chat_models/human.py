@@ -89,11 +89,11 @@ class HumanInputChatModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         """
         Displays the messages to the user and returns their input as a response.
 
@@ -105,9 +105,12 @@ class HumanInputChatModel(BaseChatModel):
         Returns:
             ChatResult: The user's input as a response.
         """
-        self.message_func(messages, **self.message_kwargs)
-        user_input = self.input_func(messages, stop=stop, **self.input_kwargs)
-        return ChatResult(generations=[ChatGeneration(message=user_input)])
+        results = []
+        for msgs_prompt in messages:
+            self.message_func(messages, **self.message_kwargs)
+            user_input = self.input_func(messages, stop=stop, **self.input_kwargs)
+            results.append(ChatResult(generations=[ChatGeneration(message=user_input)]))
+        return results
 
     async def _agenerate(
         self,

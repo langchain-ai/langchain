@@ -51,11 +51,11 @@ class MiniMaxChat(MinimaxCommon, BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         """Generate next turn in the conversation.
         Args:
             messages: The history of the conversation as a list of messages. Code chat
@@ -73,13 +73,16 @@ class MiniMaxChat(MinimaxCommon, BaseChatModel):
             raise ValueError(
                 "You should provide at least one message to start the chat!"
             )
-        history = _parse_chat_history(messages)
-        payload = self._default_params
-        payload["messages"] = history
-        text = self._client.post(payload)
+        results = []
+        for msgs_prompt in messages:
+            history = _parse_chat_history(msgs_prompt)
+            payload = self._default_params
+            payload["messages"] = history
+            text = self._client.post(payload)
 
-        # This is required since the stop are not enforced by the model parameters
-        return text if stop is None else enforce_stop_tokens(text, stop)
+            # This is required since the stop are not enforced by the model parameters
+            results.append(text if stop is None else enforce_stop_tokens(text, stop))
+        return results
 
     async def _agenerate(
         self,

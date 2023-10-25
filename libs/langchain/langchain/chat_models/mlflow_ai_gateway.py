@@ -85,11 +85,11 @@ class ChatMLflowAIGateway(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         try:
             import mlflow.gateway
         except ImportError as e:
@@ -98,17 +98,20 @@ class ChatMLflowAIGateway(BaseChatModel):
                 "Please install it with `pip install mlflow[gateway]`."
             ) from e
 
-        message_dicts = [
-            ChatMLflowAIGateway._convert_message_to_dict(message)
-            for message in messages
-        ]
-        data: Dict[str, Any] = {
-            "messages": message_dicts,
-            **(self.params.dict() if self.params else {}),
-        }
+        results = []
+        for msgs_prompt in messages:
+            message_dicts = [
+                ChatMLflowAIGateway._convert_message_to_dict(message)
+                for message in msgs_prompt
+            ]
+            data: Dict[str, Any] = {
+                "messages": message_dicts,
+                **(self.params.dict() if self.params else {}),
+            }
 
-        resp = mlflow.gateway.query(self.route, data=data)
-        return ChatMLflowAIGateway._create_chat_result(resp)
+            resp = mlflow.gateway.query(self.route, data=data)
+            results.append(ChatMLflowAIGateway._create_chat_result(resp))
+        return results
 
     async def _agenerate(
         self,

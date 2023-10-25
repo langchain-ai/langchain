@@ -287,25 +287,28 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
-        prompt = _messages_to_prompt_dict(messages)
+    ) -> List[ChatResult]:
+        results = []
+        for msgs_prompt in messages:
+            prompt = _messages_to_prompt_dict(msgs_prompt)
 
-        response: genai.types.ChatResponse = chat_with_retry(
-            self,
-            model=self.model_name,
-            prompt=prompt,
-            temperature=self.temperature,
-            top_p=self.top_p,
-            top_k=self.top_k,
-            candidate_count=self.n,
-            **kwargs,
-        )
+            response: genai.types.ChatResponse = chat_with_retry(
+                self,
+                model=self.model_name,
+                prompt=prompt,
+                temperature=self.temperature,
+                top_p=self.top_p,
+                top_k=self.top_k,
+                candidate_count=self.n,
+                **kwargs,
+            )
 
-        return _response_to_result(response, stop)
+            results.append(_response_to_result(response, stop))
+        return results
 
     async def _agenerate(
         self,

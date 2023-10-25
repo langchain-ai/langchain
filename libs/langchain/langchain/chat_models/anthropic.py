@@ -160,30 +160,31 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
-        if self.streaming:
+    ) -> List[ChatResult]:
+        if self.streaming and len(messages) == 1:
             stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages[0], stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
-        prompt = self._convert_messages_to_prompt(
-            messages,
-        )
-        params: Dict[str, Any] = {
-            "prompt": prompt,
-            **self._default_params,
-            **kwargs,
-        }
-        if stop:
-            params["stop_sequences"] = stop
-        response = self.client.completions.create(**params)
-        completion = response.completion
-        message = AIMessage(content=completion)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+            return [_generate_from_stream(stream_iter)]
+        results = []
+        for msgs_prompt in messages:
+            prompt = self._convert_messages_to_prompt(msgs_prompt)
+            params: Dict[str, Any] = {
+                "prompt": prompt,
+                **self._default_params,
+                **kwargs,
+            }
+            if stop:
+                params["stop_sequences"] = stop
+            response = self.client.completions.create(**params)
+            completion = response.completion
+            message = AIMessage(content=completion)
+            results.append(ChatResult(generations=[ChatGeneration(message=message)]))
+        return results
 
     async def _agenerate(
         self,

@@ -22,18 +22,21 @@ class FakeMessagesListChatModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
-        response = self.responses[self.i]
-        if self.i < len(self.responses) - 1:
-            self.i += 1
-        else:
-            self.i = 0
-        generation = ChatGeneration(message=response)
-        return ChatResult(generations=[generation])
+    ) -> List[ChatResult]:
+        results = []
+        for _ in messages:
+            response = self.responses[self.i]
+            if self.i < len(self.responses) - 1:
+                self.i += 1
+            else:
+                self.i = 0
+            generation = ChatGeneration(message=response)
+            results.append(ChatResult(generations=[generation]))
+        return results
 
     @property
     def _llm_type(self) -> str:

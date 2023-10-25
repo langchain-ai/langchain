@@ -306,32 +306,35 @@ class ChatTongyi(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         stream: Optional[bool] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         should_stream = stream if stream is not None else self.streaming
-        if should_stream:
+        if should_stream and len(messages) == 1:
             stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages[0], stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return [_generate_from_stream(stream_iter)]
 
         if not messages:
             raise ValueError("No messages provided.")
 
-        message_dicts, params = self._create_message_dicts(messages, stop)
+        results = []
+        for msgs_prompt in messages:
+            message_dicts, params = self._create_message_dicts(msgs_prompt, stop)
 
-        if message_dicts[-1]["role"] != "user":
-            raise ValueError("Last message should be user message.")
+            if message_dicts[-1]["role"] != "user":
+                raise ValueError("Last message should be user message.")
 
-        params = {**params, **kwargs}
-        response = self.completion_with_retry(
-            messages=message_dicts, run_manager=run_manager, **params
-        )
-        return self._create_chat_result(response)
+            params = {**params, **kwargs}
+            response = self.completion_with_retry(
+                messages=message_dicts, run_manager=run_manager, **params
+            )
+            results.append(self._create_chat_result(response))
+        return results
 
     def _stream(
         self,

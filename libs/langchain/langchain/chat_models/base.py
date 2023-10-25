@@ -472,11 +472,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def _generate_with_cache(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
         )
@@ -496,19 +496,33 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 return self._generate(messages, stop=stop, **kwargs)
         else:
             llm_string = self._get_llm_string(stop=stop, **kwargs)
-            prompt = dumps(messages)
-            cache_val = llm_cache.lookup(prompt, llm_string)
-            if isinstance(cache_val, list):
-                return ChatResult(generations=cache_val)
-            else:
+            results = []
+            to_generate = []
+            for i, msgs_prompt in enumerate(messages):
+                prompt = dumps(msgs_prompt)
+                cache_val = llm_cache.lookup(prompt, llm_string)
+                if isinstance(cache_val, list):
+                    results.append((i, ChatResult(generations=cache_val)))
+                else:
+                    to_generate.append((i, msgs_prompt))
+            if to_generate:
+                generate_idxs, generate_messages = tuple(zip(*to_generate))
                 if new_arg_supported:
-                    result = self._generate(
-                        messages, stop=stop, run_manager=run_manager, **kwargs
+                    generations = self._generate(
+                        list(generate_messages),
+                        stop=stop,
+                        run_manager=run_manager,
+                        **kwargs,
                     )
                 else:
-                    result = self._generate(messages, stop=stop, **kwargs)
-                llm_cache.update(prompt, llm_string, result.generations)
-                return result
+                    generations = self._generate(
+                        list(generate_messages), stop=stop, **kwargs
+                    )
+                for msgs_prompt, chat_res in zip(generate_messages, generations):
+                    prompt = dumps(msgs_prompt)
+                    llm_cache.update(prompt, llm_string, chat_res.generations)
+                results.extend(zip(generate_idxs, generations))
+            return [res for _, res in sorted(results)]
 
     async def _agenerate_with_cache(
         self,
@@ -553,20 +567,20 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     @abstractmethod
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         """Top Level call"""
 
     async def _agenerate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         """Top Level call"""
         return await asyncio.get_running_loop().run_in_executor(
             None, partial(self._generate, **kwargs), messages, stop, run_manager
@@ -696,15 +710,20 @@ class SimpleChatModel(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
-        output_str = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
-        message = AIMessage(content=output_str)
-        generation = ChatGeneration(message=message)
-        return ChatResult(generations=[generation])
+    ) -> List[ChatResult]:
+        results = []
+        for msgs_prompt in messages:
+            output_str = self._call(
+                msgs_prompt, stop=stop, run_manager=run_manager, **kwargs
+            )
+            message = AIMessage(content=output_str)
+            generation = ChatGeneration(message=message)
+            results.append(ChatResult(generations=[generation]))
+        return results
 
     @abstractmethod
     def _call(

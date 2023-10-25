@@ -343,24 +343,27 @@ class ChatOpenAI(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         stream: Optional[bool] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         should_stream = stream if stream is not None else self.streaming
-        if should_stream:
+        if should_stream and len(messages) == 1:
             stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages[0], stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        response = self.completion_with_retry(
-            messages=message_dicts, run_manager=run_manager, **params
-        )
-        return self._create_chat_result(response)
+            return [_generate_from_stream(stream_iter)]
+        results = []
+        for msgs_prompt in messages:
+            message_dicts, params = self._create_message_dicts(msgs_prompt, stop)
+            params = {**params, **kwargs}
+            response = self.completion_with_retry(
+                messages=message_dicts, run_manager=run_manager, **params
+            )
+            results.append(self._create_chat_result(response))
+        return results
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]

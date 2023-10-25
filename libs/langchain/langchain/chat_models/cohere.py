@@ -168,29 +168,36 @@ class ChatCohere(BaseChatModel, BaseCohere):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
-        if self.streaming:
+    ) -> List[ChatResult]:
+        if self.streaming and len(messages) == 1:
             stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages[0], stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return [_generate_from_stream(stream_iter)]
 
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        response = self.client.chat(**request)
+        results = []
+        for msgs_prompt in messages:
+            request = get_cohere_chat_request(
+                msgs_prompt, **self._default_params, **kwargs
+            )
+            response = self.client.chat(**request)
 
-        message = AIMessage(content=response.text)
-        generation_info = None
-        if hasattr(response, "documents"):
-            generation_info = {"documents": response.documents}
-        return ChatResult(
-            generations=[
-                ChatGeneration(message=message, generation_info=generation_info)
-            ]
-        )
+            message = AIMessage(content=response.text)
+            generation_info = None
+            if hasattr(response, "documents"):
+                generation_info = {"documents": response.documents}
+            results.append(
+                ChatResult(
+                    generations=[
+                        ChatGeneration(message=message, generation_info=generation_info)
+                    ]
+                )
+            )
+        return results
 
     async def _agenerate(
         self,

@@ -319,21 +319,24 @@ class JinaChat(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
-        if self.streaming:
+    ) -> List[ChatResult]:
+        if self.streaming and len(messages) == 1:
             stream_iter = self._stream(
-                messages=messages, stop=stop, run_manager=run_manager, **kwargs
+                messages=messages[0], stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return [_generate_from_stream(stream_iter)]
 
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        response = self.completion_with_retry(messages=message_dicts, **params)
-        return self._create_chat_result(response)
+        results = []
+        for msgs_prompt in messages:
+            message_dicts, params = self._create_message_dicts(msgs_prompt, stop)
+            params = {**params, **kwargs}
+            response = self.completion_with_retry(messages=message_dicts, **params)
+            results.append(self._create_chat_result(response))
+        return results
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]

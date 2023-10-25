@@ -221,11 +221,11 @@ class QianfanChatEndpoint(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         """Call out to an qianfan models endpoint for each generation with a prompt.
         Args:
             messages: The messages to pass into the model.
@@ -237,32 +237,37 @@ class QianfanChatEndpoint(BaseChatModel):
             .. code-block:: python
                 response = qianfan_model("Tell me a joke.")
         """
-        if self.streaming:
+        if self.streaming and len(messages) == 1:
             completion = ""
-            for chunk in self._stream(messages, stop, run_manager, **kwargs):
+            for chunk in self._stream(messages[0], stop, run_manager, **kwargs):
                 completion += chunk.text
             lc_msg = AIMessage(content=completion, additional_kwargs={})
             gen = ChatGeneration(
                 message=lc_msg,
                 generation_info=dict(finish_reason="stop"),
             )
-            return ChatResult(
-                generations=[gen],
-                llm_output={"token_usage": {}, "model_name": self.model},
+            return [
+                ChatResult(
+                    generations=[gen],
+                    llm_output={"token_usage": {}, "model_name": self.model},
+                )
+            ]
+        results = []
+        for msgs_prompt in messages:
+            params = self._convert_prompt_msg_params(msgs_prompt, **kwargs)
+            response_payload = self.client.do(**params)
+            lc_msg = _convert_dict_to_message(response_payload)
+            gen = ChatGeneration(
+                message=lc_msg,
+                generation_info={
+                    "finish_reason": "stop",
+                    **response_payload.get("body", {}),
+                },
             )
-        params = self._convert_prompt_msg_params(messages, **kwargs)
-        response_payload = self.client.do(**params)
-        lc_msg = _convert_dict_to_message(response_payload)
-        gen = ChatGeneration(
-            message=lc_msg,
-            generation_info={
-                "finish_reason": "stop",
-                **response_payload.get("body", {}),
-            },
-        )
-        token_usage = response_payload.get("usage", {})
-        llm_output = {"token_usage": token_usage, "model_name": self.model}
-        return ChatResult(generations=[gen], llm_output=llm_output)
+            token_usage = response_payload.get("usage", {})
+            llm_output = {"token_usage": token_usage, "model_name": self.model}
+            results.append(ChatResult(generations=[gen], llm_output=llm_output))
+        return results
 
     async def _agenerate(
         self,

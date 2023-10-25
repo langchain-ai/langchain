@@ -101,23 +101,26 @@ class ChatJavelinAIGateway(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
-        message_dicts = [
-            ChatJavelinAIGateway._convert_message_to_dict(message)
-            for message in messages
-        ]
-        data: Dict[str, Any] = {
-            "messages": message_dicts,
-            **(self.params.dict() if self.params else {}),
-        }
+    ) -> [ChatResult]:
+        results = []
+        for msgs_prompt in messages:
+            message_dicts = [
+                ChatJavelinAIGateway._convert_message_to_dict(msgs_prompt)
+                for message in messages
+            ]
+            data: Dict[str, Any] = {
+                "messages": message_dicts,
+                **(self.params.dict() if self.params else {}),
+            }
 
-        resp = self.client.query_route(self.route, query_body=data)
+            resp = self.client.query_route(self.route, query_body=data)
 
-        return ChatJavelinAIGateway._create_chat_result(resp.dict())
+            results.append(ChatJavelinAIGateway._create_chat_result(resp.dict()))
+        return results
 
     async def _agenerate(
         self,

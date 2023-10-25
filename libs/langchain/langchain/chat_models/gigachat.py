@@ -104,23 +104,26 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         stream: Optional[bool] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         should_stream = stream if stream is not None else self.streaming
-        if should_stream:
+        if should_stream and len(messages) == 1:
             stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages[0], stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return [_generate_from_stream(stream_iter)]
 
-        payload = self._build_payload(messages)
-        response = self._client.chat(payload)
+        results = []
+        for msgs_prompt in messages:
+            payload = self._build_payload(msgs_prompt)
+            response = self._client.chat(payload)
 
-        return self._create_chat_result(response)
+            results.append(self._create_chat_result(response))
+        return results
 
     async def _agenerate(
         self,

@@ -182,15 +182,20 @@ class PaiEasChatEndpoint(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
-        output_str = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
-        message = AIMessage(content=output_str)
-        generation = ChatGeneration(message=message)
-        return ChatResult(generations=[generation])
+    ) -> List[ChatResult]:
+        results = []
+        for msgs_prompt in messages:
+            output_str = self._call(
+                msgs_prompt, stop=stop, run_manager=run_manager, **kwargs
+            )
+            message = AIMessage(content=output_str)
+            generation = ChatGeneration(message=message)
+            results.append(ChatResult(generations=[generation]))
+        return results
 
     def _call(
         self,

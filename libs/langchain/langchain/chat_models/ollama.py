@@ -72,11 +72,11 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> List[ChatResult]:
         """Call out to Ollama's generate endpoint.
 
         Args:

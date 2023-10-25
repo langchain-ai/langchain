@@ -240,25 +240,28 @@ class ChatHunyuan(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: List[List[BaseMessage]],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
-        if self.streaming:
+    ) -> List[ChatResult]:
+        if self.streaming and len(messages) == 1:
             stream_iter = self._stream(
-                messages=messages, stop=stop, run_manager=run_manager, **kwargs
+                messages=messages[0], stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return [_generate_from_stream(stream_iter)]
 
-        res = self._chat(messages, **kwargs)
+        results = []
+        for msgs_prompt in messages:
+            res = self._chat(msgs_prompt, **kwargs)
 
-        response = res.json()
+            response = res.json()
 
-        if "error" in response:
-            raise ValueError(f"Error from Hunyuan api response: {response}")
+            if "error" in response:
+                raise ValueError(f"Error from Hunyuan api response: {response}")
 
-        return _create_chat_result(response)
+            results.append(_create_chat_result(response))
+        return results
 
     def _stream(
         self,
