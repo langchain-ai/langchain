@@ -4,6 +4,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 from langchain.output_parsers.openai_functions import JsonKeyOutputFunctionsParser
+import json
 
 
 template = """A article will be passed to you. Extract from it all papers that are mentioned by this article. 
@@ -32,5 +33,9 @@ class Info(BaseModel):
 model = ChatOpenAI()
 function = [convert_pydantic_to_openai_function(Info)]
 chain = prompt | model.bind(
-    functions=function, function_call={"name": "Overview"}
-) | JsonKeyOutputFunctionsParser(key_name="papers")
+    functions=function, function_call={"name": "Info"}
+) | (lambda x: json.loads(x.additional_kwargs['function_call']['arguments'])['papers'])
+
+# chain = prompt | model.bind(
+#     functions=function, function_call={"name": "Info"}
+# ) | JsonKeyOutputFunctionsParser(key_name="papers")
