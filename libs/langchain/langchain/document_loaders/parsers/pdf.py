@@ -134,6 +134,7 @@ class PDFMinerParser(BaseBlobParser):
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
         from pdfminer.pdfpage import PDFPage
+
         if not self.extract_images:
             from pdfminer.high_level import extract_text
 
