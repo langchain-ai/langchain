@@ -184,6 +184,12 @@ def _import_forefrontai() -> Any:
     return ForefrontAI
 
 
+def _import_gigachat() -> Any:
+    from langchain.llms.gigachat import GigaChat
+
+    return GigaChat
+
+
 def _import_google_palm() -> Any:
     from langchain.llms.google_palm import GooglePalm
 
@@ -310,12 +316,6 @@ def _import_opaqueprompts() -> Any:
     from langchain.llms.opaqueprompts import OpaquePrompts
 
     return OpaquePrompts
-
-
-def _import_gigachat() -> Any:
-    from langchain.llms.gigachat import GigaChat
-
-    return GigaChat
 
 
 def _import_azure_openai() -> Any:
@@ -553,6 +553,8 @@ def __getattr__(name: str) -> Any:
         return _import_fireworks()
     elif name == "ForefrontAI":
         return _import_forefrontai()
+    elif name == "GigaChat":
+        return _import_gigachat()
     elif name == "GooglePalm":
         return _import_google_palm()
     elif name == "GooseAI":
@@ -595,8 +597,6 @@ def __getattr__(name: str) -> Any:
         return _import_ollama()
     elif name == "OpaquePrompts":
         return _import_opaqueprompts()
-    elif name == "GigaChat":
-        return _import_gigachat()
     elif name == "AzureOpenAI":
         return _import_azure_openai()
     elif name == "OpenAI":
@@ -694,6 +694,7 @@ __all__ = [
     "FakeListLLM",
     "Fireworks",
     "ForefrontAI",
+    "GigaChat",
     "GPT4All",
     "GooglePalm",
     "GooseAI",
@@ -715,7 +716,6 @@ __all__ = [
     "NIBittensorLLM",
     "NLPCloud",
     "Ollama",
-    "GigaChat",
     "OpenAI",
     "OpenAIChat",
     "OpenLLM",
@@ -777,6 +777,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "edenai": _import_edenai,
         "fake-list": _import_fake,
         "forefrontai": _import_forefrontai,
+        "giga-chat-model": _import_gigachat,
         "google_palm": _import_google_palm,
         "gooseai": _import_gooseai,
         "gradient": _import_gradient_ai,
@@ -797,7 +798,6 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nibittensor": _import_bittensor,
         "nlpcloud": _import_nlpcloud,
         "ollama": _import_ollama,
-        "gigachat": _import_gigachat,
         "openai": _import_openai,
         "openlm": _import_openlm,
         "pai_eas_endpoint": _import_pai_eas_endpoint,
