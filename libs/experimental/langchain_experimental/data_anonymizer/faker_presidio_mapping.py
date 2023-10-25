@@ -27,7 +27,7 @@ def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callab
         "IP_ADDRESS": lambda _: fake.ipv4_public(),
         "LOCATION": lambda _: fake.city(),
         "DATE_TIME": lambda _: fake.date(),
-        "NRP": lambda _: str(fake.random_number(digits=8, fix_len=True),
+        "NRP": lambda _: str(fake.random_number(digits=8, fix_len=True)),
         "MEDICAL_LICENSE": lambda _: fake.bothify(text="??######").upper(),
         "URL": lambda _: fake.url(),
         # US-specific entities
