@@ -5,14 +5,12 @@ from typing import Any, DefaultDict, Dict, List, Optional
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
-    Callbacks,
 )
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
-    LLMResult,
 )
 from langchain.schema.messages import (
     AIMessage,
@@ -195,18 +193,6 @@ class AnthropicFunctions(BaseChatModel):
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
             return ChatResult(generations=[ChatGeneration(message=response)])
-
-    async def agenerate(
-        self,
-        messages: List[List[BaseMessage]],
-        stop: Optional[List[str]] = None,
-        callbacks: Callbacks = None,
-        *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> LLMResult:
-        raise NotImplementedError
 
     @property
     def _llm_type(self) -> str:
