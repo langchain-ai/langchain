@@ -18,6 +18,8 @@ from langchain.utils import get_from_dict_or_env
 
 
 class TrainResult(TypedDict):
+    """Train result."""
+
     loss: float
 
 

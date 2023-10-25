@@ -5,7 +5,6 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
-import warnings
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -23,6 +22,7 @@ from typing import (
 from langsmith import Client, RunEvaluator
 from langsmith.schemas import Dataset, DataType, Example
 
+from langchain._api import warn_deprecated
 from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.evaluation import (
     EvaluatorCallbackHandler,
@@ -998,17 +998,15 @@ async def arun_on_dataset(
 ) -> Dict[str, Any]:
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
-        warnings.warn(
-            _INPUT_MAPPER_DEP_WARNING,
-            DeprecationWarning,
-        )
+        warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
 
     if kwargs:
-        warnings.warn(
-            "The following arguments are deprecated and "
+        warn_deprecated(
+            "0.0.305",
+            message="The following arguments are deprecated and "
             "will be removed in a future release: "
             f"{kwargs.keys()}.",
-            DeprecationWarning,
+            removal="0.0.305",
         )
     client = client or Client()
     wrapped_model, project_name, examples, configs = _prepare_run_on_dataset(
@@ -1061,16 +1059,15 @@ def run_on_dataset(
 ) -> Dict[str, Any]:
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
-        warnings.warn(
-            _INPUT_MAPPER_DEP_WARNING,
-            DeprecationWarning,
-        )
+        warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
+
     if kwargs:
-        warnings.warn(
-            "The following arguments are deprecated and "
+        warn_deprecated(
+            "0.0.305",
+            message="The following arguments are deprecated and "
             "will be removed in a future release: "
             f"{kwargs.keys()}.",
-            DeprecationWarning,
+            removal="0.0.305",
         )
     client = client or Client()
     wrapped_model, project_name, examples, configs = _prepare_run_on_dataset(

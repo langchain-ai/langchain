@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
+from langchain.utilities.vertexai import get_client_info
 from langchain.utils.iter import batch_iterate
 
 if TYPE_CHECKING:
@@ -89,7 +90,10 @@ class DocAIParser(BaseBlobParser):
             options = ClientOptions(
                 api_endpoint=f"{location}-documentai.googleapis.com"
             )
-            self._client = DocumentProcessorServiceClient(client_options=options)
+            self._client = DocumentProcessorServiceClient(
+                client_options=options,
+                client_info=get_client_info(module="document-ai"),
+            )
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Parses a blob lazily.
