@@ -557,6 +557,22 @@ def test_lambda_schemas() -> None:
     }
 
 
+def test_with_types_with_type_generics() -> None:
+    """Verify that with_types works if we use things like List[int]"""
+
+    def foo(x: int) -> None:
+        """Add one to the input."""
+        raise NotImplementedError()
+
+    # Try specifying some
+    RunnableLambda(foo).with_types(
+        output_type=List[int], input_type=List[int]  # type: ignore
+    )
+    RunnableLambda(foo).with_types(
+        output_type=Sequence[int], input_type=Sequence[int]  # type: ignore[arg-type]
+    )
+
+
 def test_schema_complex_seq() -> None:
     prompt1 = ChatPromptTemplate.from_template("what is the city {person} is from?")
     prompt2 = ChatPromptTemplate.from_template(
