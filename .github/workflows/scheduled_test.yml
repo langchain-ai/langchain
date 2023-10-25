@@ -24,7 +24,7 @@ jobs:
           - "3.11"
     name: Python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: "./.github/actions/poetry_setup"
@@ -61,6 +61,10 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_DEPLOYMENT_NAME:  ${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
         run: |
           make scheduled_tests
 

@@ -47,6 +47,7 @@ def create_extraction_chain(
     schema: dict,
     llm: BaseLanguageModel,
     prompt: Optional[BasePromptTemplate] = None,
+    tags: Optional[List[str]] = None,
     verbose: bool = False,
 ) -> Chain:
     """Creates a chain that extracts information from a passage.
@@ -56,7 +57,8 @@ def create_extraction_chain(
         llm: The language model to use.
         prompt: The prompt to use for extraction.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
-            logs will be printed to the console. Defaults to `langchain.verbose` value.
+            logs will be printed to the console. Defaults to the global `verbose` value,
+            accessible via `langchain.globals.get_verbose()`.
 
     Returns:
         Chain that can be used to extract information from a passage.
@@ -70,6 +72,7 @@ def create_extraction_chain(
         prompt=extraction_prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
+        tags=tags,
         verbose=verbose,
     )
     return chain
@@ -88,7 +91,8 @@ def create_extraction_chain_pydantic(
         llm: The language model to use.
         prompt: The prompt to use for extraction.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
-            logs will be printed to the console. Defaults to `langchain.verbose` value.
+            logs will be printed to the console. Defaults to the global `verbose` value,
+            accessible via `langchain.globals.get_verbose()`
 
     Returns:
         Chain that can be used to extract information from a passage.

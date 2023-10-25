@@ -20,7 +20,10 @@ from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 @pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
 def test_vertexai_instantiation(model_name: str) -> None:
-    model = ChatVertexAI(model_name=model_name)
+    if model_name:
+        model = ChatVertexAI(model_name=model_name)
+    else:
+        model = ChatVertexAI()
     assert model._llm_type == "vertexai"
     assert model.model_name == model.client._model_id
 
@@ -36,6 +39,15 @@ def test_vertexai_single_call(model_name: str) -> None:
     response = model([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+
+
+def test_candidates() -> None:
+    model = ChatVertexAI(model_name="chat-bison@001", temperature=0.3, n=2)
+    message = HumanMessage(content="Hello")
+    response = model.generate(messages=[[message]])
+    assert isinstance(response, LLMResult)
+    assert len(response.generations) == 1
+    assert len(response.generations[0]) == 2
 
 
 @pytest.mark.scheduled
@@ -153,7 +165,8 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
     with patch(
         "vertexai.language_models._language_models.ChatModel.start_chat"
     ) as start_chat:
-        mock_response = Mock(text=response_text)
+        mock_response = MagicMock()
+        mock_response.candidates = [Mock(text=response_text)]
         mock_chat = MagicMock()
         start_chat.return_value = mock_chat
         mock_send_message = MagicMock(return_value=mock_response)
@@ -167,7 +180,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
             response = model([message])
 
         assert response.content == response_text
-        mock_send_message.assert_called_once_with(user_prompt)
+        mock_send_message.assert_called_once_with(user_prompt, candidate_count=1)
         expected_stop_sequence = [stop] if stop else None
         start_chat.assert_called_once_with(
             context=None,
