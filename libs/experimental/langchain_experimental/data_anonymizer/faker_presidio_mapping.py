@@ -1,6 +1,7 @@
 import string
 from typing import Callable, Dict, Optional
 
+
 def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callable]:
     try:
         from faker import Faker
@@ -12,7 +13,7 @@ def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callab
     fake = Faker()
     fake.seed_instance(seed)
 
-    # Listed entities supported by Microsoft Presidio (for now, global and US only)
+    # Listed  entities supported by Microsoft Presidio (for now, global and US only)
     # Source: https://microsoft.github.io/presidio/supported_entities/
     return {
         # Global entities
@@ -21,7 +22,8 @@ def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callab
         "PHONE_NUMBER": lambda _: fake.phone_number(),
         "IBAN_CODE": lambda _: fake.iban(),
         "CREDIT_CARD": lambda _: fake.credit_card_number(),
-        "CRYPTO": lambda _: "bc1" + "".join(
+        "CRYPTO": lambda _: "bc1"
+        + "".join(
             fake.random_choices(string.ascii_lowercase + string.digits, length=26)
         ),
         "IP_ADDRESS": lambda _: fake.ipv4_public(),
@@ -45,7 +47,9 @@ def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callab
         "IT_DRIVER_LICENSE": lambda _: fake.bothify(text="?A#######?").upper(),
         "IT_VAT_CODE": lambda _: fake.bothify(text="IT???????????"),
         "IT_PASSPORT": lambda _: str(fake.random_number(digits=9, fix_len=True)),
-        "IT_IDENTITY_CARD": lambda _: lambda _: str(fake.random_number(digits=7, fix_len=True)),
+        "IT_IDENTITY_CARD": lambda _: lambda _: str(
+            fake.random_number(digits=7, fix_len=True)
+        ),
         # Singapore-specific entities
         "SG_NRIC_FIN": lambda _: fake.bothify(text="????####?").upper(),
         # Australia-specific entities
