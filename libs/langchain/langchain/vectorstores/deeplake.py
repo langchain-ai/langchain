@@ -8,7 +8,7 @@ import numpy as np
 try:
     import deeplake
     from deeplake.core.fast_forwarding import version_compare
-    from deeplake.core.vectorstore import DeepLakeVectorStore
+    from deeplake import VectorStore as DeepLakeVectorStore
 
     _DEEPLAKE_INSTALLED = True
 except ImportError:
