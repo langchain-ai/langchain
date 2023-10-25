@@ -6,13 +6,17 @@ from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.pydantic_v1 import Field
 from langchain.tools import BaseTool
 from langchain.tools.slack.send_message import SlackSendMessage
+from langchain.tools.slack.utils import login
 
 if TYPE_CHECKING:
     from slack_sdk import WebClient
     from slack_sdk.errors import SlackApiError
 
-class SlackToolKit(BaseToolkit):
+
+class SlackToolkit(BaseToolkit):
     """Toolkit for interacting with Slack."""
+
+    client: WebClient = Field(default_factory=login)
 
     class Config:
         """Pydantic config."""
