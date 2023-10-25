@@ -7,11 +7,11 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
-    from google.api_core.client_options import ClientOptions
     from google.cloud.speech_v2 import (
         RecognitionConfig,
         SpeechClient,
     )
+    from google.protobuf.field_mask_pb2 import FieldMask
 
 
 class GoogleSpeechToTextLoader(BaseLoader):
@@ -26,7 +26,8 @@ class GoogleSpeechToTextLoader(BaseLoader):
 
     Audio files can be specified via a Google Cloud Storage uri or a local file path.
 
-    For a detailed explanation of Google Cloud Speech-to-Text, refer to the product documentation.
+    For a detailed explanation of Google Cloud Speech-to-Text, refer to the product
+    documentation.
     https://cloud.google.com/speech-to-text
     """
 
@@ -39,8 +40,8 @@ class GoogleSpeechToTextLoader(BaseLoader):
         file_path: str,
         location: str = "global",
         recognizer_id: str = "_",
-        *,
         config: Optional[RecognitionConfig] = None,
+        config_mask: Optional[FieldMask] = None,
     ):
         """
         Initializes the GoogleSpeechToTextLoader.
@@ -53,10 +54,20 @@ class GoogleSpeechToTextLoader(BaseLoader):
             config: Recognition options and features.
                 For more information:
                 https://cloud.google.com/python/docs/reference/speech/latest/google.cloud.speech_v2.types.RecognitionConfig
+            config_mask: The list of fields in config that override the values in the
+                ``default_recognition_config`` of the recognizer during this
+                recognition request.
+                For more information:
+                https://cloud.google.com/python/docs/reference/speech/latest/google.cloud.speech_v2.types.RecognizeRequest
         """
         try:
             from google.api_core.client_options import ClientOptions
-            from google.cloud.speech_v2 import SpeechClient
+            from google.cloud.speech_v2 import (
+                AutoDetectDecodingConfig,
+                RecognitionConfig,
+                RecognitionFeatures,
+                SpeechClient,
+            )
         except ImportError as exc:
             raise ImportError(
                 "Could not import google-cloud-speech python package. "
@@ -67,7 +78,17 @@ class GoogleSpeechToTextLoader(BaseLoader):
         self.file_path = file_path
         self.location = location
         self.recognizer_id = recognizer_id
-        self.config = config
+        # Config must be set in speech recognition request.
+        self.config = config or RecognitionConfig(
+            auto_decoding_config=AutoDetectDecodingConfig(),
+            language_codes=["en-US"],
+            model="long",
+            features=RecognitionFeatures(
+                # Automatic punctuation could be useful for language applications
+                enable_automatic_punctuation=True,
+            ),
+        )
+        self.config_mask = config_mask
 
         self._client = SpeechClient(
             client_info=get_client_info(module="speech-to-text"),
@@ -95,16 +116,18 @@ class GoogleSpeechToTextLoader(BaseLoader):
                 "Please install it with `pip install google-cloud-speech`."
             ) from exc
 
-        request = RecognizeRequest(recognizer=self._recognizer_path, config=self.config)
+        request = RecognizeRequest(
+            recognizer=self._recognizer_path,
+            config=self.config,
+            config_mask=self.config_mask,
+        )
 
         if "gs://" in self.file_path:
-            request.gcs_uri = self.file_path
+            request.uri = self.file_path
         else:
-            # Reads a file as bytes
             with open(self.file_path, "rb") as f:
                 request.content = f.read()
 
-        # Transcribes the audio into text
         response = self._client.recognize(request=request)
 
         return [
