@@ -19,7 +19,7 @@ def new(
     with_poetry: Annotated[
         bool,
         typer.Option(
-            "--with-poetry/--no-poetry", "-w/", help="Don't run poetry install"
+            "--with-poetry/--no-poetry", help="Don't run poetry install"
         ),
     ] = False,
 ):

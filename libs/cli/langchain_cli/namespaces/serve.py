@@ -30,7 +30,7 @@ def new(
     with_poetry: Annotated[
         bool,
         typer.Option(
-            "--with-poetry/--no-poetry", "-w/", help="Run poetry install"
+            "--with-poetry/--no-poetry", help="Run poetry install"
         ),
     ] = False,
 ):
@@ -80,7 +80,7 @@ def add(
     with_poetry: Annotated[
         bool,
         typer.Option(
-            "--with-poetry/--no-poetry", "-w/", help="Run poetry install"
+            "--with-poetry/--no-poetry", help="Run poetry install"
         ),
     ] = False,
 ):
@@ -162,7 +162,7 @@ def remove(
     with_poetry: Annotated[
         bool,
         typer.Option(
-            "--with_poetry/--no-poetry", "-w/", help="Don't run poetry remove"
+            "--with_poetry/--no-poetry", help="Don't run poetry remove"
         ),
     ] = False,
 ):
