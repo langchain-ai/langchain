@@ -184,6 +184,12 @@ def _import_forefrontai() -> Any:
     return ForefrontAI
 
 
+def _import_gigachat() -> Any:
+    from langchain.llms.gigachat import GigaChat
+
+    return GigaChat
+
+
 def _import_google_palm() -> Any:
     from langchain.llms.google_palm import GooglePalm
 
@@ -340,6 +346,12 @@ def _import_openlm() -> Any:
     from langchain.llms.openlm import OpenLM
 
     return OpenLM
+
+
+def _import_pai_eas_endpoint() -> Any:
+    from langchain.llms.pai_eas_endpoint import PaiEasEndpoint
+
+    return PaiEasEndpoint
 
 
 def _import_petals() -> Any:
@@ -541,6 +553,8 @@ def __getattr__(name: str) -> Any:
         return _import_fireworks()
     elif name == "ForefrontAI":
         return _import_forefrontai()
+    elif name == "GigaChat":
+        return _import_gigachat()
     elif name == "GooglePalm":
         return _import_google_palm()
     elif name == "GooseAI":
@@ -593,6 +607,8 @@ def __getattr__(name: str) -> Any:
         return _import_openllm()
     elif name == "OpenLM":
         return _import_openlm()
+    elif name == "PaiEasEndpoint":
+        return _import_pai_eas_endpoint()
     elif name == "Petals":
         return _import_petals()
     elif name == "PipelineAI":
@@ -678,6 +694,7 @@ __all__ = [
     "FakeListLLM",
     "Fireworks",
     "ForefrontAI",
+    "GigaChat",
     "GPT4All",
     "GooglePalm",
     "GooseAI",
@@ -703,6 +720,7 @@ __all__ = [
     "OpenAIChat",
     "OpenLLM",
     "OpenLM",
+    "PaiEasEndpoint",
     "Petals",
     "PipelineAI",
     "Predibase",
@@ -758,6 +776,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "edenai": _import_edenai,
         "fake-list": _import_fake,
         "forefrontai": _import_forefrontai,
+        "giga-chat-model": _import_gigachat,
         "google_palm": _import_google_palm,
         "gooseai": _import_gooseai,
         "gradient": _import_gradient_ai,
@@ -780,6 +799,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,
+        "pai_eas_endpoint": _import_pai_eas_endpoint,
         "petals": _import_petals,
         "pipelineai": _import_pipelineai,
         "predibase": _import_predibase,

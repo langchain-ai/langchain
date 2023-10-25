@@ -22,6 +22,7 @@ from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.schema import BasePromptTemplate, BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
+from langchain.schema.runnable.config import RunnableConfig
 from langchain.schema.vectorstore import VectorStore
 
 # Depending on the memory type and configuration, the chat history format may differ.
@@ -52,7 +53,7 @@ def _get_chat_history(chat_history: List[CHAT_TURN_TYPE]) -> str:
 
 class InputType(BaseModel):
     question: str
-    chat_history: List[CHAT_TURN_TYPE]
+    chat_history: List[CHAT_TURN_TYPE] = Field(default_factory=list)
 
 
 class BaseConversationalRetrievalChain(Chain):
@@ -95,8 +96,9 @@ class BaseConversationalRetrievalChain(Chain):
         """Input keys."""
         return ["question", "chat_history"]
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         return InputType
 
     @property

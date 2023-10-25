@@ -8,6 +8,8 @@ from langchain.schema.retriever import BaseRetriever
 
 
 class SearchDepth(Enum):
+    """Search depth as enumerator."""
+
     BASIC = "basic"
     ADVANCED = "advanced"
 
