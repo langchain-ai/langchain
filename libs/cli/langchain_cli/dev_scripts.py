@@ -4,7 +4,7 @@ Development Scripts for Hub Packages
 
 from fastapi import FastAPI
 from langserve.packages import add_package_route
-from langc.utils.packages import get_package_root
+from langchain_cli.utils.packages import get_package_root
 
 
 def create_demo_server():

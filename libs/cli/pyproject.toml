@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "langc"
+name = "langchain-cli"
 version = "0.0.1"
 description = ""
 authors = ["Erick Friis <erick@langchain.dev>"]
@@ -19,7 +19,8 @@ fastapi = "^0.104.0"
 uvicorn = "^0.23.2"
 
 [tool.poetry.scripts]
-langchain = "langc.cli:app"
+langchain = "langchain_cli.cli:app"
+langchain-cli = "langchain_cli.cli:app"
 
 
 [tool.poetry.group.dev.dependencies]

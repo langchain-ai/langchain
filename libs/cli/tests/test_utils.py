@@ -1,5 +1,5 @@
-from langc.utils.git import _parse_dependency_string, DependencySource
-from langc.constants import DEFAULT_GIT_REPO, DEFAULT_GIT_SUBDIRECTORY
+from langchain_cli.utils.git import _parse_dependency_string, DependencySource
+from langchain_cli.constants import DEFAULT_GIT_REPO, DEFAULT_GIT_SUBDIRECTORY
 
 
 def test_dependency_string() -> None:

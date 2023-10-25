@@ -8,9 +8,9 @@ from typing_extensions import Annotated
 from pathlib import Path
 import shutil
 import subprocess
-from langc.utils.git import copy_repo, update_repo
-from langc.utils.packages import get_package_root
-from langc.utils.events import create_events
+from langchain_cli.utils.git import copy_repo, update_repo
+from langchain_cli.utils.packages import get_package_root
+from langchain_cli.utils.events import create_events
 from langserve.packages import list_packages, get_langserve_export
 import tomli
 

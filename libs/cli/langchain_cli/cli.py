@@ -3,8 +3,8 @@ import subprocess
 from typing import Optional
 from typing_extensions import Annotated
 
-from langc.namespaces import hub
-from langc.namespaces import serve
+from langchain_cli.namespaces import hub
+from langchain_cli.namespaces import serve
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(hub.hub, name="hub", help=hub.__doc__)
