@@ -38,7 +38,7 @@ class GoogleSpeechToTextLoader(BaseLoader):
         self,
         project_id: str,
         file_path: str,
-        location: str = "global",
+        location: str = "us-central1",
         recognizer_id: str = "_",
         config: Optional[RecognitionConfig] = None,
         config_mask: Optional[FieldMask] = None,
@@ -82,7 +82,7 @@ class GoogleSpeechToTextLoader(BaseLoader):
         self.config = config or RecognitionConfig(
             auto_decoding_config=AutoDetectDecodingConfig(),
             language_codes=["en-US"],
-            model="long",
+            model="chirp",
             features=RecognitionFeatures(
                 # Automatic punctuation could be useful for language applications
                 enable_automatic_punctuation=True,
@@ -92,12 +92,12 @@ class GoogleSpeechToTextLoader(BaseLoader):
 
         self._client = SpeechClient(
             client_info=get_client_info(module="speech-to-text"),
+            client_options=(
+                ClientOptions(api_endpoint=f"{location}-speech.googleapis.com")
+                if location != "global"
+                else None
+            ),
         )
-
-        if location != "global":
-            self._client.client_options = ClientOptions(
-                api_endpoint=f"{location}-speech.googleapis.com"
-            )
         self._recognizer_path = self._client.recognizer_path(
             project_id, location, recognizer_id
         )
