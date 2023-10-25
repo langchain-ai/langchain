@@ -212,6 +212,12 @@ def _import_zapier() -> Any:
     return ZapierNLAWrapper
 
 
+def _import_cube() -> Any:
+    from langchain.utilities.cube import Cube
+
+    return Cube
+
+
 def __getattr__(name: str) -> Any:
     if name == "AlphaVantageAPIWrapper":
         return _import_alpha_vantage()
@@ -279,6 +285,8 @@ def __getattr__(name: str) -> Any:
         return _import_wolfram_alpha()
     elif name == "ZapierNLAWrapper":
         return _import_zapier()
+    elif name == "Cube":
+        return _import_cube()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -321,4 +329,5 @@ __all__ = [
     "WikipediaAPIWrapper",
     "WolframAlphaAPIWrapper",
     "ZapierNLAWrapper",
+    "Cube",
 ]

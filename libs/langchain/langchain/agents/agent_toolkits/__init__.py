@@ -26,6 +26,7 @@ from langchain.agents.agent_toolkits.conversational_retrieval.tool import (
 )
 from langchain.agents.agent_toolkits.csv.base import create_csv_agent
 from langchain.agents.agent_toolkits.cube.base import create_cube_agent
+from langchain.agents.agent_toolkits.cube.toolkit import CubeToolkit
 from langchain.agents.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
 )
@@ -81,6 +82,7 @@ __all__ = [
     "VectorStoreRouterToolkit",
     "VectorStoreToolkit",
     "ZapierToolkit",
+    "CubeToolkit",
     "create_csv_agent",
     "create_json_agent",
     "create_openapi_agent",
