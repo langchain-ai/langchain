@@ -2867,6 +2867,7 @@ def test_metadata_is_merged() -> None:
     with collect_runs() as cb:
         foo.invoke("hi", {"metadata": {"my_other_key": "my_other_value"}})
         run = cb.traced_runs[0]
+    assert run.extra is not None
     assert run.extra["metadata"] == expected_metadata
 
 
@@ -3526,6 +3527,7 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
     assert parent_run_qux.error is None
+    assert parent_run_qux.outputs is not None
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
@@ -3648,6 +3650,7 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
     assert parent_run_qux.error is None
+    assert parent_run_qux.outputs is not None
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
