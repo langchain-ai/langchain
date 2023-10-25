@@ -2,7 +2,7 @@
 from langchain.prompts.prompt import PromptTemplate
 
 PROMPT_SUFFIX = """Only use the following meta-information for Cubes defined in the data model:
-{model_mate_information}
+{model_meta_information}
 
 Question: {input}"""
 
@@ -26,6 +26,6 @@ Answer: Final answer here
 """
 
 PROMPT = PromptTemplate(
-    input_variables=["input", "model_mate_information", "top_k", "current_date"],
+    input_variables=["input", "model_meta_information", "top_k", "current_date"],
     template=_DEFAULT_TEMPLATE + PROMPT_SUFFIX,
 )

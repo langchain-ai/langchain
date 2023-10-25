@@ -125,8 +125,8 @@ class Cube:
     ):
         self.cube_api_url = cube_api_url
         self.cube_api_token = cube_api_token
-        self._mate_information = self._get_mate_information()
-        self._all_models = set([model["name"] for model in self._mate_information])
+        self._meta_information = self._get_meta_information()
+        self._all_models = set([model["name"] for model in self._meta_information])
 
         self._include_models = set(include_models) if include_models else set()
         if self._include_models:
@@ -159,11 +159,11 @@ class Cube:
             )
 
     @property
-    def mate_information(self) -> List[Dict[str, Any]]:
+    def meta_information(self) -> List[Dict[str, Any]]:
         """Metadata of the cube."""
-        return self._mate_information
+        return self._meta_information
 
-    def _get_mate_information(self) -> List[Dict[str, Any]]:
+    def _get_meta_information(self) -> List[Dict[str, Any]]:
         """Metadata of the cube."""
         headers = {
             "Content-Type": "application/json",
@@ -194,7 +194,7 @@ class Cube:
         model_info = "| Model | Description |\n"
         model_info += "| --- | --- |\n"
 
-        for m in self._mate_information:
+        for m in self._meta_information:
             model_name = m["name"]
             if model_name not in all_model_names:
                 continue
@@ -204,11 +204,11 @@ class Cube:
         return model_info
 
     @property
-    def model_mate_information(self) -> str:
+    def model_meta_information(self) -> str:
         """Information about all models in the cube."""
-        return self.get_model_mate_information()
+        return self.get_model_meta_information()
 
-    def get_model_mate_information(
+    def get_model_meta_information(
         self, model_names: Optional[List[str]] = None
     ) -> str:
         """Get information about specified models."""
@@ -221,7 +221,7 @@ class Cube:
             all_model_names = model_names
 
         models = []
-        for m in self._mate_information:
+        for m in self._meta_information:
             model_name = m["name"]
 
             if model_name not in all_model_names:

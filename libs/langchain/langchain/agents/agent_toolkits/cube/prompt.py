@@ -15,7 +15,7 @@ If the question does not seem related to the Cube Semantic, just return "I don't
 CUBE_SUFFIX = """Begin!
 
 Question: {input}
-Thought: I should look at the models in the Cube to see what I can query.  Then I should query the metadata of the most relevant models.
+Thought: I should look at the models in the Cube to see what I can query.  Then I should query the meta-information of the most relevant models.
 {agent_scratchpad}"""
 
-CUBE_FUNCTIONS_SUFFIX = """I should look at the models in the Cube to see what I can query.  Then I should query the metadata of the most relevant models."""
+CUBE_FUNCTIONS_SUFFIX = """I should look at the models in the Cube to see what I can query.  Then I should query the meta-information of the most relevant models."""

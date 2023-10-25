@@ -81,7 +81,7 @@ class LoadCubeTool(BaseCubeTool, BaseTool):
 class MetaInformationCubeTool(BaseCubeTool, BaseTool):
     """Tool for getting meta-information about a Cube Semantic Layer."""
 
-    name: str = "mate_information_cube"
+    name: str = "meta_information_cube"
     description: str = """
     Input to this tool is a comma-separated list of models, output is a Markdown table of the meta-information for those models.
     Be sure that the models actually exist by calling list_models_cube first!
@@ -95,7 +95,7 @@ class MetaInformationCubeTool(BaseCubeTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get the meta-information of the Cube Semantic Layer."""
-        return self.cube.get_model_mate_information(model_names.split(", "))
+        return self.cube.get_model_meta_information(model_names.split(", "))
 
 
 class ListCubeTool(BaseCubeTool, BaseTool):
