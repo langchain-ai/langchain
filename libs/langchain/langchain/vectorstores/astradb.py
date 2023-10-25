@@ -72,14 +72,15 @@ class AstraDB(VectorStore):
 
     def __init__(
         self,
+        *,
         embedding: Embeddings,
-        database_id: str,  # TODO: param name not final
-        token: str,  # TODO: param name not final?
-        collection_name: str,  # TODO: param name not final?
-        namespace: Optional[str] = None,  # TODO: param name not final/signature tbd
+        collection_name: str,
+        api_key: str,
+        api_endpoint: str,
+        namespace: Optional[str] = None,
     ) -> None:
         try:
-            from astrapy.collections import AstraDb, AstraDbCollection
+            from astrapy.db import AstraDB, AstraDBCollection
         except (ImportError, ModuleNotFoundError):
             raise ImportError(
                 "Could not import a recent astrapy python package. "
@@ -87,32 +88,25 @@ class AstraDB(VectorStore):
             )
         """Create a vector table."""
         self.embedding = embedding
-        self.database_id = database_id
-        self.token = token
         self.collection_name = collection_name
+        self.api_key = api_key
+        self.api_endpoint = api_endpoint
         self.namespace = namespace
         #
         self._embedding_dimension = None
         #
-        # TODO: depending on handling of namespace optionality, reduce this if away
-        if self.namespace is None:
-            self.astra_db = AstraDb(
-                db_id=self.database_id,
-                token=self.token,
-            )
-        else:
-            self.astra_db = AstraDb(
-                db_id=self.database_id,
-                token=self.token,
-                namespace=self.namespace,
-            )
+        self.astra_db = AstraDB(
+            api_key = self.api_key,
+            api_endpoint = self.api_endpoint,
+            namespace=self.namespace,
+        )
         #
         create_collection_response = self.astra_db.create_collection(
             size=self._get_embedding_dimension(),
-            name=self.collection_name,
+            collection_name=self.collection_name,
         )
-        self.collection = AstraDbCollection(
-            collection=self.collection_name,
+        self.collection = AstraDBCollection(
+            collection_name=self.collection_name,
             astra_db=self.astra_db,
         )
 
@@ -223,8 +217,9 @@ class AstraDB(VectorStore):
                 )
             ]
 
-            batch_result = self.collection.insert_many(batch_documents)
-            all_ids += batch_result.get("status", {}).get("insertedIds", [])
+            for document in batch_documents:
+                upsert_id = self.collection.upsert(document)
+                all_ids += [upsert_id]
 
         return all_ids
 
