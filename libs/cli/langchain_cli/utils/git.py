@@ -14,35 +14,6 @@ class DependencySource(TypedDict):
     subdirectory: Optional[str]
 
 
-def _get_main_branch(repo: Repo) -> Optional[str]:
-    """
-    Get the name of the main branch of a git repo.
-    From https://stackoverflow.com/questions/69651536/how-to-get-master-main-branch-from-gitpython
-    """
-    try:
-        # replace "origin" with your remote name if differs
-        show_result = repo.git.remote("show", "origin")
-
-        # The show_result contains a wall of text in the language that
-        # is set by your locales. Now you can use regex to extract the
-        # default branch name, but if your language is different
-        # from english, you need to adjust this regex pattern.
-
-        matches = re.search(r"\s*HEAD branch:\s*(.*)", show_result)
-        if matches:
-            default_branch = matches.group(1)
-            return default_branch
-    except Exception:
-        pass
-    # fallback to main/master
-    if "main" in repo.heads:
-        return "main"
-    if "master" in repo.heads:
-        return "master"
-
-    raise ValueError("Could not find main branch")
-
-
 # use poetry dependency string format
 def _parse_dependency_string(package_string: str) -> DependencySource:
     if package_string.startswith("git+"):
@@ -102,16 +73,11 @@ def update_repo(gitpath: str, repo_dir: Path) -> Path:
     # see if path already saved
     dependency = _parse_dependency_string(gitpath)
     repo_path = _get_repo_path(dependency, repo_dir)
-    if not repo_path.exists():
-        repo = Repo.clone_from(dependency["git"], repo_path)
-    else:
-        repo = Repo(repo_path)
+    if repo_path.exists():
+        shutil.rmtree(repo_path)
 
-    # pull it
-    ref = dependency.get("ref") if dependency.get("ref") else _get_main_branch(repo)
-    repo.git.checkout(ref)
-
-    repo.git.pull()
+    # now we have fresh dir
+    Repo.clone_from(dependency["git"], repo_path, branch=dependency.get("ref"), depth=1)
 
     return (
         repo_path
@@ -123,8 +89,11 @@ def update_repo(gitpath: str, repo_dir: Path) -> Path:
 def copy_repo(
     source: Path,
     destination: Path,
+    delete_source: bool = False,
 ) -> None:
     def ignore_func(_, files):
         return [f for f in files if f == ".git"]
 
     shutil.copytree(source, destination, ignore=ignore_func)
+    if delete_source:
+        shutil.rmtree(source)

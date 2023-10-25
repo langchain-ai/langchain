@@ -29,9 +29,7 @@ def new(
     ] = None,
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with-poetry/--no-poetry", help="Run poetry install"
-        ),
+        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
     ] = False,
 ):
     """
@@ -79,9 +77,7 @@ def add(
     ] = [],
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with-poetry/--no-poetry", help="Run poetry install"
-        ),
+        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
     ] = False,
 ):
     """
@@ -148,7 +144,7 @@ def add(
                 f"Endpoint {langserve_export['package_name']} already exists. Skipping...",
             )
             continue
-        copy_repo(source_path, destination_path)
+        copy_repo(source_path, destination_path, delete_source=True)
         # poetry install
         if with_poetry:
             subprocess.run(
@@ -161,9 +157,7 @@ def remove(
     api_paths: Annotated[List[str], typer.Argument(help="The API paths to remove")],
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with_poetry/--no-poetry", help="Don't run poetry remove"
-        ),
+        typer.Option("--with_poetry/--no-poetry", help="Don't run poetry remove"),
     ] = False,
 ):
     """
