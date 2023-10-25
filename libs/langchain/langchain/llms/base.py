@@ -294,6 +294,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 inputs[i : i + max_concurrency]
                 for i in range(0, len(inputs), max_concurrency)
             ]
+            config = [{**c, "max_concurrency": None} for c in config]  # type: ignore[misc]
             return [
                 output
                 for batch in batches
@@ -336,10 +337,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 inputs[i : i + max_concurrency]
                 for i in range(0, len(inputs), max_concurrency)
             ]
+            config = [{**c, "max_concurrency": None} for c in config]  # type: ignore[misc]
             return [
                 output
                 for batch in batches
-                for output in await self.abatch(batch, config=config, **kwargs)
+                for output in await self.abatch(
+                    batch, config=config, return_exceptions=return_exceptions, **kwargs
+                )
             ]
 
     def stream(
