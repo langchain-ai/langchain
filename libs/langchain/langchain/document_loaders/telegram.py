@@ -14,22 +14,24 @@ if TYPE_CHECKING:
     from telethon.hints import EntityLike
 
 
-def concatenate_rows(row: dict) -> str:
+[docs]def concatenate_rows(row: dict) -> str:
     """Combine message information in a readable format ready to be used."""
     date = row["date"]
-    sender = row["from"]
-    text = row["text"]
-    return f"{sender} on {date}: {text}\n\n"
+    sender = row["from"]  
+    message = row["text"] 
+    return f"{sender} on {date}: {message}\n\n" 
 
 
-class TelegramChatFileLoader(BaseLoader):
+
+[docs]class TelegramChatFileLoader(BaseLoader):
     """Load from `Telegram chat` dump."""
 
-    def __init__(self, path: str):
+[docs]    def __init__(self, path: str):
         """Initialize with a path."""
         self.file_path = path
 
-    def load(self) -> List[Document]:
+
+[docs]    def load(self) -> List[Document]:
         """Load documents."""
         p = Path(self.file_path)
 
@@ -46,7 +48,8 @@ class TelegramChatFileLoader(BaseLoader):
         return [Document(page_content=text, metadata=metadata)]
 
 
-def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
+
+[docs]def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
     """Convert a string or list of strings to a list of Documents with metadata."""
     if isinstance(text, str):
         # Take a single string as one page
@@ -77,10 +80,11 @@ def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
     return doc_chunks
 
 
-class TelegramChatApiLoader(BaseLoader):
+
+[docs]class TelegramChatApiLoader(BaseLoader):
     """Load `Telegram` chat json directory dump."""
 
-    def __init__(
+[docs]    def __init__(
         self,
         chat_entity: Optional[EntityLike] = None,
         api_id: Optional[int] = None,
@@ -104,15 +108,19 @@ class TelegramChatApiLoader(BaseLoader):
         self.username = username
         self.file_path = file_path
 
-    async def fetch_data_from_telegram(self) -> None:
+
+[docs]    async def fetch_data_from_telegram(self) -> None:
         """Fetch data from Telegram API and save it as a JSON file."""
         from telethon.sync import TelegramClient
-
-        data = []
+        
+	data = []
         async with TelegramClient(self.username, self.api_id, self.api_hash) as client:
             async for message in client.iter_messages(self.chat_entity):
                 is_reply = message.reply_to is not None
                 reply_to_id = message.reply_to.reply_to_msg_id if is_reply else None
+
+		url = f"https://t.me/c/{self.chat_entity.id}/{message.id}"  
+
                 data.append(
                     {
                         "sender_id": message.sender_id,
@@ -121,11 +129,13 @@ class TelegramChatApiLoader(BaseLoader):
                         "message.id": message.id,
                         "is_reply": is_reply,
                         "reply_to_id": reply_to_id,
+			"url": url,   
                     }
                 )
 
         with open(self.file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
+
 
     def _get_message_threads(self, data: pd.DataFrame) -> dict:
         """Create a dictionary of message threads from the given data.
@@ -139,6 +149,7 @@ class TelegramChatApiLoader(BaseLoader):
                 - message.id
                 - is_reply
                 - reply_to_id
+		- url
 
         Returns:
             dict: A dictionary where the key is the parent message ID and \
@@ -224,7 +235,7 @@ class TelegramChatApiLoader(BaseLoader):
 
         return combined_text.strip()
 
-    def load(self) -> List[Document]:
+[docs]    def load(self) -> List[Document]:
         """Load documents."""
 
         if self.chat_entity is not None:
