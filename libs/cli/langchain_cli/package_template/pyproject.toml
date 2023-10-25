@@ -13,8 +13,8 @@ fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = {git = "https://github.com/langchain-ai/langchain.git", rev = "erick/cli", subdirectory = "libs/cli"}
 poethepoet = "^0.24.1"
+langchain-cli = ">=0.0.1rc2"
 
 [tool.langserve]
 export_module = "__package_name__.chain"

@@ -1,5 +1,9 @@
 from langchain_cli.utils.git import _parse_dependency_string, DependencySource
-from langchain_cli.constants import DEFAULT_GIT_REPO, DEFAULT_GIT_SUBDIRECTORY
+from langchain_cli.constants import (
+    DEFAULT_GIT_REPO,
+    DEFAULT_GIT_SUBDIRECTORY,
+    DEFAULT_GIT_REF,
+)
 
 
 def test_dependency_string() -> None:
@@ -28,5 +32,5 @@ def test_dependency_string() -> None:
     assert _parse_dependency_string("simple-pirate") == DependencySource(
         git=DEFAULT_GIT_REPO,
         subdirectory=f"{DEFAULT_GIT_SUBDIRECTORY}/simple-pirate",
-        ref=None,
+        ref=DEFAULT_GIT_REF,
     )

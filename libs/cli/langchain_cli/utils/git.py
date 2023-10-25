@@ -3,7 +3,11 @@ from pathlib import Path
 
 import shutil
 import re
-from langchain_cli.constants import DEFAULT_GIT_REPO, DEFAULT_GIT_SUBDIRECTORY
+from langchain_cli.constants import (
+    DEFAULT_GIT_REPO,
+    DEFAULT_GIT_SUBDIRECTORY,
+    DEFAULT_GIT_REF,
+)
 import hashlib
 from git import Repo
 
@@ -79,9 +83,10 @@ def _parse_dependency_string(package_string: str) -> DependencySource:
         raise NotImplementedError("url dependencies are not supported yet")
     else:
         # it's a default git repo dependency
-        gitstring = DEFAULT_GIT_REPO
         subdirectory = str(Path(DEFAULT_GIT_SUBDIRECTORY) / package_string)
-        return DependencySource(git=gitstring, ref=None, subdirectory=subdirectory)
+        return DependencySource(
+            git=DEFAULT_GIT_REPO, ref=DEFAULT_GIT_REF, subdirectory=subdirectory
+        )
 
 
 def _get_repo_path(dependency: DependencySource, repo_dir: Path) -> Path:
