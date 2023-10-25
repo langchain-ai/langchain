@@ -294,6 +294,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 inputs[i : i + max_concurrency]
                 for i in range(0, len(inputs), max_concurrency)
             ]
+            config = [{**c, "max_concurrency": None} for c in config]
             return [
                 output
                 for batch in batches
