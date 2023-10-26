@@ -26,6 +26,7 @@ class _LlamaCppCommon(BaseLanguageModel):
     base_url: str = "http://localhost:8080"
     """Base url the model is hosted under."""
 
+    grammar: Optional[str]
     logit_bias: Optional[int]
     mirostat: Optional[int] = 0
     mirostat_tau: Optional[int] = 5
@@ -46,7 +47,7 @@ class _LlamaCppCommon(BaseLanguageModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Ollama."""
+        """Get the default parameters for calling Llama.cpp."""
         return {
             "temperature": self.temperature,
             "repeat_last_n": self.repeat_last_n,
@@ -62,6 +63,7 @@ class _LlamaCppCommon(BaseLanguageModel):
             "mirostat_eta": self.mirostat_eta,
             "n_predict": self.n_predict,
             "n_probs": self.n_probs,
+            "grammar": self.grammar,
             "seed": self.seed,
         }
 
@@ -198,3 +200,61 @@ class LlamaCppServer(BaseLLM, _LlamaCppCommon):
                         chunk.text,
                         verbose=self.verbose,
                     )
+
+JSON_GNBF = '''root  ::= object
+value ::= object | array | string | number | boolean | "null"
+
+object ::=
+  "{" ws (
+            string ":" ws value
+    ("," ws string ":" ws value)*
+  )? "}"
+
+array  ::=
+  "[" ws (
+            value
+    ("," ws value)*
+  )? "]"
+
+string  ::=
+  "\\"" (
+    [^"\\\\] |
+    "\\\\" (["\\\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F]) # escapes
+  )* "\\"" ws
+
+number  ::= "-"? [0-9]+ ws
+boolean ::= ("true" | "false") ws
+
+ws ::= ([ \\t\\n] ws)?'''
+
+JSON_ARRAY_GNBF = '''root   ::= arr
+value  ::= object | array | string | number | ("true" | "false" | "null") ws
+
+arr  ::=
+  "[\\n" ws (
+            value
+    (",\\n" ws value)*
+  )? "]"
+
+object ::=
+  "{" ws (
+            string ":" ws value
+    ("," ws string ":" ws value)*
+  )? "}" ws
+
+array  ::=
+  "[" ws (
+            value
+    ("," ws value)*
+  )? "]" ws
+
+string ::=
+  "\\"" (
+    [^"\\\\] |
+    "\\\\" (["\\\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F]) # escapes
+  )* "\\"" ws
+
+number ::= ("-"? ([0-9] | [1-9] [0-9]*)) ("." [0-9]+)? ([eE] [-+]? [0-9]+)? ws
+
+# Optional space: by convention, applied in this grammar after literal chars when allowed
+ws ::= ([ \\t\\n] ws)?'''
