@@ -3,3 +3,6 @@ lint lint_diff:
 
 test:
 	poetry run poe test
+
+format:
+	poetry run poe format

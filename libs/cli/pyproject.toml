@@ -45,6 +45,7 @@ select = [
 test = "poetry run pytest"
 watch = "poetry run ptw"
 lint = "poetry run ruff ."
+format = "poetry run ruff . --fix"
 
 
 [build-system]
