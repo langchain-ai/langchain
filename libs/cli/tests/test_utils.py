@@ -1,5 +1,5 @@
 import pytest
-from langchain_cli.utils.git import _parse_dependency_string, DependencySource
+from langchain_cli.utils.git import parse_dependency_string, DependencySource
 from langchain_cli.constants import (
     DEFAULT_GIT_REPO,
     DEFAULT_GIT_SUBDIRECTORY,
@@ -8,7 +8,7 @@ from langchain_cli.constants import (
 
 
 def test_dependency_string() -> None:
-    assert _parse_dependency_string(
+    assert parse_dependency_string(
         "git+ssh://git@github.com/efriis/myrepo.git"
     ) == DependencySource(
         git="ssh://git@github.com/efriis/myrepo.git",
@@ -16,7 +16,7 @@ def test_dependency_string() -> None:
         subdirectory=None,
     )
 
-    assert _parse_dependency_string(
+    assert parse_dependency_string(
         "git+https://github.com/efriis/myrepo.git#subdirectory=src"
     ) == DependencySource(
         git="https://github.com/efriis/myrepo.git",
@@ -24,27 +24,27 @@ def test_dependency_string() -> None:
         ref=None,
     )
 
-    assert _parse_dependency_string(
+    assert parse_dependency_string(
         "git+ssh://git@github.com:efriis/myrepo.git#develop"
     ) == DependencySource(
         git="ssh://git@github.com:efriis/myrepo.git", ref="develop", subdirectory=None
     )
 
     # also support a slash in ssh
-    assert _parse_dependency_string(
+    assert parse_dependency_string(
         "git+ssh://git@github.com/efriis/myrepo.git#develop"
     ) == DependencySource(
         git="ssh://git@github.com/efriis/myrepo.git", ref="develop", subdirectory=None
     )
 
     # looks like poetry supports both an @ and a #
-    assert _parse_dependency_string(
+    assert parse_dependency_string(
         "git+ssh://git@github.com:efriis/myrepo.git@develop"
     ) == DependencySource(
         git="ssh://git@github.com:efriis/myrepo.git", ref="develop", subdirectory=None
     )
 
-    assert _parse_dependency_string("simple-pirate") == DependencySource(
+    assert parse_dependency_string("simple-pirate") == DependencySource(
         git=DEFAULT_GIT_REPO,
         subdirectory=f"{DEFAULT_GIT_SUBDIRECTORY}/simple-pirate",
         ref=DEFAULT_GIT_REF,
@@ -52,7 +52,7 @@ def test_dependency_string() -> None:
 
 
 def test_dependency_string_both() -> None:
-    assert _parse_dependency_string(
+    assert parse_dependency_string(
         "git+https://github.com/efriis/myrepo.git@branch#subdirectory=src"
     ) == DependencySource(
         git="https://github.com/efriis/myrepo.git",
@@ -64,7 +64,7 @@ def test_dependency_string_both() -> None:
 def test_dependency_string_invalids() -> None:
     # expect error for wrong order
     with pytest.raises(ValueError):
-        _parse_dependency_string(
+        parse_dependency_string(
             "git+https://github.com/efriis/myrepo.git#subdirectory=src@branch"
         )
     # expect error for @subdirectory
@@ -76,14 +76,14 @@ def test_dependency_string_edge_case() -> None:
     # this could be a ssh dep with user=a, and default ref
     # or a ssh dep at a with ref=b.
     # in this case, assume the first case (be greedy with the '@')
-    assert _parse_dependency_string("git+ssh://a@b") == DependencySource(
+    assert parse_dependency_string("git+ssh://a@b") == DependencySource(
         git="ssh://a@b",
         subdirectory=None,
         ref=None,
     )
 
     # weird one that is actually valid
-    assert _parse_dependency_string(
+    assert parse_dependency_string(
         "git+https://github.com/efriis/myrepo.git@subdirectory=src"
     ) == DependencySource(
         git="https://github.com/efriis/myrepo.git",

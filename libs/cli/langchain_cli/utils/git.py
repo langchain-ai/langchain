@@ -19,7 +19,7 @@ class DependencySource(TypedDict):
 
 
 # use poetry dependency string format
-def _parse_dependency_string(package_string: str) -> DependencySource:
+def parse_dependency_string(package_string: str) -> DependencySource:
     if package_string.startswith("git+"):
         # remove git+
         gitstring = package_string[4:]
@@ -53,7 +53,6 @@ def _parse_dependency_string(package_string: str) -> DependencySource:
             _, post_slash = find_slash.split("/", 1)
             if "@" in post_slash or "#" in post_slash:
                 _, ref = re.split(r"[@#]", post_slash, 1)
-        print(post_slash, ref)
 
         # gitstring is everything before that
         gitstring = gitstring[: -len(ref) - 1] if ref is not None else gitstring
@@ -75,9 +74,8 @@ def _parse_dependency_string(package_string: str) -> DependencySource:
         )
 
 
-def _get_repo_path(dependency: DependencySource, repo_dir: Path) -> Path:
+def _get_repo_path(gitstring: str, repo_dir: Path) -> Path:
     # only based on git for now
-    gitstring = dependency["git"]
     hashed = hashlib.sha256(gitstring.encode("utf-8")).hexdigest()[:8]
 
     removed_protocol = gitstring.split("://")[-1]
@@ -89,31 +87,27 @@ def _get_repo_path(dependency: DependencySource, repo_dir: Path) -> Path:
     return repo_dir / directory_name
 
 
-def update_repo(gitpath: str, repo_dir: Path) -> Path:
+def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     # see if path already saved
-    print("starting", gitpath)
-    dependency = _parse_dependency_string(gitpath)
-    repo_path = _get_repo_path(dependency, repo_dir)
-    print("h", repo_path)
+    repo_path = _get_repo_path(gitstring, repo_dir)
     if repo_path.exists():
         shutil.rmtree(repo_path)
-        print("rm done")
 
     # now we have fresh dir
-    print('dependency.get("ref")', dependency.get("ref"))
-    Repo.clone_from(dependency["git"], repo_path, branch=dependency.get("ref"), depth=1)
-    print("clone done")
-    return (
-        repo_path
-        if dependency["subdirectory"] is None
-        else repo_path / dependency["subdirectory"]
-    )
+    Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
+    return repo_path
 
 
 def copy_repo(
     source: Path,
     destination: Path,
 ) -> None:
+    """
+    Copies a repo, ignoring git folders.
+
+    Raises FileNotFound error if it can't find source
+    """
+
     def ignore_func(_, files):
         return [f for f in files if f == ".git"]
 
