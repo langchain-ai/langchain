@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "neo4j_generation"
+version = "0.0.1"
+description = ""
+authors = ["Tomaz Bratanic <tomaz.bratanic@neo4j.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.320"
+openai = "^0.28.1"
+neo4j = "^5.12.0"
+
+[tool.langserve]
+export_module = "neo4j_generation.chain"
+export_attr = "chain"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

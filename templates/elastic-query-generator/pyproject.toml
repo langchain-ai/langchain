@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "elastic_query_generator"
+version = "0.0.1"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.313"
+elasticsearch = "^8.10.1"
+
+[tool.langserve]
+export_module = "elastic_query_generator.chain"
+export_attr = "chain"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

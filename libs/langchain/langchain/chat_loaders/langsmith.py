@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Union, cast
 
 from langchain.chat_loaders.base import BaseChatLoader
 from langchain.load import load
@@ -79,7 +79,7 @@ class LangSmithRunChatLoader(BaseChatLoader):
         """
         if llm_run.run_type != "llm":
             raise ValueError(f"Expected run of type llm. Got: {llm_run.run_type}")
-        return llm_run.extra.get("invocation_params", {}).get("functions")
+        return (llm_run.extra or {}).get("invocation_params", {}).get("functions")
 
     def lazy_load(self) -> Iterator[ChatSession]:
         """
@@ -90,13 +90,15 @@ class LangSmithRunChatLoader(BaseChatLoader):
 
         :return: Iterator of chat sessions containing messages.
         """
+        from langsmith.schemas import Run
+
         for run_obj in self.runs:
             try:
                 if hasattr(run_obj, "id"):
                     run = run_obj
                 else:
                     run = self.client.read_run(run_obj)
-                session = self._load_single_chat_session(run)
+                session = self._load_single_chat_session(cast(Run, run))
                 yield session
             except ValueError as e:
                 logger.warning(f"Could not load run {run_obj}: {repr(e)}")
