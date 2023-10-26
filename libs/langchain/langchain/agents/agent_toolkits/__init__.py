@@ -92,4 +92,5 @@ __all__ = [
     "create_vectorstore_router_agent",
     "create_xorbits_agent",
     "create_conversational_retrieval_agent",
+    "create_retriever_tool",
 ]
