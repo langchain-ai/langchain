@@ -1,4 +1,5 @@
 """Test Fireworks AI API Wrapper."""
+import sys
 from typing import Generator
 
 import pytest
@@ -12,18 +13,23 @@ from langchain.prompts.chat import (
 )
 from langchain.schema import LLMResult
 
+if sys.version_info < (3, 9):
+    pytest.skip("fireworks-ai requires Python > 3.8", allow_module_level=True)
+
 
 @pytest.fixture
 def llm() -> Fireworks:
     return Fireworks(model_kwargs={"temperature": 0, "max_tokens": 512})
 
 
+@pytest.mark.scheduled
 def test_fireworks_call(llm: Fireworks) -> None:
     """Test valid call to fireworks."""
     output = llm("How is the weather in New York today?")
     assert isinstance(output, str)
 
 
+@pytest.mark.scheduled
 def test_fireworks_in_chain() -> None:
     """Tests fireworks AI in a Langchain chain"""
     human_message_prompt = HumanMessagePromptTemplate(
@@ -39,12 +45,14 @@ def test_fireworks_in_chain() -> None:
     assert isinstance(output, str)
 
 
+@pytest.mark.scheduled
 def test_fireworks_model_param() -> None:
     """Tests model parameters for Fireworks"""
     llm = Fireworks(model="foo")
     assert llm.model == "foo"
 
 
+@pytest.mark.scheduled
 def test_fireworks_invoke(llm: Fireworks) -> None:
     """Tests completion with invoke"""
     output = llm.invoke("How is the weather in New York today?", stop=[","])
@@ -52,6 +60,7 @@ def test_fireworks_invoke(llm: Fireworks) -> None:
     assert output[-1] == ","
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_fireworks_ainvoke(llm: Fireworks) -> None:
     """Tests completion with invoke"""
@@ -60,6 +69,7 @@ async def test_fireworks_ainvoke(llm: Fireworks) -> None:
     assert output[-1] == ","
 
 
+@pytest.mark.scheduled
 def test_fireworks_batch(llm: Fireworks) -> None:
     """Tests completion with invoke"""
     llm = Fireworks()
@@ -78,6 +88,7 @@ def test_fireworks_batch(llm: Fireworks) -> None:
         assert token[-1] == ","
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_fireworks_abatch(llm: Fireworks) -> None:
     """Tests completion with invoke"""
@@ -96,6 +107,7 @@ async def test_fireworks_abatch(llm: Fireworks) -> None:
         assert token[-1] == ","
 
 
+@pytest.mark.scheduled
 def test_fireworks_multiple_prompts(
     llm: Fireworks,
 ) -> None:
@@ -106,6 +118,7 @@ def test_fireworks_multiple_prompts(
     assert len(output.generations) == 2
 
 
+@pytest.mark.scheduled
 def test_fireworks_streaming(llm: Fireworks) -> None:
     """Test stream completion."""
     generator = llm.stream("Who's the best quarterback in the NFL?")
@@ -115,6 +128,7 @@ def test_fireworks_streaming(llm: Fireworks) -> None:
         assert isinstance(token, str)
 
 
+@pytest.mark.scheduled
 def test_fireworks_streaming_stop_words(llm: Fireworks) -> None:
     """Test stream completion with stop words."""
     generator = llm.stream("Who's the best quarterback in the NFL?", stop=[","])
@@ -127,6 +141,7 @@ def test_fireworks_streaming_stop_words(llm: Fireworks) -> None:
     assert last_token[-1] == ","
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_fireworks_streaming_async(llm: Fireworks) -> None:
     """Test stream completion."""
@@ -140,6 +155,7 @@ async def test_fireworks_streaming_async(llm: Fireworks) -> None:
     assert last_token[-1] == ","
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_fireworks_async_agenerate(llm: Fireworks) -> None:
     """Test async."""
@@ -147,6 +163,7 @@ async def test_fireworks_async_agenerate(llm: Fireworks) -> None:
     assert isinstance(output, LLMResult)
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_fireworks_multiple_prompts_async_agenerate(llm: Fireworks) -> None:
     output = await llm.agenerate(

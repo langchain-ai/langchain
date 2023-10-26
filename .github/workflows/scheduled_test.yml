@@ -72,11 +72,6 @@ jobs:
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
         run: |
           make scheduled_tests
-          if [[ ${{ matrix.python-version }} != "3.8" ]]
-          then
-            poetry run pytest tests/integration_tests/llms/test_fireworks.py
-            poetry run pytest tests/integration_tests/chat_models/test_fireworks.py
-          fi
 
       - name: Ensure the tests did not create any additional files
         shell: bash
