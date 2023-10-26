@@ -69,6 +69,11 @@ from langchain.evaluation.embedding_distance import (
 )
 from langchain.evaluation.exact_match.base import ExactMatchStringEvaluator
 from langchain.evaluation.loading import load_dataset, load_evaluator, load_evaluators
+from langchain.evaluation.parsing.base import (
+    JsonEqualityEvaluator,
+    JsonValidityEvaluator,
+)
+from langchain.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
 from langchain.evaluation.regex_match.base import RegexMatchStringEvaluator
 from langchain.evaluation.schema import (
@@ -86,9 +91,6 @@ from langchain.evaluation.string_distance import (
     StringDistance,
     StringDistanceEvalChain,
 )
-from langchain.evaluation.parsing.base import (JsonEqualityEvaluator, JsonValidityEvaluator)
-from langchain.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
-
 
 __all__ = [
     "EvaluatorType",
@@ -120,5 +122,4 @@ __all__ = [
     "JsonValidityEvaluator",
     "JsonEqualityEvaluator",
     "JsonEditDistanceEvaluator",
-    
 ]

@@ -122,7 +122,8 @@ class JsonEqualityEvaluator(StringEvaluator):
         return "json_equality"
 
     def _parse_json(
-        self, string: Any, 
+        self,
+        string: Any,
     ) -> Union[dict, list, None, float, bool, int, str]:
         if isinstance(string, str):
             return parse_json_markdown(string)
