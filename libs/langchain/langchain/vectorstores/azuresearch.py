@@ -368,14 +368,14 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import VectorQuery
+        from azure.search.documents.models import RawVectorQuery
 
         results = self.client.search(
             search_text="",
             vector_queries=[
-                VectorQuery(
+                RawVectorQuery(
                     kind="vector",
-                    value=np.array(
+                    vector=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
                     k=k,
@@ -429,14 +429,14 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import VectorQuery
+        from azure.search.documents.models import RawVectorQuery
 
         results = self.client.search(
             search_text=query,
             vector_queries=[
-                VectorQuery(
+                RawVectorQuery(
                     kind="vector",
-                    value=np.array(
+                    vector=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
                     k=k,
@@ -493,14 +493,14 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import VectorQuery
+        from azure.search.documents.models import RawVectorQuery
 
         results = self.client.search(
             search_text=query,
             vector_queries=[
-                VectorQuery(
+                RawVectorQuery(
                     kind="vector",
-                    value=np.array(
+                    vector=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
                     k=50,
