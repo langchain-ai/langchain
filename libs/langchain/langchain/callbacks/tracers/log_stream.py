@@ -237,7 +237,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         name=run.name,
                         type=run.run_type,
                         tags=run.tags or [],
-                        metadata=run.extra.get("metadata", {}),
+                        metadata=(run.extra or {}).get("metadata", {}),
                         start_time=run.start_time.isoformat(timespec="milliseconds"),
                         streamed_output_str=[],
                         final_output=None,
@@ -266,7 +266,9 @@ class LogStreamCallbackHandler(BaseTracer):
                     {
                         "op": "add",
                         "path": f"/logs/{index}/end_time",
-                        "value": run.end_time.isoformat(timespec="milliseconds"),
+                        "value": run.end_time.isoformat(timespec="milliseconds")
+                        if run.end_time is not None
+                        else None,
                     },
                 )
             )

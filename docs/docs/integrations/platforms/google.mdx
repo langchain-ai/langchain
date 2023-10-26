@@ -30,7 +30,6 @@ Access PaLM chat models like `chat-bison` and `codechat-bison` via Google Cloud.
 from langchain.chat_models import ChatVertexAI
 ```
 
-
 ## Document Loader
 ### Google BigQuery
 
@@ -51,7 +50,7 @@ from langchain.document_loaders import BigQueryLoader
 
 ### Google Cloud Storage
 
->[Google Cloud Storage](https://en.wikipedia.org/wiki/Google_Cloud_Storage) is a managed service for storing unstructured data.
+> [Google Cloud Storage](https://en.wikipedia.org/wiki/Google_Cloud_Storage) is a managed service for storing unstructured data.
 
 First, we need to install `google-cloud-storage` python package.
 
@@ -74,27 +73,28 @@ from langchain.document_loaders import GCSFileLoader
 
 ### Google Drive
 
->[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) is a file storage and synchronization service developed by Google.
+> [Google Drive](https://en.wikipedia.org/wiki/Google_Drive) is a file storage and synchronization service developed by Google.
 
 Currently, only `Google Docs` are supported.
 
-First, we need to install several python package.
+First, we need to install several python packages.
 
 ```bash
 pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 ```
 
-See a [usage example and authorizing instructions](/docs/integrations/document_loaders/google_drive.html).
+See a [usage example and authorizing instructions](/docs/integrations/document_loaders/google_drive).
 
 ```python
 from langchain.document_loaders import GoogleDriveLoader
 ```
 
 ## Vector Store
-### Google Vertex AI MatchingEngine
+### Google Vertex AI Vector Search
 
-> [Google Vertex AI Matching Engine](https://cloud.google.com/vertex-ai/docs/matching-engine/overview) provides
-> the industry's leading high-scale low latency vector database. These vector databases are commonly
+> [Google Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview),
+> formerly known as Vertex AI Matching Engine, provides the industry's leading high-scale 
+> low latency vector database. These vector databases are commonly
 > referred to as vector similarity-matching or an approximate nearest neighbor (ANN) service.
 
 We need to install several python packages.
@@ -181,12 +181,26 @@ There exists a `GoogleSearchAPIWrapper` utility which wraps this API. To import 
 ```python
 from langchain.utilities import GoogleSearchAPIWrapper
 ```
-For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/google_search.html).
+
+For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/google_search).
 
 We can easily load this wrapper as a Tool (to use with an Agent). We can do this with:
+
 ```python
 from langchain.agents import load_tools
 tools = load_tools(["google-search"])
+```
+
+### Google Places
+
+See a [usage example](/docs/integrations/tools/google_places).
+
+```
+pip install googlemaps
+```
+
+```python
+from langchain.tools import GooglePlacesTool
 ```
 
 ## Document Transformer
@@ -215,4 +229,41 @@ See a [usage example](/docs/integrations/document_transformers/docai).
 ```python
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers import DocAIParser
+```
+
+## Chat loaders
+### Gmail
+
+> [Gmail](https://en.wikipedia.org/wiki/Gmail) is a free email service provided by Google.
+
+First, we need to install several python packages.
+
+```bash
+pip install --upgrade google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+```
+
+See a [usage example and authorizing instructions](/docs/integrations/chat_loaders/gmail).
+
+```python
+from langchain.chat_loaders.gmail import GMailLoader
+```
+
+## Agents and Toolkits
+### Gmail
+
+See a [usage example and authorizing instructions](/docs/integrations/toolkits/gmail).
+
+```python
+from langchain.agents.agent_toolkits import GmailToolkit
+
+toolkit = GmailToolkit()
+```
+
+### Google Drive
+
+See a [usage example and authorizing instructions](/docs/integrations/toolkits/google_drive).
+
+```python
+from langchain_googledrive.utilities.google_drive import GoogleDriveAPIWrapper
+from langchain_googledrive.tools.google_drive.tool import GoogleDriveSearchTool
 ```
