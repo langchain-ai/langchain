@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
@@ -94,7 +93,10 @@ class ReadTheDocsLoader(BaseLoader):
         return len(link_text) / len(total_text)
 
     def _get_clean_text(self, element):
-        """Recursive text getter that excludes code and binary content and preserves newline data from the html."""
+        """
+        Recursive text getter that excludes code and binary content and
+        preserves newline data from the html.
+        """
         from bs4 import NavigableString
         from bs4.element import Comment
 
@@ -124,7 +126,7 @@ class ReadTheDocsLoader(BaseLoader):
             "select",
             "base",
             "style",
-            "img"
+            "img",
         ]
 
         newline_elements = [
@@ -141,11 +143,14 @@ class ReadTheDocsLoader(BaseLoader):
             "h6",
             "pre",
             "table",
-            "tr"
+            "tr",
         ]
 
         def process_element(el):
-            """Traverse through HTML tree recursively to preserve newline and skip unwanted (code/binary) elements"""
+            """
+            Traverse through HTML tree recursively to preserve newline and skip
+            unwanted (code/binary) elements
+            """
             tag_name = getattr(el, "name", None)
             if isinstance(el, Comment) or tag_name in elements_to_skip:
                 return ""
@@ -184,9 +189,8 @@ class ReadTheDocsLoader(BaseLoader):
             if text is not None:
                 break
 
-        if (
-            text is not None
-            and not (self.exclude_index_pages and self._get_link_ratio(text) >= 0.5)
+        if text is not None and not (
+            self.exclude_index_pages and self._get_link_ratio(text) >= 0.5
         ):
             text = self._get_clean_text(text)
         else:
