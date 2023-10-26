@@ -69,7 +69,7 @@ def parse_dependency_string(package_string: str) -> DependencySource:
         # it's a default git repo dependency
         subdirectory = str(Path(DEFAULT_GIT_SUBDIRECTORY) / package_string)
         return DependencySource(
-            git=gitstring, ref=DEFAULT_GIT_REF, subdirectory=subdirectory
+            git=DEFAULT_GIT_REPO, ref=DEFAULT_GIT_REF, subdirectory=subdirectory
         )
 
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-cli"
-version = "0.0.4"
+version = "0.0.5"
 description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
@@ -27,6 +27,7 @@ pytest-watch = "^4.2.0"
 [tool.poe.tasks]
 test = "poetry run pytest"
 watch = "poetry run ptw"
+lint = "poetry run ruff ."
 
 
 [build-system]
