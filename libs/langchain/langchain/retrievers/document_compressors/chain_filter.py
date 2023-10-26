@@ -72,8 +72,10 @@ class LLMChainFilter(BaseDocumentCompressor):
             A LLMChainFilter that uses the given language model.
         """
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
-        output_parser = None
+        llm_chain_kwargs = {"llm": llm, "prompt": _prompt}
         if _prompt.output_parser is None:
-            output_parser = RetryOutputParser.from_llm(llm, BooleanOutputParser())
-        llm_chain = LLMChain(llm=llm, prompt=_prompt, output_parser=output_parser)
+            llm_chain_kwargs["output_parser"] = RetryOutputParser.from_llm(
+                llm, BooleanOutputParser()
+            )
+        llm_chain = LLMChain(**llm_chain_kwargs)
         return cls(llm_chain=llm_chain, **kwargs)
