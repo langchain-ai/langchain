@@ -45,7 +45,7 @@ def ingest_documents():
         metadatas=[chunk.metadata for chunk in chunks],
         embedding=embedder,
         index_name=INDEX_NAME,
-        schema=INDEX_SCHEMA,
+        index_schema=INDEX_SCHEMA,
         redis_url=REDIS_URL
     )
 
