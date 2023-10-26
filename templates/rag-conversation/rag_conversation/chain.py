@@ -11,6 +11,12 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough, RunnableBranch, RunnableLambda, RunnableMap
 
+if os.environ.get("PINECONE_API_KEY", None) is None:
+    raise Exception("Missing `PINECONE_API_KEY` environment variable.")
+
+if os.environ.get("PINECONE_ENVIRONMENT", None) is None:
+    raise Exception("Missing `PINECONE_ENVIRONMENT` environment variable.")
+
 PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
 ### Ingest code - you may need to run this the first time
