@@ -6,6 +6,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.schema.output_parser import StrOutputParser
+from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
 
 if os.environ.get("PINECONE_API_KEY", None) is None:
@@ -33,8 +34,12 @@ PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 # )
 # retriever = vectorstore.as_retriever()
 
+# Set up index with multi query retriever
 vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
-retriever = vectorstore.as_retriever()
+model = ChatOpenAI(temperature=0)
+retriever = MultiQueryRetriever.from_llm(
+    retriever=vectorstore.as_retriever(), llm=model
+)
 
 # RAG prompt
 template = """Answer the question based only on the following context:

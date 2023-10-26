@@ -65,6 +65,14 @@ MODEL_COST_PER_1K_TOKENS = {
     "babbage-002-finetuned-completion": 0.0016,
     "davinci-002-finetuned-completion": 0.012,
     "gpt-3.5-turbo-0613-finetuned-completion": 0.016,
+    # Azure Fine Tuned input
+    "babbage-002-azure-finetuned": 0.0004,
+    "davinci-002-azure-finetuned": 0.002,
+    "gpt-35-turbo-0613-azure-finetuned": 0.0015,
+    # Azure Fine Tuned output
+    "babbage-002-azure-finetuned-completion": 0.0004,
+    "davinci-002-azure-finetuned-completion": 0.002,
+    "gpt-35-turbo-0613-azure-finetuned-completion": 0.002,
     # Legacy fine-tuned models
     "ada-finetuned-legacy": 0.0016,
     "babbage-finetuned-legacy": 0.0024,
@@ -90,7 +98,9 @@ def standardize_model_name(
 
     """
     model_name = model_name.lower()
-    if "ft-" in model_name:
+    if ".ft-" in model_name:
+        return model_name.split(".ft-")[0] + "-azure-finetuned"
+    if ":ft-" in model_name:
         return model_name.split(":")[0] + "-finetuned-legacy"
     if "ft:" in model_name:
         return model_name.split(":")[1] + "-finetuned"
