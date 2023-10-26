@@ -1,17 +1,18 @@
 import asyncio
 import logging
-from typing import List, Sequence
+from typing import Any, List, Optional, Sequence, cast
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field
+from langchain.retrievers.rrf import weighted_reciprocal_rank_fusion
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.language_model import BaseLanguageModel
 
 logger = logging.getLogger(__name__)
 
@@ -58,33 +59,43 @@ class MultiQueryRetriever(BaseRetriever):
     """
 
     retriever: BaseRetriever
+    """Retriever to query documents"""
     llm_chain: LLMChain
+    """Chain to generate query variations"""
     verbose: bool = True
+    """Set verbosity to log generated queries"""
     parser_key: str = "lines"
+    """Key to access the generated queries in the llm_chain's output parser"""
 
     @classmethod
     def from_llm(
         cls,
         retriever: BaseRetriever,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
-        parser_key: str = "lines",
+        **kwargs: Any,
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.
 
         Args:
             retriever: retriever to query documents from
-            llm: llm for query generation using DEFAULT_QUERY_PROMPT
+            llm: llm for query generation
+            prompt: prompt for query generation. Defaults to DEFAULT_QUERY_PROMPT.
 
         Returns:
             MultiQueryRetriever
         """
         output_parser = LineListOutputParser()
-        llm_chain = LLMChain(llm=llm, prompt=prompt, output_parser=output_parser)
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            output_parser=output_parser,
+            verbose=kwargs.get("verbose", False),
+        )
         return cls(
             retriever=retriever,
             llm_chain=llm_chain,
-            parser_key=parser_key,
+            **kwargs,
         )
 
     async def _aget_relevant_documents(
@@ -96,13 +107,14 @@ class MultiQueryRetriever(BaseRetriever):
         """Get relevant documents given a user query.
 
         Args:
-            question: user query
+            query: user query
 
         Returns:
             Unique union of relevant documents from all generated queries
         """
         queries = await self.agenerate_queries(query, run_manager)
-        documents = await self.aretrieve_documents(queries, run_manager)
+        doc_lists = await self.aretrieve_documents(queries, run_manager)
+        documents = [doc for docs in doc_lists for doc in docs]
         return self.unique_union(documents)
 
     async def agenerate_queries(
@@ -126,7 +138,7 @@ class MultiQueryRetriever(BaseRetriever):
 
     async def aretrieve_documents(
         self, queries: List[str], run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> List[List[Document]]:
         """Run all LLM generated queries.
 
         Args:
@@ -143,7 +155,8 @@ class MultiQueryRetriever(BaseRetriever):
                 for query in queries
             )
         )
-        return [doc for docs in document_lists for doc in docs]
+        document_lists = cast(List[List[Document]], document_lists)
+        return document_lists
 
     def _get_relevant_documents(
         self,
@@ -154,13 +167,14 @@ class MultiQueryRetriever(BaseRetriever):
         """Get relevant documents given a user query.
 
         Args:
-            question: user query
+            query: user query
 
         Returns:
             Unique union of relevant documents from all generated queries
         """
         queries = self.generate_queries(query, run_manager)
-        documents = self.retrieve_documents(queries, run_manager)
+        doc_lists = self.retrieve_documents(queries, run_manager)
+        documents = [doc for docs in doc_lists for doc in docs]
         return self.unique_union(documents)
 
     def generate_queries(
@@ -184,7 +198,7 @@ class MultiQueryRetriever(BaseRetriever):
 
     def retrieve_documents(
         self, queries: List[str], run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> List[List[Document]]:
         """Run all LLM generated queries.
 
         Args:
@@ -198,7 +212,7 @@ class MultiQueryRetriever(BaseRetriever):
             docs = self.retriever.get_relevant_documents(
                 query, callbacks=run_manager.get_child()
             )
-            documents.extend(docs)
+            documents.append(docs)
         return documents
 
     def unique_union(self, documents: List[Document]) -> List[Document]:
@@ -211,3 +225,81 @@ class MultiQueryRetriever(BaseRetriever):
             List of unique retrieved Documents
         """
         return _unique_documents(documents)
+
+
+class MultiQueryRankFusionRetriever(MultiQueryRetriever):
+    """Given a query, use an LLM to write a set of queries.
+
+    Retrieve docs for each query. Return the retrieved docs
+    re-ranked with weighted Reciprocal Rank Fusion.
+    """
+
+    append_original_query: bool = True
+    """Whether to append to original query to the variations generated by the chain"""
+    weights: Optional[List[float]] = None
+    """Weights for each query (only for RRF)"""
+    c: int = 60
+    """Constant added to the rank, controlling the balance between
+    the importance of high-ranked items and the consideration given to
+    lower-ranked items (only for RRF)"""
+
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+    ) -> List[Document]:
+        """Get relevant documents given a user query.
+
+        Args:
+            query: user query
+
+        Returns:
+            Unique union of relevant documents from all generated queries
+        """
+        queries = await self.agenerate_queries(query, run_manager)
+
+        if self.append_original_query and query not in queries:
+            queries.append(query)
+
+        queries = list(set(queries))
+
+        documents = await self.aretrieve_documents(queries, run_manager)
+        return self.rank_fusion(documents)
+
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+    ) -> List[Document]:
+        """Get relevant documents given a user query.
+
+        Args:
+            query: user query
+
+        Returns:
+            Unique union of relevant documents from all generated queries
+        """
+        queries = self.generate_queries(query, run_manager)
+
+        if self.append_original_query and query not in queries:
+            queries.append(query)
+
+        queries = list(set(queries))
+
+        documents = self.retrieve_documents(queries, run_manager)
+        return self.rank_fusion(documents)
+
+    def rank_fusion(self, doc_lists: List[List[Document]]) -> List[Document]:
+        """Get unique Documents.
+
+        Args:
+            doc_lists: List of Document lists, one per query
+
+        Returns:
+            List of unique retrieved Documents
+        """
+        return weighted_reciprocal_rank_fusion(
+            doc_lists, weights=self.weights, c=self.c
+        )

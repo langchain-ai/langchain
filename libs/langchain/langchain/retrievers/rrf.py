@@ -1,11 +1,11 @@
-from typing import List
+from typing import List, Optional
 
 from langchain.schema import Document
 
 
 def weighted_reciprocal_rank_fusion(
     doc_lists: List[List[Document]],
-    weights: List[float] | None = None,
+    weights: Optional[List[float]] = None,
     c: int = 60,
 ) -> List[Document]:
     """
