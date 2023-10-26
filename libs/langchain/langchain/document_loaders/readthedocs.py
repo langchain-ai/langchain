@@ -164,7 +164,7 @@ class ReadTheDocsLoader(BaseLoader):
                 return "".join(process_element(child) for child in el.children)
 
         text = process_element(element)
-        return text
+        return text.strip()
 
     def _clean_data(self, data: str) -> str:
         from bs4 import BeautifulSoup

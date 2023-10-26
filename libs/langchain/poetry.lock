@@ -1168,6 +1168,19 @@ files = [
 cffi = ">=1.0.0"
 
 [[package]]
+name = "bs4"
+version = "0.0.1"
+description = "Dummy package for Beautiful Soup"
+optional = false
+python-versions = "*"
+files = [
+    {file = "bs4-0.0.1.tar.gz", hash = "sha256:36ecea1fd7cc5c0c6e4a1ff075df26d50da647b75376626cc186e2212886dd3a"},
+]
+
+[package.dependencies]
+beautifulsoup4 = "*"
+
+[[package]]
 name = "build"
 version = "1.0.3"
 description = "A simple, correct Python build frontend"
@@ -11051,4 +11064,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6bf06e81190f228675452f1a7581614898c983d27f2d56ae9ddd92119c114b03"
+content-hash = "13a00138544d8c4d21005fdc079e9ca28e13c7297544b226159d5d89b1151764"

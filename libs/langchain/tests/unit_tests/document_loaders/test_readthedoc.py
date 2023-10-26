@@ -32,6 +32,22 @@ def test_custom() -> None:
 
 
 @pytest.mark.requires("bs4")
+def test_nested_html_structure() -> None:
+    loader = ReadTheDocsLoader(PARENT_DIR / "nested_html_structure")
+    documents = loader.load()
+    assert "\n" not in documents[0].page_content
+
+
+@pytest.mark.requires("bs4")
+def test_index_page() -> None:
+    loader = ReadTheDocsLoader(
+        PARENT_DIR / "index_page", exclude_index_pages=True
+    )
+    documents = loader.load()
+    assert len(documents[0].page_content) == 0
+
+
+@pytest.mark.requires("bs4")
 def test_empty() -> None:
     loader = ReadTheDocsLoader(
         PARENT_DIR / "custom",
