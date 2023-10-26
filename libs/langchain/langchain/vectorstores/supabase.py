@@ -61,6 +61,7 @@ class SupabaseVectorStore(VectorStore):
             client=supabase_client,
             table_name="documents",
             query_name="match_documents",
+            chunk_size=500,
         )
 
     To load from an existing table:
@@ -105,7 +106,8 @@ class SupabaseVectorStore(VectorStore):
         self.table_name = table_name or "documents"
         self.query_name = query_name or "match_documents"
         self.chunk_size = chunk_size or 500
-        print("chunk size set to:" + str(chunk_size))
+        # According to the SupabaseVectorStore JS implementation, the best chunk size
+        # is 500. Though for large datasets it can be too large so it is configurable.
 
     @property
     def embeddings(self) -> Embeddings:
@@ -318,9 +320,6 @@ class SupabaseVectorStore(VectorStore):
             }
             for idx, embedding in enumerate(vectors)
         ]
-
-        # According to the SupabaseVectorStore JS implementation, the best chunk size
-        # is 500
 
         id_list: List[str] = []
         for i in range(0, len(rows), chunk_size):
