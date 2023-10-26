@@ -4,7 +4,10 @@ import json
 from abc import abstractmethod
 from typing import Any, Dict, Generic, Iterator, List, Mapping, Optional, TypeVar, Union
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, root_validator
@@ -91,7 +94,7 @@ class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
                 def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
                     input_str = json.dumps({prompt: prompt, **model_kwargs})
                     return input_str.encode('utf-8')
-                
+
                 def transform_output(self, output: bytes) -> str:
                     response_json = json.loads(output.read().decode("utf-8"))
                     return response_json[0]["generated_text"]
@@ -141,7 +144,7 @@ class SagemakerEndpoint(LLM):
     """
 
     """
-    Args:        
+    Args:
 
         region_name: The aws region e.g., `us-west-2`.
             Fallsback to AWS_DEFAULT_REGION env variable
@@ -154,7 +157,7 @@ class SagemakerEndpoint(LLM):
 
         client: boto3 client for Sagemaker Endpoint
 
-        content_handler: Implementation for model specific LLMContentHandler 
+        content_handler: Implementation for model specific LLMContentHandler
 
 
     Example:
@@ -228,7 +231,7 @@ class SagemakerEndpoint(LLM):
                 def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
                     input_str = json.dumps({prompt: prompt, **model_kwargs})
                     return input_str.encode('utf-8')
-                
+
                 def transform_output(self, output: bytes) -> str:
                     response_json = json.loads(output.read().decode("utf-8"))
                     return response_json[0]["generated_text"]
@@ -330,22 +333,122 @@ class SagemakerEndpoint(LLM):
 
         if self.streaming and run_manager:
             try:
-                resp = self.client.invoke_endpoint_with_response_stream(
+                response = self.client.invoke_endpoint_with_response_stream(
                     EndpointName=self.endpoint_name,
                     Body=body,
                     ContentType=self.content_handler.content_type,
                     **_endpoint_kwargs,
                 )
-                iterator = LineIterator(resp["Body"])
+                response_metadata = response.get("ResponseMetadata", {})
+                http_headers = response_metadata.get("HTTPHeaders", {})
+                content_type = http_headers.get("x-amzn-sagemaker-content-type", "")
+                iterator = LineIterator(response["Body"])
                 current_completion: str = ""
+                start_json = b"{"
+                is_lmi = content_type == "application/jsonlines"
                 for line in iterator:
-                    resp = json.loads(line)
-                    resp_output = resp.get("outputs")[0]
+                    if is_lmi:
+                        data = json.loads(line)
+                        resp_output = data.get("outputs")[0]
+                    elif not is_lmi and line != b"" and start_json in line:
+                        data = json.loads(line[line.find(start_json) :].decode("utf-8"))
+                        resp_output = (
+                            data["token"]["text"]
+                            if not data["token"]["special"]
+                            else ""
+                        )
+                    else:
+                        continue
                     if stop is not None:
                         # Uses same approach as below
                         resp_output = enforce_stop_tokens(resp_output, stop)
                     current_completion += resp_output
                     run_manager.on_llm_new_token(resp_output)
+                return current_completion
+            except Exception as e:
+                raise ValueError(f"Error raised by streaming inference endpoint: {e}")
+        else:
+            try:
+                response = self.client.invoke_endpoint(
+                    EndpointName=self.endpoint_name,
+                    Body=body,
+                    ContentType=content_type,
+                    Accept=accepts,
+                    **_endpoint_kwargs,
+                )
+            except Exception as e:
+                raise ValueError(f"Error raised by inference endpoint: {e}")
+
+            text = self.content_handler.transform_output(response["Body"])
+            if stop is not None:
+                # This is a bit hacky, but I can't figure out a better way to enforce
+                # stop tokens when making calls to the sagemaker endpoint.
+                text = enforce_stop_tokens(text, stop)
+
+            return text
+
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Asynchronously Call out to Sagemaker inference endpoint.
+
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            The string generated by the model.
+
+        Example:
+            .. code-block:: python
+
+                response = await se._acall("Tell me a joke.")
+        """
+        _model_kwargs = self.model_kwargs or {}
+        _model_kwargs = {**_model_kwargs, **kwargs}
+        _endpoint_kwargs = self.endpoint_kwargs or {}
+
+        body = self.content_handler.transform_input(prompt, _model_kwargs)
+        content_type = self.content_handler.content_type
+        accepts = self.content_handler.accepts
+
+        if self.streaming and run_manager:
+            try:
+                response = self.client.invoke_endpoint_with_response_stream(
+                    EndpointName=self.endpoint_name,
+                    Body=body,
+                    ContentType=self.content_handler.content_type,
+                    **_endpoint_kwargs,
+                )
+                response_metadata = response.get("ResponseMetadata", {})
+                http_headers = response_metadata.get("HTTPHeaders", {})
+                content_type = http_headers.get("x-amzn-sagemaker-content-type", "")
+                iterator = LineIterator(response["Body"])
+                current_completion: str = ""
+                start_json = b"{"
+                is_lmi = content_type == "application/jsonlines"
+                for line in iterator:
+                    if is_lmi:
+                        data = json.loads(line)
+                        resp_output = data.get("outputs", [""])[0]
+                    elif not is_lmi and line != b"" and start_json in line:
+                        data = json.loads(line[line.find(start_json) :].decode("utf-8"))
+                        resp_output = (
+                            data["token"]["text"]
+                            if not data["token"]["special"]
+                            else ""
+                        )
+                    else:
+                        continue
+                    if stop is not None:
+                        # Uses same approach as below
+                        resp_output = enforce_stop_tokens(resp_output, stop)
+                    current_completion += resp_output
+                    await run_manager.on_llm_new_token(resp_output)
                 return current_completion
             except Exception as e:
                 raise ValueError(f"Error raised by streaming inference endpoint: {e}")
