@@ -31,9 +31,9 @@ class Fireworks(BaseLLM):
     model: str = "accounts/fireworks/models/llama-v2-7b-chat"
     model_kwargs: dict = Field(
         default_factory=lambda: {
-            "temperature": 0.1,
+            "temperature": 0.7,
             "max_tokens": 512,
-            "top_p": 0.9,
+            "top_p": 1,
         }.copy()
     )
     fireworks_api_key: Optional[str] = None

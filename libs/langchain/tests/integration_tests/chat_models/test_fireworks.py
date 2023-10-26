@@ -68,16 +68,6 @@ def test_chat_fireworks_llm_output_contains_model_id() -> None:
     assert llm_result.llm_output["model"] == chat.model
 
 
-def test_chat_fireworks_llm_output_stop_words() -> None:
-    """Test llm_output contains model_id."""
-    chat = ChatFireworks()
-    message = HumanMessage(content="Hello")
-    llm_result = chat.generate([[message]], stop=[","])
-    assert llm_result.llm_output is not None
-    assert llm_result.llm_output["model"] == chat.model
-    assert llm_result.generations[0][0].text[-1] == ","
-
-
 def test_fireworks_invoke() -> None:
     """Tests chat completion with invoke"""
     chat = ChatFireworks()

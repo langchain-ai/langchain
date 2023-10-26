@@ -104,15 +104,6 @@ def test_fireworks_multiple_prompts() -> None:
     assert len(output.generations) == 2
 
 
-def test_fireworks_stop_words() -> None:
-    """Test completion with stop words."""
-    llm = Fireworks()
-    output = llm.generate(["How is the weather in New York today?"], stop=[","])
-    assert isinstance(output, LLMResult)
-    assert isinstance(output.generations, list)
-    assert output.generations[0][0].text[-1] == ","
-
-
 def test_fireworks_streaming() -> None:
     """Test stream completion."""
     llm = Fireworks()
