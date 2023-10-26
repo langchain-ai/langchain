@@ -1,4 +1,4 @@
-from typing import Type, TypeVar
+from typing import Type
 
 from langchain.schema import BaseDocumentTransformer
 from langchain.text_splitter import (
@@ -7,10 +7,8 @@ from langchain.text_splitter import (
     TextSplitter,
 )
 
-T = TypeVar("T")
 
-
-def _load_text_splitter(splitter: Type[T], config: dict) -> T:
+def _load_text_splitter(splitter: Type[TextSplitter], config: dict) -> TextSplitter:
     length_function = len
     if "length_function" in config:
         func_config = config.pop("length_function")
@@ -31,11 +29,11 @@ def _load_text_splitter(splitter: Type[T], config: dict) -> T:
     return splitter(length_function=length_function, **config)
 
 
-def _load_char_splitter(config: dict) -> CharacterTextSplitter:
+def _load_char_splitter(config: dict) -> TextSplitter:
     return _load_text_splitter(CharacterTextSplitter, config)
 
 
-def _load_recursive_splitter(config: dict) -> RecursiveCharacterTextSplitter:
+def _load_recursive_splitter(config: dict) -> TextSplitter:
     return _load_text_splitter(RecursiveCharacterTextSplitter, config)
 
 
