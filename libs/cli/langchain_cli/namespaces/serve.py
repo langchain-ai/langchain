@@ -93,6 +93,7 @@ def add(
     if dependencies is None:
         dependencies = []
 
+    method = ""
     # cannot have both repo and dependencies
     if len(repo) != 0:
         if len(dependencies) != 0:
@@ -144,7 +145,7 @@ def add(
                 f"Endpoint {langserve_export['package_name']} already exists. Skipping...",
             )
             continue
-        copy_repo(source_path, destination_path, delete_source=True)
+        copy_repo(source_path, destination_path)
         # poetry install
         if with_poetry:
             subprocess.run(

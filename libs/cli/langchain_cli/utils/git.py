@@ -3,7 +3,11 @@ from pathlib import Path
 
 import shutil
 import re
-from langchain_cli.constants import DEFAULT_GIT_REPO, DEFAULT_GIT_SUBDIRECTORY
+from langchain_cli.constants import (
+    DEFAULT_GIT_REPO,
+    DEFAULT_GIT_SUBDIRECTORY,
+    DEFAULT_GIT_REF,
+)
 import hashlib
 from git import Repo
 
@@ -18,32 +22,46 @@ class DependencySource(TypedDict):
 def _parse_dependency_string(package_string: str) -> DependencySource:
     if package_string.startswith("git+"):
         # remove git+
-        remaining = package_string[4:]
-        # split main string from params
-        gitstring, *params = remaining.split("#")
-        # parse params
-        params_dict = {}
-        for param in params:
-            if not param:
-                # ignore empty entries
-                continue
-            if "=" in param:
-                key, value = param.split("=")
-                if key in params_dict:
-                    raise ValueError(
-                        f"Duplicate parameter {key} in dependency string {package_string}"
-                    )
-                params_dict[key] = value
-            else:
-                if "ref" in params_dict:
-                    raise ValueError(
-                        f"Duplicate parameter ref in dependency string {package_string}"
-                    )
-                params_dict["ref"] = param
+        gitstring = package_string[4:]
+        subdirectory = None
+        ref = None
+        # first check for #subdirectory= on the end
+        if "#subdirectory=" in gitstring:
+            gitstring, subdirectory = gitstring.split("#subdirectory=")
+            if "#" in subdirectory or "@" in subdirectory:
+                raise ValueError(
+                    "#subdirectory must be the last part of the dependency string"
+                )
+
+        # find first slash after ://
+        # find @ or # after that slash
+        # remainder is ref
+        # if no @ or #, then ref is None
+
+        # find first slash after ://
+        if "://" not in gitstring:
+            raise ValueError(
+                "git+ dependencies must start with git+https:// or git+ssh://"
+            )
+
+        _, find_slash = gitstring.split("://", 1)
+
+        if "/" not in find_slash:
+            post_slash = find_slash
+            ref = None
+        else:
+            _, post_slash = find_slash.split("/", 1)
+            if "@" in post_slash or "#" in post_slash:
+                _, ref = re.split(r"[@#]", post_slash, 1)
+        print(post_slash, ref)
+
+        # gitstring is everything before that
+        gitstring = gitstring[: -len(ref) - 1] if ref is not None else gitstring
+
         return DependencySource(
             git=gitstring,
-            ref=params_dict.get("ref"),
-            subdirectory=params_dict.get("subdirectory"),
+            ref=ref,
+            subdirectory=subdirectory,
         )
 
     elif package_string.startswith("https://"):
@@ -52,7 +70,9 @@ def _parse_dependency_string(package_string: str) -> DependencySource:
         # it's a default git repo dependency
         gitstring = DEFAULT_GIT_REPO
         subdirectory = str(Path(DEFAULT_GIT_SUBDIRECTORY) / package_string)
-        return DependencySource(git=gitstring, ref=None, subdirectory=subdirectory)
+        return DependencySource(
+            git=gitstring, ref=DEFAULT_GIT_REF, subdirectory=subdirectory
+        )
 
 
 def _get_repo_path(dependency: DependencySource, repo_dir: Path) -> Path:
@@ -71,14 +91,18 @@ def _get_repo_path(dependency: DependencySource, repo_dir: Path) -> Path:
 
 def update_repo(gitpath: str, repo_dir: Path) -> Path:
     # see if path already saved
+    print("starting", gitpath)
     dependency = _parse_dependency_string(gitpath)
     repo_path = _get_repo_path(dependency, repo_dir)
+    print("h", repo_path)
     if repo_path.exists():
         shutil.rmtree(repo_path)
+        print("rm done")
 
     # now we have fresh dir
+    print('dependency.get("ref")', dependency.get("ref"))
     Repo.clone_from(dependency["git"], repo_path, branch=dependency.get("ref"), depth=1)
-
+    print("clone done")
     return (
         repo_path
         if dependency["subdirectory"] is None
@@ -89,11 +113,8 @@ def update_repo(gitpath: str, repo_dir: Path) -> Path:
 def copy_repo(
     source: Path,
     destination: Path,
-    delete_source: bool = False,
 ) -> None:
     def ignore_func(_, files):
         return [f for f in files if f == ".git"]
 
     shutil.copytree(source, destination, ignore=ignore_func)
-    if delete_source:
-        shutil.rmtree(source)
