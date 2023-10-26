@@ -1,71 +1,74 @@
-# LangServe Hub
+# LangServe Templates
 
-Packages that can be easily hosted by LangServe using the `langserve` cli.
+Templates for a fully functioning app that can be hosted by LangServe.
 
-## Using LangServe Hub
+## Usage
 
-You can install the `langservehub` CLI and use it as follows:
-```bash
-# install langservehub CLI
-pip install --upgrade langservehub
+To use, first install the LangChain CLI.
 
-langservehub new my-app
+```shell
+pip install -U langchain-cli
+```
+
+Then, install `langserve`:
+
+```shell
+pip install "langserve[all]"
+```
+
+Next, create a new LangChain project:
+
+```shell
+langchain serve new my-app
+```
+
+This will create a new directory called `my-app` with two folders:
+
+- `app`: This is where LangServe code will live
+- `packages`: This is where your chains or agents will live
+
+To pull in an existing template as a package, you first need to go into your new project:
+
+```shell
 cd my-app
-
-poetry install
-
-# if you have problems with poe, use `poetry run poe ...` instead
-
-# add the simple-pirate package
-poe add --repo=pingpong-templates/hub simple-pirate
-
-# adding other GitHub repo packages, defaults to repo root
-poe add --repo=hwchase17/chain-of-verification
-
-# with a custom api mount point (defaults to `/{package_name}`)
-poe add --repo=pingpong-templates/hub simple-translator --api_path=/my/custom/path/translator
-
-poe list
-
-poe start
-^C
-
-# remove packages by their api path:
-poe remove my/custom/path/translator
 ```
 
-## Creating New Packages
+And you can the add a template as a project
 
-You can also create new packages with the `langservehub package new` command
-
-```bash
-# starting from this directory in langserve-hub
-langservehub package new simple-newpackage
+```shell
+langchain serve add $PROJECT_NAME
 ```
 
-Now you can edit the chain in `simple-newpackage/simple_newpackage/chain.py` and put up a PR!
+This will pull in the specified template into `packages/$PROJECT_NAME`
 
-Your package will be usable as `poe add --repo=pingpong-templates/hub simple-newpackage` when it's merged in.
+You then need to install this package so you can use it in the langserve app:
 
-## Data Format
+```shell
+pip install -e packages/$PROJECT_NAME
+```
 
-What makes these packages work?
+We install it with `-e` so that if we modify the template at all (which we likely will) the changes are updated.
 
-- Poetry
-- pyproject.toml files
+In order to have LangServe use this project, you then need to modify `app/server.py`.
+Specifically, you should add something like:
 
-### Installable Packages
+```python
+from fastapi import FastAPI
+from langserve import add_routes
+# This depends on the structure of the package you install
+from my_project import chain
 
-Everything is a Poetry package currently. This allows poetry to manage our dependencies for us :).
+app = FastAPI()
 
-In addition to normal keys in the `pyproject.toml` file, you'll notice an additional `tool.langserve` key ([link](https://github.com/langchain-ai/langserve-hub/blob/main/simple/pirate/pyproject.toml#L13-L15)).
+add_routes(app, chain)
+```
 
-This allows us to identify which module and attribute to import as the chain/runnable for the langserve `add_routes` call.
+You can then spin up production-ready endpoints, along with a playground, by running:
 
-### Apps (with installed langserve packages)
+```shell
+python app/server.py
+```
 
-Let's say you add the pirate package with `poe add --repo=pingpong-templates/hub simple-pirate`.
+## Adding a template
 
-First this downloads the simple-pirate package to pirate
-
-Then this adds a `poetry` path dependency, which gets picked up from `add_package_routes`.
+See [here](CONTRIBUTING.md)
