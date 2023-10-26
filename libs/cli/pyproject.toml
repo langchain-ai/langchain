@@ -18,11 +18,16 @@ uvicorn = "^0.23.2"
 langchain = "langchain_cli.cli:app"
 langchain-cli = "langchain_cli.cli:app"
 
-
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"
 pytest = "^7.4.2"
 pytest-watch = "^4.2.0"
+
+[tool.poetry.group.lint.dependencies]
+
+[tool.poetry.group.test.dependencies]
+
+[tool.poetry.group.typing.dependencies]
 
 [tool.poe.tasks]
 test = "poetry run pytest"
