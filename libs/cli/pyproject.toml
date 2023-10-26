@@ -27,6 +27,7 @@ pytest-watch = "^4.2.0"
 [tool.poe.tasks]
 test = "poetry run pytest"
 watch = "poetry run ptw"
+lint = "poetry run ruff ."
 
 
 [build-system]

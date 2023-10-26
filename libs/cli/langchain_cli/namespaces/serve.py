@@ -3,7 +3,7 @@ Manage LangServe application projects.
 """
 
 import typer
-from typing import Optional, List, Tuple, Dict
+from typing import Optional, List
 from typing_extensions import Annotated
 from pathlib import Path
 import shutil
@@ -12,13 +12,11 @@ from langchain_cli.utils.git import (
     copy_repo,
     update_repo,
     parse_dependency_string,
-    DependencySource,
 )
 from langchain_cli.utils.packages import get_package_root
 from langchain_cli.utils.events import create_events
 from langserve.packages import list_packages, get_langserve_export
 import tomli
-from collections import defaultdict
 
 REPO_DIR = Path(typer.get_app_dir("langchain")) / "git_repos"
 
@@ -99,7 +97,6 @@ def add(
     if dependencies is None:
         dependencies = []
 
-    method = ""
     # cannot have both repo and dependencies
     if len(repo) != 0:
         if len(dependencies) != 0:
