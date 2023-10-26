@@ -88,11 +88,16 @@ class Fireworks(BaseLLM):
             "model": self.model,
             **self.model_kwargs,
         }
-        sub_prompts = self.get_batch_prompts(params, prompts, stop)
+        sub_prompts = self.get_batch_prompts(prompts)
         choices = []
         for _prompts in sub_prompts:
             response = completion_with_retry_batching(
-                self, self.use_retry, prompt=_prompts, run_manager=run_manager, **params
+                self,
+                self.use_retry,
+                prompt=_prompts,
+                run_manager=run_manager,
+                stop=stop,
+                **params,
             )
             choices.extend(response)
 
@@ -110,11 +115,16 @@ class Fireworks(BaseLLM):
             "model": self.model,
             **self.model_kwargs,
         }
-        sub_prompts = self.get_batch_prompts(params, prompts, stop)
+        sub_prompts = self.get_batch_prompts(prompts)
         choices = []
         for _prompts in sub_prompts:
             response = await acompletion_with_retry_batching(
-                self, self.use_retry, prompt=_prompts, run_manager=run_manager, **params
+                self,
+                self.use_retry,
+                prompt=_prompts,
+                run_manager=run_manager,
+                stop=stop,
+                **params,
             )
             choices.extend(response)
 
@@ -122,16 +132,9 @@ class Fireworks(BaseLLM):
 
     def get_batch_prompts(
         self,
-        params: Dict[str, Any],
         prompts: List[str],
-        stop: Optional[List[str]] = None,
     ) -> List[List[str]]:
         """Get the sub prompts for llm call."""
-        if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
-
         sub_prompts = [
             prompts[i : i + self.batch_size]
             for i in range(0, len(prompts), self.batch_size)

@@ -78,6 +78,23 @@ def test_chat_fireworks_llm_output_stop_words() -> None:
     assert llm_result.generations[0][0].text[-1] == ","
 
 
+def test_fireworks_invoke() -> None:
+    """Tests chat completion with invoke"""
+    chat = ChatFireworks()
+    result = chat.invoke("How is the weather in New York today?", stop=[","])
+    assert isinstance(result.content, str)
+    assert result.content[-1] == ","
+
+
+@pytest.mark.asyncio
+async def test_fireworks_ainvoke() -> None:
+    """Tests chat completion with invoke"""
+    chat = ChatFireworks()
+    result = await chat.ainvoke("How is the weather in New York today?", stop=[","])
+    assert isinstance(result.content, str)
+    assert result.content[-1] == ","
+
+
 def test_fireworks_batch() -> None:
     """Test batch tokens from ChatFireworks."""
     chat = ChatFireworks()
@@ -91,15 +108,18 @@ def test_fireworks_batch() -> None:
             "What is the weather in Redwood City, CA today",
         ],
         config={"max_concurrency": 5},
+        stop=[","],
     )
     for token in result:
         assert isinstance(token.content, str)
+        assert token.content[-1] == ","
 
 
+@pytest.mark.asyncio
 async def test_fireworks_abatch() -> None:
     """Test batch tokens from ChatFireworks."""
-    llm = ChatFireworks()
-    result = await llm.abatch(
+    chat = ChatFireworks()
+    result = await chat.abatch(
         [
             "What is the weather in Redwood City, CA today",
             "What is the weather in Redwood City, CA today",
@@ -109,9 +129,11 @@ async def test_fireworks_abatch() -> None:
             "What is the weather in Redwood City, CA today",
         ],
         config={"max_concurrency": 5},
+        stop=[","],
     )
     for token in result:
         assert isinstance(token.content, str)
+        assert token.content[-1] == ","
 
 
 def test_fireworks_streaming() -> None:
@@ -154,5 +176,10 @@ async def test_fireworks_astream() -> None:
     """Test streaming tokens from Fireworks."""
     llm = ChatFireworks()
 
-    async for token in llm.astream("Who's the best quarterback in the NFL?"):
+    last_token = ""
+    async for token in llm.astream(
+        "Who's the best quarterback in the NFL?", stop=[","]
+    ):
+        last_token = token.content
         assert isinstance(token.content, str)
+    assert last_token[-1] == ","
