@@ -199,7 +199,11 @@ class Cube:
             if model_name not in all_model_names:
                 continue
 
-            model_info += f"| {model_name} | {m.get('description')} |\n"
+            description = m["title"]
+            if m.get("description"):
+                description += f", {m['description']}"
+
+            model_info += f"| {model_name} | {description} |\n"
 
         return model_info
 
@@ -239,8 +243,8 @@ class Cube:
 
                 for measure in m["measures"]:
                     information += (
-                        f"| {measure.get('title')} "
-                        f"| {measure.get('description')} "
+                        f"| {measure.get('shortTitle')} "
+                        f"| {measure.get('description','')} "
                         f"| {measure.get('name')} "
                         f"| {measure.get('type')} |\n"
                     )
@@ -252,8 +256,8 @@ class Cube:
 
                 for dimension in m["dimensions"]:
                     information += (
-                        f"| {dimension.get('title')} "
-                        f"| {dimension.get('description')} "
+                        f"| {dimension.get('shortTitle')} "
+                        f"| {dimension.get('description','')} "
                         f"| {dimension.get('name')} "
                         f"| {dimension.get('type')} |\n"
                     )
