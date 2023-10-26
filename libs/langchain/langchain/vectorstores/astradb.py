@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 # import typing
+from concurrent.futures import ThreadPoolExecutor
 import uuid
 from typing import (
     # Any,
@@ -239,10 +240,8 @@ class AstraDB(VectorStore):
         )[::-1]
 
         all_ids = []
-        for document_batch in _batch_iterable(
-            uniqued_documents_to_insert,
-            batch_size,
-        ):
+
+        def _handle_batch(document_batch):
             batch_inserted = []
             im_result = self.collection.insert_many(
                 documents=document_batch,
@@ -261,17 +260,33 @@ class AstraDB(VectorStore):
                 for document in document_batch
                 if document["_id"] in missed_inserted_ids
             ]
-            batch_replaced = []
-            for missing_document in missing_from_batch:
+
+            def _handle_missing_document(missing_document):
                 replacement_result = self.collection.find_one_and_replace(
                     filter={"_id": missing_document["_id"]},
                     replacement=missing_document,
                 )
-                batch_replaced += [replacement_result["data"]["document"]["_id"]]
+                return [replacement_result["data"]["document"]["_id"]]
 
+            with ThreadPoolExecutor(max_workers=10) as tpe2:
+                batch_replaced = list(tpe2.map(
+                    _handle_missing_document,
+                    missing_from_batch,
+                ))
 
             upsert_ids = batch_inserted + batch_replaced
-            all_ids += upsert_ids
+            return upsert_ids
+
+        with ThreadPoolExecutor(max_workers=5) as tpe:
+            all_ids_nested = tpe.map(
+                _handle_batch,
+                _batch_iterable(
+                    uniqued_documents_to_insert,
+                    batch_size,
+                ),
+            )
+
+        all_ids = [iid for id_list in all_ids_nested for iid in id_list]
 
         return all_ids
 
