@@ -27,7 +27,7 @@ from langchain.pydantic_v1 import (
     root_validator,
     validator,
 )
-from langchain.schema import RUN_KEY, BaseMemory, RunInfo
+from langchain.schema import RUN_KEY, BaseMemory, RunInfo, BaseDocumentTransformer
 from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 logger = logging.getLogger(__name__)
@@ -658,6 +658,16 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                 )
         elif save_path.suffix == ".yaml":
             with open(file_path, "w") as f:
+                from langchain.document_transformers.serializers import (
+                    serialize_transformer,
+                )
+
+                yaml.add_multi_representer(
+                    BaseDocumentTransformer,
+                    lambda dumper, data: dumper.represent_mapping(
+                        "tag:yaml.org,2002:map", serialize_transformer(data)
+                    ),
+                )
                 yaml.dump(chain_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
