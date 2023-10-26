@@ -1,33 +1,33 @@
 import pytest
 
-from langchain.evaluation.parsing.json_distance import JsonDistanceEvaluator
+from langchain.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
 
 
 @pytest.fixture
-def json_distance_evaluator() -> JsonDistanceEvaluator:
-    return JsonDistanceEvaluator()
+def json_distance_evaluator() -> JsonEditDistanceEvaluator:
+    return JsonEditDistanceEvaluator()
 
 
 def test_json_distance_evaluator_requires_input(
-    json_distance_evaluator: JsonDistanceEvaluator,
+    json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
     assert json_distance_evaluator.requires_input is False
 
 
 def test_json_distance_evaluator_requires_reference(
-    json_distance_evaluator: JsonDistanceEvaluator,
+    json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
     assert json_distance_evaluator.requires_reference is True
 
 
 def test_json_distance_evaluator_evaluation_name(
-    json_distance_evaluator: JsonDistanceEvaluator,
+    json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
-    assert json_distance_evaluator.evaluation_name == "json_distance"
+    assert json_distance_evaluator.evaluation_name == "json_edit_distance"
 
 
 def test_json_distance_evaluator_parse_json(
-    json_distance_evaluator: JsonDistanceEvaluator,
+    json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
     string = '{"a": 1}'
     result = json_distance_evaluator._parse_json(string)
@@ -35,58 +35,58 @@ def test_json_distance_evaluator_parse_json(
 
 
 def test_json_distance_evaluator_evaluate_strings_simple_diff(
-    json_distance_evaluator: JsonDistanceEvaluator,
+    json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
     prediction = '{"a": 1}'
     reference = '{"a": 2}'
     result = json_distance_evaluator._evaluate_strings(
         prediction=prediction, reference=reference
     )
-    assert result == {"score": 1.0}
+    assert result == {"score": 0.14285714285714285}
 
 
 def test_json_distance_evaluator_evaluate_strings_complex_diff(
-    json_distance_evaluator: JsonDistanceEvaluator,
+    json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
     prediction = '{"a": 1, "b": {"c": 2, "d": 3}}'
     reference = '{"a": 1, "b": {"c": 2, "d": 4}}'
     result = json_distance_evaluator._evaluate_strings(
         prediction=prediction, reference=reference
     )
-    assert result == {"score": 1.0}
+    assert result == {"score": 0.04}
 
 
 def test_json_distance_evaluator_evaluate_strings_list_diff(
-    json_distance_evaluator: JsonDistanceEvaluator,
+    json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
     prediction = '[{"a": 1, "b": 2}, {"a": 2, "b": 3}]'
     reference = '[{"a": 1, "b": 2}, {"a": 2, "b": 4}]'
     result = json_distance_evaluator._evaluate_strings(
         prediction=prediction, reference=reference
     )
-    assert result == {"score": 1.0}
+    assert result == {"score": 0.034482758620689655}
 
 
 def test_json_distance_evaluator_evaluate_strings_list_same(
-    json_distance_evaluator: JsonDistanceEvaluator,
+    json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
     prediction = '[{"a": 1, "b": 2}, {"a": 2, "b": 3}]'
     reference = '[{"a": 2, "b": 3}, {"a": 1, "b": 2}]'
     result = json_distance_evaluator._evaluate_strings(
         prediction=prediction, reference=reference
     )
-    assert result == {"score": 1.0}
+    assert result == {"score": 0.13793103448275862}
 
 
 def test_json_distance_evaluator_evaluate_strings_list_diff_length(
-    json_distance_evaluator: JsonDistanceEvaluator,
+    json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
     prediction = '[{"a": 1, "b": 2}, {"a": 2, "b": 3}]'
     reference = '[{"a": 1, "b": 2}]'
     result = json_distance_evaluator._evaluate_strings(
         prediction=prediction, reference=reference
     )
-    assert result == {"score": 1.0}
+    assert result == {"score": 0.4827586206896552}
 
 
 def test_json_distance_evaluator_evaluate_strings_custom_operator_equal() -> None:
@@ -95,7 +95,7 @@ def test_json_distance_evaluator_evaluate_strings_custom_operator_equal() -> Non
     def custom_distance(a: str, b: str) -> float:
         return 0.5 if a != b else 0.0
 
-    evaluator = JsonDistanceEvaluator(string_distance=custom_distance)
+    evaluator = JsonEditDistanceEvaluator(string_distance=custom_distance)
     prediction = '{"a": "apple", "b": "banana"}'
     reference = '{"a": "apple", "b": "berries"}'
     result = evaluator._evaluate_strings(prediction=prediction, reference=reference)
