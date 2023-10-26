@@ -11,8 +11,8 @@ on:
       - '.github/workflows/_lint.yml'
       - '.github/workflows/_test.yml'
       - '.github/workflows/langchain_experimental_ci.yml'
-      - 'libs/**'
-      - '!libs/cli'
+      - 'libs/*'
+      - 'libs/experimental/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
 # If another push to the same PR or branch happens while this workflow is still running,
