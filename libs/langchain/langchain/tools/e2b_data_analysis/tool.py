@@ -213,7 +213,9 @@ class E2BDataAnalysisTool(BaseTool):
         """Remove uploaded file from the sandbox."""
         self.session.filesystem.remove(uploaded_file.remote_path)
         self._uploaded_files = [
-            f for f in self._uploaded_files if f.remote_path != uploaded_file.remote_path
+            f
+            for f in self._uploaded_files
+            if f.remote_path != uploaded_file.remote_path
         ]
         self.description = self.description + "\n" + self.uploaded_files_description
 
