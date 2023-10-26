@@ -26,9 +26,7 @@ Script should be pure python code that can be evaluated. \
 It should be in python format NOT markdown. \
 The code should NOT be wrapped in backticks. \
 All python packages including requests, matplotlib, scipy, numpy, pandas, \
-etc are available. \
-If you have any files outputted write them to "/home/user" directory \
-path."""
+etc are available. Create and display chart using `plt.show()`."""
 
 
 def _unparse(tree: ast.AST) -> str:
@@ -99,7 +97,7 @@ class E2BDataAnalysisTool(BaseTool):
     name = "e2b_data_analysis"
     args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
     session: Any
-    _uploaded_files: List[UploadedFile] = Field(default_factory=list)
+    uploaded_files: List[UploadedFile] = Field(default_factory=list)
 
     def __init__(
         self,
@@ -130,23 +128,21 @@ class E2BDataAnalysisTool(BaseTool):
             on_exit=on_exit,
             on_artifact=on_artifact,
         )
-        super().__init__(session=session, **kwargs)
-        self.description = (
-            base_description + "\n\n" + self.uploaded_files_description
-        ).strip()
+        super().__init__(session=session, description=base_description, **kwargs)
+        self.uploaded_files = []
 
     def close(self) -> None:
         """Close the cloud sandbox."""
-        self._uploaded_files = []
+        self.uploaded_files = []
         self.session.close()
 
     @property
     def uploaded_files_description(self) -> str:
-        if len(self._uploaded_files) == 0:
+        if len(self.uploaded_files) == 0:
             return ""
         lines = ["The following files available in the sandbox:"]
 
-        for f in self._uploaded_files:
+        for f in self.uploaded_files:
             if f.description == "":
                 lines.append(f"- path: `{f.remote_path}`")
             else:
@@ -210,16 +206,14 @@ class E2BDataAnalysisTool(BaseTool):
             remote_path=remote_path,
             description=description,
         )
-        self._uploaded_files.append(f)
+        self.uploaded_files.append(f)
         return f
 
     def remove_uploaded_file(self, uploaded_file: UploadedFile) -> None:
         """Remove uploaded file from the sandbox."""
         self.session.filesystem.remove(uploaded_file.remote_path)
-        self._uploaded_files = [
-            f
-            for f in self._uploaded_files
-            if f.remote_path != uploaded_file.remote_path
+        self.uploaded_files = [
+            f for f in self.uploaded_files if f.remote_path != uploaded_file.remote_path
         ]
 
     def as_tool(self) -> Tool:
