@@ -663,7 +663,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                 )
 
                 yaml.add_multi_representer(
-                    BaseDocumentTransformer,
+                    BaseDocumentTransformer,  # type: ignore
                     lambda dumper, data: dumper.represent_mapping(
                         "tag:yaml.org,2002:map", serialize_transformer(data)
                     ),
