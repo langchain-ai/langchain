@@ -31,9 +31,6 @@ class GoogleSpeechToTextLoader(BaseLoader):
     https://cloud.google.com/speech-to-text
     """
 
-    _client: SpeechClient
-    _recognizer_path: str
-
     def __init__(
         self,
         project_id: str,
