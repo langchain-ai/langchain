@@ -66,6 +66,8 @@ class EvaluatorType(str, Enum):
     """Check if a prediction is equal to a reference JSON."""
     JSON_EDIT_DISTANCE = "json_edit_distance"
     """Compute the edit distance between two JSON strings after canonicalization."""
+    JSON_SCHEMA_VALIDATION = "json_schema_validation"
+    """Check if a prediction is valid JSON according to a JSON schema."""
 
 
 class LLMEvalChain(Chain):
