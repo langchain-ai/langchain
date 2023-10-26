@@ -99,8 +99,8 @@ def standardize_model_name(
     """
     model_name = model_name.lower()
     if ".ft-" in model_name:
-        return model_name.split(".")[0] + "-azure-finetuned"
-    if "ft-" in model_name:
+        return model_name.split(".ft-")[0] + "-azure-finetuned"
+    if ":ft-" in model_name:
         return model_name.split(":")[0] + "-finetuned-legacy"
     if "ft:" in model_name:
         return model_name.split(":")[1] + "-finetuned"
