@@ -34,7 +34,7 @@ class GmailGetMessage(GmailBaseTool):
     ) -> Dict:
         """Run the tool."""
 
-        def decode_payload(payload, charset=None):
+        def decode_payload(payload: bytes, charset: Optional[str] = None) -> str:
             encodings_to_try = [
                 "utf-8",
                 "latin1",
