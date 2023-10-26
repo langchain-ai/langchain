@@ -27,6 +27,7 @@ from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.runnable import Runnable
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores import (
     Chroma,
     DashVector,
@@ -41,7 +42,6 @@ from langchain.vectorstores import (
     SupabaseVectorStore,
     TimescaleVector,
     Vectara,
-    VectorStore,
     Weaviate,
 )
 

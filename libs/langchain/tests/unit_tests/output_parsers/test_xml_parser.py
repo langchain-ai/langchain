@@ -4,7 +4,7 @@ import pytest
 from langchain.output_parsers.xml import XMLOutputParser
 
 DEF_RESULT_ENCODING = """<?xml version="1.0" encoding="UTF-8"?>
-<foo>
+ <foo>
     <bar>
         <baz></baz>
         <baz>slim.shady</baz>

@@ -90,6 +90,14 @@ class ChatFireworks(BaseChatModel):
     fireworks_api_key: Optional[str] = None
     max_retries: int = 20
 
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"fireworks_api_key": "FIREWORKS_API_KEY"}
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key in environment."""
