@@ -86,6 +86,9 @@ from langchain.evaluation.string_distance import (
     StringDistance,
     StringDistanceEvalChain,
 )
+from langchain.evaluation.parsing.base import (JsonEqualityEvaluator, JsonValidityEvaluator)
+from langchain.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
+
 
 __all__ = [
     "EvaluatorType",
@@ -114,4 +117,8 @@ __all__ = [
     "AgentTrajectoryEvaluator",
     "ScoreStringEvalChain",
     "LabeledScoreStringEvalChain",
+    "JsonValidityEvaluator",
+    "JsonEqualityEvaluator",
+    "JsonEditDistanceEvaluator",
+    
 ]
