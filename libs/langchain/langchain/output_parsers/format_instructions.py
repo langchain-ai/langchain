@@ -41,3 +41,7 @@ Here are the output tags:
 ```
 {tags}
 ```"""
+
+
+PANDAS_DATAFRAME_INSTRUCTIONS = """
+"""
