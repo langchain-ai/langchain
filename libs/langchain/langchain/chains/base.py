@@ -18,6 +18,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain.chains.encoder import AliasJSONEncoder
 from langchain.load.dump import dumpd
 from langchain.pydantic_v1 import (
     BaseModel,
@@ -652,7 +653,9 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
-                json.dump(chain_dict, f, indent=4, ensure_ascii=False)
+                json.dump(
+                    chain_dict, f, indent=4, ensure_ascii=False, cls=AliasJSONEncoder
+                )
         elif save_path.suffix == ".yaml":
             with open(file_path, "w") as f:
                 yaml.dump(chain_dict, f, default_flow_style=False)
