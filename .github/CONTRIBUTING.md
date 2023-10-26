@@ -77,7 +77,7 @@ tell Poetry to use the virtualenv python environment (`poetry config virtualenvs
 
 There are two separate projects in this repository:
 - `langchain`: core langchain code, abstractions, and use cases
-- `langchain.experimental`: see the [Experimental README](../libs/experimental/README.md) for more information.
+- `langchain.experimental`: see the [Experimental README](https://github.com/langchain-ai/langchain/tree/master/libs/experimental/README.md) for more information.
 
 Each of these has its own development environment. Docs are run from the top-level makefile, but development
 is split across separate test & release flows.
@@ -129,7 +129,7 @@ To run unit tests in Docker:
 make docker_tests
 ```
 
-There are also [integration tests and code-coverage](../libs/langchain/tests/README.md) available.
+There are also [integration tests and code-coverage](https://github.com/langchain-ai/langchain/tree/master/libs/langchain/tests/README.md) available.
 
 ### Formatting and Linting
 
