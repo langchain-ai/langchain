@@ -8,13 +8,13 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.schema import format_document, AIMessage, HumanMessage
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough, RunnableBranch, RunnableLambda, RunnableMap
 
+### Ingest code - you may need to run this the first time
 # Load
-from langchain.document_loaders import WebBaseLoader
-loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
-data = loader.load()
+# from langchain.document_loaders import WebBaseLoader
+# loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
+# data = loader.load()
 
 # # Split
 # from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -90,5 +90,3 @@ _inputs = RunnableMap({
 }).with_types(input_type=ChatHistory)
 
 chain = _inputs | ANSWER_PROMPT | ChatOpenAI() | StrOutputParser()
-
-print(chain.invoke({"question": "hi!", "chat_history": [("hi", "bye")]}))
