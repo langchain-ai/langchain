@@ -3,16 +3,22 @@ Manage LangServe application projects.
 """
 
 import typer
-from typing import Optional, List
+from typing import Optional, List, Tuple, Dict
 from typing_extensions import Annotated
 from pathlib import Path
 import shutil
 import subprocess
-from langchain_cli.utils.git import copy_repo, update_repo
+from langchain_cli.utils.git import (
+    copy_repo,
+    update_repo,
+    parse_dependency_string,
+    DependencySource,
+)
 from langchain_cli.utils.packages import get_package_root
 from langchain_cli.utils.events import create_events
 from langserve.packages import list_packages, get_langserve_export
 import tomli
+from collections import defaultdict
 
 REPO_DIR = Path(typer.get_app_dir("langchain")) / "git_repos"
 
@@ -29,9 +35,7 @@ def new(
     ] = None,
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with-poetry/--no-poetry", help="Run poetry install"
-        ),
+        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
     ] = False,
 ):
     """
@@ -79,9 +83,7 @@ def add(
     ] = [],
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with-poetry/--no-poetry", help="Run poetry install"
-        ),
+        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
     ] = False,
 ):
     """
@@ -97,6 +99,7 @@ def add(
     if dependencies is None:
         dependencies = []
 
+    method = ""
     # cannot have both repo and dependencies
     if len(repo) != 0:
         if len(dependencies) != 0:
@@ -128,8 +131,17 @@ def add(
     for i, dependency in enumerate(dependencies):
         # update repo
         typer.echo(f"Adding {dependency}...")
-        source_path = update_repo(dependency, REPO_DIR)
+        dep = parse_dependency_string(dependency)
+        source_repo_path = update_repo(dep["git"], dep["ref"], REPO_DIR)
+        source_path = (
+            source_repo_path / dep["subdirectory"]
+            if dep["subdirectory"]
+            else source_repo_path
+        )
         pyproject_path = source_path / "pyproject.toml"
+        if not pyproject_path.exists():
+            typer.echo(f"Could not find {pyproject_path}")
+            continue
         langserve_export = get_langserve_export(pyproject_path)
 
         # detect name conflict
@@ -161,9 +173,7 @@ def remove(
     api_paths: Annotated[List[str], typer.Argument(help="The API paths to remove")],
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with_poetry/--no-poetry", help="Don't run poetry remove"
-        ),
+        typer.Option("--with_poetry/--no-poetry", help="Don't run poetry remove"),
     ] = False,
 ):
     """
