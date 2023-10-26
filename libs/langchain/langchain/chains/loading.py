@@ -551,7 +551,7 @@ def _load_llm_requests_chain(config: dict, **kwargs: Any) -> LLMRequestsChain:
         return LLMRequestsChain(llm_chain=llm_chain, **config)
 
 
-def _load_analyze_document_chain(config: dict, **kwargs) -> AnalyzeDocumentChain:
+def _load_analyze_document_chain(config: dict, **kwargs: Any) -> AnalyzeDocumentChain:
     if "text_splitter" in config:
         text_splitter = load_transformer_from_config(config.pop("text_splitter"))
         config["text_splitter"] = text_splitter
