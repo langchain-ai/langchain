@@ -306,28 +306,29 @@ def _create_api_controller_tool(
 
     def _create_and_run_api_controller_agent(plan_str: str) -> str:
         docs_str_dict = {}
+        match_endpoints = []
         pattern = r"\b(GET|POST|PATCH|DELETE)\s+(/\S+)*"
         matches = re.findall(pattern, plan_str)
         endpoint_names = [
             "{method} {route}".format(method=method, route=route.split("?")[0])
             for method, route in matches
         ]
-        for endpoint_name in endpoint_names:
+        for single_spec in api_spec:
             docs_str = ""
-            found_match = False
-            for single_spec in api_spec:
+            for endpoint_name in endpoint_names:
                 for name, _, docs in single_spec.endpoints:
                     regex_name = re.compile(re.sub("\{.*?\}", ".*", name))
                     if regex_name.match(endpoint_name):
-                        found_match = True
+                        match_endpoints.append(endpoint_name)
                         docs_str += (
                             f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
                         )
-            if not found_match:
-                raise ValueError(
-                    f"{endpoint_name} endpoint does not exist in any of the APIs."
-                )
             docs_str_dict.update({single_spec.servers[0]["url"]: docs_str})
+        if set(endpoint_names).difference(set(match_endpoints)):
+            raise ValueError(
+                f"{set(endpoint_names).difference(set(match_endpoints))} "
+                f"endpoint(s) not in any of the APIs."
+            )
 
         agent = _create_api_controller_agent(
             base_url, docs_str_dict, requests_wrapper, llm
