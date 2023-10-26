@@ -606,17 +606,28 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         retry_if_exception_type: Tuple[Type[BaseException], ...] = (Exception,),
         wait_exponential_jitter: bool = True,
-        stop_after_attempt: int = 3,
+        max_attempt_number: Optional[int] = None,
+        stop_after_attempt: Optional[int] = None,
     ) -> Runnable[Input, Output]:
         from langchain.schema.runnable.retry import RunnableRetry
 
+        if max_attempt_number is not None and stop_after_attempt is not None:
+            raise ValueError(
+                "Can only specify one of max_attempt_number and stop_after_attempt."
+            )
+        if max_attempt_number is not None:
+            pass
+        elif stop_after_attempt is not None:
+            max_attempt_number = stop_after_attempt
+        else:
+            max_attempt_number = 3
         return RunnableRetry(
             bound=self,
             kwargs={},
             config={},
             retry_exception_types=retry_if_exception_type,
             wait_exponential_jitter=wait_exponential_jitter,
-            max_attempt_number=stop_after_attempt,
+            max_attempt_number=max_attempt_number,
         )
 
     def map(self) -> Runnable[List[Input], List[Output]]:
