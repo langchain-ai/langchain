@@ -1,3 +1,4 @@
+import os
 from typing import Tuple, List
 from pydantic import BaseModel
 from operator import itemgetter
@@ -10,6 +11,14 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough, RunnableBranch, RunnableLambda, RunnableMap
 
+if os.environ.get("PINECONE_API_KEY", None) is None:
+    raise Exception("Missing `PINECONE_API_KEY` environment variable.")
+
+if os.environ.get("PINECONE_ENVIRONMENT", None) is None:
+    raise Exception("Missing `PINECONE_ENVIRONMENT` environment variable.")
+
+PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
+
 ### Ingest code - you may need to run this the first time
 # Load
 # from langchain.document_loaders import WebBaseLoader
@@ -20,14 +29,14 @@ from langchain.schema.runnable import RunnablePassthrough, RunnableBranch, Runna
 # from langchain.text_splitter import RecursiveCharacterTextSplitter
 # text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 # all_splits = text_splitter.split_documents(data)
-#
+
 # # Add to vectorDB
 # vectorstore = Pinecone.from_documents(
-#     documents=all_splits, embedding=OpenAIEmbeddings(), index_name='langchain-test'
+#     documents=all_splits, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
 # )
 # retriever = vectorstore.as_retriever()
 
-vectorstore = Pinecone.from_existing_index("langchain-test", OpenAIEmbeddings())
+vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
 retriever = vectorstore.as_retriever()
 
 # Condense a chat history and follow-up question into a standalone question
@@ -62,9 +71,9 @@ def _format_chat_history(chat_history: List[Tuple[str, str]]) -> List:
         buffer.append(AIMessage(content=ai))
     return buffer
 
-# User input 
+# User input
 class ChatHistory(BaseModel):
-    chat_history: List[Tuple[str, str]] 
+    chat_history: List[Tuple[str, str]]
     question: str
 
 
