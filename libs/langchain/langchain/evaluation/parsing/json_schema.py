@@ -9,18 +9,12 @@ class JsonSchemaEvaluator(StringEvaluator):
     An evaluator that validates a JSON prediction against a JSON schema reference.
 
     This evaluator checks if a given JSON prediction conforms to the provided JSON schema.
-    If the prediction is valid, the score is 0 (no errors). Otherwise, the score is 1 (error occurred).
+    If the prediction is valid, the score is True (no errors). Otherwise, the score is False (error occurred).
 
     Parameters
     ----------
     **kwargs : Any
         Additional keyword arguments.
-
-    Attributes
-    ----------
-
-    _error_message : Optional[str]
-        Stores the error message in case of a schema validation failure.
 
     Examples
     --------
