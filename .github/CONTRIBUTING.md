@@ -1,20 +1,19 @@
 # Contributing to LangChain
 
 Hi there! Thank you for even being interested in contributing to LangChain.
-As an open source project in a rapidly developing field, we are extremely open
-to contributions, whether they be in the form of new features, improved infra, better documentation, or bug fixes.
+As an open-source project in a rapidly developing field, we are extremely open to contributions, whether they involve new features, improved infrastructure, better documentation, or bug fixes.
 
 ## 🗺️ Guidelines
 
 ### 👩‍💻 Contributing Code
 
-To contribute to this project, please follow a ["fork and pull request"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow.
+To contribute to this project, please follow the ["fork and pull request"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow.
 Please do not try to push directly to this repo unless you are a maintainer.
 
 Please follow the checked-in pull request template when opening pull requests. Note related issues and tag relevant
 maintainers.
 
-Pull requests cannot land without passing the formatting, linting and testing checks first. See [Testing](#testing) and
+Pull requests cannot land without passing the formatting, linting, and testing checks first. See [Testing](#testing) and
 [Formatting and Linting](#formatting-and-linting) for how to run these checks locally.
 
 It's essential that we maintain great documentation and testing. If you:
@@ -27,16 +26,14 @@ It's essential that we maintain great documentation and testing. If you:
   - Add a demo notebook in `docs/modules`.
   - Add unit and integration tests.
 
-We're a small, building-oriented team. If there's something you'd like to add or change, opening a pull request is the
+We are a small, progress-oriented team. If there's something you'd like to add or change, opening a pull request is the
 best way to get our attention.
 
 ### 🚩GitHub Issues
 
-Our [issues](https://github.com/langchain-ai/langchain/issues) page is kept up to date
-with bugs, improvements, and feature requests.
+Our [issues](https://github.com/langchain-ai/langchain/issues) page is kept up to date with bugs, improvements, and feature requests.
 
-There is a taxonomy of labels to help with sorting and discovery of issues of interest. Please use these to help
-organize issues.
+There is a taxonomy of labels to help with sorting and discovery of issues of interest. Please use these to help organize issues.
 
 If you start working on an issue, please assign it to yourself.
 
@@ -59,12 +56,12 @@ we do not want these to get in the way of getting good code into the codebase.
 
 ## 🚀 Quick Start
 
-This quick start describes running the repository locally.
+This quick start guide explains how to run the repository locally.
 For a [development container](https://containers.dev/), see the [.devcontainer folder](https://github.com/langchain-ai/langchain/tree/master/.devcontainer).
 
 ### Dependency Management: Poetry and other env/dependency managers
 
-This project uses [Poetry](https://python-poetry.org/) v1.6.1+ as a dependency manager.
+This project utilizes [Poetry](https://python-poetry.org/) v1.6.1+ as a dependency manager.
 
 ❗Note: *Before installing Poetry*, if you use `Conda`, create and activate a new Conda env (e.g. `conda create -n langchain python=3.9`)
 
@@ -75,11 +72,11 @@ tell Poetry to use the virtualenv python environment (`poetry config virtualenvs
 
 ### Core vs. Experimental
 
-There are two separate projects in this repository:
-- `langchain`: core langchain code, abstractions, and use cases
-- `langchain.experimental`: see the [Experimental README](../libs/experimental/README.md) for more information.
+This repository contains two separate projects:
+- `langchain`: core langchain code, abstractions, and use cases.
+- `langchain.experimental`: see the [Experimental README](https://github.com/langchain-ai/langchain/tree/master/libs/experimental/README.md) for more information.
 
-Each of these has their own development environment. Docs are run from the top-level makefile, but development
+Each of these has its own development environment. Docs are run from the top-level makefile, but development
 is split across separate test & release flows.
 
 For this quickstart, start with langchain core:
@@ -129,7 +126,7 @@ To run unit tests in Docker:
 make docker_tests
 ```
 
-There are also [integration tests and code-coverage](../libs/langchain/tests/README.md) available.
+There are also [integration tests and code-coverage](https://github.com/langchain-ai/langchain/tree/master/libs/langchain/tests/README.md) available.
 
 ### Formatting and Linting
 
@@ -282,7 +279,7 @@ make docs_build
 make api_docs_build
 ```
 
-Finally, you can run the linkchecker to make sure all links are valid:
+Finally, run the link checker to ensure all links are valid:
 
 ```bash
 make docs_linkcheck
@@ -307,4 +304,4 @@ even patch releases may contain [non-backwards-compatible changes](https://semve
 ### 🌟 Recognition
 
 If your contribution has made its way into a release, we will want to give you credit on Twitter (only if you want though)!
-If you have a Twitter account you would like us to mention, please let us know in the PR or in another manner.
+If you have a Twitter account you would like us to mention, please let us know in the PR or through another means.

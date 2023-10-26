@@ -6,9 +6,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM, create_base_retry_decorator
 from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema.language_model import LanguageModelInput
 from langchain.schema.output import GenerationChunk
-from langchain.schema.runnable.config import RunnableConfig
 from langchain.utils.env import get_from_dict_or_env
 
 
@@ -38,6 +36,14 @@ class Fireworks(LLM):
     )
     fireworks_api_key: Optional[str] = None
     max_retries: int = 20
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"fireworks_api_key": "FIREWORKS_API_KEY"}
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -139,42 +145,6 @@ class Fireworks(LLM):
             yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
-
-    def stream(
-        self,
-        input: LanguageModelInput,
-        config: Optional[RunnableConfig] = None,
-        *,
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> Iterator[str]:
-        prompt = self._convert_input(input).to_string()
-        generation: Optional[GenerationChunk] = None
-        for chunk in self._stream(prompt):
-            yield chunk.text
-            if generation is None:
-                generation = chunk
-            else:
-                generation += chunk
-        assert generation is not None
-
-    async def astream(
-        self,
-        input: LanguageModelInput,
-        config: Optional[RunnableConfig] = None,
-        *,
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[str]:
-        prompt = self._convert_input(input).to_string()
-        generation: Optional[GenerationChunk] = None
-        async for chunk in self._astream(prompt):
-            yield chunk.text
-            if generation is None:
-                generation = chunk
-            else:
-                generation += chunk
-        assert generation is not None
 
 
 def completion_with_retry(

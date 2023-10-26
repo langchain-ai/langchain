@@ -47,6 +47,7 @@ def create_extraction_chain(
     schema: dict,
     llm: BaseLanguageModel,
     prompt: Optional[BasePromptTemplate] = None,
+    tags: Optional[List[str]] = None,
     verbose: bool = False,
 ) -> Chain:
     """Creates a chain that extracts information from a passage.
@@ -71,6 +72,7 @@ def create_extraction_chain(
         prompt=extraction_prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
+        tags=tags,
         verbose=verbose,
     )
     return chain

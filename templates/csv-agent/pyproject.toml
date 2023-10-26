@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "csv_agent"
+version = "0.0.1"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9.1,<3.13"
+langchain = ">=0.0.313"
+openai = "^0.28.1"
+tiktoken = "^0.5.1"
+faiss-cpu = "^1.7.4"
+pandas = "^2.1.1"
+setuptools = "^68.2.2"
+tabulate = "^0.9.0"
+pydantic = "<2"
+langchain-experimental = "^0.0.32"
+
+[tool.langserve]
+export_module = "csv_agent.chain"
+export_attr = "chain"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
