@@ -1,4 +1,5 @@
 from json import JSONEncoder
+from typing import Any
 
 from langchain.schema import BaseDocumentTransformer
 
@@ -9,7 +10,7 @@ class AliasJSONEncoder(JSONEncoder):
     такие как BaseDocumentTransformer, в JSON, с помощью вспомогательных функций
     """
 
-    def default(self, o):
+    def default(self, o: object) -> Any:
         from langchain.document_transformers.serializers import serialize_transformer
 
         if isinstance(o, BaseDocumentTransformer):
