@@ -135,7 +135,7 @@ class SupabaseVectorStore(VectorStore):
         client: Optional[supabase.client.Client] = None,
         table_name: Optional[str] = "documents",
         query_name: Union[str, None] = "match_documents",
-        chunk_size: Optional[int] = 500,
+        chunk_size: int = 500,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> "SupabaseVectorStore":
@@ -166,7 +166,9 @@ class SupabaseVectorStore(VectorStore):
         documents: List[Document],
         ids: List[str],
     ) -> List[str]:
-        return self._add_vectors(self._client, self.table_name, vectors, documents, ids, self.chunk_size)
+        return self._add_vectors(
+            self._client, self.table_name, vectors, documents, ids, self.chunk_size
+        )
 
     def similarity_search(
         self,
