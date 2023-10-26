@@ -59,6 +59,9 @@ def test_on_llm_end_custom_model(handler: OpenAICallbackHandler) -> None:
         "ft:babbage-002:your-org:custom-model-name:1abcdefg",
         "ft:davinci-002:your-org:custom-model-name:1abcdefg",
         "ft:gpt-3.5-turbo-0613:your-org:custom-model-name:1abcdefg",
+        "babbage-002.ft-0123456789abcdefghijklmnopqrstuv",
+        "davinci-002.ft-0123456789abcdefghijklmnopqrstuv",
+        "gpt-35-turbo-0613.ft-0123456789abcdefghijklmnopqrstuv",
     ],
 )
 def test_on_llm_end_finetuned_model(

@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "rag_fusion"
+version = "0.0.1"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.313"
+openai = "^0.28.1"
+pinecone-client = "^2.2.4"
+langchainhub = "^0.1.13"
+
+[tool.langserve]
+export_module = "rag_fusion.chain"
+export_attr = "chain"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
