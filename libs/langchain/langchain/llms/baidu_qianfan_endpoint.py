@@ -40,7 +40,7 @@ class QianfanLLMEndpoint(LLM):
                 endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
     """
 
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    init_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     client: Any
 
@@ -72,7 +72,7 @@ class QianfanLLMEndpoint(LLM):
     """
 
     @root_validator()
-    def validate_enviroment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = get_from_dict_or_env(
             values,
             "qianfan_ak",
@@ -94,7 +94,7 @@ class QianfanLLMEndpoint(LLM):
         try:
             import qianfan
 
-            values["client"] = qianfan.Completion(**params)
+            values["client"] = qianfan.Completion(**(values["init_kwargs"]), **params)
         except ImportError:
             raise ValueError(
                 "qianfan package not found, please install it with "
@@ -127,7 +127,7 @@ class QianfanLLMEndpoint(LLM):
             "penalty_score": self.penalty_score,
         }
 
-        return {**normal_params, **self.model_kwargs}
+        return normal_params
 
     def _convert_prompt_msg_params(
         self,

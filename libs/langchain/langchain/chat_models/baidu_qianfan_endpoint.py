@@ -92,7 +92,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
     """
 
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    init_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     client: Any
 
@@ -125,7 +125,7 @@ class QianfanChatEndpoint(BaseChatModel):
     """Endpoint of the Qianfan LLM, required if custom model used."""
 
     @root_validator()
-    def validate_enviroment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = get_from_dict_or_env(
             values,
             "qianfan_ak",
@@ -147,7 +147,7 @@ class QianfanChatEndpoint(BaseChatModel):
         try:
             import qianfan
 
-            values["client"] = qianfan.ChatCompletion(**params)
+            values["client"] = qianfan.ChatCompletion(**(values["init_kwargs"]), **params)
         except ImportError:
             raise ValueError(
                 "qianfan package not found, please install it with "
@@ -180,7 +180,7 @@ class QianfanChatEndpoint(BaseChatModel):
             "penalty_score": self.penalty_score,
         }
 
-        return {**normal_params, **self.model_kwargs}
+        return normal_params
 
     def _convert_prompt_msg_params(
         self,

@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
+from pydantic import Field
+
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -12,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
     """`Baidu Qianfan Embeddings` embedding models."""
+
+    init_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     qianfan_ak: Optional[str] = None
     """Qianfan application apikey"""
@@ -88,7 +92,7 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
             }
             if values["endpoint"] is not None and values["endpoint"] != "":
                 params["endpoint"] = values["endpoint"]
-            values["client"] = qianfan.Embedding(**params)
+            values["client"] = qianfan.Embedding(**(values["init_kwargs"]), **params)
         except ImportError:
             raise ImportError(
                 "qianfan package not found, please install it with "
