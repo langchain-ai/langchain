@@ -174,6 +174,10 @@ const config = {
                 label: "Community",
               },
               {
+                to: "/docs/contributing",
+                label: "Developer's guide",
+              },
+              {
                 to: "/docs/additional_resources/dependents",
                 label: "Dependents",
               },
