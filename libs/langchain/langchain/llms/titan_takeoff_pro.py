@@ -92,24 +92,6 @@ class TitanTakeoffPro(LLM):
                 else {}
             ),
         }
-        # params: Mapping[str, Any] = {}
-        # if self.regex_string is not None:
-        #     params["regex_string"] = self.regex_string
-        # if self.sampling_temperature is not None:
-        #     params["sampling_temperature"] = self.sampling_temperature
-        # if self.sampling_topp is not None:
-        #     params["sampling_topp"] = self.sampling_topp
-        # if self.repetition_penalty is not None:
-        #     params["repetition_penalty"] = self.repetition_penalty
-        # if self.max_new_tokens is not None:
-        #     params["max_new_tokens"] = self.max_new_tokens
-        # if self.min_new_tokens is not None:
-        #     params["min_new_tokens"] = self.min_new_tokens
-        # if self.sampling_topk is not None:
-        #     params["sampling_topk"] = self.sampling_topk
-        # if self.no_repeat_ngram_size is not None:
-        #     params["no_repeat_ngram_size"] = self.no_repeat_ngram_size
-        # return params
 
     @property
     def _llm_type(self) -> str:
