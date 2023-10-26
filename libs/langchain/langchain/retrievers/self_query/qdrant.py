@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class QdrantTranslator(Visitor):
     """Translate `Qdrant` internal query language elements to valid filters."""
 
-    allowed_operators = （
+    allowed_operators = (
         Operator.AND,
         Operator.OR,
         Operator.NOT,
