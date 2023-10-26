@@ -75,7 +75,12 @@ class GmailSearch(GmailBaseTool):
 
     def _parse_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         def decode_payload(payload, charset=None):
-            encodings_to_try = ['utf-8', 'latin1', 'iso-8859-1', 'cp1252']  # Add more if needed
+            encodings_to_try = [
+                "utf-8",
+                "latin1",
+                "iso-8859-1",
+                "cp1252",
+            ]  # Add more if needed
 
             if charset:
                 encodings_to_try.insert(0, charset)
@@ -83,10 +88,11 @@ class GmailSearch(GmailBaseTool):
             for encoding in encodings_to_try:
                 try:
                     return payload.decode(encoding)
-                except:
+                except UnicodeDecodeError:
                     pass
 
-            return payload.decode('utf-8', 'replace')  # Default to utf-8 with replacement for unknown characters
+            # Default to utf-8 with replacement for unknown characters
+            return payload.decode("utf-8", "replace")
 
         results = []
         for message in messages:
@@ -111,11 +117,15 @@ class GmailSearch(GmailBaseTool):
                     cdispo = str(part.get("Content-Disposition"))
                     if ctype == "text/plain" and "attachment" not in cdispo:
                         charset = part.get_content_charset()  # Extract charset
-                        message_body = decode_payload(part.get_payload(decode=True), charset)
+                        message_body = decode_payload(
+                            part.get_payload(decode=True), charset
+                        )
                         break
             else:
                 charset = email_msg.get_content_charset()
-                message_body = decode_payload(email_msg.get_payload(decode=True), charset)
+                message_body = decode_payload(
+                    email_msg.get_payload(decode=True), charset
+                )
 
             body = clean_email_body(message_body)
 
@@ -130,7 +140,7 @@ class GmailSearch(GmailBaseTool):
                 }
             )
         return results
-        
+
     def _run(
         self,
         query: str,
