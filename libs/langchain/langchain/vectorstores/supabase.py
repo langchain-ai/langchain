@@ -89,7 +89,7 @@ class SupabaseVectorStore(VectorStore):
         client: supabase.client.Client,
         embedding: Embeddings,
         table_name: str,
-        chunk_size: int,
+        chunk_size: int = 500,
         query_name: Union[str, None] = None,
     ) -> None:
         """Initialize with supabase client."""
