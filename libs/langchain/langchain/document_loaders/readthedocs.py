@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
@@ -15,6 +16,7 @@ class ReadTheDocsLoader(BaseLoader):
         errors: Optional[str] = None,
         custom_html_tag: Optional[Tuple[str, dict]] = None,
         patterns: Sequence[str] = ("*.htm", "*.html"),
+        exclude_index_pages: bool = False,
         **kwargs: Optional[Any]
     ):
         """
@@ -36,6 +38,9 @@ class ReadTheDocsLoader(BaseLoader):
             custom_html_tag: Optional custom html tag to retrieve the content from
                 files.
             patterns: The file patterns to load, passed to `glob.rglob`.
+            exclude_index_pages: Exclude index pages with high link ratios (>50%).
+                This is to reduce the frequency at which index pages make their
+                way into retrieved results.
             kwargs: named arguments passed to `bs4.BeautifulSoup`.
         """
         try:
@@ -59,6 +64,7 @@ class ReadTheDocsLoader(BaseLoader):
         self.custom_html_tag = custom_html_tag
         self.patterns = patterns
         self.bs_kwargs = kwargs
+        self.exclude_index_pages = exclude_index_pages
 
     def load(self) -> List[Document]:
         """Load documents."""
@@ -72,6 +78,88 @@ class ReadTheDocsLoader(BaseLoader):
                 metadata = {"source": str(p)}
                 docs.append(Document(page_content=text, metadata=metadata))
         return docs
+
+    def _get_link_ratio(self, section):
+        links = section.find_all("a")
+        total_text = "".join(str(s) for s in section.stripped_strings)
+        if len(total_text) == 0:
+            return 0
+
+        link_text = "".join(
+            str(string.string.strip())
+            for link in links
+            for string in link.strings
+            if string
+        )
+        return len(link_text) / len(total_text)
+
+    def _get_clean_text(self, element):
+        """Recursive text getter that excludes code and binary content and preserves newline data from the html."""
+        from bs4 import NavigableString
+        from bs4.element import Comment
+
+        elements_to_skip = [
+            "script",
+            "noscript",
+            "canvas",
+            "meta",
+            "svg",
+            "map",
+            "area",
+            "audio",
+            "source",
+            "track",
+            "video",
+            "embed",
+            "object",
+            "param",
+            "picture",
+            "iframe",
+            "frame",
+            "frameset",
+            "noframes",
+            "applet",
+            "form",
+            "button",
+            "select",
+            "base",
+            "style",
+            "img"
+        ]
+
+        newline_elements = [
+            "p",
+            "div",
+            "ul",
+            "ol",
+            "li",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "pre",
+            "table",
+            "tr"
+        ]
+
+        def process_element(el):
+            """Traverse through HTML tree recursively to preserve newline and skip unwanted (code/binary) elements"""
+            tag_name = getattr(el, "name", None)
+            if isinstance(el, Comment) or tag_name in elements_to_skip:
+                return ""
+            elif isinstance(el, NavigableString):
+                return el
+            elif tag_name == "br":
+                return "\n"
+            elif tag_name in newline_elements:
+                return "".join(process_element(child) for child in el.children) + "\n"
+            else:
+                return "".join(process_element(child) for child in el.children)
+
+        text = process_element(element)
+        return text
 
     def _clean_data(self, data: str) -> str:
         from bs4 import BeautifulSoup
@@ -96,8 +184,11 @@ class ReadTheDocsLoader(BaseLoader):
             if text is not None:
                 break
 
-        if text is not None:
-            text = text.get_text()
+        if (
+            text is not None
+            and not (self.exclude_index_pages and self._get_link_ratio(text) >= 0.5)
+        ):
+            text = self._get_clean_text(text)
         else:
             text = ""
         # trim empty lines
