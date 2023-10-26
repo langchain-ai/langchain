@@ -1,30 +1,31 @@
 [tool.poetry]
-name = "langservehub-template"
-version = "0.1.0"
+name = "__package_name__"
+version = "0.0.1"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = []
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.313, <0.1"
+openai = "^0.28.1"
+fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
-tomli-w = "^1.0.0"
-uvicorn = "^0.23.2"
-fastapi = "^0.103.2"
-langserve = {git = "https://github.com/langchain-ai/langserve"}
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"
-uvicorn = "^0.23.2"
-pygithub = "^2.1.1"
+langchain-cli = ">=0.0.1rc2"
+
+[tool.langserve]
+export_module = "__package_name__.chain"
+export_attr = "chain"
 
 [tool.poe.tasks.start]
-cmd="uvicorn app.server:app --reload --port $port --host $host"
+cmd="uvicorn langchain_cli.dev_scripts:create_demo_server --reload --port $port --host $host"
 args = [
     {name = "port", help = "port to run on", default = "8000"},
     {name = "host", help = "host to run on", default = "127.0.0.1"}
 ]
-
 
 [build-system]
 requires = ["poetry-core"]

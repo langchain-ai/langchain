@@ -4,10 +4,6 @@ version = "0.0.3"
 description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
-include = [
-    {path="project_template/**/*", format="wheel"},
-    {path="package_template/**/*", format="wheel"}
-]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
