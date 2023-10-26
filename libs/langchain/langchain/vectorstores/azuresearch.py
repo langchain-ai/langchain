@@ -374,6 +374,7 @@ class AzureSearch(VectorStore):
             search_text="",
             vector_queries=[
                 VectorQuery(
+                    kind="vector",
                     value=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
@@ -434,6 +435,7 @@ class AzureSearch(VectorStore):
             search_text=query,
             vector_queries=[
                 VectorQuery(
+                    kind="vector",
                     value=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
@@ -497,6 +499,7 @@ class AzureSearch(VectorStore):
             search_text=query,
             vector_queries=[
                 VectorQuery(
+                    kind="vector",
                     value=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
