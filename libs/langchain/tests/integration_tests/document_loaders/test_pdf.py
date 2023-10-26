@@ -54,6 +54,19 @@ def test_pdfminer_loader() -> None:
     loader = PDFMinerLoader(str(file_path))
 
     docs = loader.load()
+    assert len(docs) == 1
+
+    """Test PDFMiner loader. (load per pages)"""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PDFMinerLoader(str(file_path), load_per_pages=True)
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PDFMinerLoader(str(file_path), load_per_pages=True)
+
+    docs = loader.load()
     assert len(docs) == 16
 
 

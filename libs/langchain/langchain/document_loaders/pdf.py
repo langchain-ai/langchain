@@ -251,6 +251,7 @@ class PDFMinerLoader(BasePDFLoader):
         *,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
+        load_per_pages: bool = False,
     ) -> None:
         """Initialize with file path."""
         try:
@@ -262,7 +263,9 @@ class PDFMinerLoader(BasePDFLoader):
             )
 
         super().__init__(file_path, headers=headers)
-        self.parser = PDFMinerParser(extract_images=extract_images)
+        self.parser = PDFMinerParser(
+            extract_images=extract_images, load_per_pages=load_per_pages
+        )
 
     def load(self) -> List[Document]:
         """Eagerly load the content."""
