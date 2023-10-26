@@ -27,7 +27,7 @@ from langchain.pydantic_v1 import (
     root_validator,
     validator,
 )
-from langchain.schema import RUN_KEY, BaseMemory, RunInfo, BaseDocumentTransformer
+from langchain.schema import RUN_KEY, BaseDocumentTransformer, BaseMemory, RunInfo
 from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 logger = logging.getLogger(__name__)
