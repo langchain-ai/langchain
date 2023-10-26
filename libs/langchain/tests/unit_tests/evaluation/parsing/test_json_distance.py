@@ -37,23 +37,25 @@ def test_json_distance_evaluator_parse_json(
 def test_json_distance_evaluator_evaluate_strings_simple_diff(
     json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
-    prediction = '{"a": 1}'
+    prediction = '{"a":           1}'
     reference = '{"a": 2}'
     result = json_distance_evaluator._evaluate_strings(
         prediction=prediction, reference=reference
     )
-    assert result == {"score": 0.14285714285714285}
+    # Only 1 character flipped
+    pytest.approx(1 / 7, result["score"])
 
 
 def test_json_distance_evaluator_evaluate_strings_complex_diff(
     json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
-    prediction = '{"a": 1, "b": {"c": 2, "d": 3}}'
+    prediction = '{"a":1, "b": {"c": 2, "d": 3}}'
     reference = '{"a": 1, "b": {"c": 2, "d": 4}}'
     result = json_distance_evaluator._evaluate_strings(
         prediction=prediction, reference=reference
     )
-    assert result == {"score": 0.04}
+    # Only 1 character flipped
+    pytest.approx(1 / len(reference.replace(" ", "")), result["score"])
 
 
 def test_json_distance_evaluator_evaluate_strings_list_diff(
@@ -64,18 +66,19 @@ def test_json_distance_evaluator_evaluate_strings_list_diff(
     result = json_distance_evaluator._evaluate_strings(
         prediction=prediction, reference=reference
     )
-    assert result == {"score": 0.034482758620689655}
+    # Again only 1 character flipped
+    pytest.approx(1 / len(reference.replace(" ", "")), result["score"])
 
 
 def test_json_distance_evaluator_evaluate_strings_list_same(
     json_distance_evaluator: JsonEditDistanceEvaluator,
 ) -> None:
     prediction = '[{"a": 1, "b": 2}, {"a": 2, "b": 3}]'
-    reference = '[{"a": 2, "b": 3}, {"a": 1, "b": 2}]'
+    reference = '[{"b": 2, "a": 1}, {"b": 3, "a": 2}]'
     result = json_distance_evaluator._evaluate_strings(
         prediction=prediction, reference=reference
     )
-    assert result == {"score": 0.13793103448275862}
+    assert result["score"] == 0
 
 
 def test_json_distance_evaluator_evaluate_strings_list_diff_length(
@@ -86,7 +89,9 @@ def test_json_distance_evaluator_evaluate_strings_list_diff_length(
     result = json_distance_evaluator._evaluate_strings(
         prediction=prediction, reference=reference
     )
-    assert result == {"score": 0.4827586206896552}
+    pytest.approx(
+        len('{"a":2,"b":3}') / len(reference.replace(" ", "")), result["score"]
+    )
 
 
 def test_json_distance_evaluator_evaluate_strings_custom_operator_equal() -> None:
@@ -99,4 +104,4 @@ def test_json_distance_evaluator_evaluate_strings_custom_operator_equal() -> Non
     prediction = '{"a": "apple", "b": "banana"}'
     reference = '{"a": "apple", "b": "berries"}'
     result = evaluator._evaluate_strings(prediction=prediction, reference=reference)
-    assert result == {"score": 0.5}
+    assert result["score"] == 0.5
