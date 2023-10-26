@@ -30,7 +30,9 @@ class JsonEditDistanceEvaluator(StringEvaluator):
             self._canonicalize = canonicalize
         else:
             self._canonicalize = lambda x: json.dumps(
-                x, separators=(",", ":"), sort_keys=True
+                x,
+                separators=(",", ":"), # eliminate whitespace
+                sort_keys=True
             )
 
     @property

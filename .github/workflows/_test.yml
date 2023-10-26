@@ -9,7 +9,7 @@ on:
         description: "From which folder this pipeline executes"
 
 env:
-  POETRY_VERSION: "1.5.1"
+  POETRY_VERSION: "1.6.1"
 
 jobs:
   build:
@@ -26,7 +26,7 @@ jobs:
           - "3.11"
     name: Python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
@@ -43,6 +43,14 @@ jobs:
       - name: Run core tests
         shell: bash
         run: make test
+
+      - name: Install integration dependencies
+        shell: bash
+        run: poetry install --with=test_integration
+
+      - name: Check integration tests compile
+        shell: bash
+        run: poetry run pytest -m compile tests/integration_tests
 
       - name: Ensure the tests did not create any additional files
         shell: bash

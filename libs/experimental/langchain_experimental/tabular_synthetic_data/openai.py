@@ -5,6 +5,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema import BaseLLMOutputParser, BasePromptTemplate
+
 from langchain_experimental.tabular_synthetic_data.base import SyntheticDataGenerator
 
 OPENAI_TEMPLATE = PromptTemplate(input_variables=["example"], template="{example}")

@@ -40,7 +40,7 @@ class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
                 tagging_chain = create_tagging_chain(schema, llm)
                 document_transformer = OpenAIMetadataTagger(tagging_chain=tagging_chain)
                 original_documents = [
-                    Document(page_content="Review of The Bee Movie\nBy Roger Ebert\n\This is the greatest movie ever made. 4 out of 5 stars."),
+                    Document(page_content="Review of The Bee Movie\nBy Roger Ebert\n\nThis is the greatest movie ever made. 4 out of 5 stars."),
                     Document(page_content="Review of The Godfather\nBy Anonymous\n\nThis movie was super boring. 1 out of 5 stars.", metadata={"reliable": False}),
                 ]
 
@@ -123,7 +123,7 @@ def create_metadata_tagger(
 
                 document_transformer = create_metadata_tagger(schema, llm)
                 original_documents = [
-                    Document(page_content="Review of The Bee Movie\nBy Roger Ebert\n\This is the greatest movie ever made. 4 out of 5 stars."),
+                    Document(page_content="Review of The Bee Movie\nBy Roger Ebert\n\nThis is the greatest movie ever made. 4 out of 5 stars."),
                     Document(page_content="Review of The Godfather\nBy Anonymous\n\nThis movie was super boring. 1 out of 5 stars.", metadata={"reliable": False}),
                 ]
 

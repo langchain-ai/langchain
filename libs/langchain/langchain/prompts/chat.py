@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Sequence,
     Set,
     Tuple,
@@ -299,6 +300,8 @@ class ChatPromptValueConcrete(ChatPromptValue):
 
     messages: Sequence[AnyMessage]
 
+    type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
+
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     """Base class for chat prompt templates."""
@@ -379,6 +382,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     """List of input variables in template messages. Used for validation."""
     messages: List[MessageLike]
     """List of messages consisting of either message prompt templates or messages."""
+    validate_template: bool = False
+    """Whether or not to try validating the template."""
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
@@ -420,12 +425,16 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         messages = values["messages"]
         input_vars = set()
+        input_types: Dict[str, Any] = values.get("input_types", {})
         for message in messages:
             if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
                 input_vars.update(message.input_variables)
+            if isinstance(message, MessagesPlaceholder):
+                if message.variable_name not in input_types:
+                    input_types[message.variable_name] = List[AnyMessage]
         if "partial_variables" in values:
             input_vars = input_vars - set(values["partial_variables"])
-        if "input_variables" in values:
+        if "input_variables" in values and values.get("validate_template"):
             if input_vars != set(values["input_variables"]):
                 raise ValueError(
                     "Got mismatched input_variables. "
@@ -434,6 +443,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 )
         else:
             values["input_variables"] = sorted(input_vars)
+        values["input_types"] = input_types
         return values
 
     @classmethod
