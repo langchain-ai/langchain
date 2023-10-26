@@ -24,10 +24,15 @@ pytest = "^7.4.2"
 pytest-watch = "^4.2.0"
 
 [tool.poetry.group.lint.dependencies]
+ruff = "^0.1.3"
 
 [tool.poetry.group.test.dependencies]
 
 [tool.poetry.group.typing.dependencies]
+
+[tool.poetry.group.test_integration]
+optional = true
+dependencies = {}
 
 [tool.poe.tasks]
 test = "poetry run pytest"
