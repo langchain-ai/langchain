@@ -151,10 +151,6 @@ class E2BDataAnalysisTool(BaseTool):
                 )
         return "\n".join(lines)
 
-    @property
-    def description(self) -> str:
-        return (base_description + "\n\n" + self.uploaded_files_description).strip()
-
     def _run(
         self, python_code: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
@@ -217,9 +213,7 @@ class E2BDataAnalysisTool(BaseTool):
         """Remove uploaded file from the sandbox."""
         self.session.filesystem.remove(uploaded_file.remote_path)
         self.uploaded_files = [
-            f
-            for f in self.uploaded_files
-            if f.remote_path != uploaded_file.remote_path
+            f for f in self.uploaded_files if f.remote_path != uploaded_file.remote_path
         ]
 
     def as_tool(self) -> Tool:
