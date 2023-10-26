@@ -43,7 +43,7 @@ def ingest_documents():
         # appending this little bit can sometimes help with semantic retrieval -- especially with multiple companies
         texts=[f"Company: {company_name}. " + chunk.page_content for chunk in chunks],
         metadatas=[chunk.metadata for chunk in chunks],
-        embeddings=embedder,
+        embedding=embedder,
         index_name=INDEX_NAME,
         schema=INDEX_SCHEMA,
         redis_url=REDIS_URL

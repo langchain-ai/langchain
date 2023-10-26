@@ -33,17 +33,15 @@ if USE_CACHE:
     from langchain.cache import RedisSemanticCache
 
     llm_cache = RedisSemanticCache(
-        index_name="llmcache",
         redis_url=REDIS_URL,
-        embeddings=embedder,
-        ttl=CACHE_TTL
+        embedding=embedder,
     )
     langchain.llm_cache = llm_cache
 
 
 # Connect to pre-loaded vectorstore -- run the ingest.py script to populate this
 vectorstore = Redis.from_existing_index(
-    embeddings=embedder,
+    embedding=embedder,
     index_name=INDEX_NAME,
     schema=INDEX_SCHEMA,
     redis_url=REDIS_URL

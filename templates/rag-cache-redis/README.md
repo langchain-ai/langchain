@@ -50,7 +50,6 @@ We use a variety of environment variables to configure this application
 | Environment Variable | Description                       | Default Value |
 |----------------------|-----------------------------------|---------------|
 | `USE_CACHE`            | Enable or disable LLM cache       | False         |
-| `CACHE_TTL`            | Time-to-live for the cache, in seconds | 600         |
 | `REDIS_HOST`           | Hostname for the Redis server     | "localhost"   |
 | `REDIS_PORT`           | Port for the Redis server         | 6379          |
 | `REDIS_USER`           | User for the Redis server         | "" |
