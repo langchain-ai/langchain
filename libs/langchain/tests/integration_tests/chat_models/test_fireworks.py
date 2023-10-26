@@ -3,11 +3,7 @@
 import pytest
 
 from langchain.chat_models.fireworks import ChatFireworks
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-    LLMResult,
-)
+from langchain.schema import ChatGeneration, ChatResult, LLMResult
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 
 
@@ -72,12 +68,81 @@ def test_chat_fireworks_llm_output_contains_model_id() -> None:
     assert llm_result.llm_output["model"] == chat.model
 
 
+def test_fireworks_invoke() -> None:
+    """Tests chat completion with invoke"""
+    chat = ChatFireworks()
+    result = chat.invoke("How is the weather in New York today?", stop=[","])
+    assert isinstance(result.content, str)
+    assert result.content[-1] == ","
+
+
+@pytest.mark.asyncio
+async def test_fireworks_ainvoke() -> None:
+    """Tests chat completion with invoke"""
+    chat = ChatFireworks()
+    result = await chat.ainvoke("How is the weather in New York today?", stop=[","])
+    assert isinstance(result.content, str)
+    assert result.content[-1] == ","
+
+
+def test_fireworks_batch() -> None:
+    """Test batch tokens from ChatFireworks."""
+    chat = ChatFireworks()
+    result = chat.batch(
+        [
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+        ],
+        config={"max_concurrency": 5},
+        stop=[","],
+    )
+    for token in result:
+        assert isinstance(token.content, str)
+        assert token.content[-1] == ","
+
+
+@pytest.mark.asyncio
+async def test_fireworks_abatch() -> None:
+    """Test batch tokens from ChatFireworks."""
+    chat = ChatFireworks()
+    result = await chat.abatch(
+        [
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today",
+        ],
+        config={"max_concurrency": 5},
+        stop=[","],
+    )
+    for token in result:
+        assert isinstance(token.content, str)
+        assert token.content[-1] == ","
+
+
 def test_fireworks_streaming() -> None:
     """Test streaming tokens from Fireworks."""
     llm = ChatFireworks()
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
+
+
+def test_fireworks_streaming_stop_words() -> None:
+    """Test streaming tokens with stop words."""
+    llm = ChatFireworks()
+
+    last_token = ""
+    for token in llm.stream("I'm Pickle Rick", stop=[","]):
+        last_token = token.content
+        assert isinstance(token.content, str)
+    assert last_token[-1] == ","
 
 
 @pytest.mark.asyncio
@@ -101,5 +166,10 @@ async def test_fireworks_astream() -> None:
     """Test streaming tokens from Fireworks."""
     llm = ChatFireworks()
 
-    async for token in llm.astream("Who's the best quarterback in the NFL?"):
+    last_token = ""
+    async for token in llm.astream(
+        "Who's the best quarterback in the NFL?", stop=[","]
+    ):
+        last_token = token.content
         assert isinstance(token.content, str)
+    assert last_token[-1] == ","
