@@ -42,7 +42,7 @@ def new(
     Create a new LangServe application.
     """
     # copy over template from ../project_template
-    project_template_dir = Path(__file__).parent.parent.parent / "project_template"
+    project_template_dir = Path(__file__).parents[1] / "project_template"
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=name == ".")
 

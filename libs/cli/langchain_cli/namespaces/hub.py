@@ -30,7 +30,7 @@ def new(
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
 
     # copy over template from ../package_template
-    project_template_dir = Path(__file__).parent.parent.parent / "package_template"
+    project_template_dir = Path(__file__).parents[1] / "package_template"
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=name == ".")
 
     package_name_split = computed_name.split("/")

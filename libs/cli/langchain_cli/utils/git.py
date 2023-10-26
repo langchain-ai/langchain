@@ -67,7 +67,6 @@ def parse_dependency_string(package_string: str) -> DependencySource:
         raise NotImplementedError("url dependencies are not supported yet")
     else:
         # it's a default git repo dependency
-        gitstring = DEFAULT_GIT_REPO
         subdirectory = str(Path(DEFAULT_GIT_SUBDIRECTORY) / package_string)
         return DependencySource(
             git=gitstring, ref=DEFAULT_GIT_REF, subdirectory=subdirectory
