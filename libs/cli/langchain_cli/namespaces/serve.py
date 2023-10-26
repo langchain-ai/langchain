@@ -103,7 +103,8 @@ def add(
     if len(repo) != 0:
         if len(dependencies) != 0:
             raise typer.BadParameter(
-                "Cannot specify both repo and dependencies. Please specify one or the other."
+                "Cannot specify both repo and dependencies. "
+                "Please specify one or the other."
             )
         dependencies = [f"git+https://github.com/{r}" for r in repo]
 
@@ -146,7 +147,8 @@ def add(
         # detect name conflict
         if langserve_export["package_name"] in installed_names:
             typer.echo(
-                f"Package with name {langserve_export['package_name']} already installed. Skipping...",
+                f"Package with name {langserve_export['package_name']} already "
+                "installed. Skipping...",
             )
             continue
 
@@ -156,7 +158,8 @@ def add(
         destination_path = package_dir / inner_api_path
         if destination_path.exists():
             typer.echo(
-                f"Endpoint {langserve_export['package_name']} already exists. Skipping...",
+                f"Endpoint {langserve_export['package_name']} already exists. "
+                "Skipping...",
             )
             continue
         copy_repo(source_path, destination_path)
