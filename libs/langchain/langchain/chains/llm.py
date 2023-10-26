@@ -90,10 +90,12 @@ class LLMChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        prompts, response = self.generate([inputs], run_manager=run_manager)
+        prompts, response = self._generate_also_return_prompt(
+            [inputs], run_manager=run_manager
+        )
         return self.create_outputs(prompts, response)[0]
 
-    def generate(
+    def _generate_also_return_prompt(
         self,
         input_list: List[Dict[str, Any]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
@@ -107,7 +109,7 @@ class LLMChain(Chain):
             **self.llm_kwargs,
         )
 
-    async def agenerate(
+    async def _agenerate_also_return_prompt(
         self,
         input_list: List[Dict[str, Any]],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
@@ -120,6 +122,28 @@ class LLMChain(Chain):
             callbacks=run_manager.get_child() if run_manager else None,
             **self.llm_kwargs,
         )
+
+    def generate(
+        self,
+        input_list: List[Dict[str, Any]],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> LLMResult:
+        """Generate LLM result from inputs."""
+        prompts, generations = self._generate_also_return_prompt(
+            input_list, run_manager
+        )
+        return generations
+
+    async def agenerate(
+        self,
+        input_list: List[Dict[str, Any]],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> LLMResult:
+        """Generate LLM result from inputs."""
+        prompts, generations = await self._agenerate_also_return_prompt(
+            input_list, run_manager
+        )
+        return generations
 
     def prep_prompts(
         self,
@@ -185,7 +209,9 @@ class LLMChain(Chain):
             {"input_list": input_list},
         )
         try:
-            prompts, response = self.generate(input_list, run_manager=run_manager)
+            prompts, response = self._generate_also_return_prompt(
+                input_list, run_manager=run_manager
+            )
         except BaseException as e:
             run_manager.on_chain_error(e)
             raise e
@@ -205,7 +231,7 @@ class LLMChain(Chain):
             {"input_list": input_list},
         )
         try:
-            prompts, response = await self.agenerate(
+            prompts, response = await self._agenerate_also_return_prompt(
                 input_list, run_manager=run_manager
             )
         except BaseException as e:
@@ -242,7 +268,9 @@ class LLMChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        prompts, response = await self.agenerate([inputs], run_manager=run_manager)
+        prompts, response = await self._agenerate_also_return_prompt(
+            [inputs], run_manager=run_manager
+        )
         return self.create_outputs(prompts, response)[0]
 
     def predict(self, callbacks: Callbacks = None, **kwargs: Any) -> str:
