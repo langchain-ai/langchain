@@ -549,7 +549,9 @@ class AzureSearch(VectorStore):
                             else {},
                             "answers": semantic_answers_dict.get(
                                 json.loads(result[FIELDS_METADATA]).get("key"), ""
-                            ) if FIELDS_METADATA in result else ""
+                            )
+                            if FIELDS_METADATA in result
+                            else "",
                         },
                     },
                 ),
