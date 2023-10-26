@@ -5,7 +5,7 @@ from typing import Any, Union
 
 import yaml
 
-from langchain.chains import ReduceDocumentsChain
+from langchain.chains import AnalyzeDocumentChain, ReduceDocumentsChain
 from langchain.chains.api.base import APIChain
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
@@ -22,6 +22,7 @@ from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
+from langchain.document_transformers.loading import load_transformer_from_config
 from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.loading import (
     _load_output_parser,
@@ -550,6 +551,14 @@ def _load_llm_requests_chain(config: dict, **kwargs: Any) -> LLMRequestsChain:
         return LLMRequestsChain(llm_chain=llm_chain, **config)
 
 
+def _load_analyze_document_chain(config: dict, **kwargs) -> AnalyzeDocumentChain:
+    if "text_splitter" in config:
+        text_splitter = load_transformer_from_config(config.pop("text_splitter"))
+        config["text_splitter"] = text_splitter
+    combine_chain = load_chain_from_config(config.pop("combine_docs_chain"))
+    return AnalyzeDocumentChain(combine_docs_chain=combine_chain, **config)
+
+
 type_to_loader_dict = {
     "api_chain": _load_api_chain,
     "hyde_chain": _load_hyde_chain,
@@ -561,6 +570,7 @@ type_to_loader_dict = {
     "pal_chain": _load_pal_chain,
     "qa_with_sources_chain": _load_qa_with_sources_chain,
     "stuff_documents_chain": _load_stuff_documents_chain,
+    "analyze_document_chain": _load_analyze_document_chain,
     "map_reduce_documents_chain": _load_map_reduce_documents_chain,
     "reduce_documents_chain": _load_reduce_documents_chain,
     "map_rerank_documents_chain": _load_map_rerank_documents_chain,
