@@ -26,5 +26,7 @@ def test_model() -> None:
 
 
 def test_init_kwargs() -> None:
-    chat = QianfanEmbeddingsEndpoint(qianfan_ak="11", qianfan_sk="22", init_kwargs={"query_per_second": 12})
+    chat = QianfanEmbeddingsEndpoint(
+        qianfan_ak="11", qianfan_sk="22", init_kwargs={"query_per_second": 12}
+    )
     assert chat.client._client._rate_limiter._sync_limiter._query_per_period == 12

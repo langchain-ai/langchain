@@ -147,7 +147,9 @@ class QianfanChatEndpoint(BaseChatModel):
         try:
             import qianfan
 
-            values["client"] = qianfan.ChatCompletion(**(values["init_kwargs"]), **params)
+            values["client"] = qianfan.ChatCompletion(
+                **(values["init_kwargs"]), **params
+            )
         except ImportError:
             raise ValueError(
                 "qianfan package not found, please install it with "
