@@ -224,7 +224,7 @@ class AzureSearch(VectorStore):
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
                 vector_search_dimensions=len(embedding_function("Text")),
-                vector_search_configuration="default",
+                vector_search_profile="default",
             ),
             SearchableField(
                 name=FIELDS_METADATA,
@@ -368,12 +368,12 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
+        from azure.search.documents.models import VectorQuery
 
         results = self.client.search(
             search_text="",
-            vectors=[
-                Vector(
+            vector_queries=[
+                VectorQuery(
                     value=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
@@ -428,12 +428,12 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
+        from azure.search.documents.models import VectorQuery
 
         results = self.client.search(
             search_text=query,
-            vectors=[
-                Vector(
+            vector_queries=[
+                VectorQuery(
                     value=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
@@ -491,12 +491,12 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
+        from azure.search.documents.models import VectorQuery
 
         results = self.client.search(
             search_text=query,
-            vectors=[
-                Vector(
+            vector_queries=[
+                VectorQuery(
                     value=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
@@ -545,8 +545,8 @@ class AzureSearch(VectorStore):
                             if result.get("@search.captions")
                             else {},
                             "answers": semantic_answers_dict.get(
-                                json.loads(result["metadata"]).get("key"), ""
-                            ),
+                                json.loads(result[FIELDS_METADATA]).get("key"), ""
+                            ) if FIELDS_METADATA in result else ""
                         },
                     },
                 ),
