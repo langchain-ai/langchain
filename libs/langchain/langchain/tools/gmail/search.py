@@ -74,6 +74,20 @@ class GmailSearch(GmailBaseTool):
         return results
 
     def _parse_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        def decode_payload(payload, charset=None):
+            encodings_to_try = ['utf-8', 'latin1', 'iso-8859-1', 'cp1252']  # Add more if needed
+
+            if charset:
+                encodings_to_try.insert(0, charset)
+
+            for encoding in encodings_to_try:
+                try:
+                    return payload.decode(encoding)
+                except:
+                    pass
+
+            return payload.decode('utf-8', 'replace')  # Default to utf-8 with replacement for unknown characters
+
         results = []
         for message in messages:
             message_id = message["id"]
@@ -85,7 +99,6 @@ class GmailSearch(GmailBaseTool):
             )
 
             raw_message = base64.urlsafe_b64decode(message_data["raw"])
-
             email_msg = email.message_from_bytes(raw_message)
 
             subject = email_msg["Subject"]
@@ -97,10 +110,12 @@ class GmailSearch(GmailBaseTool):
                     ctype = part.get_content_type()
                     cdispo = str(part.get("Content-Disposition"))
                     if ctype == "text/plain" and "attachment" not in cdispo:
-                        message_body = part.get_payload(decode=True).decode("utf-8")
+                        charset = part.get_content_charset()  # Extract charset
+                        message_body = decode_payload(part.get_payload(decode=True), charset)
                         break
             else:
-                message_body = email_msg.get_payload(decode=True).decode("utf-8")
+                charset = email_msg.get_content_charset()
+                message_body = decode_payload(email_msg.get_payload(decode=True), charset)
 
             body = clean_email_body(message_body)
 
@@ -115,7 +130,7 @@ class GmailSearch(GmailBaseTool):
                 }
             )
         return results
-
+        
     def _run(
         self,
         query: str,
