@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -17,12 +17,19 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import (
     BaseLLMOutputParser,
+    BaseMessage,
     BasePromptTemplate,
+    ChatGeneration,
+    Generation,
     LLMResult,
     PromptValue,
     StrOutputParser,
 )
-from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.language_model import (
+    BaseLanguageModel,
+    LanguageModelInput,
+)
+from langchain.schema.runnable import Runnable
 from langchain.utils.input import get_colored_text
 
 
@@ -48,7 +55,9 @@ class LLMChain(Chain):
 
     prompt: BasePromptTemplate
     """Prompt object to use."""
-    llm: BaseLanguageModel
+    llm: Union[
+        Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
+    ]
     """Language model to call."""
     output_key: str = "text"  #: :meta private:
     output_parser: BaseLLMOutputParser = Field(default_factory=StrOutputParser)
@@ -100,12 +109,25 @@ class LLMChain(Chain):
     ) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list, run_manager=run_manager)
-        return self.llm.generate_prompt(
-            prompts,
-            stop,
-            callbacks=run_manager.get_child() if run_manager else None,
-            **self.llm_kwargs,
-        )
+        callbacks = run_manager.get_child() if run_manager else None
+        if isinstance(self.llm, BaseLanguageModel):
+            return self.llm.generate_prompt(
+                prompts,
+                stop,
+                callbacks=callbacks,
+                **self.llm_kwargs,
+            )
+        else:
+            results = self.llm.bind(stop=stop, **self.llm_kwargs).batch(
+                cast(List, prompts), {"callbacks": callbacks}
+            )
+            generations: List[List[Generation]] = []
+            for res in results:
+                if isinstance(res, BaseMessage):
+                    generations.append([ChatGeneration(message=res)])
+                else:
+                    generations.append([Generation(text=res)])
+            return LLMResult(generations=generations)
 
     async def agenerate(
         self,
