@@ -702,13 +702,13 @@ server = ["fastapi (>=0.90.1)", "sse-starlette (>=1.3.0,<2.0.0)"]
 
 [[package]]
 name = "langsmith"
-version = "0.0.51"
+version = "0.0.52"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.51-py3-none-any.whl", hash = "sha256:6d65d038f8410344fba13a67437d1d7644a728983ca22ccf2c40dc32b8ba0368"},
-    {file = "langsmith-0.0.51.tar.gz", hash = "sha256:b014e16d95c48797e6ed7a053c952bbd23d3034883df4bca13cc958334332a7f"},
+    {file = "langsmith-0.0.52-py3-none-any.whl", hash = "sha256:d02a0ade5a53b36143084e57003ed38ccbdf5fc15a5a0eb14f8989ceaee0b807"},
+    {file = "langsmith-0.0.52.tar.gz", hash = "sha256:1dc29082d257deea1859cb22c53d9481ca5c4a37f3af40c0f9d300fb8adc91db"},
 ]
 
 [package.dependencies]
