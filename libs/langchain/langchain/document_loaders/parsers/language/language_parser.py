@@ -7,6 +7,7 @@ from langchain.document_loaders.parsers.language.cpp import CPPSegmenter
 from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
 from langchain.document_loaders.parsers.language.python import PythonSegmenter
 from langchain.document_loaders.parsers.language.ruby import RubySegmenter
+from langchain.document_loaders.parsers.language.scala import ScalaSegmenter
 from langchain.text_splitter import Language
 
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
@@ -14,6 +15,7 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "js": Language.JS,
     "cpp": Language.CPP,
     "rb": Language.RUBY,
+    "scl": Language.SCALA,
     "rs": Language.RUST,
 }
 
@@ -22,6 +24,7 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     Language.JS: JavaScriptSegmenter,
     Language.CPP: CPPSegmenter,
     Language.RUBY: RubySegmenter,
+    Language.SCALA: ScalaSegmenter,
 }
 
 
