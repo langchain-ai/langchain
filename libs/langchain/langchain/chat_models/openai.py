@@ -13,6 +13,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -525,3 +526,32 @@ class ChatOpenAI(BaseChatModel):
         # every reply is primed with <im_start>assistant
         num_tokens += 3
         return num_tokens
+
+
+class AdaptativeChatOpenAI(ChatOpenAI):
+    """`OpenAIChat API with adaptative model selection
+    based on the number of tokens in the input.
+    """
+
+    def _adjust_model_based_on_tokens(self, num_tokens: int) -> None:
+        """Adjust the model based on the number of tokens in the input."""
+        is_gpt4 = self.model_name.startswith("gpt-4")
+
+        model_name_lower_context_window = "gpt-4" if is_gpt4 else "gpt-3.5-turbo"
+        model_name_upper_context_window = (
+            "gpt-4-32k" if is_gpt4 else "gpt-3.5-turbo-16k"
+        )
+        lower_context_limit = 8192 if is_gpt4 else 4096
+
+        if num_tokens > lower_context_limit:
+            self.model_name = model_name_upper_context_window
+        else:
+            self.model_name = model_name_lower_context_window
+
+    def predict(
+        self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
+    ) -> str:
+        num_tokens_of = self.get_num_tokens(text)
+        self._adjust_model_based_on_tokens(num_tokens_of)
+
+        return super().predict(text, stop=stop, **kwargs)

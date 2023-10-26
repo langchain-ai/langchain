@@ -1,4 +1,5 @@
 """Test ChatOpenAI wrapper."""
+import os
 from typing import Any, List, Optional, Union
 
 import pytest
@@ -8,7 +9,7 @@ from langchain.callbacks.manager import CallbackManager
 from langchain.chains.openai_functions import (
     create_openai_fn_chain,
 )
-from langchain.chat_models.openai import ChatOpenAI
+from langchain.chat_models.openai import ChatOpenAI, AdaptativeChatOpenAI
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.schema import (
     ChatGeneration,
@@ -391,3 +392,10 @@ def test_openai_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+
+@pytest.mark.scheduled
+def test_adaptative_openai() -> None:
+    """Test adaptative chat openai."""
+    llm = AdaptativeChatOpenAI(model_name="gpt-3.5-turbo-16k", max_tokens=10)
+    llm.predict("I'm Pickle Rick")
+    assert llm.model_name == "gpt-3.5"

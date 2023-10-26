@@ -1,12 +1,13 @@
 """Test OpenAI Chat API wrapper."""
 import json
+import os
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from langchain.adapters.openai import convert_dict_to_message
-from langchain.chat_models.openai import ChatOpenAI
+from langchain.chat_models.openai import AdaptativeChatOpenAI, ChatOpenAI
 from langchain.schema.messages import (
     AIMessage,
     FunctionMessage,
@@ -121,3 +122,22 @@ async def test_openai_apredict(mock_completion: dict) -> None:
         res = llm.predict("bar")
         assert res == "Bar Baz"
     assert completed
+
+
+@pytest.mark.requires("openai")
+@pytest.mark.parametrize(
+    "init_model_name, num_tokens,expected_model_name",
+    [
+        ("gpt-3.5-turbo", 100, "gpt-3.5-turbo"),
+        ("gpt-3.5-turbo", 10000, "gpt-3.5-turbo-16k"),
+        ("gpt-4", 100, "gpt-4"),
+        ("gpt-4", 10000, "gpt-4-32k"),
+    ],
+)
+def test__adjust_model_based_on_tokens(
+    init_model_name: str, num_tokens: int, expected_model_name: str
+) -> None:
+    os.environ["OPENAI_API_KEY"] = "open ai key"
+    llm = AdaptativeChatOpenAI(model_name=init_model_name)
+    llm._adjust_model_based_on_tokens(num_tokens)
+    assert llm.model_name == expected_model_name
