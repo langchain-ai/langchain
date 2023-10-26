@@ -16,7 +16,7 @@ from langchain.schema import LLMResult
 def test_fireworks_call() -> None:
     """Test valid call to fireworks."""
     llm = Fireworks()
-    output = llm("Who's the best quarterback in the NFL?")
+    output = llm("How is the weather in New York today?")
     assert isinstance(output, str)
 
 
@@ -41,6 +41,60 @@ def test_fireworks_model_param() -> None:
     assert llm.model == "foo"
 
 
+def test_fireworks_invoke() -> None:
+    """Tests completion with invoke"""
+    llm = Fireworks()
+    output = llm.invoke("How is the weather in New York today?", stop=[","])
+    assert isinstance(output, str)
+    assert output[-1] == ","
+
+
+@pytest.mark.asyncio
+async def test_fireworks_ainvoke() -> None:
+    """Tests completion with invoke"""
+    llm = Fireworks()
+    output = await llm.ainvoke("How is the weather in New York today?", stop=[","])
+    assert isinstance(output, str)
+    assert output[-1] == ","
+
+
+def test_fireworks_batch() -> None:
+    """Tests completion with invoke"""
+    llm = Fireworks()
+    output = llm.batch(
+        [
+            "How is the weather in New York today?",
+            "How is the weather in New York today?",
+            "How is the weather in New York today?",
+            "How is the weather in New York today?",
+            "How is the weather in New York today?",
+        ],
+        stop=[","],
+    )
+    for token in output:
+        assert isinstance(token, str)
+        assert token[-1] == ","
+
+
+@pytest.mark.asyncio
+async def test_fireworks_abatch() -> None:
+    """Tests completion with invoke"""
+    llm = Fireworks()
+    output = await llm.abatch(
+        [
+            "How is the weather in New York today?",
+            "How is the weather in New York today?",
+            "How is the weather in New York today?",
+            "How is the weather in New York today?",
+            "How is the weather in New York today?",
+        ],
+        stop=[","],
+    )
+    for token in output:
+        assert isinstance(token, str)
+        assert token[-1] == ","
+
+
 def test_fireworks_multiple_prompts() -> None:
     """Test completion with multiple prompts."""
     llm = Fireworks()
@@ -60,13 +114,31 @@ def test_fireworks_streaming() -> None:
         assert isinstance(token, str)
 
 
+def test_fireworks_streaming_stop_words() -> None:
+    """Test stream completion with stop words."""
+    llm = Fireworks()
+    generator = llm.stream("Who's the best quarterback in the NFL?", stop=[","])
+    assert isinstance(generator, Generator)
+
+    last_token = ""
+    for token in generator:
+        last_token = token
+        assert isinstance(token, str)
+    assert last_token[-1] == ","
+
+
 @pytest.mark.asyncio
 async def test_fireworks_streaming_async() -> None:
     """Test stream completion."""
     llm = Fireworks()
 
-    async for token in llm.astream("Who's the best quarterback in the NFL?"):
+    last_token = ""
+    async for token in llm.astream(
+        "Who's the best quarterback in the NFL?", stop=[","]
+    ):
+        last_token = token
         assert isinstance(token, str)
+    assert last_token[-1] == ","
 
 
 @pytest.mark.asyncio
