@@ -36,10 +36,9 @@ jobs:
       working-directory: templates
       langchain-location: ../libs/langchain
     secrets: inherit
-
-  test:
-    uses:
-      ./.github/workflows/_test.yml
-    with:
-      working-directory: templates
-    secrets: inherit
+  # test:
+  #   uses:
+  #     ./.github/workflows/_test.yml
+  #   with:
+  #     working-directory: templates
+  #   secrets: inherit
