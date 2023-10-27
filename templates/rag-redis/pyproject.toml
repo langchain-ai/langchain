@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "rag-cache-redis"
+name = "rag-redis"
 version = "0.0.1"
-description = "Run a RAG app backed by OpenAI, HuggingFace, and Redis as a vector database + LLM cache"
+description = "Run a RAG app backed by OpenAI, HuggingFace, and Redis as a vector database"
 authors = ["Tyler Hutcherson <tyler.hutcherson@redis.com>", "Sam Partee <sam.partee@redis.com>"]
 readme = "README.md"
 
@@ -22,7 +22,7 @@ langchain-cli = {git = "https://github.com/langchain-ai/langchain.git", rev = "e
 poethepoet = "^0.24.1"
 
 [tool.langserve]
-export_module = "rag_cache_redis.chain"
+export_module = "rag_redis.chain"
 export_attr = "chain"
 
 [tool.poe.tasks.start]

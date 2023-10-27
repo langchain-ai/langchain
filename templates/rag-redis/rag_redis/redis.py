@@ -26,8 +26,8 @@ def get_boolean_env_var(var_name, default_value=False):
         return default_value
 
 
-# Whether or not to enable LLM cache
-USE_CACHE = get_boolean_env_var("USE_CACHE", True)
+# Whether or not to enable langchain debugging
+DEBUG = get_boolean_env_var("DEBUG", True)
 
 # Redis Connection Information
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -39,7 +39,7 @@ if not REDIS_URL:
     REDIS_URL = f"redis://{REDIS_USER}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
 
 # Vector Index Configuration
-INDEX_NAME = os.getenv("INDEX_NAME", "rag-cache-redis")
+INDEX_NAME = os.getenv("INDEX_NAME", "rag-redis")
 VECTOR_SCHEMA = {
     "name": "content_vector",      # name of the vector field in langchain
     "algorithm": "HNSW",           # could use HNSW instead

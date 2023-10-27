@@ -7,7 +7,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import UnstructuredFileLoader
 
 
-from rag_cache_redis.redis import (
+from rag_redis.redis import (
     REDIS_URL,
     INDEX_NAME,
     INDEX_SCHEMA,

@@ -1,4 +1,4 @@
-# Redis RAG & LLM Caching Example
+# Redis RAG Example
 
 Using Langserve and Redis to build a RAG search example for answering questions on financial 10k filings docs (for Nike).
 
@@ -49,13 +49,13 @@ We use a variety of environment variables to configure this application
 
 | Environment Variable | Description                       | Default Value |
 |----------------------|-----------------------------------|---------------|
-| `USE_CACHE`            | Enable or disable semantic LLM cache       | True         |
+| `DEBUG`            | Enable or disable Langchain debugging logs       | True         |
 | `REDIS_HOST`           | Hostname for the Redis server     | "localhost"   |
 | `REDIS_PORT`           | Port for the Redis server         | 6379          |
 | `REDIS_USER`           | User for the Redis server         | "" |
 | `REDIS_PASSWORD`       | Password for the Redis server     | "" |
 | `REDIS_URL`            | Full URL for connecting to Redis  | `None`, Constructed from user, password, host, and port if not provided |
-| `INDEX_NAME`           | Name of the vector index          | "rag-cache-redis"   |
+| `INDEX_NAME`           | Name of the vector index          | "rag-redis"   |
 
 
 
@@ -68,7 +68,7 @@ cd my-langserve-app
 
 Add this template:
 ```bash
-langchain serve add rag-cache-redis
+langchain serve add rag-redis
 ```
 
 Start the server:
