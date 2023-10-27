@@ -200,7 +200,7 @@ def test_mathpix_loader() -> None:
         ),
     ],
 )
-@pytest.mark.skip(reason="Requires AWS credentials to run")
+#@pytest.mark.skip(reason="Requires AWS credentials to run")
 def test_amazontextract_loader(
     file_path: str,
     features: Union[Sequence[str], None],
@@ -217,6 +217,7 @@ def test_amazontextract_loader(
     else:
         loader = AmazonTextractPDFLoader(file_path, textract_features=features)
     docs = loader.load()
+    print(docs)
 
     assert len(docs) == docs_length
 
