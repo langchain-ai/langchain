@@ -5,6 +5,7 @@ from typing import Callable, List, Optional
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.utilities.vertexai import get_client_info
 
 
 class GCSFileLoader(BaseLoader):
@@ -57,7 +58,9 @@ class GCSFileLoader(BaseLoader):
             )
 
         # Initialise a client
-        storage_client = storage.Client(self.project_name)
+        storage_client = storage.Client(
+            self.project_name, client_info=get_client_info("google-cloud-storage")
+        )
         # Create a bucket object for our bucket
         bucket = storage_client.get_bucket(self.bucket)
         # Create a blob object from the filepath
