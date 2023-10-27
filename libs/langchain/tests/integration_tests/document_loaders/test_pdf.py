@@ -200,7 +200,7 @@ def test_mathpix_loader() -> None:
         ),
     ],
 )
-#@pytest.mark.skip(reason="Requires AWS credentials to run")
+@pytest.mark.skip(reason="Requires AWS credentials to run")
 def test_amazontextract_loader(
     file_path: str,
     features: Union[Sequence[str], None],
