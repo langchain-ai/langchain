@@ -154,7 +154,44 @@ def test_mathpix_loader() -> None:
             1,
             False,
         ),
+        (
+            (
+                "https://amazon-textract-public-content.s3.us-east-2.amazonaws.com"
+                "/langchain/alejandro_rosalez_sample_1.jpg"
+            ),
+            [],
+            1,
+            False,
+        ),
+        (
+            (
+                "https://amazon-textract-public-content.s3.us-east-2.amazonaws.com"
+                "/langchain/alejandro_rosalez_sample_1.jpg"
+            ),
+            ["TABLES"],
+            1,
+            False,
+        ),
+        (
+            (
+                "https://amazon-textract-public-content.s3.us-east-2.amazonaws.com"
+                "/langchain/alejandro_rosalez_sample_1.jpg"
+            ),
+            ["FORMS"],
+            1,
+            False,
+        ),
+        (
+            (
+                "https://amazon-textract-public-content.s3.us-east-2.amazonaws.com"
+                "/langchain/alejandro_rosalez_sample_1.jpg"
+            ),
+            ["LAYOUT"],
+            1,
+            False,
+        ),
         (str(Path(__file__).parent.parent / "examples/hello.pdf"), ["FORMS"], 1, False),
+        (str(Path(__file__).parent.parent / "examples/hello.pdf"), [], 1, False),
         (
             "s3://amazon-textract-public-content/langchain/layout-parser-paper.pdf",
             ["FORMS", "TABLES", "LAYOUT"],
