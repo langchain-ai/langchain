@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "__package_name__"
+version = "0.0.1"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.313, <0.1"
+openai = "^0.28.1"
+
+[tool.poetry.group.dev.dependencies]
+poethepoet = "^0.24.1"
+langchain-cli = ">=0.0.4"
+fastapi = "^0.104.0"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "__package_name__.chain"
+export_attr = "chain"
+
+[tool.poe.tasks.start]
+cmd="uvicorn langchain_cli.dev_scripts:create_demo_server --reload --port $port --host $host"
+args = [
+    {name = "port", help = "port to run on", default = "8000"},
+    {name = "host", help = "host to run on", default = "127.0.0.1"}
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
