@@ -25,5 +25,5 @@ Be sure that you have set a few env variables in `chain.py`:
 Be sure to set AWS enviorment variables:
 
 * `AWS_DEFAULT_REGION`
-# `AWS_PROFILE`
+* `AWS_PROFILE`
 * `BEDROCK_ASSUME_ROLE`
