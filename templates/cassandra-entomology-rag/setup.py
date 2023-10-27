@@ -1,14 +1,13 @@
 import os
 
 import cassio
-
-from langchain.vectorstores import Cassandra
 from langchain.embeddings import OpenAIEmbeddings
-
+from langchain.vectorstores import Cassandra
 
 use_cassandra = int(os.environ.get("USE_CASSANDRA_CLUSTER", "0"))
 if use_cassandra:
     from cassandra_entomology_rag.cassandra_cluster_init import get_cassandra_connection
+
     session, keyspace = get_cassandra_connection()
     cassio.init(
         session=session,
@@ -22,7 +21,7 @@ else:
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     embeddings = OpenAIEmbeddings()
     vector_store = Cassandra(
         session=None,
@@ -32,16 +31,13 @@ if __name__ == '__main__':
     )
     #
     lines = [
-        l.strip()
-        for l in open("sources.txt").readlines()
-        if l.strip()
-        if l[0] != "#"
+        line.strip()
+        for line in open("sources.txt").readlines()
+        if line.strip()
+        if line[0] != "#"
     ]
     # deterministic IDs to prevent duplicates on multiple runs
-    ids = [
-        "_".join(l.split(" ")[:2]).lower().replace(":", "")
-        for l in lines
-    ]
+    ids = ["_".join(line.split(" ")[:2]).lower().replace(":", "") for line in lines]
     #
     vector_store.add_texts(texts=lines, ids=ids)
     print(f"Done ({len(lines)} lines inserted).")

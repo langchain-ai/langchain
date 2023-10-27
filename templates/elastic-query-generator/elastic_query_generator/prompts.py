@@ -16,6 +16,6 @@ Use the following format:
 
 Question: Question here
 ESQuery: Elasticsearch Query formatted as json
-"""
+"""  # noqa: E501
 
 DSL_PROMPT = PromptTemplate.from_template(DEFAULT_DSL_TEMPLATE + PROMPT_SUFFIX)

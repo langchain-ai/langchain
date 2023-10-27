@@ -1,14 +1,12 @@
 import os
 
 import cassio
-
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Cassandra
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.output_parser import StrOutputParser
-
+from langchain.schema.runnable import RunnablePassthrough
+from langchain.vectorstores import Cassandra
 
 use_cassandra = int(os.environ.get("USE_CASSANDRA_CLUSTER", "0"))
 if use_cassandra:
