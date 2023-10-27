@@ -13,34 +13,25 @@ class JsonEditDistanceEvaluator(StringEvaluator):
     after parsing them and converting them to a canonical format (i.e., whitespace and key order are normalized).
     It can be customized with alternative distance and canonicalization functions.
 
-    Parameters
-    ----------
-    string_distance : Optional[Callable[[str, str], float]]
-        A callable that computes the distance between two strings. If not provided,
-        a Damerau-Levenshtein distance from the `rapidfuzz` package will be used.
-    canonicalize : Optional[Callable[[Any], Any]]
-        A callable that converts a parsed JSON object into its canonical string form.
-        If not provided, the default behavior is to serialize the JSON with sorted keys and no extra whitespace.
-    **kwargs : Any
-        Additional keyword arguments.
+    Args:
+        string_distance (Optional[Callable[[str, str], float]]): A callable that computes the distance between two strings.
+            If not provided, a Damerau-Levenshtein distance from the `rapidfuzz` package will be used.
+        canonicalize (Optional[Callable[[Any], Any]]): A callable that converts a parsed JSON object into its canonical string form.
+            If not provided, the default behavior is to serialize the JSON with sorted keys and no extra whitespace.
+        **kwargs (Any): Additional keyword arguments.
 
-    Attributes
-    ----------
-    _string_distance : Callable[[str, str], float]
-        The internal distance computation function.
-    _canonicalize : Callable[[Any], Any]
-        The internal canonicalization function.
+    Attributes:
+        _string_distance (Callable[[str, str], float]): The internal distance computation function.
+        _canonicalize (Callable[[Any], Any]): The internal canonicalization function.
 
-    Examples
-    --------
-    >>> evaluator = JsonEditDistanceEvaluator()
-    >>> result = evaluator.evaluate_strings(prediction='{"a": 1, "b": 2}', reference='{"a": 1, "b": 3}')
-    >>> assert result["score"] is not None
+    Examples:
+        >>> evaluator = JsonEditDistanceEvaluator()
+        >>> result = evaluator.evaluate_strings(prediction='{"a": 1, "b": 2}', reference='{"a": 1, "b": 3}')
+        >>> assert result["score"] is not None
 
-    Raises
-    ------
-    ImportError
-        If `rapidfuzz` is not installed and no alternative `string_distance` function is provided.
+    Raises:
+        ImportError: If `rapidfuzz` is not installed and no alternative `string_distance` function is provided.
+
     """  # noqa: E501
 
     def __init__(
@@ -83,45 +74,9 @@ class JsonEditDistanceEvaluator(StringEvaluator):
         return "json_edit_distance"
 
     def _parse_json(self, node: Any) -> Union[dict, list, None, float, bool, int, str]:
-        """
-        Parse the given node into JSON. If the node is a string, it is assumed to be JSON markdown
-        and is parsed accordingly. Otherwise, the node is returned as is.
-
-        Parameters
-        ----------
-        node : Any
-            The node (e.g., string) to be parsed into JSON.
-
-        Returns
-        -------
-        Union[dict, list, None, float, bool, int, str]
-            The parsed JSON object.
-        """  # noqa: E501
         if isinstance(node, str):
             return parse_json_markdown(node)
         return node
-
-    def _distance(self, a: Any, b: Any) -> float:
-        """
-        Evaluate the distance between a prediction JSON string and a reference JSON string.
-
-        Parameters
-        ----------
-        prediction : str
-            The predicted JSON string.
-        input : Optional[str]
-            Not used in this method but included for compatibility.
-        reference : Optional[str]
-            The reference JSON string to compare against the prediction.
-        **kwargs : Any
-            Additional keyword arguments.
-
-        Returns
-        -------
-        dict
-            A dictionary containing the score representing the edit distance between the prediction and the reference.
-        """  # noqa: E501
-        return self._string_distance(a, b)
 
     def _evaluate_strings(
         self,
@@ -132,5 +87,5 @@ class JsonEditDistanceEvaluator(StringEvaluator):
     ) -> dict:
         parsed = self._canonicalize(self._parse_json(prediction))
         label = self._canonicalize(self._parse_json(reference))
-        distance = self._distance(parsed, label)
+        distance = self._string_distance(parsed, label)
         return {"score": distance}
