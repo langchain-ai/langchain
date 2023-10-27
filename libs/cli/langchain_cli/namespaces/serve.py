@@ -4,19 +4,19 @@ Manage LangServe application projects.
 
 import shutil
 import subprocess
+from collections import defaultdict
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
-import tomli
 import typer
 from langserve.packages import get_langserve_export, list_packages
 from typing_extensions import Annotated
 
 from langchain_cli.utils.events import create_events
 from langchain_cli.utils.git import (
+    DependencySource,
     copy_repo,
     parse_dependencies,
-    parse_dependency_string,
     update_repo,
 )
 from langchain_cli.utils.packages import get_package_root
@@ -99,70 +99,93 @@ def add(
     langchain serve add git+https://github.com/efriis/hub.git#devbranch#subdirectory=mypackage
     """
 
-    parsed_deps = parse_dependencies(dependencies, repo, branch)
-
-    if len(api_path) != 0 and len(api_path) != len(parsed_deps):
-        raise typer.BadParameter(
-            "The number of API paths must match the number of dependencies."
-        )
+    parsed_deps = parse_dependencies(dependencies, repo, branch, api_path)
 
     project_root = get_package_root(project_dir)
-
-    # get installed packages from pyproject.toml
-    root_pyproject_path = project_root / "pyproject.toml"
-    with open(root_pyproject_path, "rb") as pyproject_file:
-        pyproject = tomli.load(pyproject_file)
-    installed_packages = (
-        pyproject.get("tool", {}).get("poetry", {}).get("dependencies", {})
-    )
-    installed_names = set(installed_packages.keys())
 
     package_dir = project_root / "packages"
 
     create_events(
-        [{"event": "serve add", "properties": {"package": d}} for d in dependencies]
+        [{"event": "serve add", "properties": dict(parsed_dep=d)} for d in parsed_deps]
     )
 
-    for i, dependency in enumerate(dependencies):
-        # update repo
-        typer.echo(f"Adding {dependency}...")
-        dep = parse_dependency_string(dependency)
-        source_repo_path = update_repo(dep["git"], dep["ref"], REPO_DIR)
-        source_path = (
-            source_repo_path / dep["subdirectory"]
-            if dep["subdirectory"]
-            else source_repo_path
-        )
-        pyproject_path = source_path / "pyproject.toml"
-        if not pyproject_path.exists():
-            typer.echo(f"Could not find {pyproject_path}")
-            continue
-        langserve_export = get_langserve_export(pyproject_path)
+    # group by repo/ref
+    grouped: Dict[Tuple[str, Optional[str]], List[DependencySource]] = defaultdict(list)
+    for dep in parsed_deps:
+        grouped[(dep["git"], dep["ref"])].append(dep)
 
-        # detect name conflict
-        if langserve_export["package_name"] in installed_names:
-            typer.echo(
-                f"Package with name {langserve_export['package_name']} already "
-                "installed. Skipping...",
-            )
-            continue
+    installed_destination_paths: List[str] = []
+    installed_exports: List[Dict] = []
 
-        inner_api_path = (
-            api_path[i] if len(api_path) != 0 else langserve_export["package_name"]
+    for (git, ref), group_deps in grouped.items():
+        if len(group_deps) == 1:
+            typer.echo(f"Adding {git}@{ref}...")
+        else:
+            typer.echo(f"Adding {len(group_deps)} dependencies from {git}@{ref}")
+        source_repo_path = update_repo(git, ref, REPO_DIR)
+
+        for dep in group_deps:
+            source_path = (
+                source_repo_path / dep["subdirectory"]
+                if dep["subdirectory"]
+                else source_repo_path
+            )
+            pyproject_path = source_path / "pyproject.toml"
+            if not pyproject_path.exists():
+                typer.echo(f"Could not find {pyproject_path}")
+                continue
+            langserve_export = get_langserve_export(pyproject_path)
+
+            # default path to package_name
+            inner_api_path = dep["api_path"] or langserve_export["package_name"]
+
+            destination_path = package_dir / inner_api_path
+            if destination_path.exists():
+                typer.echo(
+                    f"Folder {str(inner_api_path)} already exists. " "Skipping...",
+                )
+                continue
+            copy_repo(source_path, destination_path)
+            typer.echo(f" - Installed {dep['subdirectory']} to {inner_api_path}")
+            installed_destination_paths.append(str(destination_path))
+            installed_exports.append(langserve_export)
+
+    if with_poetry:
+        subprocess.run(
+            ["poetry", "add", "--editable"] + installed_destination_paths,
+            cwd=project_root,
         )
-        destination_path = package_dir / inner_api_path
-        if destination_path.exists():
-            typer.echo(
-                f"Endpoint {langserve_export['package_name']} already exists. "
-                "Skipping...",
-            )
-            continue
-        copy_repo(source_path, destination_path)
-        # poetry install
-        if with_poetry:
-            subprocess.run(
-                ["poetry", "add", "--editable", destination_path], cwd=project_root
-            )
+    else:
+        cmd = ["pip", "install", "-e"] + installed_destination_paths
+        if typer.confirm(f"Run {' '.join(cmd)}?"):
+            subprocess.run(cmd, cwd=project_root)
+
+    if typer.confirm("Generate route code for these packages?"):
+        chain_names = []
+        for e in installed_exports:
+            original_candidate = e["package_name"].replace("-", "_")
+            candidate = original_candidate
+            i = 2
+            while candidate in chain_names:
+                candidate = original_candidate + "_" + str(i)
+                i += 1
+            chain_names.append(candidate)
+
+        api_paths = [str(Path("/") / path) for path in installed_destination_paths]
+
+        imports = [
+            f"from {e['module']} import {e['attr']} as {name}"
+            for e, name in zip(installed_exports, chain_names)
+        ]
+        routes = [
+            f'add_routes(app, {name}, path="{path}")'
+            for name, path in zip(chain_names, api_paths)
+        ]
+
+        lines = (
+            ["Remember to add the following to your app:", ""] + imports + [""] + routes
+        )
+        typer.echo("\n".join(lines))
 
 
 @serve.command()

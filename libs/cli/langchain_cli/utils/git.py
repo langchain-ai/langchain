@@ -17,12 +17,16 @@ class DependencySource(TypedDict):
     git: str
     ref: Optional[str]
     subdirectory: Optional[str]
+    api_path: Optional[str]
     event_metadata: Dict
 
 
 # use poetry dependency string format
 def parse_dependency_string(
-    dep: Optional[str], repo: Optional[str], branch: Optional[str]
+    dep: Optional[str],
+    repo: Optional[str],
+    branch: Optional[str],
+    api_path: Optional[str],
 ) -> DependencySource:
     if dep is not None and dep.startswith("git+"):
         if repo is not None or branch is not None:
@@ -70,6 +74,7 @@ def parse_dependency_string(
             git=gitstring,
             ref=ref,
             subdirectory=subdirectory,
+            api_path=api_path,
             event_metadata={"dependency_string": dep},
         )
 
@@ -90,6 +95,7 @@ def parse_dependency_string(
             git=gitstring,
             ref=ref,
             subdirectory=subdir,
+            api_path=api_path,
             event_metadata={
                 "dependency_string": dep,
                 "used_repo_flag": repo is not None,
@@ -110,27 +116,33 @@ def _list_arg_to_length(arg: Optional[List[str]], num: int) -> Sequence[Optional
 
 
 def parse_dependencies(
-    dependencies: Optional[List[str]], repo: List[str], branch: List[str]
+    dependencies: Optional[List[str]],
+    repo: List[str],
+    branch: List[str],
+    api_path: List[str],
 ) -> List[DependencySource]:
     num_deps = max(
         len(dependencies) if dependencies is not None else 0, len(repo), len(branch)
     )
     if (
         (dependencies and len(dependencies) != num_deps)
+        or (api_path and len(api_path) != num_deps)
         or (repo and len(repo) not in [1, num_deps])
         or (branch and len(branch) not in [1, num_deps])
     ):
         raise ValueError(
-            "Number of defined repos/branches did not match the number of dependencies."
+            "Number of defined repos/branches/api_paths did not match the "
+            "number of dependencies."
         )
     inner_deps = _list_arg_to_length(dependencies, num_deps)
+    inner_api_paths = _list_arg_to_length(api_path, num_deps)
     inner_repos = _list_arg_to_length(repo, num_deps)
     inner_branches = _list_arg_to_length(branch, num_deps)
 
     return [
-        parse_dependency_string(iter_dep, iter_repo, iter_branch)
-        for iter_dep, iter_repo, iter_branch in zip(
-            inner_deps, inner_repos, inner_branches
+        parse_dependency_string(iter_dep, iter_repo, iter_branch, iter_api_path)
+        for iter_dep, iter_repo, iter_branch, iter_api_path in zip(
+            inner_deps, inner_repos, inner_branches, inner_api_paths
         )
     ]
 
