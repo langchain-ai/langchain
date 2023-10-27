@@ -6,7 +6,7 @@ HERE = Path(__file__).parent
 
 # Get directory of langchain package
 PACKAGE_DIR = HERE.parent
-SEPERATOR = os.sep
+SEPARATOR = os.sep
 
 
 def get_relative_path(
@@ -30,7 +30,7 @@ def as_import_path(
     path = get_relative_path(file, relative_to=relative_to)
     if file.is_file():
         path = path[: -len(file.suffix)]
-    import_path = path.replace(SEPERATOR, ".")
+    import_path = path.replace(SEPARATOR, ".")
     if suffix:
         import_path += "." + suffix
     return import_path
