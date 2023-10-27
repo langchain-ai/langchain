@@ -88,7 +88,7 @@ class JsonSchemaEvaluator(StringEvaluator):
         prediction: str,
         input: Optional[str] = None,
         reference: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> dict:
         parsed_prediction = self._parse_json(prediction)
         schema = self._parse_json(reference)

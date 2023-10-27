@@ -38,7 +38,7 @@ class JsonEditDistanceEvaluator(StringEvaluator):
         self,
         string_distance: Optional[Callable[[str, str], float]] = None,
         canonicalize: Optional[Callable[[Any], Any]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__()
         if string_distance is not None:
@@ -58,7 +58,9 @@ class JsonEditDistanceEvaluator(StringEvaluator):
             self._canonicalize = canonicalize
         else:
             self._canonicalize = lambda x: json.dumps(
-                x, separators=(",", ":"), sort_keys=True  # eliminate whitespace
+                x,
+                separators=(",", ":"),
+                sort_keys=True,  # eliminate whitespace
             )
 
     @property
@@ -83,7 +85,7 @@ class JsonEditDistanceEvaluator(StringEvaluator):
         prediction: str,
         input: Optional[str] = None,
         reference: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> dict:
         parsed = self._canonicalize(self._parse_json(prediction))
         label = self._canonicalize(self._parse_json(reference))
