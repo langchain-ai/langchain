@@ -310,6 +310,13 @@ class TimescaleVector(VectorStore):
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
 
+    def _embed_query(self, query: str) -> List[float]:
+        # an empty query should not be embedded
+        if query is None or query == "" or query.isspace():
+            return None
+        else:
+            return self.embedding.embed_query(query)
+
     def similarity_search(
         self,
         query: str,
@@ -328,7 +335,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding.embed_query(text=query)
+        embedding = self._embed_query(query)
         return self.similarity_search_by_vector(
             embedding=embedding,
             k=k,
@@ -355,7 +362,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding.embed_query(text=query)
+        embedding = self._embed_query(query)
         return await self.asimilarity_search_by_vector(
             embedding=embedding,
             k=k,
@@ -382,7 +389,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        embedding = self.embedding.embed_query(query)
+        embedding = self._embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding=embedding,
             k=k,
@@ -410,7 +417,8 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        embedding = self.embedding.embed_query(query)
+
+        embedding = self._embed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
             embedding=embedding,
             k=k,
@@ -854,10 +862,12 @@ class TimescaleVector(VectorStore):
             )
 
         index_type = (
-            index_type.value if isinstance(index_type, self.IndexType) else index_type
+            index_type.value if isinstance(
+                index_type, self.IndexType) else index_type
         )
         if index_type == self.IndexType.PGVECTOR_IVFFLAT.value:
-            self.sync_client.create_embedding_index(client.IvfflatIndex(**kwargs))
+            self.sync_client.create_embedding_index(
+                client.IvfflatIndex(**kwargs))
 
         if index_type == self.IndexType.PGVECTOR_HNSW.value:
             self.sync_client.create_embedding_index(client.HNSWIndex(**kwargs))
