@@ -99,7 +99,7 @@ class AstraDB(VectorStore):
         *,
         embedding: Embeddings,
         collection_name: str,
-        api_key: str,
+        token: str,
         api_endpoint: str,
         namespace: Optional[str] = None,
     ) -> None:
@@ -113,14 +113,14 @@ class AstraDB(VectorStore):
         """Create a vector table."""
         self.embedding = embedding
         self.collection_name = collection_name
-        self.api_key = api_key
+        self.token = token
         self.api_endpoint = api_endpoint
         self.namespace = namespace
         #
         self._embedding_dimension = None
         #
         self.astra_db = AstraDB(
-            api_key = self.api_key,
+            token = self.token,
             api_endpoint = self.api_endpoint,
             namespace=self.namespace,
         )
@@ -246,6 +246,7 @@ class AstraDB(VectorStore):
             im_result = self.collection.insert_many(
                 documents=document_batch,
                 options={"ordered": False},
+                partial_failures_allowed=True,
             )
             batch_inserted = im_result["status"]["insertedIds"]
             
