@@ -14,16 +14,8 @@ fastapi = "^0.103.2"
 langserve = ">=0.0.16"
 
 [tool.poetry.group.dev.dependencies]
-poethepoet = "^0.24.1"
 uvicorn = "^0.23.2"
 pygithub = "^2.1.1"
-
-[tool.poe.tasks.start]
-cmd="uvicorn app.server:app --reload --port $port --host $host"
-args = [
-    {name = "port", help = "port to run on", default = "8000"},
-    {name = "host", help = "host to run on", default = "127.0.0.1"}
-]
 
 
 [build-system]
