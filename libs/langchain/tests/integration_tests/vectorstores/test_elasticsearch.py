@@ -474,7 +474,9 @@ class TestElasticsearch:
             )
 
             def assert_query(
-                query_body: dict, query: str, rrf: Optional[Union[dict, bool, None]] = True
+                query_body: dict,
+                query: str,
+                rrf: Optional[Union[dict, bool, None]] = True,
             ) -> dict:
                 cmp_query_body = {
                     "knn": {
