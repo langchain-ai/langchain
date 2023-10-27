@@ -1,17 +1,11 @@
 import os
 
-from typing import List
-
-from langchain.callbacks.manager import AsyncCallbackManagerForRetrieverRun
-from langchain.docstore.document import Document
-from langchain.vectorstores.redis import RedisVectorStoreRetriever
 from langchain.vectorstores import Redis
 from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAI
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
-
 
 from .redis import (
     REDIS_URL,
@@ -21,7 +15,6 @@ from .redis import (
 )
 
 
-
 # Check for openai API key
 if "OPENAI_API_KEY" not in os.environ:
     raise Exception("Must provide an OPENAI_API_KEY as an env var.")
@@ -29,10 +22,6 @@ if "OPENAI_API_KEY" not in os.environ:
 
 # Init Embeddings
 embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-
-class Retriever(RedisVectorStoreRetriever):
-    async def _aget_relevant_documents(self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun) -> List[Document]:
-        return self._get_relevant_documents(query=query, run_manager=run_manager)
 
 
 # Set DEBUG env var to "true" if you wish to enable LC debugging module
@@ -53,7 +42,7 @@ vectorstore = Redis.from_existing_index(
     schema=INDEX_SCHEMA,
     redis_url=REDIS_URL
 )
-retriever = Retriever(vectorstore=vectorstore)#vectorstore.as_retriever()
+retriever = vectorstore.as_retriever()
 
 
 # Define our prompt
