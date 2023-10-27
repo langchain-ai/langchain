@@ -1,11 +1,9 @@
-import subprocess
 from typing import Optional
 
 import typer
 from typing_extensions import Annotated
 
 from langchain_cli.namespaces import hub, serve
-from langserve.
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(hub.hub, name="hub", help=hub.__doc__)
