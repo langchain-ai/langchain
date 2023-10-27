@@ -70,14 +70,12 @@ from langchain.agents.structured_chat.base import StructuredChatAgent
 from langchain.agents.tools import Tool, tool
 from langchain.agents.xml.base import XMLAgent
 
-# DEPRECATED = [
-#     "create_csv_agent",
-#     "create_pandas_dataframe_agent",
-#     "create_spark_dataframe_agent",
-#     "create_xorbits_agent",
-# ]
-
-DEPRECATED = []
+DEPRECATED = [
+    "create_csv_agent",
+    "create_pandas_dataframe_agent",
+    "create_spark_dataframe_agent",
+    "create_xorbits_agent",
+]
 
 
 __all__ = [
