@@ -76,8 +76,6 @@ class GoogleTranslateTransformer(BaseDocumentTransformer):
                 "(pip install google-cloud-translate)"
             ) from exc
 
-        transformed_documents: List[Document] = []
-
         response = self._client.translate_text(
             request=translate.TranslateTextRequest(
                 contents=[doc.page_content for doc in documents],
