@@ -17,7 +17,7 @@ Be sure that `OPENAI_API_KEY` is set in order to the OpenAI models.
 ## App
 
 Example `server.py`:
-```
+```python
 from fastapi import FastAPI
 from langserve import add_routes
 from rag_pinecone_multi_query.chain import chain
@@ -34,17 +34,17 @@ if __name__ == "__main__":
 ```
 
 Run:
-```
-python app/server.py
+```shell
+langchain start
 ```
 
 Check endpoint:
-```
+```shell
 http://0.0.0.0:8001/docs
 ```
 
 See `rag_pinecone_multi_query.ipynb` for example usage - 
-```
+```python
 from langserve.client import RemoteRunnable
 rag_app_pinecone = RemoteRunnable('http://0.0.0.0:8001/rag_pinecone_multi_query')
 rag_app_pinecone.invoke("What are the different types of agent memory")
