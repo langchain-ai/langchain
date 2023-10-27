@@ -2,7 +2,6 @@ import os
 
 from langchain.embeddings import BedrockEmbeddings
 from langchain.llms.bedrock import Bedrock
-from langchain.chains import RetrievalQA
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
