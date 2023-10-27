@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "__package_name__"
+name = "hyde"
 version = "0.0.1"
 description = ""
 authors = []
@@ -9,15 +9,15 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.313, <0.1"
 openai = "^0.28.1"
+
+[tool.poetry.group.dev.dependencies]
+poethepoet = "^0.24.1"
+langchain-cli = ">=0.0.4"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
-[tool.poetry.group.dev.dependencies]
-langchain-cli = {git = "https://github.com/langchain-ai/langchain.git", rev = "erick/cli", subdirectory = "libs/cli"}
-poethepoet = "^0.24.1"
-
 [tool.langserve]
-export_module = "__package_name__.chain"
+export_module = "hyde.chain"
 export_attr = "chain"
 
 [tool.poe.tasks.start]

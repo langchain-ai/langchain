@@ -226,7 +226,7 @@ class StringExampleMapper(Serializable):
         return {
             "reference": self.serialize_chat_messages([output])
             if isinstance(output, dict) and output.get("type") and output.get("data")
-            else str(output)
+            else output
         }
 
     def __call__(self, example: Example) -> Dict[str, str]:

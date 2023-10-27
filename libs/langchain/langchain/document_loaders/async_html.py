@@ -24,6 +24,18 @@ default_header_template = {
 }
 
 
+def _build_metadata(soup: Any, url: str) -> dict:
+    """Build metadata from BeautifulSoup output."""
+    metadata = {"source": url}
+    if title := soup.find("title"):
+        metadata["title"] = title.get_text()
+    if description := soup.find("meta", attrs={"name": "description"}):
+        metadata["description"] = description.get("content", "No description found.")
+    if html := soup.find("html"):
+        metadata["language"] = html.get("lang", "No language found.")
+    return metadata
+
+
 class AsyncHtmlLoader(BaseLoader):
     """Load `HTML` asynchronously."""
 
@@ -33,6 +45,9 @@ class AsyncHtmlLoader(BaseLoader):
         header_template: Optional[dict] = None,
         verify_ssl: Optional[bool] = True,
         proxies: Optional[dict] = None,
+        autoset_encoding: bool = True,
+        encoding: Optional[str] = None,
+        default_parser: str = "html.parser",
         requests_per_second: int = 2,
         requests_kwargs: Optional[Dict[str, Any]] = None,
         raise_for_status: bool = False,
@@ -68,8 +83,46 @@ class AsyncHtmlLoader(BaseLoader):
             self.session.proxies.update(proxies)
 
         self.requests_per_second = requests_per_second
+        self.default_parser = default_parser
         self.requests_kwargs = requests_kwargs or {}
         self.raise_for_status = raise_for_status
+        self.autoset_encoding = autoset_encoding
+        self.encoding = encoding
+
+    @staticmethod
+    def _check_parser(parser: str) -> None:
+        """Check that parser is valid for bs4."""
+        valid_parsers = ["html.parser", "lxml", "xml", "lxml-xml", "html5lib"]
+        if parser not in valid_parsers:
+            raise ValueError(
+                "`parser` must be one of " + ", ".join(valid_parsers) + "."
+            )
+
+    def _scrape(
+        self,
+        url: str,
+        parser: Union[str, None] = None,
+        bs_kwargs: Optional[dict] = None,
+    ) -> Any:
+        from bs4 import BeautifulSoup
+
+        if parser is None:
+            if url.endswith(".xml"):
+                parser = "xml"
+            else:
+                parser = self.default_parser
+
+        self._check_parser(parser)
+
+        html_doc = self.session.get(url, **self.requests_kwargs)
+        if self.raise_for_status:
+            html_doc.raise_for_status()
+
+        if self.encoding is not None:
+            html_doc.encoding = self.encoding
+        elif self.autoset_encoding:
+            html_doc.encoding = html_doc.apparent_encoding
+        return BeautifulSoup(html_doc.text, parser, **(bs_kwargs or {}))
 
     async def _fetch(
         self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
@@ -142,7 +195,8 @@ class AsyncHtmlLoader(BaseLoader):
             results = asyncio.run(self.fetch_all(self.web_paths))
         docs = []
         for i, text in enumerate(cast(List[str], results)):
-            metadata = {"source": self.web_paths[i]}
+            soup = self._scrape(self.web_paths[i])
+            metadata = _build_metadata(soup, self.web_paths[i])
             docs.append(Document(page_content=text, metadata=metadata))
 
         return docs

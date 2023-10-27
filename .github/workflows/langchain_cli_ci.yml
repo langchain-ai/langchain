@@ -1,0 +1,53 @@
+---
+name: libs/cli CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    paths:
+      - '.github/actions/poetry_setup/action.yml'
+      - '.github/tools/**'
+      - '.github/workflows/_lint.yml'
+      - '.github/workflows/_test.yml'
+      - '.github/workflows/_pydantic_compatibility.yml'
+      - '.github/workflows/langchain_cli_ci.yml'
+      - 'libs/cli/**'
+      - 'libs/*'
+  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
+
+# If another push to the same PR or branch happens while this workflow is still running,
+# cancel the earlier run in favor of the next run.
+#
+# There's no point in testing an outdated version of the code. GitHub only allows
+# a limited number of job runners to be active at the same time, so it's better to cancel
+# pointless jobs early so that more useful jobs can run sooner.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VERSION: "1.6.1"
+  WORKDIR: "libs/cli"
+
+jobs:
+  lint:
+    uses:
+      ./.github/workflows/_lint.yml
+    with:
+      working-directory: libs/cli
+    secrets: inherit
+
+  test:
+    uses:
+      ./.github/workflows/_test.yml
+    with:
+      working-directory: libs/cli
+    secrets: inherit
+
+  pydantic-compatibility:
+    uses:
+      ./.github/workflows/_pydantic_compatibility.yml
+    with:
+      working-directory: libs/cli
+    secrets: inherit
