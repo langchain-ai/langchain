@@ -265,7 +265,7 @@ def create_openai_fn_runnable(
                     ]
                 )
                 chain = create_openai_fn_runnable([RecordPerson, RecordDog], llm, prompt)
-                chain.invoke("Harry was a chubby brown beagle who loved chicken")
+                chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
     if not functions:
@@ -329,7 +329,7 @@ def create_structured_output_runnable(
                     ]
                 )
                 chain = create_structured_output_chain(Dog, llm, prompt)
-                chain.invoke("Harry was a chubby brown beagle who loved chicken")
+                chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
     if isinstance(output_schema, dict):
