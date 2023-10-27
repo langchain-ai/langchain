@@ -478,10 +478,10 @@ class AzureSearch(VectorStore):
             query, k=k, filters=kwargs.get("filters", None)
         )
         return [doc for doc, _, _ in docs_and_scores]
-    
+
     def semantic_hybrid_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
-    ) ->List[Tuple[Document, float]]:
+    ) -> List[Tuple[Document, float]]:
         """
         Returns the most similar indexed documents to the query text.
 
@@ -569,7 +569,7 @@ class AzureSearch(VectorStore):
                     },
                 ),
                 float(result["@search.score"]),
-                float(result["@search.reranker_score"])
+                float(result["@search.reranker_score"]),
             )
             for result in results
         ]
