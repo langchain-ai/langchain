@@ -11,13 +11,7 @@ Some other helpful docs:
 To use, first install the LangChain CLI.
 
 ```shell
-pip install -U langchain-cli
-```
-
-Then, install `langserve`:
-
-```shell
-pip install -U "langserve[all]"
+pip install -U "langchain-cli[serve]"
 ```
 
 Next, create a new LangChain project:

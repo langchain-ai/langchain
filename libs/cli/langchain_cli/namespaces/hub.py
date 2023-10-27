@@ -95,6 +95,7 @@ def start(
 
     command = [
         "uvicorn",
+        "--factory",
         "langchain_cli.dev_scripts:create_demo_server",
         "--reload",
         "--port",
