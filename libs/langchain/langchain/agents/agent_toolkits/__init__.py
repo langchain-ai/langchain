@@ -13,7 +13,8 @@ whether permissions of the given toolkit are appropriate for the application.
 
 See [Security](https://python.langchain.com/docs/security) for more information.
 """
-from langchain._api import DeprecatedCode
+from typing import Any
+
 from langchain.agents.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
 from langchain.agents.agent_toolkits.amadeus.toolkit import AmadeusToolkit
 from langchain.agents.agent_toolkits.azure_cognitive_services import (
@@ -54,26 +55,24 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
 from langchain.tools.retriever import create_retriever_tool
 
-create_csv_agent = DeprecatedCode(
-    "create_csv_agent has been moved to langchain experimental. "
-    "See https://github.com/langchain-ai/langchain/discussions/11680"
-)
-create_pandas_dataframe_agent = DeprecatedCode(
-    "create_csv_agent has been moved to langchain experimental. "
-    "See https://github.com/langchain-ai/langchain/discussions/11680"
-)
-create_xorbits_agent = DeprecatedCode(
-    "create_csv_agent has been moved to langchain experimental. "
-    "See https://github.com/langchain-ai/langchain/discussions/11680"
-)
-create_python_agent = DeprecatedCode(
-    "create_csv_agent has been moved to langchain experimental. "
-    "See https://github.com/langchain-ai/langchain/discussions/11680"
-)
-create_spark_dataframe_agent = DeprecatedCode(
-    "create_csv_agent has been moved to langchain experimental. "
-    "See https://github.com/langchain-ai/langchain/discussions/11680"
-)
+DEPRECATED_AGENTS = [
+    "create_csv_agent",
+    "create_pandas_dataframe_agent",
+    "create_xorbits_agent",
+    "create_python_agent",
+    "create_spark_dataframe_agent",
+]
+
+
+def __getattr__(name: str) -> Any:
+    """Get attr name."""
+    if name in DEPRECATED_AGENTS:
+        raise ImportError(
+            f"{name} has been moved to langchain experimental. "
+            "See https://github.com/langchain-ai/langchain/discussions/11680"
+        )
+    raise ImportError(f"{name} does not exist")
+
 
 __all__ = [
     "AINetworkToolkit",
@@ -105,10 +104,4 @@ __all__ = [
     "create_vectorstore_router_agent",
     "create_conversational_retrieval_agent",
     "create_retriever_tool",
-    # Deprecated agents moved to langchain experimental
-    "create_csv_agent",
-    "create_pandas_dataframe_agent",
-    "create_python_agent",
-    "create_spark_dataframe_agent",
-    "create_xorbits_agent",
 ]
