@@ -40,7 +40,6 @@ from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerper
 from langchain.tools.searchapi.tool import SearchAPIResults, SearchAPIRun
 from langchain.tools.graphql.tool import BaseGraphQLTool
 from langchain.tools.human.tool import HumanInputRun
-from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import (
     RequestsDeleteTool,
     RequestsGetTool,
@@ -80,7 +79,9 @@ from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 
 
 def _get_python_repl() -> BaseTool:
-    return PythonREPLTool()
+    from langchain.tools.python import tool  # Will raise on import
+
+    raise AssertionError("Unreachable code")
 
 
 def _get_tools_requests_get() -> BaseTool:

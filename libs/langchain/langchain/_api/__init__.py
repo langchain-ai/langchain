@@ -10,6 +10,7 @@ This module is only relevant for LangChain developers, not for users.
 """
 
 from .deprecation import (
+    DeprecatedCode,
     LangChainDeprecationWarning,
     deprecated,
     suppress_langchain_deprecation_warning,
@@ -23,4 +24,5 @@ __all__ = [
     "suppress_langchain_deprecation_warning",
     "surface_langchain_deprecation_warnings",
     "warn_deprecated",
+    "DeprecatedCode",
 ]

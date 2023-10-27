@@ -339,3 +339,26 @@ def surface_langchain_deprecation_warnings() -> None:
         "default",
         category=LangChainDeprecationWarning,
     )
+
+
+class DeprecatedCode:
+    def __init__(self, message: str) -> None:
+        """Initialize a deprecated object with a message."""
+        self.message = message
+
+    def __getattr__(self, name: str) -> Any:
+        raise ImportError(self.message)
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        raise ImportError(self.message)
+
+    #
+    def __getitem__(self, key: Any) -> Any:
+        raise ImportError(self.message)
+
+    def __setitem__(self, key: Any, value: Any) -> Any:
+        raise ImportError(self.message)
+
+    #
+    def __str__(self) -> str:
+        return f"Deprecated object with message: {self.message}"
