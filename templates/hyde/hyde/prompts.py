@@ -7,7 +7,7 @@ Question: {input}
 Passage:"""
 sci_fact_template = """Please write a scientific paper passage to support/refute the claim 
 Claim: {input}
-Passage:"""
+Passage:"""  # noqa: E501
 fiqa_template = """Please write a financial article passage to answer the question
 Question: {input}
 Passage:"""
