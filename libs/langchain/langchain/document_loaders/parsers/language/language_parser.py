@@ -4,6 +4,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.language.cpp import CPPSegmenter
+from langchain.document_loaders.parsers.language.csharp import CSharpSegmenter
 from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
 from langchain.document_loaders.parsers.language.python import PythonSegmenter
 from langchain.document_loaders.parsers.language.ruby import RubySegmenter
@@ -15,6 +16,7 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "py": Language.PYTHON,
     "js": Language.JS,
     "cpp": Language.CPP,
+    "cs": Language.CSHARP,
     "rb": Language.RUBY,
     "scala": Language.SCALA,
     "rs": Language.RUST,
@@ -24,6 +26,7 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     Language.PYTHON: PythonSegmenter,
     Language.JS: JavaScriptSegmenter,
     Language.CPP: CPPSegmenter,
+    Language.CSHARP: CSharpSegmenter,
     Language.RUBY: RubySegmenter,
     Language.RUST: RustSegmenter,
     Language.SCALA: ScalaSegmenter,
