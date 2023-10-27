@@ -3,6 +3,7 @@ from typing import Any, cast
 
 import lark
 import pytest
+import datetime
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -106,6 +107,20 @@ def test_parse_string_value(x: str) -> None:
     parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
     actual = parsed.value
     assert actual == x[1:-1]
+
+
+@pytest.mark.parametrize("x", ('"2001-01-01"', '"2020-11-21"'))
+def test_parse_date_value(x: str) -> None:
+    parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
+    actual = parsed.value
+    assert actual == datetime.datetime.strptime(x[1:-1], '%Y-%m-%d').date()
+
+
+@pytest.mark.parametrize("x", ('"2001-01-01T01:01:01Z"', '"2020-11-21T11:11:11Z"'))
+def test_parse_timestamp_value(x: str) -> None:
+    parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
+    actual = parsed.value
+    assert actual == datetime.datetime.strptime(x[1:-1], '%Y-%m-%dT%H:%M:%SZ')
 
 
 @pytest.mark.parametrize("x", ("true", "True", "TRUE", "false", "False", "FALSE"))
