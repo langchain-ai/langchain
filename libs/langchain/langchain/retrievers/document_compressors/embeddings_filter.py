@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Optional, Sequence
+from typing import Callable, Dict, Optional, Sequence, List
 
 import numpy as np
 
@@ -51,7 +51,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         documents: Sequence[Document],
         query: str,
         callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
+    ) -> List[Document]:
         """Filter documents based on similarity of their embeddings to the query."""
         stateful_documents = get_stateful_documents(documents)
         embedded_documents = _get_embeddings_from_stateful_docs(

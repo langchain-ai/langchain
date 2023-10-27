@@ -1,5 +1,5 @@
 """Filter that uses an LLM to drop documents that aren't relevant to the query."""
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence, List
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
@@ -41,7 +41,7 @@ class LLMChainFilter(BaseDocumentCompressor):
         documents: Sequence[Document],
         query: str,
         callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
+    ) -> List[Document]:
         """Filter down documents based on their relevance to the query."""
         filtered_docs = []
         for doc in documents:

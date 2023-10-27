@@ -17,7 +17,7 @@ class BaseDocumentCompressor(BaseModel, ABC):
         documents: Sequence[Document],
         query: str,
         callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
+    ) -> List[Document]:
         """Compress retrieved documents given the query context."""
 
     async def acompress_documents(
@@ -25,7 +25,7 @@ class BaseDocumentCompressor(BaseModel, ABC):
         documents: Sequence[Document],
         query: str,
         callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
+    ) -> List[Document]:
         """Compress retrieved documents given the query context."""
         return await asyncio.get_running_loop().run_in_executor(
             None, self.compress_documents, documents, query, callbacks
@@ -48,7 +48,7 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
         documents: Sequence[Document],
         query: str,
         callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
+    ) -> List[Document]:
         """Transform a list of documents."""
         for _transformer in self.transformers:
             if isinstance(_transformer, BaseDocumentCompressor):
@@ -75,7 +75,7 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
         documents: Sequence[Document],
         query: str,
         callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
+    ) -> List[Document]:
         """Compress retrieved documents given the query context."""
         for _transformer in self.transformers:
             if isinstance(_transformer, BaseDocumentCompressor):

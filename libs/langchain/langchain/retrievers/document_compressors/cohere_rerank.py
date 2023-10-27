@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional, Sequence
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, List
 
 from langchain.callbacks.manager import Callbacks
 from langchain.pydantic_v1 import Extra, root_validator
@@ -59,9 +59,8 @@ class CohereRerank(BaseDocumentCompressor):
         documents: Sequence[Document],
         query: str,
         callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
-        """
-        Compress documents using Cohere's rerank API.
+    ) -> List[Document]:
+        """Compress documents using Cohere's rerank API.
 
         Args:
             documents: A sequence of documents to compress.
