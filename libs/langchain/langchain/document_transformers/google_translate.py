@@ -28,7 +28,8 @@ class GoogleTranslateTransformer(BaseDocumentTransformer):
             from google.cloud import translate
         except ImportError as exc:
             raise ImportError(
-                "Install Google Translate to use this parser. (pip install google-cloud-translate)"
+                "Install Google Cloud Translate to use this parser."
+                "(pip install google-cloud-translate)"
             ) from exc
 
         self.project_id = project_id
@@ -70,7 +71,8 @@ class GoogleTranslateTransformer(BaseDocumentTransformer):
             from google.cloud import translate
         except ImportError as exc:
             raise ImportError(
-                "Install Google Translate to use this parser. (pip install google-cloud-translate)"
+                "Install Google Cloud Translate to use this parser."
+                "(pip install google-cloud-translate)"
             ) from exc
 
         transformed_documents: List[Document] = []
