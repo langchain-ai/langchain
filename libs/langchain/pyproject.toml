@@ -21,6 +21,7 @@ azure-core = {version = "^1.26.4", optional=true}
 tqdm = {version = ">=4.48.0", optional = true}
 openapi-pydantic = {version = "^0.3.2", optional = true}
 faiss-cpu = {version = "^1", optional = true}
+hippo-api = {version = "1.1.0rc3", optional = true}
 wikipedia = {version = "^1", optional = true}
 elasticsearch = {version = "^8", optional = true}
 opensearch-py = {version = "^2.0.0", optional = true}
