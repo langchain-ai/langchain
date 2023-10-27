@@ -7,6 +7,7 @@ from langchain.document_loaders.parsers.language.cpp import CPPSegmenter
 from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
 from langchain.document_loaders.parsers.language.python import PythonSegmenter
 from langchain.document_loaders.parsers.language.ruby import RubySegmenter
+from langchain.document_loaders.parsers.language.rust import RustSegmenter
 from langchain.text_splitter import Language
 
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
@@ -22,6 +23,7 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     Language.JS: JavaScriptSegmenter,
     Language.CPP: CPPSegmenter,
     Language.RUBY: RubySegmenter,
+    Language.RUST: RustSegmenter,
 }
 
 
