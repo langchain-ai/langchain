@@ -29,7 +29,7 @@ Edit `app/server.py` to add that package to the routes
 ```markdown
 from fastapi import FastAPI
 from langserve import add_routes
-from extraction_summary.chain import chain
+from extraction_openai_functions import chain
 
 app = FastAPI()
 
