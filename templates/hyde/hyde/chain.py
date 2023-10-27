@@ -64,4 +64,4 @@ chain = (
     | prompt
     | model
     | StrOutputParser()
-)
+).with_types(input_type=str)
