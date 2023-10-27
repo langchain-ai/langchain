@@ -17,7 +17,7 @@ pip install -U langchain-cli
 Then, install `langserve`:
 
 ```shell
-pip install "langserve[all]" poethepoet
+pip install -U "langserve[all]" poethepoet
 ```
 
 Next, create a new LangChain project:
@@ -70,7 +70,7 @@ add_routes(app, chain)
 You can then spin up production-ready endpoints, along with a playground, by running:
 
 ```shell
-python app/server.py
+langchain start
 ```
 
 ## Adding a template
