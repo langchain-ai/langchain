@@ -461,7 +461,12 @@ class TestElasticsearch:
         from typing import Optional
 
         # 1. check query_body is okay
-        for rrf_option in [True, False, {"rank_constant": 1, "window_size": 5}]:
+        rrf_test_cases: List[Optional[Union[dict, bool]]] = [
+            True,
+            False,
+            {"rank_constant": 1, "window_size": 5},
+        ]
+        for rrf_test_case in rrf_test_cases:
             texts = ["foo", "bar", "baz"]
             docsearch = ElasticsearchStore.from_texts(
                 texts,
@@ -469,14 +474,14 @@ class TestElasticsearch:
                 **elasticsearch_connection,
                 index_name=index_name,
                 strategy=ElasticsearchStore.ApproxRetrievalStrategy(
-                    hybrid=True, rrf=rrf_option
+                    hybrid=True, rrf=rrf_test_case
                 ),
             )
 
             def assert_query(
                 query_body: dict,
                 query: str,
-                rrf: Optional[Union[dict, bool, None]] = True,
+                rrf: Optional[Union[dict, bool]] = True,
             ) -> dict:
                 cmp_query_body = {
                     "knn": {
@@ -516,7 +521,7 @@ class TestElasticsearch:
 
             ## without fetch_k parameter
             output = docsearch.similarity_search(
-                "foo", k=3, custom_query=partial(assert_query, rrf=rrf_option)
+                "foo", k=3, custom_query=partial(assert_query, rrf=rrf_test_case)
             )
 
         # 2. check query result is okay
