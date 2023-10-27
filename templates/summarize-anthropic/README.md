@@ -14,23 +14,3 @@ To do this, we can use various prompts from LangChain hub, such as:
 This template will use `Claude2` by default. 
 
 Be sure that `ANTHROPIC_API_KEY` is set in your enviorment.
-
-## Adding the template
-
-Create your LangServe app:
-```
-langchain serve new my-app
-cd my-app
-```
-
-Add template:
-```
-langchain serve add summarize-anthropic
-```
-
-Start server:
-```
-langchain start
-```
-
-See Jupyter notebook `summarize_anthropic` for various way to connect to the template.

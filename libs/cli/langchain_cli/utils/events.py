@@ -1,6 +1,7 @@
-import urllib3
 import json
-from typing import List, Dict, Any, Optional, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict
+
+import urllib3
 
 WRITE_KEY = "310apTK0HUFl4AOv"
 
