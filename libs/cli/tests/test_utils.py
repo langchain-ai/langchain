@@ -28,7 +28,7 @@ def _assert_dependency_equals(
 def test_dependency_string() -> None:
     _assert_dependency_equals(
         parse_dependency_string(
-            "git+ssh://git@github.com/efriis/myrepo.git", None, None
+            "git+ssh://git@github.com/efriis/myrepo.git", None, None, None
         ),
         git="ssh://git@github.com/efriis/myrepo.git",
         ref=None,
@@ -37,7 +37,10 @@ def test_dependency_string() -> None:
 
     _assert_dependency_equals(
         parse_dependency_string(
-            "git+https://github.com/efriis/myrepo.git#subdirectory=src", None, None
+            "git+https://github.com/efriis/myrepo.git#subdirectory=src",
+            None,
+            None,
+            None,
         ),
         git="https://github.com/efriis/myrepo.git",
         subdirectory="src",
@@ -46,7 +49,7 @@ def test_dependency_string() -> None:
 
     _assert_dependency_equals(
         parse_dependency_string(
-            "git+ssh://git@github.com:efriis/myrepo.git#develop", None, None
+            "git+ssh://git@github.com:efriis/myrepo.git#develop", None, None, None
         ),
         git="ssh://git@github.com:efriis/myrepo.git",
         ref="develop",
@@ -56,7 +59,7 @@ def test_dependency_string() -> None:
     # also support a slash in ssh
     _assert_dependency_equals(
         parse_dependency_string(
-            "git+ssh://git@github.com/efriis/myrepo.git#develop", None, None
+            "git+ssh://git@github.com/efriis/myrepo.git#develop", None, None, None
         ),
         git="ssh://git@github.com/efriis/myrepo.git",
         ref="develop",
@@ -66,7 +69,7 @@ def test_dependency_string() -> None:
     # looks like poetry supports both an @ and a #
     _assert_dependency_equals(
         parse_dependency_string(
-            "git+ssh://git@github.com:efriis/myrepo.git@develop", None, None
+            "git+ssh://git@github.com:efriis/myrepo.git@develop", None, None, None
         ),
         git="ssh://git@github.com:efriis/myrepo.git",
         ref="develop",
@@ -74,7 +77,7 @@ def test_dependency_string() -> None:
     )
 
     _assert_dependency_equals(
-        parse_dependency_string("simple-pirate", None, None),
+        parse_dependency_string("simple-pirate", None, None, None),
         git=DEFAULT_GIT_REPO,
         subdirectory=f"{DEFAULT_GIT_SUBDIRECTORY}/simple-pirate",
         ref=DEFAULT_GIT_REF,
@@ -85,6 +88,7 @@ def test_dependency_string_both() -> None:
     _assert_dependency_equals(
         parse_dependency_string(
             "git+https://github.com/efriis/myrepo.git@branch#subdirectory=src",
+            None,
             None,
             None,
         ),
@@ -101,6 +105,7 @@ def test_dependency_string_invalids() -> None:
             "git+https://github.com/efriis/myrepo.git#subdirectory=src@branch",
             None,
             None,
+            None,
         )
     # expect error for @subdirectory
 
@@ -112,7 +117,7 @@ def test_dependency_string_edge_case() -> None:
     # or a ssh dep at a with ref=b.
     # in this case, assume the first case (be greedy with the '@')
     _assert_dependency_equals(
-        parse_dependency_string("git+ssh://a@b", None, None),
+        parse_dependency_string("git+ssh://a@b", None, None, None),
         git="ssh://a@b",
         subdirectory=None,
         ref=None,
@@ -121,7 +126,10 @@ def test_dependency_string_edge_case() -> None:
     # weird one that is actually valid
     _assert_dependency_equals(
         parse_dependency_string(
-            "git+https://github.com/efriis/myrepo.git@subdirectory=src", None, None
+            "git+https://github.com/efriis/myrepo.git@subdirectory=src",
+            None,
+            None,
+            None,
         ),
         git="https://github.com/efriis/myrepo.git",
         subdirectory=None,
