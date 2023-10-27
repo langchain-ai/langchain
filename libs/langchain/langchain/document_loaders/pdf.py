@@ -155,9 +155,7 @@ class PyPDFLoader(BasePDFLoader):
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
         super().__init__(file_path, headers=headers)
-        self.parser = PyPDFParser(
-            password=password, extract_images=extract_images, web_path=self.web_path
-        )
+        self.parser = PyPDFParser(password=password, extract_images=extract_images)
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
@@ -167,7 +165,10 @@ class PyPDFLoader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
 
 

@@ -81,14 +81,10 @@ class PyPDFParser(BaseBlobParser):
     """Load `PDF` using `pypdf`"""
 
     def __init__(
-        self,
-        password: Optional[Union[str, bytes]] = None,
-        extract_images: bool = False,
-        web_path: Optional[str] = None,
+        self, password: Optional[Union[str, bytes]] = None, extract_images: bool = False
     ):
         self.password = password
         self.extract_images = extract_images
-        self.web_path = web_path
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -100,12 +96,7 @@ class PyPDFParser(BaseBlobParser):
                 Document(
                     page_content=page.extract_text()
                     + self._extract_images_from_page(page),
-                    metadata={
-                        "source": blob.source
-                        if self.web_path is None
-                        else self.web_path,
-                        "page": page_number,
-                    },
+                    metadata={"source": blob.source, "page": page_number},
                 )
                 for page_number, page in enumerate(pdf_reader.pages)
             ]
