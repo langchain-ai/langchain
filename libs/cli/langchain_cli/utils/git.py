@@ -2,7 +2,7 @@ import hashlib
 import re
 import shutil
 from pathlib import Path
-from typing import Dict, List, Optional, TypedDict
+from typing import Dict, List, Optional, Sequence, TypedDict
 
 from git import Repo
 
@@ -70,50 +70,69 @@ def parse_dependency_string(
             git=gitstring,
             ref=ref,
             subdirectory=subdirectory,
+            event_metadata={"dependency_string": dep},
         )
 
-    elif dep.startswith("https://"):
-        raise NotImplementedError("url dependencies are not supported yet")
+    elif dep is not None and dep.startswith("https://"):
+        raise ValueError("Only git dependencies are supported")
     else:
-        # it's a default git repo dependency
-        subdirectory = str(Path(DEFAULT_GIT_SUBDIRECTORY) / dep)
-        return DependencySource(
-            git=DEFAULT_GIT_REPO, ref=DEFAULT_GIT_REF, subdirectory=subdirectory
+        # if repo is none, use default, including subdirectory
+        base_subdir = Path(DEFAULT_GIT_SUBDIRECTORY) if repo is None else Path()
+        subdir = str(base_subdir / dep) if dep is not None else None
+        gitstring = (
+            DEFAULT_GIT_REPO
+            if repo is None
+            else f"https://github.com/{repo.strip('/')}.git"
         )
+        ref = DEFAULT_GIT_REF if branch is None else branch
+        # it's a default git repo dependency
+        return DependencySource(
+            git=gitstring,
+            ref=ref,
+            subdirectory=subdir,
+            event_metadata={
+                "dependency_string": dep,
+                "used_repo_flag": repo is not None,
+                "used_branch_flag": branch is not None,
+            },
+        )
+
+
+def _list_arg_to_length(arg: Optional[List[str]], num: int) -> Sequence[Optional[str]]:
+    if arg is None:
+        return [None] * num
+    elif len(arg) == 1:
+        return arg * num
+    elif len(arg) == num:
+        return arg
+    else:
+        raise ValueError(f"Argument must be of length 1 or {num}")
 
 
 def parse_dependencies(
     dependencies: Optional[List[str]], repo: List[str], branch: List[str]
 ) -> List[DependencySource]:
-    deps = dependencies or []
-    if len(deps) > 0:
-        if len(repo) == 0 and len(branch) == 0:
-            # build based on deps
-            return [parse_dependency_string(d) for d in deps]
+    num_deps = max(
+        len(dependencies) if dependencies is not None else 0, len(repo), len(branch)
+    )
+    if (
+        (dependencies and len(dependencies) != num_deps)
+        or (repo and len(repo) not in [1, num_deps])
+        or (branch and len(branch) not in [1, num_deps])
+    ):
+        raise ValueError(
+            "Number of defined repos/branches did not match the number of dependencies."
+        )
+    inner_deps = _list_arg_to_length(dependencies, num_deps)
+    inner_repos = _list_arg_to_length(repo, num_deps)
+    inner_branches = _list_arg_to_length(branch, num_deps)
 
-        # for singleton, repeat for all
-        if len(repo) == 1:
-            repo = repo * len(deps)
-        if len(branch) == 1:
-            branch = branch * len(deps)
-
-        if len(repo) > 0 and len(repo) != len(deps):
-            raise ValueError(
-                "The number of repos must be 1 or match the number of dependencies."
-            )
-        if len(branch) > 0 and len(branch) != len(deps):
-            raise ValueError(
-                "The number of branches must be 1 or match the number of dependencies."
-            )
-
-        rtn = []
-        for dep in deps:
-            pass
-
-    else:
-        # build purely based on repo/branch
-        pass
-    return []
+    return [
+        parse_dependency_string(iter_dep, iter_repo, iter_branch)
+        for iter_dep, iter_repo, iter_branch in zip(
+            inner_deps, inner_repos, inner_branches
+        )
+    ]
 
 
 def _get_repo_path(gitstring: str, repo_dir: Path) -> Path:
