@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Union,
 )
 
 from langchain.callbacks.manager import (
@@ -20,10 +21,17 @@ from langchain.llms.openai import (
     acompletion_with_retry,
     completion_with_retry,
 )
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env
+
+
+def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
+    """Convert a string to a SecretStr if needed."""
+    if isinstance(value, SecretStr):
+        return value
+    return SecretStr(value)
 
 
 def update_token_usage(
@@ -84,7 +92,7 @@ class Anyscale(BaseOpenAI):
 
     """Key word arguments to pass to the model."""
     anyscale_api_base: Optional[str] = None
-    anyscale_api_key: Optional[str] = None
+    anyscale_api_key: Optional[SecretStr] = None
 
     prefix_messages: List = Field(default_factory=list)
 
@@ -94,8 +102,8 @@ class Anyscale(BaseOpenAI):
         values["anyscale_api_base"] = get_from_dict_or_env(
             values, "anyscale_api_base", "ANYSCALE_API_BASE"
         )
-        values["anyscale_api_key"] = get_from_dict_or_env(
-            values, "anyscale_api_key", "ANYSCALE_API_KEY"
+        values["anyscale_api_key"] = _to_secret(
+            get_from_dict_or_env(values, "anyscale_api_key", "ANYSCALE_API_KEY")
         )
         try:
             import openai
