@@ -1,11 +1,12 @@
 import os
-from utils import bedrock, print_ww
-from langchain.llms.bedrock import Bedrock
+
 from langchain.embeddings import BedrockEmbeddings
+from langchain.llms.bedrock import Bedrock
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.vectorstores import Pinecone
+from utils import bedrock
 
 if os.environ.get("PINECONE_API_KEY", None) is None:
     raise Exception("Missing `PINECONE_API_KEY` environment variable.")
@@ -49,7 +50,8 @@ boto3_bedrock = bedrock.get_bedrock_client(
 model = Bedrock(model_id="anthropic.claude-v2", 
                 client=boto3_bedrock, 
                 model_kwargs={'max_tokens_to_sample':200})
-bedrock_embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v1", client=boto3_bedrock)
+bedrock_embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v1", 
+                                       client=boto3_bedrock)
 
 # Set vectostore
 vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, bedrock_embeddings)
