@@ -27,14 +27,16 @@ Assistant: <tool>search</tool><tool_input>weather in SF</tool_input>
 It is 64 degress in SF
 
 
-Begin!"""
+Begin!"""  # noqa: E501
 
-conversational_prompt = ChatPromptTemplate.from_messages([
-    ("system", template),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("user", "{question}"),
-    ("ai", "{agent_scratchpad}")
-])
+conversational_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", template),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("user", "{question}"),
+        ("ai", "{agent_scratchpad}"),
+    ]
+)
 
 
 def parse_output(message):

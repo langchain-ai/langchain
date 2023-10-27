@@ -444,6 +444,12 @@ def _import_titan_takeoff() -> Any:
     return TitanTakeoff
 
 
+def _import_titan_takeoff_pro() -> Any:
+    from langchain.llms.titan_takeoff_pro import TitanTakeoffPro
+
+    return TitanTakeoffPro
+
+
 def _import_together() -> Any:
     from langchain.llms.together import Together
 
@@ -645,6 +651,8 @@ def __getattr__(name: str) -> Any:
         return _import_textgen()
     elif name == "TitanTakeoff":
         return _import_titan_takeoff()
+    elif name == "TitanTakeoffPro":
+        return _import_titan_takeoff_pro()
     elif name == "Together":
         return _import_together()
     elif name == "Tongyi":
@@ -743,6 +751,7 @@ __all__ = [
     "SelfHostedPipeline",
     "StochasticAI",
     "TitanTakeoff",
+    "TitanTakeoffPro",
     "Tongyi",
     "VertexAI",
     "VertexAIModelGarden",
@@ -822,6 +831,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "together": _import_together,
         "tongyi": _import_tongyi,
         "titan_takeoff": _import_titan_takeoff,
+        "titan_takeoff_pro": _import_titan_takeoff_pro,
         "vertexai": _import_vertex,
         "vertexai_model_garden": _import_vertex_model_garden,
         "openllm": _import_openllm,

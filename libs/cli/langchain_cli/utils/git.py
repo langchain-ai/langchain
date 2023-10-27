@@ -1,15 +1,16 @@
-from typing import Optional, TypedDict
-from pathlib import Path
-
-import shutil
+import hashlib
 import re
+import shutil
+from pathlib import Path
+from typing import Optional, TypedDict
+
+from git import Repo
+
 from langchain_cli.constants import (
+    DEFAULT_GIT_REF,
     DEFAULT_GIT_REPO,
     DEFAULT_GIT_SUBDIRECTORY,
-    DEFAULT_GIT_REF,
 )
-import hashlib
-from git import Repo
 
 
 class DependencySource(TypedDict):
@@ -67,10 +68,9 @@ def parse_dependency_string(package_string: str) -> DependencySource:
         raise NotImplementedError("url dependencies are not supported yet")
     else:
         # it's a default git repo dependency
-        gitstring = DEFAULT_GIT_REPO
         subdirectory = str(Path(DEFAULT_GIT_SUBDIRECTORY) / package_string)
         return DependencySource(
-            git=gitstring, ref=DEFAULT_GIT_REF, subdirectory=subdirectory
+            git=DEFAULT_GIT_REPO, ref=DEFAULT_GIT_REF, subdirectory=subdirectory
         )
 
 
