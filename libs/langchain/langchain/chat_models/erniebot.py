@@ -292,6 +292,7 @@ class ErnieBotChat(BaseChatModel):
                     "Ignoring system messages "
                     "since they are currently not supported for ERNIE Bot."
                 )
+                continue
             eb_msg = self._convert_message_to_dict(msg)
             erniebot_messages.append(eb_msg)
         return erniebot_messages
