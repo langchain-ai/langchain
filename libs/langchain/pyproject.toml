@@ -317,6 +317,7 @@ cli = [
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
 extended_testing = [
+ "aleph-alpha-client",
  "amazon-textract-caller",
  "aiosqlite",
  "assemblyai",
