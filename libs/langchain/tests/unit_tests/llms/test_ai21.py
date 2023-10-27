@@ -26,8 +26,14 @@ def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
-    llm = AI21(ai21_api_key=SecretStr("secret-api-key"))
+    llm = AI21(ai21_api_key="secret-api-key")
     print(llm.ai21_api_key, end="")
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
+
+
+def test_uses_actual_secret_value_from_secretstr() -> None:
+    """Test that actual secret is retrieved using `.get_secret_value()`."""
+    llm = AI21(ai21_api_key="secret-api-key")
+    assert llm.ai21_api_key.get_secret_value() == "secret-api-key"
