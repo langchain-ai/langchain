@@ -1,19 +1,17 @@
-name: Documentation
-description: Report an issue related to the LangChain documentation.
-title: "DOC: <Please write a comprehensive title after the 'DOC: ' prefix>"
-labels: [03 - Documentation]
+name: Документация
+description: Расскажите как мы можем улучшить документацию GigaChain.
+title: "DOC: <Укажите развернутый заголовок после префикса 'DOC: '>"
+labels: [03 - Документация]
 
 body:
 - type: textarea
   attributes: 
-    label: "Issue with current documentation:"
+    label: "Проблема с существующей документацией:"
     description: >
-      Please make sure to leave a reference to the document/code you're
-      referring to.
+      Оставьте ссылку на страницу документации или файл кода, где, по вашему мнению, нужно доработать документацию.
 
 - type: textarea
   attributes:
-    label: "Idea or request for content:"
+    label: "Запрос на доработку:"
     description: >
-      Please describe as clearly as possible what topics you think are missing
-      from the current documentation.
+      По возможности подробнее опишите какие темы следует отразить в существующей документации, по вашему мнению.

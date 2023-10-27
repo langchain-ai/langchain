@@ -1,18 +1,18 @@
-name: Other Issue
-description: Raise an issue that wouldn't be covered by the other templates.
-title: "Issue: <Please write a comprehensive title after the 'Issue: ' prefix>"
-labels: [04 - Other]
+name: Другое
+description: Предложите обсудить проблему, которая не попадает в другие категории.
+title: "Issue: <Укажите развернутый заголовок после префикса 'Issue: ' prefix>"
+labels: [04 - Другое]
 
 body:
   - type: textarea
     attributes:
-      label: "Issue you'd like to raise."
+      label: "Проблема, которую вы хотите обсудить."
       description: >
-        Please describe the issue you'd like to raise as clearly as possible.
-        Make sure to include any relevant links or references.
+        Как можно подробнее опишите проблему, которую вы хотите обсудить.
+        Приведите ссылки на подходящие ресурсы.
 
   - type: textarea
     attributes:
-      label: "Suggestion:"
+      label: "Предложение:"
       description: >
-        Please outline a suggestion to improve the issue here.
+        Опишите, как вы видите решение проблемы.

@@ -1,69 +1,45 @@
-name: "\U0001F41B Bug Report"
-description: Submit a bug report to help us improve LangChain. To report a security issue, please instead use the security option below.
-labels: ["02 Bug Report"]
+name: "\U0001F41B Сообщение об ошибке"
+description: Сообщите об ошибке, чтобы улучшить работу GigaChain. Для обратной связи о проблемах с безопасностью воспользуйтесь отдельной формой ниже.
+labels: ["02 Сообщение об ошибке"]
 body:
   - type: markdown
     attributes:
       value: >
-        Thank you for taking the time to file a bug report. Before creating a new
-        issue, please make sure to take a few moments to check the issue tracker
-        for existing issues about the bug.
+
+        Перед тем как сообщить об ошибке, пожалуйста, убедитесь, что вашей проблемы нет среди открытых issue.
 
   - type: textarea
     id: system-info
     attributes:
-      label: System Info
-      description: Please share your system info with us.
-      placeholder: LangChain version, platform, python version, ...
+      label: Информация об окружении
+      description: Расскажите об окружении, в котором возникла ошибка.
+      placeholder: Версия GigaChain, версия python, операционная система, ...
     validations:
       required: true
 
   - type: textarea
     id: who-can-help
     attributes:
-      label: Who can help?
+      label: К кому обратиться?
       description: |
-        Your issue will be replied to more quickly if you can figure out the right person to tag with @
-        If you know how to use git blame, that is the easiest way, otherwise, here is a rough guide of **who to tag**.
-
-        The core maintainers strive to read all issues, but tagging them will help them prioritize.
-
-        Please tag fewer than 3 people.
-
-        @hwchase17 - project lead
-
-        Tracing / Callbacks
-        - @agola11
-
-        Async
-        - @agola11
-
-        DataLoader Abstractions
-        - @eyurtsev
-
-        LLM/Chat Wrappers
-        - @hwchase17
-        - @agola11
-
-        Tools / Toolkits
-        - ...
+        Разработчики стараются своевременно обрабатывать все открытые issue. Тем не менее, если вы считаете, что обнаруженную ошибку нужно рассмотреть с повышенным приоритетом, вы можете уведомить об этом руководителя проекта — @Rai220.
 
       placeholder: "@Username ..."
 
   - type: checkboxes
     id: information-scripts-examples
     attributes:
-      label: Information
-      description: "The problem arises when using:"
+      label: Дополнительная информация
+      description: "Ошибка обнаружена при использовании:"
       options:
-        - label: "The official example notebooks/scripts"
-        - label: "My own modified scripts"
+        - label: "Официальных примеров (*notebooks*)/скриптов"
+        - label: "Собственных или доработанных скриптов"
 
   - type: checkboxes
     id: related-components
     attributes:
-      label: Related Components
-      description: "Select the components related to the issue (if applicable):"
+      label: Компоненты
+      description: "По возможности, укажите компоненты библиотеки, к которым относится ошибка:"
       options:
         - label: "LLMs/Chat Models"
         - label: "Embedding Models"
@@ -83,15 +59,15 @@ body:
     validations:
       required: true
     attributes:
-      label: Reproduction
+      label: Воспроизведение ошибки
       description: |
-        Please provide a [code sample](https://stackoverflow.com/help/minimal-reproducible-example) that reproduces the problem you ran into. It can be a Colab link or just a code snippet.
-        If you have code snippets, error messages, stack traces please provide them here as well.
-        Important! Use code tags to correctly format your code. See https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting
-        Avoid screenshots when possible, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
+        Предоставьте [образец кода](https://stackoverflow.com/help/minimal-reproducible-example), при выполнении которого возникает ошибка. Подойдет как ссылка на Colab, так и отдельный фрагмент кода.
+        По возможности, приложите другие примеры кода, сообщения об ошибках и стек трейсы, которые помогут воспроизвести проблему.
+        Обратите внимание на корректное [выделение блоков кода с помощью тегов](https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting).
+        Не нужно присылать скриншоты кода. Такие примеры неудобно читать и их нельзя скопировать.
 
       placeholder: |
-        Steps to reproduce the behavior:
+        Опишите шаги для воспроизведения ошибки:
 
           1.
           2.
@@ -102,5 +78,5 @@ body:
     validations:
       required: true
     attributes:
-      label: Expected behavior
-      description: "A clear and concise description of what you would expect to happen."
+      label: Ожидаемое поведение
+      description: "Краткое и понятное описание поведения GigaChain, которого вы ожидали при выполнении кода."
