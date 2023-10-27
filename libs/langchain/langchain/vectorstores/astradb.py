@@ -16,7 +16,7 @@ from typing import (
     # Union,
 )
 
-# import numpy as np
+import numpy as np
 
 # if typing.TYPE_CHECKING:
 #     from cassandra.cluster import Session
