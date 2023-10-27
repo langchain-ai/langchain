@@ -29,13 +29,13 @@ class AI21(LLM):
     """AI21 large language models.
 
     To use, you should have the environment variable ``AI21_API_KEY``
-    set with your API key.
+    set with your API key or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
             from langchain.llms import AI21
-            ai21 = AI21(model="j2-jumbo-instruct")
+            ai21 = AI21(ai21_api_key="my-api-key", model="j2-jumbo-instruct")
     """
 
     model: str = "j2-jumbo-instruct"
