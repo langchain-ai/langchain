@@ -4,7 +4,6 @@ Manage LangServe application projects.
 
 import shutil
 import subprocess
-from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -84,7 +83,7 @@ def add(
     ] = [],
     branch: Annotated[
         List[str], typer.Option(help="Install deps from a specific branch")
-    ],
+    ] = [],
     with_poetry: Annotated[
         bool,
         typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
@@ -110,11 +109,14 @@ def add(
     )
 
     # group by repo/ref
-    grouped: Dict[Tuple[str, Optional[str]], List[DependencySource]] = defaultdict(list)
+    grouped: Dict[Tuple[str, Optional[str]], List[DependencySource]] = {}
     for dep in parsed_deps:
-        grouped[(dep["git"], dep["ref"])].append(dep)
+        key_tup = (dep["git"], dep["ref"])
+        lst = grouped.get(key_tup, [])
+        lst.append(dep)
+        grouped[key_tup] = lst
 
-    installed_destination_paths: List[str] = []
+    installed_destination_paths: List[Path] = []
     installed_exports: List[Dict] = []
 
     for (git, ref), group_deps in grouped.items():
@@ -147,23 +149,28 @@ def add(
                 continue
             copy_repo(source_path, destination_path)
             typer.echo(f" - Installed {dep['subdirectory']} to {inner_api_path}")
-            installed_destination_paths.append(str(destination_path))
+            installed_destination_paths.append(destination_path)
             installed_exports.append(langserve_export)
+
+    if len(installed_destination_paths) == 0:
+        typer.echo("No packages installed. Exiting.")
+        return
+
+    installed_desination_strs = [str(p) for p in installed_destination_paths]
 
     if with_poetry:
         subprocess.run(
-            ["poetry", "add", "--editable"] + installed_destination_paths,
+            ["poetry", "add", "--editable"] + installed_desination_strs,
             cwd=project_root,
         )
     else:
-        cmd = ["pip", "install", "-e"] + installed_destination_paths
+        cmd = ["pip", "install", "-e"] + installed_desination_strs
         if typer.confirm(f"Run {' '.join(cmd)}?"):
             subprocess.run(cmd, cwd=project_root)
-
-    if typer.confirm("Generate route code for these packages?"):
+    if typer.confirm("\nGenerate route code for these packages?"):
         chain_names = []
         for e in installed_exports:
-            original_candidate = e["package_name"].replace("-", "_")
+            original_candidate = f'{e["package_name"].replace("-", "_")}_chain'
             candidate = original_candidate
             i = 2
             while candidate in chain_names:
@@ -171,7 +178,10 @@ def add(
                 i += 1
             chain_names.append(candidate)
 
-        api_paths = [str(Path("/") / path) for path in installed_destination_paths]
+        api_paths = [
+            str(Path("/") / path.relative_to(package_dir))
+            for path in installed_destination_paths
+        ]
 
         imports = [
             f"from {e['module']} import {e['attr']} as {name}"
@@ -183,7 +193,7 @@ def add(
         ]
 
         lines = (
-            ["Remember to add the following to your app:", ""] + imports + [""] + routes
+            ["", "Great! Add the following to your app:", ""] + imports + [""] + routes
         )
         typer.echo("\n".join(lines))
 

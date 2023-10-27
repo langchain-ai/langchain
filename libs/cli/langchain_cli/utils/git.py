@@ -105,7 +105,7 @@ def parse_dependency_string(
 
 
 def _list_arg_to_length(arg: Optional[List[str]], num: int) -> Sequence[Optional[str]]:
-    if arg is None:
+    if not arg:
         return [None] * num
     elif len(arg) == 1:
         return arg * num
