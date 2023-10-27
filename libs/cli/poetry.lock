@@ -1535,4 +1535,4 @@ serve = ["langserve"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "94a238061103b110e9ec265e46f964bb355dd9f092922f4da469fc2f18707bde"
+content-hash = "80e530d72b799e5d066f3f6e5f472e5b70a288aed9f3bf4ee6293e3bf5a9e987"
