@@ -12,7 +12,7 @@ import typer
 from langserve.packages import get_langserve_export
 from typing_extensions import Annotated
 
-from langchain_cli.utils.packages import get_project_root
+from langchain_cli.utils.packages import get_package_root
 
 hub = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -84,7 +84,7 @@ def start(
     Starts a demo LangServe instance for this hub package.
     """
     # load pyproject.toml
-    project_dir = get_project_root()
+    project_dir = get_package_root()
     pyproject = project_dir / "pyproject.toml"
 
     # get langserve export - throws KeyError if invalid
