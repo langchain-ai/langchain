@@ -9,7 +9,6 @@ on:
       - '.github/actions/poetry_setup/action.yml'
       - '.github/tools/**'
       - '.github/workflows/_lint.yml'
-      - '.github/workflows/_test.yml'
       - '.github/workflows/templates_ci.yml'
       - 'templates/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
@@ -36,9 +35,3 @@ jobs:
       working-directory: templates
       langchain-location: ../libs/langchain
     secrets: inherit
-  # test:
-  #   uses:
-  #     ./.github/workflows/_test.yml
-  #   with:
-  #     working-directory: templates
-  #   secrets: inherit
