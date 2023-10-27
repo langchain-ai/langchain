@@ -5,24 +5,25 @@ from langchain.utilities.vertexai import get_client_info
 
 
 class GoogleTranslateTransformer(BaseDocumentTransformer):
-    """Translate text documents using Google Cloud Translation.
-
-    Arguments:
-        project_id: Google Cloud Project ID.
-        location: (Optional) Translate model location.
-        model_id: (Optional) Translate model ID to use.
-        glossary_id: (Optional) Translate glossary ID to use.
-        api_endpoint: (Optional) Regional endpoint to use.
-    """
+    """Translate text documents using Google Cloud Translation."""
 
     def __init__(
         self,
         project_id: str,
+        *,
         location: str = "global",
         model_id: Optional[str] = None,
         glossary_id: Optional[str] = None,
         api_endpoint: Optional[str] = None,
     ) -> None:
+        """
+        Arguments:
+            project_id: Google Cloud Project ID.
+            location: (Optional) Translate model location.
+            model_id: (Optional) Translate model ID to use.
+            glossary_id: (Optional) Translate glossary ID to use.
+            api_endpoint: (Optional) Regional endpoint to use.
+        """
         try:
             from google.api_core.client_options import ClientOptions
             from google.cloud import translate
@@ -77,33 +78,31 @@ class GoogleTranslateTransformer(BaseDocumentTransformer):
 
         transformed_documents: List[Document] = []
 
-        for doc in documents:
-            response = self._client.translate_text(
-                request=translate.TranslateTextRequest(
-                    contents=[doc.page_content],
-                    parent=self._parent_path,
-                    model=self._model_path,
-                    glossary_config=translate.TranslateTextGlossaryConfig(
-                        glossary=self._glossary_path
-                    ),
-                    source_language_code=kwargs.get("source_language_code", None),
-                    target_language_code=kwargs.get("target_language_code"),
-                    mime_type=kwargs.get("mime_type", "text/plain"),
-                )
-            )
-
-            # If using a glossary, the translations will be in `glossary_translations`.
-            translations = response.glossary_translations or response.translations
-            new_metadata = {
-                "model": getattr(translations[0], ("model")),
-                "detected_language_code": getattr(
-                    translations[0], "detected_language_code"
+        response = self._client.translate_text(
+            request=translate.TranslateTextRequest(
+                contents=[doc.page_content for doc in documents],
+                parent=self._parent_path,
+                model=self._model_path,
+                glossary_config=translate.TranslateTextGlossaryConfig(
+                    glossary=self._glossary_path
                 ),
-            }
-            transformed_documents.append(
-                Document(
-                    page_content=translations[0].translated_text,
-                    metadata={**doc.metadata, **new_metadata},
-                )
+                source_language_code=kwargs.get("source_language_code", None),
+                target_language_code=kwargs.get("target_language_code"),
+                mime_type=kwargs.get("mime_type", "text/plain"),
             )
-        return transformed_documents
+        )
+
+        # If using a glossary, the translations will be in `glossary_translations`.
+        translations = response.glossary_translations or response.translations
+
+        return [
+            Document(
+                page_content=translation.translated_text,
+                metadata={
+                    **doc.metadata,
+                    "model": translation.model,
+                    "detected_language_code": translation.detected_language_code,
+                },
+            )
+            for doc, translation in zip(documents, translations)
+        ]
