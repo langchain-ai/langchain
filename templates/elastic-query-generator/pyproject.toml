@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "elastic_query_generator"
+name = "elastic-query-generator"
 version = "0.0.1"
 description = ""
 authors = []

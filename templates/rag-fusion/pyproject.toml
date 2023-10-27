@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rag_fusion"
+name = "rag-fusion"
 version = "0.0.1"
 description = ""
 authors = []

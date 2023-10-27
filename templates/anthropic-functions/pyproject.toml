@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "anthropic-function"
+name = "anthropic-functions"
 version = "0.1.0"
 description = ""
 authors = ["Lance Martin <lance@langchain.dev>"]

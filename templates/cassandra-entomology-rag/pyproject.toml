@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "cassandra_entomology_rag"
+name = "cassandra-entomology-rag"
 version = "0.0.1"
 description = ""
 authors = ["Stefano Lottini <stefano.lottini@datastax.com>"]

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "neo4j_cypher"
+name = "neo4j-cypher"
 version = "0.1.0"
 description = ""
 authors = ["Tomaz Bratanic <tomaz.bratanic@neo4j.com>"]
