@@ -14,6 +14,7 @@ def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
         return value
     return SecretStr(value)
 
+
 class AI21PenaltyData(BaseModel):
     """Parameters for AI21 penalty data."""
 
