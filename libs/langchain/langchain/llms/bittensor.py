@@ -8,7 +8,8 @@ from langchain.llms.base import LLM
 
 
 class NIBittensorLLM(LLM):
-    """
+    """NIBittensor LLMs
+
     NIBittensorLLM is created by Neural Internet (https://neuralinternet.ai/),
     powered by Bittensor, a decentralized network full of different AI models.
 

@@ -49,6 +49,17 @@ _PDF_FILTER_WITHOUT_LOSS = [
 def extract_from_images_with_rapidocr(
     images: Sequence[Union[Iterable[np.ndarray], bytes]]
 ) -> str:
+    """Extract text from images with RapidOCR.
+
+    Args:
+        images: Images to extract text from.
+
+    Returns:
+        Text extracted from images.
+
+    Raises:
+        ImportError: If `rapidocr-onnxruntime` package is not installed.
+    """
     try:
         from rapidocr_onnxruntime import RapidOCR
     except ImportError:
