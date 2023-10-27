@@ -10,6 +10,8 @@ CHUNK_QUERY = """
             name: (identifier)) @function
         (object_definition
             name: (identifier)) @object
+        (trait_definition
+            name: (identifier)) @trait
     ]
 """.strip()
 

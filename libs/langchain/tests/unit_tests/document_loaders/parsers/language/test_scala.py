@@ -18,18 +18,25 @@ object T {
 
 class S() {
 
+}
+
+trait T {
+    def P(x: Any): Boolean
 }"""
 
         self.expected_simplified_code = """// Code for: def foo() {
 
 // Code for: object T {
 
-// Code for: class S() {"""
+// Code for: class S() {
+
+// Code for: trait T {"""
 
         self.expected_extracted_code = [
             "def foo() {\n    return 1\n}",
             "object T {\n    def baz() {\n        val x = 1\n    }\n}",
             "class S() {\n\n}",
+            "trait T {\n    def P(x: Any): Boolean\n}",
         ]
 
     def test_is_valid(self) -> None:

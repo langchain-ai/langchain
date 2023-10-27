@@ -52,11 +52,11 @@ record Person(string FirstName, string LastName, string Id)
 
         self.expected_extracted_code = [
             "namespace World\n{\n}",
-            "class Hello\n{\n    static void Main(string []args)\n    {\n        System.Console.WriteLine(\"Hello, world.\");\n    }\n}",
+            'class Hello\n{\n    static void Main(string []args)\n    {\n        System.Console.WriteLine("Hello, world.");\n    }\n}',
             "interface Human\n{\n    void breathe();\n}",
             "enum Tens\n{\n    Ten = 10,\n    Twenty = 20\n}",
             "struct T\n{\n}",
-            "record Person(string FirstName, string LastName, string Id)\n{\n    internal string Id { get; init; } = Id;\n}"
+            "record Person(string FirstName, string LastName, string Id)\n{\n    internal string Id { get; init; } = Id;\n}",
         ]
 
     def test_is_valid(self) -> None:
