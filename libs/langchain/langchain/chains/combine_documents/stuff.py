@@ -152,6 +152,11 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         prompt = self.llm_chain.prompt.format(**inputs)
         return self.llm_chain.llm.get_num_tokens(prompt)
 
+    def apply_predict_docs_input(self, partial_doc, **kwargs: Any):
+        inputs = self._get_inputs(partial_doc, **kwargs)
+        # Call predict on the LLM.
+        return self.llm_chain.predict(callbacks=callbacks, **inputs)
+
     def combine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
@@ -166,9 +171,19 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             The first element returned is the single string output. The second
             element returned is a dictionary of other keys to return.
         """
+        sizedocs = len(docs)
+        predict2 = ''
+        if sizedocs>=2:
+            splitEnd = int(sizedocs/2)
+            splitStart = splitEnd
+            docs2 =   docs[splitStart:]
+            docs = docs[:splitEnd]
+            inputs2 = self._get_inputs(docs2, **kwargs)
+            predict2 = self.llm_chain.predict(callbacks=callbacks, **inputs2)
         inputs = self._get_inputs(docs, **kwargs)
         # Call predict on the LLM.
-        return self.llm_chain.predict(callbacks=callbacks, **inputs), {}
+        predict1 = self.llm_chain.predict(callbacks=callbacks, **inputs)
+        return predict1 +'\n\n'+predict2, {}
 
     async def acombine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
