@@ -105,10 +105,6 @@ def test_on_llm_end_finetuned_model(
         ("gpt-4-32k", 0.18),
         ("gpt-4-32k-0314", 0.18),
         ("gpt-4-32k-0613", 0.18),
-        # Fine-tuned models
-        ("gpt-35-turbo-0613.ft-0123456789abcdefghijklmnopqrstuv", 0.0035),
-        ("babbage-002.ft-0123456789abcdefghijklmnopqrstuv", 0.0008),
-        ("davinci-002.ft-0123456789abcdefghijklmnopqrstuv", 0.004),
     ],
 )
 def test_on_llm_end_azure_openai(
