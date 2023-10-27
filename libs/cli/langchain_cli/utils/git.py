@@ -2,7 +2,7 @@ import hashlib
 import re
 import shutil
 from pathlib import Path
-from typing import Optional, TypedDict, List, Dict
+from typing import Dict, List, Optional, TypedDict
 
 from git import Repo
 

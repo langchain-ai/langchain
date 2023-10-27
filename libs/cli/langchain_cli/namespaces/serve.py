@@ -15,9 +15,9 @@ from typing_extensions import Annotated
 from langchain_cli.utils.events import create_events
 from langchain_cli.utils.git import (
     copy_repo,
+    parse_dependencies,
     parse_dependency_string,
     update_repo,
-    parse_dependencies,
 )
 from langchain_cli.utils.packages import get_package_root
 
@@ -98,7 +98,6 @@ def add(
     langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
     langchain serve add git+https://github.com/efriis/hub.git#devbranch#subdirectory=mypackage
     """
-    project_root = get_package_root(project_dir)
 
     parsed_deps = parse_dependencies(dependencies, repo, branch)
 
@@ -106,6 +105,8 @@ def add(
         raise typer.BadParameter(
             "The number of API paths must match the number of dependencies."
         )
+
+    project_root = get_package_root(project_dir)
 
     # get installed packages from pyproject.toml
     root_pyproject_path = project_root / "pyproject.toml"
