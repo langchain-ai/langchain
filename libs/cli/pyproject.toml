@@ -18,16 +18,30 @@ uvicorn = "^0.23.2"
 langchain = "langchain_cli.cli:app"
 langchain-cli = "langchain_cli.cli:app"
 
-
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"
 pytest = "^7.4.2"
 pytest-watch = "^4.2.0"
 
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.1.3"
+
+[tool.poetry.group.test.dependencies]
+
+[tool.poetry.group.typing.dependencies]
+
+[tool.ruff]
+select = [
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+]
+
 [tool.poe.tasks]
 test = "poetry run pytest"
 watch = "poetry run ptw"
 lint = "poetry run ruff ."
+format = "poetry run ruff . --fix"
 
 
 [build-system]
