@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, List
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
 
 from langchain.callbacks.manager import Callbacks
 from langchain.pydantic_v1 import Extra, root_validator

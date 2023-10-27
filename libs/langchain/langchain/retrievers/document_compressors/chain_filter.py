@@ -1,5 +1,5 @@
 """Filter that uses an LLM to drop documents that aren't relevant to the query."""
-from typing import Any, Callable, Dict, Optional, Sequence, List
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
