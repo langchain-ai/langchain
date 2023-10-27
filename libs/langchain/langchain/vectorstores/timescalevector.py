@@ -313,7 +313,7 @@ class TimescaleVector(VectorStore):
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
 
-    def _embed_query(self, query: str) -> List[float]:
+    def _embed_query(self, query: str) -> Optional[List[float]]:
         # an empty query should not be embedded
         if query is None or query == "" or query.isspace():
             return None
@@ -456,7 +456,7 @@ class TimescaleVector(VectorStore):
 
     def similarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: Optional[List[float]],
         k: int = 4,
         filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
@@ -492,7 +492,7 @@ class TimescaleVector(VectorStore):
 
     async def asimilarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: Optional[List[float]],
         k: int = 4,
         filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
@@ -528,7 +528,7 @@ class TimescaleVector(VectorStore):
 
     def similarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: Optional[List[float]],
         k: int = 4,
         filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
@@ -551,7 +551,7 @@ class TimescaleVector(VectorStore):
 
     async def asimilarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: Optional[List[float]],
         k: int = 4,
         filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
@@ -865,12 +865,10 @@ class TimescaleVector(VectorStore):
             )
 
         index_type = (
-            index_type.value if isinstance(
-                index_type, self.IndexType) else index_type
+            index_type.value if isinstance(index_type, self.IndexType) else index_type
         )
         if index_type == self.IndexType.PGVECTOR_IVFFLAT.value:
-            self.sync_client.create_embedding_index(
-                client.IvfflatIndex(**kwargs))
+            self.sync_client.create_embedding_index(client.IvfflatIndex(**kwargs))
 
         if index_type == self.IndexType.PGVECTOR_HNSW.value:
             self.sync_client.create_embedding_index(client.HNSWIndex(**kwargs))
