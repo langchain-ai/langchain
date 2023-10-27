@@ -9,6 +9,7 @@ But, it can be adapted to any API that support LLaMA2, including [Fireworks](htt
 See related templates `sql-ollama` and `sql-llamacpp` for private, local chat with SQL.
 
 ## Installation
+
 ```bash
 # from inside your LangServe instance
 poe add sql-llama2
