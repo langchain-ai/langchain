@@ -1,22 +1,25 @@
+from pathlib import Path
+
 from langchain.llms import Replicate
+from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
-from langchain.prompts import ChatPromptTemplate
+from langchain.utilities import SQLDatabase
 
 # make sure to set REPLICATE_API_TOKEN in your environment
 # use llama-2-13b model in replicate
-replicate_id = "meta/llama-2-13b-chat:f4e2de70d66816a838a89eeeb621910adffb0dd0baba3976c96980970978018d"
+replicate_id = "meta/llama-2-13b-chat:f4e2de70d66816a838a89eeeb621910adffb0dd0baba3976c96980970978018d"  # noqa: E501
 llm = Replicate(
     model=replicate_id,
     model_kwargs={"temperature": 0.01, "max_length": 500, "top_p": 1},
 )
 
-from pathlib import Path
-from langchain.utilities import SQLDatabase
+
 db_path = Path(__file__).parent / "nba_roster.db"
 rel = db_path.relative_to(Path.cwd())
 db_string = f"sqlite:///{rel}"
 db = SQLDatabase.from_uri(db_string, sample_rows_in_table_info=0)
+
 
 def get_schema(_):
     return db.get_table_info()
@@ -30,7 +33,7 @@ template_query = """Based on the table schema below, write a SQL query that woul
 {schema}
 
 Question: {question}
-SQL Query:"""
+SQL Query:"""  # noqa: E501
 prompt = ChatPromptTemplate.from_messages(
     [
         ("system", "Given an input question, convert it to a SQL query. No pre-amble."),
@@ -50,13 +53,14 @@ template_response = """Based on the table schema below, question, sql query, and
 
 Question: {question}
 SQL Query: {query}
-SQL Response: {response}"""
+SQL Response: {response}"""  # noqa: E501
 
 prompt_response = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "Given an input question and SQL response, convert it to a natural language answer. No pre-amble.",
+            "Given an input question and SQL response, convert it to a natural "
+            "language answer. No pre-amble.",
         ),
         ("human", template_response),
     ]

@@ -2,21 +2,23 @@
 Manage LangServe application projects.
 """
 
-import typer
-from typing import Optional, List
-from typing_extensions import Annotated
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
+from typing import List, Optional
+
+import tomli
+import typer
+from langserve.packages import get_langserve_export, list_packages
+from typing_extensions import Annotated
+
+from langchain_cli.utils.events import create_events
 from langchain_cli.utils.git import (
     copy_repo,
-    update_repo,
     parse_dependency_string,
+    update_repo,
 )
 from langchain_cli.utils.packages import get_package_root
-from langchain_cli.utils.events import create_events
-from langserve.packages import list_packages, get_langserve_export
-import tomli
 
 REPO_DIR = Path(typer.get_app_dir("langchain")) / "git_repos"
 
@@ -88,7 +90,7 @@ def add(
     Adds the specified package to the current LangServe instance.
 
     e.g.:
-    langchain serve add simple-pirate
+    langchain serve add extraction-openai-functions
     langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
     langchain serve add git+https://github.com/efriis/hub.git#devbranch#subdirectory=mypackage
     """
@@ -101,7 +103,8 @@ def add(
     if len(repo) != 0:
         if len(dependencies) != 0:
             raise typer.BadParameter(
-                "Cannot specify both repo and dependencies. Please specify one or the other."
+                "Cannot specify both repo and dependencies. "
+                "Please specify one or the other."
             )
         dependencies = [f"git+https://github.com/{r}" for r in repo]
 
@@ -144,7 +147,8 @@ def add(
         # detect name conflict
         if langserve_export["package_name"] in installed_names:
             typer.echo(
-                f"Package with name {langserve_export['package_name']} already installed. Skipping...",
+                f"Package with name {langserve_export['package_name']} already "
+                "installed. Skipping...",
             )
             continue
 
@@ -154,7 +158,8 @@ def add(
         destination_path = package_dir / inner_api_path
         if destination_path.exists():
             typer.echo(
-                f"Endpoint {langserve_export['package_name']} already exists. Skipping...",
+                f"Endpoint {langserve_export['package_name']} already exists. "
+                "Skipping...",
             )
             continue
         copy_repo(source_path, destination_path)
@@ -213,13 +218,15 @@ def start(
     host: Annotated[
         Optional[str], typer.Option(help="The host to run the server on")
     ] = None,
+    app: Annotated[Optional[str], typer.Option(help="The app to run")] = None,
 ) -> None:
     """
     Starts the LangServe instance.
     """
-    cmd = ["poetry", "run", "poe", "start"]
-    if port is not None:
-        cmd += ["--port", str(port)]
-    if host is not None:
-        cmd += ["--host", host]
+
+    app_str = app if app is not None else "app.server:app"
+    port_str = str(port) if port is not None else "8000"
+    host_str = host if host is not None else "127.0.0.1"
+
+    cmd = ["uvicorn", app_str, "--reload", "--port", port_str, "--host", host_str]
     subprocess.run(cmd)
