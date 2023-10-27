@@ -79,6 +79,7 @@ class TimescaleVector(VectorStore):
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         time_partition_interval: Optional[timedelta] = None,
+        **kwargs: Any,
     ) -> None:
         try:
             from timescale_vector import client
@@ -103,6 +104,7 @@ class TimescaleVector(VectorStore):
             self.num_dimensions,
             self._distance_strategy.value.lower(),
             time_partition_interval=self._time_partition_interval,
+            **kwargs,
         )
         self.async_client = client.Async(
             self.service_url,
@@ -110,6 +112,7 @@ class TimescaleVector(VectorStore):
             self.num_dimensions,
             self._distance_strategy.value.lower(),
             time_partition_interval=self._time_partition_interval,
+            **kwargs,
         )
         self.__post_init__()
 
