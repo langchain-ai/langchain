@@ -19,9 +19,14 @@ from langchain.evaluation.parsing.base import (
     JsonEqualityEvaluator,
     JsonValidityEvaluator,
 )
+from langchain.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
 from langchain.evaluation.regex_match.base import RegexMatchStringEvaluator
 from langchain.evaluation.schema import EvaluatorType, LLMEvalChain, StringEvaluator
+from langchain.evaluation.scoring.eval_chain import (
+    LabeledScoreStringEvalChain,
+    ScoreStringEvalChain,
+)
 from langchain.evaluation.string_distance.base import (
     PairwiseStringDistanceEvalChain,
     StringDistanceEvalChain,
@@ -70,7 +75,9 @@ _EVALUATOR_MAP: Dict[
     EvaluatorType.COT_QA: CotQAEvalChain,
     EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
     EvaluatorType.PAIRWISE_STRING: PairwiseStringEvalChain,
+    EvaluatorType.SCORE_STRING: ScoreStringEvalChain,
     EvaluatorType.LABELED_PAIRWISE_STRING: LabeledPairwiseStringEvalChain,
+    EvaluatorType.LABELED_SCORE_STRING: LabeledScoreStringEvalChain,
     EvaluatorType.AGENT_TRAJECTORY: TrajectoryEvalChain,
     EvaluatorType.CRITERIA: CriteriaEvalChain,
     EvaluatorType.LABELED_CRITERIA: LabeledCriteriaEvalChain,
@@ -80,6 +87,7 @@ _EVALUATOR_MAP: Dict[
     EvaluatorType.PAIRWISE_EMBEDDING_DISTANCE: PairwiseEmbeddingDistanceEvalChain,
     EvaluatorType.JSON_VALIDITY: JsonValidityEvaluator,
     EvaluatorType.JSON_EQUALITY: JsonEqualityEvaluator,
+    EvaluatorType.JSON_EDIT_DISTANCE: JsonEditDistanceEvaluator,
     EvaluatorType.REGEX_MATCH: RegexMatchStringEvaluator,
     EvaluatorType.EXACT_MATCH: ExactMatchStringEvaluator,
 }

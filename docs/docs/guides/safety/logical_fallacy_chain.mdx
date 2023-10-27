@@ -1,0 +1,91 @@
+# Logical Fallacy chain
+
+This example shows how to remove logical fallacies from model output.
+
+## Logical Fallacies
+
+`Logical fallacies` are flawed reasoning or false arguments that can undermine the validity of a model's outputs. 
+
+Examples include circular reasoning, false
+dichotomies, ad hominem attacks, etc.  Machine learning models are optimized to perform well on specific metrics like accuracy, perplexity, or loss. However, 
+optimizing for metrics alone does not guarantee logically sound reasoning.
+
+Language models can learn to exploit flaws in reasoning to generate plausible-sounding but logically invalid arguments.  When models rely on fallacies, their outputs become unreliable and untrustworthy, even if they achieve high scores on metrics. Users cannot depend on such outputs. Propagating logical fallacies can spread misinformation, confuse users, and lead to harmful real-world consequences when models are deployed in products or services.
+
+Monitoring and testing specifically for logical flaws is challenging unlike other quality issues. It requires reasoning about arguments rather than pattern matching.
+
+Therefore, it is crucial that model developers proactively address logical fallacies after optimizing metrics. Specialized techniques like causal modeling, robustness testing, and bias mitigation can help avoid flawed reasoning.  Overall, allowing logical flaws to persist makes models less safe and ethical. Eliminating fallacies ensures model outputs remain logically valid and aligned with human reasoning. This maintains user trust and mitigates risks.
+
+
+## Example
+
+```python
+# Imports
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
+from langchain.chains.llm import LLMChain
+from langchain_experimental.fallacy_removal.base import FallacyChain
+```
+
+```python
+# Example of a model output being returned with a logical fallacy
+misleading_prompt = PromptTemplate(
+    template="""You have to respond by using only logical fallacies inherent in your answer explanations.
+
+Question: {question}
+
+Bad answer:""",
+    input_variables=["question"],
+)
+
+llm = OpenAI(temperature=0)
+misleading_chain = LLMChain(llm=llm, prompt=misleading_prompt)
+misleading_chain.run(question="How do I know the earth is round?")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    'The earth is round because my professor said it is, and everyone believes my professor'
+```
+
+</CodeOutputBlock>
+
+
+```python
+fallacies = FallacyChain.get_fallacies(["correction"])
+fallacy_chain = FallacyChain.from_llm(
+    chain=misleading_chain,
+    logical_fallacies=fallacies,
+    llm=llm,
+    verbose=True,
+)
+
+fallacy_chain.run(question="How do I know the earth is round?")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+
+
+    > Entering new FallacyChain chain...
+    Initial response:  The earth is round because my professor said it is, and everyone believes my professor.
+
+    Applying correction...
+
+    Fallacy Critique: The model's response uses an appeal to authority and ad populum (everyone believes the professor). Fallacy Critique Needed.
+
+    Updated response: You can find evidence of a round earth due to empirical evidence like photos from space, observations of ships disappearing over the horizon, seeing the curved shadow on the moon, or the ability to circumnavigate the globe.
+
+
+    > Finished chain.
+
+
+
+
+
+    'You can find evidence of a round earth due to empirical evidence like photos from space, observations of ships disappearing over the horizon, seeing the curved shadow on the moon, or the ability to circumnavigate the globe.'
+```
+
+</CodeOutputBlock>

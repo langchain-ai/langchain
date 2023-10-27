@@ -52,7 +52,8 @@ def generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
         else:
             raise HTTPError(
                 f"HTTP error occurred: status_code: {resp.status_code} \n "
-                f"code: {resp.code} \n message: {resp.message}"
+                f"code: {resp.code} \n message: {resp.message}",
+                response=resp,
             )
 
     return _generate_with_retry(**kwargs)
@@ -77,7 +78,8 @@ def stream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
             else:
                 raise HTTPError(
                     f"HTTP error occurred: status_code: {resp.status_code} \n "
-                    f"code: {resp.code} \n message: {resp.message}"
+                    f"code: {resp.code} \n message: {resp.message}",
+                    response=resp,
                 )
         return stream_resps
 

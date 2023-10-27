@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -10,13 +11,13 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Type,
     TypeVar,
     Union,
 )
 
 from typing_extensions import get_args
 
-from langchain.load.serializable import Serializable
 from langchain.schema.messages import AnyMessage, BaseMessage, BaseMessageChunk
 from langchain.schema.output import (
     ChatGeneration,
@@ -25,12 +26,12 @@ from langchain.schema.output import (
     GenerationChunk,
 )
 from langchain.schema.prompt import PromptValue
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 T = TypeVar("T")
 
 
-class BaseLLMOutputParser(Serializable, Generic[T], ABC):
+class BaseLLMOutputParser(Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
@@ -63,7 +64,7 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
 
 
 class BaseGenerationOutputParser(
-    BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
+    BaseLLMOutputParser, RunnableSerializable[Union[str, BaseMessage], T]
 ):
     """Base class to parse the output of an LLM call."""
 
@@ -72,7 +73,7 @@ class BaseGenerationOutputParser(
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> type[T]:
+    def OutputType(self) -> Type[T]:
         # even though mypy complains this isn't valid,
         # it is good enough for pydantic to build the schema from
         return T  # type: ignore[misc]
@@ -121,7 +122,9 @@ class BaseGenerationOutputParser(
             )
 
 
-class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]):
+class BaseOutputParser(
+    BaseLLMOutputParser, RunnableSerializable[Union[str, BaseMessage], T]
+):
     """Base class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
@@ -153,7 +156,7 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         return Union[str, AnyMessage]
 
     @property
-    def OutputType(self) -> type[T]:
+    def OutputType(self) -> Type[T]:
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == 1:
@@ -248,7 +251,9 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         Returns:
             Structured output.
         """
-        return await self.aparse(result[0].text)
+        return await asyncio.get_running_loop().run_in_executor(
+            None, functools.partial(self.parse_result, partial=partial), result
+        )
 
     async def aparse(self, text: str) -> T:
         """Parse a single string model output into some structure.
@@ -293,7 +298,10 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().dict(**kwargs)
-        output_parser_dict["_type"] = self._type
+        try:
+            output_parser_dict["_type"] = self._type
+        except NotImplementedError:
+            pass
         return output_parser_dict
 
 

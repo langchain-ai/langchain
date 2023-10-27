@@ -9,7 +9,7 @@ on:
         description: "From which folder this pipeline executes"
 
 env:
-  POETRY_VERSION: "1.5.1"
+  POETRY_VERSION: "1.6.1"
   WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
           - "3.8"
           - "3.11"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           # Fetch the last FETCH_DEPTH commits, so the mtime-changing script
           # can accurately set the mtimes of files modified in the last FETCH_DEPTH commits.

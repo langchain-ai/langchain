@@ -17,6 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import (
     BaseModel,
     Extra,
@@ -25,7 +26,7 @@ from langchain.pydantic_v1 import (
     root_validator,
     validate_arguments,
 )
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import Runnable, RunnableConfig, RunnableSerializable
 
 
 class SchemaAnnotationError(TypeError):
@@ -97,7 +98,7 @@ class ToolException(Exception):
     pass
 
 
-class BaseTool(BaseModel, Runnable[Union[str, Dict], Any]):
+class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
     """Interface LangChain tools must implement."""
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -165,10 +166,9 @@ class ChildTool(BaseTool):
     ] = False
     """Handle the content of the ToolException thrown."""
 
-    class Config:
+    class Config(Serializable.Config):
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     @property
@@ -187,8 +187,9 @@ class ChildTool(BaseTool):
 
     # --- Runnable ---
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         """The tool's input schema."""
         if self.args_schema is not None:
             return self.args_schema
@@ -217,10 +218,6 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        if type(self)._arun == BaseTool._arun:
-            # If the tool does not implement async, fall back to default implementation
-            return await super().ainvoke(input, config, **kwargs)
-
         config = config or {}
         return await self.arun(
             input,
@@ -657,7 +654,6 @@ class StructuredTool(BaseTool):
             )
         return await asyncio.get_running_loop().run_in_executor(
             None,
-            self._run,
             partial(self._run, run_manager=run_manager, **kwargs),
             *args,
         )

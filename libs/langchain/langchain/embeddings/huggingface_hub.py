@@ -33,7 +33,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     task: Optional[str] = "feature-extraction"
     """Task to call the model with."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     huggingfacehub_api_token: Optional[str] = None
 

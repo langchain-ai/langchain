@@ -15,11 +15,10 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from langchain.load.serializable import Serializable
 from langchain.schema.messages import AnyMessage, BaseMessage, get_buffer_string
 from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
-from langchain.schema.runnable import Runnable
+from langchain.schema.runnable import RunnableSerializable
 from langchain.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
@@ -54,7 +53,7 @@ LanguageModelOutput = TypeVar("LanguageModelOutput")
 
 
 class BaseLanguageModel(
-    Serializable, Runnable[LanguageModelInput, LanguageModelOutput], ABC
+    RunnableSerializable[LanguageModelInput, LanguageModelOutput], ABC
 ):
     """Abstract base class for interfacing with language models.
 

@@ -8,20 +8,30 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Union,
     cast,
 )
 
 from typing_extensions import TypedDict
 
-from langchain.load.serializable import Serializable
-from langchain.schema.runnable.base import Input, Output, Runnable, coerce_to_runnable
+from langchain.schema.runnable.base import (
+    Input,
+    Output,
+    Runnable,
+    RunnableSerializable,
+    coerce_to_runnable,
+)
 from langchain.schema.runnable.config import (
     RunnableConfig,
     get_config_list,
     get_executor_for_config,
 )
-from langchain.schema.runnable.utils import gather_with_concurrency
+from langchain.schema.runnable.utils import (
+    ConfigurableFieldSpec,
+    gather_with_concurrency,
+    get_unique_config_specs,
+)
 
 
 class RouterInput(TypedDict):
@@ -36,13 +46,19 @@ class RouterInput(TypedDict):
     input: Any
 
 
-class RouterRunnable(Serializable, Runnable[RouterInput, Output]):
+class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     """
     A runnable that routes to a set of runnables based on Input['key'].
     Returns the output of the selected runnable.
     """
 
     runnables: Mapping[str, Runnable[Any, Output]]
+
+    @property
+    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+        return get_unique_config_specs(
+            spec for step in self.runnables.values() for spec in step.config_specs
+        )
 
     def __init__(
         self,

@@ -89,6 +89,15 @@ class ChatFireworks(BaseChatModel):
     )
     fireworks_api_key: Optional[str] = None
     max_retries: int = 20
+    use_retry: bool = True
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"fireworks_api_key": "FIREWORKS_API_KEY"}
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -96,7 +105,10 @@ class ChatFireworks(BaseChatModel):
         try:
             import fireworks.client
         except ImportError as e:
-            raise ImportError("") from e
+            raise ImportError(
+                "Could not import fireworks-ai python package. "
+                "Please install it with `pip install fireworks-ai`."
+            ) from e
         fireworks_api_key = get_from_dict_or_env(
             values, "fireworks_api_key", "FIREWORKS_API_KEY"
         )
@@ -123,7 +135,11 @@ class ChatFireworks(BaseChatModel):
             **self.model_kwargs,
         }
         response = completion_with_retry(
-            self, run_manager=run_manager, stop=stop, **params
+            self,
+            self.use_retry,
+            run_manager=run_manager,
+            stop=stop,
+            **params,
         )
         return self._create_chat_result(response)
 
@@ -141,7 +157,7 @@ class ChatFireworks(BaseChatModel):
             **self.model_kwargs,
         }
         response = await acompletion_with_retry(
-            self, run_manager=run_manager, stop=stop, **params
+            self, self.use_retry, run_manager=run_manager, stop=stop, **params
         )
         return self._create_chat_result(response)
 
@@ -184,7 +200,7 @@ class ChatFireworks(BaseChatModel):
             **self.model_kwargs,
         }
         for chunk in completion_with_retry(
-            self, run_manager=run_manager, stop=stop, **params
+            self, self.use_retry, run_manager=run_manager, stop=stop, **params
         ):
             choice = chunk.choices[0]
             chunk = _convert_delta_to_message_chunk(choice.delta, default_chunk_class)
@@ -194,6 +210,8 @@ class ChatFireworks(BaseChatModel):
             )
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.content, chunk=chunk)
 
     async def _astream(
         self,
@@ -211,7 +229,7 @@ class ChatFireworks(BaseChatModel):
             **self.model_kwargs,
         }
         async for chunk in await acompletion_with_retry_streaming(
-            self, run_manager=run_manager, stop=stop, **params
+            self, self.use_retry, run_manager=run_manager, stop=stop, **params
         ):
             choice = chunk.choices[0]
             chunk = _convert_delta_to_message_chunk(choice.delta, default_chunk_class)
@@ -221,10 +239,24 @@ class ChatFireworks(BaseChatModel):
             )
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            if run_manager:
+                await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
+
+
+def conditional_decorator(
+    condition: bool, decorator: Callable[[Any], Any]
+) -> Callable[[Any], Any]:
+    def actual_decorator(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        if condition:
+            return decorator(func)
+        return func
+
+    return actual_decorator
 
 
 def completion_with_retry(
     llm: ChatFireworks,
+    use_retry: bool,
     *,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -234,7 +266,7 @@ def completion_with_retry(
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
-    @retry_decorator
+    @conditional_decorator(use_retry, retry_decorator)
     def _completion_with_retry(**kwargs: Any) -> Any:
         return fireworks.client.ChatCompletion.create(
             **kwargs,
@@ -245,6 +277,7 @@ def completion_with_retry(
 
 async def acompletion_with_retry(
     llm: ChatFireworks,
+    use_retry: bool,
     *,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -254,7 +287,7 @@ async def acompletion_with_retry(
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
-    @retry_decorator
+    @conditional_decorator(use_retry, retry_decorator)
     async def _completion_with_retry(**kwargs: Any) -> Any:
         return await fireworks.client.ChatCompletion.acreate(
             **kwargs,
@@ -265,6 +298,7 @@ async def acompletion_with_retry(
 
 async def acompletion_with_retry_streaming(
     llm: ChatFireworks,
+    use_retry: bool,
     *,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -274,7 +308,7 @@ async def acompletion_with_retry_streaming(
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
-    @retry_decorator
+    @conditional_decorator(use_retry, retry_decorator)
     async def _completion_with_retry(**kwargs: Any) -> Any:
         return fireworks.client.ChatCompletion.acreate(
             **kwargs,
@@ -294,6 +328,8 @@ def _create_retry_decorator(
 
     errors = [
         fireworks.client.error.RateLimitError,
+        fireworks.client.error.InternalServerError,
+        fireworks.client.error.BadGatewayError,
         fireworks.client.error.ServiceUnavailableError,
     ]
     return create_base_retry_decorator(

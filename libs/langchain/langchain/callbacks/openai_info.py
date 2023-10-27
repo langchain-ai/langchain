@@ -57,10 +57,27 @@ MODEL_COST_PER_1K_TOKENS = {
     "text-davinci-003": 0.02,
     "text-davinci-002": 0.02,
     "code-davinci-002": 0.02,
-    "ada-finetuned": 0.0016,
-    "babbage-finetuned": 0.0024,
-    "curie-finetuned": 0.012,
-    "davinci-finetuned": 0.12,
+    # Fine Tuned input
+    "babbage-002-finetuned": 0.0016,
+    "davinci-002-finetuned": 0.012,
+    "gpt-3.5-turbo-0613-finetuned": 0.012,
+    # Fine Tuned output
+    "babbage-002-finetuned-completion": 0.0016,
+    "davinci-002-finetuned-completion": 0.012,
+    "gpt-3.5-turbo-0613-finetuned-completion": 0.016,
+    # Azure Fine Tuned input
+    "babbage-002-azure-finetuned": 0.0004,
+    "davinci-002-azure-finetuned": 0.002,
+    "gpt-35-turbo-0613-azure-finetuned": 0.0015,
+    # Azure Fine Tuned output
+    "babbage-002-azure-finetuned-completion": 0.0004,
+    "davinci-002-azure-finetuned-completion": 0.002,
+    "gpt-35-turbo-0613-azure-finetuned-completion": 0.002,
+    # Legacy fine-tuned models
+    "ada-finetuned-legacy": 0.0016,
+    "babbage-finetuned-legacy": 0.0024,
+    "curie-finetuned-legacy": 0.012,
+    "davinci-finetuned-legacy": 0.12,
 }
 
 
@@ -81,12 +98,17 @@ def standardize_model_name(
 
     """
     model_name = model_name.lower()
-    if "ft-" in model_name:
-        return model_name.split(":")[0] + "-finetuned"
+    if ".ft-" in model_name:
+        return model_name.split(".ft-")[0] + "-azure-finetuned"
+    if ":ft-" in model_name:
+        return model_name.split(":")[0] + "-finetuned-legacy"
+    if "ft:" in model_name:
+        return model_name.split(":")[1] + "-finetuned"
     elif is_completion and (
         model_name.startswith("gpt-4")
         or model_name.startswith("gpt-3.5")
         or model_name.startswith("gpt-35")
+        or ("finetuned" in model_name and "legacy" not in model_name)
     ):
         return model_name + "-completion"
     else:

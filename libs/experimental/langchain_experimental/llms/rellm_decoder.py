@@ -39,7 +39,9 @@ class RELLM(HuggingFacePipeline):
         default=200, description="Maximum number of new tokens to generate."
     )
 
-    @root_validator
+    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
+    #       and causes mypy type-checking failures (hence the `type: ignore`)
+    @root_validator  # type: ignore[call-overload]
     def check_rellm_installation(cls, values: dict) -> dict:
         import_rellm()
         return values
