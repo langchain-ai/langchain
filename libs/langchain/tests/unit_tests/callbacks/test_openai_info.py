@@ -56,7 +56,7 @@ def test_on_llm_end_custom_model(handler: OpenAICallbackHandler) -> None:
         ("babbage:ft-your-org:custom-model-name-2022-02-15-04-21-04", 0.0048),
         ("curie:ft-your-org:custom-model-name-2022-02-15-04-21-04", 0.024),
         ("davinci:ft-your-org:custom-model-name-2022-02-15-04-21-04", 0.24),
-        ("ft:babbage-002:your-org:custom-model-name:1abcdefg",  0.0032),
+        ("ft:babbage-002:your-org:custom-model-name:1abcdefg", 0.0032),
         ("ft:davinci-002:your-org:custom-model-name:1abcdefg", 0.024),
         ("ft:gpt-3.5-turbo-0613:your-org:custom-model-name:1abcdefg", 0.028),
         ("babbage-002.ft-0123456789abcdefghijklmnopqrstuv", 0.0008),
