@@ -31,7 +31,7 @@ from langchain.schema.messages import (
 async def aenumerate(
     iterable: AsyncIterator[Any], start: int = 0
 ) -> AsyncIterator[tuple[int, Any]]:
-    """Async version of enumerate."""
+    """Async version of enumerate function."""
     i = start
     async for x in iterable:
         yield i, x
@@ -39,6 +39,14 @@ async def aenumerate(
 
 
 def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+    """Convert a dictionary to a LangChain message.
+
+    Args:
+        _dict: The dictionary.
+
+    Returns:
+        The LangChain message.
+    """
     role = _dict["role"]
     if role == "user":
         return HumanMessage(content=_dict["content"])
@@ -60,6 +68,14 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 
 
 def convert_message_to_dict(message: BaseMessage) -> dict:
+    """Convert a LangChain message to a dictionary.
+
+    Args:
+        message: The LangChain message.
+
+    Returns:
+        The dictionary.
+    """
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -122,6 +138,8 @@ def _convert_message_chunk_to_delta(chunk: BaseMessageChunk, i: int) -> Dict[str
 
 
 class ChatCompletion:
+    """Chat completion."""
+
     @overload
     @staticmethod
     def create(
@@ -217,7 +235,14 @@ def _has_assistant_message(session: ChatSession) -> bool:
 def convert_messages_for_finetuning(
     sessions: Iterable[ChatSession],
 ) -> List[List[dict]]:
-    """Convert messages to a list of lists of dictionaries for fine-tuning."""
+    """Convert messages to a list of lists of dictionaries for fine-tuning.
+
+    Args:
+        sessions: The chat sessions.
+
+    Returns:
+        The list of lists of dictionaries.
+    """
     return [
         [convert_message_to_dict(s) for s in session["messages"]]
         for session in sessions

@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "cassandra_synonym_caching"
+version = "0.0.1"
+description = ""
+authors = ["Stefano Lottini <stefano.lottini@datastax.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langchain = ">=0.0.313"
+openai = "^0.28.1"
+tiktoken = "^0.5.1"
+cassio = "^0.1.3"
+
+[tool.langserve]
+export_module = "cassandra_synonym_caching"
+export_attr = "chain"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
