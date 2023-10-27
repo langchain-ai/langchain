@@ -2,17 +2,23 @@
 Manage LangServe application projects.
 """
 
-import typer
-from typing import Optional, List
-from typing_extensions import Annotated
-from pathlib import Path
 import shutil
 import subprocess
-from langchain_cli.utils.git import copy_repo, update_repo
-from langchain_cli.utils.packages import get_package_root
-from langchain_cli.utils.events import create_events
-from langserve.packages import list_packages, get_langserve_export
+from pathlib import Path
+from typing import List, Optional
+
 import tomli
+import typer
+from langserve.packages import get_langserve_export, list_packages
+from typing_extensions import Annotated
+
+from langchain_cli.utils.events import create_events
+from langchain_cli.utils.git import (
+    copy_repo,
+    parse_dependency_string,
+    update_repo,
+)
+from langchain_cli.utils.packages import get_package_root
 
 REPO_DIR = Path(typer.get_app_dir("langchain")) / "git_repos"
 
@@ -29,16 +35,14 @@ def new(
     ] = None,
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with-poetry/--no-poetry", help="Run poetry install"
-        ),
+        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
     ] = False,
 ):
     """
     Create a new LangServe application.
     """
     # copy over template from ../project_template
-    project_template_dir = Path(__file__).parent.parent.parent / "project_template"
+    project_template_dir = Path(__file__).parents[1] / "project_template"
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=name == ".")
 
@@ -79,16 +83,14 @@ def add(
     ] = [],
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with-poetry/--no-poetry", help="Run poetry install"
-        ),
+        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
     ] = False,
 ):
     """
     Adds the specified package to the current LangServe instance.
 
     e.g.:
-    langchain serve add simple-pirate
+    langchain serve add extraction-openai-functions
     langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
     langchain serve add git+https://github.com/efriis/hub.git#devbranch#subdirectory=mypackage
     """
@@ -101,7 +103,8 @@ def add(
     if len(repo) != 0:
         if len(dependencies) != 0:
             raise typer.BadParameter(
-                "Cannot specify both repo and dependencies. Please specify one or the other."
+                "Cannot specify both repo and dependencies. "
+                "Please specify one or the other."
             )
         dependencies = [f"git+https://github.com/{r}" for r in repo]
 
@@ -128,14 +131,24 @@ def add(
     for i, dependency in enumerate(dependencies):
         # update repo
         typer.echo(f"Adding {dependency}...")
-        source_path = update_repo(dependency, REPO_DIR)
+        dep = parse_dependency_string(dependency)
+        source_repo_path = update_repo(dep["git"], dep["ref"], REPO_DIR)
+        source_path = (
+            source_repo_path / dep["subdirectory"]
+            if dep["subdirectory"]
+            else source_repo_path
+        )
         pyproject_path = source_path / "pyproject.toml"
+        if not pyproject_path.exists():
+            typer.echo(f"Could not find {pyproject_path}")
+            continue
         langserve_export = get_langserve_export(pyproject_path)
 
         # detect name conflict
         if langserve_export["package_name"] in installed_names:
             typer.echo(
-                f"Package with name {langserve_export['package_name']} already installed. Skipping...",
+                f"Package with name {langserve_export['package_name']} already "
+                "installed. Skipping...",
             )
             continue
 
@@ -145,7 +158,8 @@ def add(
         destination_path = package_dir / inner_api_path
         if destination_path.exists():
             typer.echo(
-                f"Endpoint {langserve_export['package_name']} already exists. Skipping...",
+                f"Endpoint {langserve_export['package_name']} already exists. "
+                "Skipping...",
             )
             continue
         copy_repo(source_path, destination_path)
@@ -161,9 +175,7 @@ def remove(
     api_paths: Annotated[List[str], typer.Argument(help="The API paths to remove")],
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with_poetry/--no-poetry", help="Don't run poetry remove"
-        ),
+        typer.Option("--with_poetry/--no-poetry", help="Don't run poetry remove"),
     ] = False,
 ):
     """

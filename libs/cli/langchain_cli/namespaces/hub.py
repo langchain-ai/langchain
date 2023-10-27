@@ -2,13 +2,14 @@
 Manage installable hub packages.
 """
 
-import typer
-from typing import Optional
-from typing_extensions import Annotated
-from pathlib import Path
+import re
 import shutil
 import subprocess
-import re
+from pathlib import Path
+from typing import Optional
+
+import typer
+from typing_extensions import Annotated
 
 hub = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -30,7 +31,7 @@ def new(
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
 
     # copy over template from ../package_template
-    project_template_dir = Path(__file__).parent.parent.parent / "package_template"
+    project_template_dir = Path(__file__).parents[1] / "package_template"
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=name == ".")
 
     package_name_split = computed_name.split("/")
