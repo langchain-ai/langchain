@@ -2,13 +2,14 @@
 Manage installable hub packages.
 """
 
-import typer
-from typing import Optional
-from typing_extensions import Annotated
-from pathlib import Path
+import re
 import shutil
 import subprocess
-import re
+from pathlib import Path
+from typing import Optional
+
+import typer
+from typing_extensions import Annotated
 
 hub = typer.Typer(no_args_is_help=True, add_completion=False)
 
