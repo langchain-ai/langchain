@@ -1,12 +1,18 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain.utils import get_from_dict_or_env
 
+
+def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
+    """Convert a string to a SecretStr if needed."""
+    if isinstance(value, SecretStr):
+        return value
+    return SecretStr(value)
 
 class AI21PenaltyData(BaseModel):
     """Parameters for AI21 penalty data."""
@@ -62,7 +68,7 @@ class AI21(LLM):
     logitBias: Optional[Dict[str, float]] = None
     """Adjust the probability of specific tokens being generated."""
 
-    ai21_api_key: Optional[str] = None
+    ai21_api_key: Optional[SecretStr] = None
 
     stop: Optional[List[str]] = None
 
@@ -77,7 +83,9 @@ class AI21(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        ai21_api_key = get_from_dict_or_env(values, "ai21_api_key", "AI21_API_KEY")
+        ai21_api_key = _to_secret(
+            get_from_dict_or_env(values, "ai21_api_key", "AI21_API_KEY")
+        )
         values["ai21_api_key"] = ai21_api_key
         return values
 
@@ -143,7 +151,7 @@ class AI21(LLM):
         params = {**self._default_params, **kwargs}
         response = requests.post(
             url=f"{base_url}/{self.model}/complete",
-            headers={"Authorization": f"Bearer {self.ai21_api_key}"},
+            headers={"Authorization": f"Bearer {self.ai21_api_key.get_secret_value()}"},
             json={"prompt": prompt, "stopSequences": stop, **params},
         )
         if response.status_code != 200:
