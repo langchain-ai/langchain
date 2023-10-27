@@ -1,39 +1,47 @@
 from typing import Any, Optional, Union
 
+from jsonschema import ValidationError, validate
+
 from langchain.evaluation.schema import StringEvaluator
 from langchain.output_parsers.json import parse_json_markdown
 
 
 class JsonSchemaEvaluator(StringEvaluator):
-    """
-    An evaluator that validates a JSON prediction against a JSON schema reference.
+    """An evaluator that validates a JSON prediction against a JSON schema reference.
 
     This evaluator checks if a given JSON prediction conforms to the provided JSON schema.
     If the prediction is valid, the score is True (no errors). Otherwise, the score is False (error occurred).
 
-    Parameters
-    ----------
-    **kwargs : Any
-        Additional keyword arguments.
+    Attributes:
+        requires_input (bool): Whether the evaluator requires input.
+        requires_reference (bool): Whether the evaluator requires reference.
+        evaluation_name (str): The name of the evaluation.
 
-    Examples
-    --------
-    >>> evaluator = JsonSchemaEvaluator()
-    >>> result = evaluator.evaluate_strings(
-                        prediction='{"name": "John", "age": 30}',
-                        reference={
-                                    "type": "object",
-                                    "properties": {
-                                        "name": {"type": "string"},
-                                        "age": {"type": "integer"}
-                                    }
-                        }
-                )
-    >>> assert result["score"] is not None
+    Examples:
+        evaluator = JsonSchemaEvaluator()
+        result = evaluator.evaluate_strings(
+            prediction='{"name": "John", "age": 30}',
+            reference={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "age": {"type": "integer"}
+                }
+            }
+        )
+        assert result["score"] is not None
 
     """  # noqa: E501
 
     def __init__(self, **kwargs: Any) -> None:
+        """Initializes the JsonSchemaEvaluator.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Raises:
+            ImportError: If the jsonschema package is not installed.
+        """
         super().__init__()
         try:
             import jsonschema  # noqa: F401
@@ -45,14 +53,17 @@ class JsonSchemaEvaluator(StringEvaluator):
 
     @property
     def requires_input(self) -> bool:
+        """Returns whether the evaluator requires input."""
         return False
 
     @property
     def requires_reference(self) -> bool:
+        """Returns whether the evaluator requires reference."""
         return True
 
     @property
     def evaluation_name(self) -> str:
+        """Returns the name of the evaluation."""
         return "json_schema_validation"
 
     def _parse_json(self, node: Any) -> Union[dict, list, None, float, bool, int, str]:
@@ -63,24 +74,7 @@ class JsonSchemaEvaluator(StringEvaluator):
             return getattr(node, "schema")()
         return node
 
-    def _validate(self, prediction: Any, schema: Any) -> bool:
-        """
-        Validate the prediction against the provided JSON schema.
-
-        Parameters
-        ----------
-        prediction : Any
-            The parsed prediction JSON.
-        schema : Any
-            The parsed JSON schema.
-
-        Returns
-        -------
-        bool
-            True if the prediction adheres to the schema, False otherwise.
-        """
-        from jsonschema import ValidationError, validate  # noqa: F811
-
+    def _validate(self, prediction: Any, schema: Any) -> dict:
         try:
             validate(instance=prediction, schema=schema)
             return {
