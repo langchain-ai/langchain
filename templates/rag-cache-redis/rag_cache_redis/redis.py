@@ -27,7 +27,7 @@ def get_boolean_env_var(var_name, default_value=False):
 
 
 # Whether or not to enable LLM cache
-USE_CACHE = get_boolean_env_var("USE_CACHE", False)
+USE_CACHE = get_boolean_env_var("USE_CACHE", True)
 
 # Redis Connection Information
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")

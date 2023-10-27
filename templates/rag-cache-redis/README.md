@@ -49,7 +49,7 @@ We use a variety of environment variables to configure this application
 
 | Environment Variable | Description                       | Default Value |
 |----------------------|-----------------------------------|---------------|
-| `USE_CACHE`            | Enable or disable LLM cache       | False         |
+| `USE_CACHE`            | Enable or disable semantic LLM cache       | True         |
 | `REDIS_HOST`           | Hostname for the Redis server     | "localhost"   |
 | `REDIS_PORT`           | Port for the Redis server         | 6379          |
 | `REDIS_USER`           | User for the Redis server         | "" |
