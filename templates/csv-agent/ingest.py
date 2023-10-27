@@ -1,5 +1,4 @@
 from langchain.document_loaders import CSVLoader
-from langchain.tools.retriever import create_retriever_tool
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.vectorstores import FAISS
 
