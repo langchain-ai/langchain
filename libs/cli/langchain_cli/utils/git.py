@@ -21,10 +21,17 @@ class DependencySource(TypedDict):
 
 
 # use poetry dependency string format
-def parse_dependency_string(package_string: str) -> DependencySource:
-    if package_string.startswith("git+"):
+def parse_dependency_string(
+    dep: Optional[str], repo: Optional[str], branch: Optional[str]
+) -> DependencySource:
+    if dep is not None and dep.startswith("git+"):
+        if repo is not None or branch is not None:
+            raise ValueError(
+                "If a dependency starts with git+, you cannot manually specify "
+                "a repo or branch."
+            )
         # remove git+
-        gitstring = package_string[4:]
+        gitstring = dep[4:]
         subdirectory = None
         ref = None
         # first check for #subdirectory= on the end
@@ -65,11 +72,11 @@ def parse_dependency_string(package_string: str) -> DependencySource:
             subdirectory=subdirectory,
         )
 
-    elif package_string.startswith("https://"):
+    elif dep.startswith("https://"):
         raise NotImplementedError("url dependencies are not supported yet")
     else:
         # it's a default git repo dependency
-        subdirectory = str(Path(DEFAULT_GIT_SUBDIRECTORY) / package_string)
+        subdirectory = str(Path(DEFAULT_GIT_SUBDIRECTORY) / dep)
         return DependencySource(
             git=DEFAULT_GIT_REPO, ref=DEFAULT_GIT_REF, subdirectory=subdirectory
         )
@@ -98,9 +105,10 @@ def parse_dependencies(
             raise ValueError(
                 "The number of branches must be 1 or match the number of dependencies."
             )
-        
+
         rtn = []
         for dep in deps:
+            pass
 
     else:
         # build purely based on repo/branch
