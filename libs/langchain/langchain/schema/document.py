@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Literal, Sequence
+from typing import Any, List, Literal, Sequence
 
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
@@ -65,7 +65,7 @@ class BaseDocumentTransformer(ABC):
     @abstractmethod
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
+    ) -> List[Document]:
         """Transform a list of documents.
 
         Args:
@@ -77,7 +77,7 @@ class BaseDocumentTransformer(ABC):
 
     async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
+    ) -> List[Document]:
         """Asynchronously transform a list of documents.
 
         Args:
