@@ -9,7 +9,7 @@ class GoogleTranslateTransformer(BaseDocumentTransformer):
 
     Arguments:
         project_id: Google Cloud Project ID.
-        location: Translate model location.
+        location: (Optional) Translate model location.
         model_id: (Optional) Translate model ID to use.
         glossary_id: (Optional) Translate glossary ID to use.
         api_endpoint: (Optional) Regional endpoint to use.
