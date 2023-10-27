@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Dict, Optional, Set
+from typing import TYPE_CHECKING, Dict, Optional, Set, Union
 
 import requests
 
@@ -13,7 +13,7 @@ from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema.messages import BaseMessage
 from langchain.utils import get_from_dict_or_env
 
@@ -25,6 +25,13 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
+
+
+def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
+    """Convert a string to a SecretStr if needed."""
+    if isinstance(value, SecretStr):
+        return value
+    return SecretStr(value)
 
 
 class ChatAnyscale(ChatOpenAI):
@@ -53,7 +60,7 @@ class ChatAnyscale(ChatOpenAI):
     def lc_secrets(self) -> Dict[str, str]:
         return {"anyscale_api_key": "ANYSCALE_API_KEY"}
 
-    anyscale_api_key: Optional[str] = None
+    anyscale_api_key: Optional[SecretStr] = None
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
@@ -67,12 +74,13 @@ class ChatAnyscale(ChatOpenAI):
 
     @staticmethod
     def get_available_models(
-        anyscale_api_key: Optional[str] = None,
+        anyscale_api_key: Optional[SecretStr] = None,
         anyscale_api_base: str = DEFAULT_API_BASE,
     ) -> Set[str]:
         """Get available models from Anyscale API."""
         try:
-            anyscale_api_key = anyscale_api_key or os.environ["ANYSCALE_API_KEY"]
+            if anyscale_api_key is None:
+                anyscale_api_key = _to_secret(os.environ["ANYSCALE_API_KEY"])
         except KeyError as e:
             raise ValueError(
                 "Anyscale API key must be passed as keyword argument or "
@@ -83,7 +91,7 @@ class ChatAnyscale(ChatOpenAI):
         models_response = requests.get(
             models_url,
             headers={
-                "Authorization": f"Bearer {anyscale_api_key}",
+                "Authorization": f"Bearer {anyscale_api_key.get_secret_value()}",
             },
         )
 
@@ -98,18 +106,20 @@ class ChatAnyscale(ChatOpenAI):
     @root_validator(pre=True)
     def validate_environment_override(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values,
-            "anyscale_api_key",
-            "ANYSCALE_API_KEY",
+        values["anyscale_api_key"] = _to_secret(
+            get_from_dict_or_env(
+                values,
+                "anyscale_api_key",
+                "ANYSCALE_API_KEY",
+            )
         )
-        values["openai_api_base"] = get_from_dict_or_env(
+        values["anyscale_api_base"] = get_from_dict_or_env(
             values,
             "anyscale_api_base",
             "ANYSCALE_API_BASE",
             default=DEFAULT_API_BASE,
         )
-        values["openai_proxy"] = get_from_dict_or_env(
+        values["anyscale_proxy"] = get_from_dict_or_env(
             values,
             "anyscale_proxy",
             "ANYSCALE_PROXY",
@@ -138,8 +148,8 @@ class ChatAnyscale(ChatOpenAI):
         model_name = values["model_name"]
 
         available_models = cls.get_available_models(
-            values["openai_api_key"],
-            values["openai_api_base"],
+            values["anyscale_api_key"],
+            values["anyscale_api_base"],
         )
 
         if model_name not in available_models:
