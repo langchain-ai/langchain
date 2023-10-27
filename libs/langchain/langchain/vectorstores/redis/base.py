@@ -1450,11 +1450,6 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError("RedisVectorStoreRetriever does not support async")
-
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""
         return self.vectorstore.add_documents(documents, **kwargs)
