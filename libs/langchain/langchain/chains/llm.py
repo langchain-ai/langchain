@@ -399,4 +399,7 @@ def _get_language_model(llm_like: Runnable) -> BaseLanguageModel:
     elif isinstance(llm_like, (RunnableBranch, DynamicRunnable)):
         return _get_language_model(llm_like.default)
     else:
-        raise ValueError()
+        raise ValueError(
+            f"Unable to extract BaseLanguageModel from llm_like object of type "
+            f"{type(llm_like)}"
+        )
