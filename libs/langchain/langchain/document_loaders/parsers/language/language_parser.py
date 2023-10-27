@@ -16,7 +16,7 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "js": Language.JS,
     "cpp": Language.CPP,
     "rb": Language.RUBY,
-    "scl": Language.SCALA,
+    "scala": Language.SCALA,
     "rs": Language.RUST,
 }
 
