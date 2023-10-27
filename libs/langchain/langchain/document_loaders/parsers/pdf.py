@@ -391,8 +391,6 @@ class AmazonTextractPDFParser(BaseBlobParser):
     The AmazonTextractPDFLoader calls the
     [Amazon Textract Service](https://aws.amazon.com/textract/)
     to convert PDFs into a Document structure.
-    The loader does pure OCR at the moment, with more features like
-    layout support planned, depending on demand.
     Single and multi-page documents are supported with up to 3000 pages
     and 512 MB of size.
 
