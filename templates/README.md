@@ -17,7 +17,7 @@ pip install -U langchain-cli
 Then, install `langserve`:
 
 ```shell
-pip install -U "langserve[all]" poethepoet
+pip install -U "langserve[all]"
 ```
 
 Next, create a new LangChain project:
