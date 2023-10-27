@@ -69,9 +69,9 @@ def load_agent_from_config(
 
     agent_cls = AGENT_TO_CLASS[config_type]
     if "llm_chain" in config:
-        config["llm_chain"] = load_chain_from_config(config.pop("llm_chain"))
+        config["llm_chain"] = load_chain_from_config(config.pop("llm_chain"), **kwargs)
     elif "llm_chain_path" in config:
-        config["llm_chain"] = load_chain(config.pop("llm_chain_path"))
+        config["llm_chain"] = load_chain(config.pop("llm_chain_path"), **kwargs)
     else:
         raise ValueError("One of `llm_chain` and `llm_chain_path` should be specified.")
     if "output_parser" in config:
