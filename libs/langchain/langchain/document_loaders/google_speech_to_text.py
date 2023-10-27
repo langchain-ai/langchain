@@ -7,10 +7,7 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
-    from google.cloud.speech_v2 import (
-        RecognitionConfig,
-        SpeechClient,
-    )
+    from google.cloud.speech_v2 import RecognitionConfig
     from google.protobuf.field_mask_pb2 import FieldMask
 
 
