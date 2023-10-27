@@ -2,7 +2,7 @@ import hashlib
 import re
 import shutil
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import Optional, TypedDict, List, Dict
 
 from git import Repo
 
@@ -17,6 +17,7 @@ class DependencySource(TypedDict):
     git: str
     ref: Optional[str]
     subdirectory: Optional[str]
+    event_metadata: Dict
 
 
 # use poetry dependency string format
@@ -72,6 +73,39 @@ def parse_dependency_string(package_string: str) -> DependencySource:
         return DependencySource(
             git=DEFAULT_GIT_REPO, ref=DEFAULT_GIT_REF, subdirectory=subdirectory
         )
+
+
+def parse_dependencies(
+    dependencies: Optional[List[str]], repo: List[str], branch: List[str]
+) -> List[DependencySource]:
+    deps = dependencies or []
+    if len(deps) > 0:
+        if len(repo) == 0 and len(branch) == 0:
+            # build based on deps
+            return [parse_dependency_string(d) for d in deps]
+
+        # for singleton, repeat for all
+        if len(repo) == 1:
+            repo = repo * len(deps)
+        if len(branch) == 1:
+            branch = branch * len(deps)
+
+        if len(repo) > 0 and len(repo) != len(deps):
+            raise ValueError(
+                "The number of repos must be 1 or match the number of dependencies."
+            )
+        if len(branch) > 0 and len(branch) != len(deps):
+            raise ValueError(
+                "The number of branches must be 1 or match the number of dependencies."
+            )
+        
+        rtn = []
+        for dep in deps:
+
+    else:
+        # build purely based on repo/branch
+        pass
+    return []
 
 
 def _get_repo_path(gitstring: str, repo_dir: Path) -> Path:

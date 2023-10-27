@@ -17,6 +17,7 @@ from langchain_cli.utils.git import (
     copy_repo,
     parse_dependency_string,
     update_repo,
+    parse_dependencies,
 )
 from langchain_cli.utils.packages import get_package_root
 
@@ -79,8 +80,11 @@ def add(
         Optional[Path], typer.Option(help="The project directory")
     ] = None,
     repo: Annotated[
-        List[str], typer.Option(help="Shorthand for installing a GitHub Repo")
+        List[str], typer.Option(help="Install deps from a specific github repo instead")
     ] = [],
+    branch: Annotated[
+        List[str], typer.Option(help="Install deps from a specific branch")
+    ],
     with_poetry: Annotated[
         bool,
         typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
@@ -96,19 +100,9 @@ def add(
     """
     project_root = get_package_root(project_dir)
 
-    if dependencies is None:
-        dependencies = []
+    parsed_deps = parse_dependencies(dependencies, repo, branch)
 
-    # cannot have both repo and dependencies
-    if len(repo) != 0:
-        if len(dependencies) != 0:
-            raise typer.BadParameter(
-                "Cannot specify both repo and dependencies. "
-                "Please specify one or the other."
-            )
-        dependencies = [f"git+https://github.com/{r}" for r in repo]
-
-    if len(api_path) != 0 and len(api_path) != len(dependencies):
+    if len(api_path) != 0 and len(api_path) != len(parsed_deps):
         raise typer.BadParameter(
             "The number of API paths must match the number of dependencies."
         )
