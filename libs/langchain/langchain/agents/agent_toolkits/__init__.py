@@ -13,8 +13,10 @@ whether permissions of the given toolkit are appropriate for the application.
 
 See [Security](https://python.langchain.com/docs/security) for more information.
 """
+from pathlib import Path
 from typing import Any
 
+from langchain._api.path import as_import_path
 from langchain.agents.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
 from langchain.agents.agent_toolkits.amadeus.toolkit import AmadeusToolkit
 from langchain.agents.agent_toolkits.azure_cognitive_services import (
@@ -67,9 +69,14 @@ DEPRECATED_AGENTS = [
 def __getattr__(name: str) -> Any:
     """Get attr name."""
     if name in DEPRECATED_AGENTS:
+        relative_path = as_import_path(Path(__file__).parent, suffix=name)
+        old_path = "langchain." + relative_path
+        new_path = "langchain_experimental." + relative_path
         raise ImportError(
             f"{name} has been moved to langchain experimental. "
             "See https://github.com/langchain-ai/langchain/discussions/11680"
+            "for more information.\n"
+            f"Please update your import statement from: `{old_path}` to `{new_path}`."
         )
     raise ImportError(f"{name} does not exist")
 
