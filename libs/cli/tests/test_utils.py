@@ -1,10 +1,11 @@
 import pytest
-from langchain_cli.utils.git import parse_dependency_string, DependencySource
+
 from langchain_cli.constants import (
+    DEFAULT_GIT_REF,
     DEFAULT_GIT_REPO,
     DEFAULT_GIT_SUBDIRECTORY,
-    DEFAULT_GIT_REF,
 )
+from langchain_cli.utils.git import DependencySource, parse_dependency_string
 
 
 def test_dependency_string() -> None:
