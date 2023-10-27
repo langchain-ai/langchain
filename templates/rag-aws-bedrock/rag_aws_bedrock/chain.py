@@ -7,7 +7,6 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.vectorstores import FAISS
 
-
 # Get region and profile from env
 region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 profile = os.environ.get("AWS_PROFILE", "default")
