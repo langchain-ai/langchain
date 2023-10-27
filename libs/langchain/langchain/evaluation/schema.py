@@ -6,7 +6,7 @@ import logging
 from abc import ABC, abstractmethod
 from enum import Enum
 from functools import partial
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence, Tuple, Union
 from warnings import warn
 
 from langchain.chains.base import Chain
@@ -146,9 +146,9 @@ class StringEvaluator(_EvalArgsMixin, ABC):
     def _evaluate_strings(
         self,
         *,
-        prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        prediction: Union[str, Any],
+        reference: Optional[Union[str, Any]] = None,
+        input: Optional[Union[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
         """Evaluate Chain or LLM output, based on optional input and label.
@@ -169,9 +169,9 @@ class StringEvaluator(_EvalArgsMixin, ABC):
     async def _aevaluate_strings(
         self,
         *,
-        prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        prediction: Union[str, Any],
+        reference: Optional[Union[str, Any]] = None,
+        input: Optional[Union[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate Chain or LLM output, based on optional input and label.

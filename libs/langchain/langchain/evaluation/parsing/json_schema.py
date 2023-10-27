@@ -1,6 +1,4 @@
-from typing import Any, Optional, Union
-
-from jsonschema import ValidationError, validate
+from typing import Any, Union
 
 from langchain.evaluation.schema import StringEvaluator
 from langchain.output_parsers.json import parse_json_markdown
@@ -75,6 +73,8 @@ class JsonSchemaEvaluator(StringEvaluator):
         return node
 
     def _validate(self, prediction: Any, schema: Any) -> dict:
+        from jsonschema import ValidationError, validate  # noqa: F401
+
         try:
             validate(instance=prediction, schema=schema)
             return {
@@ -85,9 +85,9 @@ class JsonSchemaEvaluator(StringEvaluator):
 
     def _evaluate_strings(
         self,
-        prediction: str,
-        input: Optional[str] = None,
-        reference: Optional[str] = None,
+        prediction: Union[str, Any],
+        input: Union[str, Any] = None,
+        reference: Union[str, Any] = None,
         **kwargs: Any,
     ) -> dict:
         parsed_prediction = self._parse_json(prediction)
