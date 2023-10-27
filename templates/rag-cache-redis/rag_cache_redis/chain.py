@@ -12,7 +12,6 @@ from .redis import (
     INDEX_NAME,
     INDEX_SCHEMA,
     USE_CACHE,
-    CACHE_TTL
 )
 
 
