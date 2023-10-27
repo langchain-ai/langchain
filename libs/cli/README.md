@@ -51,4 +51,6 @@ export LANGCHAIN_PROJECT="extraction-openai-functions"
 
 Run the app
 
-`python app/server.py`
+```shell
+langchain start
+```

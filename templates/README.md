@@ -66,7 +66,7 @@ add_routes(app, chain)
 You can then spin up production-ready endpoints, along with a playground, by running:
 
 ```shell
-python app/server.py
+langchain start
 ```
 
 ## Adding a template
