@@ -108,18 +108,22 @@ class Anyscale(BaseOpenAI):
         try:
             import openai
 
-            ## Always create ChatComplete client, replacing the legacy Complete client
-            values["client"] = openai.ChatCompletion
+            openai.api_key = values["anyscale_api_key"].get_secret_value()
+            openai.api_base = values["anyscale_api_base"]
+
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        if values["streaming"] and values["n"] > 1:
-            raise ValueError("Cannot stream results when n > 1.")
-        if values["streaming"] and values["best_of"] > 1:
-            raise ValueError("Cannot stream results when best_of > 1.")
-
+        try:
+            values["client"] = openai.ChatCompletion
+        except AttributeError:
+            raise ValueError(
+                "`openai` has no `ChatCompletion` attribute, this is likely "
+                "due to an old version of the openai package. Try upgrading it "
+                "with `pip install --upgrade openai`."
+            )
         return values
 
     @property
