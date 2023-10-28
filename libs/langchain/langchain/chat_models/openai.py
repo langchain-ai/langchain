@@ -540,3 +540,10 @@ class ChatOpenAI(BaseChatModel):
         # every reply is primed with <im_start>assistant
         num_tokens += 3
         return num_tokens
+
+    def __repr_args__(self) -> "ReprArgs":
+        return [
+            (key, value)
+            for key, value in super().__repr_args__()
+            if key != "openai_api_key"
+        ]
