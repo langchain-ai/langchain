@@ -1,8 +1,7 @@
 # LangServe Templates
 
-LangServe Templates are the easiest and fastest way to build a production ready LLM application.
+LangServe Templates are the easiest and fastest way to build a production-ready LLM application.
 These templates serve as a set of reference architectures for a wide variety of popular LLM use cases.
-They can be easily downloaded into a LangServe project, which makes it easy to deploy them in a production ready manner.
 
 ## Quick Start
 
