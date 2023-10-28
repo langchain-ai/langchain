@@ -528,3 +528,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         embeddings = await self.aembed_documents([text])
         return embeddings[0]
+
+    def __repr_args__(self) -> "ReprArgs":
+        return [
+            (key, value)
+            for key, value in super().__repr_args__()
+            if key != "openai_api_key"
+        ]

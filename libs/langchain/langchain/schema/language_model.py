@@ -289,3 +289,10 @@ class BaseLanguageModel(
         Use get_pydantic_field_names.
         """
         return get_pydantic_field_names(cls)
+
+    def __repr_args__(self) -> "ReprArgs":
+        return [
+            (key, value)
+            for key, value in super().__repr_args__()
+            if key != "openai_api_key"
+        ]
