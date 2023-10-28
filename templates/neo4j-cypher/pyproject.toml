@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "neo4j_cypher"
+version = "0.1.0"
+description = ""
+authors = ["Tomaz Bratanic <tomaz.bratanic@neo4j.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.320"
+neo4j = ">5.12"
+openai = "^0.28.1"
+
+[tool.langserve]
+export_module = "neo4j.cypher"
+export_attr = "chain"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

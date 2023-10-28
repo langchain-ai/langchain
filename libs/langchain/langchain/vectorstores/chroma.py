@@ -626,6 +626,8 @@ class Chroma(VectorStore):
             collection_metadata=collection_metadata,
             **kwargs,
         )
+        if ids is None:
+            ids = [str(uuid.uuid1()) for _ in texts]
         if hasattr(
             chroma_collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above

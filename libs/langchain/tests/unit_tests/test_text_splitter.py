@@ -453,6 +453,41 @@ helloWorld();
     __test_language_splitter(Language.JS, code, expected)
 
 
+def test_cobol_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.COBOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+IDENTIFICATION DIVISION.
+PROGRAM-ID. HelloWorld.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 GREETING           PIC X(12)   VALUE 'Hello, World!'.
+PROCEDURE DIVISION.
+DISPLAY GREETING.
+STOP RUN.
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "IDENTIFICATION",
+        "DIVISION.",
+        "PROGRAM-ID.",
+        "HelloWorld.",
+        "DATA DIVISION.",
+        "WORKING-STORAGE",
+        "SECTION.",
+        "01 GREETING",
+        "PIC X(12)",
+        "VALUE 'Hello,",
+        "World!'.",
+        "PROCEDURE",
+        "DIVISION.",
+        "DISPLAY",
+        "GREETING.",
+        "STOP RUN.",
+    ]
+
+
 def test_typescript_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.TS, chunk_size=CHUNK_SIZE, chunk_overlap=0

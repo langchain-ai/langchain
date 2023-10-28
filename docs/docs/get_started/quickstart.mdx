@@ -18,7 +18,7 @@ import CodeBlock from "@theme/CodeBlock";
 </Tabs>
 
 
-For more details, see our [Installation guide](/docs/get_started/installation.html).
+For more details, see our [Installation guide](/docs/get_started/installation).
 
 ## Environment setup
 
@@ -144,7 +144,7 @@ Whatever values are passed in during run time will always override what the obje
 
 Most LLM applications do not pass user input directly into an LLM. Usually they will add the user input to a larger piece of text, called a prompt template, that provides additional context on the specific task at hand.
 
-In the previous example, the text we passed to the model contained instructions to generate a company name. For our application, it'd be great if the user only had to provide the description of a company/product, without having to worry about giving the model instructions.
+In the previous example, the text we passed to the model contained instructions to generate a company name. For our application, it would be great if the user only had to provide the description of a company/product, without having to worry about giving the model instructions.
 
 PromptTemplates help with exactly this!
 They bundle up all the logic for going from user input into a fully formatted prompt.
@@ -167,7 +167,7 @@ You can compose them together, easily combining different templates into a singl
 For explanations of these functionalities, see the [section on prompts](/docs/modules/model_io/prompts) for more detail.
 
 PromptTemplates can also be used to produce a list of messages.
-In this case, the prompt not only contains information about the content, but also each message (its role, its position in the list, etc)
+In this case, the prompt not only contains information about the content, but also each message (its role, its position in the list, etc.).
 Here, what happens most often is a ChatPromptTemplate is a list of ChatMessageTemplates.
 Each ChatMessageTemplate contains instructions for how to format that ChatMessage - its role, and then also its content.
 Let's take a look at this below:
@@ -199,13 +199,13 @@ ChatPromptTemplates can also be constructed in other ways - see the [section on 
 ## Output parsers
 
 OutputParsers convert the raw output of an LLM into a format that can be used downstream.
-There are few main type of OutputParsers, including:
+There are few main types of OutputParsers, including:
 
-- Convert text from LLM -> structured information (e.g. JSON)
+- Convert text from LLM into structured information (e.g. JSON)
 - Convert a ChatMessage into just a string
 - Convert the extra information returned from a call besides the message (like OpenAI function invocation) into a string.
 
-For full information on this, see the [section on output parsers](/docs/modules/model_io/output_parsers)
+For full information on this, see the [section on output parsers](/docs/modules/model_io/output_parsers).
 
 In this getting started guide, we will write our own output parser - one that converts a comma separated list into a list.
 

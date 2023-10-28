@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
 from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
+from langchain.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
     from google.cloud import storage
@@ -419,7 +420,11 @@ class MatchingEngine(VectorStore):
 
         from google.cloud import storage
 
-        return storage.Client(credentials=credentials, project=project_id)
+        return storage.Client(
+            credentials=credentials,
+            project=project_id,
+            client_info=get_client_info(module="vertex-ai-matching-engine"),
+        )
 
     @classmethod
     def _init_aiplatform(
