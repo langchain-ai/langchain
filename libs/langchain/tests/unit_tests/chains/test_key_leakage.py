@@ -9,5 +9,5 @@ def test_openai_key_leakage():
     input = ChatPromptTemplate.from_messages([SystemMessagePromptTemplate.from_template("Foobar")])
     chat = ChatOpenAI(openai_api_key=key)
     chain = input | chat
-    assert key not in str(input)
-    assert key not in repr(chat)
+    assert key not in str(chain)
+    assert key not in repr(chain)
