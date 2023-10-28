@@ -100,7 +100,7 @@ That's it for the quick start!
 You have successfully downloaded your first template and deployed it with LangServe.
 
 
-## Other Resources
+## Additional Resources
 
 ### [Index of Templates](docs/INDEX.md)
 
