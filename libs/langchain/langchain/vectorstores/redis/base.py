@@ -24,10 +24,7 @@ import numpy as np
 import yaml
 
 from langchain._api import deprecated
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
@@ -1449,11 +1446,6 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError("RedisVectorStoreRetriever does not support async")
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""
