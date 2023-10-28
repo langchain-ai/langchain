@@ -1,32 +1,38 @@
-import os 
-import pinecone
-from operator import itemgetter
-from langchain.vectorstores import Pinecone
-from langchain.prompts import ChatPromptTemplate
+import os
+
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
+from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
+from langchain.vectorstores import Pinecone
 
-# Pinecone init
-# Find API key in console at app.pinecone.io
-YOUR_API_KEY = os.getenv('PINECONE_API_KEY') or 'PINECONE_API_KEY'
-# Find ENV (cloud region) next to API key in console
-YOUR_ENV = os.getenv('PINECONE_ENVIRONMENT') or 'PINECONE_ENV'
-# Init
-pinecone.init(
-    api_key=YOUR_API_KEY,
-    environment=YOUR_ENV
-)
+if os.environ.get("PINECONE_API_KEY", None) is None:
+    raise Exception("Missing `PINECONE_API_KEY` environment variable.")
 
-# Get vectorstore
-text_field = "text"
-index_name = "langchain-multi-query-demo"
-index = pinecone.Index(index_name)
-vectorstore = Pinecone(index, 
-                       OpenAIEmbeddings(), 
-                       text_field)
+if os.environ.get("PINECONE_ENVIRONMENT", None) is None:
+    raise Exception("Missing `PINECONE_ENVIRONMENT` environment variable.")
 
+PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
+
+### Ingest code - you may need to run this the first time
+# Load
+# from langchain.document_loaders import WebBaseLoader
+# loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
+# data = loader.load()
+
+# # Split
+# from langchain.text_splitter import RecursiveCharacterTextSplitter
+# text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
+# all_splits = text_splitter.split_documents(data)
+
+# # Add to vectorDB
+# vectorstore = Pinecone.from_documents(
+#     documents=all_splits, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
+# )
+# retriever = vectorstore.as_retriever()
+
+vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
 retriever = vectorstore.as_retriever()
 
 # RAG prompt

@@ -223,6 +223,8 @@ def __getattr__(name: str) -> Any:
         return _import_alpha_vantage()
     elif name == "ApifyWrapper":
         return _import_apify()
+    elif name == "ArceeWrapper":
+        return _import_arcee()
     elif name == "ArxivAPIWrapper":
         return _import_arxiv()
     elif name == "LambdaWrapper":
