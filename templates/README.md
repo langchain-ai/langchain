@@ -87,7 +87,7 @@ You also get API documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:
 
 ![docs.png](docs/docs.png)
 
-You can also use the LangServe SDK to easily interact with the API endpoint as if it was another [Runnable](https://python.langchain.com/docs/expression_language/) object
+Use the LangServe python or js SDK to interact with the API as if it were a regular [Runnable](https://python.langchain.com/docs/expression_language/).
 
 ```python
 from langserve import RemoteRunnable
