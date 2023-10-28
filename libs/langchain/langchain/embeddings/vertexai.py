@@ -1,8 +1,8 @@
 from typing import Dict, List
 
-from langchain.embeddings.base import Embeddings
 from langchain.llms.vertexai import _VertexAICommon
 from langchain.pydantic_v1 import root_validator
+from langchain.schema.embeddings import Embeddings
 from langchain.utilities.vertexai import raise_vertex_import_error
 
 

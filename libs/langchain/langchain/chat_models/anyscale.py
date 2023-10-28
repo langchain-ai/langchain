@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Optional, Set
+from typing import TYPE_CHECKING, Dict, Optional, Set
 
 import requests
 
@@ -50,7 +50,7 @@ class ChatAnyscale(ChatOpenAI):
         return "anyscale-chat"
 
     @property
-    def lc_secrets(self) -> dict[str, str]:
+    def lc_secrets(self) -> Dict[str, str]:
         return {"anyscale_api_key": "ANYSCALE_API_KEY"}
 
     anyscale_api_key: Optional[str] = None

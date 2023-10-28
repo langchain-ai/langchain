@@ -4,9 +4,9 @@ import uuid
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_env
-from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
     from meilisearch import Client
@@ -281,7 +281,7 @@ class Meilisearch(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Meilisearch
+                from langchain.vectorstores import Meilisearch
                 from langchain.embeddings import OpenAIEmbeddings
                 import meilisearch
 

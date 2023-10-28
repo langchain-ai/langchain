@@ -25,8 +25,8 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
@@ -231,7 +231,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
@@ -257,8 +257,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
             default_api_version = "2022-12-01"
+            # Azure OpenAI embedding models allow a maximum of 16 texts
+            # at a time in each batch
+            # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
+            default_chunk_size = 16
         else:
             default_api_version = ""
+            default_chunk_size = 1000
         values["openai_api_version"] = get_from_dict_or_env(
             values,
             "openai_api_version",
@@ -271,6 +276,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_ORGANIZATION",
             default="",
         )
+        if "chunk_size" not in values:
+            values["chunk_size"] = default_chunk_size
         try:
             import openai
 
