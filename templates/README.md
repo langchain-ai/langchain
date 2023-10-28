@@ -83,7 +83,7 @@ For example, you get a playground out-of-the-box at [http://127.0.0.1:8000/pirat
 
 ![playground.png](docs/playground.png)
 
-You also get API documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+Access API documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 ![docs.png](docs/docs.png)
 
