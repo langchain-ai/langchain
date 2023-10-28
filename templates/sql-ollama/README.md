@@ -16,10 +16,3 @@ Also follow instructions to download your LLM of interest:
 This template includes an example DB of 2023 NBA rosters.
 
 You can see instructions to build this DB [here](https://github.com/facebookresearch/llama-recipes/blob/main/demo_apps/StructuredLlama.ipynb).
-
-## Installation
-
-```bash
-# from inside your LangServe instance
-poe add sql-ollama
-```
