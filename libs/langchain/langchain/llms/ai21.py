@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import requests
 
@@ -143,6 +143,7 @@ class AI21(LLM):
             else:
                 base_url = "https://api.ai21.com/studio/v1"
         params = {**self._default_params, **kwargs}
+        self.ai21_api_key = cast(SecretStr, self.ai21_api_key)
         response = requests.post(
             url=f"{base_url}/{self.model}/complete",
             headers={"Authorization": f"Bearer {self.ai21_api_key.get_secret_value()}"},
