@@ -3,7 +3,7 @@
 You can also launch LangServe directly from a package, without having to pull it into a project.
 This can be useful when you are developing a package and want to test it quickly.
 The downside of this is that it gives you a little less control over how the LangServe APIs are configured,
-which is why for proper projects we typically recommend creating a full project.
+which is why for proper projects we recommend creating a full project.
 
 In order to do this, first change your working directory to the package itself.
 For example, if you are currently in this `templates` module, you can go into the `pirate-speak` package with:
