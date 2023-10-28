@@ -1,18 +1,11 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import requests
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain.utils import get_from_dict_or_env
-
-
-def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class AI21PenaltyData(BaseModel):
@@ -84,7 +77,7 @@ class AI21(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        ai21_api_key = _to_secret(
+        ai21_api_key = convert_to_secret_str(
             get_from_dict_or_env(values, "ai21_api_key", "AI21_API_KEY")
         )
         values["ai21_api_key"] = ai21_api_key
