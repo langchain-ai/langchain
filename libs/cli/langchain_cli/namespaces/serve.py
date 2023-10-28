@@ -148,7 +148,7 @@ def add(
                 )
                 continue
             copy_repo(source_path, destination_path)
-            typer.echo(f" - Installed {dep['subdirectory']} to {inner_api_path}")
+            typer.echo(f" - Downloaded {dep['subdirectory']} to {inner_api_path}")
             installed_destination_paths.append(destination_path)
             installed_exports.append(langserve_export)
 
@@ -156,18 +156,25 @@ def add(
         typer.echo("No packages installed. Exiting.")
         return
 
-    installed_desination_strs = [str(p) for p in installed_destination_paths]
+    cwd = Path.cwd()
+    installed_desination_strs = [
+        str(p.relative_to(cwd)) for p in installed_destination_paths
+    ]
 
     if with_poetry:
         subprocess.run(
             ["poetry", "add", "--editable"] + installed_desination_strs,
-            cwd=project_root,
+            cwd=cwd,
         )
     else:
         cmd = ["pip", "install", "-e"] + installed_desination_strs
-        if typer.confirm(f"Run {' '.join(cmd)}?"):
-            subprocess.run(cmd, cwd=project_root)
-    if typer.confirm("\nGenerate route code for these packages?"):
+        cmd_str = " \\\n  ".join(installed_desination_strs)
+        install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
+        typer.echo(install_str)
+
+        if typer.confirm("Run it?"):
+            subprocess.run(cmd, cwd=cwd)
+    if typer.confirm("\nGenerate route code for these packages?", default=True):
         chain_names = []
         for e in installed_exports:
             original_candidate = f'{e["package_name"].replace("-", "_")}_chain'
