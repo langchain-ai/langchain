@@ -4,12 +4,7 @@ LangServe Templates are the easiest and fastest way to build a production ready 
 These templates serve as a set of reference architectures for a wide variety of popular LLM use cases.
 They can be easily downloaded into a LangServe project, which makes it easy to deploy them in a production ready manner.
 
-Below we cover how to get started. Some other helpful docs:
-
-- [Index of Templates](INDEX.md)
-- [Contributing](CONTRIBUTING.md)
-
-## Usage
+## Quick Start
 
 To use, first install the LangChain CLI.
 
@@ -44,26 +39,38 @@ langchain serve add pirate-speak
 
 This will pull in the specified template into `packages/pirate-speak`
 
-You then need to install this package so you can use it in the langserve app:
-
-```shell
-pip install -e packages/pirate-speak
-```
-
+You will then be prompted if you want to install it. 
+This is the equivalent of running `pip install -e packages/pirate-speak`.
+You should generally accept this (or run that same command afterwards).
 We install it with `-e` so that if you modify the template at all (which you likely will) the changes are updated.
 
+After that, it will ask you if you want to generate route code for this project.
+This is code you need to add to your app to start using this chain.
+If we accept, we will see the following code generated:
+
+```shell
+from pirate_speak.chain import chain as pirate_speak_chain
+
+add_routes(app, pirate_speak_chain, path="/pirate_speak")
+```
+
+You can now edit the template you pulled down.
+You can change the code files in `package/pirate-speak` to use a different model, different prompt, different logic.
+Note that the above code snippet always expects the final chain to be importable as `from pirate_speak.chain import chain`,
+so you should either keep the structure of the package similar enough to respect that or be prepared to update that code snippet.
+
+Once you have done as much of that as you want, it is 
 In order to have LangServe use this project, you then need to modify `app/server.py`.
-Specifically, you should add something like:
+Specifically, you should add the above code snippet to `app/server.py` so that file looks like:
 
 ```python
 from fastapi import FastAPI
 from langserve import add_routes
-# This depends on the structure of the package you install
-from pirate_speak import chain
+from pirate_speak.chain import chain as pirate_speak_chain
 
 app = FastAPI()
 
-add_routes(app, chain, path="pirate-speak")
+add_routes(app, pirate_speak_chain, path="/pirate_speak")
 ```
 
 You can then spin up production-ready endpoints, along with a playground, by running:
@@ -73,22 +80,39 @@ langchain start
 ```
 
 This now gives a fully deployed LangServe application.
-For example, you get a playground out-of-the-box at [http://127.0.0.1:8000/pirate-speak/playground/](http://127.0.0.1:8000/pirate-speak/playground/):
+For example, you get a playground out-of-the-box at [http://127.0.0.1:8000/pirate_speak/playground/](http://127.0.0.1:8000/pirate_speak/playground/):
+
+![playground.png](docs/playground.png)
 
 You also get API documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
+![docs.png](docs/docs.png)
 
 You can also use the LangServe SDK to easily interact with the API endpoint as if it was another [Runnable](https://python.langchain.com/docs/expression_language/) object
 
 ```python
 from langserve import RemoteRunnable
 
-api = RemoteRunnable("http://127.0.0.1:8000/pirate-speak")
+api = RemoteRunnable("http://127.0.0.1:8000/pirate_speak")
 api.invoke({"text": "hi"})
 ```
+
+That's it for the quick start!
+You have successfully downloaded your first template and deployed it with LangServe.
+See below for more other resources and things you can do.
 
 
 ## Other Resources
 
-- [Index of Templates](INDEX.md)
-- [Contributing](CONTRIBUTING.md)
+### [Index of Templates](docs/INDEX.md)
+
+Explore the many templates available to use - from advanced RAG to agents.
+
+### [Contributing](docs/CONTRIBUTING.md)
+
+Want to contribute your own template? It's pretty easy! These instructions walk through how to do that.
+
+### [Launching LangServe from a Package](docs/LAUNCHING_PACKAGE.md)
+
+You can also launch LangServe from a package directly (without having to create a new project).
+These instructions cover how to do that.
