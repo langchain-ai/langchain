@@ -3,16 +3,18 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Extra, Field, root_validator, SecretStr
+from langchain.pydantic_v1 import Extra, Field, SecretStr, root_validator
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
+
 
 def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
     """Convert a string to a SecretStr if needed."""
     if isinstance(value, SecretStr):
         return value
     return SecretStr(value)
+
 
 class GooseAI(LLM):
     """GooseAI large language models.
