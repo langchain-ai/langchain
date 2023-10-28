@@ -1,7 +1,7 @@
 from langchain.schema.runnable import ConfigurableField
 
+from .chain import chain
 from .retriever_agent import executor
-from .chain import chain 
 
 final_chain = chain.configurable_alternatives(
     ConfigurableField(id="chain"),

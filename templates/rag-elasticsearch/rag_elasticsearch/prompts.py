@@ -6,7 +6,7 @@ condense_question_prompt_template = """Given the following conversation and a fo
 Chat History:
 {chat_history}
 Follow Up Input: {question}
-"""
+"""  # noqa: E501
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(
     condense_question_prompt_template
 )
@@ -23,7 +23,7 @@ If you don't know the answer, just say that you don't know, don't try to make up
 {context}
 ----
 Question: {question}
-"""
+"""  # noqa: E501
 
 LLM_CONTEXT_PROMPT = ChatPromptTemplate.from_template(llm_context_prompt_template)
 

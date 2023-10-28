@@ -2,18 +2,16 @@
 
 Templates for a fully functioning app that can be hosted by LangServe.
 
+Some other helpful docs:
+
+- [Templates]
+
 ## Usage
 
 To use, first install the LangChain CLI.
 
 ```shell
-pip install -U langchain-cli
-```
-
-Then, install `langserve`:
-
-```shell
-pip install "langserve[all]"
+pip install -U "langchain-cli[serve]"
 ```
 
 Next, create a new LangChain project:
@@ -47,7 +45,7 @@ You then need to install this package so you can use it in the langserve app:
 pip install -e packages/$PROJECT_NAME
 ```
 
-We install it with `-e` so that if we modify the template at all (which we likely will) the changes are updated.
+We install it with `-e` so that if you modify the template at all (which you likely will) the changes are updated.
 
 In order to have LangServe use this project, you then need to modify `app/server.py`.
 Specifically, you should add something like:
@@ -66,7 +64,7 @@ add_routes(app, chain)
 You can then spin up production-ready endpoints, along with a playground, by running:
 
 ```shell
-python app/server.py
+langchain start
 ```
 
 ## Adding a template
