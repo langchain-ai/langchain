@@ -124,6 +124,11 @@ class Anyscale(BaseOpenAI):
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`."
             )
+
+        if values["streaming"] and values["n"] > 1:
+	    raise ValueError("Cannot stream results when n > 1.")
+        if values["streaming"] and values["best_of"] > 1:
+            raise ValueError("Cannot stream results when best_of > 1.")
         return values
 
     @property
