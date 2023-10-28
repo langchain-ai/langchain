@@ -33,6 +33,8 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     """Threshold for determining when two documents are similar enough
     to be considered redundant. Defaults to None, must be specified if `k` is set
     to None."""
+    return_similarity_scores = False
+    """Whether to return similarity scores in the `state` of the returned docs"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -67,4 +69,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 similarity[included_idxs] > self.similarity_threshold
             )
             included_idxs = included_idxs[similar_enough]
+        if self.return_similarity_scores:
+            for i in included_idxs:
+                stateful_documents[i].state["query_similarity_score"] = similarity[i]
         return [stateful_documents[i] for i in included_idxs]
