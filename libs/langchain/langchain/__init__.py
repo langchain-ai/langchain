@@ -370,7 +370,6 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "LLMChain",
-    "LLMBashChain",
     "LLMCheckerChain",
     "LLMMathChain",
     "ArxivAPIWrapper",
