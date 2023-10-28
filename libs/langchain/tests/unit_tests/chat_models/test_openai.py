@@ -121,3 +121,11 @@ async def test_openai_apredict(mock_completion: dict) -> None:
         res = llm.predict("bar")
         assert res == "Bar Baz"
     assert completed
+
+
+@pytest.mark.requires("openai")
+def test_openai_chat_key_leakage():
+    key = "sk-TESTKEY"
+    chat = ChatOpenAI(openai_api_key=key)
+    assert key not in str(chat)
+    assert key not in repr(chat)

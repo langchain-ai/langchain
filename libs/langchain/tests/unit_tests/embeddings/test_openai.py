@@ -18,3 +18,11 @@ def test_openai_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
         llm = OpenAIEmbeddings(foo="bar")
     assert llm.model_kwargs == {"foo": "bar"}
+
+
+@pytest.mark.requires("openai")
+def test_openai_embeddings_key_leakage():
+    key = "sk-TESTKEY"
+    embedder = OpenAIEmbeddings(openai_api_key=key)
+    assert key not in str(embedder)
+    assert key not in repr(embedder)
