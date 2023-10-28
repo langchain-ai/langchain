@@ -1300,6 +1300,37 @@ class RecursiveCharacterTextSplitter(CharacterTextSplitter):
                 "\n+",
                 " +",
             ]
+        elif language == Language.COBOL:
+            return [
+                # # Split along divisions
+                # "\nIDENTIFICATION DIVISION.",
+                # "\nENVIRONMENT DIVISION.",
+                # "\nDATA DIVISION.",
+                # "\nPROCEDURE DIVISION.",
+                # # Split along sections within DATA DIVISION
+                # "\nWORKING-STORAGE SECTION.",
+                # "\nLINKAGE SECTION.",
+                # "\nFILE SECTION.",
+                # # Split along sections within PROCEDURE DIVISION
+                # "\nINPUT-OUTPUT SECTION.",
+                # # Split along paragraphs and common statements
+                # "\nOPEN ",
+                # "\nCLOSE ",
+                # "\nREAD ",
+                # "\nWRITE ",
+                # "\nIF ",
+                # "\nELSE ",
+                # "\nMOVE ",
+                # "\nPERFORM ",
+                # "\nUNTIL ",
+                # "\nVARYING ",
+                # "\nACCEPT ",
+                # "\nDISPLAY ",
+                # "\nSTOP RUN.",
+                # Split by the normal type of lines
+                "\n+",
+                " +",
+            ]
         else:
             logging.warning(
                 f"Language {language} not supported. Using default splitters."
@@ -1307,38 +1338,6 @@ class RecursiveCharacterTextSplitter(CharacterTextSplitter):
             return [
                 "\n+",
                 " +",
-            ]
-        elif language == Language.COBOL:
-            return [
-                # Split along divisions
-                "\nIDENTIFICATION DIVISION.",
-                "\nENVIRONMENT DIVISION.",
-                "\nDATA DIVISION.",
-                "\nPROCEDURE DIVISION.",
-                # Split along sections within DATA DIVISION
-                "\nWORKING-STORAGE SECTION.",
-                "\nLINKAGE SECTION.",
-                "\nFILE SECTION.",
-                # Split along sections within PROCEDURE DIVISION
-                "\nINPUT-OUTPUT SECTION.",
-                # Split along paragraphs and common statements
-                "\nOPEN ",
-                "\nCLOSE ",
-                "\nREAD ",
-                "\nWRITE ",
-                "\nIF ",
-                "\nELSE ",
-                "\nMOVE ",
-                "\nPERFORM ",
-                "\nUNTIL ",
-                "\nVARYING ",
-                "\nACCEPT ",
-                "\nDISPLAY ",
-                "\nSTOP RUN.",
-                # Split by the normal type of lines
-                "\n",
-                " ",
-                "",
             ]
 
 
