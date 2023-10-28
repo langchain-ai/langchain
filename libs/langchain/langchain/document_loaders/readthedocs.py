@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Sequence, Tuple, Union
 
@@ -10,9 +9,6 @@ from langchain.document_loaders.base import BaseLoader
 if TYPE_CHECKING:
     from bs4 import NavigableString
     from bs4.element import Comment, Tag
-
-
-logger = logging.getLogger(__name__)
 
 
 class ReadTheDocsLoader(BaseLoader):
@@ -115,7 +111,6 @@ class ReadTheDocsLoader(BaseLoader):
                 break
 
         if element is not None and _get_link_ratio(element) <= self.exclude_links_ratio:
-            logger.info("=" * 100, "\n", element, type(element), "\n", "=" * 100)
             text = _get_clean_text(element)
         else:
             text = ""
