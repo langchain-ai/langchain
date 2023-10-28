@@ -6,7 +6,8 @@ def get_boolean_env_var(var_name, default_value=False):
 
     Args:
     var_name (str): The name of the environment variable to retrieve.
-    default_value (bool): The default value to return if the variable is not found.
+    default_value (bool): The default value to return if the variable
+    is not found.
 
     Returns:
     bool: The value of the environment variable, interpreted as a boolean.
@@ -40,7 +41,8 @@ if DEBUG:
 
 
 # Embedding model
-EMBED_MODEL = os.getenv("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+EMBED_MODEL = os.getenv("EMBED_MODEL",
+                        "sentence-transformers/all-MiniLM-L6-v2")
 
 # Redis Connection Information
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -57,7 +59,7 @@ def format_redis_conn_from_env():
         # if using RBAC
         password = os.getenv("REDIS_PASSWORD", None)
         username = os.getenv("REDIS_USERNAME", "default")
-        if password != None:
+        if password is not None:
             start += f"{username}:{password}@"
 
         return start + f"{REDIS_HOST}:{REDIS_PORT}"

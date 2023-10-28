@@ -1,20 +1,19 @@
-import os
 
-from langchain.vectorstores import Redis
-from langchain.prompts import PromptTemplate
-from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
+from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel
+from langchain.schema.output_parser import StrOutputParser
+from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
+from langchain.vectorstores import Redis
 
 from rag_redis.config import (
-    REDIS_URL,
+    EMBED_MODEL,
     INDEX_NAME,
     INDEX_SCHEMA,
-    DEBUG,
-    EMBED_MODEL,
+    REDIS_URL,
 )
+
 
 # Make this look better in the docs.
 class Question(BaseModel):
@@ -24,42 +23,45 @@ class Question(BaseModel):
 # Init Embeddings
 embedder = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
 
-# Connect to pre-loaded vectorstore -- run the ingest.py script to populate this
+# Connect to pre-loaded vectorstore
+# run the ingest.py script to populate this
 vectorstore = Redis.from_existing_index(
     embedding=embedder,
     index_name=INDEX_NAME,
     schema=INDEX_SCHEMA,
     redis_url=REDIS_URL
 )
-# TODO set parameters
-retriever = vectorstore.as_retriever()
+# TODO allow user to change parameters
+retriever = vectorstore.as_retriever(search_type="mmr")
 
 
 # Define our prompt
 template = """
-Use the following pieces of context from financial 10k filings data to answer the user question.
-If you don't know the answer, say that you don't know, don't try to make up an answer.
-
-This should be in the following format:
-
-Question: [question here]
-Answer: [answer here]
-
-Begin!
+Use the following pieces of context from Nike's financial 10k filings
+dataset to answer the question. Do not make up an answer if there is no
+context provided to help answer it. Include the 'source' and 'start_index'
+from the metadata included in the context you used to answer the question
 
 Context:
 ---------
 {context}
+
 ---------
 Question: {question}
-Answer:"""
+---------
 
-prompt = PromptTemplate.from_template(template)
+Answer:
+"""
+
+
+prompt = ChatPromptTemplate.from_template(template)
+
 
 # RAG Chain
-model = OpenAI()
+model = ChatOpenAI(model_name="gpt-3.5-turbo-16k")
 chain = (
-    RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
+    RunnableParallel({"context": retriever,
+                      "question": RunnablePassthrough()})
     | prompt
     | model
     | StrOutputParser()
