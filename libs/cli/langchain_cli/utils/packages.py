@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Set, Optional
+from typing import Optional, Set
 
 
 def get_package_root(cwd: Optional[Path] = None) -> Path:
