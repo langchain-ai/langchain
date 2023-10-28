@@ -126,7 +126,7 @@ class Anyscale(BaseOpenAI):
             )
 
         if values["streaming"] and values["n"] > 1:
-	    raise ValueError("Cannot stream results when n > 1.")
+            raise ValueError("Cannot stream results when n > 1.")
         if values["streaming"] and values["best_of"] > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
         return values
