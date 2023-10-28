@@ -4,26 +4,24 @@ AWS Bedrock is a managed serve that offers a set of foundation models.
 
 Here we will use `Anthropic Claude` for text generation and `Amazon Titan` for text embedding.
 
-We will use Pinecode as our vectorstore.
+We will use FAISS as our vectorstore.
 
 (See [this notebook](https://github.com/aws-samples/amazon-bedrock-workshop/blob/main/03_QuestionAnswering/01_qa_w_rag_claude.ipynb) for additional context on the RAG pipeline.)
 
-(See [this notebook](https://github.com/aws-samples/amazon-bedrock-workshop/blob/58f238a183e7e629c9ae11dd970393af4e64ec44/00_Intro/bedrock_boto3_setup.ipynb#Prerequisites) for additional context on setup.)
+Code here uses the `boto3` library to connect with the Bedrock service. See [this page](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration) for setting up and configuring boto3 to work with an AWS account. 
 
-##  Pinecone
+##  FAISS
 
-This connects to a hosted Pinecone vectorstore.
+You need to install the `faiss-cpu` package to work with the FAISS vector store.
 
-Be sure that you have set a few env variables in `chain.py`:
+```bash
+pip install faiss-cpu
+```
 
-* `PINECONE_API_KEY`
-* `PINECONE_ENV`
-* `index_name`
 
 ##  LLM and Embeddings
 
-Be sure to set AWS enviorment variables:
+The code assumes that you are working with the `default` AWS profile and `us-east-1` region. If not, specify these environment variables to reflect the correct region and AWS profile.
 
 * `AWS_DEFAULT_REGION`
 * `AWS_PROFILE`
-* `BEDROCK_ASSUME_ROLE`
