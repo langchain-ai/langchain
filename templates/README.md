@@ -98,7 +98,6 @@ api.invoke({"text": "hi"})
 
 That's it for the quick start!
 You have successfully downloaded your first template and deployed it with LangServe.
-See below for more other resources and things you can do.
 
 
 ## Other Resources
