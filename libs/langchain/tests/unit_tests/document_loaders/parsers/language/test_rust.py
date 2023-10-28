@@ -15,15 +15,22 @@ struct T {
     b: bool,
     c: String
 }
+
+trait S {
+    fn bar() -> Self
+}
 """
 
         self.expected_simplified_code = """// Code for: fn foo() -> i32 {
 
-// Code for: struct T {"""
+// Code for: struct T {
+
+// Code for: trait S {"""
 
         self.expected_extracted_code = [
             "fn foo() -> i32 {\n    return 1;\n}",
             "struct T {\n    a: i32,\n    b: bool,\n    c: String\n}",
+            "trait S {\n    fn bar() -> Self\n}",
         ]
 
     def test_is_valid(self) -> None:

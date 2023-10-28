@@ -8,6 +8,7 @@ CHUNK_QUERY = """
             name: (identifier)
             body: (block)) @function
         (struct_item) @struct
+        (trait_item) @trait
     ]
 """.strip()
 
