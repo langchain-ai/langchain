@@ -1,4 +1,3 @@
-import subprocess
 from typing import Optional
 
 import typer
@@ -24,12 +23,12 @@ def start(
     """
     Start the LangServe instance, whether it's a hub package or a serve project.
     """
-    cmd = ["poetry", "run", "poe", "start"]
-    if port is not None:
-        cmd += ["--port", str(port)]
-    if host is not None:
-        cmd += ["--host", host]
-    subprocess.run(cmd)
+
+    # try starting hub package, if error, try langserve
+    try:
+        hub.start(port=port, host=host)
+    except KeyError:
+        serve.start(port=port, host=host)
 
 
 if __name__ == "__main__":

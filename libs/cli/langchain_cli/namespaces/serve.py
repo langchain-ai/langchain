@@ -90,7 +90,7 @@ def add(
     Adds the specified package to the current LangServe instance.
 
     e.g.:
-    langchain serve add simple-pirate
+    langchain serve add extraction-openai-functions
     langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
     langchain serve add git+https://github.com/efriis/hub.git#devbranch#subdirectory=mypackage
     """
@@ -218,13 +218,15 @@ def start(
     host: Annotated[
         Optional[str], typer.Option(help="The host to run the server on")
     ] = None,
+    app: Annotated[Optional[str], typer.Option(help="The app to run")] = None,
 ) -> None:
     """
     Starts the LangServe instance.
     """
-    cmd = ["poetry", "run", "poe", "start"]
-    if port is not None:
-        cmd += ["--port", str(port)]
-    if host is not None:
-        cmd += ["--host", host]
+
+    app_str = app if app is not None else "app.server:app"
+    port_str = str(port) if port is not None else "8000"
+    host_str = host if host is not None else "127.0.0.1"
+
+    cmd = ["uvicorn", app_str, "--reload", "--port", port_str, "--host", host_str]
     subprocess.run(cmd)
