@@ -67,7 +67,7 @@ class GooseAI(LLM):
     logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
     """Adjust the probability of specific tokens being generated."""
 
-    gooseai_api_key: Optional[Union[str, SecretStr]] = None
+    gooseai_api_key: Optional[SecretStr] = None
 
     class Config:
         """Configuration for this pydantic config."""
