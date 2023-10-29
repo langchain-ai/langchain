@@ -7,7 +7,7 @@ from langchain.agents.agent_toolkits.conversational_retrieval.tool import (
 from langchain.agents.format_scratchpad import format_xml
 from langchain.chat_models import ChatAnthropic
 from langchain.pydantic_v1 import BaseModel
-from langchain.retrievers.you import YouRetriever
+from langchain.retrievers.tavily_search_api import TavilySearchAPIRetriever
 from langchain.schema import AIMessage, HumanMessage
 from langchain.tools.render import render_text_description
 
@@ -25,7 +25,7 @@ def _format_chat_history(chat_history: List[Tuple[str, str]]):
 model = ChatAnthropic(model="claude-2")
 
 # Fake Tool
-retriever = YouRetriever(k=5)
+retriever = TavilySearchAPIRetriever(k=5)
 retriever_tool = create_retriever_tool(
     retriever, "search", "Use this to search for current events."
 )
