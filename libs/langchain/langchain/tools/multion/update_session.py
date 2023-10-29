@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Type
+from typing import  Optional,TYPE_CHECKING, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
@@ -18,8 +18,8 @@ else:
 class UpdateSessionSchema(BaseModel):
     """Input for UpdateSessionTool."""
 
-    tabId: str = Field(
-        ..., description="The tabID, received from one of the createSessions run before"
+    sessionId: str = Field(
+        ..., description="The sessionID, received from one of the createSessions run before"
     )
     query: str = Field(
         ...,
@@ -44,13 +44,13 @@ class MultionUpdateSession(BaseTool):
     name: str = "update_multion_session"
     description: str = """Use this tool to update \
 an existing corresponding Multion Browser Window with provided fields. \
-Note: TabId must be received from previous Browser window creation."""
+Note: sessionId must be received from previous Browser window creation."""
     args_schema: Type[UpdateSessionSchema] = UpdateSessionSchema
-    tabId: str = ""
+    sessionId: str = ""
 
     def _run(
         self,
-        tabId: str,
+        sessionId: str,
         query: str,
         url: Optional[str] = "https://www.google.com/",
         run_manager: Optional[CallbackManagerForToolRun] = None,
@@ -66,9 +66,6 @@ Note: TabId must be received from previous Browser window creation."""
             except Exception as e:
                 print(f"{e}, retrying...")
                 return {"error": f"{e}", "Response": "retrying..."}
-                # response = multion.new_session({"input": query, "url": url})
-                # self.tabID = response["tabId"]
-                # return {"tabId": response["tabId"], "Response": response["message"]}
         except Exception as e:
             raise Exception(f"An error occurred: {e}")
 

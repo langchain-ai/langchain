@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Type
+from typing import  Optional,TYPE_CHECKING, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
@@ -21,7 +21,8 @@ class CloseSessionSchema(BaseModel):
 
     sessionId: str = Field(
         ...,
-        description="The sessionId, received from one of the createSessions or updateSessions run before",
+        description="""The sessionId, received from one of the createSessions 
+        or updateSessions run before""",
     )
 
 
@@ -48,7 +49,7 @@ Note: SessionId must be received from previous Browser window creation."""
     ) -> None:
         try:
             try:
-                response = multion.close_session(sessionId)
+                multion.close_session(sessionId)
             except Exception as e:
                 print(f"{e}, retrying...")
                 return {"error": f"{e}", "Response": "retrying..."}
