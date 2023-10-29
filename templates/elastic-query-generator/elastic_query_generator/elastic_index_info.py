@@ -13,8 +13,18 @@ def _list_indices(database, include_indices=None, ignore_indices=None) -> List[s
 
     return all_indices
 
-def get_indices_infos(database, sample_documents_in_index_info=5) -> str:
-    indices = _list_indices(database)
+
+def get_indices_infos(
+        database,
+        sample_documents_in_index_info=5,
+        include_indices=None,
+        ignore_indices=None
+) -> str:
+    indices = _list_indices(
+        database,
+        include_indices=include_indices,
+        ignore_indices=ignore_indices
+    )
     mappings = database.indices.get_mapping(index=",".join(indices))
     if sample_documents_in_index_info > 0:
         for k, v in mappings.items():

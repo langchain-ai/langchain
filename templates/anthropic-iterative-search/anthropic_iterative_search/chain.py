@@ -1,5 +1,6 @@
 from langchain.chat_models import ChatAnthropic
 from langchain.prompts import ChatPromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
 
 from .prompts import answer_prompt
@@ -13,3 +14,12 @@ chain = {
 	"query": lambda x: x["query"],
 	"information": executor | (lambda x: x["output"])
 } | prompt | model | StrOutputParser()
+
+# Add typing for the inputs to be used in the playground
+
+
+class Inputs(BaseModel):
+	query: str
+
+
+chain = chain.with_types(input_type=Inputs)
