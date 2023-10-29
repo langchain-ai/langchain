@@ -25,10 +25,9 @@ jobs:
         # Expect for hub
         git grep 'from langchain import' {docs,templates,cookbook} | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
 
-    - name: Run lint
+  lint:
       uses:
         ./.github/workflows/_lint.yml
       with:
         working-directory: .
       secrets: inherit
-
