@@ -13,6 +13,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -546,14 +547,40 @@ class ChatOpenAI(BaseChatModel):
 
     def bind_functions(
         self,
-        functions: List[Union[Dict[str, Any], Type[BaseModel], Callable]],
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+        function_call: str = "auto",
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind functions (and other objects) to this chat model."""
+        """Bind functions (and other objects) to this chat model.
+
+        Args:
+            functions: A list of function definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, or callable. Pydantic
+                models and callables will be automatically converted to
+                their schema dictionary representation.
+            function_call: Which function to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any).
+            kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
         from langchain.chains.openai_functions.base import convert_to_openai_function
 
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
+        if function_call != "auto":
+            if len(formatted_functions) != 1:
+                raise ValueError(
+                    "When specifying `function_call`, you must provide exactly one "
+                    "function."
+                )
+            if formatted_functions[0]["name"] != function_call:
+                raise ValueError(
+                    f"Function call {function_call} was specified, but the only "
+                    f"provided function was {formatted_functions[0]['name']}."
+                )
         return super().bind(
             functions=formatted_functions,
+            function_call=function_call,
             **kwargs,
         )
