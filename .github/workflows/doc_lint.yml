@@ -9,6 +9,7 @@ on:
       - 'docs/**'
       - 'templates/**'
       - 'cookbook/**'
+      - '.github/workflows/_lint.yml'
   workflow_dispatch:
 
 jobs:
