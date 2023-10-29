@@ -43,11 +43,11 @@ spell_fix:
 
 lint:
 	poetry run ruff docs templates cookbook
-	poetry run black {docs,templates,cookbook} --check
+	poetry run black docs templates cookbook --check
 
 format format_diff:
-	poetry run black {docs,templates,cookbook}
-	poetry run ruff --select I --fix {docs,templates,cookbook}
+	poetry run black docs templates cookbook
+	poetry run ruff --select I --fix docs templates cookbook
 
 ######################
 # HELP
