@@ -5,6 +5,10 @@ on:
   push:
     branches: [master]
   pull_request:
+    paths:
+      - 'docs/**'
+      - 'templates/**'
+      - 'cookbook/**'
     branches: [master]
 
 jobs:
