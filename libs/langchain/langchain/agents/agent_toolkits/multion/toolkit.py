@@ -1,23 +1,13 @@
 """MultiOn agent."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import List
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
 from langchain.tools.multion.close_session import MultionCloseSession
 from langchain.tools.multion.create_session import MultionCreateSession
 from langchain.tools.multion.update_session import MultionUpdateSession
-
-if TYPE_CHECKING:
-    # This is for linting and IDE typehints
-    import multion
-else:
-    try:
-        # We do this so pydantic can resolve the types when instantiating
-        import multion
-    except ImportError:
-        pass
 
 
 class MultionToolkit(BaseToolkit):
