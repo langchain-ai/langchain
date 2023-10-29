@@ -12,6 +12,7 @@ class PandasDataFrameOutputParser(BaseOutputParser):
 
     @root_validator()
     def check_dataframe(cls, values: Dict) -> Dict:
+        # TODO: Might want to add more validation logic to this.
         dataframe = values.get('dataframe')
         if not isinstance(dataframe, pd.DataFrame):
             raise ValueError("Input must be a Pandas DataFrame.")
