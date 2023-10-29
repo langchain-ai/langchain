@@ -28,6 +28,10 @@ linkchecker = "^10.2.1"
 sphinx-copybutton = "^0.5.1"
 nbdoc = "^0.0.82"
 
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.1"
+black = "^23.10.0"
+
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
