@@ -1233,20 +1233,6 @@ pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3-binary"]
 
 [[package]]
-name = "tavily-python"
-version = "0.1.9"
-description = "Python wrapper for the Tavily API"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "tavily-python-0.1.9.tar.gz", hash = "sha256:6b43f151f49ad461e370e7b186e205fbeed11c1807e9b393d9aa0a239aa8f89f"},
-    {file = "tavily_python-0.1.9-py3-none-any.whl", hash = "sha256:600793dc7096468a3b1371a98e37d9ed9948a7331ee40285ae992838ae2cc9c2"},
-]
-
-[package.dependencies]
-requests = "*"
-
-[[package]]
 name = "tenacity"
 version = "8.2.3"
 description = "Retry code until it succeeds"
@@ -1542,4 +1528,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "8572d28da96e2d6b60e88029a2db543b2a718e678542810926fb41c327c06045"
+content-hash = "2cb59dad73d9333a58a0d26ad4157810b6be2ead113cb32972a1e31a34851798"
