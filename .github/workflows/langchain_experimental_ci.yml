@@ -35,7 +35,7 @@ jobs:
       ./.github/workflows/_lint.yml
     with:
       working-directory: libs/experimental
-      langchain-location: ../libs/langchain
+      langchain-location: ../langchain
     secrets: inherit
 
   test:
