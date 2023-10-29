@@ -29,8 +29,9 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.language_model import LanguageModelInput
 from langchain.schema.messages import (
     AIMessageChunk,
     BaseMessage,
@@ -41,10 +42,12 @@ from langchain.schema.messages import (
     SystemMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
+from langchain.schema.runnable import Runnable
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 if TYPE_CHECKING:
     import tiktoken
+
 
 logger = logging.getLogger(__name__)
 
@@ -540,3 +543,17 @@ class ChatOpenAI(BaseChatModel):
         # every reply is primed with <im_start>assistant
         num_tokens += 3
         return num_tokens
+
+    def bind_functions(
+        self,
+        functions: List[Union[Dict[str, Any], Type[BaseModel], Callable]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind functions (and other objects) to this chat model."""
+        from langchain.chains.openai_functions.base import convert_to_openai_function
+
+        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
+        return super().bind(
+            functions=formatted_functions,
+            **kwargs,
+        )
