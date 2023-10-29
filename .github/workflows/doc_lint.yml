@@ -1,14 +1,15 @@
 ---
-name: Docs, templates, cookbooks Lint
+name: Docs, templates, cookbook lint
 
 on:
   push:
-    branches: [master]
+    branches: [ master ]
   pull_request:
     paths:
       - 'docs/**'
       - 'templates/**'
       - 'cookbook/**'
+  workflow_dispatch:
 
 jobs:
   check:
