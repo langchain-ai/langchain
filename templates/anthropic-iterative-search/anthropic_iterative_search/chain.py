@@ -10,16 +10,18 @@ prompt = ChatPromptTemplate.from_template(answer_prompt)
 
 model = ChatAnthropic(model="claude-2", temperature=0, max_tokens_to_sample=1000)
 
-chain = {
-	"query": lambda x: x["query"],
-	"information": executor | (lambda x: x["output"])
-} | prompt | model | StrOutputParser()
+chain = (
+    {"query": lambda x: x["query"], "information": executor | (lambda x: x["output"])}
+    | prompt
+    | model
+    | StrOutputParser()
+)
 
 # Add typing for the inputs to be used in the playground
 
 
 class Inputs(BaseModel):
-	query: str
+    query: str
 
 
 chain = chain.with_types(input_type=Inputs)

@@ -23,6 +23,7 @@ search = DuckDuckGoSearchAPIWrapper()
 def retriever(query):
     return search.run(query)
 
+
 template = """Provide a better search query for \
 web search engine to answer the given question, end \
 the queries with ’**’. Question: \
@@ -31,19 +32,28 @@ rewrite_prompt = ChatPromptTemplate.from_template(template)
 
 # Parser to remove the `**`
 
+
 def _parse(text):
     return text.strip("**")
 
+
 rewriter = rewrite_prompt | ChatOpenAI(temperature=0) | StrOutputParser() | _parse
 
-chain = {
-    "context": {"x": RunnablePassthrough()} | rewriter | retriever,
-    "question": RunnablePassthrough()
-    } | prompt | model | StrOutputParser()
+chain = (
+    {
+        "context": {"x": RunnablePassthrough()} | rewriter | retriever,
+        "question": RunnablePassthrough(),
+    }
+    | prompt
+    | model
+    | StrOutputParser()
+)
 
 # Add input type for playground
 
+
 class Question(BaseModel):
     __root__: str
+
 
 chain = chain.with_types(input_type=Question)
