@@ -56,7 +56,7 @@ class PandasDataFrameOutputParser(BaseOutputParser):
                         parsed_array = self.parse_array(array_exists.group(1))
                         if parsed_array == []:
                             raise OutputParserException(
-                                f"The array provided is not correctly defined. Please refer to the format instructions."
+                                "The array provided is not correctly defined. Please refer to the format instructions."
                             )
                     else:
                         result[request_type] = getattr(self.dataframe[request_params], request_type)()
