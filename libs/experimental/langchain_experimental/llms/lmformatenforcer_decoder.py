@@ -66,13 +66,15 @@ class LMFormatEnforcer(HuggingFacePipeline):
             )
 
         lmformatenforcer = import_lmformatenforcer()
+        import lmformatenforcer.integrations.transformers as hf_integration
+
         if has_json_schema:
             parser = lmformatenforcer.JsonSchemaParser(self.json_schema)
         else:
             parser = lmformatenforcer.RegexParser(self.regex)
 
         pipeline = cast(Text2TextGenerationPipeline, self.pipeline)
-        prefix_function = lmformatenforcer.build_transformers_prefix_allowed_tokens_fn(
+        prefix_function = hf_integration.build_transformers_prefix_allowed_tokens_fn(
             pipeline.tokenizer, parser
         )
         self.pipeline._forward_params["prefix_allowed_tokens_fn"] = prefix_function
