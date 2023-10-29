@@ -24,7 +24,7 @@ def _format_chat_history(chat_history: List[Tuple[str, str]]):
 
 model = ChatAnthropic(model="claude-2")
 
-# Fake Tool
+# Retriever tool
 retriever = YouRetriever(k=5)
 retriever_tool = create_retriever_tool(
     retriever, "search", "Use this to search for current events."
