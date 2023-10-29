@@ -47,17 +47,22 @@ prompt = ChatPromptTemplate.from_template(template)
 # LLM
 model = ChatOpenAI()
 
+# Query transformation chain
+# This transforms the query into the hypothetical document
+hyde_chain = (
+    {"input": RunnablePassthrough()}
+    | hyde_prompt
+    | model
+    | StrOutputParser()
+)
+
 # RAG chain
 chain = (
     RunnableParallel(
         {
             # Configure the input, pass it the prompt, pass that to the model,
             # and then the result to the retriever
-            "context": {"input": RunnablePassthrough()}
-            | hyde_prompt
-            | model
-            | StrOutputParser()
-            | retriever,
+            "context": hyde_chain | retriever,
             "question": RunnablePassthrough(),
         }
     )
