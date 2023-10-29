@@ -1,6 +1,7 @@
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.vectorstores import Chroma
@@ -49,24 +50,26 @@ model = ChatOpenAI()
 
 # Query transformation chain
 # This transforms the query into the hypothetical document
-hyde_chain = (
-    {"input": RunnablePassthrough()}
-    | hyde_prompt
-    | model
-    | StrOutputParser()
-)
+hyde_chain = hyde_prompt | model | StrOutputParser()
 
 # RAG chain
 chain = (
     RunnableParallel(
         {
-            # Configure the input, pass it the prompt, pass that to the model,
-            # and then the result to the retriever
+            # Generate a hypothetical document and then pass it to the retriever
             "context": hyde_chain | retriever,
-            "question": RunnablePassthrough(),
+            "question": lambda x: x["question"],
         }
     )
     | prompt
     | model
     | StrOutputParser()
 )
+
+
+# Add input types for playground
+class ChainInput(BaseModel):
+    question: str
+
+
+chain = chain.with_types(input_type=ChainInput)
