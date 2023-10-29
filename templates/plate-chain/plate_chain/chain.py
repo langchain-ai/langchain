@@ -26,6 +26,7 @@ prompt = ChatPromptTemplate.from_messages(
     ],
 )
 
+
 # ATTENTION: Inherit from CustomUserType instead of BaseModel otherwise
 # the server will decode it into a dict instead of a pydantic model.
 class FileProcessingRequest(CustomUserType):
@@ -38,29 +39,44 @@ class FileProcessingRequest(CustomUserType):
     num_cols: int = 12
 
 
+def _load_file(request: FileProcessingRequest):
+    return str(base64.b64decode(request.file.encode("utf-8")))
+
+
+def _load_prompt(request: FileProcessingRequest):
+    return create_prompt(
+            num_plates=request.num_plates,
+            num_rows=request.num_rows,
+            num_cols=request.num_cols,
+        )
+
+def _get_col_range_str(request: FileProcessingRequest):
+    if request.num_cols:
+        return f"from 1 to {request.num_cols}"
+    else:
+        return ""
+
+
+def _get_json_format(request: FileProcessingRequest):
+    return json.dumps(
+        [
+            {
+                "row_start": 12,
+                "row_end": 12 + request.num_rows - 1,
+                "col_start": 1,
+                "col_end": 1 + request.num_cols - 1,
+                "contents": "Entity ID",
+            }
+        ]
+    )
+
 chain = (
     {
         # Should add validation to ensure numeric indices
-        "input": lambda x: base64.b64decode(x.file.encode("utf-8")),
-        "hint": lambda x: create_prompt(
-            num_plates=x.num_plates,
-            num_rows=x.num_rows,
-            num_cols=x.num_cols,
-        ),
-        "col_range_str": lambda x: f"from 1 to {x.num_cols}"
-        if x.num_cols
-        else "",
-        "json_format": lambda x: json.dumps(
-            [
-                {
-                    "row_start": 12,
-                    "row_end": 12 + x.num_rows - 1,
-                    "col_start": 1,
-                    "col_end": 1 + x.num_cols - 1,
-                    "contents": "Entity ID",
-                }
-            ]
-        ),
+        "input": _load_file,
+        "hint": _load_prompt,
+        "col_range_str": _get_col_range_str,
+        "json_format": _get_json_format,
         "user_example": lambda x: USER_EXAMPLE_DICT[
             x.num_rows * x.num_cols
         ],
