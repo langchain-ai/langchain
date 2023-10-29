@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "anthropic-functions"
+name = "extraction-anthropic-functions"
 version = "0.1.0"
 description = ""
 authors = ["Lance Martin <lance@langchain.dev>"]
@@ -10,10 +10,10 @@ python = ">=3.8.1,<4.0"
 langchain = ">=0.0.322"
 anthropic = ">=0.5.0"
 langchainhub = ">=0.1.13"
-langchain-experimental = "^0.0.33"
+langchain-experimental = "^0.0.36"
 
 [tool.langserve]
-export_module = "anthropic_functions"
+export_module = "extraction_anthropic_functions"
 export_attr = "chain"
 
 [build-system]

@@ -200,7 +200,7 @@ def add(
         ]
 
         lines = (
-            ["", "Great! Add the following to your app:", ""] + imports + [""] + routes
+            ["", "Great! Add the following to your app:\n\n```", ""] + imports + [""] + routes + ["```"]
         )
         typer.echo("\n".join(lines))
 
