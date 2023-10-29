@@ -8,6 +8,7 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
 from presidio_analyzer import AnalyzerEngine
 
+
 # Formatting for chat history
 def _format_chat_history(chat_history: List[Tuple[str, str]]):
     buffer = []
