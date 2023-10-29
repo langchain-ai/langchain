@@ -1,7 +1,10 @@
 import asyncio
 from typing import TYPE_CHECKING, Optional, Type
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
 
@@ -58,7 +61,7 @@ Note: SessionId must be received from previous Browser window creation."""
     async def _arun(
         self,
         sessionId: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> None:
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._run, sessionId)
