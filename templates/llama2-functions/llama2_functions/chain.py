@@ -1,4 +1,3 @@
-from langchain.chat_models import ChatOpenAI
 from langchain.llms import Replicate
 from langchain.prompts import ChatPromptTemplate
 
@@ -39,8 +38,7 @@ Respond with json that adheres to the following jsonschema:
 
 prompt = ChatPromptTemplate.from_messages([("system", template), ("human", "{input}")])
 
-# Chain 
-model = ChatOpenAI()
+# Chain
 chain = (
     prompt
     | model
