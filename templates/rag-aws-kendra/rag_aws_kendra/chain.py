@@ -2,6 +2,7 @@ import os
 
 from langchain.llms.bedrock import Bedrock
 from langchain.prompts import ChatPromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.retrievers import AmazonKendraRetriever
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
@@ -47,3 +48,9 @@ chain = (
     | model
     | StrOutputParser()
 )
+
+# Add typing for input
+class Question(BaseModel):
+    __root__: str
+
+chain = chain.with_types(input_type=Question)
