@@ -31,5 +31,5 @@ jobs:
       uses:
         ./.github/workflows/_lint.yml
       with:
-        working-directory: .
+        working-directory: "."
       secrets: inherit
