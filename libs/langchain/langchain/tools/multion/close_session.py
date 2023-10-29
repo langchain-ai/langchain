@@ -52,7 +52,6 @@ Note: SessionId must be received from previous Browser window creation."""
                 multion.close_session(sessionId)
             except Exception as e:
                 print(f"{e}, retrying...")
-                return {"error": f"{e}", "Response": "retrying..."}
         except Exception as e:
             raise Exception(f"An error occurred: {e}")
 
@@ -62,6 +61,4 @@ Note: SessionId must be received from previous Browser window creation."""
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> None:
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, self._run, sessionId)
-
-        return result
+        await loop.run_in_executor(None, self._run, sessionId)
