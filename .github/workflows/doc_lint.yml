@@ -10,6 +10,7 @@ on:
       - 'templates/**'
       - 'cookbook/**'
       - '.github/workflows/_lint.yml'
+      - '.github/workflows/doc_lint.yml'
   workflow_dispatch:
 
 jobs:
