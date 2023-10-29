@@ -1,4 +1,4 @@
-"""Unit tests for beautiful soup document transformers."""
+"""Unit tests for beautiful soup document transformer."""
 import pytest
 
 from langchain.document_transformers import BeautifulSoupTransformer
