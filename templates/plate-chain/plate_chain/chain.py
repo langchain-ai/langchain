@@ -40,7 +40,7 @@ class FileProcessingRequest(CustomUserType):
 
 
 def _load_file(request: FileProcessingRequest):
-    return str(base64.b64decode(request.file.encode("utf-8")))
+    return base64.b64decode(request.file.encode("utf-8")).decode('utf-8')
 
 
 def _load_prompt(request: FileProcessingRequest):
