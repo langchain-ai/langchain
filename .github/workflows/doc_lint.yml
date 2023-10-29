@@ -1,5 +1,5 @@
 ---
-name: Examples Lint
+name: Docs, templates, cookbooks Lint
 
 on:
   push:
@@ -9,7 +9,6 @@ on:
       - 'docs/**'
       - 'templates/**'
       - 'cookbook/**'
-    branches: [master]
 
 jobs:
   check:
