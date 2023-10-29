@@ -11,7 +11,7 @@ on:
       - '.github/workflows/_lint.yml'
       - '.github/workflows/_test.yml'
       - '.github/workflows/langchain_experimental_ci.yml'
-      - 'libs/langchain/**'
+      - 'libs/*'
       - 'libs/experimental/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
@@ -44,6 +44,13 @@ jobs:
       working-directory: libs/experimental
     secrets: inherit
 
+  compile-integration-tests:
+    uses:
+      ./.github/workflows/_compile_integration_test.yml
+    with:
+      working-directory: libs/experimental
+    secrets: inherit
+
   # It's possible that langchain-experimental works fine with the latest *published* langchain,
   # but is broken with the langchain on `master`.
   #
@@ -62,7 +69,7 @@ jobs:
           - "3.11"
     name: test with unpublished langchain - Python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
@@ -97,7 +104,7 @@ jobs:
           - "3.11"
     name: Python ${{ matrix.python-version }} extended tests
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"

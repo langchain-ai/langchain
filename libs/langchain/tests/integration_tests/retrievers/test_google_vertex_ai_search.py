@@ -7,18 +7,19 @@ google_vertex_ai_search.ipynb
 to set up the app and configure authentication.
 
 Set the following environment variables before the tests:
-PROJECT_ID - set to your Google Cloud project ID
-DATA_STORE_ID - the ID of the search engine to use for the test
+export PROJECT_ID=... - set to your Google Cloud project ID
+export DATA_STORE_ID=... - the ID of the search engine to use for the test
 """
 
 import os
 
 import pytest
 
-from langchain.retrievers.google_cloud_enterprise_search import (
+from langchain.retrievers.google_vertex_ai_search import (
     GoogleCloudEnterpriseSearchRetriever,
+    GoogleVertexAIMultiTurnSearchRetriever,
+    GoogleVertexAISearchRetriever,
 )
-from langchain.retrievers.google_vertex_ai_search import GoogleVertexAISearchRetriever
 from langchain.schema import Document
 
 
@@ -26,6 +27,19 @@ from langchain.schema import Document
 def test_google_vertex_ai_search_get_relevant_documents() -> None:
     """Test the get_relevant_documents() method."""
     retriever = GoogleVertexAISearchRetriever()
+    documents = retriever.get_relevant_documents("What are Alphabet's Other Bets?")
+    assert len(documents) > 0
+    for doc in documents:
+        assert isinstance(doc, Document)
+        assert doc.page_content
+        assert doc.metadata["id"]
+        assert doc.metadata["source"]
+
+
+@pytest.mark.requires("google_api_core")
+def test_google_vertex_ai_multiturnsearch_get_relevant_documents() -> None:
+    """Test the get_relevant_documents() method."""
+    retriever = GoogleVertexAIMultiTurnSearchRetriever()
     documents = retriever.get_relevant_documents("What are Alphabet's Other Bets?")
     assert len(documents) > 0
     for doc in documents:

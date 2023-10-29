@@ -60,6 +60,7 @@ class TestLakeFSLoader(unittest.TestCase):
 
     @requests_mock.Mocker()
     @pytest.mark.usefixtures("mock_lakefs_client")
+    @pytest.mark.requires("unstructured")
     def test_presigned_loading(self, mocker: Mocker) -> None:
         mocker.register_uri("GET", requests_mock.ANY, text="data")
         loader = LakeFSLoader(
