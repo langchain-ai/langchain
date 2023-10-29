@@ -4005,7 +4005,7 @@ async def test_runnable_gen_transform() -> None:
     assert [p async for p in achain.astream(4)] == [1, 2, 3, 4]
 
 
-def test_with_config_callbacks():
+def test_with_config_callbacks() -> None:
     result = RunnableLambda(lambda x: x).with_config({"callbacks": []})
     # Bugfix from version 0.0.325
     # ConfigError: field "callbacks" not yet prepared so type is still a ForwardRef,
