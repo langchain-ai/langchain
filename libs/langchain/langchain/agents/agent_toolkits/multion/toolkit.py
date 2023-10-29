@@ -30,4 +30,4 @@ class MultionToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        return [MultionCreateSession(), MultionUpdateSession(),MultionCloseSession()]
+        return [MultionCreateSession(), MultionUpdateSession(), MultionCloseSession()]

@@ -20,8 +20,9 @@ class UpdateSessionSchema(BaseModel):
     """Input for UpdateSessionTool."""
 
     sessionId: str = Field(
-        ..., description="""The sessionID, 
-        received from one of the createSessions run before"""
+        ...,
+        description="""The sessionID, 
+        received from one of the createSessions run before""",
     )
     query: str = Field(
         ...,
