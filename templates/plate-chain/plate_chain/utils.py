@@ -2,8 +2,6 @@ import json
 
 from pydantic import BaseModel, conint, Field
 
-from platechain.constants import ROW_LETTERS
-
 
 class LLMPlateResponse(BaseModel):
     row_start: conint(ge=0) = Field(
@@ -19,10 +17,6 @@ class LLMPlateResponse(BaseModel):
         ..., description="The ending column of the plate (0-indexed)"
     )
     contents: str
-
-
-def create_well_str(row: int, col: int, zpad: int = 2) -> str:
-    return f"{ROW_LETTERS[row-1]}{col:0{zpad}}"
 
 
 def parse_llm_output(result: str):
