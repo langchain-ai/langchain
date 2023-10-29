@@ -42,7 +42,7 @@ spell_fix:
 ######################
 
 lint:
-	poetry run ruff {docs,templates,cookbook}
+	poetry run ruff docs templates cookbook
 	poetry run black {docs,templates,cookbook} --check
 
 format format_diff:
