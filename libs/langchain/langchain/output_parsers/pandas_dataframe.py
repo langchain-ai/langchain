@@ -28,6 +28,7 @@ class PandasDataFrameOutputParser(BaseOutputParser):
             raise OutputParserException(
                 f"Request '{request}' is not correctly formatted. Please refer to the format instructions."
             )
+        result = {}
         try:
             # NOTE: Can probably simplify using getattr(df, function_name)()
             request_type, request_params = splitted_request
@@ -38,13 +39,11 @@ class PandasDataFrameOutputParser(BaseOutputParser):
                     print(request_type)
                 case _:
                     # Call getattr. If it fails, then except, otherwise, do the stuff.
-                    print(request_type)
-        except:
+                    result[request_type] = getattr(self.dataframe[request_params], request_type)()
+        except AttributeError:
             raise OutputParserException(
-                f"Request type '{request_type}' is not correctly formatted. Please refer to the format instructions."
+                f"Request type '{request_type}' is possibly not supported. Please refer to the format instructions."
             )
-
-        return
 
     def get_format_instructions(self) -> str:
         return ""
