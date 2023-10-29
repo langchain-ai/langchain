@@ -10237,21 +10237,6 @@ tzdata = {version = "*", markers = "platform_system == \"Windows\""}
 devenv = ["black", "check-manifest", "flake8", "pyroma", "pytest (>=4.3)", "pytest-cov", "pytest-mock (>=3.3)", "zest.releaser"]
 
 [[package]]
-name = "upstash-redis"
-version = "0.15.0"
-description = "Serverless Redis SDK from Upstash"
-optional = true
-python-versions = ">=3.8,<4.0"
-files = [
-    {file = "upstash_redis-0.15.0-py3-none-any.whl", hash = "sha256:4a89913cb2bb2422610bc2a9c8d6b9a9d75d0674c22c5ea8037d35d343ee5846"},
-    {file = "upstash_redis-0.15.0.tar.gz", hash = "sha256:910f6a567142167b742c38efecfabf23f47e24fcbddb00a6b5845cb11064c3af"},
-]
-
-[package.dependencies]
-aiohttp = ">=3.8.4,<4.0.0"
-requests = ">=2.31.0,<3.0.0"
-
-[[package]]
 name = "unstructured"
 version = "0.10.21"
 description = "A library that prepares raw documents for downstream ML tasks."
@@ -10325,6 +10310,21 @@ slack = ["slack-sdk"]
 tsv = ["pandas"]
 wikipedia = ["wikipedia"]
 xlsx = ["openpyxl", "pandas", "xlrd"]
+
+[[package]]
+name = "upstash-redis"
+version = "0.15.0"
+description = "Serverless Redis SDK from Upstash"
+optional = true
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "upstash_redis-0.15.0-py3-none-any.whl", hash = "sha256:4a89913cb2bb2422610bc2a9c8d6b9a9d75d0674c22c5ea8037d35d343ee5846"},
+    {file = "upstash_redis-0.15.0.tar.gz", hash = "sha256:910f6a567142167b742c38efecfabf23f47e24fcbddb00a6b5845cb11064c3af"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.8.4,<4.0.0"
+requests = ">=2.31.0,<3.0.0"
 
 [[package]]
 name = "uri-template"
@@ -11088,4 +11088,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6205031e342d6e4640b47b0b5a37fa7d11ea1915e8a3ee05c00e2e49fdec071e"
+content-hash = "4b8eec0e12a8b3f906a70756be34f62750273ad1d6ae04a8d59973f3583a8d72"
