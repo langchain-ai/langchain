@@ -1,6 +1,6 @@
 import json
 
-from pydantic import BaseModel, conint, Field
+from pydantic import BaseModel, Field, conint
 
 
 class LLMPlateResponse(BaseModel):
@@ -23,7 +23,8 @@ def parse_llm_output(result: str):
     """
     Based on the prompt we expect the result to be a string that looks like:
 
-    '[{"row_start": 12, "row_end": 19, "col_start": 1, "col_end": 12, "contents": "Entity ID"}]'
+    '[{"row_start": 12, "row_end": 19, "col_start": 1, \
+    "col_end": 12, "contents": "Entity ID"}]'
 
     We'll load that JSON and turn it into a Pydantic model
     """
