@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "neo4j_parent"
+name = "neo4j-parent"
 version = "0.1.0"
 description = ""
 authors = ["Tomaz Bratanic <tomaz.bratanic@neo4j.com>"]
@@ -9,6 +9,8 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.320"
 tiktoken = "^0.5.1"
+openai = "^0.28.1"
+neo4j = "^5.14.0"
 
 [tool.langserve]
 export_module = "neo4j_parent"

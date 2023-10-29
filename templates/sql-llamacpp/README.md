@@ -27,10 +27,3 @@ You can select other files and specify their download path (browse [here](https:
 This template includes an example DB of 2023 NBA rosters.
 
 You can see instructions to build this DB [here](https://github.com/facebookresearch/llama-recipes/blob/main/demo_apps/StructuredLlama.ipynb).
-
-## Installation
-
-```bash
-# from inside your LangServe instance
-poe add sql/llama2-ollama
-```

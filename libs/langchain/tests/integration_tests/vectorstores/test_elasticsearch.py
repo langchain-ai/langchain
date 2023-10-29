@@ -481,6 +481,115 @@ class TestElasticsearch:
         output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
 
+    def test_similarity_search_approx_with_hybrid_search_rrf(
+        self, es_client: Any, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test end to end construction and rrf hybrid search with metadata."""
+        from functools import partial
+        from typing import Optional
+
+        # 1. check query_body is okay
+        rrf_test_cases: List[Optional[Union[dict, bool]]] = [
+            True,
+            False,
+            {"rank_constant": 1, "window_size": 5},
+        ]
+        for rrf_test_case in rrf_test_cases:
+            texts = ["foo", "bar", "baz"]
+            docsearch = ElasticsearchStore.from_texts(
+                texts,
+                FakeEmbeddings(),
+                **elasticsearch_connection,
+                index_name=index_name,
+                strategy=ElasticsearchStore.ApproxRetrievalStrategy(
+                    hybrid=True, rrf=rrf_test_case
+                ),
+            )
+
+            def assert_query(
+                query_body: dict,
+                query: str,
+                rrf: Optional[Union[dict, bool]] = True,
+            ) -> dict:
+                cmp_query_body = {
+                    "knn": {
+                        "field": "vector",
+                        "filter": [],
+                        "k": 3,
+                        "num_candidates": 50,
+                        "query_vector": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0,
+                        ],
+                    },
+                    "query": {
+                        "bool": {
+                            "filter": [],
+                            "must": [{"match": {"text": {"query": "foo"}}}],
+                        }
+                    },
+                }
+
+                if isinstance(rrf, dict):
+                    cmp_query_body["rank"] = {"rrf": rrf}
+                elif isinstance(rrf, bool) and rrf is True:
+                    cmp_query_body["rank"] = {"rrf": {}}
+
+                assert query_body == cmp_query_body
+
+                return query_body
+
+            ## without fetch_k parameter
+            output = docsearch.similarity_search(
+                "foo", k=3, custom_query=partial(assert_query, rrf=rrf_test_case)
+            )
+
+        # 2. check query result is okay
+        es_output = es_client.search(
+            index=index_name,
+            query={
+                "bool": {
+                    "filter": [],
+                    "must": [{"match": {"text": {"query": "foo"}}}],
+                }
+            },
+            knn={
+                "field": "vector",
+                "filter": [],
+                "k": 3,
+                "num_candidates": 50,
+                "query_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+            },
+            size=3,
+            rank={"rrf": {"rank_constant": 1, "window_size": 5}},
+        )
+
+        assert [o.page_content for o in output] == [
+            e["_source"]["text"] for e in es_output["hits"]["hits"]
+        ]
+
+        # 3. check rrf default option is okay
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+            strategy=ElasticsearchStore.ApproxRetrievalStrategy(hybrid=True),
+        )
+
+        ## with fetch_k parameter
+        output = docsearch.similarity_search(
+            "foo", k=3, fetch_k=50, custom_query=assert_query
+        )
+
     def test_similarity_search_approx_with_custom_query_fn(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
