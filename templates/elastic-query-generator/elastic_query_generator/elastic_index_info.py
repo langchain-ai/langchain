@@ -20,7 +20,11 @@ def get_indices_infos(
         include_indices=None,
         ignore_indices=None
 ) -> str:
-    indices = _list_indices(database, include_indices=include_indices, ignore_indices=ignore_indices)
+    indices = _list_indices(
+        database,
+        include_indices=include_indices,
+        ignore_indices=ignore_indices
+    )
     mappings = database.indices.get_mapping(index=",".join(indices))
     if sample_documents_in_index_info > 0:
         for k, v in mappings.items():

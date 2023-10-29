@@ -72,7 +72,7 @@ agent = OpenAIFunctionsAgent(
 )
 agent_executor = AgentExecutor(
     agent=agent, tools=tools, max_iterations=5, early_stopping_method="generate"
-)
+)| (lambda x: x["output"])
 
 # Typing for playground inputs
 
@@ -81,4 +81,4 @@ class AgentInputs(BaseModel):
     input: str
 
 
-agent_executor = agent_executor.with_types(input_type=AgentInputs) | (lambda x: x["output"])
+agent_executor = agent_executor.with_types(input_type=AgentInputs)
