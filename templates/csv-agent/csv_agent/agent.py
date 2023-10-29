@@ -49,7 +49,7 @@ class PythonInputs(BaseModel):
     query: str = Field(description="code snippet to run")
 
 
-df = pd.read_csv("titanic.csv")
+df = pd.read_csv(MAIN_DIR / "titanic.csv")
 template = TEMPLATE.format(dhead=df.head().to_markdown())
 
 prompt = ChatPromptTemplate.from_messages(
