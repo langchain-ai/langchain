@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "csv_agent"
+name = "csv-agent"
 version = "0.0.1"
 description = ""
 authors = []
