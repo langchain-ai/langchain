@@ -5,7 +5,6 @@ from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
 
-
 if TYPE_CHECKING:
     # This is for linting and IDE typehints
     import multion
