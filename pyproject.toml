@@ -37,6 +37,14 @@ black = "^23.10.0"
 codespell = "^2.2.0"
 
 
+[tool.poetry.group.dev.dependencies]
+
+
+[tool.poetry.group.test.dependencies]
+
+
+[tool.poetry.group.typing.dependencies]
+
 [tool.codespell]
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates'
 # Ignore latin etc
