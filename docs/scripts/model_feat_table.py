@@ -3,13 +3,9 @@ from pathlib import Path
 
 from langchain import chat_models, llms
 from langchain.chat_models.base import BaseChatModel, SimpleChatModel
-from langchain.llms.base import BaseLLM, LLM
+from langchain.llms.base import LLM, BaseLLM
 
-INTEGRATIONS_DIR = (
-    Path(os.path.abspath(__file__)).parents[1]
-    / "docs"
-    / "integrations"
-)
+INTEGRATIONS_DIR = Path(os.path.abspath(__file__)).parents[1] / "docs" / "integrations"
 LLM_IGNORE = ("FakeListLLM", "OpenAIChat", "PromptLayerOpenAIChat")
 LLM_FEAT_TABLE_CORRECTION = {
     "TextGen": {"_astream": False, "_agenerate": False},

@@ -83,12 +83,16 @@ prompt_response = ChatPromptTemplate.from_messages(
     ]
 )
 
-# Supply the input types to the prompt 
+
+# Supply the input types to the prompt
 class InputType(BaseModel):
     question: str
 
+
 chain = (
-    RunnablePassthrough.assign(query=sql_response_memory).with_types(input_type=InputType)
+    RunnablePassthrough.assign(query=sql_response_memory).with_types(
+        input_type=InputType
+    )
     | RunnablePassthrough.assign(
         schema=get_schema,
         response=lambda x: db.run(x["query"]),
