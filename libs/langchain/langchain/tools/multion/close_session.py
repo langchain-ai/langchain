@@ -1,9 +1,9 @@
+import asyncio
 from typing import TYPE_CHECKING, Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
-import asyncio
 
 if TYPE_CHECKING:
     # This is for linting and IDE typehints
