@@ -6,7 +6,7 @@ from langchain.agents.agent_toolkits.conversational_retrieval.tool import (
 )
 from langchain.agents.format_scratchpad import format_xml
 from langchain.chat_models import ChatAnthropic
-from langchain.pydantic_v1 import BaseModel
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.retrievers.you import YouRetriever
 from langchain.schema import AIMessage, HumanMessage
 from langchain.tools.render import render_text_description
@@ -52,7 +52,7 @@ agent = (
 
 class AgentInput(BaseModel):
     question: str
-    chat_history: List[Tuple[str, str]]
+    chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat"}})
 
 
 agent_executor = AgentExecutor(
