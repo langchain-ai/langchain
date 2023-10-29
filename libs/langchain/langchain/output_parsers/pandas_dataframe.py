@@ -1,25 +1,23 @@
 import pandas as pd
 import re
 from typing import Any, Dict, List, Tuple
-from langchain.pydantic_v1 import root_validator
+from langchain.pydantic_v1 import validator
 from langchain.schema import BaseOutputParser, OutputParserException
-
 
 class PandasDataFrameOutputParser(BaseOutputParser):
     """Parse an output using Pandas DataFrame format."""
 
     """The Pandas DataFrame to parse."""
-    dataframe: pd.DataFrame
+    dataframe: Any
 
-    @root_validator()
-    def check_dataframe(cls, values: Dict) -> Dict:
-        # TODO: Might want to add more validation logic to this.
-        dataframe = values.get('dataframe')
-        if not isinstance(dataframe, pd.DataFrame):
-            raise ValueError("Input must be a Pandas DataFrame.")
-        if dataframe.empty:
+    @validator("dataframe")
+    def validate_dataframe(cls, val):
+        if issubclass(type(val), pd.DataFrame):
+            return val
+        if pd.DataFrame(val).empty:
             raise ValueError("DataFrame cannot be empty.")
-        return values
+
+        raise TypeError("Wrong type for 'dataframe', must be subclass of Pandas DataFrame (pd.DataFrame)")
     
     def parse_array(self, array: str) -> List[int]:
         # Check if the format is [1,3,5]
