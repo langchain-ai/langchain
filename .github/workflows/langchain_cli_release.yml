@@ -1,0 +1,13 @@
+---
+name: libs/cli Release
+
+on:
+  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
+
+jobs:
+  release:
+    uses:
+      ./.github/workflows/_release.yml
+    with:
+      working-directory: libs/cli
+    secrets: inherit

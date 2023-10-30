@@ -1,6 +1,7 @@
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.vectorstores import Neo4jVector
@@ -15,8 +16,7 @@ vectorstore = Neo4jVector.from_existing_index(
     index_name="retrieval",
     node_label="Child",
     embedding_node_property="embedding",
-    retrieval_query=retrieval_query
-
+    retrieval_query=retrieval_query,
 )
 retriever = vectorstore.as_retriever()
 
@@ -35,3 +35,11 @@ chain = (
     | model
     | StrOutputParser()
 )
+
+
+# Add typing for input
+class Question(BaseModel):
+    __root__: str
+
+
+chain = chain.with_types(input_type=Question)

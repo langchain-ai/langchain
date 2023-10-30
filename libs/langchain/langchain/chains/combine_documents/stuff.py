@@ -150,7 +150,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         """
         inputs = self._get_inputs(docs, **kwargs)
         prompt = self.llm_chain.prompt.format(**inputs)
-        return self.llm_chain.llm.get_num_tokens(prompt)
+        return self.llm_chain._get_num_tokens(prompt)
 
     def combine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
