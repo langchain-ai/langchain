@@ -56,10 +56,16 @@ class CohereEmbeddings(BaseModel, Embeddings):
             import cohere
 
             values["client"] = cohere.Client(
-                cohere_api_key, max_retries=max_retries, timeout=request_timeout, client_name="langchain"
+                cohere_api_key,
+                max_retries=max_retries,
+                timeout=request_timeout,
+                client_name="langchain",
             )
             values["async_client"] = cohere.AsyncClient(
-                cohere_api_key, max_retries=max_retries, timeout=request_timeout, client_name="langchain"
+                cohere_api_key,
+                max_retries=max_retries,
+                timeout=request_timeout,
+                client_name="langchain",
             )
         except ImportError:
             raise ValueError(
