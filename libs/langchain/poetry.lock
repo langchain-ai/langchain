@@ -3202,7 +3202,7 @@ numpy = ">=1.17.3"
 name = "hippo-api"
 version = "1.1.0rc3"
 description = "Transwarp Hippo API"
-optional = true
+optional = false
 python-versions = ">=3.8.0"
 files = [
     {file = "hippo_api-1.1.0rc3-py3-none-any.whl", hash = "sha256:68f8da5e3cbb3e06617b6bc41d321200809a83d6dec1bd96eabcdf5110ff076b"},
@@ -11064,4 +11064,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "bae611548c0550312cca05adea32f34b66d71d40a6c91881aa91416af845b71b"
+content-hash = "780f6ba0e72465a894d551598d45fdffef432a7ffcd06f7642714586f16f8bf2"

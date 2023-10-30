@@ -191,6 +191,7 @@ python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
 tiktoken = "^0.3.2"
 anthropic = "^0.3.11"
+hippo_api= "1.1.0rc3"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1"
