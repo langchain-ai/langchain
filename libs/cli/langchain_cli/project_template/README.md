@@ -1,11 +1,11 @@
-# LangServeHub Project Template
+# LangServe App Template
 
 ## Installation
 
 Install the LangChain CLI if you haven't yet
 
 ```bash
-pip install --user --upgrade git+https://github.com/pingpong-templates/cli.git
+pip install --upgrade langchain-cli[serve]
 ```
 
 And install this package's dependencies

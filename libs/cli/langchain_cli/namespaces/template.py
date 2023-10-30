@@ -1,5 +1,5 @@
 """
-Manage installable hub packages.
+Develop installable templates.
 """
 
 import re
@@ -26,7 +26,7 @@ def new(
     ] = False,
 ):
     """
-    Creates a new hub package.
+    Creates a new template package.
     """
     computed_name = name if name != "." else Path.cwd().name
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
@@ -92,7 +92,7 @@ def start(
     ] = None,
 ) -> None:
     """
-    Starts a demo LangServe instance for this hub package.
+    Starts a demo LangServe instance for this template.
     """
     # load pyproject.toml
     project_dir = get_package_root()
