@@ -241,9 +241,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal[
-        "FunctionMessageChunk"
-    ] = "FunctionMessageChunk"  # type: ignore[assignment]
+    type: Literal["FunctionMessageChunk"] = "FunctionMessageChunk"  # type: ignore[assignment]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):

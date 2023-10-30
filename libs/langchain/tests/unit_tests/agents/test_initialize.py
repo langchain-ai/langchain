@@ -16,7 +16,9 @@ def test_initialize_agent_with_str_agent_type() -> None:
     """Test initialize_agent with a string."""
     fake_llm = FakeLLM()
     agent_executor = initialize_agent(
-        [my_tool], fake_llm, "zero-shot-react-description"  # type: ignore
+        [my_tool],
+        fake_llm,
+        "zero-shot-react-description",  # type: ignore
     )
     assert agent_executor.agent._agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION
     assert isinstance(agent_executor.tags, list)

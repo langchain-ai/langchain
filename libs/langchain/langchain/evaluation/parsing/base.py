@@ -51,7 +51,7 @@ class JsonValidityEvaluator(StringEvaluator):
         prediction: str,
         input: Optional[str] = None,
         reference: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> dict:
         """Evaluate the prediction string.
 
@@ -131,7 +131,7 @@ class JsonEqualityEvaluator(StringEvaluator):
         prediction: str,
         input: Optional[str] = None,
         reference: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> dict:
         """Evaluate the prediction string.
 

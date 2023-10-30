@@ -15,7 +15,7 @@ class ReadTheDocsLoader(BaseLoader):
         errors: Optional[str] = None,
         custom_html_tag: Optional[Tuple[str, dict]] = None,
         patterns: Sequence[str] = ("*.htm", "*.html"),
-        **kwargs: Optional[Any]
+        **kwargs: Optional[Any],
     ):
         """
         Initialize ReadTheDocsLoader
