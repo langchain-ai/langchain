@@ -75,6 +75,18 @@ app = FastAPI()
 add_routes(app, pirate_speak_chain, path="/pirate_speak")
 ```
 
+(Optional) Let's now configure LangSmith. 
+LangSmith will help us trace, monitor and debug LangChain applications. 
+LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+If you don't have access, you can skip this section
+
+
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+```
+
 You can then spin up production-ready endpoints, along with a playground, by running:
 
 ```shell
