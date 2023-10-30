@@ -256,7 +256,9 @@ def serve(
     host: Annotated[
         Optional[str], typer.Option(help="The host to run the server on")
     ] = None,
-    app: Annotated[Optional[str], typer.Option(help="The app to run")] = None,
+    app: Annotated[
+        Optional[str], typer.Option(help="The app to run, e.g. app.server:app")
+    ] = None,
 ) -> None:
     """
     Starts the LangServe instance.
