@@ -16,7 +16,7 @@ Feedback collection occurs within a custom `RunEvaluator`. This evaluator is cal
 
 The evaluator instructs an LLM, specifically `gpt-3.5-turbo`, to evaluate the AI's most recent chat message based on the user's followup response. It generates a score and accompanying reasoning that is converted to feedback in LangSmith, applied to the value provided as the `last_run_id`.
 
-The prompt used within the LLM [is available on the hub](https://smith.langchain.com/hub/wfh/response-effectiveness). Feel free to customize it. We also utilize OpenAI's function-calling API to ensure a more consistent, structured output for the grade.
+The prompt used within the LLM [is available on the hub](https://smith.langchain.com/hub/wfh/response-effectiveness). Feel free to customize it with things like additional app context (such as the goal of the app or the types of questions it should respond to) or "symptoms" you'd like the LLM to focus on. This evaluator also utilizes OpenAI's function-calling API to ensure a more consistent, structured output for the grade.
 
 ## Environment Variables
 
@@ -25,6 +25,7 @@ Ensure that `OPENAI_API_KEY` is set to use OpenAI models. Also, configure LangSm
 ```bash
 export OPENAI_API_KEY=sk-...
 export LANGSMITH_API_KEY=...
+export LANGCHAIN_TRACING_V2=true
 ```
 
 ## Usage
@@ -68,6 +69,7 @@ def stream_content(
 chat_history = []
 text = "Where are my keys?"
 last_run_id, response_message = stream_content(text, on_chunk=partial(print, end=""))
+print()
 chat_history.extend([HumanMessage(content=text), AIMessage(content=response_message)])
 text = "I CAN'T FIND THEM ANYWHERE"  # The previous response will likely receive a low score,
 # as the user's frustration appears to be escalating.
@@ -77,6 +79,7 @@ last_run_id, response_message = stream_content(
     last_run_id=str(last_run_id),
     on_chunk=partial(print, end=""),
 )
+print()
 chat_history.extend([HumanMessage(content=text), AIMessage(content=response_message)])
 ```
 

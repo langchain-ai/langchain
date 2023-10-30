@@ -18,14 +18,12 @@ from langchain.schema import (
 )
 from langchain.schema.runnable import Runnable
 from langsmith.evaluation import EvaluationResult, RunEvaluator
-from langsmith.schemas import Example, Run
-
+from langsmith.schemas import Example
 from pydantic import BaseModel, Field
 
 ### The feedback model used for the "function definition" provided to OpenAI
 # For use with open source models, you can add the schema directly,
 # but some modifications to the prompt and parser will be needed
-
 
 
 class ResponseEffectiveness(BaseModel):
@@ -43,7 +41,7 @@ class ResponseEffectiveness(BaseModel):
     )
 
 
-def format_messages(input: dict) -> dict:
+def format_messages(input: dict) -> List[BaseMessage]:
     """Format the messages for the evaluator."""
     chat_history = input.get("chat_history") or []
     results = []
@@ -76,7 +74,7 @@ evaluate_response_effectiveness = (
     # bind() provides the requested schemas to the model for structured prediction
     | ChatOpenAI(model="gpt-3.5-turbo").bind(
         functions=[convert_to_openai_function(ResponseEffectiveness)],
-        function_name="response_effectiveness",
+        function_call={"name": "ResponseEffectiveness"},
     )
     # Convert the model's output to a dict
     | JsonOutputFunctionsParser(args_only=True)
