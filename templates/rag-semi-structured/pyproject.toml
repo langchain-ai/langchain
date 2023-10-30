@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "rag-semi-structured"
+version = "0.1.0"
+description = ""
+authors = ["Lance Martin <lance@langchain.dev>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.313, <0.1"
+tiktoken = ">=0.5.1"
+chromadb = ">=0.4.14"
+openai = ">=0.27.9"
+unstructured = ">=0.10.19"
+pdf2image = ">=1.16.3"
+
+[tool.langserve]
+export_module = "rag_semi_structured"
+export_attr = "chain"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

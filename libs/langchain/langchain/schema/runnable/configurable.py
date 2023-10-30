@@ -6,6 +6,7 @@ from abc import abstractmethod
 from typing import (
     Any,
     AsyncIterator,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -287,7 +288,10 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     which: ConfigurableField
 
-    alternatives: Dict[str, RunnableSerializable[Input, Output]]
+    alternatives: Dict[
+        str,
+        Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
+    ]
 
     default_key: str = "default"
 
@@ -314,7 +318,12 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                 default=self.default_key,
             ),
             *self.default.config_specs,
-        ] + [s for alt in self.alternatives.values() for s in alt.config_specs]
+        ] + [
+            s
+            for alt in self.alternatives.values()
+            if isinstance(alt, RunnableSerializable)
+            for s in alt.config_specs
+        ]
 
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
@@ -333,7 +342,11 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         if which == self.default_key:
             return self.default
         elif which in self.alternatives:
-            return self.alternatives[which]
+            alt = self.alternatives[which]
+            if isinstance(alt, Runnable):
+                return alt
+            else:
+                return alt()
         else:
             raise ValueError(f"Unknown alternative: {which}")
 

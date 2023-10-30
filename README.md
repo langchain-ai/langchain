@@ -93,7 +93,7 @@ Memory refers to persisting state between calls of a chain/agent. LangChain prov
 
 **🧐 Evaluation:**
 
-[BETA] Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
+[BETA] Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is by using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
 
 For more information on these concepts, please see our [full documentation](https://python.langchain.com).
 

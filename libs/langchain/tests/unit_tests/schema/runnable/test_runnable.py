@@ -1,4 +1,5 @@
 import sys
+from functools import partial
 from operator import itemgetter
 from typing import (
     Any,
@@ -38,6 +39,7 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.document import Document
 from langchain.schema.messages import (
     AIMessage,
@@ -58,7 +60,11 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
-from langchain.schema.runnable.base import ConfigurableField, RunnableGenerator
+from langchain.schema.runnable.base import (
+    ConfigurableField,
+    RunnableBinding,
+    RunnableGenerator,
+)
 from langchain.schema.runnable.utils import (
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
@@ -555,6 +561,22 @@ def test_lambda_schemas() -> None:
     }
 
 
+def test_with_types_with_type_generics() -> None:
+    """Verify that with_types works if we use things like List[int]"""
+
+    def foo(x: int) -> None:
+        """Add one to the input."""
+        raise NotImplementedError()
+
+    # Try specifying some
+    RunnableLambda(foo).with_types(
+        output_type=List[int], input_type=List[int]  # type: ignore
+    )
+    RunnableLambda(foo).with_types(
+        output_type=Sequence[int], input_type=Sequence[int]  # type: ignore[arg-type]
+    )
+
+
 def test_schema_complex_seq() -> None:
     prompt1 = ChatPromptTemplate.from_template("what is the city {person} is from?")
     prompt2 = ChatPromptTemplate.from_template(
@@ -584,6 +606,26 @@ def test_schema_complex_seq() -> None:
     assert chain2.output_schema.schema() == {
         "title": "StrOutputParserOutput",
         "type": "string",
+    }
+
+    assert chain2.with_types(input_type=str).input_schema.schema() == {
+        "title": "RunnableBindingInput",
+        "type": "string",
+    }
+
+    assert chain2.with_types(input_type=int).output_schema.schema() == {
+        "title": "StrOutputParserOutput",
+        "type": "string",
+    }
+
+    class InputType(BaseModel):
+        person: str
+
+    assert chain2.with_types(input_type=InputType).input_schema.schema() == {
+        "title": "InputType",
+        "type": "object",
+        "properties": {"person": {"title": "Person", "type": "string"}},
+        "required": ["person"],
     }
 
 
@@ -925,6 +967,17 @@ def test_configurable_fields() -> None:
     ).invoke({"name": "John"}) == {"llm1": "c", "llm2": "c", "llm3": "d"}
 
 
+def test_configurable_alts_factory() -> None:
+    fake_llm = FakeListLLM(responses=["a"]).configurable_alternatives(
+        ConfigurableField(id="llm", name="LLM"),
+        chat=partial(FakeListLLM, responses=["b"]),
+    )
+
+    assert fake_llm.invoke("...") == "a"
+
+    assert fake_llm.with_config(configurable={"llm": "chat"}).invoke("...") == "b"
+
+
 def test_configurable_fields_example() -> None:
     fake_chat = FakeListChatModel(responses=["b"]).configurable_fields(
         responses=ConfigurableFieldMultiOption(
@@ -1176,7 +1229,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -1186,7 +1238,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -1257,8 +1308,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
         mocker.call(
@@ -1267,8 +1317,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
     ]
@@ -1690,7 +1739,9 @@ async def test_prompt_with_llm(
                 "op": "add",
                 "path": "/logs/FakeListLLM/final_output",
                 "value": {
-                    "generations": [[{"generation_info": None, "text": "foo"}]],
+                    "generations": [
+                        [{"generation_info": None, "text": "foo", "type": "Generation"}]
+                    ],
                     "llm_output": None,
                     "run": None,
                 },
@@ -2820,6 +2871,7 @@ def test_metadata_is_merged() -> None:
     with collect_runs() as cb:
         foo.invoke("hi", {"metadata": {"my_other_key": "my_other_value"}})
         run = cb.traced_runs[0]
+    assert run.extra is not None
     assert run.extra["metadata"] == expected_metadata
 
 
@@ -3479,6 +3531,7 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
     assert parent_run_qux.error is None
+    assert parent_run_qux.outputs is not None
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
@@ -3601,6 +3654,7 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
     assert parent_run_qux.error is None
+    assert parent_run_qux.outputs is not None
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
@@ -3949,3 +4003,11 @@ async def test_runnable_gen_transform() -> None:
 
     assert list(chain.stream(3)) == [1, 2, 3]
     assert [p async for p in achain.astream(4)] == [1, 2, 3, 4]
+
+
+def test_with_config_callbacks() -> None:
+    result = RunnableLambda(lambda x: x).with_config({"callbacks": []})
+    # Bugfix from version 0.0.325
+    # ConfigError: field "callbacks" not yet prepared so type is still a ForwardRef,
+    # you might need to call RunnableConfig.update_forward_refs().
+    assert isinstance(result, RunnableBinding)

@@ -160,29 +160,64 @@ const config = {
             label: "Integrations",
           },
           {
-            to: "https://api.python.langchain.com",
+            href: "https://api.python.langchain.com",
             label: "API",
             position: "left",
           },
           {
-            to: "/docs/community",
-            label: "Community",
+            type: "dropdown",
+            label: "More",
             position: "left",
+            items: [
+              {
+                to: "/docs/community",
+                label: "Community",
+              },
+              {
+                to: "/docs/contributing",
+                label: "Developer's guide",
+              },
+              {
+                to: "/docs/additional_resources/dependents",
+                label: "Dependents",
+              },
+              {
+                to: "/docs/additional_resources/tutorials",
+                label: "Tutorials"
+              },
+              {
+                to: "/docs/additional_resources/youtube",
+                label: "YouTube videos"
+              },
+              { label: "Gallery", href: "https://github.com/kyrolabs/awesome-langchain" }
+            ]
           },
           {
-            to: "https://chat.langchain.com",
-            label: "Chat our docs",
+            type: "dropdown",
+            label: "Also by LangChain",
             position: "right",
-          },
-          {
-            to: "https://smith.langchain.com",
-            label: "LangSmith",
-            position: "right",
-          },
-          {
-            to: "https://js.langchain.com/docs",
-            label: "JS/TS Docs",
-            position: "right",
+            items: [
+              {
+                href: "https://chat.langchain.com",
+                label: "Chat our docs",
+              },
+              {
+                href: "https://smith.langchain.com",
+                label: "LangSmith",
+              },
+              {
+                href: "https://smith.langchain.com/hub",
+                label: "LangChain Hub",
+              },
+              {
+                href: "https://github.com/langchain-ai/langserve",
+                label: "LangServe",
+              },
+              {
+                href: "https://js.langchain.com/docs",
+                label: "JS/TS",
+              },
+            ]
           },
           // Please keep GitHub link to the right for consistency.
           {
