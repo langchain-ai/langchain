@@ -216,13 +216,14 @@ def _approximate_search_query_with_boolean_filter(
         },
     }
 
+
 def _approximate_search_query_match_text_with_boolean_filter(
     query: str,
     query_vector: List[float],
     boolean_filter: Dict,
     k: int = 4,
     vector_field: str = "vector_field",
-    text_field:str = "text",
+    text_field: str = "text",
     subquery_clause: str = "must",
 ) -> Dict:
     """For Approximate k-NN Search, with Boolean Filter and match clause with text field."""
@@ -233,7 +234,7 @@ def _approximate_search_query_match_text_with_boolean_filter(
                 "filter": boolean_filter,
                 subquery_clause: [
                     {"knn": {vector_field: {"vector": query_vector, "k": k}}},
-                    {"match": {text_field: query}}
+                    {"match": {text_field: query}},
                 ],
             }
         },
@@ -584,7 +585,6 @@ class OpenSearchVectorSearch(VectorStore):
         ]
         return documents_with_scores
 
-
     def _raw_similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[dict]:
@@ -659,14 +659,16 @@ class OpenSearchVectorSearch(VectorStore):
 
             if boolean_filter != {}:
                 if text_field != {}:
-                    search_query = _approximate_search_query_match_text_with_boolean_filter(
-                        query,
-                        embedding,
-                        boolean_filter,
-                        k=k,
-                        vector_field=vector_field,
-                        text_field=text_field,
-                        subquery_clause=subquery_clause
+                    search_query = (
+                        _approximate_search_query_match_text_with_boolean_filter(
+                            query,
+                            embedding,
+                            boolean_filter,
+                            k=k,
+                            vector_field=vector_field,
+                            text_field=text_field,
+                            subquery_clause=subquery_clause,
+                        )
                     )
                 else:
                     search_query = _approximate_search_query_with_boolean_filter(
