@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import tempfile
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.vertexai import get_client_info
+
+if TYPE_CHECKING:
+    from google.cloud import texttospeech
 
 
 def _import_google_cloud_texttospeech() -> Any:
@@ -19,12 +22,10 @@ def _import_google_cloud_texttospeech() -> Any:
     return texttospeech
 
 
-if TYPE_CHECKING:
-    from google.cloud import texttospeech
-
-
 def _encoding_file_extension_map(encoding: texttospeech.AudioEncoding) -> Optional[str]:
-    ENCODING_FILE_EXTENSION_MAP: Dict[texttospeech.AudioEncoding, str] = {
+    texttospeech = _import_google_cloud_texttospeech()
+
+    ENCODING_FILE_EXTENSION_MAP = {
         texttospeech.AudioEncoding.LINEAR16: ".wav",
         texttospeech.AudioEncoding.MP3: ".mp3",
         texttospeech.AudioEncoding.OGG_OPUS: ".ogg",
