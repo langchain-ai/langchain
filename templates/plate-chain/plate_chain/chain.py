@@ -40,15 +40,16 @@ class FileProcessingRequest(CustomUserType):
 
 
 def _load_file(request: FileProcessingRequest):
-    return base64.b64decode(request.file.encode("utf-8")).decode('utf-8')
+    return base64.b64decode(request.file.encode("utf-8")).decode("utf-8")
 
 
 def _load_prompt(request: FileProcessingRequest):
     return create_prompt(
-            num_plates=request.num_plates,
-            num_rows=request.num_rows,
-            num_cols=request.num_cols,
-        )
+        num_plates=request.num_plates,
+        num_rows=request.num_rows,
+        num_cols=request.num_cols,
+    )
+
 
 def _get_col_range_str(request: FileProcessingRequest):
     if request.num_cols:
@@ -70,6 +71,7 @@ def _get_json_format(request: FileProcessingRequest):
         ]
     )
 
+
 chain = (
     {
         # Should add validation to ensure numeric indices
@@ -77,12 +79,8 @@ chain = (
         "hint": _load_prompt,
         "col_range_str": _get_col_range_str,
         "json_format": _get_json_format,
-        "user_example": lambda x: USER_EXAMPLE_DICT[
-            x.num_rows * x.num_cols
-        ],
-        "ai_response": lambda x: AI_REPONSE_DICT[
-            x.num_rows * x.num_cols
-        ],
+        "user_example": lambda x: USER_EXAMPLE_DICT[x.num_rows * x.num_cols],
+        "ai_response": lambda x: AI_REPONSE_DICT[x.num_rows * x.num_cols],
     }
     | prompt
     | llm
