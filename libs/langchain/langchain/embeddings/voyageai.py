@@ -10,6 +10,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    cast,
 )
 
 import requests
@@ -20,9 +21,9 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain.schema.embeddings import Embeddings
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain.embeddings import VoyageEmbeddings
+
             voyage = VoyageEmbeddings(voyage_api_key="your-api-key")
             text = "This is a test query."
             query_result = voyage.embed_query(text)
@@ -75,7 +77,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
 
     model: str = "voyage-01"
     voyage_api_base: str = "https://api.voyageai.com/v1/embeddings"
-    voyage_api_key: Optional[str] = None
+    voyage_api_key: Optional[SecretStr] = None
     batch_size: int = 8
     """Maximum number of texts to embed in each API request."""
     max_retries: int = 6
@@ -83,7 +85,8 @@ class VoyageEmbeddings(BaseModel, Embeddings):
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout in seconds for the API request."""
     show_progress_bar: bool = False
-    """Whether to show a progress bar when embedding."""
+    """Whether to show a progress bar when embedding. Must have tqdm installed if set 
+        to True."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -93,55 +96,55 @@ class VoyageEmbeddings(BaseModel, Embeddings):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["voyage_api_key"] = get_from_dict_or_env(
-            values, "voyage_api_key", "VOYAGE_API_KEY"
+        values["voyage_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "voyage_api_key", "VOYAGE_API_KEY")
         )
         return values
 
     def _invocation_params(self, input: List[str]) -> Dict:
+        api_key = cast(SecretStr, self.voyage_api_key).get_secret_value()
         params = {
             "url": self.voyage_api_base,
-            "headers": {"Authorization": f"Bearer {self.voyage_api_key}"},
+            "headers": {"Authorization": f"Bearer {api_key}"},
             "json": {"model": self.model, "input": input},
             "timeout": self.request_timeout,
         }
         return params
 
-    def _get_embeddings(
-        self, texts: List[str], *, batch_size: Optional[int] = None
-    ) -> List[List[float]]:
+    def _get_embeddings(self, texts: List[str], batch_size: int) -> List[List[float]]:
         embeddings: List[List[float]] = []
-        _batch_size = batch_size or self.batch_size
 
         if self.show_progress_bar:
-            from tqdm.auto import tqdm
+            try:
+                from tqdm.auto import tqdm
+            except ImportError as e:
+                raise ImportError(
+                    "Must have tqdm installed if `show_progress_bar` is set to True. "
+                    "Please install with `pip install tqdm`."
+                ) from e
 
-            _iter = tqdm(range(0, len(texts), _batch_size))
+            _iter = tqdm(range(0, len(texts), batch_size))
         else:
-            _iter = range(0, len(texts), _batch_size)
+            _iter = range(0, len(texts), batch_size)
 
         for i in _iter:
             response = embed_with_retry(
-                self, **self._invocation_params(input=texts[i : i + _batch_size])
+                self, **self._invocation_params(input=texts[i : i + batch_size])
             )
             embeddings.extend(r["embedding"] for r in response["data"])
 
         return embeddings
 
-    def embed_documents(
-        self, texts: List[str], batch_size: Optional[int] = None
-    ) -> List[List[float]]:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to Voyage Embedding endpoint for embedding search docs.
 
         Args:
             texts: The list of texts to embed.
-            batch_size: The batch size of embeddings. If None, will use the batch size
-                specified by the class.
 
         Returns:
             List of embeddings, one for each text.
         """
-        return self._get_embeddings(texts, batch_size=batch_size)
+        return self._get_embeddings(texts, batch_size=self.batch_size)
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to Voyage Embedding endpoint for embedding query text.
