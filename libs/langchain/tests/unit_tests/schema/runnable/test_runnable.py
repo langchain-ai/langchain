@@ -1444,7 +1444,7 @@ async def test_prompt() -> None:
 
     # nested inside trace_with_chain_group
 
-    async with atrace_as_chain_group("workspace_agent_chain") as manager:
+    async with atrace_as_chain_group("a_group") as manager:
         stream_log_nested = [
             part
             async for part in prompt.astream_log(
