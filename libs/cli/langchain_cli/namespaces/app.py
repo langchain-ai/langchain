@@ -96,7 +96,7 @@ def add(
     ] = False,
 ):
     """
-    Adds the specified package to the current LangServe instance.
+    Adds the specified package to the current LangServe app.
 
     e.g.:
     langchain app add extraction-openai-functions
@@ -223,7 +223,7 @@ def remove(
     ] = False,
 ):
     """
-    Removes the specified package from the current LangServe instance.
+    Removes the specified package from the current LangServe app.
     """
     for api_path in api_paths:
         package_dir = Path.cwd() / "packages" / api_path
@@ -241,7 +241,7 @@ def remove(
 @app_cli.command()
 def list():
     """
-    Lists all packages in the current LangServe instance.
+    Lists all packages in the current LangServe app.
     """
     package_root = get_package_root() / "packages"
     for package_path in list_packages(package_root):
@@ -267,7 +267,7 @@ def serve(
     ] = None,
 ) -> None:
     """
-    Starts the LangServe instance.
+    Starts the LangServe app.
     """
 
     app_str = app if app is not None else "app.server:app"
