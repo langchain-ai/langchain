@@ -56,7 +56,7 @@ class _MinimaxEndpointClient(BaseModel):
 class MinimaxCommon(BaseModel):
     """Common parameters for Minimax large language models."""
 
-    client: _MinimaxEndpointClient = None
+    _client: Any = None
     model: str = "abab5.5-chat"
     """Model name to use."""
     max_tokens: int = 256
@@ -112,7 +112,7 @@ class MinimaxCommon(BaseModel):
 
     def __init__(self, **data: Any):
         super().__init__(**data)
-        self.client = _MinimaxEndpointClient(
+        self._client = _MinimaxEndpointClient(
             host=self.minimax_api_host,
             api_key=self.minimax_api_key,
             group_id=self.minimax_group_id,
@@ -150,7 +150,7 @@ class Minimax(MinimaxCommon, LLM):
         request = self._default_params
         request["messages"] = [{"sender_type": "USER", "text": prompt}]
         request.update(kwargs)
-        text = self.client.post(request)
+        text = self._client.post(request)
         if stop is not None:
             # This is required since the stop tokens
             # are not enforced by the model parameters
