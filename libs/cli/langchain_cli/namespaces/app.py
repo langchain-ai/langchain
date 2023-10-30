@@ -44,7 +44,13 @@ def new(
     # copy over template from ../project_template
     project_template_dir = Path(__file__).parents[1] / "project_template"
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
+    app_name = name if name != "." else Path.cwd().name
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=name == ".")
+
+    readme = destination_dir / "README.md"
+    readme_contents = readme.read_text()
+    readme.write_text(
+        readme_contents.replace("__app_name__", app_name)
 
     # poetry install
     if with_poetry:

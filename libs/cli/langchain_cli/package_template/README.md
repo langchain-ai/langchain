@@ -31,10 +31,16 @@ And add the following code to your `server.py` file:
 __app_route_code__
 ```
 
-To see and debug your chains with [LangSmith](https://docs.smith.langchain.com/), set the following environment variables. You can get an API key [here](https://smith.langchain.com/settings):
+(Optional) Let's now configure LangSmith. 
+LangSmith will help us trace, monitor and debug LangChain applications. 
+LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+If you don't have access, you can skip this section
+
+
 ```shell
 export LANGCHAIN_TRACING_V2=true
 export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
 ```
 
 If you are inside this directory, then you can spin up a LangServe instance directly by:
