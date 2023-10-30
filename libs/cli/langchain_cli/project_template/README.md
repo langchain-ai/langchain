@@ -19,14 +19,17 @@ poetry install
 ```bash
 # if you have problems with `poe`, try `poetry run poe`
 
-# adding packages from https://github.com/pingpong-templates/hub
-langchain serve add extraction-openai-functions
+# adding packages from 
+# https://github.com/langchain-ai/langchain/tree/master/templates
+langchain app add extraction-openai-functions
 
 # adding custom GitHub repo packages
-langchain serve add git+https://github.com/hwchase17/chain-of-verification
+langchain app add --repo hwchase17/chain-of-verification
+# or with whole git string (supports other git providers):
+# langchain app add git+https://github.com/hwchase17/chain-of-verification
 
 # with a custom api mount point (defaults to `/{package_name}`)
-poe add simple-translator --api_path=/my/custom/path/translator
+langchain app add rag-chroma --api_path=/my/custom/path/rag
 ```
 
 ## Removing packages
@@ -34,5 +37,5 @@ poe add simple-translator --api_path=/my/custom/path/translator
 Note: you remove packages by their api path
 
 ```bash
-langchain serve remove extraction-openai-functions
+langchain app remove my/custom/path/rag
 ```
