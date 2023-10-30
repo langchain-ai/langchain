@@ -84,10 +84,11 @@ def add(
         Optional[Path], typer.Option(help="The project directory")
     ] = None,
     repo: Annotated[
-        List[str], typer.Option(help="Install deps from a specific github repo instead")
+        List[str],
+        typer.Option(help="Install templates from a specific github repo instead"),
     ] = [],
     branch: Annotated[
-        List[str], typer.Option(help="Install deps from a specific branch")
+        List[str], typer.Option(help="Install templates from a specific branch")
     ] = [],
     with_poetry: Annotated[
         bool,
@@ -127,7 +128,7 @@ def add(
         if len(group_deps) == 1:
             typer.echo(f"Adding {git}@{ref}...")
         else:
-            typer.echo(f"Adding {len(group_deps)} dependencies from {git}@{ref}")
+            typer.echo(f"Adding {len(group_deps)} templates from {git}@{ref}")
         source_repo_path = update_repo(git, ref, REPO_DIR)
 
         for dep in group_deps:
