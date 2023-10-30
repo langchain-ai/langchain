@@ -46,7 +46,7 @@ class GoogleCloudTextToSpeechTool(BaseTool):
         "Spanish, Italian, French, Portuguese, and Hindi. "
     )
 
-    _client: texttospeech.TextToSpeechClient
+    _client: Any
 
     def __init__(self, **kwargs: Any) -> None:
         """Initializes private fields."""
@@ -62,12 +62,14 @@ class GoogleCloudTextToSpeechTool(BaseTool):
         self,
         input_text: str,
         language_code: str = "en-US",
-        ssml_gender: texttospeech.SsmlVoiceGender = texttospeech.SsmlVoiceGender.NEUTRAL,  # noqa: E501
-        audio_encoding: texttospeech.AudioEncoding = texttospeech.AudioEncoding.MP3,
+        ssml_gender: Optional[texttospeech.SsmlVoiceGender] = None,
+        audio_encoding: Optional[texttospeech.AudioEncoding] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
         texttospeech = _import_google_cloud_texttospeech()
+        ssml_gender = ssml_gender or texttospeech.SsmlVoiceGender.NEUTRAL
+        audio_encoding = audio_encoding or texttospeech.AudioEncoding.MP3
 
         response = self._client.synthesize_speech(
             input=texttospeech.SynthesisInput(text=input_text),
