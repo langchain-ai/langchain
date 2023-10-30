@@ -17,9 +17,7 @@ pip install -U "langchain-cli[serve]"
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain serve new my-app
-cd my-app
-langchain serve add __package_name_last__
+langchain serve new my-app --package __package_name_last__
 ```
 
 If you want to add this to an existing project, you can just run:
