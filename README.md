@@ -48,13 +48,13 @@
 
   Генерация с дополнением данными включает в себя специфические типы цепочек, которые сначала получают данные от внешнего источника, а затем используют их в генерации. Примеры включают в себя суммирование больших текстов и ответы на вопросы по заданным источникам данных.
 
-  Пример — [Ответы на вопросы по статьям из wikipedia](https://github.com/ai-forever/gigachain/blob/master/docs/extras/integrations/retrievers/wikipedia.ipynb)
+  Пример — [Ответы на вопросы по статьям из wikipedia](docs/docs/integrations/retrievers/wikipedia.ipynb))
 
 - Работа с агентами (*Agents*).
 
   Агент представляет собой LLM, которая принимает решение о дальнейшем действии, отслеживает его результат, и, с учетом результата, принимает следующее решение. Процесс повторяется до завершения. GigaChain предоставляет стандартный интерфейс для работы с агентами, выбор агентов и примеры готовых агентов.
 
-  Пример — [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/extras/use_cases/agent_simulations/multi_llm_thre_player_dnd.ipynb).
+  Пример — [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/docs/use_cases/question_answering/agent_simulations/multi_llm_thre_player_dnd.ipynb).
 
 - Создание памяти.
 
