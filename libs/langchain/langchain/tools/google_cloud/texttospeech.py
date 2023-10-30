@@ -22,13 +22,16 @@ def _import_google_cloud_texttospeech() -> Any:
 if TYPE_CHECKING:
     from google.cloud import texttospeech
 
-ENCODING_FILE_EXTENSION_MAP: Dict[texttospeech.AudioEncoding, str] = {
-    texttospeech.AudioEncoding.LINEAR16: ".wav",
-    texttospeech.AudioEncoding.MP3: ".mp3",
-    texttospeech.AudioEncoding.OGG_OPUS: ".ogg",
-    texttospeech.AudioEncoding.MULAW: ".wav",
-    texttospeech.AudioEncoding.ALAW: ".wav",
-}
+
+def _encoding_file_extension_map(encoding: texttospeech.AudioEncoding) -> Optional[str]:
+    ENCODING_FILE_EXTENSION_MAP: Dict[texttospeech.AudioEncoding, str] = {
+        texttospeech.AudioEncoding.LINEAR16: ".wav",
+        texttospeech.AudioEncoding.MP3: ".mp3",
+        texttospeech.AudioEncoding.OGG_OPUS: ".ogg",
+        texttospeech.AudioEncoding.MULAW: ".wav",
+        texttospeech.AudioEncoding.ALAW: ".wav",
+    }
+    return ENCODING_FILE_EXTENSION_MAP.get(encoding)
 
 
 class GoogleCloudTextToSpeechTool(BaseTool):
@@ -79,7 +82,7 @@ class GoogleCloudTextToSpeechTool(BaseTool):
             audio_config=texttospeech.AudioConfig(audio_encoding=audio_encoding),
         )
 
-        suffix = ENCODING_FILE_EXTENSION_MAP.get(audio_encoding, None)
+        suffix = _encoding_file_extension_map(audio_encoding)
 
         with tempfile.NamedTemporaryFile(mode="bx", suffix=suffix, delete=False) as f:
             f.write(response.audio_content)
