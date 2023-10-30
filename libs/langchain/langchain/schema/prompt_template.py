@@ -45,8 +45,9 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
 
         return Union[StringPromptValue, ChatPromptValueConcrete]
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "PromptInput",
@@ -204,6 +205,7 @@ def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
 
             from langchain.schema import Document
             from langchain.prompts import PromptTemplate
+
             doc = Document(page_content="This is a joke", metadata={"page": "1"})
             prompt = PromptTemplate.from_template("Page {page}: {page_content}")
             format_document(doc, prompt)

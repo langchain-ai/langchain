@@ -27,6 +27,7 @@ from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.runnable import Runnable
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores import (
     Chroma,
     DashVector,
@@ -41,7 +42,6 @@ from langchain.vectorstores import (
     SupabaseVectorStore,
     TimescaleVector,
     Vectara,
-    VectorStore,
     Weaviate,
 )
 
@@ -203,11 +203,17 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
             structured_query_translator = _get_builtin_translator(vectorstore)
         chain_kwargs = chain_kwargs or {}
 
-        if "allowed_comparators" not in chain_kwargs:
+        if (
+            "allowed_comparators" not in chain_kwargs
+            and structured_query_translator.allowed_comparators is not None
+        ):
             chain_kwargs[
                 "allowed_comparators"
             ] = structured_query_translator.allowed_comparators
-        if "allowed_operators" not in chain_kwargs:
+        if (
+            "allowed_operators" not in chain_kwargs
+            and structured_query_translator.allowed_operators is not None
+        ):
             chain_kwargs[
                 "allowed_operators"
             ] = structured_query_translator.allowed_operators

@@ -39,9 +39,11 @@ class FakeLLM(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
+        print(prompt)
         if self.sequential_responses:
             return self._get_next_response_in_sequence
-
+        print(repr(prompt))
+        print(self.queries)
         if self.queries is not None:
             return self.queries[prompt]
         if stop is None:

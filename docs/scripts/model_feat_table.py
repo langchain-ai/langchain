@@ -3,13 +3,9 @@ from pathlib import Path
 
 from langchain import chat_models, llms
 from langchain.chat_models.base import BaseChatModel, SimpleChatModel
-from langchain.llms.base import BaseLLM, LLM
+from langchain.llms.base import LLM, BaseLLM
 
-INTEGRATIONS_DIR = (
-    Path(os.path.abspath(__file__)).parents[1]
-    / "docs"
-    / "integrations"
-)
+INTEGRATIONS_DIR = Path(os.path.abspath(__file__)).parents[1] / "docs" / "integrations"
 LLM_IGNORE = ("FakeListLLM", "OpenAIChat", "PromptLayerOpenAIChat")
 LLM_FEAT_TABLE_CORRECTION = {
     "TextGen": {"_astream": False, "_agenerate": False},
@@ -33,8 +29,6 @@ sidebar_class_name: hidden
 
 # LLMs
 
-import DocCardList from "@theme/DocCardList";
-
 ## Features (natively supported)
 All LLMs implement the Runnable interface, which comes with default implementations of all methods, ie. `ainvoke`, `batch`, `abatch`, `stream`, `astream`. This gives all LLMs basic support for async, streaming and batch, which by default is implemented as below:
 - *Async* support defaults to calling the respective sync method in asyncio's default thread pool executor. This lets other async functions in your application make progress while the LLM is being executed, by moving this call to a background thread.
@@ -45,8 +39,7 @@ Each LLM integration can optionally provide native implementations for async, st
 
 {table}
 
-<DocCardList />
-"""
+"""  # noqa: E501
 
 CHAT_MODEL_TEMPLATE = """\
 ---
@@ -55,8 +48,6 @@ sidebar_class_name: hidden
 ---
 
 # Chat models
-
-import DocCardList from "@theme/DocCardList";
 
 ## Features (natively supported)
 All ChatModels implement the Runnable interface, which comes with default implementations of all methods, ie. `ainvoke`, `batch`, `abatch`, `stream`, `astream`. This gives all ChatModels basic support for async, streaming and batch, which by default is implemented as below:
@@ -69,8 +60,7 @@ The table shows, for each integration, which features have been implemented with
 
 {table}
 
-<DocCardList />
-"""
+"""  # noqa: E501
 
 
 def get_llm_table():
