@@ -1444,10 +1444,12 @@ async def test_prompt() -> None:
 
     # nested inside trace_with_chain_group
 
-    async with atrace_as_chain_group("workspace_agent_chain"):
+    async with atrace_as_chain_group("workspace_agent_chain") as manager:
         stream_log_nested = [
             part
-            async for part in prompt.astream_log({"question": "What is your name?"})
+            async for part in prompt.astream_log(
+                {"question": "What is your name?"}, config={"callbacks": manager}
+            )
         ]
 
     assert len(stream_log_nested[0].ops) == 1
