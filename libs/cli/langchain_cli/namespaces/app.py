@@ -49,8 +49,7 @@ def new(
 
     readme = destination_dir / "README.md"
     readme_contents = readme.read_text()
-    readme.write_text(
-        readme_contents.replace("__app_name__", app_name)
+    readme.write_text(readme_contents.replace("__app_name__", app_name))
 
     # poetry install
     if with_poetry:
