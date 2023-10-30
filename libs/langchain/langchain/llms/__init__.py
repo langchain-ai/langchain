@@ -838,7 +838,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "openllm_client": _import_openllm,
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
-        "watsonxllm": _import_watsonxllm(),
+        "watsonxllm": _import_watsonxllm,
         "writer": _import_writer,
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,
