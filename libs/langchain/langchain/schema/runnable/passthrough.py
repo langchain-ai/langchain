@@ -27,7 +27,12 @@ from langchain.schema.runnable.base import (
     RunnableParallel,
     RunnableSerializable,
 )
-from langchain.schema.runnable.config import RunnableConfig, get_executor_for_config
+from langchain.schema.runnable.config import (
+    RunnableConfig,
+    acall_func_with_variable_args,
+    call_func_with_variable_args,
+    get_executor_for_config,
+)
 from langchain.schema.runnable.utils import AddableDict, ConfigurableFieldSpec
 from langchain.utils.aiter import atee, py_anext
 from langchain.utils.iter import safetee
@@ -102,16 +107,34 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
     input_type: Optional[Type[Other]] = None
 
-    func: Optional[Callable[[Other], None]] = None
+    func: Optional[
+        Union[Callable[[Other], None], Callable[[Other, RunnableConfig], None]]
+    ] = None
 
-    afunc: Optional[Callable[[Other], Awaitable[None]]] = None
+    afunc: Optional[
+        Union[
+            Callable[[Other], Awaitable[None]],
+            Callable[[Other, RunnableConfig], Awaitable[None]],
+        ]
+    ] = None
 
     def __init__(
         self,
         func: Optional[
-            Union[Callable[[Other], None], Callable[[Other], Awaitable[None]]]
+            Union[
+                Union[Callable[[Other], None], Callable[[Other, RunnableConfig], None]],
+                Union[
+                    Callable[[Other], Awaitable[None]],
+                    Callable[[Other, RunnableConfig], Awaitable[None]],
+                ],
+            ]
         ] = None,
-        afunc: Optional[Callable[[Other], Awaitable[None]]] = None,
+        afunc: Optional[
+            Union[
+                Callable[[Other], Awaitable[None]],
+                Callable[[Other, RunnableConfig], Awaitable[None]],
+            ]
+        ] = None,
         *,
         input_type: Optional[Type[Other]] = None,
         **kwargs: Any,
@@ -161,9 +184,11 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         """
         return RunnableAssign(RunnableParallel(kwargs))
 
-    def invoke(self, input: Other, config: Optional[RunnableConfig] = None) -> Other:
+    def invoke(
+        self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Other:
         if self.func is not None:
-            self.func(input)
+            call_func_with_variable_args(self.func, input, config or {}, **kwargs)
         return self._call_with_config(identity, input, config)
 
     async def ainvoke(
@@ -173,9 +198,11 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         **kwargs: Optional[Any],
     ) -> Other:
         if self.afunc is not None:
-            await self.afunc(input, **kwargs)
+            await acall_func_with_variable_args(
+                self.afunc, input, config or {}, **kwargs
+            )
         elif self.func is not None:
-            self.func(input, **kwargs)
+            call_func_with_variable_args(self.func, input, config or {}, **kwargs)
         return await self._acall_with_config(aidentity, input, config)
 
     def transform(
@@ -198,7 +225,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                     final = final + chunk
 
             if final is not None:
-                self.func(final, **kwargs)
+                call_func_with_variable_args(self.func, final, config or {}, **kwargs)
 
     async def atransform(
         self,
@@ -224,10 +251,13 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                     final = final + chunk
 
             if final is not None:
+                config = config or {}
                 if self.afunc is not None:
-                    await self.afunc(final, **kwargs)
+                    await acall_func_with_variable_args(
+                        self.afunc, final, config, **kwargs
+                    )
                 elif self.func is not None:
-                    self.func(final, **kwargs)
+                    call_func_with_variable_args(self.func, final, config, **kwargs)
 
     def stream(
         self,

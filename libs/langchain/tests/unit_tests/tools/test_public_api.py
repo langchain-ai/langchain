@@ -76,8 +76,6 @@ _EXPECTED = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
-    "PythonAstREPLTool",
-    "PythonREPLTool",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
@@ -109,6 +107,7 @@ _EXPECTED = [
     "format_tool_to_openai_function",
     "tool",
     "BearlyInterpreterTool",
+    "E2BDataAnalysisTool",
 ]
 
 

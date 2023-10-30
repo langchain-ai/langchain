@@ -1,0 +1,50 @@
+name: test-release
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "From which folder this pipeline executes"
+
+env:
+  POETRY_VERSION: "1.6.1"
+
+jobs:
+  publish_to_test_pypi:
+    runs-on: ubuntu-latest
+    permissions:
+      # This permission is used for trusted publishing:
+      # https://blog.pypi.org/posts/2023-04-20-introducing-trusted-publishers/
+      #
+      # Trusted publishing has to also be configured on PyPI for each package:
+      # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
+      id-token: write
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: "3.10"
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: release
+
+      - name: Build project for distribution
+        run: poetry build
+      - name: Check Version
+        id: check-version
+        run: |
+          echo version=$(poetry version --short) >> $GITHUB_OUTPUT
+      - name: Publish package to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: ${{ inputs.working-directory }}/dist/
+          verbose: true
+          print-hash: true

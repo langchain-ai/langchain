@@ -64,6 +64,16 @@ def _get_executor() -> ThreadPoolExecutor:
     return _EXECUTOR
 
 
+def _copy(run: Run) -> Run:
+    """Copy a run."""
+    try:
+        return run.copy(deep=True)
+    except TypeError:
+        # Fallback in case the object contains a lock or other
+        # non-pickleable object
+        return run.copy()
+
+
 class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
@@ -192,63 +202,63 @@ class LangChainTracer(BaseTracer):
         """Persist an LLM run."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, run.copy(deep=True))
+        self._submit(self._persist_run_single, _copy(run))
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, run.copy(deep=True))
+        self._submit(self._persist_run_single, _copy(run))
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_llm_error(self, run: Run) -> None:
         """Process the LLM Run upon error."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_chain_start(self, run: Run) -> None:
         """Process the Chain Run upon start."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, run.copy(deep=True))
+        self._submit(self._persist_run_single, _copy(run))
 
     def _on_chain_end(self, run: Run) -> None:
         """Process the Chain Run."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_chain_error(self, run: Run) -> None:
         """Process the Chain Run upon error."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, run.copy(deep=True))
+        self._submit(self._persist_run_single, _copy(run))
 
     def _on_tool_end(self, run: Run) -> None:
         """Process the Tool Run."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_tool_error(self, run: Run) -> None:
         """Process the Tool Run upon error."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_retriever_start(self, run: Run) -> None:
         """Process the Retriever Run upon start."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, run.copy(deep=True))
+        self._submit(self._persist_run_single, _copy(run))
 
     def _on_retriever_end(self, run: Run) -> None:
         """Process the Retriever Run."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_retriever_error(self, run: Run) -> None:
         """Process the Retriever Run upon error."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
