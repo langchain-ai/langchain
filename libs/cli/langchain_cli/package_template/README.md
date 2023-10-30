@@ -28,7 +28,7 @@ langchain app add __package_name__
 
 And add the following code to your `server.py` file:
 ```python
-
+__app_route_code__
 ```
 
 To see and debug your chains with [LangSmith](https://docs.smith.langchain.com/), set the following environment variables. You can get an API key [here](https://smith.langchain.com/settings):
