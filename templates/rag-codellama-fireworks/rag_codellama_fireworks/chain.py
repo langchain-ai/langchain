@@ -53,7 +53,7 @@ Question: {question}
 prompt = ChatPromptTemplate.from_template(template)
 
 # Initialize a Fireworks model
-model = Fireworks(model="accounts/fireworks/models/llama-v2-34b-code-w8a16")
+model = Fireworks(model="accounts/fireworks/models/llama-v2-34b-code-instruct")
 
 # RAG chain
 chain = (
