@@ -548,7 +548,7 @@ class ChatOpenAI(BaseChatModel):
     def bind_functions(
         self,
         functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
-        function_call: str = "auto",
+        function_call: Optional[str] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind functions (and other objects) to this chat model.
@@ -568,7 +568,8 @@ class ChatOpenAI(BaseChatModel):
         from langchain.chains.openai_functions.base import convert_to_openai_function
 
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
-        if function_call != "auto":
+        function_call_ = None
+        if function_call is not None:
             if len(formatted_functions) != 1:
                 raise ValueError(
                     "When specifying `function_call`, you must provide exactly one "
@@ -579,8 +580,9 @@ class ChatOpenAI(BaseChatModel):
                     f"Function call {function_call} was specified, but the only "
                     f"provided function was {formatted_functions[0]['name']}."
                 )
+            function_call_ = {"name": function_call}
+            kwargs = {**kwargs, "function_call": function_call_}
         return super().bind(
             functions=formatted_functions,
-            function_call={"name": function_call},
             **kwargs,
         )
