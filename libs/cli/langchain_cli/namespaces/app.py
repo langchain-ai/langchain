@@ -257,7 +257,7 @@ def serve(
         Optional[str], typer.Option(help="The host to run the server on")
     ] = None,
     app: Annotated[
-        Optional[str], typer.Option(help="The app to run, e.g. app.server:app")
+        Optional[str], typer.Option(help="The app to run, e.g. `app.server:app`")
     ] = None,
 ) -> None:
     """

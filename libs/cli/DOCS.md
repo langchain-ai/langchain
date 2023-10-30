@@ -145,7 +145,7 @@ $ langchain app serve [OPTIONS]
 
 * `--port INTEGER`: The port to run the server on
 * `--host TEXT`: The host to run the server on
-* `--app TEXT`: The app to run, e.g. app.server:app
+* `--app TEXT`: The app to run, e.g. `app.server:app`
 * `--help`: Show this message and exit.
 
 ## `langchain serve`
