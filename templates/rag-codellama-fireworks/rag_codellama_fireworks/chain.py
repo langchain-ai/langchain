@@ -1,4 +1,3 @@
-
 import os
 
 from git import Repo
@@ -63,8 +62,10 @@ chain = (
     | StrOutputParser()
 )
 
+
 # Add typing for input
 class Question(BaseModel):
     __root__: str
+
 
 chain = chain.with_types(input_type=Question)
