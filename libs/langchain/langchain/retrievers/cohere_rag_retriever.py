@@ -15,10 +15,11 @@ if TYPE_CHECKING:
 
 
 def _get_docs(response: Any) -> List[Document]:
-    return [
+    docs = [
         Document(page_content=doc["snippet"], metadata=doc)
         for doc in response.generation_info["documents"]
-    ].append(
+    ]
+    docs.append(
         Document(
             page_content=response.message,
             metadata={
@@ -29,10 +30,11 @@ def _get_docs(response: Any) -> List[Document]:
             },
         )
     )
+    return docs
 
 
 class CohereRagRetriever(BaseRetriever):
-    """`ChatGPT plugin` retriever."""
+    """Cohere Chat API with RAG."""
 
     connectors: List[Dict] = Field(default_factory=lambda: [{"id": "web-search"}])
     """
