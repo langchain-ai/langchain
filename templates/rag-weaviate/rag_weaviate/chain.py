@@ -28,7 +28,7 @@ all_splits = text_splitter.split_documents(data)
 
 # # Add to vectorDB
 vectorstore = Weaviate.from_documents(
-     documents=all_splits, embedding=OpenAIEmbeddings(), index_name=WEAVIATE_INDEX_NAME
+    documents=all_splits, embedding=OpenAIEmbeddings(), index_name=WEAVIATE_INDEX_NAME
 )
 retriever = vectorstore.as_retriever()
 
