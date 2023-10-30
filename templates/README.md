@@ -1,7 +1,10 @@
-# LangServe Templates
+# LangChain Templates
 
-LangServe Templates are the easiest and fastest way to build a production-ready LLM application.
+LangChain Templates are the easiest and fastest way to build a production-ready LLM application.
 These templates serve as a set of reference architectures for a wide variety of popular LLM use cases.
+They are all in a standard format which make it easy to deploy them with [LangServe](https://github.com/langchain-ai/langserve).
+
+🚩 We will be releasing a hosted version of LangServe for one-click deployments of LangChain applications. [Sign up here](https://airtable.com/app0hN6sd93QcKubv/shrAjst60xXa6quV2) to get on the waitlist.
 
 ## Quick Start
 
