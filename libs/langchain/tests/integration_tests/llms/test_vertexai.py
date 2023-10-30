@@ -11,7 +11,6 @@ import os
 
 import pytest
 from pytest_mock import MockerFixture
-from vertexai.language_models._language_models import CountTokensResponse
 
 from langchain.chains.summarize import load_summarize_chain
 from langchain.docstore.document import Document
@@ -120,9 +119,12 @@ def test_vertex_call_trigger_count_tokens() -> None:
     assert output == 2
 
 
+@pytest.mark.requires("google.cloud.aiplatform")
 def test_get_num_tokens_be_called_when_using_mapreduce_chain(
     mocker: MockerFixture,
 ) -> None:
+    from vertexai.language_models._language_models import CountTokensResponse
+
     m1 = mocker.patch(
         "vertexai.preview.language_models._PreviewTextGenerationModel.count_tokens",
         return_value=CountTokensResponse(
