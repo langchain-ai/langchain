@@ -5,7 +5,7 @@ from langchain.agents.format_scratchpad import format_to_openai_functions
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.pydantic_v1 import BaseModel
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema.messages import AIMessage, HumanMessage
 from langchain.tools.render import format_tool_to_openai_function
 from langchain.tools.tavily_search import TavilySearchResults
@@ -57,7 +57,7 @@ agent = (
 
 class AgentInput(BaseModel):
     input: str
-    chat_history: List[Tuple[str, str]]
+    chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat"}})
 
 
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True).with_types(

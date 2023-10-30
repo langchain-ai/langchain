@@ -8,6 +8,7 @@ from langchain.vectorstores import Neo4jVector
 
 retrieval_query = """
 MATCH (node)-[:HAS_PARENT]->(parent)
+WITH parent, max(score) AS score // deduplicate parents
 RETURN parent.text AS text, score, {} AS metadata
 """
 
@@ -16,8 +17,7 @@ vectorstore = Neo4jVector.from_existing_index(
     index_name="retrieval",
     node_label="Child",
     embedding_node_property="embedding",
-    retrieval_query=retrieval_query
-
+    retrieval_query=retrieval_query,
 )
 retriever = vectorstore.as_retriever()
 
@@ -37,8 +37,10 @@ chain = (
     | StrOutputParser()
 )
 
+
 # Add typing for input
 class Question(BaseModel):
     __root__: str
+
 
 chain = chain.with_types(input_type=Question)

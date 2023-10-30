@@ -8,7 +8,7 @@ from langchain.vectorstores import Chroma
 
 # Example for document loading (from url), splitting, and creating vectostore
 
-''' 
+""" 
 # Load
 from langchain.document_loaders import WebBaseLoader
 loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
@@ -25,13 +25,13 @@ vectorstore = Chroma.from_documents(documents=all_splits,
                                     embedding=OpenAIEmbeddings(),
                                     )
 retriever = vectorstore.as_retriever()
-'''
+"""
 
 # Embed a single document as a test
 vectorstore = Chroma.from_texts(
-    ["harrison worked at kensho"], 
+    ["harrison worked at kensho"],
     collection_name="rag-chroma",
-    embedding=OpenAIEmbeddings()
+    embedding=OpenAIEmbeddings(),
 )
 retriever = vectorstore.as_retriever()
 
@@ -54,9 +54,10 @@ chain = (
     | StrOutputParser()
 )
 
+
 # Add typing for input
 class Question(BaseModel):
     __root__: str
 
-chain = chain.with_types(input_type=Question)
 
+chain = chain.with_types(input_type=Question)
