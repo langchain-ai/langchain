@@ -11,6 +11,8 @@ By default, it will extract the title and author of papers.
 
 This template will use `Claude2` by default. 
 
+Be sure that `ANTHROPIC_API_KEY` is set in your environment.
+
 ## Environment variables
 
 You need to define the following environment variable

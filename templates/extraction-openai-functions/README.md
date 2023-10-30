@@ -10,6 +10,8 @@ By default, it will extract the title and author of papers.
 
 This template will use `OpenAI` by default. 
 
+Be sure that `OPENAI_API_KEY` is set in your environment.
+
 ## Environment variables
 
 You need to define the following environment variable
