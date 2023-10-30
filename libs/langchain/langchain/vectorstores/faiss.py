@@ -923,8 +923,8 @@ class FAISS(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: List[dict] | None = None,
-        ids: List[str] | None = None,
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> FAISS:
         """Construct FAISS wrapper from raw documents asynchronously.
