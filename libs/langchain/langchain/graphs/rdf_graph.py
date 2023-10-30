@@ -45,7 +45,7 @@ rel_query_rdf = prefixes["rdfs"] + (
     """SELECT DISTINCT ?rel ?com\n"""
     """WHERE { \n"""
     """    ?subj ?rel ?obj . \n"""
-    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+    """    OPTIONAL { ?rel rdfs:comment ?com } \n"""
     """}"""
 )
 
@@ -56,7 +56,7 @@ rel_query_rdfs = (
         """SELECT DISTINCT ?rel ?com\n"""
         """WHERE { \n"""
         """    ?rel a/rdfs:subPropertyOf* rdf:Property . \n"""
-        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+        """    OPTIONAL { ?rel rdfs:comment ?com } \n"""
         """}"""
     )
 )
@@ -68,7 +68,7 @@ op_query_owl = (
         """SELECT DISTINCT ?op ?com\n"""
         """WHERE { \n"""
         """    ?op a/rdfs:subPropertyOf* owl:ObjectProperty . \n"""
-        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+        """    OPTIONAL { ?op rdfs:comment ?com } \n"""
         """}"""
     )
 )
@@ -80,7 +80,7 @@ dp_query_owl = (
         """SELECT DISTINCT ?dp ?com\n"""
         """WHERE { \n"""
         """    ?dp a/rdfs:subPropertyOf* owl:DatatypeProperty . \n"""
-        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+        """    OPTIONAL { ?dp rdfs:comment ?com } \n"""
         """}"""
     )
 )
