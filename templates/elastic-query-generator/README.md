@@ -20,9 +20,12 @@ Create a free trial account on [Elastic Cloud](https://cloud.elastic.co/registra
 
 With a deployment, update the connection string.
 
-Password and connection (elasticsearch url) can be found on the deployment console.  
+Password and connection (elasticsearch url) can be found on the deployment console. Th 
 
-```bash
-> export ELASTIC_SEARCH_SERVER="https://elastic:<password>@<es-url>"
+## Populating with data
 
 If you want to populate the DB with some example info, you can run `python ingest.py`.
+
+This will create a `customers` index.
+In the chain, we specify indexes to generate queries against, and we specify `["customers"]`.
+This is specific to setting up your Elastic index in this 
