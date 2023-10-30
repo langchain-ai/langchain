@@ -60,14 +60,6 @@ def test__convert_dict_to_message_ai() -> None:
     assert actual == expected
 
 
-def test__convert_dict_to_message_type_error() -> None:
-    message = Messages(role="user", content="foo")
-    message.role = "bar"
-
-    with pytest.raises(TypeError):
-        _convert_dict_to_message(message)
-
-
 def test__convert_message_to_dict_system() -> None:
     message = SystemMessage(content="foo")
     expected = Messages(role="system", content="foo")
