@@ -397,40 +397,12 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        try:
-            from google.protobuf import json_format
-            from google.protobuf.struct_pb2 import Value
-        except ImportError:
-            raise ImportError(
-                "protobuf package not found, please install it with"
-                " `pip install protobuf`"
-            )
-
-        instances = []
-        for prompt in prompts:
-            if self.allowed_model_args:
-                instance = {
-                    k: v for k, v in kwargs.items() if k in self.allowed_model_args
-                }
-            else:
-                instance = {}
-            instance[self.prompt_arg] = prompt
-            instances.append(instance)
-
-        predict_instances = [
-            json_format.ParseDict(instance_dict, Value()) for instance_dict in instances
-        ]
-
+        predict_instances = self._create_instances(prompts, kwargs)
         endpoint = self.client.endpoint_path(
             project=self.project, location=self.location, endpoint=self.endpoint_id
         )
         response = self.client.predict(endpoint=endpoint, instances=predict_instances)
-        generations: List[List[Generation]] = []
-        for result in response.predictions:
-            generations.append(
-                [Generation(text=prediction[self.result_arg]) for prediction in result]
-            )
-        return LLMResult(generations=generations)
+        return self._parse_response(response)
 
     async def _agenerate(
         self,
@@ -440,39 +412,43 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        try:
-            from google.protobuf import json_format
-            from google.protobuf.struct_pb2 import Value
-        except ImportError:
-            raise ImportError(
-                "protobuf package not found, please install it with"
-                " `pip install protobuf`"
-            )
-
-        instances = []
-        for prompt in prompts:
-            if self.allowed_model_args:
-                instance = {
-                    k: v for k, v in kwargs.items() if k in self.allowed_model_args
-                }
-            else:
-                instance = {}
-            instance[self.prompt_arg] = prompt
-            instances.append(instance)
-
-        predict_instances = [
-            json_format.ParseDict(instance_dict, Value()) for instance_dict in instances
-        ]
-
+        predict_instances = self._create_instances(prompts, kwargs)
         endpoint = self.async_client.endpoint_path(
             project=self.project, location=self.location, endpoint=self.endpoint_id
         )
         response = await self.async_client.predict(
             endpoint=endpoint, instances=predict_instances
         )
-        generations: List[List[Generation]] = []
-        for result in response.predictions:
-            generations.append(
-                [Generation(text=prediction[self.result_arg]) for prediction in result]
+        return self._parse_response(response)
+
+    def _create_instances(
+        self,
+        prompts: List[str],
+        kwargs: Dict[str, Any],
+    ) -> List:
+        try:
+            from google.protobuf import json_format
+            from google.protobuf.struct_pb2 import Value
+        except ImportError as exc:
+            raise ImportError(
+                "protobuf package not found, please install it with"
+                " `pip install protobuf`"
+            ) from exc
+        return [
+            json_format.ParseDict(
+                {
+                    self.prompt_arg: prompt,
+                    **{k: v for k, v in kwargs.items() if k in self.allowed_model_args},
+                },
+                Value(),
             )
-        return LLMResult(generations=generations)
+            for prompt in prompts
+        ]
+
+    def _parse_response(self, response: Any) -> LLMResult:
+        return LLMResult(
+            generations=[
+                [Generation(text=prediction[self.result_arg]) for prediction in result]
+                for result in response.predictions
+            ]
+        )
