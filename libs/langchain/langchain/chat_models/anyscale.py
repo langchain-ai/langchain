@@ -74,13 +74,16 @@ class ChatAnyscale(ChatOpenAI):
 
     @staticmethod
     def get_available_models(
-        anyscale_api_key: Optional[SecretStr] = None,
+        anyscale_api_key: Optional[Union[str, SecretStr]] = None,
         anyscale_api_base: str = DEFAULT_API_BASE,
     ) -> Set[str]:
         """Get available models from Anyscale API."""
         try:
             if anyscale_api_key is None:
                 anyscale_api_key = _to_secret(os.environ["ANYSCALE_API_KEY"])
+
+            if isinstance(anyscale_api_key, str):
+                anyscale_api_key = _to_secret(anyscale_api_key)
         except KeyError as e:
             raise ValueError(
                 "Anyscale API key must be passed as keyword argument or "
