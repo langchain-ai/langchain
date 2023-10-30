@@ -1832,6 +1832,18 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         self.parent_run_manager = parent_run_manager
         self.ended = False
 
+    def copy(self) -> AsyncCallbackManagerForChainGroup:
+        return self.__class__(
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
+            parent_run_manager=self.parent_run_manager,
+        )
+
     async def on_chain_end(
         self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
     ) -> None:
@@ -1956,7 +1968,9 @@ def _configure(
 
     tracer_v2 = tracing_v2_callback_var.get()
     tracing_v2_enabled_ = (
-        env_var_is_set("LANGCHAIN_TRACING_V2") or tracer_v2 is not None
+        env_var_is_set("LANGCHAIN_TRACING_V2")
+        or tracer_v2 is not None
+        or run_tree is not None
     )
     tracer_project = getattr(
         run_tree,

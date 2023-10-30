@@ -97,7 +97,7 @@ $ langchain serve [OPTIONS] COMMAND [ARGS]...
 Adds the specified package to the current LangServe instance.
 
 e.g.:
-langchain serve add simple-pirate
+langchain serve add extraction-openai-functions
 langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
 langchain serve add git+https://github.com/efriis/hub.git#devbranch#subdirectory=mypackage
 
