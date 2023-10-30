@@ -28,9 +28,7 @@ assistant_system_message = """You are a helpful assistant. \
 Use tools (only if necessary) to best answer the users questions."""
 prompt = ChatPromptTemplate.from_messages(
     [
-        (
-            "system",assistant_system_message
-        ),
+        ("system", assistant_system_message),
         MessagesPlaceholder(variable_name="chat_history"),
         ("user", "{input}"),
         MessagesPlaceholder(variable_name="agent_scratchpad"),
