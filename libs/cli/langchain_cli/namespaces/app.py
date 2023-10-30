@@ -33,10 +33,6 @@ def new(
         Optional[List[str]],
         typer.Option(help="Packages to seed the project with"),
     ] = None,
-    with_poetry: Annotated[
-        bool,
-        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
-    ] = False,
 ):
     """
     Create a new LangServe application.
@@ -51,26 +47,9 @@ def new(
     readme_contents = readme.read_text()
     readme.write_text(readme_contents.replace("__app_name__", app_name))
 
-    # poetry install
-    if with_poetry:
-        subprocess.run(["poetry", "install"], cwd=destination_dir)
-
     # add packages if specified
     if package is not None and len(package) > 0:
-        add(package, project_dir=destination_dir, with_poetry=with_poetry)
-
-
-@app_cli.command()
-def install():
-    package_root = get_package_root() / "packages"
-    for package_path in list_packages(package_root):
-        try:
-            pyproject_path = package_path / "pyproject.toml"
-            langserve_export = get_langserve_export(pyproject_path)
-            typer.echo(f"Installing {langserve_export['package_name']}...")
-            subprocess.run(["poetry", "add", "--editable", package_path])
-        except Exception as e:
-            typer.echo(f"Skipping installing {package_path} due to error: {e}")
+        add(package, project_dir=destination_dir)
 
 
 @app_cli.command()
@@ -90,10 +69,6 @@ def add(
     branch: Annotated[
         List[str], typer.Option(help="Install templates from a specific branch")
     ] = [],
-    with_poetry: Annotated[
-        bool,
-        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
-    ] = False,
 ):
     """
     Adds the specified package to the current LangServe instance.
@@ -165,20 +140,14 @@ def add(
     installed_desination_strs = [
         str(p.relative_to(cwd)) for p in installed_destination_paths
     ]
+    cmd = ["pip", "install", "-e"] + installed_desination_strs
+    cmd_str = " \\\n  ".join(installed_desination_strs)
+    install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
+    typer.echo(install_str)
 
-    if with_poetry:
-        subprocess.run(
-            ["poetry", "add", "--editable"] + installed_desination_strs,
-            cwd=cwd,
-        )
-    else:
-        cmd = ["pip", "install", "-e"] + installed_desination_strs
-        cmd_str = " \\\n  ".join(installed_desination_strs)
-        install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
-        typer.echo(install_str)
+    if typer.confirm("Run it?"):
+        subprocess.run(cmd, cwd=cwd)
 
-        if typer.confirm("Run it?"):
-            subprocess.run(cmd, cwd=cwd)
     if typer.confirm("\nGenerate route code for these packages?", default=True):
         chain_names = []
         for e in installed_exports:
@@ -217,10 +186,6 @@ def add(
 @app_cli.command()
 def remove(
     api_paths: Annotated[List[str], typer.Argument(help="The API paths to remove")],
-    with_poetry: Annotated[
-        bool,
-        typer.Option("--with_poetry/--no-poetry", help="Don't run poetry remove"),
-    ] = False,
 ):
     """
     Removes the specified package from the current LangServe instance.
@@ -233,24 +198,8 @@ def remove(
         pyproject = package_dir / "pyproject.toml"
         langserve_export = get_langserve_export(pyproject)
         typer.echo(f"Removing {langserve_export['package_name']}...")
-        if with_poetry:
-            subprocess.run(["poetry", "remove", langserve_export["package_name"]])
+
         shutil.rmtree(package_dir)
-
-
-@app_cli.command()
-def list():
-    """
-    Lists all packages in the current LangServe instance.
-    """
-    package_root = get_package_root() / "packages"
-    for package_path in list_packages(package_root):
-        relative = package_path.relative_to(package_root)
-        pyproject_path = package_path / "pyproject.toml"
-        langserve_export = get_langserve_export(pyproject_path)
-        typer.echo(
-            f"{relative}: ({langserve_export['module']}.{langserve_export['attr']})"
-        )
 
 
 @app_cli.command()
