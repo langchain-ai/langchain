@@ -1,7 +1,5 @@
 # LangSmith
 
-import DocCardList from "@theme/DocCardList";
-
 [LangSmith](https://smith.langchain.com) helps you trace and evaluate your language model applications and intelligent agents to help you
 move from prototype to production.
 
@@ -17,6 +15,3 @@ check out the [LangSmith Cookbook](https://github.com/langchain-ai/langsmith-coo
 - How to evaluate and audit your RAG workflows ([link](https://github.com/langchain-ai/langsmith-cookbook/tree/main/testing-examples/qa-correctness)).
 - How to fine-tune a LLM on real usage data ([link](https://github.com/langchain-ai/langsmith-cookbook/blob/main/fine-tuning-examples/export-to-openai/fine-tuning-on-chat-runs.ipynb)).
 - How to use the [LangChain Hub](https://smith.langchain.com/hub) to version your prompts ([link](https://github.com/langchain-ai/langsmith-cookbook/blob/main/hub-examples/retrieval-qa-chain/retrieval-qa.ipynb))
-
-
-<DocCardList />
