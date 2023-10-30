@@ -29,6 +29,8 @@ class CohereRerank(BaseDocumentCompressor):
     model: str = "rerank-english-v2.0"
     """Model to use for reranking."""
 
+    cohere_api_key: Optional[str] = None
+
     class Config:
         """Configuration for this pydantic object."""
 

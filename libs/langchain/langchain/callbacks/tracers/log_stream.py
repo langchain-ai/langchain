@@ -25,6 +25,8 @@ from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
 
 class LogEntry(TypedDict):
+    """A single entry in the run log."""
+
     id: str
     """ID of the sub-run."""
     name: str
@@ -49,6 +51,8 @@ class LogEntry(TypedDict):
 
 
 class RunState(TypedDict):
+    """State of the run."""
+
     id: str
     """ID of the run."""
     streamed_output: List[Any]
@@ -63,6 +67,8 @@ class RunState(TypedDict):
 
 
 class RunLogPatch:
+    """A patch to the run log."""
+
     ops: List[Dict[str, Any]]
     """List of jsonpatch operations, which describe how to create the run state
     from an empty dict. This is the minimal representation of the log, designed to
@@ -94,6 +100,8 @@ class RunLogPatch:
 
 
 class RunLog(RunLogPatch):
+    """A run log."""
+
     state: RunState
     """Current state of the log, obtained from applying all ops in sequence."""
 
@@ -118,6 +126,8 @@ class RunLog(RunLogPatch):
 
 
 class LogStreamCallbackHandler(BaseTracer):
+    """A tracer that streams run logs to a stream."""
+
     def __init__(
         self,
         *,
@@ -227,7 +237,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         name=run.name,
                         type=run.run_type,
                         tags=run.tags or [],
-                        metadata=run.extra.get("metadata", {}),
+                        metadata=(run.extra or {}).get("metadata", {}),
                         start_time=run.start_time.isoformat(timespec="milliseconds"),
                         streamed_output_str=[],
                         final_output=None,
@@ -256,7 +266,9 @@ class LogStreamCallbackHandler(BaseTracer):
                     {
                         "op": "add",
                         "path": f"/logs/{index}/end_time",
-                        "value": run.end_time.isoformat(timespec="milliseconds"),
+                        "value": run.end_time.isoformat(timespec="milliseconds")
+                        if run.end_time is not None
+                        else None,
                     },
                 )
             )

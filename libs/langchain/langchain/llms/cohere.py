@@ -63,6 +63,8 @@ def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
 
 
 class BaseCohere(Serializable):
+    """Base class for Cohere models."""
+
     client: Any  #: :meta private:
     async_client: Any  #: :meta private:
     model: Optional[str] = Field(default=None)
