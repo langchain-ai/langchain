@@ -255,6 +255,7 @@ all = [
     "jinja2",
     "pinecone-client",
     "pinecone-text",
+    "hippo-api",
     "marqo",
     "pymongo",
     "weaviate-client",

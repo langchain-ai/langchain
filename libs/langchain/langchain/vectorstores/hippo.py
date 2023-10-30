@@ -1,14 +1,12 @@
-from langchain.schema.embeddings import Embeddings
-from transwarp_hippo_api.hippo_client import HippoTable, HippoClient, HippoField
-from transwarp_hippo_api.hippo_type import HippoType, MetricType, IndexType
 import logging
-from langchain.docstore.document import Document
-from langchain.vectorstores.base import VectorStore
-from typing import Any, Iterable, List, Optional, Tuple, Dict
-from langchain.utils.utils import guard_import
-guard_import("hippo-api")
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-logger = logging.getLogger(__name__)
+from transwarp_hippo_api.hippo_client import HippoClient, HippoField, HippoTable
+from transwarp_hippo_api.hippo_type import HippoType, IndexType, MetricType
+
+from langchain.docstore.document import Document
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 
 # Default connection
 DEFAULT_HIPPO_CONNECTION = {
@@ -18,10 +16,11 @@ DEFAULT_HIPPO_CONNECTION = {
     "password": "admin",
 }
 
-
+logger = logging.getLogger(__name__)
 
 
 class Hippo(VectorStore):
+
     """`Hippo` vector store.
 
     You need to install `hippo-api` and run Hippo.
@@ -78,15 +77,15 @@ class Hippo(VectorStore):
     """
 
     def __init__(
-            self,
-            embedding_function: Embeddings,
-            table_name: str = "test",
-            database_name: str = "default",
-            number_of_shards: int = 1,
-            number_of_replicas: int = 1,
-            connection_args: Optional[Dict[str, Any]] = None,
-            index_params: Optional[dict] = None,
-            drop_old: Optional[bool] = False,
+        self,
+        embedding_function: Embeddings,
+        table_name: str = "test",
+        database_name: str = "default",
+        number_of_shards: int = 1,
+        number_of_replicas: int = 1,
+        connection_args: Optional[Dict[str, Any]] = None,
+        index_params: Optional[dict] = None,
+        drop_old: Optional[bool] = False,
     ):
         self.number_of_shards = number_of_shards
         self.number_of_replicas = number_of_replicas
@@ -95,7 +94,8 @@ class Hippo(VectorStore):
         self.database_name = database_name
         self.index_params = index_params
 
-        # In order for a collection to be compatible, 'pk' should be an auto-increment primary key and string
+        # In order for a collection to be compatible,
+        # 'pk' should be an auto-increment primary key and string
         self._primary_field = "pk"
         # In order for compatibility, the text field will need to be called "text"
         self._text_field = "text"
@@ -105,22 +105,29 @@ class Hippo(VectorStore):
         # Create the connection to the server
         if connection_args is None:
             connection_args = DEFAULT_HIPPO_CONNECTION
-        self.hc = self._create_connection_alias(connection_args)
-        self.col = Optional[HippoTable]
+        self.hc: HippoClient = self._create_connection_alias(connection_args)
+        self.col: HippoTable = Optional[HippoTable]
 
         # If the collection exists, delete it
         try:
-            if self.hc.check_table_exists(self.table_name, self.database_name) and drop_old:
+            if (
+                self.hc.check_table_exists(self.table_name, self.database_name)
+                and drop_old
+            ):
                 self.hc.delete_table(self.table_name, self.database_name)
         except Exception as e:
-            logging.error(f"An error occurred while deleting the table {self.table_name}: {e}")
+            logging.error(
+                f"An error occurred while deleting the table " f"{self.table_name}: {e}"
+            )
             raise
 
         try:
             if self.hc.check_table_exists(self.table_name, self.database_name):
                 self.col = self.hc.get_table(self.table_name, self.database_name)
         except Exception as e:
-            logging.error(f"An error occurred while getting the table {self.table_name}: {e}")
+            logging.error(
+                f"An error occurred while getting the table " f"{self.table_name}: {e}"
+            )
             raise
 
         # Initialize the vector database
@@ -152,7 +159,7 @@ class Hippo(VectorStore):
             raise e
 
     def _get_env(
-            self, embeddings: Optional[list] = None, metadatas: Optional[List[dict]] = None
+        self, embeddings: Optional[list] = None, metadatas: Optional[List[dict]] = None
     ) -> None:
         logger.info("init ...")
         if embeddings is not None:
@@ -163,7 +170,7 @@ class Hippo(VectorStore):
         # self._create_search_params()
 
     def _create_collection(
-            self, embeddings: list, metadatas: Optional[List[dict]] = None
+        self, embeddings: list, metadatas: Optional[List[dict]] = None
     ) -> None:
         # Determine embedding dim
         dim = len(embeddings[0])
@@ -253,6 +260,7 @@ class Hippo(VectorStore):
                     logger.debug(f"[_get_index] embedding_indexes {embedding_indexes}")
                     if x["column"] == self._vector_field:
                         return x
+        return None
 
     # TO Indexes can only be created for the self._vector_field field.
     def _create_index(self) -> None:
@@ -312,8 +320,8 @@ class Hippo(VectorStore):
                             self.col.activate_index(self.index_params["index_name"])
                         )
                     elif (
-                            self.index_params["index_type"] == "IVF_FLAT"
-                            or self.index_params["index_type"] == "IVF_SQ"
+                        self.index_params["index_type"] == "IVF_FLAT"
+                        or self.index_params["index_type"] == "IVF_SQ"
                     ):
                         self.index_params["index_type"] = index_dict[
                             self.index_params["index_type"]
@@ -370,12 +378,12 @@ class Hippo(VectorStore):
                         )
 
     def add_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
-            timeout: Optional[int] = None,
-            batch_size: int = 1000,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        timeout: Optional[int] = None,
+        batch_size: int = 1000,
+        **kwargs: Any,
     ) -> List[str]:
         """
         Add text to the collection.
@@ -457,13 +465,13 @@ class Hippo(VectorStore):
         return [""]
 
     def similarity_search(
-            self,
-            query: str,
-            k: int = 4,
-            param: Optional[dict] = None,
-            expr: Optional[str] = None,
-            timeout: Optional[int] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        param: Optional[dict] = None,
+        expr: Optional[str] = None,
+        timeout: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """
         Perform a similarity search on the query string.
@@ -491,13 +499,13 @@ class Hippo(VectorStore):
         return [doc for doc, _ in res]
 
     def similarity_search_with_score(
-            self,
-            query: str,
-            k: int = 4,
-            param: Optional[dict] = None,
-            expr: Optional[str] = None,
-            timeout: Optional[int] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        param: Optional[dict] = None,
+        expr: Optional[str] = None,
+        timeout: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
         Performs a search on the query string and returns results with scores.
@@ -530,13 +538,13 @@ class Hippo(VectorStore):
         return ret
 
     def similarity_search_with_score_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            param: Optional[dict] = None,
-            expr: Optional[str] = None,
-            timeout: Optional[int] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        param: Optional[dict] = None,
+        expr: Optional[str] = None,
+        timeout: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
         Performs a search on the query string and returns results with scores.
@@ -600,18 +608,18 @@ class Hippo(VectorStore):
 
     @classmethod
     def from_texts(
-            cls,
-            texts: List[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[dict]] = None,
-            table_name: str = "test",
-            database_name: str = "default",
-            connection_args: Dict[str, Any] = DEFAULT_HIPPO_CONNECTION,
-            index_params: dict = None,
-            search_params=None,
-            drop_old: bool = False,
-            **kwargs: Any,
-    ) -> VectorStore:
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        table_name: str = "test",
+        database_name: str = "default",
+        connection_args: Dict[str, Any] = DEFAULT_HIPPO_CONNECTION,
+        index_params: Optional[Dict[Any, Any]] = None,
+        search_params: Optional[Dict[str, Any]] = None,
+        drop_old: bool = False,
+        **kwargs: Any,
+    ) -> "Hippo":
         """
         Creates an instance of the VST class from the given texts.
 
@@ -630,7 +638,7 @@ class Hippo(VectorStore):
             kwargs: Other arguments.
 
         Returns:
-            VST: An instance of the VST class.
+            Hippo: An instance of the VST class.
         """
 
         if search_params is None:
@@ -649,6 +657,3 @@ class Hippo(VectorStore):
         logger.debug(f"[from_texts] metadatas:{metadatas}")
         vector_db.add_texts(texts=texts, metadatas=metadatas)
         return vector_db
-
-
-
