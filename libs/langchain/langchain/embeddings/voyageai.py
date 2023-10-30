@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import json
 import logging
 from typing import (
@@ -40,7 +41,7 @@ def _create_retry_decorator(embeddings: VoyageEmbeddings) -> Callable[[Any], Any
 
 
 def _check_response(response: dict) -> dict:
-    if 'data' not in response:
+    if "data" not in response:
         raise RuntimeError(f"Voyage API Error. Message: {json.dumps(response)}")
     return response
 
@@ -100,7 +101,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
     def _invocation_params(self, input: List[str]) -> Dict:
         params = {
             "url": self.voyage_api_base,
-            "headers":  {"Authorization": f"Bearer {self.voyage_api_key}"},
+            "headers": {"Authorization": f"Bearer {self.voyage_api_key}"},
             "json": {"model": self.model, "input": input},
             "timeout": self.request_timeout,
         }
