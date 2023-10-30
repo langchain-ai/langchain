@@ -19,7 +19,7 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
-from langchain.callbacks.manager import Callbacks, collect_runs
+from langchain.callbacks.manager import Callbacks, atrace_as_chain_group, collect_runs
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.callbacks.tracers.schemas import Run
@@ -1441,6 +1441,40 @@ async def test_prompt() -> None:
             ],
         },
     )
+
+    # nested inside trace_with_chain_group
+
+    async with atrace_as_chain_group("a_group") as manager:
+        stream_log_nested = [
+            part
+            async for part in prompt.astream_log(
+                {"question": "What is your name?"}, config={"callbacks": manager}
+            )
+        ]
+
+    assert len(stream_log_nested[0].ops) == 1
+    assert stream_log_nested[0].ops[0]["op"] == "replace"
+    assert stream_log_nested[0].ops[0]["path"] == ""
+    assert stream_log_nested[0].ops[0]["value"]["logs"] == {}
+    assert stream_log_nested[0].ops[0]["value"]["final_output"] is None
+    assert stream_log_nested[0].ops[0]["value"]["streamed_output"] == []
+    assert isinstance(stream_log_nested[0].ops[0]["value"]["id"], str)
+
+    assert stream_log_nested[1:] == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "/final_output",
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
+            }
+        ),
+        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
+    ]
 
 
 def test_prompt_template_params() -> None:
