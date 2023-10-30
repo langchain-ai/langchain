@@ -19,12 +19,15 @@ def _get_docs(response: Any) -> List[Document]:
         Document(page_content=doc["snippet"], metadata=doc)
         for doc in response.generation_info["documents"]
     ].append(
-        Document(page_content=response.message, metadata={
-            "type": "model_response",
-            "citations": response.generation_info["citations"],
-            "search_results": response.generation_info["search_results"],
-            "search_queries": response.generation_info["search_queries"],
-        })
+        Document(
+            page_content=response.message,
+            metadata={
+                "type": "model_response",
+                "citations": response.generation_info["citations"],
+                "search_results": response.generation_info["search_results"],
+                "search_queries": response.generation_info["search_queries"],
+            },
+        )
     )
 
 
