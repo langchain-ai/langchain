@@ -36,5 +36,3 @@ This is some content\n1
         loader=EmailFromPDF(file_path)
         docs=loader.load()
         assert docs==expected_docs,"PDF not loaded correctly as email"
-testy=TestEmailFromPDFLoader()
-testy.test_emailfrompdf_loader()
