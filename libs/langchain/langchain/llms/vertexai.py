@@ -45,13 +45,10 @@ def _response_to_generation(
     response: TextGenerationResponse,
 ) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
-    try:
-        generation_info = {
-            "is_blocked": response.is_blocked,
-            "safety_attributes": response.safety_attributes,
-        }
-    except Exception:
-        generation_info = None
+    generation_info = {
+        "is_blocked": getattr(response, "is_blocked", None),
+        "safety_attributes": getattr(response, "safety_attributes", None),
+    }
     return GenerationChunk(text=response.text, generation_info=generation_info)
 
 
@@ -161,21 +158,21 @@ class _VertexAIBase(BaseModel):
 class _VertexAICommon(_VertexAIBase):
     client: "_LanguageModel" = None  #: :meta private:
     model_name: str
-    "Underlying model name."
+    """Underlying model name."""
     temperature: float = 0.0
-    "Sampling temperature, it controls the degree of randomness in token selection."
+    """Sampling temperature, it controls the degree of randomness in token selection."""
     max_output_tokens: int = 128
-    "Token limit determines the maximum amount of text output from one prompt."
+    """Token limit determines the maximum amount of text output from one prompt."""
     top_p: float = 0.95
-    "Tokens are selected from most probable to least until the sum of their "
-    "probabilities equals the top-p value. Top-p is ignored for Codey models."
+    """Tokens are selected from most probable to least until the sum of their
+    probabilities equals the top-p value. Top-p is ignored for Codey models."""
     top_k: int = 40
-    "How the model selects tokens for output, the next token is selected from "
-    "among the top-k most probable tokens. Top-k is ignored for Codey models."
+    """How the model selects tokens for output, the next token is selected from
+    among the top-k most probable tokens. Top-k is ignored for Codey models."""
     credentials: Any = Field(default=None, exclude=True)
-    "The default custom credentials (google.auth.credentials.Credentials) to use "
-    "when making API calls. If not provided, credentials will be ascertained from "
-    "the environment."
+    """The default custom credentials (google.auth.credentials.Credentials) to use
+    when making API calls. If not provided, credentials will be ascertained from
+    the environment."""
     n: int = 1
     """How many completions to generate for each prompt."""
     streaming: bool = False
