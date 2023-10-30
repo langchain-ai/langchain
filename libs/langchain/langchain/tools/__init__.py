@@ -240,6 +240,12 @@ def _import_gmail_GmailSendMessage() -> Any:
     return GmailSendMessage
 
 
+def _import_google_cloud_texttospeech() -> Any:
+    from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
+
+    return GoogleCloudTextToSpeechTool
+
+
 def _import_google_places_tool() -> Any:
     from langchain.tools.google_places.tool import GooglePlacesTool
 
@@ -731,6 +737,8 @@ def __getattr__(name: str) -> Any:
         return _import_gmail_GmailSearch()
     elif name == "GmailSendMessage":
         return _import_gmail_GmailSendMessage()
+    elif name == "GoogleCloudTextToSpeechTool":
+        return _import_google_cloud_texttospeech()
     elif name == "GooglePlacesTool":
         return _import_google_places_tool()
     elif name == "GoogleSearchResults":
@@ -916,6 +924,7 @@ __all__ = [
     "GmailGetThread",
     "GmailSearch",
     "GmailSendMessage",
+    "GoogleCloudTextToSpeechTool",
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
