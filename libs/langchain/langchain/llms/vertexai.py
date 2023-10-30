@@ -292,7 +292,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         except AttributeError:
             raise NotImplementedError(
                 "Your google-cloud-aiplatform version didn't implement count_tokens."
-                "Please, install it with pip install google-cloud-aiplatform>=1.34.0"
+                "Please, install it with pip install google-cloud-aiplatform>=1.35.0"
             )
 
         return result.total_tokens
