@@ -81,7 +81,11 @@ class ImageCaptionLoader(BaseLoader):
             else:
                 image = Image.open(image).convert("RGB")
         except Exception:
-            raise ValueError(f"Could not get image data for {image_source}")
+            if isinstance(image_source, bytes):
+                msg = "Could not get image data from bytes"
+            else:
+                msg = f"Could not get image data for {image_source}"
+            raise ValueError(msg)
 
         inputs = processor(image, "an image of", return_tensors="pt")
         output = model.generate(**inputs)
