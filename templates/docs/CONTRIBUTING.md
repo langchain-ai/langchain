@@ -6,7 +6,7 @@ If you need any help at all, please reach out!
 
 To contribute a new template, first fork this repository.
 Then clone that fork and pull it down locally.
-Set up an appropriate dev environment, and make sure you are in this `template` directory.
+Set up an appropriate dev environment, and make sure you are in this `templates` directory.
 
 Make sure you have `langchain-cli` installed.
 

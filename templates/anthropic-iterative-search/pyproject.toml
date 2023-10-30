@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "anthropic_iterative_search"
+name = "anthropic-iterative-search"
 version = "0.0.1"
 description = ""
 authors = []

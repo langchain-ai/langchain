@@ -95,7 +95,6 @@ def add(
     e.g.:
     langchain serve add extraction-openai-functions
     langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
-    langchain serve add git+https://github.com/efriis/hub.git#devbranch#subdirectory=mypackage
     """
 
     parsed_deps = parse_dependencies(dependencies, repo, branch, api_path)
@@ -200,7 +199,8 @@ def add(
         ]
 
         lines = (
-            ["", "Great! Add the following to your app:", ""] + imports + [""] + routes
+            ["", "Great! Add the following to your app:\n\n```", ""]
+            + imports + [""] + routes + ["```"]
         )
         typer.echo("\n".join(lines))
 
