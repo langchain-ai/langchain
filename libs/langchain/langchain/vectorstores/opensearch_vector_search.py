@@ -216,6 +216,29 @@ def _approximate_search_query_with_boolean_filter(
         },
     }
 
+def _approximate_search_query_match_text_with_boolean_filter(
+    query: str,
+    query_vector: List[float],
+    boolean_filter: Dict,
+    k: int = 4,
+    vector_field: str = "vector_field",
+    text_field:str = "text",
+    subquery_clause: str = "must",
+) -> Dict:
+    """For Approximate k-NN Search, with Boolean Filter and match clause with text field."""
+    return {
+        "size": k,
+        "query": {
+            "bool": {
+                "filter": boolean_filter,
+                subquery_clause: [
+                    {"knn": {vector_field: {"vector": query_vector, "k": k}}},
+                    {"match": {text_field: query}}
+                ],
+            }
+        },
+    }
+
 
 def _approximate_search_query_with_efficient_filter(
     query_vector: List[float],
@@ -561,6 +584,7 @@ class OpenSearchVectorSearch(VectorStore):
         ]
         return documents_with_scores
 
+
     def _raw_similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[dict]:
@@ -598,6 +622,7 @@ class OpenSearchVectorSearch(VectorStore):
 
         if search_type == "approximate_search":
             boolean_filter = _get_kwargs_value(kwargs, "boolean_filter", {})
+            text_field = _get_kwargs_value(kwargs, "text_field", "text")
             subquery_clause = _get_kwargs_value(kwargs, "subquery_clause", "must")
             efficient_filter = _get_kwargs_value(kwargs, "efficient_filter", {})
             # `lucene_filter` is deprecated, added for Backwards Compatibility
@@ -633,13 +658,24 @@ class OpenSearchVectorSearch(VectorStore):
                     boolean_filter = filter
 
             if boolean_filter != {}:
-                search_query = _approximate_search_query_with_boolean_filter(
-                    embedding,
-                    boolean_filter,
-                    k=k,
-                    vector_field=vector_field,
-                    subquery_clause=subquery_clause,
-                )
+                if text_field != {}:
+                    search_query = _approximate_search_query_match_text_with_boolean_filter(
+                        query,
+                        embedding,
+                        boolean_filter,
+                        k=k,
+                        vector_field=vector_field,
+                        text_field=text_field,
+                        subquery_clause=subquery_clause
+                    )
+                else:
+                    search_query = _approximate_search_query_with_boolean_filter(
+                        embedding,
+                        boolean_filter,
+                        k=k,
+                        vector_field=vector_field,
+                        subquery_clause=subquery_clause,
+                    )
             elif efficient_filter != {}:
                 search_query = _approximate_search_query_with_efficient_filter(
                     embedding, efficient_filter, k=k, vector_field=vector_field
