@@ -56,7 +56,11 @@ AI_REPONSE_DICT = {
 }
 
 
-def create_prompt(num_plates: Optional[int] = None, num_rows: Optional[int] = None, num_cols: Optional[int] = None):
+def create_prompt(
+    num_plates: Optional[int] = None,
+    num_rows: Optional[int] = None,
+    num_cols: Optional[int] = None,
+) -> str:
     additional_prompts = []
     if num_plates:
         num_plates_str = f"are {num_plates} plates" if num_plates > 1 else "is 1 plate"
