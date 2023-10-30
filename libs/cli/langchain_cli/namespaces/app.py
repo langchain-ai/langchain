@@ -1,5 +1,5 @@
 """
-Manage LangServe application projects.
+Manage LangChain apps
 """
 
 import shutil
@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import typer
-from langserve.packages import get_langserve_export, list_packages
+from langserve.packages import get_langserve_export
 from typing_extensions import Annotated
 
 from langchain_cli.utils.events import create_events
@@ -22,10 +22,10 @@ from langchain_cli.utils.packages import get_package_root
 
 REPO_DIR = Path(typer.get_app_dir("langchain")) / "git_repos"
 
-serve = typer.Typer(no_args_is_help=True, add_completion=False)
+app_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
 
-@serve.command()
+@app_cli.command()
 def new(
     name: Annotated[str, typer.Argument(help="The name of the folder to create")],
     *,
@@ -33,10 +33,6 @@ def new(
         Optional[List[str]],
         typer.Option(help="Packages to seed the project with"),
     ] = None,
-    with_poetry: Annotated[
-        bool,
-        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
-    ] = False,
 ):
     """
     Create a new LangServe application.
@@ -44,31 +40,19 @@ def new(
     # copy over template from ../project_template
     project_template_dir = Path(__file__).parents[1] / "project_template"
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
+    app_name = name if name != "." else Path.cwd().name
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=name == ".")
 
-    # poetry install
-    if with_poetry:
-        subprocess.run(["poetry", "install"], cwd=destination_dir)
+    readme = destination_dir / "README.md"
+    readme_contents = readme.read_text()
+    readme.write_text(readme_contents.replace("__app_name__", app_name))
 
     # add packages if specified
     if package is not None and len(package) > 0:
-        add(package, project_dir=destination_dir, with_poetry=with_poetry)
+        add(package, project_dir=destination_dir)
 
 
-@serve.command()
-def install():
-    package_root = get_package_root() / "packages"
-    for package_path in list_packages(package_root):
-        try:
-            pyproject_path = package_path / "pyproject.toml"
-            langserve_export = get_langserve_export(pyproject_path)
-            typer.echo(f"Installing {langserve_export['package_name']}...")
-            subprocess.run(["poetry", "add", "--editable", package_path])
-        except Exception as e:
-            typer.echo(f"Skipping installing {package_path} due to error: {e}")
-
-
-@serve.command()
+@app_cli.command()
 def add(
     dependencies: Annotated[
         Optional[List[str]], typer.Argument(help="The dependency to add")
@@ -79,22 +63,19 @@ def add(
         Optional[Path], typer.Option(help="The project directory")
     ] = None,
     repo: Annotated[
-        List[str], typer.Option(help="Install deps from a specific github repo instead")
+        List[str],
+        typer.Option(help="Install templates from a specific github repo instead"),
     ] = [],
     branch: Annotated[
-        List[str], typer.Option(help="Install deps from a specific branch")
+        List[str], typer.Option(help="Install templates from a specific branch")
     ] = [],
-    with_poetry: Annotated[
-        bool,
-        typer.Option("--with-poetry/--no-poetry", help="Run poetry install"),
-    ] = False,
 ):
     """
-    Adds the specified package to the current LangServe instance.
+    Adds the specified template to the current LangServe app.
 
     e.g.:
-    langchain serve add extraction-openai-functions
-    langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
+    langchain app add extraction-openai-functions
+    langchain app add git+ssh://git@github.com/efriis/simple-pirate.git
     """
 
     parsed_deps = parse_dependencies(dependencies, repo, branch, api_path)
@@ -122,7 +103,7 @@ def add(
         if len(group_deps) == 1:
             typer.echo(f"Adding {git}@{ref}...")
         else:
-            typer.echo(f"Adding {len(group_deps)} dependencies from {git}@{ref}")
+            typer.echo(f"Adding {len(group_deps)} templates from {git}@{ref}")
         source_repo_path = update_repo(git, ref, REPO_DIR)
 
         for dep in group_deps:
@@ -159,20 +140,14 @@ def add(
     installed_desination_strs = [
         str(p.relative_to(cwd)) for p in installed_destination_paths
     ]
+    cmd = ["pip", "install", "-e"] + installed_desination_strs
+    cmd_str = " \\\n  ".join(installed_desination_strs)
+    install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
+    typer.echo(install_str)
 
-    if with_poetry:
-        subprocess.run(
-            ["poetry", "add", "--editable"] + installed_desination_strs,
-            cwd=cwd,
-        )
-    else:
-        cmd = ["pip", "install", "-e"] + installed_desination_strs
-        cmd_str = " \\\n  ".join(installed_desination_strs)
-        install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
-        typer.echo(install_str)
+    if typer.confirm("Run it?"):
+        subprocess.run(cmd, cwd=cwd)
 
-        if typer.confirm("Run it?"):
-            subprocess.run(cmd, cwd=cwd)
     if typer.confirm("\nGenerate route code for these packages?", default=True):
         chain_names = []
         for e in installed_exports:
@@ -200,21 +175,20 @@ def add(
 
         lines = (
             ["", "Great! Add the following to your app:\n\n```", ""]
-            + imports + [""] + routes + ["```"]
+            + imports
+            + [""]
+            + routes
+            + ["```"]
         )
         typer.echo("\n".join(lines))
 
 
-@serve.command()
+@app_cli.command()
 def remove(
     api_paths: Annotated[List[str], typer.Argument(help="The API paths to remove")],
-    with_poetry: Annotated[
-        bool,
-        typer.Option("--with_poetry/--no-poetry", help="Don't run poetry remove"),
-    ] = False,
 ):
     """
-    Removes the specified package from the current LangServe instance.
+    Removes the specified package from the current LangServe app.
     """
     for api_path in api_paths:
         package_dir = Path.cwd() / "packages" / api_path
@@ -224,28 +198,12 @@ def remove(
         pyproject = package_dir / "pyproject.toml"
         langserve_export = get_langserve_export(pyproject)
         typer.echo(f"Removing {langserve_export['package_name']}...")
-        if with_poetry:
-            subprocess.run(["poetry", "remove", langserve_export["package_name"]])
+
         shutil.rmtree(package_dir)
 
 
-@serve.command()
-def list():
-    """
-    Lists all packages in the current LangServe instance.
-    """
-    package_root = get_package_root() / "packages"
-    for package_path in list_packages(package_root):
-        relative = package_path.relative_to(package_root)
-        pyproject_path = package_path / "pyproject.toml"
-        langserve_export = get_langserve_export(pyproject_path)
-        typer.echo(
-            f"{relative}: ({langserve_export['module']}.{langserve_export['attr']})"
-        )
-
-
-@serve.command()
-def start(
+@app_cli.command()
+def serve(
     *,
     port: Annotated[
         Optional[int], typer.Option(help="The port to run the server on")
@@ -253,10 +211,12 @@ def start(
     host: Annotated[
         Optional[str], typer.Option(help="The host to run the server on")
     ] = None,
-    app: Annotated[Optional[str], typer.Option(help="The app to run")] = None,
+    app: Annotated[
+        Optional[str], typer.Option(help="The app to run, e.g. `app.server:app`")
+    ] = None,
 ) -> None:
     """
-    Starts the LangServe instance.
+    Starts the LangServe app.
     """
 
     app_str = app if app is not None else "app.server:app"

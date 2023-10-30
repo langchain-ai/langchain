@@ -132,7 +132,7 @@ def parse_dependencies(
     ):
         raise ValueError(
             "Number of defined repos/branches/api_paths did not match the "
-            "number of dependencies."
+            "number of templates."
         )
     inner_deps = _list_arg_to_length(dependencies, num_deps)
     inner_api_paths = _list_arg_to_length(api_path, num_deps)

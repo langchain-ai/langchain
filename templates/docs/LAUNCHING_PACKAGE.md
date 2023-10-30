@@ -32,7 +32,7 @@ pip install -U "langchain-cli[serve]"
 You can then run:
 
 ```shell
-langchain hub start
+langchain template serve
 ```
 
 This will spin up endpoints, documentation, and playground for this chain.
