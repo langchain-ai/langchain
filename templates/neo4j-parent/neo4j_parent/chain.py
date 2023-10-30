@@ -8,6 +8,7 @@ from langchain.vectorstores import Neo4jVector
 
 retrieval_query = """
 MATCH (node)-[:HAS_PARENT]->(parent)
+WITH parent, max(score) AS score // deduplicate parents
 RETURN parent.text AS text, score, {} AS metadata
 """
 
