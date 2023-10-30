@@ -186,6 +186,7 @@ class ChatBaichuan(BaseChatModel):
         """Get the default parameters for calling Baichuan API."""
         normal_params = {
             "model": self.model,
+            "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k": self.top_k,
             "with_search_enhance": self.with_search_enhance,

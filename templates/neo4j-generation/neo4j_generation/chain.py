@@ -1,11 +1,12 @@
-from typing import Optional, List
+from typing import List, Optional
+
 from langchain.chains.openai_functions import (
     create_structured_output_chain,
 )
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
 from langchain.graphs import Neo4jGraph
 from langchain.graphs.graph_document import GraphDocument
+from langchain.prompts import ChatPromptTemplate
 from langchain.schema import Document
 
 from neo4j_generation.utils import (
@@ -35,7 +36,7 @@ def get_extraction_chain(
                                            If not provided, there won't be any specific restriction on node labels.
     - allowed_rels (Optional[List[str]]): A list of relationship types that are allowed in the knowledge graph.
                                          If not provided, there won't be any specific restriction on relationship types.
-    """
+    """  # noqa: E501
     prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -64,11 +65,12 @@ always use the most complete identifier for that entity throughout the knowledge
 Remember, the knowledge graph should be coherent and easily understandable, so maintaining consistency in entity references is crucial.
 ## 5. Strict Compliance
 Adhere to the rules strictly. Non-compliance will result in termination.
-          """,
+          """,  # noqa: E501
             ),
             (
                 "human",
-                "Use the given format to extract information from the following input: {input}",
+                "Use the given format to extract information from the "
+                "following input: {input}",
             ),
             ("human", "Tip: Make sure to answer in the correct format"),
         ]
@@ -94,7 +96,7 @@ def chain(
 
     Returns:
     str: A confirmation message indicating the completion of the graph construction.
-    """
+    """  # noqa: E501
     # Extract graph data using OpenAI functions
     extract_chain = get_extraction_chain(allowed_nodes, allowed_relationships)
     data = extract_chain.run(text)

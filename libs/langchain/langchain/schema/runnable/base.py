@@ -463,7 +463,7 @@ class Runnable(Generic[Input, Output], ABC):
             config["callbacks"] = callbacks + [stream]
         elif isinstance(callbacks, BaseCallbackManager):
             callbacks = callbacks.copy()
-            callbacks.inheritable_handlers.append(stream)
+            callbacks.add_handler(stream, inherit=True)
             config["callbacks"] = callbacks
         else:
             raise ValueError(
