@@ -94,6 +94,6 @@ class ImageCaptionLoader(BaseLoader):
         if isinstance(image_source, bytes):
             metadata: dict = {"image_source": "Image bytes provided"}
         else:
-            metadata: dict = {"image_path": image_source}
+            metadata = {"image_path": image_source}
 
         return caption, metadata
