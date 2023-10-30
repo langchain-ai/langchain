@@ -117,7 +117,7 @@ def _get_search_client(
             }
             if len(missing_fields) > 0:
                 # Helper for formatting field information for each missing field.
-                def fmt_err(x):
+                def fmt_err(x: str) -> str:
                     return (
                         f"{x} current type: '{fields_types.get(x, 'MISSING')}'. "
                         f"It has to be '{mandatory_fields.get(x)}' or you can point "
