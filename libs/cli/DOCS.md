@@ -12,72 +12,18 @@ $ langchain [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
-* `hub`: Manage installable hub packages.
-* `serve`: Manage LangServe application projects.
+* `app`: Manage LangServe application projects.
+* `package`: Manage installable hub packages.
 * `start`: Start the LangServe instance, whether it's...
 
-## `langchain hub`
-
-Manage installable hub packages.
-
-**Usage**:
-
-```console
-$ langchain hub [OPTIONS] COMMAND [ARGS]...
-```
-
-**Options**:
-
-* `--help`: Show this message and exit.
-
-**Commands**:
-
-* `new`: Creates a new hub package.
-* `start`: Starts a demo LangServe instance for this...
-
-### `langchain hub new`
-
-Creates a new hub package.
-
-**Usage**:
-
-```console
-$ langchain hub new [OPTIONS] NAME
-```
-
-**Arguments**:
-
-* `NAME`: The name of the folder to create  [required]
-
-**Options**:
-
-* `--with-poetry / --no-poetry`: Don't run poetry install  [default: no-poetry]
-* `--help`: Show this message and exit.
-
-### `langchain hub start`
-
-Starts a demo LangServe instance for this hub package.
-
-**Usage**:
-
-```console
-$ langchain hub start [OPTIONS]
-```
-
-**Options**:
-
-* `--port INTEGER`: The port to run the server on
-* `--host TEXT`: The host to run the server on
-* `--help`: Show this message and exit.
-
-## `langchain serve`
+## `langchain app`
 
 Manage LangServe application projects.
 
 **Usage**:
 
 ```console
-$ langchain serve [OPTIONS] COMMAND [ARGS]...
+$ langchain app [OPTIONS] COMMAND [ARGS]...
 ```
 
 **Options**:
@@ -93,7 +39,7 @@ $ langchain serve [OPTIONS] COMMAND [ARGS]...
 * `remove`: Removes the specified package from the...
 * `start`: Starts the LangServe instance.
 
-### `langchain serve add`
+### `langchain app add`
 
 Adds the specified package to the current LangServe instance.
 
@@ -104,7 +50,7 @@ langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
 **Usage**:
 
 ```console
-$ langchain serve add [OPTIONS] [DEPENDENCIES]...
+$ langchain app add [OPTIONS] [DEPENDENCIES]...
 ```
 
 **Arguments**:
@@ -120,40 +66,40 @@ $ langchain serve add [OPTIONS] [DEPENDENCIES]...
 * `--with-poetry / --no-poetry`: Run poetry install  [default: no-poetry]
 * `--help`: Show this message and exit.
 
-### `langchain serve install`
+### `langchain app install`
 
 **Usage**:
 
 ```console
-$ langchain serve install [OPTIONS]
+$ langchain app install [OPTIONS]
 ```
 
 **Options**:
 
 * `--help`: Show this message and exit.
 
-### `langchain serve list`
+### `langchain app list`
 
 Lists all packages in the current LangServe instance.
 
 **Usage**:
 
 ```console
-$ langchain serve list [OPTIONS]
+$ langchain app list [OPTIONS]
 ```
 
 **Options**:
 
 * `--help`: Show this message and exit.
 
-### `langchain serve new`
+### `langchain app new`
 
 Create a new LangServe application.
 
 **Usage**:
 
 ```console
-$ langchain serve new [OPTIONS] NAME
+$ langchain app new [OPTIONS] NAME
 ```
 
 **Arguments**:
@@ -166,14 +112,14 @@ $ langchain serve new [OPTIONS] NAME
 * `--with-poetry / --no-poetry`: Run poetry install  [default: no-poetry]
 * `--help`: Show this message and exit.
 
-### `langchain serve remove`
+### `langchain app remove`
 
 Removes the specified package from the current LangServe instance.
 
 **Usage**:
 
 ```console
-$ langchain serve remove [OPTIONS] API_PATHS...
+$ langchain app remove [OPTIONS] API_PATHS...
 ```
 
 **Arguments**:
@@ -185,14 +131,14 @@ $ langchain serve remove [OPTIONS] API_PATHS...
 * `--with_poetry / --no-poetry`: Don't run poetry remove  [default: no-poetry]
 * `--help`: Show this message and exit.
 
-### `langchain serve start`
+### `langchain app start`
 
 Starts the LangServe instance.
 
 **Usage**:
 
 ```console
-$ langchain serve start [OPTIONS]
+$ langchain app start [OPTIONS]
 ```
 
 **Options**:
@@ -200,6 +146,60 @@ $ langchain serve start [OPTIONS]
 * `--port INTEGER`: The port to run the server on
 * `--host TEXT`: The host to run the server on
 * `--app TEXT`: The app to run
+* `--help`: Show this message and exit.
+
+## `langchain package`
+
+Manage installable hub packages.
+
+**Usage**:
+
+```console
+$ langchain package [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `new`: Creates a new hub package.
+* `start`: Starts a demo LangServe instance for this...
+
+### `langchain package new`
+
+Creates a new hub package.
+
+**Usage**:
+
+```console
+$ langchain package new [OPTIONS] NAME
+```
+
+**Arguments**:
+
+* `NAME`: The name of the folder to create  [required]
+
+**Options**:
+
+* `--with-poetry / --no-poetry`: Don't run poetry install  [default: no-poetry]
+* `--help`: Show this message and exit.
+
+### `langchain package start`
+
+Starts a demo LangServe instance for this hub package.
+
+**Usage**:
+
+```console
+$ langchain package start [OPTIONS]
+```
+
+**Options**:
+
+* `--port INTEGER`: The port to run the server on
+* `--host TEXT`: The host to run the server on
 * `--help`: Show this message and exit.
 
 ## `langchain start`
