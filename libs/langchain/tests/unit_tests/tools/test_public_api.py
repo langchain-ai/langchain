@@ -46,6 +46,7 @@ _EXPECTED = [
     "GmailGetThread",
     "GmailSearch",
     "GmailSendMessage",
+    "GoogleCloudTextToSpeechTool",
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",

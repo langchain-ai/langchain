@@ -1,7 +1,10 @@
-# LangServe Templates
+# LangChain Templates
 
-LangServe Templates are the easiest and fastest way to build a production-ready LLM application.
+LangChain Templates are the easiest and fastest way to build a production-ready LLM application.
 These templates serve as a set of reference architectures for a wide variety of popular LLM use cases.
+They are all in a standard format which make it easy to deploy them with [LangServe](https://github.com/langchain-ai/langserve).
+
+🚩 We will be releasing a hosted version of LangServe for one-click deployments of LangChain applications. [Sign up here](https://airtable.com/app0hN6sd93QcKubv/shrAjst60xXa6quV2) to get on the waitlist.
 
 ## Quick Start
 
@@ -70,6 +73,24 @@ from pirate_speak.chain import chain as pirate_speak_chain
 app = FastAPI()
 
 add_routes(app, pirate_speak_chain, path="/pirate_speak")
+```
+
+(Optional) Let's now configure LangSmith. 
+LangSmith will help us trace, monitor and debug LangChain applications. 
+LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+If you don't have access, you can skip this section
+
+
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+```
+
+For this particular application, we will use OpenAI as the LLM, so we need to export our OpenAI API key:
+
+```shell
+export OPENAI_API_KEY=sk-...
 ```
 
 You can then spin up production-ready endpoints, along with a playground, by running:

@@ -1481,8 +1481,8 @@ class CallbackManagerForChainGroup(CallbackManager):
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
-        inheritable_handlers: List[BaseCallbackHandler] | None = None,
-        parent_run_id: UUID | None = None,
+        inheritable_handlers: Optional[List[BaseCallbackHandler]] = None,
+        parent_run_id: Optional[UUID] = None,
         *,
         parent_run_manager: CallbackManagerForChainRun,
         **kwargs: Any,
@@ -1817,8 +1817,8 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
-        inheritable_handlers: List[BaseCallbackHandler] | None = None,
-        parent_run_id: UUID | None = None,
+        inheritable_handlers: Optional[List[BaseCallbackHandler]] = None,
+        parent_run_id: Optional[UUID] = None,
         *,
         parent_run_manager: AsyncCallbackManagerForChainRun,
         **kwargs: Any,
