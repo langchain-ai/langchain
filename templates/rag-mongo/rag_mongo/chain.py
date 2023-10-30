@@ -23,7 +23,7 @@ db = client[DB_NAME]
 MONGODB_COLLECTION = db[COLLECTION_NAME]
 
 ### Ingest code - you may need to run this the first time
-''' 
+""" 
 # Load
 from langchain.document_loaders import WebBaseLoader
 loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
@@ -43,14 +43,14 @@ vectorstore = MongoDBAtlasVectorSearch.from_documents(
      index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME
  )
 retriever = vectorstore.as_retriever()
-'''
+"""
 
 # Read from MongoDB Atlas Vector Search
 vectorstore = MongoDBAtlasVectorSearch.from_connection_string(
     MONGO_URI,
     DB_NAME + "." + COLLECTION_NAME,
     OpenAIEmbeddings(disallowed_special=()),
-    index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME
+    index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME,
 )
 retriever = vectorstore.as_retriever()
 
@@ -70,8 +70,10 @@ chain = (
     | StrOutputParser()
 )
 
+
 # Add typing for input
 class Question(BaseModel):
     __root__: str
+
 
 chain = chain.with_types(input_type=Question)
