@@ -34,7 +34,9 @@ template = """You are an AI language model assistant. Your task is to generate 3
   "additionalProperties": false
 }}"""  # noqa: E501
 
-prompt = ChatPromptTemplate.from_messages([("system", template), ("human", "{question}")])
+prompt = ChatPromptTemplate.from_messages(
+    [("system", template), ("human", "{question}")]
+)
 
 # Chain
 chain = prompt | model
