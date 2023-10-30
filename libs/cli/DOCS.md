@@ -13,8 +13,8 @@ $ langchain [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `app`: Manage LangServe application projects.
-* `package`: Manage installable hub packages.
-* `start`: Start the LangServe instance, whether it's...
+* `serve`: Start the LangServe instance, whether it's...
+* `template`: Develop installable templates.
 
 ## `langchain app`
 
@@ -37,7 +37,7 @@ $ langchain app [OPTIONS] COMMAND [ARGS]...
 * `list`: Lists all packages in the current...
 * `new`: Create a new LangServe application.
 * `remove`: Removes the specified package from the...
-* `start`: Starts the LangServe instance.
+* `serve`: Starts the LangServe instance.
 
 ### `langchain app add`
 
@@ -131,14 +131,14 @@ $ langchain app remove [OPTIONS] API_PATHS...
 * `--with_poetry / --no-poetry`: Don't run poetry remove  [default: no-poetry]
 * `--help`: Show this message and exit.
 
-### `langchain app start`
+### `langchain app serve`
 
 Starts the LangServe instance.
 
 **Usage**:
 
 ```console
-$ langchain app start [OPTIONS]
+$ langchain app serve [OPTIONS]
 ```
 
 **Options**:
@@ -148,14 +148,30 @@ $ langchain app start [OPTIONS]
 * `--app TEXT`: The app to run
 * `--help`: Show this message and exit.
 
-## `langchain package`
+## `langchain serve`
 
-Manage installable hub packages.
+Start the LangServe instance, whether it's a template package or an app.
 
 **Usage**:
 
 ```console
-$ langchain package [OPTIONS] COMMAND [ARGS]...
+$ langchain serve [OPTIONS]
+```
+
+**Options**:
+
+* `--port INTEGER`: The port to run the server on
+* `--host TEXT`: The host to run the server on
+* `--help`: Show this message and exit.
+
+## `langchain template`
+
+Develop installable templates.
+
+**Usage**:
+
+```console
+$ langchain template [OPTIONS] COMMAND [ARGS]...
 ```
 
 **Options**:
@@ -164,17 +180,17 @@ $ langchain package [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
-* `new`: Creates a new hub package.
-* `start`: Starts a demo LangServe instance for this...
+* `new`: Creates a new template package.
+* `serve`: Starts a demo LangServe instance for this...
 
-### `langchain package new`
+### `langchain template new`
 
-Creates a new hub package.
+Creates a new template package.
 
 **Usage**:
 
 ```console
-$ langchain package new [OPTIONS] NAME
+$ langchain template new [OPTIONS] NAME
 ```
 
 **Arguments**:
@@ -186,30 +202,14 @@ $ langchain package new [OPTIONS] NAME
 * `--with-poetry / --no-poetry`: Don't run poetry install  [default: no-poetry]
 * `--help`: Show this message and exit.
 
-### `langchain package start`
+### `langchain template serve`
 
-Starts a demo LangServe instance for this hub package.
-
-**Usage**:
-
-```console
-$ langchain package start [OPTIONS]
-```
-
-**Options**:
-
-* `--port INTEGER`: The port to run the server on
-* `--host TEXT`: The host to run the server on
-* `--help`: Show this message and exit.
-
-## `langchain start`
-
-Start the LangServe instance, whether it's a hub package or a serve project.
+Starts a demo LangServe instance for this template.
 
 **Usage**:
 
 ```console
-$ langchain start [OPTIONS]
+$ langchain template serve [OPTIONS]
 ```
 
 **Options**:
