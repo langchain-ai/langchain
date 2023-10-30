@@ -373,6 +373,7 @@ extended_testing = [
  "anthropic",
  "upstash-redis",
  "rspace_client",
+ "fireworks-ai",
 ]
 
 [tool.ruff]
