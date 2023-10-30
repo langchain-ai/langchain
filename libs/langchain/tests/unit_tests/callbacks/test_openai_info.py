@@ -50,36 +50,36 @@ def test_on_llm_end_custom_model(handler: OpenAICallbackHandler) -> None:
 
 
 @pytest.mark.parametrize(
-    "model_name",
+    "model_name, expected_cost",
     [
-        "ada:ft-your-org:custom-model-name-2022-02-15-04-21-04",
-        "babbage:ft-your-org:custom-model-name-2022-02-15-04-21-04",
-        "curie:ft-your-org:custom-model-name-2022-02-15-04-21-04",
-        "davinci:ft-your-org:custom-model-name-2022-02-15-04-21-04",
-        "ft:babbage-002:your-org:custom-model-name:1abcdefg",
-        "ft:davinci-002:your-org:custom-model-name:1abcdefg",
-        "ft:gpt-3.5-turbo-0613:your-org:custom-model-name:1abcdefg",
-        "babbage-002.ft-0123456789abcdefghijklmnopqrstuv",
-        "davinci-002.ft-0123456789abcdefghijklmnopqrstuv",
-        "gpt-35-turbo-0613.ft-0123456789abcdefghijklmnopqrstuv",
+        ("ada:ft-your-org:custom-model-name-2022-02-15-04-21-04", 0.0032),
+        ("babbage:ft-your-org:custom-model-name-2022-02-15-04-21-04", 0.0048),
+        ("curie:ft-your-org:custom-model-name-2022-02-15-04-21-04", 0.024),
+        ("davinci:ft-your-org:custom-model-name-2022-02-15-04-21-04", 0.24),
+        ("ft:babbage-002:your-org:custom-model-name:1abcdefg", 0.0032),
+        ("ft:davinci-002:your-org:custom-model-name:1abcdefg", 0.024),
+        ("ft:gpt-3.5-turbo-0613:your-org:custom-model-name:1abcdefg", 0.028),
+        ("babbage-002.ft-0123456789abcdefghijklmnopqrstuv", 0.0008),
+        ("davinci-002.ft-0123456789abcdefghijklmnopqrstuv", 0.004),
+        ("gpt-35-turbo-0613.ft-0123456789abcdefghijklmnopqrstuv", 0.0035),
     ],
 )
 def test_on_llm_end_finetuned_model(
-    handler: OpenAICallbackHandler, model_name: str
+    handler: OpenAICallbackHandler, model_name: str, expected_cost: float
 ) -> None:
     response = LLMResult(
         generations=[],
         llm_output={
             "token_usage": {
-                "prompt_tokens": 2,
-                "completion_tokens": 1,
-                "total_tokens": 3,
+                "prompt_tokens": 1000,
+                "completion_tokens": 1000,
+                "total_tokens": 2000,
             },
             "model_name": model_name,
         },
     )
     handler.on_llm_end(response)
-    assert handler.total_cost > 0
+    assert handler.total_cost == expected_cost
 
 
 @pytest.mark.parametrize(
