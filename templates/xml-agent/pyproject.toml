@@ -10,6 +10,7 @@ python = ">=3.8.1,<4.0"
 langchain = ">=0.0.322"
 anthropic = ">=0.5.0"
 langchainhub = ">=0.1.13"
+duckduckgo-search = "^3.8.3"
 
 [tool.langserve]
 export_module = "xml_agent"

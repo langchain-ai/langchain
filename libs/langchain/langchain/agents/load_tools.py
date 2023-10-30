@@ -33,6 +33,7 @@ from langchain.tools.pubmed.tool import PubmedQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
+from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.google_scholar.tool import GoogleScholarQueryRun
 from langchain.tools.metaphor_search.tool import MetaphorSearchResults
@@ -326,6 +327,10 @@ def _get_eleven_labs_text2speech(**kwargs: Any) -> BaseTool:
     return ElevenLabsText2SpeechTool(**kwargs)
 
 
+def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
+    return GoogleCloudTextToSpeechTool(**kwargs)
+
+
 _EXTRA_LLM_TOOLS: Dict[
     str,
     Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],
@@ -390,6 +395,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["api_login", "api_password", "aiosession"],
     ),
     "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
+    "google_cloud_texttospeech": (_get_google_cloud_texttospeech, []),
 }
 
 
