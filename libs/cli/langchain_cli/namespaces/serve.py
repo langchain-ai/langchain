@@ -5,17 +5,17 @@ Manage LangServe application projects.
 import shutil
 import subprocess
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
-import tomli
 import typer
 from langserve.packages import get_langserve_export, list_packages
 from typing_extensions import Annotated
 
 from langchain_cli.utils.events import create_events
 from langchain_cli.utils.git import (
+    DependencySource,
     copy_repo,
-    parse_dependency_string,
+    parse_dependencies,
     update_repo,
 )
 from langchain_cli.utils.packages import get_package_root
@@ -79,7 +79,10 @@ def add(
         Optional[Path], typer.Option(help="The project directory")
     ] = None,
     repo: Annotated[
-        List[str], typer.Option(help="Shorthand for installing a GitHub Repo")
+        List[str], typer.Option(help="Install deps from a specific github repo instead")
+    ] = [],
+    branch: Annotated[
+        List[str], typer.Option(help="Install deps from a specific branch")
     ] = [],
     with_poetry: Annotated[
         bool,
@@ -90,84 +93,116 @@ def add(
     Adds the specified package to the current LangServe instance.
 
     e.g.:
-    langchain serve add simple-pirate
+    langchain serve add extraction-openai-functions
     langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
-    langchain serve add git+https://github.com/efriis/hub.git#devbranch#subdirectory=mypackage
     """
+
+    parsed_deps = parse_dependencies(dependencies, repo, branch, api_path)
+
     project_root = get_package_root(project_dir)
-
-    if dependencies is None:
-        dependencies = []
-
-    # cannot have both repo and dependencies
-    if len(repo) != 0:
-        if len(dependencies) != 0:
-            raise typer.BadParameter(
-                "Cannot specify both repo and dependencies. "
-                "Please specify one or the other."
-            )
-        dependencies = [f"git+https://github.com/{r}" for r in repo]
-
-    if len(api_path) != 0 and len(api_path) != len(dependencies):
-        raise typer.BadParameter(
-            "The number of API paths must match the number of dependencies."
-        )
-
-    # get installed packages from pyproject.toml
-    root_pyproject_path = project_root / "pyproject.toml"
-    with open(root_pyproject_path, "rb") as pyproject_file:
-        pyproject = tomli.load(pyproject_file)
-    installed_packages = (
-        pyproject.get("tool", {}).get("poetry", {}).get("dependencies", {})
-    )
-    installed_names = set(installed_packages.keys())
 
     package_dir = project_root / "packages"
 
     create_events(
-        [{"event": "serve add", "properties": {"package": d}} for d in dependencies]
+        [{"event": "serve add", "properties": dict(parsed_dep=d)} for d in parsed_deps]
     )
 
-    for i, dependency in enumerate(dependencies):
-        # update repo
-        typer.echo(f"Adding {dependency}...")
-        dep = parse_dependency_string(dependency)
-        source_repo_path = update_repo(dep["git"], dep["ref"], REPO_DIR)
-        source_path = (
-            source_repo_path / dep["subdirectory"]
-            if dep["subdirectory"]
-            else source_repo_path
-        )
-        pyproject_path = source_path / "pyproject.toml"
-        if not pyproject_path.exists():
-            typer.echo(f"Could not find {pyproject_path}")
-            continue
-        langserve_export = get_langserve_export(pyproject_path)
+    # group by repo/ref
+    grouped: Dict[Tuple[str, Optional[str]], List[DependencySource]] = {}
+    for dep in parsed_deps:
+        key_tup = (dep["git"], dep["ref"])
+        lst = grouped.get(key_tup, [])
+        lst.append(dep)
+        grouped[key_tup] = lst
 
-        # detect name conflict
-        if langserve_export["package_name"] in installed_names:
-            typer.echo(
-                f"Package with name {langserve_export['package_name']} already "
-                "installed. Skipping...",
-            )
-            continue
+    installed_destination_paths: List[Path] = []
+    installed_exports: List[Dict] = []
 
-        inner_api_path = (
-            api_path[i] if len(api_path) != 0 else langserve_export["package_name"]
+    for (git, ref), group_deps in grouped.items():
+        if len(group_deps) == 1:
+            typer.echo(f"Adding {git}@{ref}...")
+        else:
+            typer.echo(f"Adding {len(group_deps)} dependencies from {git}@{ref}")
+        source_repo_path = update_repo(git, ref, REPO_DIR)
+
+        for dep in group_deps:
+            source_path = (
+                source_repo_path / dep["subdirectory"]
+                if dep["subdirectory"]
+                else source_repo_path
+            )
+            pyproject_path = source_path / "pyproject.toml"
+            if not pyproject_path.exists():
+                typer.echo(f"Could not find {pyproject_path}")
+                continue
+            langserve_export = get_langserve_export(pyproject_path)
+
+            # default path to package_name
+            inner_api_path = dep["api_path"] or langserve_export["package_name"]
+
+            destination_path = package_dir / inner_api_path
+            if destination_path.exists():
+                typer.echo(
+                    f"Folder {str(inner_api_path)} already exists. " "Skipping...",
+                )
+                continue
+            copy_repo(source_path, destination_path)
+            typer.echo(f" - Downloaded {dep['subdirectory']} to {inner_api_path}")
+            installed_destination_paths.append(destination_path)
+            installed_exports.append(langserve_export)
+
+    if len(installed_destination_paths) == 0:
+        typer.echo("No packages installed. Exiting.")
+        return
+
+    cwd = Path.cwd()
+    installed_desination_strs = [
+        str(p.relative_to(cwd)) for p in installed_destination_paths
+    ]
+
+    if with_poetry:
+        subprocess.run(
+            ["poetry", "add", "--editable"] + installed_desination_strs,
+            cwd=cwd,
         )
-        destination_path = package_dir / inner_api_path
-        if destination_path.exists():
-            typer.echo(
-                f"Endpoint {langserve_export['package_name']} already exists. "
-                "Skipping...",
-            )
-            continue
-        copy_repo(source_path, destination_path)
-        # poetry install
-        if with_poetry:
-            subprocess.run(
-                ["poetry", "add", "--editable", destination_path], cwd=project_root
-            )
+    else:
+        cmd = ["pip", "install", "-e"] + installed_desination_strs
+        cmd_str = " \\\n  ".join(installed_desination_strs)
+        install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
+        typer.echo(install_str)
+
+        if typer.confirm("Run it?"):
+            subprocess.run(cmd, cwd=cwd)
+    if typer.confirm("\nGenerate route code for these packages?", default=True):
+        chain_names = []
+        for e in installed_exports:
+            original_candidate = f'{e["package_name"].replace("-", "_")}_chain'
+            candidate = original_candidate
+            i = 2
+            while candidate in chain_names:
+                candidate = original_candidate + "_" + str(i)
+                i += 1
+            chain_names.append(candidate)
+
+        api_paths = [
+            str(Path("/") / path.relative_to(package_dir))
+            for path in installed_destination_paths
+        ]
+
+        imports = [
+            f"from {e['module']} import {e['attr']} as {name}"
+            for e, name in zip(installed_exports, chain_names)
+        ]
+        routes = [
+            f'add_routes(app, {name}, path="{path}")'
+            for name, path in zip(chain_names, api_paths)
+        ]
+
+        lines = (
+            ["", "Great! Add the following to your app:\n\n```", ""]
+            + imports + [""] + routes + ["```"]
+        )
+        typer.echo("\n".join(lines))
 
 
 @serve.command()
@@ -218,13 +253,15 @@ def start(
     host: Annotated[
         Optional[str], typer.Option(help="The host to run the server on")
     ] = None,
+    app: Annotated[Optional[str], typer.Option(help="The app to run")] = None,
 ) -> None:
     """
     Starts the LangServe instance.
     """
-    cmd = ["poetry", "run", "poe", "start"]
-    if port is not None:
-        cmd += ["--port", str(port)]
-    if host is not None:
-        cmd += ["--host", host]
+
+    app_str = app if app is not None else "app.server:app"
+    port_str = str(port) if port is not None else "8000"
+    host_str = host if host is not None else "127.0.0.1"
+
+    cmd = ["uvicorn", app_str, "--reload", "--port", port_str, "--host", host_str]
     subprocess.run(cmd)

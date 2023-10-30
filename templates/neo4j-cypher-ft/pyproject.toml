@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "neo4j_cypher"
+name = "neo4j-cypher-ft"
 version = "0.1.0"
 description = ""
 authors = ["Tomaz Bratanic <tomaz.bratanic@neo4j.com>"]
@@ -12,7 +12,7 @@ neo4j = ">5.12"
 openai = "^0.28.1"
 
 [tool.langserve]
-export_module = "neo4j.cypher"
+export_module = "neo4j_cypher_ft"
 export_attr = "chain"
 
 [build-system]

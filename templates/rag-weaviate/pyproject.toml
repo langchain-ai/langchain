@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "rag_weaviate"
+version = "0.1.0"
+description = ""
+authors = ["Erika Cardenas <erika@weaviate.io"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.313"
+openai = "^0.28.1"
+tiktoken = "^0.5.1"
+weaviate-client = ">=3.24.2"
+
+[tool.poetry.group.dev.dependencies]
+python-dotenv = { extras = ["cli"], version = "^1.0.0" }
+
+[tool.langserve]
+export_module = "rag_weaviate"
+export_attr = "chain"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
