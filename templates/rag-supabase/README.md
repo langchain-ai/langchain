@@ -61,6 +61,9 @@ Use these steps to setup your Supabase database if you haven't already.
 
 Since we are using [`SupabaseVectorStore`](https://python.langchain.com/docs/integrations/vectorstores/supabase) and [`OpenAIEmbeddings`](https://python.langchain.com/docs/integrations/text_embedding/openai), we need to load their API keys.
 
+
+## Environment variables
+
 Create a `.env` file in the root of your project:
 
 _.env_

@@ -14,3 +14,13 @@ Be sure that you have set a few env variables in `chain.py`:
 ##  LLM
 
 Be sure that `OPENAI_API_KEY` is set in order to the OpenAI models.
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+WEAVIATE_ENVIRONMENT=<YOUR_WEAVIATE_ENVIRONMENT>
+WEAVIATE_API_KEY=<YOUR_WEAVIATE_API_KEY>
+```

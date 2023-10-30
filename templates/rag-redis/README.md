@@ -75,3 +75,16 @@ Start the server:
 ```bash
 langchain start
 ```
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+REDIS_HOST=<YOUR_REDIS_HOST>
+REDIS_PORT=<YOUR_REDIS_PORT>
+REDIS_USER=<YOUR_REDIS_USER>
+REDIS_PASSWORD=<YOUR_REDIS_PASSWORD>
+INDEX_NAME=<YOUR_INDEX_NAME>
+```

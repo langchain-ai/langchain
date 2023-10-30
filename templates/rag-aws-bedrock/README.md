@@ -18,10 +18,19 @@ You need to install the `faiss-cpu` package to work with the FAISS vector store.
 pip install faiss-cpu
 ```
 
-
 ##  LLM and Embeddings
 
 The code assumes that you are working with the `default` AWS profile and `us-east-1` region. If not, specify these environment variables to reflect the correct region and AWS profile.
 
 * `AWS_DEFAULT_REGION`
 * `AWS_PROFILE`
+
+
+## Environment variables
+
+You need (if not using default) to define the following environment variables
+
+```shell
+AWS_DEFAULT_REGION=<YOUR_AWS_DEFAULT_REGION>
+AWS_PROFILE=<YOUR_AWS_PROFILE>
+```

@@ -19,3 +19,11 @@ You can see instructions to build this DB [here](https://github.com/facebookrese
 This template will use a `Replicate` [hosted version](https://replicate.com/meta/llama-2-13b-chat/versions/f4e2de70d66816a838a89eeeb621910adffb0dd0baba3976c96980970978018d) of LLaMA2. 
 
 Be sure that `REPLICATE_API_TOKEN` is set in your environment.
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+REPLICATE_API_TOKEN=<YOUR_REPLICATE_API_TOKEN>
+```

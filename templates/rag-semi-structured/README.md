@@ -45,3 +45,11 @@ langchain start
 ```
 
 See Jupyter notebook `rag_semi_structured` for various way to connect to the template.
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+```

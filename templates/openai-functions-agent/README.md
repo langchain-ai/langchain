@@ -7,10 +7,15 @@ This example creates an agent that can optionally look up things on the internet
 
 This template will use `OpenAI` by default. 
 
-Be sure that `OPENAI_API_KEY` is set in your environment.
-
 ##  Tools
 
 This template will use `Tavily` by default. 
 
-Be sure that `TAVILY_API_KEY` is set in your environment.
+##  Environment variables
+
+You need to define the following environment variables
+
+```
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+TAVILY_API_KEY=<YOUR_TAVILY_API_KEY>
+```

@@ -22,6 +22,14 @@ With a deployment, update the connection string.
 
 Password and connection (elasticsearch url) can be found on the deployment console. Th 
 
+## Environment variables
+
+You need to define the following environment variable
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+```
+
 ## Populating with data
 
 If you want to populate the DB with some example info, you can run `python ingest.py`.

@@ -5,3 +5,12 @@
 > Because the original query can not be always optimal to retrieve for the LLM, especially in the real world... we first prompt an LLM to rewrite the queries, then conduct retrieval-augmented reading
 
 We show how you can easily do that with LangChain Expression Language
+
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+```

@@ -13,7 +13,16 @@ You need:
 
 _Note:_ you can alternatively use a regular Cassandra cluster: to do so, make sure you provide the `USE_CASSANDRA_CLUSTER` entry as shown in `.env.template` and the subsequent environment variables to specify how to connect to it.
 
-You need to provide the connection parameters and secrets through environment variables. Please refer to `.env.template` for what variables are required.
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+ASTRA_DB_APPLICATION_TOKEN=<YOUR_ASTRA_DB_APPLICATION_TOKEN>
+ASTRA_DB_KEYSPACE=<YOUR_ASTRA_DB_KEYSPACE>
+ASTRA_DB_ID=<YOUR_ASTRA_DB_ID>
+```
 
 ## Reference
 

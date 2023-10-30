@@ -57,3 +57,14 @@ However, you can choose from a large number of document loaders [here](https://p
 # from inside your LangServe instance
 poe add rag-elasticsearch
 ```
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+ELASTIC_CLOUD_ID=<YOUR_ELASTIC_CLOUD_ID>
+ELASTIC_USERNAME=<YOUR_ELASTIC_USERNAME>
+ELASTIC_PASSWORD=<YOUR_ELASTIC_PASSWORD>
+ES_URL=http://localhost:9200
+```

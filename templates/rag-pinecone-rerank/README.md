@@ -12,7 +12,7 @@ Be sure that you have set a few env variables in `chain.py`:
 
 * `PINECONE_API_KEY`
 * `PINECONE_ENV`
-* `index_name`
+* `PINECONE_INDEX`
 
 ##  LLM
 
@@ -21,3 +21,16 @@ Be sure that `OPENAI_API_KEY` is set in order to the OpenAI models.
 ##  Cohere
 
 Be sure that `COHERE_API_KEY` is set in order to the ReRank endpoint.
+
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+COHERE_API_KEY=<YOUR_COHERE_API_KEY>
+PINECONE_API_KEY=<YOUR_PINECONE_API_KEY>
+PINECONE_ENVIRONMENT=<YOUR_PINECONE_INDEX>
+PINECONE_INDEX=<YOUR_PINECONE_INDEX>
+```

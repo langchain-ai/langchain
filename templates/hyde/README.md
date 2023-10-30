@@ -7,3 +7,11 @@ The idea behind this is that the hypothetical document may be closer in the embe
 For a more detailed description, read the full paper [here](https://arxiv.org/abs/2212.10496).
 
 For this example, we use a simple RAG architecture, although you can easily use this technique in other more complicated architectures.
+
+## Environment variables
+
+You need to define the following environment variable
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+```

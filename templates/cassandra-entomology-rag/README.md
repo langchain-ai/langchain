@@ -42,6 +42,14 @@ To put this to test, experiment with these example questions:
 "Do birds have wings?"                <-- no entomology here!
 ```
 
+## Environment variables
+
+You need to define the following environment variable
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+```
+
 ## Reference
 
 Stand-alone repo with LangServe chain: [here](https://github.com/hemidactylus/langserve_cassandra_entomology_rag).

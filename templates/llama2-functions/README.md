@@ -12,4 +12,10 @@ This template will use a `Replicate` [hosted version](https://replicate.com/andr
 
 Based on the `Replicate` example, these are supplied directly in the prompt.
 
-Be sure that `REPLICATE_API_TOKEN` is set in your environment.
+## Environment variables
+
+You need to define the following environment variable
+
+```shell
+REPLICATE_API_TOKEN=<YOUR_REPLICATE_API_TOKEN>
+```

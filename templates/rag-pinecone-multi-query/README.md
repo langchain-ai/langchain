@@ -49,3 +49,14 @@ from langserve.client import RemoteRunnable
 rag_app_pinecone = RemoteRunnable('http://0.0.0.0:8001/rag_pinecone_multi_query')
 rag_app_pinecone.invoke("What are the different types of agent memory")
 ```
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+PINECONE_API_KEY=<YOUR_PINECONE_API_KEY>
+PINECONE_ENVIRONMENT=<YOUR_PINECONE_INDEX>
+PINECONE_INDEX=<YOUR_PINECONE_INDEX>
+```

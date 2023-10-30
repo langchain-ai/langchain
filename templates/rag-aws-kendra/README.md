@@ -15,7 +15,10 @@ You will need a Kendra Index setup before using this template. For setting up a 
 
 The code assumes that you are working with the `default` AWS profile and `us-east-1` region. If not, specify these environment variables to reflect the correct region and AWS profile. 
 
-* `AWS_DEFAULT_REGION`
-* `AWS_PROFILE`
-
 This code also requires specifying the `KENDRA_INDEX_ID` env variable which should have the Index ID of the Kendra index. Note that the Index ID is a 36 character alphanumeric value that can be found in the index detail page.
+
+```shell
+AWS_DEFAULT_REGION=<YOUR_AWS_DEFAULT_REGION>
+AWS_PROFILE=<YOUR_AWS_PROFILE>
+KENDRA_INDEX_ID=<YOUR_KENDRA_INDEX_ID>
+```

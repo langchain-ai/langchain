@@ -7,3 +7,11 @@ Read the paper [here](https://arxiv.org/abs/2310.06117)
 See an excelent blog post on this by Cobus Greyling [here](https://cobusgreyling.medium.com/a-new-prompt-engineering-technique-has-been-introduced-called-step-back-prompting-b00e8954cacb)
 
 In this template we will replicate this technique. We modify the prompts used slightly to work better with chat models.
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+```

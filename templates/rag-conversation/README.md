@@ -11,3 +11,14 @@ Be sure that `OPENAI_API_KEY` is set in order to use the OpenAI models.
 ##  Pinecone
 
 This template uses Pinecone as a vectorstore and requires that `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, and `PINECONE_INDEX` are set.
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+PINECONE_API_KEY=<YOUR_PINECONE_API_KEY>
+PINECONE_ENVIRONMENT=<YOUR_PINECONE_INDEX>
+PINECONE_INDEX=<YOUR_PINECONE_INDEX>
+```

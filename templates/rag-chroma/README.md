@@ -13,3 +13,11 @@ These documents can be loaded from [many sources](https://python.langchain.com/d
 ##  LLM
 
 Be sure that `OPENAI_API_KEY` is set in order to the OpenAI models.
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+```

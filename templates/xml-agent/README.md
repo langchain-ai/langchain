@@ -15,3 +15,12 @@ Be sure that `ANTHROPIC_API_KEY` is set in your environment.
 This template will use `You.com` by default. 
 
 Be sure that `YDC_API_KEY` is set in your environment.
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+ANTHROPIC_API_KEY=<YOUR_ANTHROPIC_API_KEY>
+YDC_API_KEY=<YOUR_YDC_API_KEY>
+```

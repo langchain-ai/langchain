@@ -14,3 +14,11 @@ To do this, we can use various prompts from LangChain hub, such as:
 This template will use `Claude2` by default. 
 
 Be sure that `ANTHROPIC_API_KEY` is set in your enviorment.
+
+## Environment variables
+
+You need to define the following environment variables
+
+```shell
+ANTHROPIC_API_KEY=<YOUR_ANTHROPIC_API_KEY>
+```
