@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import tempfile
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
@@ -11,7 +13,8 @@ def _import_google_cloud_texttospeech() -> Any:
         from google.cloud import texttospeech
     except ImportError as e:
         raise ImportError(
-            "Cannot import google.cloud.texttospeech, please install `pip install google-cloud-texttospeech`."
+            "Cannot import google.cloud.texttospeech, please install "
+            "`pip install google-cloud-texttospeech`."
         ) from e
     return texttospeech
 
@@ -19,12 +22,12 @@ def _import_google_cloud_texttospeech() -> Any:
 if TYPE_CHECKING:
     from google.cloud import texttospeech
 
-ENCODING_FILE_EXTENSION_MAP: Dict["texttospeech".AudioEncoding, str] = {
-    "texttospeech".AudioEncoding.LINEAR16: ".wav",
-    "texttospeech".AudioEncoding.MP3: ".mp3",
-    "texttospeech".AudioEncoding.OGG_OPUS: ".ogg",
-    "texttospeech".AudioEncoding.MULAW: ".wav",
-    "texttospeech".AudioEncoding.ALAW: ".wav",
+ENCODING_FILE_EXTENSION_MAP: Dict[texttospeech.AudioEncoding, str] = {
+    texttospeech.AudioEncoding.LINEAR16: ".wav",
+    texttospeech.AudioEncoding.MP3: ".mp3",
+    texttospeech.AudioEncoding.OGG_OPUS: ".ogg",
+    texttospeech.AudioEncoding.MULAW: ".wav",
+    texttospeech.AudioEncoding.ALAW: ".wav",
 }
 
 
@@ -43,7 +46,7 @@ class GoogleCloudTextToSpeechTool(BaseTool):
         "Spanish, Italian, French, Portuguese, and Hindi. "
     )
 
-    _client: "texttospeech".TextToSpeechClient
+    _client: texttospeech.TextToSpeechClient
 
     def __init__(self, **kwargs: Any) -> None:
         """Initializes private fields."""
@@ -59,8 +62,8 @@ class GoogleCloudTextToSpeechTool(BaseTool):
         self,
         input_text: str,
         language_code: str = "en-US",
-        ssml_gender: "texttospeech".SsmlVoiceGender = "texttospeech".SsmlVoiceGender.NEUTRAL,
-        audio_encoding: "texttospeech".AudioEncoding = "texttospeech".AudioEncoding.MP3,
+        ssml_gender: texttospeech.SsmlVoiceGender = texttospeech.SsmlVoiceGender.NEUTRAL,  # noqa: E501
+        audio_encoding: texttospeech.AudioEncoding = texttospeech.AudioEncoding.MP3,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
