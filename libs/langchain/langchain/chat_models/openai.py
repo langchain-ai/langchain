@@ -581,6 +581,6 @@ class ChatOpenAI(BaseChatModel):
                 )
         return super().bind(
             functions=formatted_functions,
-            function_call=function_call,
+            function_call={"name": function_call},
             **kwargs,
         )

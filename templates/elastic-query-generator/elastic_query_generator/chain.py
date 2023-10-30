@@ -16,10 +16,7 @@ ELASTIC_PASSWORD = "..."
 CLOUD_ID = "..."
 
 # Create the client instance
-db = Elasticsearch(
-    cloud_id=CLOUD_ID,
-    basic_auth=("elastic", ELASTIC_PASSWORD)
-)
+db = Elasticsearch(cloud_id=CLOUD_ID, basic_auth=("elastic", ELASTIC_PASSWORD))
 
 # Specify indices to include
 # If you want to use on your own indices, you will need to change this.
@@ -29,13 +26,20 @@ INCLUDE_INDICES = ["customers"]
 
 _model = ChatOpenAI(temperature=0, model="gpt-4")
 
-chain = {
-    "input": lambda x: x["input"],
-    # This line only get index info for "customers" index.
-    # If you are running this on your own data, you will want to change.
-    "indices_info": lambda _: get_indices_infos(db, include_indices=INCLUDE_INDICES),
-    "top_k": lambda x: x.get("top_k", 5),
-} | DSL_PROMPT | _model | SimpleJsonOutputParser()
+chain = (
+    {
+        "input": lambda x: x["input"],
+        # This line only get index info for "customers" index.
+        # If you are running this on your own data, you will want to change.
+        "indices_info": lambda _: get_indices_infos(
+            db, include_indices=INCLUDE_INDICES
+        ),
+        "top_k": lambda x: x.get("top_k", 5),
+    }
+    | DSL_PROMPT
+    | _model
+    | SimpleJsonOutputParser()
+)
 
 
 # Nicely typed inputs for playground
