@@ -1,12 +1,16 @@
 """Test OpenAI Chat API wrapper."""
 import json
+import os
 from typing import Any
+from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pytest import MonkeyPatch
 
 from langchain.adapters.openai import convert_dict_to_message
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.pydantic_v1 import SecretStr
 from langchain.schema.messages import (
     AIMessage,
     FunctionMessage,
@@ -15,6 +19,12 @@ from langchain.schema.messages import (
 )
 
 
+@mock.patch.dict(
+    os.environ,
+    {
+        "OPENAI_API_KEY": "test",
+    },
+)
 @pytest.mark.requires("openai")
 def test_openai_model_param() -> None:
     llm = ChatOpenAI(model="foo")
@@ -79,6 +89,12 @@ def mock_completion() -> dict:
     }
 
 
+@mock.patch.dict(
+    os.environ,
+    {
+        "OPENAI_API_KEY": "test",
+    },
+)
 @pytest.mark.requires("openai")
 def test_openai_predict(mock_completion: dict) -> None:
     llm = ChatOpenAI()
@@ -101,6 +117,12 @@ def test_openai_predict(mock_completion: dict) -> None:
     assert completed
 
 
+@mock.patch.dict(
+    os.environ,
+    {
+        "OPENAI_API_KEY": "test",
+    },
+)
 @pytest.mark.requires("openai")
 async def test_openai_apredict(mock_completion: dict) -> None:
     llm = ChatOpenAI()
@@ -121,3 +143,28 @@ async def test_openai_apredict(mock_completion: dict) -> None:
         res = llm.predict("bar")
         assert res == "Bar Baz"
     assert completed
+
+
+@pytest.mark.requires("openai")
+def test_api_key_is_secret_string_and_matches_input() -> None:
+    llm = ChatOpenAI(openai_api_key="secret-api-key")
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "secret-api-key"
+
+
+@pytest.mark.requires("openai")
+def test_api_key_masked_when_passed_via_constructor() -> None:
+    llm = ChatOpenAI(openai_api_key="secret-api-key")
+    assert str(llm.openai_api_key) == "**********"
+    assert "secret-api-key" not in repr(llm.openai_api_key)
+    assert "secret-api-key" not in repr(llm)
+
+
+@pytest.mark.requires("openai")
+def test_api_key_masked_when_passed_via_env() -> None:
+    with MonkeyPatch.context() as mp:
+        mp.setenv("OPENAI_API_KEY", "secret-api-key")
+        llm = ChatOpenAI()
+        assert str(llm.openai_api_key) == "**********"
+        assert "secret-api-key" not in repr(llm.openai_api_key)
+        assert "secret-api-key" not in repr(llm)

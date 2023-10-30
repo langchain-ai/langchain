@@ -16,6 +16,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
@@ -29,7 +30,7 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
     AIMessageChunk,
@@ -41,7 +42,11 @@ from langchain.schema.messages import (
     SystemMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 
 if TYPE_CHECKING:
     import tiktoken
@@ -168,7 +173,7 @@ class ChatOpenAI(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[str] = None
+    openai_api_key: Optional[SecretStr] = None
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
     openai_api_base: Optional[str] = None
@@ -230,8 +235,8 @@ class ChatOpenAI(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
+        values["openai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "openai_api_key", "OPENAI_API_KEY")
         )
         values["openai_organization"] = get_from_dict_or_env(
             values,
@@ -445,8 +450,9 @@ class ChatOpenAI(BaseChatModel):
     @property
     def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
+        self.openai_api_key = cast(SecretStr, self.openai_api_key)
         openai_creds: Dict[str, Any] = {
-            "api_key": self.openai_api_key,
+            "api_key": self.openai_api_key.get_secret_value(),
             "api_base": self.openai_api_base,
             "organization": self.openai_organization,
             "model": self.model_name,
