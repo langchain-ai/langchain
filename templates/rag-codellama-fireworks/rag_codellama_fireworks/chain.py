@@ -1,18 +1,18 @@
 
+import os
 
+from git import Repo
+from langchain.document_loaders.generic import GenericLoader
+from langchain.document_loaders.parsers import LanguageParser
+from langchain.embeddings import GPT4AllEmbeddings
+from langchain.llms.fireworks import Fireworks
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
+from langchain.text_splitter import Language, RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from git import Repo
-from langchain.llms.fireworks import Fireworks
-from langchain.embeddings import GPT4AllEmbeddings
-from langchain.text_splitter import Language
-from langchain.document_loaders.generic import GenericLoader
-from langchain.document_loaders.parsers import LanguageParser
- 
+
 # Check API key
 if os.environ.get("FIREWORKS_API_KEY", None) is None:
     raise Exception("Missing `FIREWORKS_API_KEY` environment variable.")
