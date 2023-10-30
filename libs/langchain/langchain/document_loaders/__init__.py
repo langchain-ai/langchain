@@ -73,6 +73,7 @@ from langchain.document_loaders.email import (
     OutlookMessageLoader,
     UnstructuredEmailLoader,
 )
+from langchain.document_loaders.emailfrompdf import EmailFromPDF
 from langchain.document_loaders.embaas import EmbaasBlobLoader, EmbaasLoader
 from langchain.document_loaders.epub import UnstructuredEPubLoader
 from langchain.document_loaders.etherscan import EtherscanLoader
@@ -252,6 +253,7 @@ __all__ = [
     "Docx2txtLoader",
     "DropboxLoader",
     "DuckDBLoader",
+    "EmailFromPDF",
     "EmbaasBlobLoader",
     "EmbaasLoader",
     "EtherscanLoader",
