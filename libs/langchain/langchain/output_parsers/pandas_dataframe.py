@@ -42,12 +42,17 @@ class PandasDataFrameOutputParser(BaseOutputParser):
         result = {}
         try:
             # NOTE: Can probably simplify using getattr(df, function_name)()
+            # TODO: Implement data sanitization
             request_type, request_params = splitted_request
             match request_type:
                 case 'column':
-                    print(request_type)
+                    # TODO: Implement multiple column parsing
+                    p_query = self.dataframe[request_params].to_string(header=False, index=False)
+                    result[request_params] = p_query.split("\n")
                 case 'row':
-                    print(request_type)
+                    # TODO: Implement multiple row parsing
+                    p_query = self.dataframe.iloc[int(request_params)].to_string(header=False, index=False)
+                    result[request_params] = p_query.split("\n")
                 case _:
                     array_exists = re.search(r'(\[.*?\])', request_params)
                     if array_exists:
@@ -62,6 +67,7 @@ class PandasDataFrameOutputParser(BaseOutputParser):
             raise OutputParserException(
                 f"Request type '{request_type}' is possibly not supported. Please refer to the format instructions."
             )
+        return result
 
     def get_format_instructions(self) -> str:
         return ""
