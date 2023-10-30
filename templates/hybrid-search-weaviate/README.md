@@ -1,4 +1,4 @@
-# RAG Weaviate
+# Hybrid Search Weaviate
 
 This template performs hybrid search using Weaviate.
 
