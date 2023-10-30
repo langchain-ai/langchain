@@ -87,6 +87,12 @@ export LANGCHAIN_API_KEY=<your-api-key>
 export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
 ```
 
+For this particular application, we will use OpenAI as the LLM, so we need to export our OpenAI API key:
+
+```shell
+export OPENAI_API_KEY=sk-...
+```
+
 You can then spin up production-ready endpoints, along with a playground, by running:
 
 ```shell
