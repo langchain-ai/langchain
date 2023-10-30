@@ -248,7 +248,7 @@ def list():
 
 
 @app_cli.command()
-def start(
+def serve(
     *,
     port: Annotated[
         Optional[int], typer.Option(help="The port to run the server on")

@@ -14,7 +14,7 @@ app.add_typer(app_namespace.app_cli, name="app", help=app_namespace.__doc__)
 
 
 @app.command()
-def start(
+def serve(
     *,
     port: Annotated[
         Optional[int], typer.Option(help="The port to run the server on")
@@ -29,9 +29,9 @@ def start(
 
     # try starting template package, if error, try langserve
     try:
-        template_namespace.start(port=port, host=host)
+        template_namespace.serve(port=port, host=host)
     except KeyError:
-        app_namespace.start(port=port, host=host)
+        app_namespace.serve(port=port, host=host)
 
 
 if __name__ == "__main__":
