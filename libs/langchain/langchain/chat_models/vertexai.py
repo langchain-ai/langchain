@@ -80,26 +80,27 @@ def _parse_examples(examples: List[BaseMessage]) -> List["InputOutputTextPair"]:
         raise ValueError(
             f"Expect examples to have an even amount of messages, got {len(examples)}."
         )
-    example_pairs = []
-    input_text = None
-    for i, example in enumerate(examples):
-        if i % 2 == 0:
-            if not isinstance(example, HumanMessage):
-                raise ValueError(
-                    f"Expected the first message in a part to be from human, got "
-                    f"{type(example)} for the {i}th message."
-                )
-            input_text = example.content
-        if i % 2 == 1:
-            if not isinstance(example, AIMessage):
-                raise ValueError(
-                    f"Expected the second message in a part to be from AI, got "
-                    f"{type(example)} for the {i}th message."
-                )
-            pair = InputOutputTextPair(
-                input_text=input_text, output_text=example.content
+    example_pairs: List[InputOutputTextPair] = []
+    for i in range(0, len(examples), 2):
+        human_message = examples[i]
+        ai_message = examples[i + 1]
+
+        if not isinstance(human_message, HumanMessage):
+            raise ValueError(
+                f"Expected the first message in a part to be from human, got "
+                f"{type(human_message)} for the {i}th message."
             )
-            example_pairs.append(pair)
+
+        if not isinstance(ai_message, AIMessage):
+            raise ValueError(
+                f"Expected the second message in a part to be from AI, got "
+                f"{type(ai_message)} for the {i}th message."
+            )
+        example_pairs.append(
+            InputOutputTextPair(
+                input_text=human_message.content, output_text=ai_message.content
+            )
+        )
     return example_pairs
 
 
