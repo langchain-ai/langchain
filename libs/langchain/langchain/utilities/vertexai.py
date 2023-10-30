@@ -67,9 +67,9 @@ def get_client_info(module: Optional[str] = None) -> "ClientInfo":
             "pip install google-api-core"
         ) from exc
 
-    langchain_version = metadata.version("langchain")
+    gigachain_version = metadata.version("gigachain")
     client_library_version = (
-        f"{langchain_version}-{module}" if module else langchain_version
+        f"{gigachain_version}-{module}" if module else gigachain_version
     )
     return ClientInfo(
         client_library_version=client_library_version,
