@@ -1,7 +1,9 @@
 """Memory used to save agent output AND intermediate steps."""
 from typing import Any, Dict, List
 
-from langchain.agents.openai_functions_agent.base import _format_intermediate_steps
+from langchain.agents.format_scratchpad.openai_functions import (
+    format_to_openai_functions,
+)
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, get_buffer_string
@@ -50,7 +52,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
         """Save context from this conversation to buffer. Pruned."""
         input_str, output_str = self._get_input_output(inputs, outputs)
         self.chat_memory.add_user_message(input_str)
-        steps = _format_intermediate_steps(outputs[self.intermediate_steps_key])
+        steps = format_to_openai_functions(outputs[self.intermediate_steps_key])
         for msg in steps:
             self.chat_memory.add_message(msg)
         self.chat_memory.add_ai_message(output_str)

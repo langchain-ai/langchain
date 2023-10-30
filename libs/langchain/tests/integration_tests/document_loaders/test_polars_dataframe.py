@@ -34,8 +34,6 @@ def test_load_returns_list_of_documents(sample_data_frame: pl.DataFrame) -> None
 def test_load_converts_dataframe_columns_to_document_metadata(
     sample_data_frame: pl.DataFrame,
 ) -> None:
-    import polars as pl
-
     loader = PolarsDataFrameLoader(sample_data_frame)
     docs = loader.load()
 

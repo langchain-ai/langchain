@@ -21,6 +21,7 @@ def convert_pydantic_to_openai_function(
     name: Optional[str] = None,
     description: Optional[str] = None
 ) -> FunctionDescription:
+    """Converts a Pydantic model to a function description for the OpenAI API."""
     schema = dereference_refs(model.schema())
     schema.pop("definitions", None)
     return {

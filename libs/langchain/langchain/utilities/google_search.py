@@ -18,30 +18,30 @@ class GoogleSearchAPIWrapper(BaseModel):
     - If you have never created a Google APIs Console project,
     read the Managing Projects page and create a project in the Google API Console.
     - Install the library using pip install google-api-python-client
-    The current version of the library is 2.70.0 at this time
 
-    2. To create an API key:
-    - Navigate to the APIs & Services→Credentials panel in Cloud Console.
-    - Select Create credentials, then select API key from the drop-down menu.
-    - The API key created dialog box displays your newly created key.
-    - You now have an API_KEY
-
-    3. Setup Custom Search Engine so you can search the entire web
-    - Create a custom search engine in this link.
-    - In Sites to search, add any valid URL (i.e. www.stackoverflow.com).
-    - That’s all you have to fill up, the rest doesn’t matter.
-    In the left-side menu, click Edit search engine → {your search engine name}
-    → Setup Set Search the entire web to ON. Remove the URL you added from
-    the list of Sites to search.
-    - Under Search engine ID you’ll find the search-engine-ID.
-
-    4. Enable the Custom Search API
+    2. Enable the Custom Search API
     - Navigate to the APIs & Services→Dashboard panel in Cloud Console.
     - Click Enable APIs and Services.
     - Search for Custom Search API and click on it.
     - Click Enable.
     URL for it: https://console.cloud.google.com/apis/library/customsearch.googleapis
     .com
+
+    3. To create an API key:
+    - Navigate to the APIs & Services → Credentials panel in Cloud Console.
+    - Select Create credentials, then select API key from the drop-down menu.
+    - The API key created dialog box displays your newly created key.
+    - You now have an API_KEY
+
+    Alternatively, you can just generate an API key here:
+    https://developers.google.com/custom-search/docs/paid_element#api_key
+
+    4. Setup Custom Search Engine so you can search the entire web
+    - Create a custom search engine here: https://programmablesearchengine.google.com/.
+    - In `What to search` to search, pick the `Search the entire Web` option.
+    After search engine is created, you can click on it and find `Search engine ID`
+      on the Overview page.
+
     """
 
     search_engine: Any  #: :meta private:
@@ -79,7 +79,8 @@ class GoogleSearchAPIWrapper(BaseModel):
         except ImportError:
             raise ImportError(
                 "google-api-python-client is not installed. "
-                "Please install it with `pip install google-api-python-client`"
+                "Please install it with `pip install google-api-python-client"
+                ">=2.100.0`"
             )
 
         service = build("customsearch", "v1", developerKey=google_api_key)

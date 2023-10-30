@@ -36,6 +36,7 @@ _EXPECTED = [
     "EdenAiTextModerationTool",
     "EdenAiTextToSpeechTool",
     "EdenaiTool",
+    "ElevenLabsText2SpeechTool",
     "ExtractHyperlinksTool",
     "ExtractTextTool",
     "FileSearchTool",
@@ -75,8 +76,6 @@ _EXPECTED = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
-    "PythonAstREPLTool",
-    "PythonREPLTool",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
@@ -107,6 +106,8 @@ _EXPECTED = [
     "ZapierNLARunAction",
     "format_tool_to_openai_function",
     "tool",
+    "BearlyInterpreterTool",
+    "E2BDataAnalysisTool",
 ]
 
 

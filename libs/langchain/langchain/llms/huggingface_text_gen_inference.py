@@ -65,7 +65,7 @@ class HuggingFaceTextGenInference(LLM):
     typical_p: Optional[float] = 0.95
     """Typical Decoding mass. See [Typical Decoding for Natural Language
     Generation](https://arxiv.org/abs/2202.00666) for more information."""
-    temperature: float = 0.8
+    temperature: Optional[float] = 0.8
     """The value used to module the logits distribution."""
     repetition_penalty: Optional[float] = None
     """The parameter for repetition penalty. 1.0 means no penalty.

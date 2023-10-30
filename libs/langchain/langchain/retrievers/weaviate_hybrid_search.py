@@ -99,8 +99,43 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
         where_filter: Optional[Dict[str, object]] = None,
         score: bool = False,
+        hybrid_search_kwargs: Optional[Dict[str, object]] = None,
     ) -> List[Document]:
-        """Look up similar documents in Weaviate."""
+        """Look up similar documents in Weaviate.
+
+        query: The query to search for relevant documents
+         of using weviate hybrid search.
+
+        where_filter: A filter to apply to the query.
+            https://weaviate.io/developers/weaviate/guides/querying/#filtering
+
+        score: Whether to include the score, and score explanation
+            in the returned Documents meta_data.
+
+        hybrid_search_kwargs: Used to pass additional arguments
+         to the .with_hybrid() method.
+            The primary uses cases for this are:
+            1)  Search specific properties only -
+                specify which properties to be used during hybrid search portion.
+                Note: this is not the same as the (self.attributes) to be returned.
+                Example - hybrid_search_kwargs={"properties": ["question", "answer"]}
+            https://weaviate.io/developers/weaviate/search/hybrid#selected-properties-only
+
+            2) Weight boosted searched properties -
+                Boost the weight of certain properties during the hybrid search portion.
+                Example - hybrid_search_kwargs={"properties": ["question^2", "answer"]}
+            https://weaviate.io/developers/weaviate/search/hybrid#weight-boost-searched-properties
+
+            3) Search with a custom vector - Define a different vector
+                to be used during the hybrid search portion.
+                Example - hybrid_search_kwargs={"vector": [0.1, 0.2, 0.3, ...]}
+            https://weaviate.io/developers/weaviate/search/hybrid#with-a-custom-vector
+
+            4) Use Fusion ranking method
+                Example - from weaviate.gql.get import HybridFusion
+                hybrid_search_kwargs={"fusion": fusion_type=HybridFusion.RELATIVE_SCORE}
+            https://weaviate.io/developers/weaviate/search/hybrid#fusion-ranking-method
+        """
         query_obj = self.client.query.get(self.index_name, self.attributes)
         if where_filter:
             query_obj = query_obj.with_where(where_filter)
@@ -108,7 +143,14 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         if score:
             query_obj = query_obj.with_additional(["score", "explainScore"])
 
-        result = query_obj.with_hybrid(query, alpha=self.alpha).with_limit(self.k).do()
+        if hybrid_search_kwargs is None:
+            hybrid_search_kwargs = {}
+
+        result = (
+            query_obj.with_hybrid(query, alpha=self.alpha, **hybrid_search_kwargs)
+            .with_limit(self.k)
+            .do()
+        )
         if "errors" in result:
             raise ValueError(f"Error during query: {result['errors']}")
 

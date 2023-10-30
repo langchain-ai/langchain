@@ -13,9 +13,9 @@ except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 
 _LANGCHAIN_DEFAULT_EMBEDDING_DIM = 1536
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain_document"

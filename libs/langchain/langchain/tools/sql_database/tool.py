@@ -21,13 +21,8 @@ class BaseSQLDatabaseTool(BaseModel):
 
     db: SQLDatabase = Field(exclude=True)
 
-    # Override BaseTool.Config to appease mypy
-    # See https://github.com/pydantic/pydantic/issues/4173
     class Config(BaseTool.Config):
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-        extra = Extra.forbid
+        pass
 
 
 class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
@@ -93,7 +88,7 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     name: str = "sql_db_query_checker"
     description: str = """
     Use this tool to double check if your query is correct before executing it.
-    Always use this tool before executing a query with query_sql_db!
+    Always use this tool before executing a query with sql_db_query!
     """
 
     @root_validator(pre=True)
@@ -102,11 +97,11 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
             values["llm_chain"] = LLMChain(
                 llm=values.get("llm"),
                 prompt=PromptTemplate(
-                    template=QUERY_CHECKER, input_variables=["query", "dialect"]
+                    template=QUERY_CHECKER, input_variables=["dialect", "query"]
                 ),
             )
 
-        if values["llm_chain"].prompt.input_variables != ["query", "dialect"]:
+        if values["llm_chain"].prompt.input_variables != ["dialect", "query"]:
             raise ValueError(
                 "LLM chain for QueryCheckerTool must have input variables ['query', 'dialect']"
             )

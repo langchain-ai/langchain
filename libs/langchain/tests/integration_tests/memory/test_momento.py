@@ -27,7 +27,7 @@ def message_history() -> Iterator[MomentoChatMessageHistory]:
     cache_name = f"langchain-test-cache-{random_string()}"
     client = CacheClient(
         Configurations.Laptop.v1(),
-        CredentialProvider.from_environment_variable("MOMENTO_AUTH_TOKEN"),
+        CredentialProvider.from_environment_variable("MOMENTO_API_KEY"),
         default_ttl=timedelta(seconds=30),
     )
     try:

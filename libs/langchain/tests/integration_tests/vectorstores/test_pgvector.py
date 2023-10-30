@@ -279,3 +279,31 @@ def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
     )
     output = retriever.get_relevant_documents("foo")
     assert output == []
+
+
+def test_pgvector_max_marginal_relevance_search() -> None:
+    """Test max marginal relevance search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.max_marginal_relevance_search("foo", k=1, fetch_k=3)
+    assert output == [Document(page_content="foo")]
+
+
+def test_pgvector_max_marginal_relevance_search_with_score() -> None:
+    """Test max marginal relevance search with relevance scores."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.max_marginal_relevance_search_with_score("foo", k=1, fetch_k=3)
+    assert output == [(Document(page_content="foo"), 0.0)]
