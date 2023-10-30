@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import warnings
+from pydantic import ValidationError
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import (
@@ -121,7 +122,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         elif isinstance(input, str):
             return StringPromptValue(text=input)
         elif isinstance(input, list):
-            return ChatPromptValue(messages=input)
+            try:
+                return ChatPromptValue(messages=input)
+            except BaseException as e:
+                raise ValidationError(
+                    f"There must be some element in the messages that is inappropraite for ChatPromptValue. "
+                ) from e
         else:
             raise ValueError(
                 f"Invalid input type {type(input)}. "
