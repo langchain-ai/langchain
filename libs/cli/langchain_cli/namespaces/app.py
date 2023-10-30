@@ -71,7 +71,7 @@ def add(
     ] = [],
 ):
     """
-    Adds the specified package to the current LangServe app.
+    Adds the specified template to the current LangServe app.
 
     e.g.:
     langchain app add extraction-openai-functions
