@@ -77,7 +77,6 @@ def convert_dict_to_message(_dict: Any) -> BaseMessage:
         return ChatMessage(content=content, role=role)
 
 
-
 class ChatFireworks(BaseChatModel):
     """Fireworks Chat models."""
 

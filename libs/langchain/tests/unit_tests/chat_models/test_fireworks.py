@@ -7,9 +7,9 @@ from pytest import CaptureFixture, MonkeyPatch
 from langchain.chat_models import ChatFireworks
 from langchain.pydantic_v1 import SecretStr
 
-
 if sys.version_info < (3, 9):
     pytest.skip("fireworks-ai requires Python > 3.8", allow_module_level=True)
+
 
 @pytest.mark.requires("fireworks")
 def test_api_key_is_string() -> None:

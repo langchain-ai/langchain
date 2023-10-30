@@ -7,7 +7,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
-from langchain.pydantic_v1 import Field, root_validator, SecretStr
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema.output import Generation, GenerationChunk, LLMResult
 from langchain.utils import convert_to_secret_str
 from langchain.utils.env import get_from_dict_or_env
@@ -60,9 +60,9 @@ class Fireworks(BaseLLM):
                 "Could not import fireworks-ai python package. "
                 "Please install it with `pip install fireworks-ai`."
             ) from e
-        fireworks_api_key = convert_to_secret_str(get_from_dict_or_env(
-            values, "fireworks_api_key", "FIREWORKS_API_KEY"
-        ))
+        fireworks_api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "fireworks_api_key", "FIREWORKS_API_KEY")
+        )
         fireworks.client.api_key = fireworks_api_key.get_secret_value()
         return values
 
