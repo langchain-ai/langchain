@@ -41,7 +41,7 @@ langchain app add rag-semi-structured
 
 Start server:
 ```
-langchain start
+langchain serve
 ```
 
 See Jupyter notebook `rag_semi_structured` for various way to connect to the template.

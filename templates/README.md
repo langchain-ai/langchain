@@ -75,7 +75,7 @@ add_routes(app, pirate_speak_chain, path="/pirate-speak")
 You can then spin up production-ready endpoints, along with a playground, by running:
 
 ```shell
-langchain start
+langchain serve
 ```
 
 This now gives a fully deployed LangServe application.

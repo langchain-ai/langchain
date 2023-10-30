@@ -73,5 +73,5 @@ langchain app add rag-redis
 
 Start the server:
 ```bash
-langchain start
+langchain serve
 ```
