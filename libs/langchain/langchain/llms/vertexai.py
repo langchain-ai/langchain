@@ -276,6 +276,27 @@ class VertexAI(_VertexAICommon, BaseLLM):
             raise ValueError("Only one candidate can be generated with streaming!")
         return values
 
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text.
+
+        Useful for checking if an input will fit in a model's context window.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            The integer number of tokens in the text.
+        """
+        try:
+            result = self.client.count_tokens(text)
+        except AttributeError:
+            raise NotImplementedError(
+                "Your google-cloud-aiplatform version didn't implement count_tokens."
+                "Please, install it with pip install google-cloud-aiplatform>=1.35.0"
+            )
+
+        return result.total_tokens
+
     def _generate(
         self,
         prompts: List[str],
