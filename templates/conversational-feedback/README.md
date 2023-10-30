@@ -1,27 +1,26 @@
 # Chat Feedback Template
 
-This template captures "implicit feedback from human behavior" within a simple chat bot. This instructs an LLM to use a user's responses within a conversation to grade its previous replies.
+This template captures implicit feedback from human behavior in a simple chat bot. It instructs an LLM to reference a user's responses within a conversation to evaluate the chat bot's previous replies.
 
-[Chat bots](https://python.langchain.com/docs/use_cases/chatbots) are perhaps the most common interface for applying LLMs. The quality of chat bots can be variable, and it can be challenging to get explicit user feedback through things like thumbs up/down buttons. Traditional analytics like "session length" or "conversation length" can be ambiguous. For multi-turn conversations with a chat bot, an immense amount of information can be gleaned from the dialog itself, which we can convert to metrics for monitoring, fine-tuning, and further evalution.
+[Chat bots](https://python.langchain.com/docs/use_cases/chatbots) serve as one of the most common interfaces for deploying LLMs. The quality of chat bots varies, making continuous development important. But users are wont to leave explicit feedback through mechanisms like thumbs-up or thumbs-down buttons. Furthermore, traditional analytics such as "session length" or "conversation length" often lack clarity. However, multi-turn conversations with a chat bot can provide a wealth of information, which we can transform into metrics for fine-tuning, evaluation, and product analytics.
 
-Taking [Chat Langchain](https://chat.langchain.com/) as a case study, only ~0.04% of all queries receive explicit feedback, but ~70% of of the queries are follow-ups to previous questions. A large portion of these followup queries
- are actual continuations of the same topic (vs. simply asking another question) and can be used to infer the quality of the previous AI response.
+Taking [Chat Langchain](https://chat.langchain.com/) as a case study, only about 0.04% of all queries receive explicit feedback. Yet, approximately 70% of the queries are follow-ups to previous questions. A significant portion of these follow-up queries continue useful information we can use to infer the quality of the previous AI response.
 
 ## LangSmith Feedback
 
-[LangSmith](https://smith.langchain.com/) is a platform for building production-grade LLM applications. In addition to its debugging and offline evaluation functionality, it helps you capture feedback (both user and model-assisted) to improve your LLM application. For other cookbook examples on collecting feedback using LangSmith, check out the [docs](https://docs.smith.langchain.com/cookbook/feedback-examples).
+[LangSmith](https://smith.langchain.com/) is a platform for building production-grade LLM applications. Beyond its debugging and offline evaluation features, LangSmith helps you capture both user and model-assisted feedback to refine your LLM application. For more examples on collecting feedback using LangSmith, consult the [documentation](https://docs.smith.langchain.com/cookbook/feedback-examples).
 
 ## Implementation
 
-The feedback is executed within a custom `RunEvaluator`. This evaluator is run in a separate thread (to not obstruct the runtime of the actual chat bot).
-It uses an LLM (in this case, `gpt-3.5-turbo`) to grade the the AI's most recent chat message, accounting for the user's response to that message.
+Feedback collection occurs within a custom `RunEvaluator`. This evaluator is called using the `EvaluatorCallbackHandler`, which run it in a separate thread to avoid interfering with the chat bot's runtime. 
 
-The prompt used within the LLM [can be found on the hub](https://smith.langchain.com/hub/wfh/response-effectiveness). Feel free to modify it to your liking!
-We also use OpenAI's function calling API to ensure more consistent structured output in the grade.
+The evaluator instructs an LLM, specifically `gpt-3.5-turbo`, to evaluate the AI's most recent chat message based on the user's followup response. It generates a score and accompanying reasoning that is converted to feedback in LangSmith, applied to the value provided as the `last_run_id`.
+
+The prompt used within the LLM [is available on the hub](https://smith.langchain.com/hub/wfh/response-effectiveness). Feel free to customize it. We also utilize OpenAI's function-calling API to ensure a more consistent, structured output for the grade.
 
 ## Environment Variables
 
-Be sure that `OPENAI_API_KEY` is set in order to use the OpenAI models. Also, configure LangSmith by setting your `LANGSMITH_API_KEY`.
+Ensure that `OPENAI_API_KEY` is set to use OpenAI models. Also, configure LangSmith by setting your `LANGSMITH_API_KEY`.
 
 ```bash
 export OPENAI_API_KEY=sk-...
@@ -30,17 +29,15 @@ export LANGSMITH_API_KEY=...
 
 ## Usage
 
-If you are deplying this via `LangServe`, it's recommended that you instruct the server to return callback events as well.
+If deploying via `LangServe`, we recommend configuring the server to return callback events as well. This will ensure the backend traces are included in whatever traces you generate using the `RemoteRunnable`.
 
-```
+```python
 from conversational_feedback.chain import chain
 
 add_routes(app, chain, path="/conversational-feedback", include_callback_events=True)
 ```
 
-This will unify any traces started in the client with those in the server.
-
-The code snippet below shows how you could use the stream endpoint
+With the server running, you can use the following code snippet to stream the chat bot responses for a 2 turn conversation.
 
 ```python
 from functools import partial
@@ -49,15 +46,14 @@ from langserve import RemoteRunnable
 from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.schema import BaseMessage, AIMessage, HumanMessage
 
-# Upudate with the URL provided by your LangServe server
+# Update with the URL provided by your LangServe server
 chain = RemoteRunnable("http://127.0.0.1:8031/conversational-feedback")
-
 
 def stream_content(
     text: str,
     chat_history: Optional[List[BaseMessage]] = None,
     last_run_id: Optional[str] = None,
-    on_chunk=Callable,
+    on_chunk: Callable = None,
 ):
     results = []
     with tracing_v2_enabled() as cb:
@@ -66,16 +62,15 @@ def stream_content(
         ):
             on_chunk(chunk)
             results.append(chunk)
-        last_run_id = cb.latest_run.id if cb.latest_run is not None else None
+        last_run_id = cb.latest_run.id if cb.latest_run else None
     return last_run_id, "".join(results)
-
 
 chat_history = []
 text = "Where are my keys?"
 last_run_id, response_message = stream_content(text, on_chunk=partial(print, end=""))
 chat_history.extend([HumanMessage(content=text), AIMessage(content=response_message)])
-text = "I CANT FIND THEM ANYWHERE" # The previous response will be given a low score since
-# the user's frustration (as evidenced by the text) seems to be increasing
+text = "I CAN'T FIND THEM ANYWHERE"  # The previous response will likely receive a low score,
+# as the user's frustration appears to be escalating.
 last_run_id, response_message = stream_content(
     text,
     chat_history=chat_history,
@@ -84,3 +79,5 @@ last_run_id, response_message = stream_content(
 )
 chat_history.extend([HumanMessage(content=text), AIMessage(content=response_message)])
 ```
+
+This uses the  `tracing_v2_enabled` callback manager to get the run ID of the call, which we provide in subsequent calls in the same chat thread, so the evaluator can assign feedback to the appropriate trace.
