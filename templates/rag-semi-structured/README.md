@@ -30,13 +30,13 @@ Be sure that `OPENAI_API_KEY` is set in order to the OpenAI models.
 
 Create your LangServe app:
 ```
-langchain serve new my-app
+langchain app new my-app
 cd my-app
 ```
 
 Add template:
 ```
-langchain serve add rag-semi-structured
+langchain app add rag-semi-structured
 ```
 
 Start server:

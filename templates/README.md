@@ -14,7 +14,7 @@ pip install -U "langchain-cli[serve]"
 Next, create a new LangChain project:
 
 ```shell
-langchain serve new my-app
+langchain app new my-app
 ```
 
 This will create a new directory called `my-app` with two folders:
@@ -33,7 +33,7 @@ In this getting started guide, we will add a simple `pirate-speak` project.
 All this project does is convert user input into pirate speak.
 
 ```shell
-langchain serve add pirate-speak
+langchain app add pirate-speak
 ```
 
 This will pull in the specified template into `packages/pirate-speak`

@@ -44,8 +44,8 @@ $ langchain app [OPTIONS] COMMAND [ARGS]...
 Adds the specified package to the current LangServe instance.
 
 e.g.:
-langchain serve add extraction-openai-functions
-langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
+langchain app add extraction-openai-functions
+langchain app add git+ssh://git@github.com/efriis/simple-pirate.git
 
 **Usage**:
 

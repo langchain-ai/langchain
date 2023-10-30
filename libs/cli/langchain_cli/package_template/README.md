@@ -26,6 +26,12 @@ If you want to add this to an existing project, you can just run:
 langchain app add __package_name__
 ```
 
+To see and debug your chains with [LangSmith](https://docs.smith.langchain.com/), set the following environment variables. You can get an API key [here](https://smith.langchain.com/settings):
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+```
+
 If you are inside this directory, then you can spin up a LangServe instance directly by:
 
 ```shell

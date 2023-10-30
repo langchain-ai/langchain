@@ -62,13 +62,13 @@ We use a variety of environment variables to configure this application
 ## Installation
 To create a langserve application using this template, run the following:
 ```bash
-langchain serve new my-langserve-app
+langchain app new my-langserve-app
 cd my-langserve-app
 ```
 
 Add this template:
 ```bash
-langchain serve add rag-redis
+langchain app add rag-redis
 ```
 
 Start the server:
