@@ -32,16 +32,14 @@ $ langchain app [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
-* `add`: Adds the specified package to the current...
-* `install`
-* `list`: Lists all packages in the current...
+* `add`: Adds the specified template to the current...
 * `new`: Create a new LangServe application.
 * `remove`: Removes the specified package from the...
 * `serve`: Starts the LangServe app.
 
 ### `langchain app add`
 
-Adds the specified package to the current LangServe app.
+Adds the specified template to the current LangServe app.
 
 e.g.:
 langchain app add extraction-openai-functions
@@ -63,33 +61,6 @@ $ langchain app add [OPTIONS] [DEPENDENCIES]...
 * `--project-dir PATH`: The project directory
 * `--repo TEXT`: Install templates from a specific github repo instead
 * `--branch TEXT`: Install templates from a specific branch
-* `--with-poetry / --no-poetry`: Run poetry install  [default: no-poetry]
-* `--help`: Show this message and exit.
-
-### `langchain app install`
-
-**Usage**:
-
-```console
-$ langchain app install [OPTIONS]
-```
-
-**Options**:
-
-* `--help`: Show this message and exit.
-
-### `langchain app list`
-
-Lists all packages in the current LangServe app.
-
-**Usage**:
-
-```console
-$ langchain app list [OPTIONS]
-```
-
-**Options**:
-
 * `--help`: Show this message and exit.
 
 ### `langchain app new`
@@ -109,7 +80,6 @@ $ langchain app new [OPTIONS] NAME
 **Options**:
 
 * `--package TEXT`: Packages to seed the project with
-* `--with-poetry / --no-poetry`: Run poetry install  [default: no-poetry]
 * `--help`: Show this message and exit.
 
 ### `langchain app remove`
@@ -128,7 +98,6 @@ $ langchain app remove [OPTIONS] API_PATHS...
 
 **Options**:
 
-* `--with_poetry / --no-poetry`: Don't run poetry remove  [default: no-poetry]
 * `--help`: Show this message and exit.
 
 ### `langchain app serve`
