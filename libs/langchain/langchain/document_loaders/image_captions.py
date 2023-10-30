@@ -1,5 +1,5 @@
-from typing import Any, List, Tuple, Union
 from io import BytesIO
+from typing import Any, List, Tuple, Union
 
 import requests
 
@@ -21,11 +21,11 @@ class ImageCaptionLoader(BaseLoader):
         blip_processor: str = "Salesforce/blip-image-captioning-base",
         blip_model: str = "Salesforce/blip-image-captioning-base",
     ):
-        """
-        Initialize with a list of image data (bytes) or file paths
+        """Initialize with a list of image data (bytes) or file paths
 
         Args:
-            images: A list of image bytes or file paths.
+            images: Either a single image or a list of images. Accepts
+                    image data (bytes) or file paths to images.
             blip_processor: The name of the pre-trained BLIP processor.
             blip_model: The name of the pre-trained BLIP model.
         """
@@ -38,9 +38,7 @@ class ImageCaptionLoader(BaseLoader):
         self.blip_model = blip_model
 
     def load(self) -> List[Document]:
-        """
-        Load from a list of image data or file paths
-        """
+        """Load from a list of image data or file paths"""
         try:
             from transformers import BlipForConditionalGeneration, BlipProcessor
         except ImportError:
@@ -65,9 +63,7 @@ class ImageCaptionLoader(BaseLoader):
     def _get_captions_and_metadata(
         self, model: Any, processor: Any, image: Union[str, bytes]
     ) -> Tuple[str, dict]:
-        """
-        Helper function for getting the captions and metadata of an image
-        """
+        """Helper function for getting the captions and metadata of an image."""
         try:
             from PIL import Image
         except ImportError:
