@@ -1,6 +1,6 @@
 # Microsoft
 
-All functionality related to Microsoft Azure
+All functionality related to `Microsoft Azure` and other `Microsoft` products.
 
 ## LLM
 ### Azure OpenAI
@@ -70,13 +70,13 @@ from langchain.chat_models import AzureChatOpenAI
 pip install azure-storage-blob
 ```
 
-See a [usage example for the Azure Blob Storage](/docs/integrations/document_loaders/azure_blob_storage_container.html).
+See a [usage example for the Azure Blob Storage](/docs/integrations/document_loaders/azure_blob_storage_container).
 
 ```python
 from langchain.document_loaders import AzureBlobStorageContainerLoader
 ```
 
-See a [usage example for the Azure Files](/docs/integrations/document_loaders/azure_blob_storage_file.html).
+See a [usage example for the Azure Files](/docs/integrations/document_loaders/azure_blob_storage_file).
 
 ```python
 from langchain.document_loaders import AzureBlobStorageFileLoader
@@ -160,4 +160,60 @@ See a [usage example](/docs/integrations/retrievers/azure_cognitive_search).
 ```python
 from langchain.retrievers import AzureCognitiveSearchRetriever
 ```
+
+## Utilities
+
+### Bing Search API
+
+See a [usage example](/docs/integrations/tools/bing_search).
+
+```python
+from langchain.utilities import BingSearchAPIWrapper
+```
+
+## Toolkits
+
+### Azure Cognitive Services
+
+We need to install several python packages.
+
+```bash
+pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision
+```
+
+See a [usage example](/docs/integrations/toolkits/azure_cognitive_services).
+
+```python
+from langchain.agents.agent_toolkits import O365Toolkit
+```
+### Microsoft Office 365 email and calendar
+
+We need to install `O365` python package.
+
+```bash
+pip install O365
+```
+
+
+See a [usage example](/docs/integrations/toolkits/office365).
+
+```python
+from langchain.agents.agent_toolkits import O365Toolkit
+```
+
+### Microsoft Azure PowerBI
+
+We need to install `azure-identity` python package.
+
+```bash
+pip install azure-identity
+```
+
+See a [usage example](/docs/integrations/toolkits/powerbi).
+
+```python
+from langchain.agents.agent_toolkits import PowerBIToolkit
+from langchain.utilities.powerbi import PowerBIDataset
+```
+
 

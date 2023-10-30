@@ -28,6 +28,8 @@ from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_API_BASE = "https://api.baichuan-ai.com/v1"
+
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
@@ -101,7 +103,7 @@ class ChatBaichuan(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    baichuan_api_base: str = "https://api.baichuan-ai.com"
+    baichuan_api_base: str = Field(default=DEFAULT_API_BASE)
     """Baichuan custom endpoints"""
     baichuan_api_key: Optional[str] = None
     """Baichuan API Key"""
@@ -162,6 +164,7 @@ class ChatBaichuan(BaseChatModel):
             values,
             "baichuan_api_base",
             "BAICHUAN_API_BASE",
+            DEFAULT_API_BASE,
         )
         values["baichuan_api_key"] = get_from_dict_or_env(
             values,
@@ -183,6 +186,7 @@ class ChatBaichuan(BaseChatModel):
         """Get the default parameters for calling Baichuan API."""
         normal_params = {
             "model": self.model,
+            "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k": self.top_k,
             "with_search_enhance": self.with_search_enhance,
@@ -252,7 +256,7 @@ class ChatBaichuan(BaseChatModel):
 
         timestamp = int(time.time())
 
-        url = f"{self.baichuan_api_base}/v1"
+        url = self.baichuan_api_base
         if self.streaming:
             url = f"{url}/stream"
         url = f"{url}/chat"

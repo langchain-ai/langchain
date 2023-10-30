@@ -12,6 +12,7 @@ on:
       - '.github/workflows/_test.yml'
       - '.github/workflows/_pydantic_compatibility.yml'
       - '.github/workflows/langchain_ci.yml'
+      - 'libs/*'
       - 'libs/langchain/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
@@ -40,6 +41,13 @@ jobs:
   test:
     uses:
       ./.github/workflows/_test.yml
+    with:
+      working-directory: libs/langchain
+    secrets: inherit
+
+  compile-integration-tests:
+    uses:
+      ./.github/workflows/_compile_integration_test.yml
     with:
       working-directory: libs/langchain
     secrets: inherit
