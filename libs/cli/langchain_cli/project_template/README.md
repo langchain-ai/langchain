@@ -5,13 +5,7 @@
 Install the LangChain CLI if you haven't yet
 
 ```bash
-pip install --upgrade langchain-cli[serve]
-```
-
-And install this package's dependencies
-
-```bash
-poetry install
+pip install --upgrade "langchain-cli[serve]"
 ```
 
 ## Adding packages
