@@ -22,6 +22,7 @@ def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
 def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to a Path object.
+    assert file.__class__ in (str, Path)
     if isinstance(file, str):
         file_path = Path(file)
     else:
