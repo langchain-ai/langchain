@@ -13,7 +13,7 @@ $ langchain [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `app`: Manage LangChain apps
-* `serve`: Start the LangServe instance, whether it's...
+* `serve`: Start the LangServe app, whether it's a...
 * `template`: Develop installable templates.
 
 ## `langchain app`
@@ -37,11 +37,11 @@ $ langchain app [OPTIONS] COMMAND [ARGS]...
 * `list`: Lists all packages in the current...
 * `new`: Create a new LangServe application.
 * `remove`: Removes the specified package from the...
-* `serve`: Starts the LangServe instance.
+* `serve`: Starts the LangServe app.
 
 ### `langchain app add`
 
-Adds the specified package to the current LangServe instance.
+Adds the specified package to the current LangServe app.
 
 e.g.:
 langchain app add extraction-openai-functions
@@ -80,7 +80,7 @@ $ langchain app install [OPTIONS]
 
 ### `langchain app list`
 
-Lists all packages in the current LangServe instance.
+Lists all packages in the current LangServe app.
 
 **Usage**:
 
@@ -114,7 +114,7 @@ $ langchain app new [OPTIONS] NAME
 
 ### `langchain app remove`
 
-Removes the specified package from the current LangServe instance.
+Removes the specified package from the current LangServe app.
 
 **Usage**:
 
@@ -133,7 +133,7 @@ $ langchain app remove [OPTIONS] API_PATHS...
 
 ### `langchain app serve`
 
-Starts the LangServe instance.
+Starts the LangServe app.
 
 **Usage**:
 
@@ -150,7 +150,7 @@ $ langchain app serve [OPTIONS]
 
 ## `langchain serve`
 
-Start the LangServe instance, whether it's a template package or an app.
+Start the LangServe app, whether it's a template or an app.
 
 **Usage**:
 

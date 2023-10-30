@@ -24,7 +24,7 @@ def serve(
     ] = None,
 ) -> None:
     """
-    Start the LangServe instance, whether it's a template package or an app.
+    Start the LangServe app, whether it's a template or an app.
     """
 
     # try starting template package, if error, try langserve
