@@ -1,46 +1,70 @@
 import os
 
+import weaviate
 from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import WebBaseLoader
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
+from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Weaviate
 
-from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
-
+# Check env vars
 if os.environ.get("WEAVIATE_API_KEY", None) is None:
     raise Exception("Missing `WEAVIATE_API_KEY` environment variable.")
 
 if os.environ.get("WEAVIATE_ENVIRONMENT", None) is None:
     raise Exception("Missing `WEAVIATE_ENVIRONMENT` environment variable.")
 
+if os.environ.get("WEAVIATE_URL", None) is None:
+    raise Exception("Missing `WEAVIATE_URL` environment variable.")
+
+if os.environ.get("OPENAI_API_KEY", None) is None:
+    raise Exception("Missing `OPENAI_API_KEY` environment variable.")
+
+# Initialize the retriever
 WEAVIATE_INDEX_NAME = os.environ.get("WEAVIATE_INDEX", "langchain-test")
-
-### Ingest code - you may need to run this the first time
-# Load
-loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
-data = loader.load()
-
-# # Split
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
-all_splits = text_splitter.split_documents(data)
-
-# # Build retriever 
-retriever = WeaviateHybridSearchRetriever = (
-    client=client, index_name=WEAVIATE_INDEX_NAME, text_key="text", attributes=[], create_schema_if_missing=True
+WEAVIATE_URL = os.getenv("WEAVIATE_URL")
+auth_client_secret = (weaviate.AuthApiKey(api_key=os.getenv("WEAVIATE_API_KEY")),)
+client = weaviate.Client(
+    url=WEAVIATE_URL,
+    additional_headers={
+        "X-Openai-Api-Key": os.getenv("OPENAI_API_KEY"),
+    },
+)
+retriever = WeaviateHybridSearchRetriever(
+    client=client,
+    index_name=WEAVIATE_INDEX_NAME,
+    text_key="text",
+    attributes=[],
+    create_schema_if_missing=True
 )
 
+# # Ingest code - you may need to run this the first time
+# # Load
+# loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
+# data = loader.load()
+#
+# # Split
+# text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
+# all_splits = text_splitter.split_documents(data)
+#
 # # Add to vectorDB
-retriever.add_documents(all_splits)
+# retriever.add_documents(all_splits)
 
 
-# Hybrid search
-retriever.get_relevant_documents("agents short-term memory")
+# RAG prompt
+template = """Answer the question based only on the following context:
+{context}
+Question: {question}
+"""
+prompt = ChatPromptTemplate.from_template(template)
 
-# Hybrid search with scores
-retriever.get_relevant_documents("short-term memory", score=True)
+# RAG
+model = ChatOpenAI()
+chain = (
+    RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
+    | prompt
+    | model
+    | StrOutputParser()
+)
 
 
