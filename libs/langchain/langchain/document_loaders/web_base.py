@@ -76,10 +76,15 @@ class WebBaseLoader(BaseLoader):
             )
         if web_paths:
             self.web_paths = list(web_paths)
+        elif isinstance(web_path, str):
+            self.web_paths = [web_path]
         elif isinstance(web_path, Sequence):
             self.web_paths = list(web_path)
         else:
-            self.web_paths = [web_path]
+            raise TypeError(
+                f"web_path must be str or Sequence[str] got ({type(web_path)}) or"
+                f" web_paths must be Sequence[str] got ({type(web_paths)})"
+            )
         self.requests_per_second = requests_per_second
         self.default_parser = default_parser
         self.requests_kwargs = requests_kwargs or {}

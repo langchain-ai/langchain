@@ -1,4 +1,7 @@
-from typing import Any, Dict, List, Mapping, Optional, Union
+import asyncio
+import logging
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Dict, List, Mapping, Optional, Sequence, TypedDict
 
 import aiohttp
 import requests
@@ -7,13 +10,20 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain.pydantic_v1 import Extra, Field, root_validator
+from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 
-class GradientLLM(LLM):
+class TrainResult(TypedDict):
+    """Train result."""
+
+    loss: float
+
+
+class GradientLLM(BaseLLM):
     """Gradient.ai LLM Endpoints.
 
     GradientLLM is a class to interact with LLMs on gradient.ai
@@ -25,11 +35,11 @@ class GradientLLM(LLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms.gradientai_endpoint import GradientAIEndpoint
+            from langchain.llms import GradientLLM
             GradientLLM(
-                model_id="cad6644_base_ml_model",
+                model="99148c6d-c2a0-4fbe-a4a7-e7c05bdb8a09_base_ml_model",
                 model_kwargs={
-                    "max_generated_token_count": 200,
+                    "max_generated_token_count": 128,
                     "temperature": 0.75,
                     "top_p": 0.95,
                     "top_k": 20,
@@ -41,7 +51,7 @@ class GradientLLM(LLM):
 
     """
 
-    model_id: str
+    model_id: str = Field(alias="model", min_length=2)
     "Underlying gradient.ai model id (base or fine-tuned)."
 
     gradient_workspace_id: Optional[str] = None
@@ -54,18 +64,19 @@ class GradientLLM(LLM):
     """
 
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     gradient_api_url: str = "https://api.gradient.ai/api"
     """Endpoint URL to use."""
 
-    aiosession: Optional[aiohttp.ClientSession] = None
-    """ClientSession, in case we want to reuse connection for better performance."""
+    aiosession: Optional[aiohttp.ClientSession] = None  #: :meta private:
+    """ClientSession, private, subject to change in upcoming releases."""
 
     # LLM call kwargs
     class Config:
         """Configuration for this pydantic object."""
 
+        allow_population_by_field_name = True
         extra = Extra.forbid
 
     @root_validator(allow_reuse=True)
@@ -109,6 +120,16 @@ class GradientLLM(LLM):
             values, "gradient_api_url", "GRADIENT_API_URL"
         )
 
+        try:
+            import gradientai  # noqa
+        except ImportError:
+            logging.warning(
+                "DeprecationWarning: `GradientLLM` will use "
+                "`pip install gradientai` in future releases of langchain."
+            )
+        except Exception:
+            pass
+
         return values
 
     @property
@@ -124,6 +145,51 @@ class GradientLLM(LLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "gradient"
+
+    def _kwargs_post_fine_tune_request(
+        self, inputs: Sequence[str], kwargs: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
+        """Build the kwargs for the Post request, used by sync
+
+        Args:
+            prompt (str): prompt used in query
+            kwargs (dict): model kwargs in payload
+
+        Returns:
+            Dict[str, Union[str,dict]]: _description_
+        """
+        _model_kwargs = self.model_kwargs or {}
+        _params = {**_model_kwargs, **kwargs}
+
+        multipliers = _params.get("multipliers", None)
+
+        return dict(
+            url=f"{self.gradient_api_url}/models/{self.model_id}/fine-tune",
+            headers={
+                "authorization": f"Bearer {self.gradient_access_token}",
+                "x-gradient-workspace-id": f"{self.gradient_workspace_id}",
+                "accept": "application/json",
+                "content-type": "application/json",
+            },
+            json=dict(
+                samples=tuple(
+                    {
+                        "inputs": input,
+                    }
+                    for input in inputs
+                )
+                if multipliers is None
+                else tuple(
+                    {
+                        "inputs": input,
+                        "fineTuningParameters": {
+                            "multiplier": multiplier,
+                        },
+                    }
+                    for input, multiplier in zip(inputs, multipliers)
+                ),
+            ),
+        )
 
     def _kwargs_post_request(
         self, prompt: str, kwargs: Mapping[str, Any]
@@ -194,8 +260,8 @@ class GradientLLM(LLM):
     async def _acall(
         self,
         prompt: str,
-        stop: Union[List[str], None] = None,
-        run_manager: Union[AsyncCallbackManagerForLLMRun, None] = None,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         """Async Call to Gradients API `model/{id}/complete`.
@@ -234,3 +300,103 @@ class GradientLLM(LLM):
             text = enforce_stop_tokens(text, stop)
 
         return text
+
+    def _generate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+
+        # same thing with threading
+        def _inner_generate(prompt: str) -> List[Generation]:
+            return [
+                Generation(
+                    text=self._call(
+                        prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+                    )
+                )
+            ]
+
+        if len(prompts) <= 1:
+            generations = list(map(_inner_generate, prompts))
+        else:
+            with ThreadPoolExecutor(min(8, len(prompts))) as p:
+                generations = list(p.map(_inner_generate, prompts))
+
+        return LLMResult(generations=generations)
+
+    async def _agenerate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+        generations = []
+        for generation in asyncio.gather(
+            [self._acall(prompt, stop=stop, run_manager=run_manager, **kwargs)]
+            for prompt in prompts
+        ):
+            generations.append([Generation(text=generation)])
+        return LLMResult(generations=generations)
+
+    def train_unsupervised(
+        self,
+        inputs: Sequence[str],
+        **kwargs: Any,
+    ) -> TrainResult:
+        try:
+            response = requests.post(
+                **self._kwargs_post_fine_tune_request(inputs, kwargs)
+            )
+            if response.status_code != 200:
+                raise Exception(
+                    f"Gradient returned an unexpected response with status "
+                    f"{response.status_code}: {response.text}"
+                )
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"RequestException while calling Gradient Endpoint: {e}")
+
+        response_json = response.json()
+        loss = response_json["sumLoss"] / response_json["numberOfTrainableTokens"]
+        return TrainResult(loss=loss)
+
+    async def atrain_unsupervised(
+        self,
+        inputs: Sequence[str],
+        **kwargs: Any,
+    ) -> TrainResult:
+        if not self.aiosession:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    **self._kwargs_post_fine_tune_request(inputs, kwargs)
+                ) as response:
+                    if response.status != 200:
+                        raise Exception(
+                            f"Gradient returned an unexpected response with status "
+                            f"{response.status}: {response.text}"
+                        )
+                    response_json = await response.json()
+                    loss = (
+                        response_json["sumLoss"]
+                        / response_json["numberOfTrainableTokens"]
+                    )
+        else:
+            async with self.aiosession.post(
+                **self._kwargs_post_fine_tune_request(inputs, kwargs)
+            ) as response:
+                if response.status != 200:
+                    raise Exception(
+                        f"Gradient returned an unexpected response with status "
+                        f"{response.status}: {response.text}"
+                    )
+                response_json = await response.json()
+                loss = (
+                    response_json["sumLoss"] / response_json["numberOfTrainableTokens"]
+                )
+
+        return TrainResult(loss=loss)

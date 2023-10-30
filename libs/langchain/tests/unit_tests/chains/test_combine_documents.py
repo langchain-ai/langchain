@@ -5,8 +5,8 @@ from typing import Any, List
 import pytest
 
 from langchain.chains.combine_documents.reduce import (
-    _collapse_docs,
-    _split_list_of_docs,
+    collapse_docs,
+    split_list_of_docs,
 )
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.docstore.document import Document
@@ -32,20 +32,20 @@ def test__split_list_long_single_doc() -> None:
     """Test splitting of a long single doc."""
     docs = [Document(page_content="foo" * 100)]
     with pytest.raises(ValueError):
-        _split_list_of_docs(docs, _fake_docs_len_func, 100)
+        split_list_of_docs(docs, _fake_docs_len_func, 100)
 
 
 def test__split_list_single_doc() -> None:
     """Test splitting works with just a single doc."""
     docs = [Document(page_content="foo")]
-    doc_list = _split_list_of_docs(docs, _fake_docs_len_func, 100)
+    doc_list = split_list_of_docs(docs, _fake_docs_len_func, 100)
     assert doc_list == [docs]
 
 
 def test__split_list_double_doc() -> None:
     """Test splitting works with just two docs."""
     docs = [Document(page_content="foo"), Document(page_content="bar")]
-    doc_list = _split_list_of_docs(docs, _fake_docs_len_func, 100)
+    doc_list = split_list_of_docs(docs, _fake_docs_len_func, 100)
     assert doc_list == [docs]
 
 
@@ -59,7 +59,7 @@ def test__split_list_works_correctly() -> None:
         Document(page_content="bar"),
         Document(page_content="baz"),
     ]
-    doc_list = _split_list_of_docs(docs, _fake_docs_len_func, 10)
+    doc_list = split_list_of_docs(docs, _fake_docs_len_func, 10)
     expected_result = [
         # Test a group of three.
         [
@@ -82,7 +82,7 @@ def test__collapse_docs_no_metadata() -> None:
         Document(page_content="bar"),
         Document(page_content="baz"),
     ]
-    output = _collapse_docs(docs, _fake_combine_docs_func)
+    output = collapse_docs(docs, _fake_combine_docs_func)
     expected_output = Document(page_content="foobarbaz")
     assert output == expected_output
 
@@ -91,12 +91,12 @@ def test__collapse_docs_one_doc() -> None:
     """Test collapse documents functionality when only one document present."""
     # Test with no metadata.
     docs = [Document(page_content="foo")]
-    output = _collapse_docs(docs, _fake_combine_docs_func)
+    output = collapse_docs(docs, _fake_combine_docs_func)
     assert output == docs[0]
 
     # Test with metadata.
     docs = [Document(page_content="foo", metadata={"source": "a"})]
-    output = _collapse_docs(docs, _fake_combine_docs_func)
+    output = collapse_docs(docs, _fake_combine_docs_func)
     assert output == docs[0]
 
 
@@ -108,7 +108,7 @@ def test__collapse_docs_metadata() -> None:
         Document(page_content="foo", metadata=metadata1),
         Document(page_content="bar", metadata=metadata2),
     ]
-    output = _collapse_docs(docs, _fake_combine_docs_func)
+    output = collapse_docs(docs, _fake_combine_docs_func)
     expected_metadata = {
         "source": "a, b",
         "foo": "2, 3",

@@ -7,7 +7,12 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 import sqlalchemy
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import JSON, UUID
-from sqlalchemy.orm import Session, declarative_base, relationship
+from sqlalchemy.orm import Session, relationship
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings

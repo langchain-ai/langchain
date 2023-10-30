@@ -87,6 +87,7 @@ from langchain.document_loaders.geodataframe import GeoDataFrameLoader
 from langchain.document_loaders.git import GitLoader
 from langchain.document_loaders.gitbook import GitbookLoader
 from langchain.document_loaders.github import GitHubIssuesLoader
+from langchain.document_loaders.google_speech_to_text import GoogleSpeechToTextLoader
 from langchain.document_loaders.googledrive import GoogleDriveLoader
 from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.hn import HNLoader
@@ -108,6 +109,7 @@ from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.merge import MergedDataLoader
 from langchain.document_loaders.mhtml import MHTMLLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
+from langchain.document_loaders.mongodb import MongodbLoader
 from langchain.document_loaders.news import NewsURLLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
@@ -266,6 +268,7 @@ __all__ = [
     "GitbookLoader",
     "GoogleApiClient",
     "GoogleApiYoutubeLoader",
+    "GoogleSpeechToTextLoader",
     "GoogleDriveLoader",
     "GutenbergLoader",
     "HNLoader",
@@ -284,6 +287,7 @@ __all__ = [
     "MaxComputeLoader",
     "MergedDataLoader",
     "ModernTreasuryLoader",
+    "MongodbLoader",
     "NewsURLLoader",
     "NotebookLoader",
     "NotionDBLoader",

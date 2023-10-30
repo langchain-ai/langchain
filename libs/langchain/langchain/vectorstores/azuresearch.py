@@ -77,7 +77,7 @@ def _get_search_client(
 ) -> SearchClient:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
-    from azure.identity import DefaultAzureCredential
+    from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
@@ -93,6 +93,9 @@ def _get_search_client(
     default_fields = default_fields or []
     if key is None:
         credential = DefaultAzureCredential()
+    elif key.upper() == "INTERACTIVE":
+        credential = InteractiveBrowserCredential()
+        credential.get_token("https://search.azure.com/.default")
     else:
         credential = AzureKeyCredential(key)
     index_client: SearchIndexClient = SearchIndexClient(
@@ -471,14 +474,32 @@ class AzureSearch(VectorStore):
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
-        docs_and_scores = self.semantic_hybrid_search_with_score(
+        docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
             query, k=k, filters=kwargs.get("filters", None)
         )
-        return [doc for doc, _ in docs_and_scores]
+        return [doc for doc, _, _ in docs_and_scores]
 
     def semantic_hybrid_search_with_score(
-        self, query: str, k: int = 4, filters: Optional[str] = None
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
+        """
+        Returns the most similar indexed documents to the query text.
+
+        Args:
+            query (str): The query text for which to find similar documents.
+            k (int): The number of documents to return. Default is 4.
+
+        Returns:
+            List[Document]: A list of documents that are most similar to the query text.
+        """
+        docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
+            query, k=k, filters=kwargs.get("filters", None)
+        )
+        return [(doc, score) for doc, score, _ in docs_and_scores]
+
+    def semantic_hybrid_search_with_score_and_rerank(
+        self, query: str, k: int = 4, filters: Optional[str] = None
+    ) -> List[Tuple[Document, float, float]]:
         """Return docs most similar to query with an hybrid query.
 
         Args:
@@ -548,6 +569,7 @@ class AzureSearch(VectorStore):
                     },
                 ),
                 float(result["@search.score"]),
+                float(result["@search.reranker_score"]),
             )
             for result in results
         ]

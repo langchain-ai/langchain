@@ -5,13 +5,11 @@ import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 
-import langchain
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -21,19 +19,26 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.load.dump import dumpd
-from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field, root_validator, validator
+from langchain.pydantic_v1 import (
+    BaseModel,
+    Field,
+    create_model,
+    root_validator,
+    validator,
+)
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 logger = logging.getLogger(__name__)
 
 
 def _get_verbosity() -> bool:
-    return langchain.verbose
+    from langchain.globals import get_verbose
+
+    return get_verbose()
 
 
-class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
+class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     """Abstract base class for creating structured sequences of calls to components.
 
     Chains should be used to encode a sequence of calls to components like
@@ -55,6 +60,22 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             output as a string or object. This method can only be used for a subset of
             chains and cannot return as rich of an output as `__call__`.
     """
+
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainInput", **{k: (Any, None) for k in self.input_keys}
+        )
+
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainOutput", **{k: (Any, None) for k in self.output_keys}
+        )
 
     def invoke(
         self,
@@ -78,12 +99,6 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        if type(self)._acall == Chain._acall:
-            # If the chain does not implement async, fall back to default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, **kwargs)
-            )
-
         config = config or {}
         return await self.acall(
             input,
@@ -96,10 +111,10 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
 
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.
-    Memory is a class that gets called at the start 
+    Memory is a class that gets called at the start
     and at the end of every chain. At the start, memory loads variables and passes
     them along in the chain. At the end, it saves any returned variables.
-    There are many different types of memory - please see memory docs 
+    There are many different types of memory - please see memory docs
     for the full catalog."""
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Optional list of callback handlers (or callback manager). Defaults to None.
@@ -111,7 +126,8 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     """Deprecated, use `callbacks` instead."""
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether or not run in verbose mode. In verbose mode, some intermediate logs
-    will be printed to the console. Defaults to `langchain.verbose` value."""
+    will be printed to the console. Defaults to the global `verbose` value,
+    accessible via `langchain.globals.get_verbose()`."""
     tags: Optional[List[str]] = None
     """Optional list of tags associated with the chain. Defaults to None.
     These tags will be associated with each call to this chain,
@@ -227,7 +243,9 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        raise NotImplementedError("Async call not supported for this chain type.")
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self._call, inputs, run_manager
+        )
 
     def __call__(
         self,
@@ -594,10 +612,11 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
                 chain.dict(exclude_unset=True)
                 # -> {"_type": "foo", "verbose": False, ...}
         """
-        if self.memory is not None:
-            raise ValueError("Saving of memory is not yet supported.")
         _dict = super().dict(**kwargs)
-        _dict["_type"] = self._chain_type
+        try:
+            _dict["_type"] = self._chain_type
+        except NotImplementedError:
+            pass
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -614,6 +633,14 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
 
                 chain.save(file_path="path/chain.yaml")
         """
+        if self.memory is not None:
+            raise ValueError("Saving of memory is not yet supported.")
+
+        # Fetch dictionary to save
+        chain_dict = self.dict()
+        if "_type" not in chain_dict:
+            raise NotImplementedError(f"Chain {self} does not support saving.")
+
         # Convert file to Path object.
         if isinstance(file_path, str):
             save_path = Path(file_path)
@@ -622,9 +649,6 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
-
-        # Fetch dictionary to save
-        chain_dict = self.dict()
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:

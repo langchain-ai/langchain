@@ -85,10 +85,10 @@ class OpenLLM(LLM):
     server_type: ServerType = "http"
     """Optional server type. Either 'http' or 'grpc'."""
     embedded: bool = True
-    """Initialize this LLM instance in current process by default. Should 
+    """Initialize this LLM instance in current process by default. Should
     only set to False when using in conjunction with BentoML Service."""
     llm_kwargs: Dict[str, Any]
-    """Key word arguments to be passed to openllm.LLM"""
+    """Keyword arguments to be passed to openllm.LLM"""
 
     _runner: Optional[openllm.LLMRunner] = PrivateAttr(default=None)
     _client: Union[
@@ -217,9 +217,9 @@ class OpenLLM(LLM):
     def _identifying_params(self) -> IdentifyingParams:
         """Get the identifying parameters."""
         if self._client is not None:
-            self.llm_kwargs.update(self._client.configuration)
-            model_name = self._client.model_name
-            model_id = self._client.model_id
+            self.llm_kwargs.update(self._client._config())
+            model_name = self._client._metadata()["model_name"]
+            model_id = self._client._metadata()["model_id"]
         else:
             if self._runner is None:
                 raise ValueError("Runner must be initialized.")
@@ -265,7 +265,9 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            res = self._client.query(prompt, **config.model_dump(flatten=True))
+            res = self._client.generate(
+                prompt, **config.model_dump(flatten=True)
+            ).responses[0]
         else:
             assert self._runner is not None
             res = self._runner(prompt, **config.model_dump(flatten=True))
@@ -300,9 +302,10 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            res = await self._client.acall(
-                "generate", prompt, **config.model_dump(flatten=True)
-            )
+            async_client = openllm.client.AsyncHTTPClient(self.server_url)
+            res = (
+                await async_client.generate(prompt, **config.model_dump(flatten=True))
+            ).responses[0]
         else:
             assert self._runner is not None
             (

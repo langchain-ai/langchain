@@ -14,6 +14,8 @@ from langchain.schema.output import ChatGeneration, ChatGenerationChunk
 
 
 class FakeMessagesListChatModel(BaseChatModel):
+    """Fake ChatModel for testing purposes."""
+
     responses: List[BaseMessage]
     sleep: Optional[float] = None
     i: int = 0
