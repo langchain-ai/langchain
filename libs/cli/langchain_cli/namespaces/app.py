@@ -1,5 +1,5 @@
 """
-Manage LangServe application projects.
+Manage LangChain apps
 """
 
 import shutil

@@ -92,7 +92,7 @@ def serve(
     ] = None,
 ) -> None:
     """
-    Starts a demo LangServe instance for this template.
+    Starts a demo app for this template.
     """
     # load pyproject.toml
     project_dir = get_package_root()

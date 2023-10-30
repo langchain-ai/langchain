@@ -12,13 +12,13 @@ $ langchain [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
-* `app`: Manage LangServe application projects.
+* `app`: Manage LangChain apps
 * `serve`: Start the LangServe instance, whether it's...
 * `template`: Develop installable templates.
 
 ## `langchain app`
 
-Manage LangServe application projects.
+Manage LangChain apps
 
 **Usage**:
 
@@ -181,7 +181,7 @@ $ langchain template [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `new`: Creates a new template package.
-* `serve`: Starts a demo LangServe instance for this...
+* `serve`: Starts a demo app for this template.
 
 ### `langchain template new`
 
@@ -204,7 +204,7 @@ $ langchain template new [OPTIONS] NAME
 
 ### `langchain template serve`
 
-Starts a demo LangServe instance for this template.
+Starts a demo app for this template.
 
 **Usage**:
 
