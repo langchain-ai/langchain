@@ -10,17 +10,14 @@ ELASTIC_PASSWORD = "..."
 CLOUD_ID = "..."
 
 # Create the client instance
-db = Elasticsearch(
-    cloud_id=CLOUD_ID,
-    basic_auth=("elastic", ELASTIC_PASSWORD)
-)
+db = Elasticsearch(cloud_id=CLOUD_ID, basic_auth=("elastic", ELASTIC_PASSWORD))
 
 customers = [
     {"firstname": "Jennifer", "lastname": "Walters"},
-    {"firstname": "Monica","lastname":"Rambeau"},
-    {"firstname": "Carol","lastname":"Danvers"},
-    {"firstname": "Wanda","lastname":"Maximoff"},
-    {"firstname": "Jennifer","lastname":"Takeda"},
+    {"firstname": "Monica", "lastname": "Rambeau"},
+    {"firstname": "Carol", "lastname": "Danvers"},
+    {"firstname": "Wanda", "lastname": "Maximoff"},
+    {"firstname": "Jennifer", "lastname": "Takeda"},
 ]
 for i, customer in enumerate(customers):
     db.create(index="customers", document=customer, id=i)
