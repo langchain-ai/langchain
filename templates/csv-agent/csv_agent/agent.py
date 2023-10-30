@@ -72,7 +72,7 @@ agent = OpenAIFunctionsAgent(
 )
 agent_executor = AgentExecutor(
     agent=agent, tools=tools, max_iterations=5, early_stopping_method="generate"
-)| (lambda x: x["output"])
+) | (lambda x: x["output"])
 
 # Typing for playground inputs
 

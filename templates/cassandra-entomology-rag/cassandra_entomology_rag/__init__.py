@@ -11,6 +11,7 @@ from langchain.vectorstores import Cassandra
 use_cassandra = int(os.environ.get("USE_CASSANDRA_CLUSTER", "0"))
 if use_cassandra:
     from .cassandra_cluster_init import get_cassandra_connection
+
     session, keyspace = get_cassandra_connection()
     cassio.init(
         session=session,
@@ -33,7 +34,7 @@ vector_store = Cassandra(
     embedding=embeddings,
     table_name="langserve_rag_demo",
 )
-retriever = vector_store.as_retriever(search_kwargs={'k': 3})
+retriever = vector_store.as_retriever(search_kwargs={"k": 3})
 
 entomology_template = """
 You are an expert entomologist, tasked with answering enthusiast biologists' questions.
@@ -53,8 +54,8 @@ YOUR ANSWER:"""
 entomology_prompt = ChatPromptTemplate.from_template(entomology_template)
 
 chain = (
-    {"context": retriever, "question": RunnablePassthrough()} 
-    | entomology_prompt 
-    | llm 
+    {"context": retriever, "question": RunnablePassthrough()}
+    | entomology_prompt
+    | llm
     | StrOutputParser()
 )
