@@ -11,6 +11,7 @@ from langchain.document_loaders.parsers.language.ruby import RubySegmenter
 from langchain.document_loaders.parsers.language.rust import RustSegmenter
 from langchain.document_loaders.parsers.language.scala import ScalaSegmenter
 from langchain.document_loaders.parsers.language.go import GoSegmenter
+from langchain.document_loaders.parsers.language.kotlin import KotlinSegmenter
 from langchain.text_splitter import Language
 
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
@@ -22,6 +23,7 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "scala": Language.SCALA,
     "rs": Language.RUST,
     "go": Language.GO,
+    "kt": Language.KOTLIN,
 }
 
 LANGUAGE_SEGMENTERS: Dict[str, Any] = {
@@ -33,6 +35,7 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     Language.RUST: RustSegmenter,
     Language.SCALA: ScalaSegmenter,
     Language.GO: GoSegmenter,
+    Language.KOTLIN: KotlinSegmenter,
 }
 
 
