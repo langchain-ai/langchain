@@ -3,11 +3,12 @@ from typing import Optional
 import typer
 from typing_extensions import Annotated
 
-from langchain_cli.namespaces import hub, serve
+from langchain_cli.namespaces import app_cli
+from langchain_cli.namespaces import package_cli
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
-app.add_typer(hub.hub, name="hub", help=hub.__doc__)
-app.add_typer(serve.serve, name="serve", help=serve.__doc__)
+app.add_typer(package_cli.hub, name="package", help=package_cli.__doc__)
+app.add_typer(app_cli.app_cli, name="app", help=app_cli.__doc__)
 
 
 @app.command()
@@ -26,9 +27,9 @@ def start(
 
     # try starting hub package, if error, try langserve
     try:
-        hub.start(port=port, host=host)
+        package_cli.start(port=port, host=host)
     except KeyError:
-        serve.start(port=port, host=host)
+        app_cli.start(port=port, host=host)
 
 
 if __name__ == "__main__":

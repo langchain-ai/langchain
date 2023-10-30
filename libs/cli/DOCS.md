@@ -47,10 +47,11 @@ $ langchain hub new [OPTIONS] NAME
 
 **Arguments**:
 
-* `NAME`: [required]
+* `NAME`: The name of the folder to create  [required]
 
 **Options**:
 
+* `--with-poetry / --no-poetry`: Don't run poetry install  [default: no-poetry]
 * `--help`: Show this message and exit.
 
 ### `langchain hub start`
@@ -65,8 +66,8 @@ $ langchain hub start [OPTIONS]
 
 **Options**:
 
-* `--port INTEGER`
-* `--host TEXT`
+* `--port INTEGER`: The port to run the server on
+* `--host TEXT`: The host to run the server on
 * `--help`: Show this message and exit.
 
 ## `langchain serve`
@@ -99,22 +100,24 @@ Adds the specified package to the current LangServe instance.
 e.g.:
 langchain serve add extraction-openai-functions
 langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
-langchain serve add git+https://github.com/efriis/hub.git#devbranch#subdirectory=mypackage
 
 **Usage**:
 
 ```console
-$ langchain serve add [OPTIONS] DEPENDENCIES...
+$ langchain serve add [OPTIONS] [DEPENDENCIES]...
 ```
 
 **Arguments**:
 
-* `DEPENDENCIES...`: [required]
+* `[DEPENDENCIES]...`: The dependency to add
 
 **Options**:
 
-* `--api-path TEXT`
-* `--project-dir PATH`
+* `--api-path TEXT`: API paths to add
+* `--project-dir PATH`: The project directory
+* `--repo TEXT`: Install deps from a specific github repo instead
+* `--branch TEXT`: Install deps from a specific branch
+* `--with-poetry / --no-poetry`: Run poetry install  [default: no-poetry]
 * `--help`: Show this message and exit.
 
 ### `langchain serve install`
@@ -155,11 +158,12 @@ $ langchain serve new [OPTIONS] NAME
 
 **Arguments**:
 
-* `NAME`: [required]
+* `NAME`: The name of the folder to create  [required]
 
 **Options**:
 
-* `--package TEXT`
+* `--package TEXT`: Packages to seed the project with
+* `--with-poetry / --no-poetry`: Run poetry install  [default: no-poetry]
 * `--help`: Show this message and exit.
 
 ### `langchain serve remove`
@@ -174,10 +178,11 @@ $ langchain serve remove [OPTIONS] API_PATHS...
 
 **Arguments**:
 
-* `API_PATHS...`: [required]
+* `API_PATHS...`: The API paths to remove  [required]
 
 **Options**:
 
+* `--with_poetry / --no-poetry`: Don't run poetry remove  [default: no-poetry]
 * `--help`: Show this message and exit.
 
 ### `langchain serve start`
@@ -192,8 +197,9 @@ $ langchain serve start [OPTIONS]
 
 **Options**:
 
-* `--port INTEGER`
-* `--host TEXT`
+* `--port INTEGER`: The port to run the server on
+* `--host TEXT`: The host to run the server on
+* `--app TEXT`: The app to run
 * `--help`: Show this message and exit.
 
 ## `langchain start`
@@ -208,6 +214,6 @@ $ langchain start [OPTIONS]
 
 **Options**:
 
-* `--port INTEGER`
-* `--host TEXT`
+* `--port INTEGER`: The port to run the server on
+* `--host TEXT`: The host to run the server on
 * `--help`: Show this message and exit.
