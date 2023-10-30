@@ -4,7 +4,7 @@ import json
 import logging
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
@@ -14,6 +14,9 @@ from langchain.utilities.vertexai import get_client_info
 if TYPE_CHECKING:
     from google.cloud import storage
     from google.cloud.aiplatform import MatchingEngineIndex, MatchingEngineIndexEndpoint
+    from google.cloud.aiplatform.matching_engine.matching_engine_index_endpoint import (
+        Namespace,
+    )
     from google.oauth2.service_account import Credentials
 
     from langchain.embeddings import TensorflowHubEmbeddings
@@ -169,19 +172,33 @@ class MatchingEngine(VectorStore):
         blob = bucket.blob(gcs_location)
         blob.upload_from_string(data)
 
-    def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        """Return docs most similar to query.
+    def similarity_search_by_vector_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[List[Namespace]] = [],
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """
+        Return docs most similar to embedding vector and similarity score.
 
         Args:
-            query: The string that will be used to search for similar documents.
-            k: The amount of neighbors that will be retrieved.
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Optional. A list of Namespaces for filtering
+                the matching results.
+                For example:
+                [Namespace("color", ["red"], []), Namespace("shape", [], ["squared"])]
+                will match datapoints that satisfy "red color" but not include
+                datapoints with "squared shape". Please refer to
+                https://cloud.google.com/vertex-ai/docs/matching-engine/filtering#json
+                for more detail.
 
         Returns:
-            A list of k matching documents.
+            List[Tuple[Document, float]]: List of documents most similar to
+            the query text and cosine distance in float for each.
+            Lower score represents more similarity.
         """
-
         logger.debug(f"Embedding query {query}.")
         embedding_query = self.embedding.embed_documents([query])
 
@@ -191,12 +208,14 @@ class MatchingEngine(VectorStore):
                 deployed_index_id=self._get_index_id(),
                 queries=embedding_query,
                 num_neighbors=k,
+                filter=filter,
             )
         else:
             response = self.endpoint.match(
                 deployed_index_id=self._get_index_id(),
                 queries=embedding_query,
                 num_neighbors=k,
+                filter=filter,
             )
 
         if len(response) == 0:
@@ -212,11 +231,40 @@ class MatchingEngine(VectorStore):
         # one element.
         for doc in response[0]:
             page_content = self._download_from_gcs(f"documents/{doc.id}")
-            results.append(Document(page_content=page_content))
+            results.append((Document(page_content=page_content), doc.distance))
 
         logger.debug("Downloaded documents for query.")
 
         return results
+
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[List[Namespace]] = [],
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: The string that will be used to search for similar documents.
+            k: The amount of neighbors that will be retrieved.
+            filter: Optional. A list of Namespaces for filtering the matching results.
+                For example:
+                [Namespace("color", ["red"], []), Namespace("shape", [], ["squared"])]
+                will match datapoints that satisfy "red color" but not include
+                datapoints with "squared shape". Please refer to
+                https://cloud.google.com/vertex-ai/docs/matching-engine/filtering#json
+                 for more detail.
+
+        Returns:
+            A list of k matching documents.
+        """
+        results = self.similarity_search_by_vector_with_relevance_scores(
+            query, k, filter, **kwargs
+        )
+
+        return [result[0] for result in results]
 
     def _get_index_id(self) -> str:
         """Gets the correct index id for the endpoint.
