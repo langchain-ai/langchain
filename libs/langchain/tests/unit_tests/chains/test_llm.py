@@ -60,6 +60,16 @@ def test_predict_method(fake_llm_chain: LLMChain) -> None:
     assert output == "foo"
 
 
+def test_metadata() -> None:
+    prompt = PromptTemplate(
+        input_variables=["text", "metadata_var"], template="{text} and {metadata_var}"
+    )
+    llm = FakeLLM(queries={"q1 and q2": "two q's"})
+    chain = LLMChain(prompt=prompt, llm=llm)
+    output = chain.run({"text": "q1"}, metadata={"metadata_var": "q2"})
+    assert output == "two q's"
+
+
 def test_predict_and_parse() -> None:
     """Test parsing ability."""
     prompt = PromptTemplate(

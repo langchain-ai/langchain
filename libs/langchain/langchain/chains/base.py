@@ -259,7 +259,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Execute the chain.
-
         Args:
             inputs: Dictionary of inputs, or single input if chain expects
                 only one param. Should contain all inputs specified in
@@ -283,7 +282,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        inputs = self.prep_inputs(inputs)
+        inputs = self.prep_inputs(inputs, metadata)
         callback_manager = CallbackManager.configure(
             callbacks,
             self.callbacks,
@@ -411,7 +410,11 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         else:
             return {**inputs, **outputs}
 
-    def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
+    def prep_inputs(
+        self,
+        inputs: Union[Dict[str, Any], Any],
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, str]:
         """Validate and prepare chain inputs, including adding inputs from memory.
 
         Args:
@@ -437,6 +440,11 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                     "eg `chain({'foo': 1, 'bar': 2})`"
                 )
             inputs = {list(_input_keys)[0]: inputs}
+        if metadata:
+            for k, v in metadata.items():
+                if k not in inputs:
+                    inputs[k] = v
+
         if self.memory is not None:
             external_context = self.memory.load_memory_variables(inputs)
             inputs = dict(inputs, **external_context)
@@ -498,7 +506,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         """
         # Run at start to make sure this is possible/defined
         _output_key = self._run_output_key
-
         if args and not kwargs:
             if len(args) != 1:
                 raise ValueError("`run` supports only one positional argument.")

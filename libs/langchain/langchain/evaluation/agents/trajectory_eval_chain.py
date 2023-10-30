@@ -276,11 +276,15 @@ The following is the expected answer. Use this to measure correctness:
         """
         return ["score", "reasoning"]
 
-    def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
+    def prep_inputs(
+        self,
+        inputs: Union[Dict[str, Any], Any],
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, str]:
         """Validate and prep inputs."""
         if "reference" not in inputs:
             inputs["reference"] = self._format_reference(inputs.get("reference"))
-        return super().prep_inputs(inputs)
+        return super().prep_inputs(inputs, metadata)
 
     def _call(
         self,

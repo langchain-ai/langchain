@@ -4,8 +4,10 @@ from typing import Any, Dict, List, Optional
 
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.callbacks.manager import CallbackManager, CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import BaseModel, Field
+from langchain.tools.base import StructuredTool
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -75,6 +77,59 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
         **kwargs,
     )
     return agent
+
+
+class AdderInput(BaseModel):
+    x: int = Field()
+    y: int = Field()
+
+
+last_add = 0
+
+
+def adder(x: int, y: int, callbacks: CallbackManager) -> int:
+    global last_add
+    base = 0
+    if "base" in callbacks.metadata:
+        base = callbacks.metadata["base"]
+    last_add = base + x + y
+    print("SET LAST ADD " + str(last_add))
+    return last_add
+
+
+def test_agent_metadata() -> None:
+    agent = _get_agent()
+    tools = [
+        StructuredTool(
+            name="Add",
+            func=adder,
+            description="Adds two numbers",
+            args_schema=AdderInput,
+        ),
+    ]
+    llm_output = """I can use the `Add` tool to achieve the goal.
+
+    Action:
+    ```json
+    {
+      "action": "Add",
+      "action_input": {"x": 1, "y": 2}
+    }
+    ```
+    """
+
+    responses = [llm_output, 3, llm_output, 4]
+    fake_llm = FakeListLLM(responses=responses)
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+    )
+    output = agent.run("What is 1+2?")
+    assert output == str(last_add)
+    output = agent.run("What is 1+2?", metadata={"base": 1})
+    assert output == str(last_add)
 
 
 def test_agent_bad_action() -> None:
