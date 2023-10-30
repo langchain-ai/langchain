@@ -9,23 +9,31 @@ from langchain.chains.openai_functions.base import convert_to_openai_function
 from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.schema import (AIMessage, BaseMessage, HumanMessage,
-                              StrOutputParser, get_buffer_string)
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    StrOutputParser,
+    get_buffer_string,
+)
 from langchain.schema.runnable import Runnable
 from langsmith.evaluation import EvaluationResult, RunEvaluator
 from langsmith.schemas import Example, Run
 
 from pydantic import BaseModel, Field
 
-### The feedback model
+### The feedback model used for the "function definition" provided to OpenAI
+# For use with open source models, you can add the schema directly,
+# but some modifications to the prompt and parser will be needed
+
 
 
 class ResponseEffectiveness(BaseModel):
-    """Score the effectiveness of bot response."""
+    """Score the effectiveness of the AI chat bot response."""
 
     reasoning: str = Field(
         ...,
-        description="Explanation of the score.",
+        description="Explanation for the score.",
     )
     score: int = Field(
         ...,
@@ -64,7 +72,7 @@ evaluation_prompt = hub.pull("wfh/response-effectiveness")
 evaluate_response_effectiveness = (
     # format_messages is a function that takes a dict and returns a dict
     format_dialog
-    | evaluation_prompt 
+    | evaluation_prompt
     # bind() provides the requested schemas to the model for structured prediction
     | ChatOpenAI(model="gpt-3.5-turbo").bind(
         functions=[convert_to_openai_function(ResponseEffectiveness)],
