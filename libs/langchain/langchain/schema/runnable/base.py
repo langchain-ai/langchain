@@ -37,6 +37,7 @@ if TYPE_CHECKING:
         CallbackManagerForChainRun,
     )
     from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
+    from langchain.callbacks.tracers.schemas import Run
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
@@ -582,6 +583,27 @@ class Runnable(Generic[Input, Output], ABC):
                 RunnableConfig,
                 {**(config or {}), **kwargs},
             ),  # type: ignore[misc]
+            kwargs={},
+        )
+
+    def with_listeners(
+        self,
+        *,
+        on_start: Optional[Callable[[Run], None]],
+        on_end: Optional[Callable[[Run], None]],
+        on_error: Optional[Callable[[Run], None]],
+    ) -> Runnable[Input, Output]:
+        from langchain.callbacks.tracers.root_listeners import RootListenersTracer
+
+        return RunnableBinding(
+            bound=self,
+            config={
+                "callbacks": [
+                    RootListenersTracer(
+                        on_start=on_start, on_end=on_end, on_error=on_error
+                    )
+                ]
+            },
             kwargs={},
         )
 
@@ -2323,6 +2345,19 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
     ) -> RunnableEach[Input, Output]:
         return RunnableEach(bound=self.bound.with_config(config, **kwargs))
 
+    def with_listeners(
+        self,
+        *,
+        on_start: Optional[Callable[[Run], None]],
+        on_end: Optional[Callable[[Run], None]],
+        on_error: Optional[Callable[[Run], None]],
+    ) -> RunnableEach[Input, Output]:
+        return RunnableEach(
+            bound=self.bound.with_listeners(
+                on_start=on_start, on_end=on_end, on_error=on_error
+            )
+        )
+
     def _invoke(
         self,
         inputs: List[Input],
@@ -2468,6 +2503,33 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
             bound=self.bound,
             kwargs=self.kwargs,
             config=cast(RunnableConfig, {**self.config, **(config or {}), **kwargs}),
+            custom_input_type=self.custom_input_type,
+            custom_output_type=self.custom_output_type,
+        )
+
+    def with_listeners(
+        self,
+        *,
+        on_start: Optional[Callable[[Run], None]],
+        on_end: Optional[Callable[[Run], None]],
+        on_error: Optional[Callable[[Run], None]],
+    ) -> Runnable[Input, Output]:
+        from langchain.callbacks.tracers.root_listeners import RootListenersTracer
+
+        return self.__class__(
+            bound=self.bound,
+            kwargs=self.kwargs,
+            config=cast(
+                RunnableConfig,
+                {
+                    **self.config,
+                    "callbacks": [
+                        RootListenersTracer(
+                            on_start=on_start, on_end=on_end, on_error=on_error
+                        )
+                    ],
+                },
+            ),
             custom_input_type=self.custom_input_type,
             custom_output_type=self.custom_output_type,
         )
