@@ -10,6 +10,7 @@ Your end-user credentials would be used to make the calls (make sure you've run
 import os
 
 import pytest
+from pytest_mock import MockerFixture
 from vertexai.language_models._language_models import CountTokensResponse
 
 from langchain.chains.summarize import load_summarize_chain
@@ -113,7 +114,15 @@ async def test_model_garden_agenerate() -> None:
     assert len(output.generations) == 2
 
 
-def test_vertex_call_trigger_count_tokens(mocker) -> None:
+def test_vertex_call_trigger_count_tokens() -> None:
+    llm = VertexAI()
+    output = llm.get_num_tokens("Hi")
+    assert output == 2
+
+
+def test_get_num_tokens_be_called_when_using_mapreduce_chain(
+    mocker: MockerFixture,
+) -> None:
     m1 = mocker.patch(
         "vertexai.preview.language_models._PreviewTextGenerationModel.count_tokens",
         return_value=CountTokensResponse(
