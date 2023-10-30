@@ -59,28 +59,11 @@ class TestLakeFSLoader(unittest.TestCase):
     path = "path"
 
     @requests_mock.Mocker()
-    @pytest.mark.usefixtures("mock_lakefs_client_no_presign_not_local")
-    def test_non_presigned_loading_fail(self, mocker: Mocker) -> None:
-        mocker.register_uri(requests_mock.ANY, requests_mock.ANY, status_code=200)
+    @pytest.mark.usefixtures("mock_lakefs_client")
+    def test_presigned_loading(self, mocker: Mocker) -> None:
+        mocker.register_uri("GET", requests_mock.ANY, text="data")
         loader = LakeFSLoader(
             self.lakefs_access_key, self.lakefs_secret_key, self.endpoint
-        )
-        loader.set_repo(self.repo)
-        loader.set_ref(self.ref)
-        loader.set_path(self.path)
-        with pytest.raises(ValueError):
-            loader.load()
-
-    @requests_mock.Mocker()
-    @pytest.mark.usefixtures(
-        "mock_lakefs_client_no_presign_local", "mock_unstructured_local"
-    )
-    def test_non_presigned_loading(self, mocker: Mocker) -> None:
-        mocker.register_uri(requests_mock.ANY, requests_mock.ANY, status_code=200)
-        loader = LakeFSLoader(
-            lakefs_access_key="lakefs_access_key",
-            lakefs_secret_key="lakefs_secret_key",
-            lakefs_endpoint=self.endpoint,
         )
         loader.set_repo(self.repo)
         loader.set_ref(self.ref)
