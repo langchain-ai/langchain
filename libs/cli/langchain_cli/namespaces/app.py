@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import typer
-from langserve.packages import get_langserve_export, list_packages
+from langserve.packages import get_langserve_export
 from typing_extensions import Annotated
 
 from langchain_cli.utils.events import create_events
