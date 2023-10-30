@@ -12,7 +12,7 @@ neo4j = ">5.12"
 openai = "^0.28.1"
 
 [tool.langserve]
-export_module = "neo4j.cypher"
+export_module = "neo4j_cypher"
 export_attr = "chain"
 
 [build-system]

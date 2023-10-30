@@ -60,7 +60,11 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
-from langchain.schema.runnable.base import ConfigurableField, RunnableGenerator
+from langchain.schema.runnable.base import (
+    ConfigurableField,
+    RunnableBinding,
+    RunnableGenerator,
+)
 from langchain.schema.runnable.utils import (
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
@@ -3999,3 +4003,11 @@ async def test_runnable_gen_transform() -> None:
 
     assert list(chain.stream(3)) == [1, 2, 3]
     assert [p async for p in achain.astream(4)] == [1, 2, 3, 4]
+
+
+def test_with_config_callbacks() -> None:
+    result = RunnableLambda(lambda x: x).with_config({"callbacks": []})
+    # Bugfix from version 0.0.325
+    # ConfigError: field "callbacks" not yet prepared so type is still a ForwardRef,
+    # you might need to call RunnableConfig.update_forward_refs().
+    assert isinstance(result, RunnableBinding)

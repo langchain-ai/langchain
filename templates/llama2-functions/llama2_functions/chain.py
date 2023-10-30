@@ -1,4 +1,3 @@
-from langchain.chat_models import ChatOpenAI
 from langchain.llms import Replicate
 from langchain.prompts import ChatPromptTemplate
 
@@ -6,9 +5,7 @@ from langchain.prompts import ChatPromptTemplate
 replicate_id = "andreasjansson/llama-2-13b-chat-gguf:60ec5dda9ff9ee0b6f786c9d1157842e6ab3cc931139ad98fe99e08a35c5d4d4"  # noqa: E501
 model = Replicate(
     model=replicate_id,
-    model_kwargs={"temperature": 0.8,
-                  "max_length": 500, 
-                  "top_p": 0.95},
+    model_kwargs={"temperature": 0.8, "max_length": 500, "top_p": 0.95},
 )
 
 # Prompt with output schema specification
@@ -39,9 +36,5 @@ Respond with json that adheres to the following jsonschema:
 
 prompt = ChatPromptTemplate.from_messages([("system", template), ("human", "{input}")])
 
-# Chain 
-model = ChatOpenAI()
-chain = (
-    prompt
-    | model
-)
+# Chain
+chain = prompt | model
