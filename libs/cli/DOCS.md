@@ -61,8 +61,8 @@ $ langchain app add [OPTIONS] [DEPENDENCIES]...
 
 * `--api-path TEXT`: API paths to add
 * `--project-dir PATH`: The project directory
-* `--repo TEXT`: Install deps from a specific github repo instead
-* `--branch TEXT`: Install deps from a specific branch
+* `--repo TEXT`: Install templates from a specific github repo instead
+* `--branch TEXT`: Install templates from a specific branch
 * `--with-poetry / --no-poetry`: Run poetry install  [default: no-poetry]
 * `--help`: Show this message and exit.
 
