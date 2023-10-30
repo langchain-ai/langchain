@@ -37,6 +37,8 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """Maximum number of retries to make when generating."""
     request_timeout: Optional[float] = None
     """Timeout in seconds for the Cohere API request."""
+    user_agent: str = "langchain"
+    """Identifier for the application making the request."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -55,11 +57,18 @@ class CohereEmbeddings(BaseModel, Embeddings):
         try:
             import cohere
 
+            client_name = values["user_agent"]
             values["client"] = cohere.Client(
-                cohere_api_key, max_retries=max_retries, timeout=request_timeout
+                cohere_api_key,
+                max_retries=max_retries,
+                timeout=request_timeout,
+                client_name=client_name,
             )
             values["async_client"] = cohere.AsyncClient(
-                cohere_api_key, max_retries=max_retries, timeout=request_timeout
+                cohere_api_key,
+                max_retries=max_retries,
+                timeout=request_timeout,
+                client_name=client_name,
             )
         except ImportError:
             raise ValueError(
