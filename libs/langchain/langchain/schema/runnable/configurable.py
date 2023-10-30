@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import enum
+import threading
 from abc import abstractmethod
 from typing import (
     Any,
     AsyncIterator,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -14,6 +16,7 @@ from typing import (
     Union,
     cast,
 )
+from weakref import WeakValueDictionary
 
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.runnable.base import Runnable, RunnableSerializable
@@ -23,7 +26,10 @@ from langchain.schema.runnable.config import (
     get_executor_for_config,
 )
 from langchain.schema.runnable.utils import (
+    AnyConfigurableField,
     ConfigurableField,
+    ConfigurableFieldMultiOption,
+    ConfigurableFieldSingleOption,
     ConfigurableFieldSpec,
     Input,
     Output,
@@ -32,6 +38,8 @@ from langchain.schema.runnable.utils import (
 
 
 class DynamicRunnable(RunnableSerializable[Input, Output]):
+    """A Serializable Runnable that can be dynamically configured."""
+
     default: RunnableSerializable[Input, Output]
 
     class Config:
@@ -53,13 +61,15 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     def OutputType(self) -> Type[Output]:
         return self.default.OutputType
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
-        return self.default.input_schema
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        return self._prepare(config).get_input_schema(config)
 
-    @property
-    def output_schema(self) -> Type[BaseModel]:
-        return self.default.output_schema
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        return self._prepare(config).get_output_schema(config)
 
     @abstractmethod
     def _prepare(
@@ -193,7 +203,9 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
 
 class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
-    fields: Dict[str, ConfigurableField]
+    """A Runnable that can be dynamically configured."""
+
+    fields: Dict[str, AnyConfigurableField]
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
@@ -207,11 +219,15 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 or self.default.__fields__[field_name].annotation,
                 default=getattr(self.default, field_name),
             )
+            if isinstance(spec, ConfigurableField)
+            else make_options_spec(
+                spec, self.default.__fields__[field_name].field_info.description
+            )
             for field_name, spec in self.fields.items()
         ]
 
     def configurable_fields(
-        self, **kwargs: ConfigurableField
+        self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
         return self.default.configurable_fields(**{**self.fields, **kwargs})
 
@@ -220,10 +236,28 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     ) -> Runnable[Input, Output]:
         config = config or {}
         specs_by_id = {spec.id: (key, spec) for key, spec in self.fields.items()}
-        configurable = {
+        configurable_fields = {
             specs_by_id[k][0]: v
             for k, v in config.get("configurable", {}).items()
-            if k in specs_by_id
+            if k in specs_by_id and isinstance(specs_by_id[k][1], ConfigurableField)
+        }
+        configurable_single_options = {
+            k: v.options[(config.get("configurable", {}).get(v.id) or v.default)]
+            for k, v in self.fields.items()
+            if isinstance(v, ConfigurableFieldSingleOption)
+        }
+        configurable_multi_options = {
+            k: [
+                v.options[o]
+                for o in config.get("configurable", {}).get(v.id, v.default)
+            ]
+            for k, v in self.fields.items()
+            if isinstance(v, ConfigurableFieldMultiOption)
+        }
+        configurable = {
+            **configurable_fields,
+            **configurable_single_options,
+            **configurable_multi_options,
         }
 
         if configurable:
@@ -234,22 +268,47 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
 # Before Python 3.11 native StrEnum is not available
 class StrEnum(str, enum.Enum):
+    """A string enum."""
+
     pass
 
 
+_enums_for_spec: WeakValueDictionary[
+    Union[
+        ConfigurableFieldSingleOption, ConfigurableFieldMultiOption, ConfigurableField
+    ],
+    Type[StrEnum],
+] = WeakValueDictionary()
+
+_enums_for_spec_lock = threading.Lock()
+
+
 class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
+    """A Runnable that can be dynamically configured."""
+
     which: ConfigurableField
 
-    alternatives: Dict[str, RunnableSerializable[Input, Output]]
+    alternatives: Dict[
+        str,
+        Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
+    ]
 
     default_key: str = "default"
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
-        which_enum = StrEnum(  # type: ignore[call-overload]
-            self.which.name or self.which.id,
-            ((v, v) for v in list(self.alternatives.keys()) + [self.default_key]),
-        )
+        with _enums_for_spec_lock:
+            if which_enum := _enums_for_spec.get(self.which):
+                pass
+            else:
+                which_enum = StrEnum(  # type: ignore[call-overload]
+                    self.which.name or self.which.id,
+                    (
+                        (v, v)
+                        for v in list(self.alternatives.keys()) + [self.default_key]
+                    ),
+                )
+                _enums_for_spec[self.which] = cast(Type[StrEnum], which_enum)
         return [
             ConfigurableFieldSpec(
                 id=self.which.id,
@@ -259,10 +318,15 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                 default=self.default_key,
             ),
             *self.default.config_specs,
-        ] + [s for alt in self.alternatives.values() for s in alt.config_specs]
+        ] + [
+            s
+            for alt in self.alternatives.values()
+            if isinstance(alt, RunnableSerializable)
+            for s in alt.config_specs
+        ]
 
     def configurable_fields(
-        self, **kwargs: ConfigurableField
+        self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
         return self.__class__(
             which=self.which,
@@ -274,10 +338,47 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         self, config: Optional[RunnableConfig] = None
     ) -> Runnable[Input, Output]:
         config = config or {}
-        which = str(config.get("configurable", {}).get(self.which.id, self.default_key))
+        which = config.get("configurable", {}).get(self.which.id, self.default_key)
         if which == self.default_key:
             return self.default
         elif which in self.alternatives:
-            return self.alternatives[which]
+            alt = self.alternatives[which]
+            if isinstance(alt, Runnable):
+                return alt
+            else:
+                return alt()
         else:
             raise ValueError(f"Unknown alternative: {which}")
+
+
+def make_options_spec(
+    spec: Union[ConfigurableFieldSingleOption, ConfigurableFieldMultiOption],
+    description: Optional[str],
+) -> ConfigurableFieldSpec:
+    """Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or
+    ConfigurableFieldMultiOption."""
+    with _enums_for_spec_lock:
+        if enum := _enums_for_spec.get(spec):
+            pass
+        else:
+            enum = StrEnum(  # type: ignore[call-overload]
+                spec.name or spec.id,
+                ((v, v) for v in list(spec.options.keys())),
+            )
+            _enums_for_spec[spec] = cast(Type[StrEnum], enum)
+    if isinstance(spec, ConfigurableFieldSingleOption):
+        return ConfigurableFieldSpec(
+            id=spec.id,
+            name=spec.name,
+            description=spec.description or description,
+            annotation=enum,
+            default=spec.default,
+        )
+    else:
+        return ConfigurableFieldSpec(
+            id=spec.id,
+            name=spec.name,
+            description=spec.description or description,
+            annotation=Sequence[enum],  # type: ignore[valid-type]
+            default=spec.default,
+        )

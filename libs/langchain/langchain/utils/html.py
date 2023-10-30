@@ -18,19 +18,28 @@ SUFFIXES_TO_IGNORE = (
     ".epub",
 )
 SUFFIXES_TO_IGNORE_REGEX = (
-    "(?!" + "|".join([re.escape(s) + "[\#'\"]" for s in SUFFIXES_TO_IGNORE]) + ")"
+    "(?!" + "|".join([re.escape(s) + r"[\#'\"]" for s in SUFFIXES_TO_IGNORE]) + ")"
 )
 PREFIXES_TO_IGNORE_REGEX = (
     "(?!" + "|".join([re.escape(s) for s in PREFIXES_TO_IGNORE]) + ")"
 )
 DEFAULT_LINK_REGEX = (
-    f"href=[\"']{PREFIXES_TO_IGNORE_REGEX}((?:{SUFFIXES_TO_IGNORE_REGEX}.)*?)[\#'\"]"
+    rf"href=[\"']{PREFIXES_TO_IGNORE_REGEX}((?:{SUFFIXES_TO_IGNORE_REGEX}.)*?)[\#'\"]"
 )
 
 
 def find_all_links(
     raw_html: str, *, pattern: Union[str, re.Pattern, None] = None
 ) -> List[str]:
+    """Extract all links from a raw html string.
+
+    Args:
+        raw_html: original html.
+        pattern: Regex to use for extracting links from raw html.
+
+    Returns:
+        List[str]: all links
+    """
     pattern = pattern or DEFAULT_LINK_REGEX
     return list(set(re.findall(pattern, raw_html)))
 
