@@ -18,14 +18,18 @@ def _get_docs(response: Any) -> List[Document]:
     return [
         Document(page_content=doc["snippet"], metadata=doc)
         for doc in response.generation_info["documents"]
-    ]
+    ].append(
+        Document(page_content=response.message, metadata={
+            "type": "model_response",
+            "citations": response.generation_info["citations"],
+            "search_results": response.generation_info["search_results"],
+            "search_queries": response.generation_info["search_queries"],
+        })
+    )
 
 
 class CohereRagRetriever(BaseRetriever):
     """`ChatGPT plugin` retriever."""
-
-    top_k: int = 3
-    """Number of documents to return."""
 
     connectors: List[Dict] = Field(default_factory=lambda: [{"id": "web-search"}])
     """
@@ -55,7 +59,7 @@ class CohereRagRetriever(BaseRetriever):
             callbacks=run_manager.get_child(),
             **kwargs,
         ).generations[0][0]
-        return _get_docs(res)[: self.top_k]
+        return _get_docs(res)
 
     async def _aget_relevant_documents(
         self,
@@ -73,4 +77,4 @@ class CohereRagRetriever(BaseRetriever):
                 **kwargs,
             )
         ).generations[0][0]
-        return _get_docs(res)[: self.top_k]
+        return _get_docs(res)
