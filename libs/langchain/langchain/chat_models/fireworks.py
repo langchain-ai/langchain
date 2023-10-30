@@ -33,6 +33,7 @@ from langchain.schema.messages import (
     SystemMessageChunk,
 )
 from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain.utils import convert_to_secret_str
 from langchain.utils.env import get_from_dict_or_env
 
 
@@ -76,12 +77,6 @@ def convert_dict_to_message(_dict: Any) -> BaseMessage:
         return ChatMessage(content=content, role=role)
 
 
-def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
-
 
 class ChatFireworks(BaseChatModel):
     """Fireworks Chat models."""
@@ -116,7 +111,7 @@ class ChatFireworks(BaseChatModel):
                 "Could not import fireworks-ai python package. "
                 "Please install it with `pip install fireworks-ai`."
             ) from e
-        fireworks_api_key = _to_secret(
+        fireworks_api_key = convert_to_secret_str(
             get_from_dict_or_env(values, "fireworks_api_key", "FIREWORKS_API_KEY")
         )
         fireworks.client.api_key = fireworks_api_key.get_secret_value()
