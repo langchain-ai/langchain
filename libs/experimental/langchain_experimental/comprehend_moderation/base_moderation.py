@@ -6,8 +6,10 @@ from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
 from langchain.schema import AIMessage, HumanMessage
 
-from langchain_experimental.comprehend_moderation.intent import ComprehendIntent
 from langchain_experimental.comprehend_moderation.pii import ComprehendPII
+from langchain_experimental.comprehend_moderation.prompt_safety import (
+    ComprehendPromptSafety,
+)
 from langchain_experimental.comprehend_moderation.toxicity import ComprehendToxicity
 
 
@@ -59,7 +61,7 @@ class BaseModeration:
                 input_text = message.content
         else:
             raise ValueError(
-                f"Invalid input type {type(input)}. "
+                f"Invalid input type {type(input_text)}. "
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
         return input_text
@@ -108,9 +110,14 @@ class BaseModeration:
             self.run_manager.on_text(message)
 
     def moderate(self, prompt: Any) -> str:
+        from langchain_experimental.comprehend_moderation.base_moderation_config import (  # noqa: E501
+            ModerationPiiConfig,
+            ModerationPromptSafetyConfig,
+            ModerationToxicityConfig,
+        )
         from langchain_experimental.comprehend_moderation.base_moderation_exceptions import (  # noqa: E501
-            ModerationIntentionError,
             ModerationPiiError,
+            ModerationPromptSafetyError,
             ModerationToxicityError,
         )
 
@@ -119,15 +126,27 @@ class BaseModeration:
             input_text = self._convert_prompt_to_text(prompt=prompt)
             output_text = str()
             # perform moderation
-            if self.config is None:
-                # In absence of config Action will default to STOP only
-                self._log_message_for_verbose("Running pii validation...\n")
-                pii_validate = self._moderation_class(moderation_class=ComprehendPII)
-                output_text = pii_validate(prompt_value=input_text)
+            filter_functions = {
+                "pii": ComprehendPII,
+                "toxicity": ComprehendToxicity,
+                "prompt_safety": ComprehendPromptSafety,
+            }
 
-                self._log_message_for_verbose("Running toxicity validation...\n")
-                toxicity_validate = self._moderation_class(
-                    moderation_class=ComprehendToxicity
+            filters = self.config.filters  # type: ignore
+
+            for _filter in filters:
+                filter_name = (
+                    "pii"
+                    if isinstance(_filter, ModerationPiiConfig)
+                    else (
+                        "toxicity"
+                        if isinstance(_filter, ModerationToxicityConfig)
+                        else (
+                            "prompt_safety"
+                            if isinstance(_filter, ModerationPromptSafetyConfig)
+                            else None
+                        )
+                    )
                 )
                 output_text = toxicity_validate(prompt_value=output_text)
 
@@ -170,7 +189,7 @@ class BaseModeration:
                 f"Found Toxic content..stopping..\n{str(e)}\n"
             )
             raise e
-        except ModerationIntentionError as e:
+        except ModerationPromptSafetyError as e:
             self._log_message_for_verbose(
                 f"Found Harmful intention..stopping..\n{str(e)}\n"
             )
