@@ -240,6 +240,14 @@ def _import_huggingface_text_gen_inference() -> Any:
     return HuggingFaceTextGenInference
 
 
+def _import_huggingface_text_gen_inference_auto() -> Any:
+    from langchain.llms.huggingface_text_gen_inference_auto import (
+        HuggingFaceTextGenInferenceAuto,
+    )
+
+    return HuggingFaceTextGenInferenceAuto
+
+
 def _import_human() -> Any:
     from langchain.llms.human import HumanInputLLM
 
@@ -577,6 +585,8 @@ def __getattr__(name: str) -> Any:
         return _import_huggingface_pipeline()
     elif name == "HuggingFaceTextGenInference":
         return _import_huggingface_text_gen_inference()
+    elif name == "HuggingFaceTextGenInferenceAuto":
+        return _import_huggingface_text_gen_inference_auto()
     elif name == "HumanInputLLM":
         return _import_human()
     elif name == "JavelinAIGateway":
@@ -711,6 +721,7 @@ __all__ = [
     "HuggingFaceHub",
     "HuggingFacePipeline",
     "HuggingFaceTextGenInference",
+    "HuggingFaceTextGenInferenceAuto",
     "HumanInputLLM",
     "KoboldApiLLM",
     "LlamaCpp",
@@ -767,6 +778,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "anthropic": _import_anthropic,
         "anyscale": _import_anyscale,
         "arcee": _import_arcee,
+        "huggingface_textgen_inference_auto": _import_huggingface_text_gen_inference_auto(),
         "aviary": _import_aviary,
         "azure": _import_azure_openai,
         "azureml_endpoint": _import_azureml_endpoint,

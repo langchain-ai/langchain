@@ -189,6 +189,9 @@ python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
 tiktoken = "^0.3.2"
 anthropic = "^0.3.11"
+docker = "^6.1.3"
+pytest-skip-slow = "^0.0.5"
+text-generation = "^0.6.1"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1"
