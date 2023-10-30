@@ -26,7 +26,7 @@ if os.environ.get("PINECONE_ENVIRONMENT", None) is None:
 PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
 ### Ingest code - you may need to run this the first time
-# Load
+# # Load
 # from langchain.document_loaders import WebBaseLoader
 # loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
 # data = loader.load()

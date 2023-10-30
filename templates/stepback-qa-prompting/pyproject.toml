@@ -9,6 +9,7 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.313"
 duckduckgo-search = "^3.9.3"
+openai = "^0.28.1"
 
 [tool.langserve]
 export_module = "stepback_qa_prompting.chain"
