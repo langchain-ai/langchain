@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "elastic_query_generator"
+name = "elastic-query-generator"
 version = "0.0.1"
 description = ""
 authors = []
@@ -9,6 +9,7 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.313"
 elasticsearch = "^8.10.1"
+openai = ">=0.27.9"
 
 [tool.langserve]
 export_module = "elastic_query_generator.chain"
