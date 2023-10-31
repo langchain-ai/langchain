@@ -1594,6 +1594,17 @@ click = ">=4.0"
 test = ["pytest-cov"]
 
 [[package]]
+name = "cloudpickle"
+version = "2.2.1"
+description = "Extended pickling support for Python objects"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "cloudpickle-2.2.1-py3-none-any.whl", hash = "sha256:61f594d1f4c295fa5cd9014ceb3a1fc4a70b0de1164b94fbc2d854ccba056f9f"},
+    {file = "cloudpickle-2.2.1.tar.gz", hash = "sha256:d89684b8de9e34a2a43b3460fbca07d09d6e25ce858df4d5a44240403b6178f5"},
+]
+
+[[package]]
 name = "codespell"
 version = "2.2.6"
 description = "Codespell"
@@ -9364,6 +9375,17 @@ files = [
 pytest = ">=7.0.0,<8.0.0"
 
 [[package]]
+name = "tblib"
+version = "1.7.0"
+description = "Traceback serialization library."
+optional = true
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+files = [
+    {file = "tblib-1.7.0-py2.py3-none-any.whl", hash = "sha256:289fa7359e580950e7d9743eab36b0691f0310fce64dee7d9c31065b8f723e23"},
+    {file = "tblib-1.7.0.tar.gz", hash = "sha256:059bd77306ea7b419d4f76016aef6d7027cc8a0785579b5aad198803435f882c"},
+]
+
+[[package]]
 name = "telethon"
 version = "1.31.1"
 description = "Full-featured Telegram client library for Python 3"
@@ -9725,6 +9747,110 @@ requests = ">=2.26.0"
 
 [package.extras]
 blobfile = ["blobfile (>=2)"]
+
+[[package]]
+name = "tiledb"
+version = "0.23.1"
+description = "Pythonic interface to the TileDB array storage manager"
+optional = true
+python-versions = "*"
+files = [
+    {file = "tiledb-0.23.1-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:9ae0c3c7c04c98e84bd2cea9d4fbf901686881a5994949e07c5b64e4f85f06c0"},
+    {file = "tiledb-0.23.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e40f89b3ad62839e7c58594ff4677c486dc3d0b0b3cd88061ef292a13be412e1"},
+    {file = "tiledb-0.23.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:92b8338a25ebd47566f225f5fd344a8c1d110c541725e2142dcc0d90e2bc4d79"},
+    {file = "tiledb-0.23.1-cp310-cp310-win_amd64.whl", hash = "sha256:0ff0de57e706885c0c27d8541e0260cd2ae0f3779858cde67cdfd2a4d0074cac"},
+    {file = "tiledb-0.23.1-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:42c93bbda186afd171464a67677cc15704fe402d4cd04165e0526ded2f6ac654"},
+    {file = "tiledb-0.23.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:9cb510463df0cb8226ed5a97d80873c1587e38e1192f951de80c2c733bd2e67e"},
+    {file = "tiledb-0.23.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cd2aaea91a1acff33cc15bf8fdc7870a920a8c8e92c31a67f6ab796d0abad78f"},
+    {file = "tiledb-0.23.1-cp311-cp311-win_amd64.whl", hash = "sha256:05d029ba94ce74f63e587d9a84fb77758092dc4e8cdeab9657697f580cabc887"},
+    {file = "tiledb-0.23.1-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:dbe7b708c5d116bc2358011ca1f288294c3b791e14542bdfbdd0341872b45612"},
+    {file = "tiledb-0.23.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cc6c6fe744960c6dfcf01fa51e4eca46f4f5c2e77c9a46b364ff7d0c510eb25c"},
+    {file = "tiledb-0.23.1-cp37-cp37m-win_amd64.whl", hash = "sha256:5f3b70372ccc6827844026e2cffff2c64b68a2c73fe9681ab42333a6a99fac0f"},
+    {file = "tiledb-0.23.1-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:af2e3be305bed91f23d8a447c23fd4f0dc6ec0a78f28852b7078ff5417623156"},
+    {file = "tiledb-0.23.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:29f65162671c367cd402a730efed1fc776f3d3947fe4a44dd2e7a73f4283d310"},
+    {file = "tiledb-0.23.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f18fcd06fe8e87acd342c9f27b125cd69e52be9d92960d2b4ca84d2c03fc8e02"},
+    {file = "tiledb-0.23.1-cp38-cp38-win_amd64.whl", hash = "sha256:0546bbb81b4e30431dd515925b2da3732968d4c56984c42621f7e95876dbc1e7"},
+    {file = "tiledb-0.23.1-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:d56656d3018152aa641ab2ec6f9ab8eba1e3bf4caee413bc4c5d38801116fea5"},
+    {file = "tiledb-0.23.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:41f427741767af4fb1fc68c0272150f66b592e58fffd464ed20c011f3eff9221"},
+    {file = "tiledb-0.23.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:72ca7cbbadd8872f33f74a1eef41fd01863e68a4a2038a50343b461fd7210803"},
+    {file = "tiledb-0.23.1-cp39-cp39-win_amd64.whl", hash = "sha256:06e2be21a5a122b94a6036471f1b94ec828cfaba02138b6536a6bb8d01fa1646"},
+    {file = "tiledb-0.23.1.tar.gz", hash = "sha256:988be85a558510aea5487a1cf981b180974ded93517f6859e262b9ea26257c81"},
+]
+
+[package.dependencies]
+numpy = [
+    {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
+    {version = ">=1.16.5", markers = "python_version < \"3.10\" and platform_machine != \"aarch64\""},
+    {version = ">=1.19.2", markers = "python_version < \"3.10\" and platform_machine == \"aarch64\""},
+    {version = ">=1.21.0", markers = "python_version == \"3.10\""},
+]
+packaging = "*"
+
+[[package]]
+name = "tiledb-cloud"
+version = "0.11.0"
+description = "TileDB Cloud platform Python client"
+optional = true
+python-versions = "*"
+files = [
+    {file = "tiledb-cloud-0.11.0.tar.gz", hash = "sha256:a64b43688752cb155baaf4d0f2c4c5433a96f3275a8e44547303a36d4022cc04"},
+    {file = "tiledb_cloud-0.11.0-py3-none-any.whl", hash = "sha256:68ab0b8070656c5d6f744c927405bd2cde96516785d322fa7ec723a1aef334b5"},
+]
+
+[package.dependencies]
+attrs = ">=21.4.0"
+certifi = "*"
+cloudpickle = ">=1.4.1,<3"
+importlib-metadata = "*"
+packaging = "*"
+pandas = ">=1.2.4"
+pyarrow = ">=3.0.0"
+python-dateutil = "*"
+six = ">=1.10"
+tblib = ">=1.7,<2.0"
+tiledb = ">=0.15.2"
+typing-extensions = "*"
+urllib3 = ">=1.26"
+
+[package.extras]
+all = ["networkx (>=2)", "plotly (>=4)", "pydot", "tiledb-plot-widget (>=0.1.7)"]
+dev = ["black", "pytest", "ruff"]
+viz-plotly = ["networkx (>=2)", "plotly (>=4)", "pydot"]
+viz-tiledb = ["networkx (>=2)", "pydot", "tiledb-plot-widget (>=0.1.7)"]
+
+[[package]]
+name = "tiledb-vector-search"
+version = "0.0.18"
+description = "TileDB Vector Search Python client"
+optional = true
+python-versions = "~=3.7"
+files = [
+    {file = "tiledb_vector_search-0.0.18-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:132360abdcdcc8ad7bb0c2abd334740f039022aae8fe95c58c2e133de196a744"},
+    {file = "tiledb_vector_search-0.0.18-cp310-cp310-macosx_12_0_x86_64.whl", hash = "sha256:7b56f1d42c0912092ae763425c2dc87cd77d9a92270d85b2889b3d79999efc87"},
+    {file = "tiledb_vector_search-0.0.18-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a098a567abab56d52f1028cb15ef3917fb9edc6e0aac2a55c8abb8082fd7975b"},
+    {file = "tiledb_vector_search-0.0.18-cp310-cp310-win_amd64.whl", hash = "sha256:6abec1b6cef5dae0ac65f96330f375f5e7022858c4206d03e37a628532727b5c"},
+    {file = "tiledb_vector_search-0.0.18-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:f98b9bdfdacd51db5f540e222cdf27b2c59f768f2a7f30c0d2de0e4c8e7f9d19"},
+    {file = "tiledb_vector_search-0.0.18-cp311-cp311-macosx_12_0_x86_64.whl", hash = "sha256:777ed3511a44b2dfab3549ce3799f788929a782b82710d89f8ec66b12972d43b"},
+    {file = "tiledb_vector_search-0.0.18-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:62c796b68805499fe1dfa36a7e851bb39c9b29290c8bb4879a1891e2e08af050"},
+    {file = "tiledb_vector_search-0.0.18-cp311-cp311-win_amd64.whl", hash = "sha256:c8dee17d555df52a97590593d032543300033b23b87f872bf24230d573fd1934"},
+    {file = "tiledb_vector_search-0.0.18-cp38-cp38-macosx_12_0_arm64.whl", hash = "sha256:85d9c892caa68be318c8e0bf856f881df9af9ea121646b067a0ac84b2c20f172"},
+    {file = "tiledb_vector_search-0.0.18-cp38-cp38-macosx_12_0_x86_64.whl", hash = "sha256:83d10c8ece5ab6d91e593f425ee7ed681304b4a6698976382f7e7c50549a1795"},
+    {file = "tiledb_vector_search-0.0.18-cp38-cp38-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:816d1402933a1a9d8dba654bd6c9f540d990fd820e0d16ac652dd3e27849c4b8"},
+    {file = "tiledb_vector_search-0.0.18-cp38-cp38-win_amd64.whl", hash = "sha256:805319e05f3d059d14ef4ed078eb8d89caf6835d67067b03d449f7e2c26f93b4"},
+    {file = "tiledb_vector_search-0.0.18-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:be6122bfb3e74b91276e2ed2fc4e9a18b4230cd417807757bc2ba18eb9b1e6ba"},
+    {file = "tiledb_vector_search-0.0.18-cp39-cp39-macosx_12_0_x86_64.whl", hash = "sha256:7bd6e44b33d36efb902fb8891f84e9da0560a10f8ac61abaa0c6101f896b41fe"},
+    {file = "tiledb_vector_search-0.0.18-cp39-cp39-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:574fdb88294cc89558b50552ef1d6daa0222f3a85d912c4ff7498ff989c52abe"},
+    {file = "tiledb_vector_search-0.0.18-cp39-cp39-win_amd64.whl", hash = "sha256:9c976b4eba362543420aa04bb7ed945fe50ed88478b196e7818198419f4f4764"},
+]
+
+[package.dependencies]
+scikit-learn = "*"
+tiledb = ">=0.23.1"
+tiledb-cloud = ">=0.11"
+typing-extensions = "*"
+
+[package.extras]
+test = ["nbmake", "pytest"]
 
 [[package]]
 name = "timescale-vector"
@@ -11063,7 +11189,7 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "amadeus", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jinja2", "jq", "lancedb", "langkit", "lark", "librosa", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "python-arango", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["O365", "aleph-alpha-client", "amadeus", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jinja2", "jq", "lancedb", "langkit", "lark", "librosa", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "python-arango", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "tensorflow-text", "tigrisdb", "tiktoken", "tiledb-vector-search", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "azure-search-documents", "openai"]
 clarifai = ["clarifai"]
 cli = ["typer"]
@@ -11080,4 +11206,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "d9f38367a43153fda9eaea5e8fd03acfc0a06006dfecc3693dffb212249197bc"
+content-hash = "5c2a7e2bf859f4e1a415e49bd8151f6d38fa5badd7bedb861e9d1d725288c48d"
