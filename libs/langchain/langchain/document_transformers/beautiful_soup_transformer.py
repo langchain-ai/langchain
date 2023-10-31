@@ -1,4 +1,6 @@
-from typing import Any, List, Sequence
+from typing import Any, Iterator, List, Sequence
+
+from bs4 import NavigableString, Tag
 
 from langchain.schema import BaseDocumentTransformer, Document
 
@@ -100,16 +102,21 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         soup = BeautifulSoup(html_content, "html.parser")
         text_parts = []
         for tag in tags:
+            other_tags = [t for t in tags if t != tag]
             elements = soup.find_all(tag)
             for element in elements:
+                # We want to extract text from the element recursively,
+                # but not from other tags we're also visiting separately.
+                text = "".join(get_strings(element, other_tags)).strip()
                 if tag == "a":
                     href = element.get("href")
                     if href:
-                        text_parts.append(f"{element.get_text()} ({href})")
-                    else:
-                        text_parts.append(element.get_text())
-                else:
-                    text_parts.append(element.get_text())
+                        text_parts.append(f"{text} ({href})")
+                    elif text:
+                        text_parts.append(text)
+                elif text:
+                    # We don't want to add empty strings to the list.
+                    text_parts.append(text)
         return " ".join(text_parts)
 
     @staticmethod
@@ -141,3 +148,12 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         **kwargs: Any,
     ) -> Sequence[Document]:
         raise NotImplementedError
+
+
+def get_strings(element: Tag, exclude_tags: Sequence[str]) -> Iterator[str]:
+    for child in element.children:
+        if isinstance(child, Tag):
+            if child.name not in exclude_tags:
+                yield from get_strings(child, exclude_tags)
+        elif isinstance(child, NavigableString):
+            yield child

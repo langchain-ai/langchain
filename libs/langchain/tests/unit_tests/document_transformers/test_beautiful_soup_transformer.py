@@ -43,23 +43,18 @@ def test_remove_unwanted_lines() -> None:
     assert docs_transformed[0].page_content == "First paragraph."
 
 
-# FIXME: This test proves that extracting nested tags fails with a _double_
-#        extraction, once for the outer and once again for the inner tag.
 @pytest.mark.requires("bs4")
 def test_fails_extract_nested_tags() -> None:
     bs_transformer = BeautifulSoupTransformer()
     nested_html = (
         "<html><div class='some_style'>"
-        "<p>First paragraph.</p>"
-        "<p>Second paragraph.</p>"
+        "<p><span>First</span> paragraph.</p>"
+        "<p>Second <div>paragraph.</div></p>"
         "</div><html>"
     )
     documents = [Document(page_content=nested_html)]
     docs_transformed = bs_transformer.transform_documents(documents)
-    assert (
-        docs_transformed[0].page_content
-        == "First paragraph. Second paragraph. First paragraph.Second paragraph."
-    )
+    assert docs_transformed[0].page_content == "First paragraph. Second paragraph."
 
     # The correct result should extract the text only one time.
     #
