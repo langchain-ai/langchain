@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "rag-elasticsearch"
+version = "0.0.1"
+description = ""
+authors = ["Joe McElroy <joseph.mcelroy@elastic.co>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+langchain = ">=0.0.313"
+openai = "^0.28.1"
+elasticsearch = "^8.10.0"
+sentence-transformers = "^2.2.2"
+jq = "^1.6.0"
+tiktoken = "^0.5.1"
+
+[tool.langserve]
+export_module = "rag-elasticsearch"
+export_attr = "chain"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
