@@ -51,7 +51,14 @@ def new(
     if package is not None and len(package) > 0:
         add(package, project_dir=destination_dir)
 
+    typer.echo(f'\n\nSuccess! Created a new LangChain app under "./{app_name}"!\n\n')
+    typer.echo("Next, enter your new app directory by running:\n")
+    typer.echo(f"    cd ./{app_name}\n")
+    typer.echo("Then add templates with commands like:\n")
+    typer.echo("    langchain app add extraction-openai-functions")
+    typer.echo("    langchain app add git+ssh://git@github.com/efriis/simple-pirate.git\n\n")
 
+new(name="testing")
 @app_cli.command()
 def add(
     dependencies: Annotated[
