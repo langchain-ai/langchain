@@ -1,10 +1,12 @@
 from typing import Any, Dict, List, Mapping, Optional, cast
 
-from langchain.retrievers.llama_index import LlamaIndexRetriever
+import pytest
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
 from langchain.chains import RetrievalQA
+from langchain.llms.base import LLM
 from langchain.pydantic_v1 import validator
+from langchain.retrievers.llama_index import LlamaIndexRetriever
 
 
 class FakeLLM(LLM):
@@ -64,10 +66,15 @@ class FakeLLM(LLM):
         return response
 
 
+@pytest.mark.requires("llama_index")
 class TestLlamaIndexRetriever:
     def test_from_texts(self) -> None:
         from llama_index import VectorStoreIndex
+
         index = VectorStoreIndex.from_documents(documents="")
         qa = RetrievalQA.from_chain_type(
-            llm=FakeLLM(), chain_type="stuff", retriever=LlamaIndexRetriever(index=index))
+            llm=FakeLLM(),
+            chain_type="stuff",
+            retriever=LlamaIndexRetriever(index=index),
+        )
         assert qa.run("") == "foo"

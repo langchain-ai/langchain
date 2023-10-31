@@ -30,16 +30,24 @@ class LlamaIndexRetriever(BaseRetriever):
         index = cast(BaseGPTIndex, self.index)
 
         query_engine = index.as_query_engine(
-            response_mode="no_text", **self.query_kwargs)
+            response_mode="no_text", **self.query_kwargs
+        )
         response = query_engine.query(query)
         response = cast(Response, response)
         # parse source nodes
         docs = []
         from llama_index.schema import NodeRelationship
+
         for source_node in response.source_nodes:
             docs.append(
-                Document(page_content=source_node.node.text,
-                         metadata={"source": source_node.node.relationships[NodeRelationship.SOURCE].node_id})
+                Document(
+                    page_content=source_node.node.text,
+                    metadata={
+                        "source": source_node.node.relationships[
+                            NodeRelationship.SOURCE
+                        ].node_id
+                    },
+                )
             )
         return docs
 
@@ -83,7 +91,6 @@ class LlamaIndexGraphRetriever(BaseRetriever):
         for source_node in response.source_nodes:
             metadata = source_node.extra_info or {}
             docs.append(
-                Document(page_content=source_node.source_text,
-                         metadata=metadata)
+                Document(page_content=source_node.source_text, metadata=metadata)
             )
         return docs
