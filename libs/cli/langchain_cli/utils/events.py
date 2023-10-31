@@ -1,7 +1,6 @@
-import json
 from typing import Any, Dict, List, Optional, TypedDict
 
-import urllib3
+import requests
 
 WRITE_KEY = "310apTK0HUFl4AOv"
 
@@ -21,12 +20,7 @@ def create_event(event: EventDict) -> None:
         "properties": event.get("properties"),
     }
     try:
-        urllib3.request(
-            "POST",
-            "https://app.firstpartyhq.com/events/v1/track",
-            body=json.dumps(data),
-            headers={"Content-Type": "application/json"},
-        )
+        requests.post("https://app.firstpartyhq.com/events/v1/track", data=data)
     except Exception:
         pass
 
@@ -43,10 +37,9 @@ def create_events(events: List[EventDict]) -> None:
         ]
     }
     try:
-        urllib3.request(
-            "POST",
+        requests.post(
             "https://app.firstpartyhq.com/events/v1/track/bulk",
-            body=json.dumps(data),
+            data=data,
             headers={"Content-Type": "application/json"},
         )
     except Exception:
