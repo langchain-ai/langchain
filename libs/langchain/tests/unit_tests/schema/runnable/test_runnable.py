@@ -19,7 +19,12 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
-from langchain.callbacks.manager import Callbacks, atrace_as_chain_group, collect_runs
+from langchain.callbacks.manager import (
+    Callbacks,
+    atrace_as_chain_group,
+    collect_runs,
+    trace_as_chain_group,
+)
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.callbacks.tracers.schemas import Run
@@ -1493,6 +1498,39 @@ def test_prompt_template_params() -> None:
 
     with pytest.raises(KeyError):
         prompt.invoke({})
+
+
+def test_with_listeners(mocker: MockerFixture) -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    chat = FakeListChatModel(responses=["foo"])
+
+    chain = prompt | chat
+
+    mock_start = mocker.Mock()
+    mock_end = mocker.Mock()
+
+    chain.with_listeners(on_start=mock_start, on_end=mock_end).invoke(
+        {"question": "Who are you?"}
+    )
+
+    assert mock_start.call_count == 1
+    assert mock_start.call_args[0][0].name == "RunnableSequence"
+    assert mock_end.call_count == 1
+
+    mock_start.reset_mock()
+    mock_end.reset_mock()
+
+    with trace_as_chain_group("hello") as manager:
+        chain.with_listeners(on_start=mock_start, on_end=mock_end).invoke(
+            {"question": "Who are you?"}, {"callbacks": manager}
+        )
+
+    assert mock_start.call_count == 1
+    assert mock_start.call_args[0][0].name == "RunnableSequence"
+    assert mock_end.call_count == 1
 
 
 @pytest.mark.asyncio
