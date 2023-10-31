@@ -161,6 +161,21 @@ class ConfluenceLoader(BaseLoader):
                 **confluence_kwargs,
             )
 
+        def HTTPError_retry_decorator(func):
+            return retry(
+                retry=retry_if_exception_type(requests.exceptions.HTTPError),
+                reraise=True,
+                stop=stop_after_attempt(self.number_of_retries),
+                wait=wait_exponential(
+                    multiplier=1,
+                    min=self.min_retry_seconds,
+                    max=self.max_retry_seconds,
+                ),
+                before_sleep=before_sleep_log(logger, logging.WARNING),
+            )(func)
+        
+        self.HTTPError_retry_decorator = HTTPError_retry_decorator
+
     @staticmethod
     def validate_init_args(
         url: Optional[str] = None,
@@ -411,24 +426,20 @@ class ConfluenceLoader(BaseLoader):
             docs.extend(batch)
         return docs[:max_pages]
 
-    @retry(
-        retry=retry_if_exception_type(requests.exceptions.HTTPError),
-        reraise=True, 
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1,
-                              min=3,
-                              max=10),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
+
     def is_public_page(self, page: dict) -> bool:
         """Check if a page is publicly accessible."""
-        restrictions = self.confluence.get_all_restrictions_for_content(page["id"])
-
-        return (
-            page["status"] == "current"
-            and not restrictions["read"]["restrictions"]["user"]["results"]
-            and not restrictions["read"]["restrictions"]["group"]["results"]
-        )
+        @self.HTTPError_retry_decorator
+        def is_public_page_(self, page: dict) -> bool:
+            restrictions = self.confluence.get_all_restrictions_for_content(page["id"])
+            return (
+                page["status"] == "current"
+                and not restrictions["read"]["restrictions"]["user"]["results"]
+                and not restrictions["read"]["restrictions"]["group"]["results"]
+            )
+        
+        return is_public_page_(self, page)
+    
 
     def process_pages(
         self,
