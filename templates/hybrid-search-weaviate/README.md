@@ -1,6 +1,6 @@
-# RAG Weaviate
+# Hybrid Search Weaviate
 
-This template performs RAG using Weaviate and OpenAI.
+This template performs hybrid search using Weaviate.
 
 ##  Weaviate
 

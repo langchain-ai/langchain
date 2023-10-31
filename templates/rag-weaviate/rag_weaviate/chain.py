@@ -27,10 +27,10 @@ text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 all_splits = text_splitter.split_documents(data)
 
 # # Add to vectorDB
-vectorstore = Weaviate.from_documents(
-    documents=all_splits, embedding=OpenAIEmbeddings(), index_name=WEAVIATE_INDEX_NAME
-)
-retriever = vectorstore.as_retriever()
+# vectorstore = Weaviate.from_documents(
+#     documents=all_splits, embedding=OpenAIEmbeddings(), index_name=WEAVIATE_INDEX_NAME
+# )
+# retriever = vectorstore.as_retriever()
 
 vectorstore = Weaviate.from_existing_index(WEAVIATE_INDEX_NAME, OpenAIEmbeddings())
 retriever = vectorstore.as_retriever()
