@@ -128,9 +128,16 @@ class PyPDFParser(BaseBlobParser):
 class PDFMinerParser(BaseBlobParser):
     """Parse `PDF` using `PDFMiner`."""
 
-    def __init__(self, extract_images: bool = False, load_per_pages: bool = False):
+    def __init__(self, extract_images: bool = False, *, concatenate_pages: bool = True):
+        """Initialize a parser based on PDFMiner.
+
+        Args:
+            extract_images: Whether to extract images from PDF.
+            concatenate_pages: If True, concatenate all PDF pages into one a single
+                               document. Otherwise, return one document per page.
+        """
         self.extract_images = extract_images
-        self.load_per_pages = load_per_pages
+        self.concatenate_pages = concatenate_pages
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -139,7 +146,11 @@ class PDFMinerParser(BaseBlobParser):
             from pdfminer.high_level import extract_text
 
             with blob.as_bytes_io() as pdf_file_obj:
-                if self.load_per_pages:
+                if self.concatenate_pages:
+                    text = extract_text(pdf_file_obj)
+                    metadata = {"source": blob.source}
+                    yield Document(page_content=text, metadata=metadata)
+                else:
                     from pdfminer.pdfpage import PDFPage
 
                     pages = PDFPage.get_pages(pdf_file_obj)
@@ -147,10 +158,6 @@ class PDFMinerParser(BaseBlobParser):
                         text = extract_text(pdf_file_obj, page_numbers=[i])
                         metadata = {"source": blob.source, "page": str(i)}
                         yield Document(page_content=text, metadata=metadata)
-                else:
-                    text = extract_text(pdf_file_obj)
-                    metadata = {"source": blob.source}
-                    yield Document(page_content=text, metadata=metadata)
         else:
             import io
 

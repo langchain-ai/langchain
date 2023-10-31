@@ -251,9 +251,15 @@ class PDFMinerLoader(BasePDFLoader):
         *,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
-        load_per_pages: bool = False,
+        concatenate_pages: bool = True,
     ) -> None:
-        """Initialize with file path."""
+        """Initialize with file path.
+
+        Args:
+            extract_images: Whether to extract images from PDF.
+            concatenate_pages: If True, concatenate all PDF pages into one a single
+                               document. Otherwise, return one document per page.
+        """
         try:
             from pdfminer.high_level import extract_text  # noqa:F401
         except ImportError:
@@ -264,7 +270,7 @@ class PDFMinerLoader(BasePDFLoader):
 
         super().__init__(file_path, headers=headers)
         self.parser = PDFMinerParser(
-            extract_images=extract_images, load_per_pages=load_per_pages
+            extract_images=extract_images, concatenate_pages=concatenate_pages
         )
 
     def load(self) -> List[Document]:
