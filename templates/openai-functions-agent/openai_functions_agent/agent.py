@@ -11,19 +11,24 @@ from langchain.tools.render import format_tool_to_openai_function
 from langchain.tools.tavily_search import TavilySearchResults
 from langchain.utilities.tavily_search import TavilySearchAPIWrapper
 
-# Fake Tool
+# Create the tool
 search = TavilySearchAPIWrapper()
-tavily_tool = TavilySearchResults(api_wrapper=search)
+description = """"A search engine optimized for comprehensive, accurate, \
+and trusted results. Useful for when you need to answer questions \
+about current events or about recent information. \
+Input should be a search query. \
+If the user is asking about something that you don't know about, \
+you should probably use this tool to see if that can provide any information."""
+tavily_tool = TavilySearchResults(api_wrapper=search, description=description)
 
 tools = [tavily_tool]
 
 llm = ChatOpenAI(temperature=0)
+assistant_system_message = """You are a helpful assistant. \
+Use tools (only if necessary) to best answer the users questions."""
 prompt = ChatPromptTemplate.from_messages(
     [
-        (
-            "system",
-            "You are very powerful assistant, but bad at calculating lengths of words.",
-        ),
+        ("system", assistant_system_message),
         MessagesPlaceholder(variable_name="chat_history"),
         ("user", "{input}"),
         MessagesPlaceholder(variable_name="agent_scratchpad"),

@@ -21,7 +21,6 @@ def _format_chat_history(chat_history: List[Tuple[str, str]]):
 
 model = ChatAnthropic(model="claude-2")
 
-
 tools = [DuckDuckGoSearchRun()]
 
 prompt = conversational_prompt.partial(
