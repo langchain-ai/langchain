@@ -36,9 +36,9 @@ langchain app add rag-aws-kendra
 
 And add the following code to your `server.py` file:
 ```python
-from rag_aws_kendra.chain import chain as rag_aws_kendra.chain_chain
+from rag_aws_kendra.chain import chain as rag_aws_kendra_chain
 
-add_routes(app, rag_aws_kendra.chain_chain, path="/rag-aws-kendra")
+add_routes(app, rag_aws_kendra_chain, path="/rag-aws-kendra")
 ```
 
 (Optional) Let's now configure LangSmith. 

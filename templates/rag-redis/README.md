@@ -35,9 +35,9 @@ langchain app add rag-redis
 
 And add the following code to your `server.py` file:
 ```python
-from rag_redis.chain import chain as rag_redis.chain_chain
+from rag_redis.chain import chain as rag_redis_chain
 
-add_routes(app, rag_redis.chain_chain, path="/rag-redis")
+add_routes(app, rag_redis_chain, path="/rag-redis")
 ```
 
 (Optional) Let's now configure LangSmith. 

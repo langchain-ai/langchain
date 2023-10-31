@@ -29,9 +29,9 @@ langchain app add csv-agent
 
 And add the following code to your `server.py` file:
 ```python
-from csv_agent.agent import chain as csv_agent.agent_chain
+from csv_agent.agent import chain as csv_agent_chain
 
-add_routes(app, csv_agent.agent_chain, path="/csv-agent")
+add_routes(app, csv_agent_chain, path="/csv-agent")
 ```
 
 (Optional) Let's now configure LangSmith. 

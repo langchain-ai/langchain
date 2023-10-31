@@ -29,9 +29,9 @@ langchain app add rewrite_retrieve_read
 
 And add the following code to your `server.py` file:
 ```python
-from rewrite_retrieve_read.chain import chain as rewrite_retrieve_read.chain_chain
+from rewrite_retrieve_read.chain import chain as rewrite_retrieve_read_chain
 
-add_routes(app, rewrite_retrieve_read.chain_chain, path="/rewrite-retrieve-read")
+add_routes(app, rewrite_retrieve_read_chain, path="/rewrite-retrieve-read")
 ```
 
 (Optional) Let's now configure LangSmith. 
