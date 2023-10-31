@@ -6,7 +6,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 def populate(vector_store):
     # is the store empty? find out with a probe search
     hits = vector_store.similarity_search_by_vector(
-        embedding=[0.001]*1536,
+        embedding=[0.001] * 1536,
         k=1,
     )
     #

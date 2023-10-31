@@ -36,7 +36,7 @@ vector_store = Cassandra(
     embedding=embeddings,
     table_name="langserve_rag_demo",
 )
-retriever = vector_store.as_retriever(search_kwargs={'k': 3})
+retriever = vector_store.as_retriever(search_kwargs={"k": 3})
 
 # For demo reasons, let's ensure there are rows on the vector store.
 # Please remove this and/or adapt to your use case!
