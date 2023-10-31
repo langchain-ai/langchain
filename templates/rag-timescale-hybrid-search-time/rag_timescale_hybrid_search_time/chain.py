@@ -3,7 +3,6 @@
 import os
 from datetime import timedelta
 
-from dotenv import find_dotenv, load_dotenv
 from langchain.chains.query_constructor.base import AttributeInfo
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -21,6 +20,7 @@ from .load_sample_dataset import load_ts_git_dataset
 # from langchain.globals import set_debug
 # set_debug(True)
 
+# from dotenv import find_dotenv, load_dotenv
 # _ = load_dotenv(find_dotenv())
 
 if os.environ.get("TIMESCALE_SERVICE_URL", None) is None:
