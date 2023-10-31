@@ -34,9 +34,9 @@ langchain app add plate-chain
 Then add the following code to your `server.py` file:
 
 ```python
-from plate_chain import chain as plate_chain_chain
+from plate_chain import chain as plate_chain
 
-add_routes(app, plate_chain_chain, path="/plate-chain")
+add_routes(app, plate_chain, path="/plate-chain")
 ```
 
 (Optional) For configuring LangSmith, which helps trace, monitor and debug LangChain applications, use the following code:
