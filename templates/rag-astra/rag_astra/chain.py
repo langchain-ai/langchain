@@ -1,4 +1,5 @@
 import os
+
 import cassio
 
 from langchain.chat_models import ChatOpenAI
@@ -48,7 +49,7 @@ retriever = vectorstore.as_retriever()
 # Option 2: Initialize the Vector Store with some text
 vectorstore = Cassandra.from_texts(
     [
-        "Astra DB gives developers the APIs, real-time data and complete ecosystem integrations to put accurate RAG and Gen AI apps in production - FAST."
+        "Astra DB enables cutting-edge GenAI applications."
     ],
     session=None,
     keyspace=None,
