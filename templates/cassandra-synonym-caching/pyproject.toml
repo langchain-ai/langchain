@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "cassandra_synonym_caching"
+name = "cassandra-synonym-caching"
 version = "0.0.1"
 description = ""
 authors = ["Stefano Lottini <stefano.lottini@datastax.com>"]

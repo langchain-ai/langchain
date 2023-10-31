@@ -11,7 +11,7 @@ Follow instructions [here](https://python.langchain.com/docs/integrations/chat/o
 
 The instructions also show how to download your LLM of interest with Ollama:
 
-* This template uses `llama2:13b-chat`
+* This template uses `llama2:7b-chat`
 * But you can pick from many [here](https://ollama.ai/library)
 
 ## Set up local embeddings

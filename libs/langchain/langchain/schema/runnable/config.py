@@ -32,6 +32,10 @@ if TYPE_CHECKING:
         CallbackManager,
         CallbackManagerForChainRun,
     )
+else:
+    # Pydantic validates through typed dicts, but
+    # the callbacks need forward refs updated
+    Callbacks = Optional[Union[List, Any]]
 
 
 class EmptyDict(TypedDict, total=False):
