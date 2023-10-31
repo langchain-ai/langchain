@@ -658,7 +658,15 @@ class OpenSearchVectorSearch(VectorStore):
                     boolean_filter = filter
 
             if boolean_filter != {}:
-                if text_field != {}:
+                if text_field is None:
+                    search_query = _approximate_search_query_with_boolean_filter(
+                        embedding,
+                        boolean_filter,
+                        k=k,
+                        vector_field=vector_field,
+                        subquery_clause=subquery_clause,
+                    )
+                else:
                     search_query = (
                         _approximate_search_query_match_text_with_boolean_filter(
                             query,
@@ -669,14 +677,6 @@ class OpenSearchVectorSearch(VectorStore):
                             text_field=text_field,
                             subquery_clause=subquery_clause,
                         )
-                    )
-                else:
-                    search_query = _approximate_search_query_with_boolean_filter(
-                        embedding,
-                        boolean_filter,
-                        k=k,
-                        vector_field=vector_field,
-                        subquery_clause=subquery_clause,
                     )
             elif efficient_filter != {}:
                 search_query = _approximate_search_query_with_efficient_filter(
