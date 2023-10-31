@@ -40,7 +40,9 @@ langchain app add rag-elasticsearch
 
 And add the following code to your `server.py` file:
 ```python
-__app_route_code__
+from rag-elasticsearch import chain as rag-elasticsearch_chain
+
+add_routes(app, rag-elasticsearch_chain, path="/rag-elasticsearch")
 ```
 
 (Optional) Let's now configure LangSmith. 

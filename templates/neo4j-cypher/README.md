@@ -36,7 +36,9 @@ langchain app add neo4j_cypher
 
 And add the following code to your `server.py` file:
 ```python
-__app_route_code__
+from neo4j_cypher import chain as neo4j_cypher_chain
+
+add_routes(app, neo4j_cypher_chain, path="/neo4j-cypher")
 ```
 
 (Optional) Let's now configure LangSmith. 

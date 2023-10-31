@@ -41,7 +41,9 @@ langchain app add rag-aws-bedrock
 
 Then add the following code to your `server.py` file:
 ```python
-__app_route_code__
+from rag_aws_bedrock import chain as rag_aws_bedrock_chain
+
+add_routes(app, rag_aws_bedrock_chain, path="/rag-aws-bedrock")
 ```
 
 (Optional) If you have access to LangSmith, you can configure it to trace, monitor, and debug LangChain applications. If you don't have access, you can skip this section.

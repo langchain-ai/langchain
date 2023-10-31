@@ -34,7 +34,9 @@ langchain app add rag-semi-structured
 
 And add the following code to your `server.py` file:
 ```python
-__app_route_code__
+from rag_semi_structured import chain as rag_semi_structured_chain
+
+add_routes(app, rag_semi_structured_chain, path="/rag-semi-structured")
 ```
 
 (Optional) Let's now configure LangSmith. 

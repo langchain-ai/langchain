@@ -29,7 +29,9 @@ langchain app add summarize-anthropic
 
 And add the following code to your `server.py` file:
 ```python
-__app_route_code__
+from summarize_anthropic import chain as summarize_anthropic_chain
+
+add_routes(app, summarize_anthropic_chain, path="/summarize-anthropic")
 ```
 
 (Optional) Let's now configure LangSmith. 

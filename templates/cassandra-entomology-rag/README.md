@@ -36,7 +36,9 @@ langchain app add cassandra-entomology-rag
 
 And add the following code to your `server.py` file:
 ```python
-__app_route_code__
+from cassandra_entomology_rag import chain as cassandra_entomology_rag_chain
+
+add_routes(app, cassandra_entomology_rag_chain, path="/cassandra-entomology-rag")
 ```
 
 (Optional) Let's now configure LangSmith. 

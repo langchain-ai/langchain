@@ -35,7 +35,9 @@ langchain app add rag-pinecone
 
 And add the following code to your `server.py` file:
 ```python
-__app_route_code__
+from rag_pinecone import chain as rag_pinecone_chain
+
+add_routes(app, rag_pinecone_chain, path="/rag-pinecone")
 ```
 
 (Optional) Let's now configure LangSmith. 
