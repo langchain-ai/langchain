@@ -1,6 +1,4 @@
 """Test voyage embeddings."""
-import pytest
-
 from langchain.embeddings.voyageai import VoyageEmbeddings
 
 # Please set VOYAGE_API_KEY in the environment variables
