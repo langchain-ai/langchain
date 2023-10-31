@@ -1,19 +1,11 @@
-# Parent Document Retriever with Neo4j Vector Index
 
-This template allows you to balance precise embeddings and context retention by splitting documents into smaller chunks and retrieving their original or larger text information.
-Using a Neo4j vector index, the template queries child nodes using vector similarity search and retrieves the corresponding parent's text by defining an appropriate `retrieval_query` parameter.
+# neo4j-parent
 
-## Neo4j database
+This template allows you to balance precise embeddings and context retention by splitting documents into smaller chunks and retrieving their original or larger text information. 
 
-There are a number of ways to set up a Neo4j database.
+Using a Neo4j vector index, the package queries child nodes using vector similarity search and retrieves the corresponding parent's text by defining an appropriate `retrieval_query` parameter.
 
-### Neo4j Aura
-
-Neo4j AuraDB is a fully managed cloud graph database service.
-Create a free instance on [Neo4j Aura](https://neo4j.com/cloud/platform/aura-graph-database?utm_source=langchain&utm_content=langserve).
-When you initiate a free database instance, you'll receive credentials to access the database.
-
-##  Environment variables
+## Environment Setup
 
 You need to define the following environment variables
 
@@ -32,9 +24,61 @@ First, the text is divided into larger chunks ("parents") and then further subdi
 After storing these chunks in the database, embeddings for the child nodes are computed using OpenAI's embeddings and stored back in the graph for future retrieval or analysis.
 Additionally, a vector index named `retrieval` is created for efficient querying of these embeddings.
 
-## Installation
 
-```bash
-# from inside your LangServe instance
-poe add neo4j-parent
+## Usage
+
+To use this package, you should first have the LangChain CLI installed:
+
+```shell
+pip install -U "langchain-cli[serve]"
+```
+
+To create a new LangChain project and install this as the only package, you can do:
+
+```shell
+langchain app new my-app --package neo4j-parent
+```
+
+If you want to add this to an existing project, you can just run:
+
+```shell
+langchain app add neo4j-parent
+```
+
+And add the following code to your `server.py` file:
+```python
+from neo4j_parent import chain as neo4j_parent_chain
+
+add_routes(app, neo4j_parent_chain, path="/neo4j-parent")
+```
+
+(Optional) Let's now configure LangSmith. 
+LangSmith will help us trace, monitor and debug LangChain applications. 
+LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+If you don't have access, you can skip this section
+
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+```
+
+If you are inside this directory, then you can spin up a LangServe instance directly by:
+
+```shell
+langchain serve
+```
+
+This will start the FastAPI app with a server is running locally at 
+[http://localhost:8000](http://localhost:8000)
+
+We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+We can access the playground at [http://127.0.0.1:8000/neo4j-parent/playground](http://127.0.0.1:8000/neo4j-parent/playground)  
+
+We can access the template from code with:
+
+```python
+from langserve.client import RemoteRunnable
+
+runnable = RemoteRunnable("http://localhost:8000/neo4j-parent")
 ```
