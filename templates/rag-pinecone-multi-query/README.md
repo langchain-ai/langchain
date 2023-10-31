@@ -1,51 +1,62 @@
-#  RAG Pinecone multi query
+# rag-pinecone-multi-query
 
-This template performs RAG using Pinecone and OpenAI with the [multi-query retriever](https://python.langchain.com/docs/modules/data_connection/retrievers/MultiQueryRetriever).
+This package is a template that performs RAG (Retrieval-Augmented Generation) using Pinecone and OpenAI with a multi-query retriever. It uses a Language Model (LLM) to generate multiple queries from different perspectives based on the user's input query. For each query, it retrieves a set of relevant documents and takes the unique union across all queries for answer synthesis.
 
-This will use an LLM to generate multiple queries from different perspectives for a given user input query. 
+## Environment Setup
 
-For each query, it retrieves a set of relevant documents and takes the unique union across all queries for answer synthesis.
+This template uses Pinecone as a vector store. The environment variables `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, and `PINECONE_INDEX` need to be set. In addition, `OPENAI_API_KEY` should be set to use the OpenAI models.
 
-##  Pinecone
+## Usage
 
-This template uses Pinecone as a vectorstore and requires that `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, and `PINECONE_INDEX` are set.
+To use this package, you should first install the LangChain CLI:
 
-##  LLM
-
-Be sure that `OPENAI_API_KEY` is set in order to the OpenAI models.
-
-## App
-
-Example `server.py`:
-```
-from fastapi import FastAPI
-from langserve import add_routes
-from rag_pinecone_multi_query.chain import chain
-
-app = FastAPI()
-
-# Edit this to add the chain you want to add
-add_routes(app, chain, path="rag_pinecone_multi_query")
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+```shell
+pip install -U "langchain-cli[serve]"
 ```
 
-Run:
-```
-python app/server.py
+To create a new LangChain project and install this package, do:
+
+```shell
+langchain app new my-app --package rag-pinecone-multi-query
 ```
 
-Check endpoint:
-```
-http://0.0.0.0:8001/docs
+To add this package to an existing project, run:
+
+```shell
+langchain app add rag-pinecone-multi-query
 ```
 
-See `rag_pinecone_multi_query.ipynb` for example usage - 
+And add the following code to your `server.py` file:
+
+```python
+from rag_pinecone_multi_query import chain as rag_pinecone_multi_query_chain
+
+add_routes(app, rag_pinecone_multi_query_chain, path="/rag-pinecone-multi-query")
 ```
+
+(Optional) Now, let's configure LangSmith. LangSmith will help us trace, monitor, and debug LangChain applications. LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). If you don't have access, you can skip this section
+
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+```
+
+If you are inside this directory, then you can spin up a LangServe instance directly by:
+
+```shell
+langchain serve
+```
+
+This will start the FastAPI app with a server running locally at [http://localhost:8000](http://localhost:8000)
+
+You can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+You can access the playground at [http://127.0.0.1:8000/rag-pinecone-multi-query/playground](http://127.0.0.1:8000/rag-pinecone-multi-query/playground)
+
+To access the template from code, use:
+
+```python
 from langserve.client import RemoteRunnable
-rag_app_pinecone = RemoteRunnable('http://0.0.0.0:8001/rag_pinecone_multi_query')
-rag_app_pinecone.invoke("What are the different types of agent memory")
+
+runnable = RemoteRunnable("http://localhost:8000/rag-pinecone-multi-query")
 ```
