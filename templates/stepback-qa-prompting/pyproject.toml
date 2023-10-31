@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "stepback_qa_prompting"
+name = "stepback-qa-prompting"
 version = "0.0.1"
 description = ""
 authors = []

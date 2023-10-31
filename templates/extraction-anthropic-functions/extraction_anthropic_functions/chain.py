@@ -33,6 +33,8 @@ class Info(BaseModel):
 model = AnthropicFunctions()
 function = [convert_pydantic_to_openai_function(Info)]
 
-chain = prompt | model.bind(
-    functions=function, function_call={"name": "Info"}
-) | JsonKeyOutputFunctionsParser(key_name="papers")
+chain = (
+    prompt
+    | model.bind(functions=function, function_call={"name": "Info"})
+    | JsonKeyOutputFunctionsParser(key_name="papers")
+)

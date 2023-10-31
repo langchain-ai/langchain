@@ -17,16 +17,13 @@ model = Bedrock(
     model_id="anthropic.claude-v2",
     region_name=region,
     credentials_profile_name=profile,
-    model_kwargs={'max_tokens_to_sample':200}
+    model_kwargs={"max_tokens_to_sample": 200},
 )
-bedrock_embeddings = BedrockEmbeddings(
-    model_id="amazon.titan-embed-text-v1"
-)
+bedrock_embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v1")
 
 # Add to vectorDB
 vectorstore = FAISS.from_texts(
-    ["harrison worked at kensho"],
-    embedding=bedrock_embeddings
+    ["harrison worked at kensho"], embedding=bedrock_embeddings
 )
 retriever = vectorstore.as_retriever()
 
@@ -49,8 +46,10 @@ chain = (
     | StrOutputParser()
 )
 
+
 # Add typing for input
 class Question(BaseModel):
     __root__: str
+
 
 chain = chain.with_types(input_type=Question)
