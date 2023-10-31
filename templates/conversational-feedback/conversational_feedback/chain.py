@@ -54,9 +54,9 @@ def format_messages(input: dict) -> List[BaseMessage]:
 
 
 def format_dialog(input: dict) -> dict:
-    """Format the dialog for the evaluator."""
+    """Format messages and convert to a single string."""
     chat_history = format_messages(input)
-    formatted_dialog = get_buffer_string(chat_history)  # + f"\nhuman: {input['text']}"
+    formatted_dialog = get_buffer_string(chat_history) + f"\nhuman: {input['text']}"
     return {"dialog": formatted_dialog}
 
 
@@ -83,6 +83,8 @@ evaluate_response_effectiveness = (
 
 
 class ResponseEffectivenessEvaluator(RunEvaluator):
+    """Evaluate the chat bot based the subsequent user responses."""
+
     def __init__(self, evaluator_runnable: Runnable) -> None:
         super().__init__()
         self.runnable = evaluator_runnable
@@ -90,13 +92,15 @@ class ResponseEffectivenessEvaluator(RunEvaluator):
     def evaluate_run(
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
-        # This particular evaluator is configured to evaluate the previous
-        # AI response. It uses the user's followup question or comment as
-        # additional grounding for its grade.
+        # This evaluator grades the AI's PREVIOUS response.
+        # If no chat history is present, there isn't anything to evaluate
+        # (it's the user's first message)
         if not run.inputs.get("chat_history"):
             return EvaluationResult(
                 key="response_effectiveness", comment="No chat history present."
             )
+        # This only occurs if the client isn't correctly sending the run IDs
+        # of the previous calls.
         elif "last_run_id" not in run.inputs:
             return EvaluationResult(
                 key="response_effectiveness", comment="No last run ID present."
@@ -106,12 +110,17 @@ class ResponseEffectivenessEvaluator(RunEvaluator):
         return EvaluationResult(
             **eval_grade,
             key="response_effectiveness",
-            target_run_id=target_run_id,
+            target_run_id=target_run_id,  # Requires langsmith >= 0.0.54
         )
 
 
-### The actual deployed chain (we are keeping it simple for this example)
-# The main focus of this template is the evaluator above, not the chain itself.
+###############################################################################
+# |           The chat bot definition
+# | This is what is actually exposed by LangServe in the API
+# | It can be any chain that accepts the ChainInput schema and returns a str
+# | all that is required is the with_config() call at the end to add the
+# V evaluators as "listeners" to the chain.
+# ############################################################################
 
 
 class ChainInput(BaseModel):
@@ -149,10 +158,9 @@ def format_chat_history(chain_input: ChainInput) -> dict:
 # with the new `tool.langserve.export_attr`
 chain = (
     (format_chat_history | _prompt | _model | StrOutputParser())
-    # This is to populate the openapi spec for LangServe
-    .with_types(input_type=ChainInput)
-    # This is to add the evluators as "listeners"
-    # and to customize the name of the chain
+    # This is to add the evaluators as "listeners"
+    # and to customize the name of the chain.
+    # Any chain that accepts a compatible input type works here.
     .with_config(
         run_name="ChatBot",
         callbacks=[
