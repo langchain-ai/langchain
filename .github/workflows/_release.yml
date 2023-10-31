@@ -81,7 +81,10 @@ jobs:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
 
+      # We don't own the `langchain-cli` package name on test PyPI yet.
+      # Test-publishing that package is disabled until we do.
       - name: Publish to test PyPI
+        if: ${{ inputs.working-directory != 'libs/cli' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: ${{ inputs.working-directory }}/dist/
