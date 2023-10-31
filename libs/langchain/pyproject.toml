@@ -123,8 +123,6 @@ gitpython = {version = "^3.1.32", optional = true}
 librosa = {version="^0.10.0.post2", optional = true }
 feedparser = {version = "^6.0.10", optional = true}
 newspaper3k = {version = "^0.2.8", optional = true}
-amazon-textract-caller = {version = "<2, >=0.2.0", optional = true}
-amazon-textract-textractor = {version = "^1.4.2", optional = true}
 xata = {version = "^1.0.0a7", optional = true}
 xmltodict = {version = "^0.13.0", optional = true}
 markdownify = {version = "^0.11.6", optional = true}
@@ -308,8 +306,6 @@ all = [
     "amadeus",
     "librosa",
     "python-arango",
-    "amazon-textract-caller",
-    "amazon-textract-textractor",
 ]
 
 cli = [
