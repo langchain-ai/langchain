@@ -44,9 +44,13 @@ select = [
 [tool.poe.tasks]
 test = "poetry run pytest"
 watch = "poetry run ptw"
-lint = "poetry run ruff ."
-format = "poetry run ruff . --fix"
+lint = ["_lint", "_check_formatting"]
+format = ["_lint_fix", "_format"]
 
+_check_formatting = "poetry run ruff format . --diff"
+_lint = "poetry run ruff ."
+_format = "poetry run ruff format ."
+_lint_fix = "poetry run ruff . --fix"
 
 [build-system]
 requires = ["poetry-core"]
