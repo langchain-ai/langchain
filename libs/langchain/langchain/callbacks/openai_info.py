@@ -99,12 +99,12 @@ def standardize_model_name(
     """
     model_name = model_name.lower()
     if ".ft-" in model_name:
-        return model_name.split(".ft-")[0] + "-azure-finetuned"
+        model_name = model_name.split(".ft-")[0] + "-azure-finetuned"
     if ":ft-" in model_name:
-        return model_name.split(":")[0] + "-finetuned-legacy"
+        model_name = model_name.split(":")[0] + "-finetuned-legacy"
     if "ft:" in model_name:
-        return model_name.split(":")[1] + "-finetuned"
-    elif is_completion and (
+        model_name = model_name.split(":")[1] + "-finetuned"
+    if is_completion and (
         model_name.startswith("gpt-4")
         or model_name.startswith("gpt-3.5")
         or model_name.startswith("gpt-35")
