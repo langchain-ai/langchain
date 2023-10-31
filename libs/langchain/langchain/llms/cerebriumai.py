@@ -99,9 +99,13 @@ class CerebriumAI(LLM):
         payload = {"prompt": prompt, **params, **kwargs}
         response = requests.post(
             self.endpoint_url, json=payload, headers=headers)
-        text = response["data"]["result"]
-        if stop is not None:
-            # I believe this is required since the stop tokens
-            # are not enforced by the model parameters
-            text = enforce_stop_tokens(text, stop)
-        return text
+        if response.status_code == 200:
+            data = response.json()
+            text = data["result"]
+            if stop is not None:
+                # I believe this is required since the stop tokens
+                # are not enforced by the model parameters
+                text = enforce_stop_tokens(text, stop)
+            return text
+        else:
+            response.raise_for_status()
