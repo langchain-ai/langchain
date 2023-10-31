@@ -181,7 +181,7 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt loaded from the file.
         """
-        with open(str(template_file), "r") as f:
+        with open(str(template_file), "r", encoding="utf-8") as f:
             template = f.read()
         return cls(input_variables=input_variables, template=template, **kwargs)
 
