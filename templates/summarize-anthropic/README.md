@@ -1,16 +1,63 @@
-# Summarize documents with Anthropic
+# summarize-anthropic
 
-This template uses Anthropic's `Claude2` to summarize documents.
+This package uses Anthropic's `Claude2` to summarize long documents. It leverages a large context window of 100k tokens, allowing for summarization of documents over 100 pages. This package uses various prompts from the LangChain hub.
 
-To do this, we can use various prompts from LangChain hub, such as:
+## Environment Setup
 
-* [This fun summarization prompt](https://smith.langchain.com/hub/hwchase17/anthropic-paper-qa)
-* [Chain of density summarization prompt](https://smith.langchain.com/hub/lawwu/chain_of_density)
+You need to set the `ANTHROPIC_API_KEY` environment variable.
 
-`Claude2` has a large (100k token) context window, allowing us to summarize documents over 100 pages.
+## Usage
 
-##  LLM
+To use this package, you should first have the LangChain CLI installed:
 
-This template will use `Claude2` by default. 
+```shell
+pip install -U "langchain-cli[serve]"
+```
 
-Be sure that `ANTHROPIC_API_KEY` is set in your enviorment.
+To create a new LangChain project and install this as the only package, you can do:
+
+```shell
+langchain app new my-app --package summarize-anthropic
+```
+
+If you want to add this to an existing project, you can just run:
+
+```shell
+langchain app add summarize-anthropic
+```
+
+And add the following code to your `server.py` file:
+```python
+__app_route_code__
+```
+
+(Optional) Let's now configure LangSmith. 
+LangSmith will help us trace, monitor and debug LangChain applications. 
+LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+If you don't have access, you can skip this section
+
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+```
+
+If you are inside this directory, then you can spin up a LangServe instance directly by:
+
+```shell
+langchain serve
+```
+
+This will start the FastAPI app with a server is running locally at 
+[http://localhost:8000](http://localhost:8000)
+
+We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+We can access the playground at [http://127.0.0.1:8000/summarize-anthropic/playground](http://127.0.0.1:8000/summarize-anthropic/playground)  
+
+We can access the template from code with:
+
+```python
+from langserve.client import RemoteRunnable
+
+runnable = RemoteRunnable("http://localhost:8000/summarize-anthropic")
+```
