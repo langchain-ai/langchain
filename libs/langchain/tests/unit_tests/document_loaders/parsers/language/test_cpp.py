@@ -20,6 +20,9 @@ class T {
 struct S {
 };
 
+union U {
+};
+
 auto T::bar() const -> int {
     return 1;
 }"""
@@ -30,12 +33,15 @@ auto T::bar() const -> int {
 
 // Code for: struct S {
 
+// Code for: union U {
+
 // Code for: auto T::bar() const -> int {"""
 
         self.expected_extracted_code = [
             "int foo() {\n    return 1;\n}",
             "class T {\n    auto bar() const -> int;\n    template<class U>\n    void baz(U) {\n    }\n}",
             "struct S {\n}",
+            "union U {\n}",
             "auto T::bar() const -> int {\n    return 1;\n}",
         ]
 
