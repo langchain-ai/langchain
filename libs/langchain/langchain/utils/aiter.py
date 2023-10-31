@@ -43,7 +43,8 @@ def py_anext(
     """
 
     try:
-        __anext__ = cast(Callable[[AsyncIterator[T]], Awaitable[T]], type(iterator).__anext__
+        __anext__ = cast(
+            Callable[[AsyncIterator[T]], Awaitable[T]], type(iterator).__anext__
         )
     except AttributeError:
         raise TypeError(f"{iterator!r} is not an async iterator")
