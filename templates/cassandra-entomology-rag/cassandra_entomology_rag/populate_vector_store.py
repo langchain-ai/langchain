@@ -21,10 +21,7 @@ def populate(vector_store):
             if line[0] != "#"
         ]
         # deterministic IDs to prevent duplicates on multiple runs
-        ids = [
-            "_".join(line.split(" ")[:2]).lower().replace(":", "")
-            for line in lines
-        ]
+        ids = ["_".join(line.split(" ")[:2]).lower().replace(":", "") for line in lines]
         #
         vector_store.add_texts(texts=lines, ids=ids)
         return len(lines)
