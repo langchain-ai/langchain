@@ -301,40 +301,6 @@ files = [
 ]
 
 [[package]]
-name = "amazon-textract-caller"
-version = "0.2.1"
-description = "Amazon Textract Caller tools"
-optional = true
-python-versions = ">=3.6"
-files = [
-    {file = "amazon-textract-caller-0.2.1.tar.gz", hash = "sha256:7a531ba4841fb64718b9430c05796958b426f41a4d674d4996f9e56cd3849f4e"},
-    {file = "amazon_textract_caller-0.2.1-py2.py3-none-any.whl", hash = "sha256:ccdeb364e02ce7c2034b69c09209954e995a0ee19f5d3dea79f25171a9565c37"},
-]
-
-[package.dependencies]
-amazon-textract-response-parser = ">=0.1.39"
-boto3 = ">=1.26.35"
-botocore = "*"
-
-[package.extras]
-testing = ["amazon-textract-response-parser", "pytest"]
-
-[[package]]
-name = "amazon-textract-response-parser"
-version = "1.0.1"
-description = "Easily parse JSON returned by Amazon Textract."
-optional = true
-python-versions = ">=3.8"
-files = [
-    {file = "amazon-textract-response-parser-1.0.1.tar.gz", hash = "sha256:d9ddedb75d12c9f5dc7cf65811c96c3934c0dfa8ef76543882cc1077618a301f"},
-    {file = "amazon_textract_response_parser-1.0.1-py2.py3-none-any.whl", hash = "sha256:890eba2c6bc33f4088c08c4df93088cd540896eca3243b7612635ea456f759c7"},
-]
-
-[package.dependencies]
-boto3 = "*"
-marshmallow = ">=3.14,<4"
-
-[[package]]
 name = "anthropic"
 version = "0.3.11"
 description = "Client library for the anthropic API"
@@ -2408,6 +2374,23 @@ s3 = ["boto3 (>=1.3.1)"]
 test = ["Fiona[s3]", "pytest (>=7)", "pytest-cov", "pytz"]
 
 [[package]]
+name = "fireworks-ai"
+version = "0.6.0"
+description = "Python client library for the Fireworks.ai Generative AI Platform"
+optional = true
+python-versions = ">=3.9"
+files = [
+    {file = "fireworks-ai-0.6.0.tar.gz", hash = "sha256:815b933f6236e3da9c85fea1c51a6b9dd3673110877f6c7f69ba978fdfb1f0f0"},
+    {file = "fireworks_ai-0.6.0-py3-none-any.whl", hash = "sha256:f7f32ab10131a7897c5e78dd69531de30af21a6899c10f5a7e405f01b57b6432"},
+]
+
+[package.dependencies]
+httpx = "*"
+httpx-sse = "*"
+Pillow = "*"
+pydantic = "*"
+
+[[package]]
 name = "flatbuffers"
 version = "23.5.26"
 description = "The FlatBuffers serialization format for Python"
@@ -3259,6 +3242,17 @@ brotli = ["brotli", "brotlicffi"]
 cli = ["click (==8.*)", "pygments (==2.*)", "rich (>=10,<14)"]
 http2 = ["h2 (>=3,<5)"]
 socks = ["socksio (==1.*)"]
+
+[[package]]
+name = "httpx-sse"
+version = "0.3.1"
+description = "Consume Server-Sent Event (SSE) messages with HTTPX."
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "httpx-sse-0.3.1.tar.gz", hash = "sha256:3bb3289b2867f50cbdb2fee3eeeefecb1e86653122e164faac0023f1ffc88aea"},
+    {file = "httpx_sse-0.3.1-py3-none-any.whl", hash = "sha256:7376dd88732892f9b6b549ac0ad05a8e2341172fe7dcf9f8f9c8050934297316"},
+]
 
 [[package]]
 name = "huggingface-hub"
@@ -8222,6 +8216,25 @@ requests = ">=1.0.0"
 six = "*"
 
 [[package]]
+name = "requests-mock"
+version = "1.11.0"
+description = "Mock out responses from the requests package"
+optional = false
+python-versions = "*"
+files = [
+    {file = "requests-mock-1.11.0.tar.gz", hash = "sha256:ef10b572b489a5f28e09b708697208c4a3b2b89ef80a9f01584340ea357ec3c4"},
+    {file = "requests_mock-1.11.0-py2.py3-none-any.whl", hash = "sha256:f7fae383f228633f6bececebdab236c478ace2284d6292c6e7e2867b9ab74d15"},
+]
+
+[package.dependencies]
+requests = ">=2.3,<3"
+six = "*"
+
+[package.extras]
+fixture = ["fixtures"]
+test = ["fixtures", "mock", "purl", "pytest", "requests-futures", "sphinx", "testtools"]
+
+[[package]]
 name = "requests-oauthlib"
 version = "1.3.1"
 description = "OAuthlib authentication support for Requests."
@@ -10984,7 +10997,7 @@ cli = ["typer"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["aiosqlite", "aleph-alpha-client", "amazon-textract-caller", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "google-cloud-documentai", "gql", "html2text", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict"]
+extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "html2text", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -10994,4 +11007,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "7a182700bde8fecf16b48224be57c24ede92388b704a38112aa42e1aa289bee0"
+content-hash = "1c796fb6c531ed9803594973b7296fba64a22605f602f9646677bc07c5a39a85"

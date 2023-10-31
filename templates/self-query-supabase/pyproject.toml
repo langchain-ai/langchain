@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "self_query_supabase"
+name = "self-query-supabase"
 version = "0.1.0"
 description = ""
 authors = ["Greg Richardson <greg@supabase.io>"]
