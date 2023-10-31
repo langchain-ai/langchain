@@ -1,6 +1,4 @@
-from typing import Any, Iterator, List, Sequence
-
-from bs4 import NavigableString, Tag
+from typing import Any, Iterator, List, Sequence, cast
 
 from langchain.schema import BaseDocumentTransformer, Document
 
@@ -150,8 +148,10 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         raise NotImplementedError
 
 
-def get_strings(element: Tag, exclude_tags: Sequence[str]) -> Iterator[str]:
-    for child in element.children:
+def get_strings(element: Any, exclude_tags: Sequence[str]) -> Iterator[str]:
+    from bs4 import NavigableString, Tag
+
+    for child in cast(Tag, element).children:
         if isinstance(child, Tag):
             if child.name not in exclude_tags:
                 yield from get_strings(child, exclude_tags)
