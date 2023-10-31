@@ -114,6 +114,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         try:
             if self.project_name is None:
                 eval_result = self.client.evaluate_run(run, evaluator)
+                eval_results = [eval_result]
             with manager.tracing_v2_enabled(
                 project_name=self.project_name, tags=["eval"], client=self.client
             ) as cb:
@@ -126,17 +127,10 @@ class EvaluatorCallbackHandler(BaseTracer):
                     run,
                     example=reference_example,
                 )
-                run_id = cb.latest_run.id if cb.latest_run is not None else None
-                self.client.create_feedback(
-                    run.id,
-                    evaluation_result.key,
-                    score=evaluation_result.score,
-                    value=evaluation_result.value,
-                    comment=evaluation_result.comment,
-                    correction=evaluation_result.correction,
-                    source_info=evaluation_result.evaluator_info,
-                    source_run_id=evaluation_result.source_run_id or run_id,
-                    feedback_source_type=langsmith.schemas.FeedbackSourceType.MODEL,
+                eval_results = self._log_evaluation_feedback(
+                    evaluation_result,
+                    run,
+                    source_run_id=cb.latest_run.id if cb.latest_run else None,
                 )
         except Exception as e:
             logger.error(
@@ -147,9 +141,59 @@ class EvaluatorCallbackHandler(BaseTracer):
             raise e
         example_id = str(run.reference_example_id)
         with self.lock:
-            self.logged_eval_results.setdefault((str(run.id), example_id), []).append(
-                eval_result
+            for res in eval_results:
+                run_id = (
+                    str(getattr(res, "target_run_id"))
+                    if hasattr(res, "target_run_id")
+                    else str(run.id)
+                )
+                self.logged_eval_results.setdefault((run_id, example_id), []).append(
+                    res
+                )
+
+    def _select_eval_results(
+        self,
+        results: Union[EvaluationResult, dict],
+    ) -> List[EvaluationResult]:
+        if isinstance(results, EvaluationResult):
+            results_ = [results]
+        elif isinstance(results, dict) and "results" in results:
+            results_ = cast(List[EvaluationResult], results["results"])
+        else:
+            raise TypeError(
+                f"Invalid evaluation result type {type(results)}."
+                " Expected EvaluationResult or EvaluationResults."
             )
+        return results_
+
+    def _log_evaluation_feedback(
+        self,
+        evaluator_response: Union[EvaluationResult, dict],
+        run: Run,
+        source_run_id: Optional[UUID] = None,
+    ) -> List[EvaluationResult]:
+        results = self._select_eval_results(evaluator_response)
+        for res in results:
+            source_info_: Dict[str, Any] = {}
+            if res.evaluator_info:
+                source_info_ = {**res.evaluator_info, **source_info_}
+            run_id_ = (
+                getattr(res, "target_run_id")
+                if hasattr(res, "target_run_id") and res.target_run_id is not None
+                else run.id
+            )
+            self.client.create_feedback(
+                run_id_,
+                res.key,
+                score=res.score,
+                value=res.value,
+                comment=res.comment,
+                correction=res.correction,
+                source_info=source_info_,
+                source_run_id=res.source_run_id or source_run_id,
+                feedback_source_type=langsmith.schemas.FeedbackSourceType.MODEL,
+            )
+        return results
 
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.

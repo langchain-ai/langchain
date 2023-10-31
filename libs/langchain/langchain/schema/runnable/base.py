@@ -463,7 +463,7 @@ class Runnable(Generic[Input, Output], ABC):
             config["callbacks"] = callbacks + [stream]
         elif isinstance(callbacks, BaseCallbackManager):
             callbacks = callbacks.copy()
-            callbacks.inheritable_handlers.append(stream)
+            callbacks.add_handler(stream, inherit=True)
             config["callbacks"] = callbacks
         else:
             raise ValueError(
@@ -2367,9 +2367,10 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
 
     config: RunnableConfig = Field(default_factory=dict)
 
-    custom_input_type: Optional[Union[Type[Input], BaseModel]] = None
-
-    custom_output_type: Optional[Union[Type[Output], BaseModel]] = None
+    # Union[Type[Input], BaseModel] + things like List[str]
+    custom_input_type: Optional[Any] = None
+    # Union[Type[Output], BaseModel] + things like List[str]
+    custom_output_type: Optional[Any] = None
 
     class Config:
         arbitrary_types_allowed = True
