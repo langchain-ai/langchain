@@ -1,14 +1,13 @@
 from operator import itemgetter
-from typing import List, Tuple, Optional
-
-from pydantic import BaseModel, Field
+from typing import List, Optional, Tuple
 
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.schema import format_document, BaseMessage
+from langchain.schema import BaseMessage, format_document
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableMap, RunnablePassthrough
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
+from pydantic import BaseModel, Field
 
 from .connection import es_connection_details
 from .prompts import CONDENSE_QUESTION_PROMPT, DOCUMENT_PROMPT, LLM_CONTEXT_PROMPT
