@@ -42,7 +42,7 @@ langchain app add rag-matching-engine
 
 And add the following code to your `server.py` file:
 ```python
-from rag_semi_structured import chain as rag_matching_engine_chain
+from rag_matching_engine import chain as rag_matching_engine_chain
 
 add_routes(app, rag_matching_engine_chain, path="/rag-matching-engine")
 ```
