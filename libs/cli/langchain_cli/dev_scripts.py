@@ -1,5 +1,5 @@
 """
-Development Scripts for Hub Packages
+Development Scripts for template packages
 """
 
 from fastapi import FastAPI
@@ -10,7 +10,7 @@ from langchain_cli.utils.packages import get_package_root
 
 def create_demo_server():
     """
-    Creates a demo server for the current hub package.
+    Creates a demo server for the current template.
     """
     app = FastAPI()
     package_root = get_package_root()

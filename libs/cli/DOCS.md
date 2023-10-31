@@ -12,18 +12,18 @@ $ langchain [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
-* `hub`: Manage installable hub packages.
-* `serve`: Manage LangServe application projects.
-* `start`: Start the LangServe instance, whether it's...
+* `app`: Manage LangChain apps
+* `serve`: Start the LangServe app, whether it's a...
+* `template`: Develop installable templates.
 
-## `langchain hub`
+## `langchain app`
 
-Manage installable hub packages.
+Manage LangChain apps
 
 **Usage**:
 
 ```console
-$ langchain hub [OPTIONS] COMMAND [ARGS]...
+$ langchain app [OPTIONS] COMMAND [ARGS]...
 ```
 
 **Options**:
@@ -32,182 +32,157 @@ $ langchain hub [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
-* `new`: Creates a new hub package.
-* `start`: Starts a demo LangServe instance for this...
-
-### `langchain hub new`
-
-Creates a new hub package.
-
-**Usage**:
-
-```console
-$ langchain hub new [OPTIONS] NAME
-```
-
-**Arguments**:
-
-* `NAME`: [required]
-
-**Options**:
-
-* `--help`: Show this message and exit.
-
-### `langchain hub start`
-
-Starts a demo LangServe instance for this hub package.
-
-**Usage**:
-
-```console
-$ langchain hub start [OPTIONS]
-```
-
-**Options**:
-
-* `--port INTEGER`
-* `--host TEXT`
-* `--help`: Show this message and exit.
-
-## `langchain serve`
-
-Manage LangServe application projects.
-
-**Usage**:
-
-```console
-$ langchain serve [OPTIONS] COMMAND [ARGS]...
-```
-
-**Options**:
-
-* `--help`: Show this message and exit.
-
-**Commands**:
-
-* `add`: Adds the specified package to the current...
-* `install`
-* `list`: Lists all packages in the current...
+* `add`: Adds the specified template to the current...
 * `new`: Create a new LangServe application.
 * `remove`: Removes the specified package from the...
-* `start`: Starts the LangServe instance.
+* `serve`: Starts the LangServe app.
 
-### `langchain serve add`
+### `langchain app add`
 
-Adds the specified package to the current LangServe instance.
+Adds the specified template to the current LangServe app.
 
 e.g.:
-langchain serve add extraction-openai-functions
-langchain serve add git+ssh://git@github.com/efriis/simple-pirate.git
-langchain serve add git+https://github.com/efriis/hub.git#devbranch#subdirectory=mypackage
+langchain app add extraction-openai-functions
+langchain app add git+ssh://git@github.com/efriis/simple-pirate.git
 
 **Usage**:
 
 ```console
-$ langchain serve add [OPTIONS] DEPENDENCIES...
+$ langchain app add [OPTIONS] [DEPENDENCIES]...
 ```
 
 **Arguments**:
 
-* `DEPENDENCIES...`: [required]
+* `[DEPENDENCIES]...`: The dependency to add
 
 **Options**:
 
-* `--api-path TEXT`
-* `--project-dir PATH`
+* `--api-path TEXT`: API paths to add
+* `--project-dir PATH`: The project directory
+* `--repo TEXT`: Install templates from a specific github repo instead
+* `--branch TEXT`: Install templates from a specific branch
 * `--help`: Show this message and exit.
 
-### `langchain serve install`
-
-**Usage**:
-
-```console
-$ langchain serve install [OPTIONS]
-```
-
-**Options**:
-
-* `--help`: Show this message and exit.
-
-### `langchain serve list`
-
-Lists all packages in the current LangServe instance.
-
-**Usage**:
-
-```console
-$ langchain serve list [OPTIONS]
-```
-
-**Options**:
-
-* `--help`: Show this message and exit.
-
-### `langchain serve new`
+### `langchain app new`
 
 Create a new LangServe application.
 
 **Usage**:
 
 ```console
-$ langchain serve new [OPTIONS] NAME
+$ langchain app new [OPTIONS] NAME
 ```
 
 **Arguments**:
 
-* `NAME`: [required]
+* `NAME`: The name of the folder to create  [required]
 
 **Options**:
 
-* `--package TEXT`
+* `--package TEXT`: Packages to seed the project with
 * `--help`: Show this message and exit.
 
-### `langchain serve remove`
+### `langchain app remove`
 
-Removes the specified package from the current LangServe instance.
+Removes the specified package from the current LangServe app.
 
 **Usage**:
 
 ```console
-$ langchain serve remove [OPTIONS] API_PATHS...
+$ langchain app remove [OPTIONS] API_PATHS...
 ```
 
 **Arguments**:
 
-* `API_PATHS...`: [required]
+* `API_PATHS...`: The API paths to remove  [required]
 
 **Options**:
 
 * `--help`: Show this message and exit.
 
-### `langchain serve start`
+### `langchain app serve`
 
-Starts the LangServe instance.
+Starts the LangServe app.
 
 **Usage**:
 
 ```console
-$ langchain serve start [OPTIONS]
+$ langchain app serve [OPTIONS]
 ```
 
 **Options**:
 
-* `--port INTEGER`
-* `--host TEXT`
+* `--port INTEGER`: The port to run the server on
+* `--host TEXT`: The host to run the server on
+* `--app TEXT`: The app to run, e.g. `app.server:app`
 * `--help`: Show this message and exit.
 
-## `langchain start`
+## `langchain serve`
 
-Start the LangServe instance, whether it's a hub package or a serve project.
+Start the LangServe app, whether it's a template or an app.
 
 **Usage**:
 
 ```console
-$ langchain start [OPTIONS]
+$ langchain serve [OPTIONS]
 ```
 
 **Options**:
 
-* `--port INTEGER`
-* `--host TEXT`
+* `--port INTEGER`: The port to run the server on
+* `--host TEXT`: The host to run the server on
+* `--help`: Show this message and exit.
+
+## `langchain template`
+
+Develop installable templates.
+
+**Usage**:
+
+```console
+$ langchain template [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `new`: Creates a new template package.
+* `serve`: Starts a demo app for this template.
+
+### `langchain template new`
+
+Creates a new template package.
+
+**Usage**:
+
+```console
+$ langchain template new [OPTIONS] NAME
+```
+
+**Arguments**:
+
+* `NAME`: The name of the folder to create  [required]
+
+**Options**:
+
+* `--with-poetry / --no-poetry`: Don't run poetry install  [default: no-poetry]
+* `--help`: Show this message and exit.
+
+### `langchain template serve`
+
+Starts a demo app for this template.
+
+**Usage**:
+
+```console
+$ langchain template serve [OPTIONS]
+```
+
+**Options**:
+
+* `--port INTEGER`: The port to run the server on
+* `--host TEXT`: The host to run the server on
 * `--help`: Show this message and exit.

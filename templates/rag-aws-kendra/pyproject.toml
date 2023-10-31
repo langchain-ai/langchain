@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rag_aws_kendra"
+name = "rag-aws-kendra"
 version = "0.0.1"
 description = ""
 authors = []
