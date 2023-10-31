@@ -301,40 +301,6 @@ files = [
 ]
 
 [[package]]
-name = "amazon-textract-caller"
-version = "0.2.1"
-description = "Amazon Textract Caller tools"
-optional = true
-python-versions = ">=3.6"
-files = [
-    {file = "amazon-textract-caller-0.2.1.tar.gz", hash = "sha256:7a531ba4841fb64718b9430c05796958b426f41a4d674d4996f9e56cd3849f4e"},
-    {file = "amazon_textract_caller-0.2.1-py2.py3-none-any.whl", hash = "sha256:ccdeb364e02ce7c2034b69c09209954e995a0ee19f5d3dea79f25171a9565c37"},
-]
-
-[package.dependencies]
-amazon-textract-response-parser = ">=0.1.39"
-boto3 = ">=1.26.35"
-botocore = "*"
-
-[package.extras]
-testing = ["amazon-textract-response-parser", "pytest"]
-
-[[package]]
-name = "amazon-textract-response-parser"
-version = "1.0.1"
-description = "Easily parse JSON returned by Amazon Textract."
-optional = true
-python-versions = ">=3.8"
-files = [
-    {file = "amazon-textract-response-parser-1.0.1.tar.gz", hash = "sha256:d9ddedb75d12c9f5dc7cf65811c96c3934c0dfa8ef76543882cc1077618a301f"},
-    {file = "amazon_textract_response_parser-1.0.1-py2.py3-none-any.whl", hash = "sha256:890eba2c6bc33f4088c08c4df93088cd540896eca3243b7612635ea456f759c7"},
-]
-
-[package.dependencies]
-boto3 = "*"
-marshmallow = ">=3.14,<4"
-
-[[package]]
 name = "anthropic"
 version = "0.3.11"
 description = "Client library for the anthropic API"
@@ -11076,7 +11042,7 @@ cli = ["typer"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["aiosqlite", "aleph-alpha-client", "amazon-textract-caller", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "google-cloud-documentai", "gql", "html2text", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict"]
+extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "google-cloud-documentai", "gql", "html2text", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -11086,4 +11052,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "9345cd37346e9f369702f51b7e10dde8da91d5f7b659c8c204e5b46c360cd028"
+content-hash = "9ffdcad5f675571917ffb0f222acdb578f406939695977da3c19e55192cac513"
