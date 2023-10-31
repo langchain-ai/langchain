@@ -58,7 +58,7 @@ def new(
     typer.echo("    langchain app add extraction-openai-functions")
     typer.echo("    langchain app add git+ssh://git@github.com/efriis/simple-pirate.git\n\n")
 
-new(name="testing")
+
 @app_cli.command()
 def add(
     dependencies: Annotated[
