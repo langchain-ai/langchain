@@ -1,19 +1,12 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.pydantic_v1 import Extra, Field, SecretStr, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
-
-
-def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
 
 
 class GooseAI(LLM):
@@ -96,7 +89,7 @@ class GooseAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        gooseai_api_key = _to_secret(
+        gooseai_api_key = convert_to_secret_str(
             get_from_dict_or_env(values, "gooseai_api_key", "GOOSEAI_API_KEY")
         )
         values["gooseai_api_key"] = gooseai_api_key

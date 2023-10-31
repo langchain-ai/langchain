@@ -9,7 +9,7 @@ from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.utilities import SQLDatabase
 
 # Add the LLM downloaded from Ollama
-ollama_llm = "llama2:13b-chat"
+ollama_llm = "zephyr"
 llm = ChatOllama(model=ollama_llm)
 
 

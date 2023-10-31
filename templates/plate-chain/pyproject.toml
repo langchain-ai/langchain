@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "plate_chain"
+name = "plate-chain"
 version = "0.0.1"
 description = ""
 authors = []
@@ -17,7 +17,7 @@ fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
-export_module = "plate_chain.__init__"
+export_module = "plate_chain"
 export_attr = "chain"
 
 [build-system]
