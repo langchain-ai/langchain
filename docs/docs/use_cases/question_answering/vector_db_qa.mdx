@@ -42,7 +42,7 @@ qa.run(query)
 </CodeOutputBlock>
 
 ## Chain Type
-You can easily specify different chain types to load and use in the RetrievalQA chain. For a more detailed walkthrough of these types, please see [this notebook](/docs/modules/chains/additional/question_answering.html).
+You can easily specify different chain types to load and use in the RetrievalQA chain. For a more detailed walkthrough of these types, please see [this notebook](/docs/modules/chains/additional/question_answering).
 
 There are two ways to load different chain types. First, you can specify the chain type argument in the `from_chain_type` method. This allows you to pass in the name of the chain type you want to use. For example, in the below we change the chain type to `map_reduce`.
 
@@ -65,7 +65,7 @@ qa.run(query)
 
 </CodeOutputBlock>
 
-The above way allows you to really simply change the chain_type, but it doesn't provide a ton of flexibility over parameters to that chain type. If you want to control those parameters, you can load the chain directly (as you did in [this notebook](/docs/modules/chains/additional/question_answering.html)) and then pass that directly to the the RetrievalQA chain with the `combine_documents_chain` parameter. For example:
+The above way allows you to really simply change the chain_type, but it doesn't provide a ton of flexibility over parameters to that chain type. If you want to control those parameters, you can load the chain directly (as you did in [this notebook](/docs/modules/chains/additional/question_answering)) and then pass that directly to the RetrievalQA chain with the `combine_documents_chain` parameter. For example:
 
 
 ```python
@@ -89,7 +89,7 @@ qa.run(query)
 </CodeOutputBlock>
 
 ## Custom Prompts
-You can pass in custom prompts to do question answering. These prompts are the same prompts as you can pass into the [base question answering chain](/docs/modules/chains/additional/question_answering.html)
+You can pass in custom prompts to do question answering. These prompts are the same prompts as you can pass into the [base question answering chain](/docs/modules/chains/additional/question_answering)
 
 
 ```python

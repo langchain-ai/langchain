@@ -1,3 +1,4 @@
+import threading
 import time
 import unittest.mock
 from typing import Any
@@ -47,3 +48,17 @@ def test_example_id_assignment_threadsafe() -> None:
         }
         tracer.wait_for_futures()
         assert example_ids == expected_example_ids
+
+
+def test_log_lock() -> None:
+    """Test that example assigned at callback start/end is honored."""
+
+    client = unittest.mock.MagicMock(spec=Client)
+    tracer = LangChainTracer(client=client)
+
+    with unittest.mock.patch.object(tracer, "_persist_run_single", new=lambda _: _):
+        run_id_1 = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+        lock = threading.Lock()
+        tracer.on_chain_start({"name": "example_1"}, {"input": lock}, run_id=run_id_1)
+        tracer.on_chain_end({}, run_id=run_id_1)
+        tracer.wait_for_futures()

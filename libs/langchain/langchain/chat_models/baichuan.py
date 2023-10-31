@@ -2,7 +2,7 @@ import hashlib
 import json
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Type, Union
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 
 import requests
 
@@ -24,9 +24,15 @@ from langchain.schema.messages import (
     HumanMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_API_BASE = "https://api.baichuan-ai.com/v1"
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -69,13 +75,6 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
-
-
 # signature generation
 def _signature(secret_key: SecretStr, payload: Dict[str, Any], timestamp: int) -> str:
     input_str = secret_key.get_secret_value() + json.dumps(payload) + str(timestamp)
@@ -101,7 +100,7 @@ class ChatBaichuan(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    baichuan_api_base: str = "https://api.baichuan-ai.com"
+    baichuan_api_base: str = Field(default=DEFAULT_API_BASE)
     """Baichuan custom endpoints"""
     baichuan_api_key: Optional[str] = None
     """Baichuan API Key"""
@@ -162,13 +161,14 @@ class ChatBaichuan(BaseChatModel):
             values,
             "baichuan_api_base",
             "BAICHUAN_API_BASE",
+            DEFAULT_API_BASE,
         )
         values["baichuan_api_key"] = get_from_dict_or_env(
             values,
             "baichuan_api_key",
             "BAICHUAN_API_KEY",
         )
-        values["baichuan_secret_key"] = _to_secret(
+        values["baichuan_secret_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
                 "baichuan_secret_key",
@@ -183,6 +183,7 @@ class ChatBaichuan(BaseChatModel):
         """Get the default parameters for calling Baichuan API."""
         normal_params = {
             "model": self.model,
+            "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k": self.top_k,
             "with_search_enhance": self.with_search_enhance,
@@ -252,7 +253,7 @@ class ChatBaichuan(BaseChatModel):
 
         timestamp = int(time.time())
 
-        url = f"{self.baichuan_api_base}/v1"
+        url = self.baichuan_api_base
         if self.streaming:
             url = f"{url}/stream"
         url = f"{url}/chat"

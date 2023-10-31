@@ -180,7 +180,7 @@ class LlamaContentFormatter(ContentFormatterBase):
     """Content formatter for LLaMa"""
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
-        """Formats the request according the the chosen api"""
+        """Formats the request according to the chosen api"""
         prompt = ContentFormatterBase.escape_special_characters(prompt)
         request_payload = json.dumps(
             {
