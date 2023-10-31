@@ -1,13 +1,13 @@
-
 from typing import List, Optional
 
+from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
+from langchain.chains.openai_functions import create_structured_output_chain
 from langchain.chat_models import ChatOpenAI
 from langchain.graphs import Neo4jGraph
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
-from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
-from langchain.chains.openai_functions import create_structured_output_chain
+
 try:
     from pydantic.v1.main import BaseModel, Field
 except ImportError:
@@ -27,14 +27,17 @@ cypher_validation = CypherQueryCorrector(corrector_schema)
 cypher_llm = ChatOpenAI(model_name="gpt-4", temperature=0.0)
 qa_llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.0)
 
+
 # Extract entities from text
 class Entities(BaseModel):
     """Identifying information about entities."""
 
     names: List[str] = Field(
         ...,
-        description="All the person, organization, or business entities that appear in the text",
+        description="All the person, organization, or business entities that "
+        "appear in the text",
     )
+
 
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -44,10 +47,12 @@ prompt = ChatPromptTemplate.from_messages(
         ),
         (
             "human",
-            "Use the given format to extract information from the following input: {question}",
+            "Use the given format to extract information from the following "
+            "input: {question}",
         ),
     ]
 )
+
 
 # Fulltext index query
 def map_to_database(entities: Entities) -> Optional[str]:
@@ -56,16 +61,16 @@ def map_to_database(entities: Entities) -> Optional[str]:
         response = graph.query(
             "CALL db.index.fulltext.queryNodes('entity', $entity + '*', {limit:1})"
             " YIELD node,score RETURN node.name AS result",
-            {"entity":entity})
+            {"entity": entity},
+        )
         try:
             result += f"{entity} maps to {response[0]['result']} in database\n"
         except IndexError:
             pass
     return result
 
-entity_chain = create_structured_output_chain(
-    Entities, qa_llm, prompt
-)
+
+entity_chain = create_structured_output_chain(Entities, qa_llm, prompt)
 
 # Generate Cypher statement based on natural language input
 cypher_template = """Based on the Neo4j graph schema below, write a Cypher query that would answer the user's question:
@@ -73,7 +78,7 @@ cypher_template = """Based on the Neo4j graph schema below, write a Cypher query
 Entities in the question map to the following database values:
 {entities_list}
 Question: {question}
-Cypher query:"""
+Cypher query:"""  # noqa: E501
 
 cypher_prompt = ChatPromptTemplate.from_messages(
     [
@@ -88,7 +93,7 @@ cypher_prompt = ChatPromptTemplate.from_messages(
 cypher_response = (
     RunnablePassthrough.assign(names=entity_chain)
     | RunnablePassthrough.assign(
-        entities_list=lambda x: map_to_database(x['names']['function']),
+        entities_list=lambda x: map_to_database(x["names"]["function"]),
         schema=lambda _: graph.get_schema,
     )
     | cypher_prompt
@@ -100,13 +105,14 @@ cypher_response = (
 response_template = """Based on the the question, Cypher query, and Cypher response, write a natural language response:
 Question: {question}
 Cypher query: {query}
-Cypher Response: {response}"""
+Cypher Response: {response}"""  # noqa: E501
 
 response_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "Given an input question and Cypher response, convert it to a natural language answer. No pre-amble.",
+            "Given an input question and Cypher response, convert it to a natural"
+            " language answer. No pre-amble.",
         ),
         ("human", response_template),
     ]
