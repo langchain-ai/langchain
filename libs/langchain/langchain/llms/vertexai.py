@@ -431,11 +431,12 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
                 "protobuf package not found, please install it with"
                 " `pip install protobuf`"
             ) from exc
+        allowed_model_args = self.allowed_model_args or []
         return [
             json_format.ParseDict(
                 {
                     self.prompt_arg: prompt,
-                    **{k: v for k, v in kwargs.items() if k in self.allowed_model_args},
+                    **{k: v for k, v in kwargs.items() if k in allowed_model_args},
                 },
                 Value(),
             )
