@@ -49,7 +49,7 @@ class TavilySearchAPIRetriever(BaseRetriever):
             exclude_domains=self.exclude_domains,
             include_raw_content=self.include_raw_content,
             include_images=self.include_images,
-            **self.kwargs
+            **self.kwargs,
         )
         docs = [
             Document(

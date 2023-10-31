@@ -617,21 +617,27 @@ def test_lambda_schemas() -> None:
             "byebye": input["yo"],
         }
 
-    assert RunnableLambda(aget_values_typed).input_schema.schema() == {  # type: ignore[arg-type]
-        "title": "RunnableLambdaInput",
-        "$ref": "#/definitions/InputType",
-        "definitions": {
-            "InputType": {
-                "properties": {
-                    "variable_name": {"title": "Variable " "Name", "type": "string"},
-                    "yo": {"title": "Yo", "type": "integer"},
-                },
-                "required": ["variable_name", "yo"],
-                "title": "InputType",
-                "type": "object",
-            }
-        },
-    }
+    assert (
+        RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
+        == {
+            "title": "RunnableLambdaInput",
+            "$ref": "#/definitions/InputType",
+            "definitions": {
+                "InputType": {
+                    "properties": {
+                        "variable_name": {
+                            "title": "Variable " "Name",
+                            "type": "string",
+                        },
+                        "yo": {"title": "Yo", "type": "integer"},
+                    },
+                    "required": ["variable_name", "yo"],
+                    "title": "InputType",
+                    "type": "object",
+                }
+            },
+        }
+    )
 
     assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
         "title": "RunnableLambdaOutput",
@@ -660,10 +666,12 @@ def test_with_types_with_type_generics() -> None:
 
     # Try specifying some
     RunnableLambda(foo).with_types(
-        output_type=List[int], input_type=List[int]  # type: ignore
+        output_type=List[int],  # type: ignore[arg-type]
+        input_type=List[int],  # type: ignore[arg-type]
     )
     RunnableLambda(foo).with_types(
-        output_type=Sequence[int], input_type=Sequence[int]  # type: ignore[arg-type]
+        output_type=Sequence[int],  # type: ignore[arg-type]
+        input_type=Sequence[int],  # type: ignore[arg-type]
     )
 
 
