@@ -3,7 +3,7 @@ from typing import List, Tuple
 from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_xml
 from langchain.chat_models import ChatAnthropic
-from langchain.pydantic_v1 import BaseModel
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import AIMessage, HumanMessage
 from langchain.tools import DuckDuckGoSearchRun
 from langchain.tools.render import render_text_description
@@ -44,7 +44,7 @@ agent = (
 
 class AgentInput(BaseModel):
     question: str
-    chat_history: List[Tuple[str, str]]
+    chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat"}})
 
 
 agent_executor = AgentExecutor(
