@@ -134,19 +134,19 @@ async def acompletion_with_retry(
 
 class _VertexAIBase(BaseModel):
     project: Optional[str] = None
-    "The default GCP project to use when making Vertex API calls."
+    """The default Google Cloud project to use when making Vertex API calls."""
     location: str = "us-central1"
-    "The default location to use when making API calls."
+    """The default location to use when making API calls."""
     request_parallelism: int = 5
-    "The amount of parallelism allowed for requests issued to VertexAI models. "
-    "Default is 5."
+    """The amount of parallelism allowed for requests issued to VertexAI models.
+    Default is 5."""
     max_retries: int = 6
     """The maximum number of retries to make when generating."""
     task_executor: ClassVar[Optional[Executor]] = Field(default=None, exclude=True)
     stop: Optional[List[str]] = None
-    "Optional list of stop words to use when generating."
+    """Optional list of stop words to use when generating."""
     model_name: Optional[str] = None
-    "Underlying model name."
+    """Underlying model name."""
 
     @classmethod
     def _get_task_executor(cls, request_parallelism: int = 5) -> Executor:
