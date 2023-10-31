@@ -34,7 +34,14 @@ vector_store = Cassandra(
     embedding=embeddings,
     table_name="langserve_rag_demo",
 )
-retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+retriever = vector_store.as_retriever(search_kwargs={'k': 3})
+
+# For demo reasons, let's ensure there are rows on the vector store.
+# Please remove this and/or adapt to your use case!
+from .populate_vector_store import populate
+inserted_lines = populate(vector_store)
+if inserted_lines:
+    print(f"Done ({inserted_lines} lines inserted).")
 
 entomology_template = """
 You are an expert entomologist, tasked with answering enthusiast biologists' questions.
