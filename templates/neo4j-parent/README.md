@@ -16,6 +16,15 @@ NEO4J_USERNAME=<YOUR_NEO4J_USERNAME>
 NEO4J_PASSWORD=<YOUR_NEO4J_PASSWORD>
 ```
 
+## Populating with data
+
+If you want to populate the DB with some example data, you can run `python ingest.py`.
+The script process and stores sections of the text from the file `dune.txt` into a Neo4j graph database.
+First, the text is divided into larger chunks ("parents") and then further subdivided into smaller chunks ("children"), where both parent and child chunks overlap slightly to maintain context.
+After storing these chunks in the database, embeddings for the child nodes are computed using OpenAI's embeddings and stored back in the graph for future retrieval or analysis.
+Additionally, a vector index named `retrieval` is created for efficient querying of these embeddings.
+
+
 ## Usage
 
 To use this package, you should first have the LangChain CLI installed:
@@ -73,11 +82,3 @@ from langserve.client import RemoteRunnable
 
 runnable = RemoteRunnable("http://localhost:8000/neo4j-parent")
 ```
-
-## Populating with data
-
-If you want to populate the DB with some example data, you can run `python ingest.py`.
-The script process and stores sections of the text from the file `dune.txt` into a Neo4j graph database.
-First, the text is divided into larger chunks ("parents") and then further subdivided into smaller chunks ("children"), where both parent and child chunks overlap slightly to maintain context.
-After storing these chunks in the database, embeddings for the child nodes are computed using OpenAI's embeddings and stored back in the graph for future retrieval or analysis.
-Additionally, a vector index named `retrieval` is created for efficient querying of these embeddings.

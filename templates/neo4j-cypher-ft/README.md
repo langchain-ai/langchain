@@ -20,6 +20,10 @@ NEO4J_USERNAME=<YOUR_NEO4J_USERNAME>
 NEO4J_PASSWORD=<YOUR_NEO4J_PASSWORD>
 ```
 
+Additionally, if you wish to populate the DB with some example data, you can run `python ingest.py`.
+This script will populate the database with sample movie data and create a full-text index named `entity`, which is used to map person and movies from user input to database values for precise Cypher statement generation.
+
+
 ## Usage
 
 To use this package, you should first have the LangChain CLI installed:
@@ -78,6 +82,3 @@ from langserve.client import RemoteRunnable
 
 runnable = RemoteRunnable("http://localhost:8000/neo4j-cypher-ft")
 ```
-
-Additionally, if you wish to populate the DB with some example data, you can run `python ingest.py`.
-This script will populate the database with sample movie data and create a full-text index named `entity`, which is used to map person and movies from user input to database values for precise Cypher statement generation.

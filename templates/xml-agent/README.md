@@ -1,14 +1,13 @@
 
 # xml-agent
 
-This package creates an agent that uses XML syntax to communicate its decisions of what actions to take. It uses Anthropic's Claude models for writing XML syntax and can optionally look up things on the internet using You.com's retriever.
+This package creates an agent that uses XML syntax to communicate its decisions of what actions to take. It uses Anthropic's Claude models for writing XML syntax and can optionally look up things on the internet using DuckDuckGo.
 
 ## Environment Setup
 
 Two environment variables need to be set:
 
 - `ANTHROPIC_API_KEY`: Required for using Anthropic
-- `YDC_API_KEY`: Required for using You.com
 
 ## Usage
 

@@ -1,5 +1,5 @@
 
-# pirate-chain
+# plate-chain
 
 This template enables parsing of data from laboratory plates. 
 

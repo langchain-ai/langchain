@@ -16,6 +16,21 @@ NEO4J_USERNAME=<YOUR_NEO4J_USERNAME>
 NEO4J_PASSWORD=<YOUR_NEO4J_PASSWORD>
 ```
 
+## Neo4j database setup
+
+There are a number of ways to set up a Neo4j database.
+
+### Neo4j Aura
+
+Neo4j AuraDB is a fully managed cloud graph database service.
+Create a free instance on [Neo4j Aura](https://neo4j.com/cloud/platform/aura-graph-database?utm_source=langchain&utm_content=langserve).
+When you initiate a free database instance, you'll receive credentials to access the database.
+
+## Populating with data
+
+If you want to populate the DB with some example data, you can run `python ingest.py`.
+This script will populate the database with sample movie data.
+
 ## Usage
 
 To use this package, you should first have the LangChain CLI installed:
@@ -73,18 +88,3 @@ from langserve.client import RemoteRunnable
 
 runnable = RemoteRunnable("http://localhost:8000/neo4j_cypher")
 ```
-
-## Neo4j database setup
-
-There are a number of ways to set up a Neo4j database.
-
-### Neo4j Aura
-
-Neo4j AuraDB is a fully managed cloud graph database service.
-Create a free instance on [Neo4j Aura](https://neo4j.com/cloud/platform/aura-graph-database?utm_source=langchain&utm_content=langserve).
-When you initiate a free database instance, you'll receive credentials to access the database.
-
-## Populating with data
-
-If you want to populate the DB with some example data, you can run `python ingest.py`.
-This script will populate the database with sample movie data.

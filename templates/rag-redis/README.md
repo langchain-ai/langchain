@@ -18,6 +18,19 @@ export REDIS_USER = <YOUR REDIS USER NAME>
 export REDIS_PASSWORD = <YOUR REDIS PASSWORD>
 ```
 
+## Supported Settings
+We use a variety of environment variables to configure this application
+
+| Environment Variable | Description                       | Default Value |
+|----------------------|-----------------------------------|---------------|
+| `DEBUG`            | Enable or disable Langchain debugging logs       | True         |
+| `REDIS_HOST`           | Hostname for the Redis server     | "localhost"   |
+| `REDIS_PORT`           | Port for the Redis server         | 6379          |
+| `REDIS_USER`           | User for the Redis server         | "" |
+| `REDIS_PASSWORD`       | Password for the Redis server     | "" |
+| `REDIS_URL`            | Full URL for connecting to Redis  | `None`, Constructed from user, password, host, and port if not provided |
+| `INDEX_NAME`           | Name of the vector index          | "rag-redis"   |
+
 ## Usage
 
 To use this package, you should first have the LangChain CLI installed:

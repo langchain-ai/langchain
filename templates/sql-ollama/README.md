@@ -40,7 +40,9 @@ langchain app add sql-ollama
 And add the following code to your `server.py` file:
 
 ```python
-# TODO: Add appropriate app route code
+from sql_ollama import chain as sql_ollama_chain
+
+add_routes(app, sql_ollama_chain, path="/sql-ollama")
 ```
 
 (Optional) Let's now configure LangSmith. 

@@ -9,19 +9,68 @@ Supabase is built on top of PostgreSQL, a free and open-source relational databa
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
-For Supabase, you can create a `.env` file in the root of your project:
-
-_.env_
-```shell
-SUPABASE_URL=
-SUPABASE_SERVICE_KEY=
-OPENAI_API_KEY=
-```
+To get your `OPENAI_API_KEY`, navigate to [API keys](https://platform.openai.com/account/api-keys) on your OpenAI account and create a new secret key.
 
 To find your `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`, head to your Supabase project's [API settings](https://supabase.com/dashboard/project/_/settings/api). 
 
 - `SUPABASE_URL` corresponds to the Project URL
 - `SUPABASE_SERVICE_KEY` corresponds to the `service_role` API key
+
+
+```shell
+export SUPABASE_URL=
+export SUPABASE_SERVICE_KEY=
+export OPENAI_API_KEY=
+```
+
+## Setup Supabase Database
+
+Use these steps to setup your Supabase database if you haven't already.
+
+1. Head over to https://database.new to provision your Supabase database.
+2. In the studio, jump to the [SQL editor](https://supabase.com/dashboard/project/_/sql/new) and run the following script to enable `pgvector` and setup your database as a vector store:
+
+   ```sql
+   -- Enable the pgvector extension to work with embedding vectors
+   create extension if not exists vector;
+
+   -- Create a table to store your documents
+   create table
+     documents (
+       id uuid primary key,
+       content text, -- corresponds to Document.pageContent
+       metadata jsonb, -- corresponds to Document.metadata
+       embedding vector (1536) -- 1536 works for OpenAI embeddings, change as needed
+     );
+
+   -- Create a function to search for documents
+   create function match_documents (
+     query_embedding vector (1536),
+     filter jsonb default '{}'
+   ) returns table (
+     id uuid,
+     content text,
+     metadata jsonb,
+     similarity float
+   ) language plpgsql as $$
+   #variable_conflict use_column
+   begin
+     return query
+     select
+       id,
+       content,
+       metadata,
+       1 - (documents.embedding <=> query_embedding) as similarity
+     from documents
+     where metadata @> filter
+     order by documents.embedding <=> query_embedding;
+   end;
+   $$;
+   ```
+
+## Setup Environment Variables
+
+Since we are using [`SupabaseVectorStore`](https://python.langchain.com/docs/integrations/vectorstores/supabase) and [`OpenAIEmbeddings`](https://python.langchain.com/docs/integrations/text_embedding/openai), we need to load their API keys.
 
 ## Usage
 
