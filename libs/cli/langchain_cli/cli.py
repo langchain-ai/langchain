@@ -17,7 +17,7 @@ app.add_typer(app_namespace.app_cli, name="app", help=app_namespace.__doc__)
 
 def version_callback(show_version: bool) -> None:
     if show_version:
-        typer.echo(f"LangChain {__version__}")
+        typer.echo(f"langchain-cli {__version__}")
         raise typer.Exit()
 
 
