@@ -11,7 +11,7 @@ class RootListenersTracer(BaseTracer):
         *,
         on_start: Optional[Callable[[Run], None]],
         on_end: Optional[Callable[[Run], None]],
-        on_error: Optional[Callable[[Run], None]]
+        on_error: Optional[Callable[[Run], None]],
     ) -> None:
         super().__init__()
 
