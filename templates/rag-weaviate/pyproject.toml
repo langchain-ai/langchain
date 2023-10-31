@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rag_weaviate"
+name = "rag-weaviate"
 version = "0.1.0"
 description = ""
 authors = ["Erika Cardenas <erika@weaviate.io"]
