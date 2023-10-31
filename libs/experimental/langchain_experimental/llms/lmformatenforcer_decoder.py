@@ -1,14 +1,13 @@
 """Experimental implementation of lm-format-enforcer wrapped LLM."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional, cast
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.schema import LLMResult
-from transformers.pipelines import Text2TextGenerationPipeline
 
-from langchain_experimental.pydantic_v1 import Field, root_validator
+from langchain_experimental.pydantic_v1 import Field
 
 if TYPE_CHECKING:
     import lmformatenforcer
@@ -39,11 +38,6 @@ class LMFormatEnforcer(HuggingFacePipeline):
         description="The regular expression to complete.", default=None
     )
 
-    @root_validator
-    def check_lmformatenforcer_installation(cls, values: dict) -> dict:
-        import_lmformatenforcer()
-        return values
-
     def _generate(
         self,
         prompts: List[str],
@@ -51,6 +45,9 @@ class LMFormatEnforcer(HuggingFacePipeline):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
+        lmformatenforcer = import_lmformatenforcer()
+        import lmformatenforcer.integrations.transformers as hf_integration
+
         # We integrate lmformatenforcer by adding a prefix_allowed_tokens_fn.
         # It has to be done on each call, because the prefix function is stateful.
         if "prefix_allowed_tokens_fn" in self.pipeline._forward_params:
@@ -65,17 +62,13 @@ class LMFormatEnforcer(HuggingFacePipeline):
                 "You must specify exactly one of json_schema or a regex, but not both."
             )
 
-        lmformatenforcer = import_lmformatenforcer()
-        import lmformatenforcer.integrations.transformers as hf_integration
-
         if has_json_schema:
             parser = lmformatenforcer.JsonSchemaParser(self.json_schema)
         else:
             parser = lmformatenforcer.RegexParser(self.regex)
 
-        pipeline = cast(Text2TextGenerationPipeline, self.pipeline)
         prefix_function = hf_integration.build_transformers_prefix_allowed_tokens_fn(
-            pipeline.tokenizer, parser
+            self.pipeline.tokenizer, parser
         )
         self.pipeline._forward_params["prefix_allowed_tokens_fn"] = prefix_function
 
