@@ -47,6 +47,7 @@ watch = "poetry run ptw"
 lint = "poetry run ruff ."
 format = "poetry run ruff . --fix"
 
+[tool.poetry_bumpversion.file."langchain_cli/cli.py"]
 
 [build-system]
 requires = ["poetry-core"]
