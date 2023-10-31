@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.327, <0.1"
+langchain = ">=0.0.325"
 openai = "^0.28.1"
 langsmith = ">=0.0.54"
 langchainhub = ">=0.1.13"
@@ -22,5 +22,7 @@ export_module = "chat_bot_feedback.chain"
 export_attr = "chain"
 
 [build-system]
-requires = ["poetry-core"]
+requires = [
+    "poetry-core",
+]
 build-backend = "poetry.core.masonry.api"
