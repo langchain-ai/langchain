@@ -41,10 +41,10 @@ class WatsonxLLM(LLM):
     space_id: str = ""
     """ID of the Watson Studio space."""
 
-    credentials: dict = {}
+    credentials: Optional[dict] = None
     """Credentials to Watson Machine Learning instance"""
 
-    params: dict = {}
+    params: Optional[dict] = None
     """Model parameters to use during generate requests."""
 
     verify: Union[str, bool] = ""
@@ -53,9 +53,6 @@ class WatsonxLLM(LLM):
         the path of directory with certificates of trusted CAs
         True - default path to truststore will be taken
         False - no verification will be made"""
-
-    llm_type: str = "IBM watsonx.ai"
-    """Type of llm."""
 
     watsonx_model: Any
 
@@ -76,36 +73,39 @@ class WatsonxLLM(LLM):
         else:
             if (
                 "token" not in values["credentials"]
-                and "TOKEN" not in os.environ
+                and "WATSONX_TOKEN" not in os.environ
                 and "password" not in values["credentials"]
-                and "PASSWORD" not in os.environ
+                and "WATSONX_PASSWORD" not in os.environ
                 and "apikey" not in values["credentials"]
                 and "WATSONX_APIKEY" not in os.environ
             ):
                 raise ValueError(
                     "Did not find 'token', 'password' or 'apikey',"
                     " please add an environment variable"
-                    " `TOKEN`, 'PASSWORD' or 'WATSONX_APIKEY' which contains it,"
+                    " `WATSONX_TOKEN`, 'WATSONX_PASSWORD' or 'WATSONX_APIKEY' "
+                    "which contains it,"
                     " or pass 'token', 'password' or 'apikey'"
                     " as a named parameter in `credentials`."
                 )
-            elif "token" in values["credentials"] or "TOKEN" in os.environ:
+            elif "token" in values["credentials"] or "WATSONX_TOKEN" in os.environ:
                 values["credentials"]["token"] = get_from_dict_or_env(
-                    values["credentials"], "token", "TOKEN"
+                    values["credentials"], "token", "WATSONX_TOKEN"
                 )
-            elif "password" in values["credentials"] or "PASSWORD" in os.environ:
+            elif (
+                "password" in values["credentials"] or "WATSONX_PASSWORD" in os.environ
+            ):
                 values["credentials"]["password"] = get_from_dict_or_env(
-                    values["credentials"], "password", "PASSWORD"
+                    values["credentials"], "password", "WATSONX_PASSWORD"
                 )
                 values["credentials"]["username"] = get_from_dict_or_env(
-                    values["credentials"], "username", "USERNAME"
+                    values["credentials"], "username", "WATSONX_USERNAME"
                 )
             elif "apikey" in values["credentials"] or "WATSONX_APIKEY" in os.environ:
                 values["credentials"]["apikey"] = get_from_dict_or_env(
                     values["credentials"], "apikey", "WATSONX_APIKEY"
                 )
                 values["credentials"]["username"] = get_from_dict_or_env(
-                    values["credentials"], "username", "USERNAME"
+                    values["credentials"], "username", "WATSONX_USERNAME"
                 )
 
         try:
@@ -132,16 +132,16 @@ class WatsonxLLM(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"model_id": self.model_id},
-            **{"params": self.params},
-            **{"project_id": self.project_id},
-            **{"space_id": self.space_id},
+            "model_id": self.model_id,
+            "params": self.params,
+            "project_id": self.project_id,
+            "space_id": self.space_id,
         }
 
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return self.llm_type
+        return "IBM watsonx.ai"
 
     def _call(
         self,
