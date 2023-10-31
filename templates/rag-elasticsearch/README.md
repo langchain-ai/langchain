@@ -19,7 +19,7 @@ export ELASTIC_PASSWORD = <ClOUD_PASSWORD>
 For local development with Docker, use:
 
 ```bash
-export ES_URL = "http://localhost:9200"
+export ES_URL="http://localhost:9200"
 ```
 
 And run an Elasticsearch instance in Docker with
@@ -88,7 +88,7 @@ runnable = RemoteRunnable("http://localhost:8000/rag-elasticsearch")
 For loading the fictional workplace documents, run the following command from the root of this repository:
 
 ```bash
-python ./data/load_documents.py
+python ingest.py
 ```
 
 However, you can choose from a large number of document loaders [here](https://python.langchain.com/docs/integrations/document_loaders).  
