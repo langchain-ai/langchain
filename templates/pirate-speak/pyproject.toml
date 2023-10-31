@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "pirate_speak"
+name = "pirate-speak"
 version = "0.0.1"
 description = ""
 authors = []

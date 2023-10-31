@@ -1,4 +1,4 @@
-# __package_name_last__
+# __package_name__
 
 TODO: What does this package do
 
