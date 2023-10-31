@@ -1,11 +1,13 @@
 
 # elastic-query-generator
 
-This package allows interacting with Elasticsearch analytics databases in natural language using LLMs. It builds search queries via the Elasticsearch DSL API (filters and aggregations). Note that the Elasticsearch client must have permissions for index listing, mapping description, and search queries.
+This template allows interacting with Elasticsearch analytics databases in natural language using LLMs. 
+
+It builds search queries via the Elasticsearch DSL API (filters and aggregations). 
 
 ## Environment Setup
 
-The environment setup includes installing Elasticsearch and populating it with data.
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ### Installing Elasticsearch
 
@@ -16,6 +18,8 @@ Create a free trial account on [Elastic Cloud](https://cloud.elastic.co/registra
 With a deployment, update the connection string.
 
 Password and connection (elasticsearch url) can be found on the deployment console.
+
+Note that the Elasticsearch client must have permissions for index listing, mapping description, and search queries.
 
 ### Populating with data
 

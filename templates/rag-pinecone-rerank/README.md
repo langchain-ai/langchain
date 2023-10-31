@@ -1,17 +1,17 @@
 
 # rag-pinecone-rerank
 
-This package performs RAG using Pinecone and OpenAI, with Cohere to perform re-ranking on returned documents. Re-ranking provides a way to rank retrieved documents using specified filters or criteria.
+This template performs RAG using Pinecone and OpenAI along with [Cohere to perform re-ranking](https://txt.cohere.com/rerank/) on returned documents. 
+
+Re-ranking provides a way to rank retrieved documents using specified filters or criteria.
 
 ## Environment Setup
 
-Ensure the following environment variables are set in `chain.py`:
+This template uses Pinecone as a vectorstore and requires that `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, and `PINECONE_INDEX` are set. 
 
-* `PINECONE_API_KEY`
-* `PINECONE_ENV`
-* `index_name`
-* `OPENAI_API_KEY`
-* `COHERE_API_KEY`
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+
+Set the `COHERE_API_KEY` environment variable to access the Cohere ReRank.
 
 ## Usage
 

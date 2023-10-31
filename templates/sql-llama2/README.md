@@ -1,7 +1,13 @@
 
 # sql-llama2
 
-This package enables you to interact with a SQL database using natural language, leveraging the powerful LLaMA2 tool. It is initially configured to use [Replicate](https://python.langchain.com/docs/integrations/llms/replicate), but can be adapted to any API that supports LLaMA2, including [Fireworks](https://python.langchain.com/docs/integrations/chat/fireworks) among others. The template includes an example database of 2023 NBA rosters. For more information on how to build this database, see [here](https://github.com/facebookresearch/llama-recipes/blob/main/demo_apps/StructuredLlama.ipynb).
+This template enables a user to interact with a SQL database using natural language. 
+
+It uses LLamA2-13b hosted by [Replicate](https://python.langchain.com/docs/integrations/llms/replicate), but can be adapted to any API that supports LLaMA2 including [Fireworks](https://python.langchain.com/docs/integrations/chat/fireworks). 
+
+The template includes an example database of 2023 NBA rosters. 
+
+For more information on how to build this database, see [here](https://github.com/facebookresearch/llama-recipes/blob/main/demo_apps/StructuredLlama.ipynb).
 
 ## Environment Setup
 

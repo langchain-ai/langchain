@@ -1,11 +1,11 @@
 
 # pirate-speak
 
-This package converts user input into pirate speak.
+This template converts user input into pirate speak.
 
 ## Environment Setup
 
-The pirate-speak package uses `OpenAI` by default. You need to set `OPENAI_API_KEY` in your environment.
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Usage
 

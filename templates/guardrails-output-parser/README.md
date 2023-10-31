@@ -1,11 +1,15 @@
 
 # guardrails-output-parser
 
-This package uses [guardrails-ai](https://github.com/guardrails-ai/guardrails) to validate output. Specifically, it protects against profanity, but with Guardrails you can protect against a multitude of things.
+This template uses [guardrails-ai](https://github.com/guardrails-ai/guardrails) to validate LLM output. 
+
+The `GuardrailsOutputParser` is set in `chain.py`.
+ 
+The default example protects against profanity.
 
 ## Environment Setup
 
-TODO: What environment variables need to be set (if any)
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Usage
 

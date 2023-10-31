@@ -1,16 +1,18 @@
 # sql-ollama
 
-This package allows you to interact with a SQL database in natural language in private, using an open source Language Learning Model (LLM).
+This template enables a user to interact with a SQL database using natural language. 
+
+It uses [Zephyr-7b](https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha) via [Ollama](https://ollama.ai/library/zephyr) to run inference locally on a Mac laptop.
 
 ## Environment Setup
 
-Before using this package, you need to set up Ollama and SQL database.
+Before using this template, you need to set up Ollama and SQL database.
 
 1. Follow instructions [here](https://python.langchain.com/docs/integrations/chat/ollama) to download Ollama.
 
 2. Download your LLM of interest:
 
-    * This package uses `llama2:13b-chat`
+    * This package uses `zephyr`: `ollama pull zephyr`
     * You can choose from many LLMs [here](https://ollama.ai/library)
 
 3. This package includes an example DB of 2023 NBA rosters. You can see instructions to build this DB [here](https://github.com/facebookresearch/llama-recipes/blob/main/demo_apps/StructuredLlama.ipynb).

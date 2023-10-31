@@ -1,12 +1,17 @@
+
 # rag-aws-bedrock
 
-This package is designed to connect with the AWS Bedrock service, a managed server that offers a set of foundation models. It primarily uses the `Anthropic Claude` for text generation and `Amazon Titan` for text embedding, and utilizes FAISS as the vectorstore.
+This template is designed to connect with the AWS Bedrock service, a managed server that offers a set of foundation models.
+
+It primarily uses the `Anthropic Claude` for text generation and `Amazon Titan` for text embedding, and utilizes FAISS as the vectorstore.
 
 For additional context on the RAG pipeline, refer to [this notebook](https://github.com/aws-samples/amazon-bedrock-workshop/blob/main/03_QuestionAnswering/01_qa_w_rag_claude.ipynb).
 
 ## Environment Setup
 
-Before you can use this package, ensure that you have configured `boto3` to work with your AWS account. For details on how to set up and configure `boto3`, visit [this page](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration).
+Before you can use this package, ensure that you have configured `boto3` to work with your AWS account. 
+
+For details on how to set up and configure `boto3`, visit [this page](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration).
 
 In addition, you need to install the `faiss-cpu` package to work with the FAISS vector store:
 

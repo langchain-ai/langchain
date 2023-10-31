@@ -1,11 +1,13 @@
 
 # extraction-openai-functions
 
-This package is designed for extraction of structured data from unstructured data, using OpenAI [function calling](https://python.langchain.com/docs/modules/chains/how_to/openai_functions). 
+This template uses [OpenAI function calling](https://python.langchain.com/docs/modules/chains/how_to/openai_functions) for extraction of structured output from unstructured input text.
+
+The extraction output schema can be set in `chain.py`. 
 
 ## Environment Setup
 
-The `OPENAI_API_KEY` environment variable must be set.
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Usage
 

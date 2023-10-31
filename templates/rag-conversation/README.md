@@ -1,11 +1,15 @@
 
 # rag-conversation
 
-This package is used for [conversational](https://python.langchain.com/docs/expression_language/cookbook/retrieval#conversational-retrieval-chain) [retrieval](https://python.langchain.com/docs/use_cases/question_answering/), which is one of the most popular LLM use-cases. It passes both a conversation history and retrieved documents into an LLM for synthesis.
+This template is used for [conversational](https://python.langchain.com/docs/expression_language/cookbook/retrieval#conversational-retrieval-chain) [retrieval](https://python.langchain.com/docs/use_cases/question_answering/), which is one of the most popular LLM use-cases. 
+
+It passes both a conversation history and retrieved documents into an LLM for synthesis.
 
 ## Environment Setup
 
-This template uses Pinecone as a vectorstore and requires that `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, and `PINECONE_INDEX` are set. Also, `OPENAI_API_KEY` should be set in order to use the OpenAI models.
+This template uses Pinecone as a vectorstore and requires that `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, and `PINECONE_INDEX` are set. 
+
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Usage
 

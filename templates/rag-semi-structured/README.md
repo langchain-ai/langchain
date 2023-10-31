@@ -1,16 +1,18 @@
 # rag-semi-structured
 
-This package performs Retrieval Augmented Generation (RAG) on semi-structured data, such as a PDF with text and tables.
+This template performs RAG on semi-structured data, such as a PDF with text and tables.
 
 ## Environment Setup
 
-This package requires some system-level package installations. On Mac, you can install the necessary packages with the following command:
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+
+This uses [Unstructured](https://unstructured-io.github.io/unstructured/) for PDF parsing, which requires some system-level package installations. 
+
+On Mac, you can install the necessary packages with the following:
 
 ```shell
 brew install tesseract poppler
 ```
-
-Make sure that the `OPENAI_API_KEY` is set in order to use the OpenAI models.
 
 ## Usage
 

@@ -1,17 +1,13 @@
 
 # rag-pinecone
 
-This package performs RAG using Pinecone and OpenAI.
+This template performs RAG using Pinecone and OpenAI.
 
 ## Environment Setup
 
-Ensure that you have set a few environment variables in `chain.py`:
+This template uses Pinecone as a vectorstore and requires that `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, and `PINECONE_INDEX` are set. 
 
-* `PINECONE_API_KEY`
-* `PINECONE_ENV`
-* `index_name`
-
-In addition, `OPENAI_API_KEY` should be set in order to use the OpenAI models.
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Usage
 

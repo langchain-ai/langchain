@@ -1,6 +1,10 @@
 # neo4j-generation
 
-The neo4j-generation package is designed to convert plain text into structured knowledge graphs. By using OpenAI's language model, it can efficiently extract structured information from text and construct a knowledge graph in Neo4j. This package is flexible and allows users to guide the extraction process by specifying a list of node labels and relationship types.
+The neo4j-generation template is designed to convert plain text into structured knowledge graphs. 
+
+By using OpenAI's language model, it can efficiently extract structured information from text and construct a knowledge graph in Neo4j. 
+
+This package is flexible and allows users to guide the extraction process by specifying a list of node labels and relationship types.
 
 ## Environment Setup
 

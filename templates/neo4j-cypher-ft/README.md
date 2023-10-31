@@ -1,7 +1,13 @@
 
 # neo4j-cypher-ft
 
-This package allows you to interact with a Neo4j graph database using natural language, leveraging OpenAI's LLM. Its main function is to convert natural language questions into Cypher queries (the language used to query Neo4j databases), execute these queries, and provide natural language responses based on the query's results. The package utilizes a full-text index for efficient mapping of text values to database entries, thereby enhancing the generation of accurate Cypher statements. In the provided example, the full-text index is used to map names of people and movies from the user's query to corresponding database entries.
+This template allows you to interact with a Neo4j graph database using natural language, leveraging OpenAI's LLM. 
+
+Its main function is to convert natural language questions into Cypher queries (the language used to query Neo4j databases), execute these queries, and provide natural language responses based on the query's results. 
+
+The package utilizes a full-text index for efficient mapping of text values to database entries, thereby enhancing the generation of accurate Cypher statements. 
+
+In the provided example, the full-text index is used to map names of people and movies from the user's query to corresponding database entries.
 
 ## Environment Setup
 

@@ -1,15 +1,15 @@
 
 # rag-weaviate
 
-This package performs RAG (Retriever-Augmented Generation) using Weaviate and OpenAI.
+This template performs RAG with Weaviate.
 
 ## Environment Setup
 
-This package connects to a hosted Weaviate vectorstore. Ensure the following environment variables are set in `chain.py`:
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+
+Also, ensure the following environment variables are set:
 * `WEAVIATE_ENVIRONMENT`
 * `WEAVIATE_API_KEY`
-
-Also, `OPENAI_API_KEY` should be set for using OpenAI models.
 
 ## Usage
 

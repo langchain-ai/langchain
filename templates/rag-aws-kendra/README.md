@@ -1,12 +1,24 @@
 # rag-aws-kendra
 
-This package is an application that utilizes Amazon Kendra, a machine learning powered search service, and Anthropic Claude for text generation. The application retrieves documents using a Retrieval chain to answer questions from your documents. It uses the `boto3` library to connect with the Bedrock service. For more context on building RAG applications with Amazon Kendra, check [this page](https://aws.amazon.com/blogs/machine-learning/quickly-build-high-accuracy-generative-ai-applications-on-enterprise-data-using-amazon-kendra-langchain-and-large-language-models/).
+This template is an application that utilizes Amazon Kendra, a machine learning powered search service, and Anthropic Claude for text generation. T
+
+he application retrieves documents using a Retrieval chain to answer questions from your documents. 
+
+It uses the `boto3` library to connect with the Bedrock service. 
+
+For more context on building RAG applications with Amazon Kendra, check [this page](https://aws.amazon.com/blogs/machine-learning/quickly-build-high-accuracy-generative-ai-applications-on-enterprise-data-using-amazon-kendra-langchain-and-large-language-models/).
 
 ## Environment Setup
 
-Please ensure to setup and configure `boto3` to work with your AWS account. You can follow the guide [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration).
+Please ensure to setup and configure `boto3` to work with your AWS account. 
 
-You should also have a Kendra Index set up before using this template. You can use [this Cloudformation template](https://github.com/aws-samples/amazon-kendra-langchain-extensions/blob/main/kendra_retriever_samples/kendra-docs-index.yaml) to create a sample index. This includes sample data containing AWS online documentation for Amazon Kendra, Amazon Lex, and Amazon SageMaker. Alternatively, you can use your own Amazon Kendra index if you have indexed your own dataset. 
+You can follow the guide [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration).
+
+You should also have a Kendra Index set up before using this template. 
+
+You can use [this Cloudformation template](https://github.com/aws-samples/amazon-kendra-langchain-extensions/blob/main/kendra_retriever_samples/kendra-docs-index.yaml) to create a sample index. 
+
+This includes sample data containing AWS online documentation for Amazon Kendra, Amazon Lex, and Amazon SageMaker. Alternatively, you can use your own Amazon Kendra index if you have indexed your own dataset. 
 
 The following environment variables need to be set:
 

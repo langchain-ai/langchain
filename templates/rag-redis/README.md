@@ -1,10 +1,15 @@
+
 # rag-redis
 
-This package uses Langserve and Redis to build a RAG search example for answering questions on financial 10k filings docs (for Nike). It relies on the sentence transformer `all-MiniLM-L6-v2` for embedding chunks of the pdf and user questions.
+This template performs RAG using Redis and OpenAI on financial 10k filings docs (for Nike). 
+
+It relies on the sentence transformer `all-MiniLM-L6-v2` for embedding chunks of the pdf and user questions.
 
 ## Environment Setup
 
-The following environment variables need to be set:
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+
+The following Redis environment variables need to be set:
 
 ```bash
 export REDIS_HOST = <YOUR REDIS HOST>

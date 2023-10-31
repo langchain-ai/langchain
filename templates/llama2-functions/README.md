@@ -1,9 +1,13 @@
 
 # llama2-functions
 
-This package is designed for extraction of structured data from unstructured data, using LLaMA2 that is fine-tuned for grammars and jsonschema. It supports tasks such as generating multiple questions from a user input in a RAG workflow and allows for specification of the schema to be extracted in `chain.py`.
+This template performs extraction of structured data from unstructured data using a [LLaMA2 model that supports a specified JSON output schema](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md). 
+
+The extraction schema can be set in `chain.py`.
 
 ## Environment Setup
+
+This will use a [LLaMA2-13b model hosted by Replicate](https://replicate.com/andreasjansson/llama-2-13b-chat-gguf/versions).
 
 Ensure that `REPLICATE_API_TOKEN` is set in your environment.
 

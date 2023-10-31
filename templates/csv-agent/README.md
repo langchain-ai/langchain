@@ -1,9 +1,11 @@
 
 # csv-agent
 
-This is a csv agent that uses both a Python REPL as well as a vectorstore to allow for interaction with text data.
+This template uses a [csv agent](https://python.langchain.com/docs/integrations/toolkits/csv) with tools (Python REPL) and memory (vectorstore) for interaction (question-answering) with text data.
 
 ## Environment Setup
+
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 To set up the environment, the `ingest.py` script should be run to handle the ingestion into a vectorstore.
 

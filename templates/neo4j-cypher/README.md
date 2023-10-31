@@ -1,7 +1,9 @@
 
 # neo4j_cypher
 
-This package allows you to interact with a Neo4j graph database in natural language, using an OpenAI LLM. It transforms a natural language question into a Cypher query (used to fetch data from Neo4j databases), executes the query, and provides a natural language response based on the query results.
+This template allows you to interact with a Neo4j graph database in natural language, using an OpenAI LLM. 
+
+It transforms a natural language question into a Cypher query (used to fetch data from Neo4j databases), executes the query, and provides a natural language response based on the query results.
 
 ## Environment Setup
 

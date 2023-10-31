@@ -1,11 +1,15 @@
 
 # extraction-anthropic-functions
 
-Extraction with Anthropic Function Calling is a package that enables [Anthropic function calling](https://python.langchain.com/docs/integrations/chat/extraction_anthropic_functions). This package is a wrapper around Anthropic's API that uses prompting and output parsing to replicate the OpenAI functions experience.
+This template enables [Anthropic function calling](https://python.langchain.com/docs/integrations/chat/anthropic_functions). 
+
+This can be used for various tasks, such as extraction or tagging.
+
+The function output schema can be set in `chain.py`. 
 
 ## Environment Setup
 
-The environment variable `ANTHROPIC_API_KEY` needs to be set.
+Set the `ANTHROPIC_API_KEY` environment variable to access the Anthropic models.
 
 ## Usage
 

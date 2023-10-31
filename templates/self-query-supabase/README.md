@@ -1,11 +1,17 @@
 
 # self-query-supabase
 
-This package is designed to host a LangServe API that can self-query Supabase. It allows you to use natural language to generate a structured query against the database. [Supabase](https://supabase.com/docs) is an open-source alternative to Firebase, built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL). It uses [pgvector](https://github.com/pgvector/pgvector) to store embeddings within your tables.
+This templates allows natural language structured quering of Supabase. 
+
+[Supabase](https://supabase.com/docs) is an open-source alternative to Firebase, built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL). 
+
+It uses [pgvector](https://github.com/pgvector/pgvector) to store embeddings within your tables.
 
 ## Environment Setup
 
-You need to load the API keys for [`SupabaseVectorStore`](https://python.langchain.com/docs/integrations/vectorstores/supabase) and [`OpenAIEmbeddings`](https://python.langchain.com/docs/integrations/text_embedding/openai) as environment variables. Create a `.env` file in your project's root directory:
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+
+Create a `.env` file in your project's root directory:
 
 _.env_
 
@@ -15,13 +21,9 @@ SUPABASE_SERVICE_KEY=
 OPENAI_API_KEY=
 ```
 
-To find your `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`, head to your Supabase project's [API settings](https://supabase.com/dashboard/project/_/settings/api). `SUPABASE_URL` corresponds to the Project URL and `SUPABASE_SERVICE_KEY` corresponds to the `service_role` API key. To get your `OPENAI_API_KEY`, navigate to [API keys](https://platform.openai.com/account/api-keys) on your OpenAI account and create a new secret key. Add this file to your `.gitignore` to prevent committing secrets:
+To find your `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`, head to your Supabase project's [API settings](https://supabase.com/dashboard/project/_/settings/api). 
 
-_.gitignore_
-
-```
-.env
-```
+`SUPABASE_URL` corresponds to the Project URL and `SUPABASE_SERVICE_KEY` corresponds to the `service_role` API key. 
 
 ## Usage
 

@@ -1,7 +1,9 @@
 
 # sql-llamacpp
 
-This package allows you to interact with a SQL database in natural language, using an open source Language Learning Model (LLM). 
+This template enables a user to interact with a SQL database using natural language. 
+
+It uses [Mistral-7b](https://mistral.ai/news/announcing-mistral-7b/) via [llama.cpp](https://github.com/ggerganov/llama.cpp) to run inference locally on a Mac laptop.
 
 ## Environment Setup
 

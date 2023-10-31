@@ -1,11 +1,11 @@
 
 # rewrite_retrieve_read
 
-**rewrite_retrieve_read** is a method proposed in the paper [Query Rewriting for Retrieval-Augmented Large Language Models](https://arxiv.org/pdf/2305.14283.pdf). It aims to optimize queries for Large Language Models (LLMs), especially in real-world scenarios, by prompting an LLM to rewrite the queries before conducting retrieval-augmented reading. This package demonstrates how you can easily implement this method using the LangChain Expression Language.
+This template implemenets a method for query transformation (re-writing) in the paper [Query Rewriting for Retrieval-Augmented Large Language Models](https://arxiv.org/pdf/2305.14283.pdf) to optimize for RAG. 
 
 ## Environment Setup
 
-TODO: What environment variables need to be set (if any)
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Usage
 

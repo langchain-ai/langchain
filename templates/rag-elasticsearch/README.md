@@ -1,9 +1,13 @@
 
 # rag-elasticsearch
 
-This package helps in using Langserve and ElasticSearch to build a RAG search example for answering questions on workplace documents. It relies on sentence transformer `MiniLM-L6-v2` for embedding passages and questions.
+This template performs RAG using ElasticSearch.
+
+It relies on sentence transformer `MiniLM-L6-v2` for embedding passages and questions.
 
 ## Environment Setup
+
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 To connect to your Elasticsearch instance, use the following environment variables:
 

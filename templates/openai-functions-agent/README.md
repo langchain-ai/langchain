@@ -1,13 +1,17 @@
+
 # openai-functions-agent
 
-This package creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take. This example creates an agent that can optionally look up things on the internet using Tavily's search engine.
+This template creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take. 
+
+This example creates an agent that can optionally look up information on the internet using Tavily's search engine.
 
 ## Environment Setup
 
 The following environment variables need to be set:
 
-- `OPENAI_API_KEY`: This template uses OpenAI by default. Make sure this is set in your environment.
-- `TAVILY_API_KEY`: This template uses Tavily by default. Make sure this is set in your environment.
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+
+Set the `TAVILY_API_KEY` environment variable to access Tavily.
 
 ## Usage
 

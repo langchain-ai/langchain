@@ -1,11 +1,15 @@
 
 # summarize-anthropic
 
-This package uses Anthropic's `Claude2` to summarize long documents. It leverages a large context window of 100k tokens, allowing for summarization of documents over 100 pages. This package uses various prompts from the LangChain hub.
+This template uses Anthropic's `Claude2` to summarize long documents. 
+
+It leverages a large context window of 100k tokens, allowing for summarization of documents over 100 pages. 
+
+You can see the summarization prompt in `chain.py`.
 
 ## Environment Setup
 
-You need to set the `ANTHROPIC_API_KEY` environment variable.
+Set the `ANTHROPIC_API_KEY` environment variable to access the Anthropic models.
 
 ## Usage
 

@@ -1,7 +1,7 @@
 
 # cassandra-entomology-rag
 
-This package offers a basic chain template showcasing the RAG pattern utilizing a vector store on Astra DB / Apache Cassandra®.
+This template will perform RAG using Astra DB and Apache Cassandra®.
 
 ## Environment Setup
 

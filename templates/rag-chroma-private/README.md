@@ -1,11 +1,23 @@
 
 # rag-chroma-private
 
-This package serves to execute private RAG (Relevance and Generation) operations with no reliance on external APIs. It utilizes Ollama for the Language Model (LLM) and GPT4All for embeddings. The package also integrates Chroma, an open-source vector database, and by default, it loads a popular blog post on agents. 
+This template performs RAG with no reliance on external APIs. 
+
+It utilizes Ollama the LLM, GPT4All for embeddings, and Chroma for the vectorstore.
+
+The vectorstore is created in `chain.py` and by default indexes a [popular blog posts on Agents](https://lilianweng.github.io/posts/2023-06-23-agent/) for question-answering. 
 
 ## Environment Setup
 
-To set up the environment, you need to download Ollama. Follow the instructions [here](https://python.langchain.com/docs/integrations/chat/ollama). You can choose the required LLM with Ollama. This template uses `llama2:7b-chat`, but there are many other options available [here](https://ollama.ai/library).
+To set up the environment, you need to download Ollama. 
+
+Follow the instructions [here](https://python.langchain.com/docs/integrations/chat/ollama). 
+
+You can choose the desired LLM with Ollama. 
+
+This template uses `llama2:7b-chat`, which can be accessed using `ollama pull llama2:7b-chat`.
+
+There are many other options available [here](https://ollama.ai/library).
 
 This package also uses [GPT4All](https://python.langchain.com/docs/integrations/text_embedding/gpt4all) embeddings. 
 

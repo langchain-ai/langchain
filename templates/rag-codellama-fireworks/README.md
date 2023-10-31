@@ -1,16 +1,15 @@
 
 # rag-codellama-fireworks
 
-This package provides a simple way to leverage Fireworks' fast LLM inference technology for code completion and code infilling, as detailed in the following blog posts:
-
-- [Accelerating Code Completion with Fireworks' Fast LLM Inference](https://blog.fireworks.ai/accelerating-code-completion-with-fireworks-fast-llm-inference-f4e8b5ec534a)
-- [Simplifying Code Infilling with Code Llama and Fireworks AI](https://blog.fireworks.ai/simplifying-code-infilling-with-code-llama-and-fireworks-ai-92c9bb06e29c)
+This template performs RAG on a codebase. 
+ 
+It uses codellama-34b hosted by Fireworks' [LLM inference API](https://blog.fireworks.ai/accelerating-code-completion-with-fireworks-fast-llm-inference-f4e8b5ec534a).
 
 ## Environment Setup
 
-The following environment variables need to be set:
+Set the `FIREWORKS_API_KEY` environment variable to access the Fireworks models.
 
-`FIREWORKS_API_KEY`: Your Fireworks API key. You can obtain it from [here](https://app.fireworks.ai/login?callbackURL=https://app.fireworks.ai).
+You can obtain it from [here](https://app.fireworks.ai/login?callbackURL=https://app.fireworks.ai).
 
 ## Usage
 

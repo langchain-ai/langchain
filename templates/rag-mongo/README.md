@@ -1,16 +1,15 @@
 
 # rag-mongo
 
-This package performs Retrieval-Augmented Generation (RAG) using MongoDB and OpenAI.
+This template performs RAG using MongoDB and OpenAI.
 
 ## Environment Setup
 
 The environment variables that need to be set are:
 
-* `MONGO_URI` - for connecting to MongoDB Atlas Vector Search
-* `OPENAI_API_KEY` - for accessing the OpenAI models
+Set the `MONGO_URI` for connecting to MongoDB Atlas Vector Search.
 
-You can set these variables in `chain.py`.
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Usage
 

@@ -1,10 +1,13 @@
+
 # anthropic-iterative-search
 
-This package is heavily inspired by [this notebook](https://github.com/anthropics/anthropic-cookbook/blob/main/long_context/wikipedia-search-cookbook.ipynb).
+This template will create a virtual research assistant with the ability to search Wikipedia to find answers to your questions.
+
+It is heavily inspired by [this notebook](https://github.com/anthropics/anthropic-cookbook/blob/main/long_context/wikipedia-search-cookbook.ipynb).
 
 ## Environment Setup
 
-TODO: What environment variables need to be set (if any)
+Set the `ANTHROPIC_API_KEY` environment variable to access the Anthropic models.
 
 ## Usage
 

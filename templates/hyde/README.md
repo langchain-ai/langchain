@@ -1,11 +1,19 @@
 
 # hyde
 
-Hyde is a Python package that stands for Hypothetical Document Embeddings (HyDE). It is a method used to enhance retrieval. This is achieved by generating a hypothetical document for an incoming query. The said document is then embedded, and that embedding is utilized to look up real documents that are similar to the hypothetical document. The underlying concept is that the hypothetical document may be closer in the embedding space than the query. This package can be used with a simple RAG architecture, although it can be easily incorporated into other more complex architectures. For a more detailed description, read the full paper [here](https://arxiv.org/abs/2212.10496).
+This template HyDE with RAG. 
+
+Hyde is a Python package that stands for Hypothetical Document Embeddings (HyDE). It is a method used to enhance retrieval by generating a hypothetical document for an incoming query. 
+
+The document is then embedded, and that embedding is utilized to look up real documents that are similar to the hypothetical document. 
+
+The underlying concept is that the hypothetical document may be closer in the embedding space than the query. 
+
+For a more detailed description, see the paper [here](https://arxiv.org/abs/2212.10496).
 
 ## Environment Setup
 
-TODO: What environment variables need to be set (if any)
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Usage
 

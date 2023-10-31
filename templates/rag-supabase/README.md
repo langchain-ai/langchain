@@ -1,10 +1,15 @@
+
 # rag_supabase
 
-This package allows you to host a retrieval augment generation (RAG) API using LangServe + Supabase, an open-source Firebase alternative. It is built on top of PostgreSQL, a free and open-source relational database management system (RDBMS) and uses pgvector to store embeddings within your tables.
+This template performs RAG with Supabase.
+
+Supabase is built on top of PostgreSQL, a free and open-source relational database management system (RDBMS) and uses pgvector to store embeddings within your tables.
 
 ## Environment Setup
 
-Create a `.env` file in the root of your project:
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+
+For Supabase, you can create a `.env` file in the root of your project:
 
 _.env_
 ```shell
@@ -17,8 +22,6 @@ To find your `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`, head to your Supabase pr
 
 - `SUPABASE_URL` corresponds to the Project URL
 - `SUPABASE_SERVICE_KEY` corresponds to the `service_role` API key
-
-To get your `OPENAI_API_KEY`, navigate to [API keys](https://platform.openai.com/account/api-keys) on your OpenAI account and create a new secret key.
 
 ## Usage
 

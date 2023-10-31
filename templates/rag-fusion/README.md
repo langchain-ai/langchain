@@ -1,10 +1,13 @@
+
 # rag-fusion
 
-RAG Fusion is a re-implementation of the project found at [this GitHub repo](https://github.com/Raudaschl/rag-fusion). All credit goes to the original author. It's a search methodology that aims to bridge the gap between traditional search paradigms and the multifaceted dimensions of human queries. Inspired by the capabilities of Retrieval Augmented Generation (RAG), this project goes a step further by employing multiple query generation and Reciprocal Rank Fusion to re-rank search results.
+This template enables RAG fusion using a re-implementation of the project found [here](https://github.com/Raudaschl/rag-fusion). 
+
+It performs multiple query generation and Reciprocal Rank Fusion to re-rank search results.
 
 ## Environment Setup
 
-TODO: What environment variables need to be set (if any)
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Usage
 

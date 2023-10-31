@@ -1,7 +1,7 @@
 
 # cassandra-synonym-caching
 
-This package provides a simple chain template showcasing the usage of LLM Caching backed by Astra DB / Apache Cassandra®.
+This template provides a simple chain template showcasing the usage of LLM Caching backed by Astra DB / Apache Cassandra®.
 
 ## Environment Setup
 

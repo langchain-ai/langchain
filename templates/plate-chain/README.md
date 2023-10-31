@@ -1,8 +1,15 @@
-Plate-chain is a Python package that allows for intricate plate management and arrangement. It is used in conjunction with the LangChain CLI to create and add to existing projects for an enhanced user experience.
+
+# pirate-chain
+
+This template enables parsing of data from laboratory plates. 
+
+In the context of biochemistry or molecular biology, laboratory plates are commonly used tools to hold samples in a grid-like format. 
+
+This can parse the resulting data into standardized (e.g., JSON) format for further processing.
 
 ## Environment Setup
 
-There are no environment variables required to run this package.
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Usage
 

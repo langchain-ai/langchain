@@ -1,10 +1,17 @@
+
 # rag-pinecone-multi-query
 
-This package is a template that performs RAG (Retrieval-Augmented Generation) using Pinecone and OpenAI with a multi-query retriever. It uses a Language Model (LLM) to generate multiple queries from different perspectives based on the user's input query. For each query, it retrieves a set of relevant documents and takes the unique union across all queries for answer synthesis.
+This template performs RAG using Pinecone and OpenAI with a multi-query retriever. 
+
+It uses an LLM to generate multiple queries from different perspectives based on the user's input query. 
+
+For each query, it retrieves a set of relevant documents and takes the unique union across all queries for answer synthesis.
 
 ## Environment Setup
 
-This template uses Pinecone as a vector store. The environment variables `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, and `PINECONE_INDEX` need to be set. In addition, `OPENAI_API_KEY` should be set to use the OpenAI models.
+This template uses Pinecone as a vectorstore and requires that `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, and `PINECONE_INDEX` are set. 
+
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Usage
 
