@@ -6,7 +6,7 @@ authors = ["Joe McElroy <joseph.mcelroy@elastic.co>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.8.1,<4.0"
 langchain = ">=0.0.313"
 openai = "^0.28.1"
 elasticsearch = "^8.10.0"
