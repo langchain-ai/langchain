@@ -1,6 +1,5 @@
 import os
 
-
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -16,15 +15,15 @@ def populate(vector_store):
         # must populate the vector store
         src_file_name = os.path.join(BASE_DIR, "..", "sources.txt")
         lines = [
-            l.strip()
-            for l in open(src_file_name).readlines()
-            if l.strip()
-            if l[0] != "#"
+            line.strip()
+            for line in open(src_file_name).readlines()
+            if line.strip()
+            if line[0] != "#"
         ]
         # deterministic IDs to prevent duplicates on multiple runs
         ids = [
-            "_".join(l.split(" ")[:2]).lower().replace(":", "")
-            for l in lines
+            "_".join(line.split(" ")[:2]).lower().replace(":", "")
+            for line in lines
         ]
         #
         vector_store.add_texts(texts=lines, ids=ids)
