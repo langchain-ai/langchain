@@ -56,7 +56,7 @@ These templates use OSS models.
 Extract data in a structured format
 - [Extraction Using OpenAI Functions](../extraction-openai-functions): Extract information from text using OpenAI Function Calling.
 - [Extraction Using Anthropic Functions](../extraction-anthropic-functions): Extract information from text using a LangChain wrapper around the Anthropic endpoints intended to simulate function calling.
-- [Extract BioTech Plate Data](../plate-chain): Extract plate data from messy Excel spreadsheets into a more normalized format.
+- [Extract BioTech Plate Data](../plate-chain): Extract microplate data from messy Excel spreadsheets into a more normalized format.
 
 ## 🤖 Agents
 - [OpenAI Functions Agent](../openai-functions-agent): Build a chatbot that can take actions. Uses OpenAI function calling and Tavily.

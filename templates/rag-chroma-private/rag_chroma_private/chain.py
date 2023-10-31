@@ -1,6 +1,5 @@
-from langchain.chat_models import ChatOllama
-
 # Load
+from langchain.chat_models import ChatOllama
 from langchain.document_loaders import WebBaseLoader
 from langchain.embeddings import GPT4AllEmbeddings
 from langchain.prompts import ChatPromptTemplate

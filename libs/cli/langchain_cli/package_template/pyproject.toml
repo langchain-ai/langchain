@@ -16,7 +16,7 @@ fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
-export_module = "__package_name__.chain"
+export_module = "__module_name__"
 export_attr = "chain"
 
 [build-system]

@@ -19,7 +19,12 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
-from langchain.callbacks.manager import Callbacks, collect_runs
+from langchain.callbacks.manager import (
+    Callbacks,
+    atrace_as_chain_group,
+    collect_runs,
+    trace_as_chain_group,
+)
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.callbacks.tracers.schemas import Run
@@ -1442,6 +1447,40 @@ async def test_prompt() -> None:
         },
     )
 
+    # nested inside trace_with_chain_group
+
+    async with atrace_as_chain_group("a_group") as manager:
+        stream_log_nested = [
+            part
+            async for part in prompt.astream_log(
+                {"question": "What is your name?"}, config={"callbacks": manager}
+            )
+        ]
+
+    assert len(stream_log_nested[0].ops) == 1
+    assert stream_log_nested[0].ops[0]["op"] == "replace"
+    assert stream_log_nested[0].ops[0]["path"] == ""
+    assert stream_log_nested[0].ops[0]["value"]["logs"] == {}
+    assert stream_log_nested[0].ops[0]["value"]["final_output"] is None
+    assert stream_log_nested[0].ops[0]["value"]["streamed_output"] == []
+    assert isinstance(stream_log_nested[0].ops[0]["value"]["id"], str)
+
+    assert stream_log_nested[1:] == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "/final_output",
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
+            }
+        ),
+        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
+    ]
+
 
 def test_prompt_template_params() -> None:
     prompt = ChatPromptTemplate.from_template(
@@ -1459,6 +1498,39 @@ def test_prompt_template_params() -> None:
 
     with pytest.raises(KeyError):
         prompt.invoke({})
+
+
+def test_with_listeners(mocker: MockerFixture) -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    chat = FakeListChatModel(responses=["foo"])
+
+    chain = prompt | chat
+
+    mock_start = mocker.Mock()
+    mock_end = mocker.Mock()
+
+    chain.with_listeners(on_start=mock_start, on_end=mock_end).invoke(
+        {"question": "Who are you?"}
+    )
+
+    assert mock_start.call_count == 1
+    assert mock_start.call_args[0][0].name == "RunnableSequence"
+    assert mock_end.call_count == 1
+
+    mock_start.reset_mock()
+    mock_end.reset_mock()
+
+    with trace_as_chain_group("hello") as manager:
+        chain.with_listeners(on_start=mock_start, on_end=mock_end).invoke(
+            {"question": "Who are you?"}, {"callbacks": manager}
+        )
+
+    assert mock_start.call_count == 1
+    assert mock_start.call_args[0][0].name == "RunnableSequence"
+    assert mock_end.call_count == 1
 
 
 @pytest.mark.asyncio
