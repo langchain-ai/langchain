@@ -131,7 +131,11 @@ jobs:
             --extra-index-url https://pypi.org/simple/ \
             "$PKG_NAME==$VERSION"
 
-          python -c "import $PKG_NAME; print(dir($PKG_NAME))"
+          # Replace all dashes in the package name with underscores,
+          # since that's how Python imports packages with dashes in the name.
+          IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g)"
+
+          python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
 
   publish:
     needs:
