@@ -157,12 +157,13 @@ class LogStreamCallbackHandler(BaseTracer):
         self.receive_stream = receive_stream
         self._key_map_by_run_id: Dict[UUID, str] = {}
         self._counter_map_by_name: Dict[str, int] = defaultdict(int)
+        self.root_id: Optional[UUID] = None
 
     def __aiter__(self) -> AsyncIterator[RunLogPatch]:
         return self.receive_stream.__aiter__()
 
     def include_run(self, run: Run) -> bool:
-        if run.parent_run_id is None:
+        if run.id == self.root_id:
             return False
 
         run_tags = run.tags or []
@@ -199,7 +200,8 @@ class LogStreamCallbackHandler(BaseTracer):
 
     def _on_run_create(self, run: Run) -> None:
         """Start a run."""
-        if run.parent_run_id is None:
+        if self.root_id is None:
+            self.root_id = run.id
             self.send_stream.send_nowait(
                 RunLogPatch(
                     {
@@ -273,7 +275,7 @@ class LogStreamCallbackHandler(BaseTracer):
                 )
             )
         finally:
-            if run.parent_run_id is None:
+            if run.id == self.root_id:
                 self.send_stream.send_nowait(
                     RunLogPatch(
                         {
