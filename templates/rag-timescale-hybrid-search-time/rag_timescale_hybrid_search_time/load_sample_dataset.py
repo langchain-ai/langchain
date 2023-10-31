@@ -13,7 +13,7 @@ from timescale_vector import client
 def parse_date(date_string: str) -> datetime:
     if date_string is None:
         return None
-    time_format = '%a %b %d %H:%M:%S %Y %z'
+    time_format = "%a %b %d %H:%M:%S %Y %z"
     return datetime.strptime(date_string, time_format)
 
 
@@ -29,9 +29,12 @@ def extract_metadata(record: dict, metadata: dict) -> dict:
     return metadata
 
 
-def load_ts_git_dataset(service_url,
-                        collection_name="timescale_commits",
-                        num_records: int = 500, partition_interval=timedelta(days=7)):
+def load_ts_git_dataset(
+    service_url,
+    collection_name="timescale_commits",
+    num_records: int = 500,
+    partition_interval=timedelta(days=7),
+):
     json_url = "https://s3.amazonaws.com/assets.timescale.com/ai/ts_git_log.json"
     tmp_file = "ts_git_log.json"
 
@@ -41,17 +44,16 @@ def load_ts_git_dataset(service_url,
     if not os.path.exists(json_file_path):
         response = requests.get(json_url)
         if response.status_code == 200:
-            with open(json_file_path, 'w') as json_file:
+            with open(json_file_path, "w") as json_file:
                 json_file.write(response.text)
         else:
-            print(
-                f"Failed to download JSON file. Status code: {response.status_code}")
+            print(f"Failed to download JSON file. Status code: {response.status_code}")
 
     loader = JSONLoader(
         file_path=json_file_path,
-        jq_schema='.commit_history[]',
+        jq_schema=".commit_history[]",
         text_content=False,
-        metadata_func=extract_metadata
+        metadata_func=extract_metadata,
     )
 
     documents = loader.load()
@@ -65,7 +67,8 @@ def load_ts_git_dataset(service_url,
     # Split the documents into chunks for embedding
     text_splitter = CharacterTextSplitter(
         chunk_size=1000,
-        chunk_overlap=200,)
+        chunk_overlap=200,
+    )
     docs = text_splitter.split_documents(documents)
 
     embeddings = OpenAIEmbeddings()
@@ -77,4 +80,5 @@ def load_ts_git_dataset(service_url,
         documents=docs,
         collection_name=collection_name,
         service_url=service_url,
-        time_partition_interval=partition_interval,)
+        time_partition_interval=partition_interval,
+    )

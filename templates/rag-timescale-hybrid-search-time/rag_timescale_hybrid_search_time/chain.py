@@ -26,8 +26,8 @@ from .load_sample_dataset import load_ts_git_dataset
 if os.environ.get("TIMESCALE_SERVICE_URL", None) is None:
     raise Exception("Missing `TIMESCALE_SERVICE_URL` environment variable.")
 
-SERVICE_URL = os.environ['TIMESCALE_SERVICE_URL']
-LOAD_SAMPLE_DATA = os.environ.get('LOAD_SAMPLE_DATA', False)
+SERVICE_URL = os.environ["TIMESCALE_SERVICE_URL"]
+LOAD_SAMPLE_DATA = os.environ.get("LOAD_SAMPLE_DATA", False)
 
 
 # DATASET SPECIFIC CODE
@@ -36,7 +36,11 @@ collection_name = "timescale_commits"
 partition_interval = timedelta(days=7)
 if LOAD_SAMPLE_DATA:
     load_ts_git_dataset(
-        SERVICE_URL, collection_name=collection_name, num_records=500, partition_interval=partition_interval)
+        SERVICE_URL,
+        collection_name=collection_name,
+        num_records=500,
+        partition_interval=partition_interval,
+    )
 
 # This will change depending on the metadata stored in your dataset.
 document_content_description = "The git log commit summary containing the commit hash, author, date of commit, change summary and change details"
@@ -61,7 +65,7 @@ metadata_field_info = [
         name="author_email",
         description="The email address of the author of the commit",
         type="string",
-    )
+    ),
 ]
 # END DATASET SPECIFIC CODE
 
@@ -75,7 +79,12 @@ vectorstore = TimescaleVector(
 
 llm = OpenAI(temperature=0)
 retriever = SelfQueryRetriever.from_llm(
-    llm, vectorstore, document_content_description, metadata_field_info, enable_limit=True, verbose=True
+    llm,
+    vectorstore,
+    document_content_description,
+    metadata_field_info,
+    enable_limit=True,
+    verbose=True,
 )
 
 template = """Answer the question based only on the following context:
