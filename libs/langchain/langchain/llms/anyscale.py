@@ -9,7 +9,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    Union,
+    cast,
 )
 
 from langchain.callbacks.manager import (
@@ -24,14 +24,7 @@ from langchain.llms.openai import (
 from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
-from langchain.utils import get_from_dict_or_env
-
-
-def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 def update_token_usage(
@@ -102,7 +95,7 @@ class Anyscale(BaseOpenAI):
         values["anyscale_api_base"] = get_from_dict_or_env(
             values, "anyscale_api_base", "ANYSCALE_API_BASE"
         )
-        values["anyscale_api_key"] = _to_secret(
+        values["anyscale_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "anyscale_api_key", "ANYSCALE_API_KEY")
         )
         try:
@@ -143,7 +136,7 @@ class Anyscale(BaseOpenAI):
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
         openai_creds: Dict[str, Any] = {
-            "api_key": self.anyscale_api_key,
+            "api_key": cast(SecretStr, self.anyscale_api_key).get_secret_value(),
             "api_base": self.anyscale_api_base,
         }
         return {**openai_creds, **{"model": self.model_name}, **super()._default_params}
