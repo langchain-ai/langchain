@@ -1,47 +1,72 @@
 # Semi structured RAG
 
-This template performs RAG on semi-structured data (e.g., a PDF with text and tables).
+This package performs Retrieval Augmented Generation (RAG) on semi-structured data, such as a PDF with text and tables.
 
-See this [blog post](https://langchain-blog.ghost.io/ghost/#/editor/post/652dc74e0633850001e977d4) for useful background context.
+## Environment Setup
 
-## Data loading 
+This package requires some system-level package installations. On Mac, you can install the necessary packages with the following command:
 
-We use [partition_pdf](https://unstructured-io.github.io/unstructured/bricks/partition.html#partition-pdf) from Unstructured to extract both table and text elements.
-
-This will require some system-level package installations, e.g., on Mac:
-
-```
+```shell
 brew install tesseract poppler
 ```
 
-##  Chroma
+Make sure that the `OPENAI_API_KEY` is set in order to use the OpenAI models.
 
-[Chroma](https://python.langchain.com/docs/integrations/vectorstores/chroma) is an open-source vector database.
+## Usage
 
-This template will create and add documents to the vector database in `chain.py`.
+To use this package, you should first have the LangChain CLI installed:
 
-These documents can be loaded from [many sources](https://python.langchain.com/docs/integrations/document_loaders).
-
-##  LLM
-
-Be sure that `OPENAI_API_KEY` is set in order to the OpenAI models.
-
-## Adding the template
-
-Create your LangServe app:
-```
-langchain app new my-app
-cd my-app
+```shell
+pip install -U "langchain-cli[serve]"
 ```
 
-Add template:
+To create a new LangChain project and install this as the only package, you can do:
+
+```shell
+langchain app new my-app --package rag-semi-structured
 ```
+
+If you want to add this to an existing project, you can just run:
+
+```shell
 langchain app add rag-semi-structured
 ```
 
-Start server:
+And add the following code to your `server.py` file:
+```python
+TODO: __app_route_code__
 ```
+
+(Optional) Let's now configure LangSmith. 
+LangSmith will help us trace, monitor and debug LangChain applications. 
+LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+If you don't have access, you can skip this section
+
+
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+```
+
+If you are inside this directory, then you can spin up a LangServe instance directly by:
+
+```shell
 langchain serve
 ```
 
-See Jupyter notebook `rag_semi_structured` for various way to connect to the template.
+This will start the FastAPI app with a server is running locally at 
+[http://localhost:8000](http://localhost:8000)
+
+We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+We can access the playground at [http://127.0.0.1:8000/rag-semi-structured/playground](http://127.0.0.1:8000/rag-semi-structured/playground)  
+
+We can access the template from code with:
+
+```python
+from langserve.client import RemoteRunnable
+
+runnable = RemoteRunnable("http://localhost:8000/rag-semi-structured")
+```
+
+For more details on how to connect to the template, refer to the Jupyter notebook `rag_semi_structured`.
