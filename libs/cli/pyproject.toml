@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-cli"
-version = "0.0.10"
+version = "0.0.11"
 description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
@@ -44,9 +44,15 @@ select = [
 [tool.poe.tasks]
 test = "poetry run pytest"
 watch = "poetry run ptw"
+version = "poetry version --short"
+bump = ["_bump_1", "_bump_2"]
 lint = ["_lint", "_check_formatting"]
 format = ["_lint_fix", "_format"]
 
+_bump_2.shell = """sed -i "" "/^__version__ =/c\\ \n__version__ = \\"$version\\"\n" langchain_cli/cli.py"""
+_bump_2.uses = { version = "version" }
+
+_bump_1 = "poetry version patch"
 _check_formatting = "poetry run ruff format . --diff"
 _lint = "poetry run ruff ."
 _format = "poetry run ruff format ."
