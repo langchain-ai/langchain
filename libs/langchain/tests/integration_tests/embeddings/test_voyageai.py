@@ -7,7 +7,6 @@ from langchain.embeddings.voyageai import VoyageEmbeddings
 MODEL = "voyage-01"
 
 
-@pytest.mark.scheduled
 def test_voyagi_embedding_documents() -> None:
     """Test voyage embeddings."""
     documents = ["foo bar"]
@@ -17,7 +16,6 @@ def test_voyagi_embedding_documents() -> None:
     assert len(output[0]) == 1024
 
 
-@pytest.mark.scheduled
 def test_voyage_embedding_documents_multiple() -> None:
     """Test voyage embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
@@ -29,7 +27,6 @@ def test_voyage_embedding_documents_multiple() -> None:
     assert len(output[2]) == 1024
 
 
-@pytest.mark.scheduled
 def test_voyage_embedding_query() -> None:
     """Test voyage embeddings."""
     document = "foo bar"
