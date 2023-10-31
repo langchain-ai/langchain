@@ -1,22 +1,20 @@
 [tool.poetry]
-name = "__package_name__"
-version = "0.0.1"
+name = "rag-codellama-fireworks"
+version = "0.1.0"
 description = ""
-authors = []
+authors = ["Lance Martin <lance@langchain.dev>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.313, <0.1"
-openai = "^0.28.1"
-
-[tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.4"
-fastapi = "^0.104.0"
-sse-starlette = "^1.6.5"
+gpt4all = ">=1.0.8"
+tiktoken = ">=0.5.1"
+chromadb = ">=0.4.14"
+fireworks-ai = ">=0.6.0"
 
 [tool.langserve]
-export_module = "__module_name__"
+export_module = "rag_codellama_fireworks"
 export_attr = "chain"
 
 [build-system]
