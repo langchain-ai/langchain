@@ -54,7 +54,7 @@
 
   Агент представляет собой LLM, которая принимает решение о дальнейшем действии, отслеживает его результат, и, с учетом результата, принимает следующее решение. Процесс повторяется до завершения. GigaChain предоставляет стандартный интерфейс для работы с агентами, выбор агентов и примеры готовых агентов.
 
-  Пример — [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/docs/use_cases/question_answering/agent_simulations/multi_llm_thre_player_dnd.ipynb).
+  Пример — - [CAMEL агент для разработки программ](cookbook/camel_role_playing.ipynb)
 
 - Создание памяти.
 
@@ -116,14 +116,12 @@ while(True):
 Модуль [`gigachat`](libs/langchain/langchain/chat_models/gigachat.py) позволяет авторизовать запросы от вашего приложения в GigaChat с помощью GigaChat API. Модуль поддерживает работу как в синхронном, так и в асинхронном режиме. Кроме этого модуль поддерживает обработку [потоковой передачи токенов](https://developers.sber.ru/docs/ru/gigachat/api/response-token-streaming)[^1].
 
 > [!NOTE]
-> Сейчас проект GigaChat API доступен только юридическим лицам и индивидуальным предпринимателям после подписания договора.
->
 > Как подключить GigaChat API читайте в [официальной документации](https://developers.sber.ru/docs/ru/gigachat/api/integration).
 
 Модуль поддерживает не только GigaChat. Поэтому, если ваше приложение уже использует другие нейросетевые модели, интеграция с GigaChat не составит труда.
 
 > [!NOTE]
-> Модуль не поддерживает работу с функциями, так как в настоящий момент они отсутствуют в GigaChat.
+> На данный момент GigaChat не поддерживает работу с функциями, но вы можете использовать другие LLM совместно с GigaChat.
 
 ## Коллекция примеров
 
@@ -139,6 +137,7 @@ while(True):
 - [Использование Elastic для поиска ответов по документам](docs/extras/integrations/retrievers/elastic_qna.ipynb)
 - [Генерация и выполнение кода с помощью PythonREPL](docs/docs/expression_language/cookbook/code_writing.ipynb)
 - [Работа с кэшем в GigaChain](docs/extras/integrations/llms/gigachain_caching.ipynb)
+- [CAMEL агент для разработки программ](cookbook/camel_role_playing.ipynb)
 - [Автономный агент AutoGPT с использованием GigaChat](cookbook/autogpt/autogpt.ipynb)
 - [Генерация плейлистов с помощью GigaChain и Spotify](docs/extras/modules/agents/how_to/playlists.ipynb)
 - Работа с LlamaIndex: [с помощью ретривера и QA цепочки](docs/docs/integrations/retrievers/llama_index_retriever.ipynb) / [с помощью тула и Conversational агента](docs/docs/modules/agents/tools/llama_index_tool.ipynb)
