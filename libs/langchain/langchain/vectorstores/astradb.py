@@ -124,15 +124,36 @@ class AstraDB(VectorStore):
             api_endpoint = self.api_endpoint,
             namespace=self.namespace,
         )
+        self._provision_collection()
         #
-        create_collection_response = self.astra_db.create_collection(
-            size=self._get_embedding_dimension(),
-            collection_name=self.collection_name,
-        )
         self.collection = AstraDBCollection(
             collection_name=self.collection_name,
             astra_db=self.astra_db,
         )
+
+    def _drop_collection(self) -> None:
+        """
+        Drop the collection from storage.
+
+        This is meant as an internal-usage method, no members
+        are set other than actual deletion on the backend.
+        """
+        drop_collection_response = self.astra_db.delete_collection(
+            collection_name=self.collection_name,
+        )
+
+    def _provision_collection(self) -> None:
+        """
+        Run the API invocation to create the collection on the backend.
+
+        Internal-usage method, no object members are set,
+        other than working on the underlying actual storage.
+        """
+        provision_collection_response = self.astra_db.create_collection(
+            size=self._get_embedding_dimension(),
+            collection_name=self.collection_name,
+        )
+        return None
 
     @property
     def embeddings(self) -> Embeddings:
@@ -151,17 +172,10 @@ class AstraDB(VectorStore):
         """
         return self._dont_flip_the_cos_score
 
-    # def delete_collection(self) -> None:
-    #     """
-    #     Just an alias for `clear`
-    #     (to better align with other VectorStore implementations).
-    #     """
-    #     self.clear()
-
     def clear(self) -> None:
-        """Empty the collection."""
-        # TODO - not available here, what do to?
-        raise NotImplementedError
+        """Empty the collection of all its stored entries."""
+        self._drop_collection()
+        self._provision_collection()
 
     def delete_by_document_id(self, document_id: str) -> bool:
         deletion_response = self.collection.delete(document_id)
@@ -189,6 +203,14 @@ class AstraDB(VectorStore):
                 ids,
             ))
         return all(deletion_responses)
+
+    def delete_collection(self) -> None:
+        """
+        Completely, destructively delete the collection from the database.
+        Stored data is lost and unrecoverable, resources are freed.
+        Use with caution.
+        """
+        self._drop_collection()
 
     def add_texts(
         self,
@@ -243,19 +265,28 @@ class AstraDB(VectorStore):
         all_ids = []
 
         def _handle_batch(document_batch):
-            batch_inserted = []
             im_result = self.collection.insert_many(
                 documents=document_batch,
                 options={"ordered": False},
                 partial_failures_allowed=True,
             )
+            if "status" not in im_result:
+                raise ValueError(
+                    f"API Exception while running bulk insertion: {str(im_result)}"
+                )
+
             batch_inserted = im_result["status"]["insertedIds"]
-            
             # estimation of the preexisting documents that failed
             missed_inserted_ids = {document["_id"] for document in document_batch} - set(batch_inserted)
             errors = im_result.get("errors", [])
-            assert len(missed_inserted_ids) == len(errors)
-            assert all(error["errorCode"] == "DOCUMENT_ALREADY_EXISTS" for error in errors)
+            # careful for other sources of error other than "doc already exists"
+            num_errors = len(errors)
+            unexpected_errors = any(error.get("errorCode") != "DOCUMENT_ALREADY_EXISTS" for error in errors)
+            if num_errors != len(missed_inserted_ids) or unexpected_errors:
+                raise ValueError(
+                    f"API Exception while running bulk insertion: {str(errors)}"
+                )
+
             # deal with the missing insertions as upserts
             missing_from_batch = [
                 document
