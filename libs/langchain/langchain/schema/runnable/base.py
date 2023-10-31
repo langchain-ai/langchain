@@ -2118,6 +2118,9 @@ class RunnableLambda(Runnable[Input, Output]):
             else:
                 return create_model("RunnableLambdaInput", __root__=(List[Any], None))
 
+        if self.InputType != Any:
+            return super().get_input_schema(config)
+
         if dict_keys := get_function_first_arg_dict_keys(func):
             return create_model(
                 "RunnableLambdaInput",
