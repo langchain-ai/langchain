@@ -1,5 +1,5 @@
 """
-Manage installable hub packages.
+Develop installable templates.
 """
 
 import re
@@ -14,10 +14,10 @@ from typing_extensions import Annotated
 
 from langchain_cli.utils.packages import get_package_root
 
-hub = typer.Typer(no_args_is_help=True, add_completion=False)
+package_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
 
-@hub.command()
+@package_cli.command()
 def new(
     name: Annotated[str, typer.Argument(help="The name of the folder to create")],
     with_poetry: Annotated[
@@ -26,7 +26,7 @@ def new(
     ] = False,
 ):
     """
-    Creates a new hub package.
+    Creates a new template package.
     """
     computed_name = name if name != "." else Path.cwd().name
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
@@ -36,33 +36,44 @@ def new(
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=name == ".")
 
     package_name_split = computed_name.split("/")
-    package_name_last = (
+    package_name = (
         package_name_split[-2]
         if len(package_name_split) > 1 and package_name_split[-1] == ""
         else package_name_split[-1]
     )
-    default_package_name = re.sub(
+    module_name = re.sub(
         r"[^a-zA-Z0-9_]",
         "_",
-        package_name_last,
+        package_name,
+    )
+
+    # generate app route code
+    chain_name = f"{module_name}_chain"
+    app_route_code = (
+        f"from {module_name} import chain as {chain_name}\n\n"
+        f'add_routes(app, {chain_name}, path="/{package_name}")'
     )
 
     # replace template strings
     pyproject = destination_dir / "pyproject.toml"
     pyproject_contents = pyproject.read_text()
     pyproject.write_text(
-        pyproject_contents.replace("__package_name__", default_package_name)
+        pyproject_contents.replace("__package_name__", module_name).replace(
+            "__module_name__", module_name
+        )
     )
 
     # move module folder
-    package_dir = destination_dir / default_package_name
+    package_dir = destination_dir / module_name
     shutil.move(destination_dir / "package_template", package_dir)
 
     # replace readme
     readme = destination_dir / "README.md"
     readme_contents = readme.read_text()
     readme.write_text(
-        readme_contents.replace("__package_name_last__", package_name_last)
+        readme_contents.replace("__package_name__", package_name).replace(
+            "__app_route_code__", app_route_code
+        )
     )
 
     # poetry install
@@ -70,8 +81,8 @@ def new(
         subprocess.run(["poetry", "install"], cwd=destination_dir)
 
 
-@hub.command()
-def start(
+@package_cli.command()
+def serve(
     *,
     port: Annotated[
         Optional[int], typer.Option(help="The port to run the server on")
@@ -81,7 +92,7 @@ def start(
     ] = None,
 ) -> None:
     """
-    Starts a demo LangServe instance for this hub package.
+    Starts a demo app for this template.
     """
     # load pyproject.toml
     project_dir = get_package_root()
