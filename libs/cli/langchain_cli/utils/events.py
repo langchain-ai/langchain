@@ -40,7 +40,6 @@ def create_events(events: List[EventDict]) -> None:
         requests.post(
             "https://app.firstpartyhq.com/events/v1/track/bulk",
             data=data,
-            headers={"Content-Type": "application/json"},
         )
     except Exception:
         pass
