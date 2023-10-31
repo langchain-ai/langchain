@@ -1,0 +1,29 @@
+from langchain.document_loaders.parsers.language.tree_sitter_segmenter import (
+    TreeSitterSegmenter,
+)
+
+CHUNK_QUERY = """
+    [
+        (struct_specifier
+            body: (field_declaration_list)) @struct
+        (enum_specifier
+            body: (enumerator_list)) @enum
+        (union_specifier
+            body: (field_declaration_list)) @union
+        (function_definition) @function
+    ]
+""".strip()
+
+class CSegmenter(TreeSitterSegmenter):
+    """Code segmenter for C."""
+
+    def get_language(self):
+        from tree_sitter_languages import get_language
+
+        return get_language("c")
+
+    def get_chunk_query(self) -> str:
+        return CHUNK_QUERY
+
+    def make_line_comment(self, text: str) -> str:
+        return f"// {text}"

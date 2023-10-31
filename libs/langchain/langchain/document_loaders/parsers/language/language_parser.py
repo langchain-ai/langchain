@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterator, Optional
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
+from langchain.document_loaders.parsers.language.c import CSegmenter
 from langchain.document_loaders.parsers.language.cpp import CPPSegmenter
 from langchain.document_loaders.parsers.language.csharp import CSharpSegmenter
 from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
@@ -17,6 +18,7 @@ from langchain.text_splitter import Language
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "py": Language.PYTHON,
     "js": Language.JS,
+    "c": Language.C,
     "cpp": Language.CPP,
     "cs": Language.CSHARP,
     "rb": Language.RUBY,
@@ -29,6 +31,7 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
 LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     Language.PYTHON: PythonSegmenter,
     Language.JS: JavaScriptSegmenter,
+    Language.C: CSegmenter,
     Language.CPP: CPPSegmenter,
     Language.CSHARP: CSharpSegmenter,
     Language.RUBY: RubySegmenter,
