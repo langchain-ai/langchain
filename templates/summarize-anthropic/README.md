@@ -1,3 +1,4 @@
+
 # summarize-anthropic
 
 This package uses Anthropic's `Claude2` to summarize long documents. It leverages a large context window of 100k tokens, allowing for summarization of documents over 100 pages. This package uses various prompts from the LangChain hub.
