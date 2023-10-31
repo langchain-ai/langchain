@@ -41,7 +41,7 @@ langchain app add rag-aws-bedrock
 
 Then add the following code to your `server.py` file:
 ```python
-TODO: __app_route_code__
+__app_route_code__
 ```
 
 (Optional) If you have access to LangSmith, you can configure it to trace, monitor, and debug LangChain applications. If you don't have access, you can skip this section.
