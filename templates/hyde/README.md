@@ -3,7 +3,7 @@
 
 This template HyDE with RAG. 
 
-Hyde is a Python package that stands for Hypothetical Document Embeddings (HyDE). It is a method used to enhance retrieval by generating a hypothetical document for an incoming query. 
+Hyde is a retrieval method that stands for Hypothetical Document Embeddings (HyDE). It is a method used to enhance retrieval by generating a hypothetical document for an incoming query. 
 
 The document is then embedded, and that embedding is utilized to look up real documents that are similar to the hypothetical document. 
 
