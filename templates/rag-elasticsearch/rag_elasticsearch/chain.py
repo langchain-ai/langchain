@@ -1,6 +1,6 @@
 from operator import itemgetter
 from typing import List, Tuple
-
+from langchain.pydantic_v1 import BaseModel
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.schema import format_document
@@ -56,3 +56,11 @@ _context = {
 }
 
 chain = _inputs | _context | LLM_CONTEXT_PROMPT | llm | StrOutputParser()
+
+
+# Add typing for input
+class Question(BaseModel):
+    __root__: str
+
+
+chain = chain.with_types(input_type=Question)

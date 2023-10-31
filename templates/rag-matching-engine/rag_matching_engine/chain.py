@@ -1,5 +1,6 @@
 import os
 
+from langchain.pydantic_v1 import BaseModel
 from langchain.embeddings import VertexAIEmbeddings
 from langchain.llms import VertexAI
 from langchain.prompts import PromptTemplate
@@ -67,3 +68,11 @@ chain = (
     | model
     | StrOutputParser()
 )
+
+
+# Add typing for input
+class Question(BaseModel):
+    __root__: str
+
+
+chain = chain.with_types(input_type=Question)
