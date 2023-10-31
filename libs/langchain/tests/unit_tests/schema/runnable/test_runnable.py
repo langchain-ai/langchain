@@ -504,6 +504,41 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     }
 
 
+def test_passthrough_assign_schema() -> None:
+    retriever = FakeRetriever()  # str -> List[Document]
+    prompt = PromptTemplate.from_template("{context} {question}")
+    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+
+    seq_w_assign: Runnable = (
+        RunnablePassthrough.assign(context=itemgetter("question") | retriever)
+        | prompt
+        | fake_llm
+    )
+
+    assert seq_w_assign.input_schema.schema() == {
+        "properties": {"question": {"title": "Question", "type": "string"}},
+        "title": "RunnableSequenceInput",
+        "type": "object",
+    }
+    assert seq_w_assign.output_schema.schema() == {
+        "title": "FakeListLLMOutput",
+        "type": "string",
+    }
+
+    invalid_seq_w_assign: Runnable = (
+        RunnablePassthrough.assign(context=itemgetter("question") | retriever)
+        | fake_llm
+    )
+
+    # fallback to RunnableAssign.input_schema if next runnable doesn't have
+    # expected dict input_schema
+    assert invalid_seq_w_assign.input_schema.schema() == {
+        "properties": {"question": {"title": "Question"}},
+        "title": "RunnableParallelInput",
+        "type": "object",
+    }
+
+
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )

@@ -1075,6 +1075,23 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
+        from langchain.schema.runnable.passthrough import RunnableAssign
+
+        if isinstance(self.first, RunnableAssign):
+            first = cast(RunnableAssign, self.first)
+            next_ = self.middle[0] if self.middle else self.last
+            next_input_schema = next_.get_input_schema(config)
+            if not next_input_schema.__custom_root_type__:
+                # it's a dict as expected
+                return create_model(  # type: ignore[call-overload]
+                    "RunnableSequenceInput",
+                    **{
+                        k: (v.annotation, v.default)
+                        for k, v in next_input_schema.__fields__.items()
+                        if k not in first.mapper.steps
+                    },
+                )
+
         return self.first.get_input_schema(config)
 
     def get_output_schema(
