@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.325"
+version = "0.0.326"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -21,7 +21,6 @@ azure-core = {version = "^1.26.4", optional=true}
 tqdm = {version = ">=4.48.0", optional = true}
 openapi-pydantic = {version = "^0.3.2", optional = true}
 faiss-cpu = {version = "^1", optional = true}
-hippo-api = {version = "1.1.0rc3", optional = true}
 wikipedia = {version = "^1", optional = true}
 elasticsearch = {version = "^8", optional = true}
 opensearch-py = {version = "^2.0.0", optional = true}
@@ -58,8 +57,7 @@ arxiv = {version = "^1.4", optional = true}
 pypdf = {version = "^3.4.0", optional = true}
 networkx = {version=">=2.6.3, <4", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
-deeplake = {version = "^3.6.8", optional = true}
-libdeeplake = {version = "^0.0.60", optional = true}
+deeplake = {version = "^3.8.3", optional = true}
 pgvector = {version = "^0.1.6", optional = true}
 psycopg2-binary = {version = "^2.9.5", optional = true}
 pyowm = {version = "^3.3.0", optional = true}
@@ -125,7 +123,6 @@ gitpython = {version = "^3.1.32", optional = true}
 librosa = {version="^0.10.0.post2", optional = true }
 feedparser = {version = "^6.0.10", optional = true}
 newspaper3k = {version = "^0.2.8", optional = true}
-amazon-textract-caller = {version = "<2", optional = true}
 xata = {version = "^1.0.0a7", optional = true}
 xmltodict = {version = "^0.13.0", optional = true}
 markdownify = {version = "^0.11.6", optional = true}
@@ -161,6 +158,8 @@ pandas = "^2.0.0"
 pytest-mock  = "^3.10.0"
 pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
+requests-mock = "^1.11.0"
+
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -191,7 +190,6 @@ python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
 tiktoken = "^0.3.2"
 anthropic = "^0.3.11"
-hippo_api= "1.1.0rc3"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1"
@@ -256,7 +254,6 @@ all = [
     "jinja2",
     "pinecone-client",
     "pinecone-text",
-    "hippo-api",
     "marqo",
     "pymongo",
     "weaviate-client",
@@ -271,7 +268,6 @@ all = [
     "nomic",
     "aleph-alpha-client",
     "deeplake",
-    "libdeeplake",
     "pgvector",
     "psycopg2-binary",
     "pyowm",
@@ -321,7 +317,6 @@ cli = [
 # merge-conflicts
 extended_testing = [
  "aleph-alpha-client",
- "amazon-textract-caller",
  "aiosqlite",
  "assemblyai",
  "beautifulsoup4",
