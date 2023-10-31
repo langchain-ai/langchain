@@ -317,7 +317,6 @@ cli = [
 # merge-conflicts
 extended_testing = [
  "aleph-alpha-client",
- "amazon-textract-caller",
  "aiosqlite",
  "assemblyai",
  "beautifulsoup4",
