@@ -34,13 +34,20 @@ _prompt = ChatPromptTemplate.from_messages(
 _model = ChatOpenAI()
 
 # Standard conversation chain.
-chat_chain = {
-    "chat_history": lambda x: _format_chat_history(x["chat_history"]),
-    "text": lambda x: x["text"],
-} | _prompt | _model | StrOutputParser()
+chat_chain = (
+    {
+        "chat_history": lambda x: _format_chat_history(x["chat_history"]),
+        "text": lambda x: x["text"],
+    }
+    | _prompt
+    | _model
+    | StrOutputParser()
+)
 
 # PII Detection logic
 analyzer = AnalyzerEngine()
+
+
 # You can customize this to detect any PII
 def _detect_pii(inputs: dict) -> bool:
     analyzer_results = analyzer.analyze(text=inputs["text"], language="en")
@@ -65,7 +72,7 @@ chain = RunnablePassthrough.assign(
     "response": _route_on_pii,
     # Return boolean of whether PII is detected so client can decided
     # whether or not to include in chat history
-    "pii_detected": lambda x: x["pii_detected"]
+    "pii_detected": lambda x: x["pii_detected"],
 }
 
 
