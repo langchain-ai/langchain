@@ -351,7 +351,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        inputs = self.prep_inputs(inputs)
+        inputs = self.prep_inputs(inputs, metadata)
         callback_manager = AsyncCallbackManager.configure(
             callbacks,
             self.callbacks,
