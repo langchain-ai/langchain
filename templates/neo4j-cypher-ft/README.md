@@ -1,24 +1,17 @@
-# Neo4j Knowledge Graph: Enhanced mapping from text to database using a full-text index
 
-This template allows you to chat with Neo4j graph database in natural language, using an OpenAI LLM.
-Its primary purpose is to convert a natural language question into a Cypher query (which is used to query Neo4j databases), 
-execute the query, and then provide a natural language response based on the query's results.
-The addition of the full-text index ensures efficient mapping of values from text to database for more precise Cypher statement generation.
-In this example, full-text index is used to map names of people and movies from the user's query with corresponding database entries.
+# neo4j-cypher-ft
 
-## Neo4j database
+This template allows you to interact with a Neo4j graph database using natural language, leveraging OpenAI's LLM. 
 
-There are a number of ways to set up a Neo4j database.
+Its main function is to convert natural language questions into Cypher queries (the language used to query Neo4j databases), execute these queries, and provide natural language responses based on the query's results. 
 
-### Neo4j Aura
+The package utilizes a full-text index for efficient mapping of text values to database entries, thereby enhancing the generation of accurate Cypher statements. 
 
-Neo4j AuraDB is a fully managed cloud graph database service.
-Create a free instance on [Neo4j Aura](https://neo4j.com/cloud/platform/aura-graph-database?utm_source=langchain&utm_content=langserve).
-When you initiate a free database instance, you'll receive credentials to access the database.
+In the provided example, the full-text index is used to map names of people and movies from the user's query to corresponding database entries.
 
-##  Environment variables
+## Environment Setup
 
-You need to define the following environment variables
+The following environment variables need to be set:
 
 ```
 OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
@@ -27,16 +20,65 @@ NEO4J_USERNAME=<YOUR_NEO4J_USERNAME>
 NEO4J_PASSWORD=<YOUR_NEO4J_PASSWORD>
 ```
 
-## Populating with data
+Additionally, if you wish to populate the DB with some example data, you can run `python ingest.py`.
+This script will populate the database with sample movie data and create a full-text index named `entity`, which is used to map person and movies from user input to database values for precise Cypher statement generation.
 
-If you want to populate the DB with some example data, you can run `python ingest.py`.
-This script will populate the database with sample movie data.
-Additionally, it will create an full-text index named `entity`, which is used to 
-map person and movies from user input to database values for precise Cypher statement generation.
 
-## Installation
+## Usage
 
-```bash
-# from inside your LangServe instance
-poe add neo4j-cypher-ft
+To use this package, you should first have the LangChain CLI installed:
+
+```shell
+pip install -U "langchain-cli[serve]"
+```
+
+To create a new LangChain project and install this as the only package, you can do:
+
+```shell
+langchain app new my-app --package neo4j-cypher-ft
+```
+
+If you want to add this to an existing project, you can just run:
+
+```shell
+langchain app add neo4j-cypher-ft
+```
+
+And add the following code to your `server.py` file:
+```python
+from neo4j_cypher_ft import chain as neo4j_cypher_ft_chain
+
+add_routes(app, neo4j_cypher_ft_chain, path="/neo4j-cypher-ft")
+```
+
+(Optional) Let's now configure LangSmith. 
+LangSmith will help us trace, monitor and debug LangChain applications. 
+LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+If you don't have access, you can skip this section
+
+
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+```
+
+If you are inside this directory, then you can spin up a LangServe instance directly by:
+
+```shell
+langchain serve
+```
+
+This will start the FastAPI app with a server running locally at 
+[http://localhost:8000](http://localhost:8000)
+
+We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+We can access the playground at [http://127.0.0.1:8000/neo4j-cypher-ft/playground](http://127.0.0.1:8000/neo4j-cypher-ft/playground)  
+
+We can access the template from code with:
+
+```python
+from langserve.client import RemoteRunnable
+
+runnable = RemoteRunnable("http://localhost:8000/neo4j-cypher-ft")
 ```

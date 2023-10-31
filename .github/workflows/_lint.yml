@@ -16,6 +16,9 @@ env:
   POETRY_VERSION: "1.6.1"
   WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
 
+  # This env var allows us to get inline annotations when ruff has complaints.
+  RUFF_OUTPUT_FORMAT: github
+
 jobs:
   build:
     runs-on: ubuntu-latest
