@@ -13,4 +13,4 @@ Be sure that you have set a few env variables in `chain.py`:
 
 ##  LLM
 
-Be sure that `OPENAI_API_KEY` is set in order to the OpenAI models.
+Be sure that `OPENAI_API_KEY` is set in order to use the OpenAI models.
