@@ -3,10 +3,8 @@ import re
 import xml.etree.cElementTree
 import xml.sax.saxutils
 from io import BytesIO
-from typing import List, Optional
+from typing import List, Optional, Sequence
 from xml.etree.ElementTree import ElementTree
-
-from quip_api.quip import HTTPError, QuipError
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -45,8 +43,8 @@ class QuipLoader(BaseLoader):
 
     def load(
         self,
-        folder_ids: Optional[list[str]] = None,
-        thread_ids: Optional[list[str]] = None,
+        folder_ids: Optional[List[str]] = None,
+        thread_ids: Optional[List[str]] = None,
         max_docs: Optional[int] = 1000,
         include_all_folders: bool = False,
         include_comments: bool = False,
@@ -68,8 +66,7 @@ class QuipLoader(BaseLoader):
                 "or set `include_all`_folders as True"
             )
 
-        if not thread_ids:
-            thread_ids = list()
+        thread_ids = thread_ids or []
 
         if folder_ids:
             for folder_id in folder_ids:
@@ -86,13 +83,15 @@ class QuipLoader(BaseLoader):
                     user["shared_folder_ids"], 0, thread_ids
                 )
 
-        thread_ids = set(list(thread_ids)[:max_docs])
+        thread_ids = list(set(thread_ids[:max_docs]))
         return self.process_threads(thread_ids, include_images, include_comments)
 
     def get_thread_ids_by_folder_id(
-        self, folder_id: str, depth: int, thread_ids: list[str]
+        self, folder_id: str, depth: int, thread_ids: List[str]
     ) -> None:
         """Get thread ids by folder id and update in thread_ids"""
+        from quip_api.quip import HTTPError, QuipError
+
         try:
             folder = self.quip_client.get_folder(folder_id)
         except QuipError as e:
@@ -125,7 +124,7 @@ class QuipLoader(BaseLoader):
                 thread_ids.append(child["thread_id"])
 
     def process_threads(
-        self, thread_ids: set[str], include_images: bool, include_messages: bool
+        self, thread_ids: Sequence[str], include_images: bool, include_messages: bool
     ) -> List[Document]:
         """Process a list of thread into a list of documents."""
         docs = []
