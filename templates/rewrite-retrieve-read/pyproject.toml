@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rewrite_retrieve_read"
+name = "rewrite-retrieve-read"
 version = "0.0.1"
 description = ""
 authors = []

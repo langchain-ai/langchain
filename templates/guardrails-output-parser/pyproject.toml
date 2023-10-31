@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "guardrails_output_parser"
+name = "guardrails-output-parser"
 version = "0.0.1"
 description = ""
 authors = []
