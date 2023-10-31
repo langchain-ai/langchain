@@ -2,12 +2,14 @@
 name = "rag-elasticsearch"
 version = "0.0.1"
 description = ""
-authors = ["Joe McElroy <joseph.mcelroy@elastic.co>"]
+authors = [
+    "Joe McElroy <joseph.mcelroy@elastic.co>",
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.313"
+langchain = ">=0.0.325"
 openai = "^0.28.1"
 elasticsearch = "^8.10.0"
 sentence-transformers = "^2.2.2"
@@ -18,7 +20,8 @@ tiktoken = "^0.5.1"
 export_module = "rag_elasticsearch"
 export_attr = "chain"
 
-
 [build-system]
-requires = ["poetry-core"]
+requires = [
+    "poetry-core",
+]
 build-backend = "poetry.core.masonry.api"
