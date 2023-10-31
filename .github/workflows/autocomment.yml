@@ -1,0 +1,51 @@
+name: Auto Comment
+on:
+  issues:
+    types:
+      - opened
+      - closed
+      - assigned
+  pull_request:
+    types:
+      - opened
+      - closed
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto Comment on Issues Opened
+        uses: wow-actions/auto-comment@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          issuesOpened: |
+            👋 @{{ author }}
+            Thank you for raising an issue. We will investigate into the matter and get back to you as soon as possible.
+            Please make sure you have given us as much context as possible.
+      - name: Auto Comment on Issues Closed
+        uses: wow-actions/auto-comment@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          issuesClosed: |
+            👋 @{{ author }} This issue is closed.
+      - name: Auto Comment on Pull Request Merged
+        uses: wow-actions/auto-comment@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pullRequestMerged: |
+            👋 @{{ author }} 🎉 Congrats on your merged pull request! Thanks for the valuable contribution! 👏🎉 Congrats on your merged pull request! Thanks for the valuable contribution! 👏
+      - name: Auto Comment on Pull Request Opened
+        uses: wow-actions/auto-comment@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pullRequestOpened: |
+            Hello👋 @{{ author }}, I hope you are doing well!
+            <br>
+            Thank you for raising your pull request and contributing to our Community 🎉
+            Please make sure you have followed our contributing guidelines. We will review it as soon as possible.
+      - name: Auto Comment on Issues Assigned
+        uses: wow-actions/auto-comment@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          issuesAssigned: |
+            Hello @{{ author }}, thank you for raising an issue. 🙌 I have assigned the issue to you. You can now start working on it. If you encounter any problems, please feel free to connect with us. 👍
