@@ -173,7 +173,7 @@ class ConfluenceLoader(BaseLoader):
                 ),
                 before_sleep=before_sleep_log(logger, logging.WARNING),
             )(func)
-        
+
         self.HTTPError_retry_decorator = HTTPError_retry_decorator
 
     @staticmethod
@@ -426,9 +426,9 @@ class ConfluenceLoader(BaseLoader):
             docs.extend(batch)
         return docs[:max_pages]
 
-
     def is_public_page(self, page: dict) -> bool:
         """Check if a page is publicly accessible."""
+
         @self.HTTPError_retry_decorator
         def is_public_page_(self, page: dict) -> bool:
             restrictions = self.confluence.get_all_restrictions_for_content(page["id"])
@@ -437,9 +437,8 @@ class ConfluenceLoader(BaseLoader):
                 and not restrictions["read"]["restrictions"]["user"]["results"]
                 and not restrictions["read"]["restrictions"]["group"]["results"]
             )
-        
+
         return is_public_page_(self, page)
-    
 
     def process_pages(
         self,
