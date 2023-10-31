@@ -593,6 +593,17 @@ class Runnable(Generic[Input, Output], ABC):
         on_end: Optional[Callable[[Run], None]] = None,
         on_error: Optional[Callable[[Run], None]] = None,
     ) -> Runnable[Input, Output]:
+        """
+        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Called before the runnable starts running, with the Run object.
+        on_end: Called after the runnable finishes running, with the Run object.
+        on_error: Called if the runnable throws an error, with the Run object.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+        """
         from langchain.callbacks.tracers.root_listeners import RootListenersTracer
 
         return RunnableBinding(
@@ -2353,6 +2364,17 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
         on_end: Optional[Callable[[Run], None]] = None,
         on_error: Optional[Callable[[Run], None]] = None,
     ) -> RunnableEach[Input, Output]:
+        """
+        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Called before the runnable starts running, with the Run object.
+        on_end: Called after the runnable finishes running, with the Run object.
+        on_error: Called if the runnable throws an error, with the Run object.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+        """
         return RunnableEach(
             bound=self.bound.with_listeners(
                 on_start=on_start, on_end=on_end, on_error=on_error
@@ -2519,6 +2541,17 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         on_end: Optional[Callable[[Run], None]] = None,
         on_error: Optional[Callable[[Run], None]] = None,
     ) -> Runnable[Input, Output]:
+        """
+        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Called before the runnable starts running, with the Run object.
+        on_end: Called after the runnable finishes running, with the Run object.
+        on_error: Called if the runnable throws an error, with the Run object.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+        """
         from langchain.callbacks.tracers.root_listeners import RootListenersTracer
 
         return self.__class__(
