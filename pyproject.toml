@@ -30,6 +30,7 @@ nbdoc = "^0.0.82"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.3"
+black = { version = "23.10.1", extras = ["jupyter"] }
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
