@@ -11114,8 +11114,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-<<<<<<< HEAD
-content-hash = "04d807630f205785230cc4b782a1e49f28336ce97b62811f8ad37b360b62b827"
-=======
-content-hash = "9345cd37346e9f369702f51b7e10dde8da91d5f7b659c8c204e5b46c360cd028"
->>>>>>> master
+content-hash = "d1fba97745ef2ae37045d7d5b7ca472760bfd2580d581ef6541db71feef53c9b"
