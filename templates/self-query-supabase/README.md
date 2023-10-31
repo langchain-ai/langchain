@@ -1,15 +1,28 @@
-# Self-querying with Supabase
 
-> [Supabase](https://supabase.com/docs) is an open-source Firebase alternative. It is built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL), a free and open-source relational database management system (RDBMS) and uses [pgvector](https://github.com/pgvector/pgvector) to store embeddings within your tables.
+# self-query-supabase
 
-Use this package to host a LangServe API that can [self-query](https://python.langchain.com/docs/modules/data_connection/retrievers/self_query) Supabase. You'll be able to use natural language to generate a structured query against the database.
+This templates allows natural language structured quering of Supabase. 
 
-## Install Package
+[Supabase](https://supabase.com/docs) is an open-source alternative to Firebase, built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL). 
 
-From within your `langservehub` project run:
+It uses [pgvector](https://github.com/pgvector/pgvector) to store embeddings within your tables.
+
+## Environment Setup
+
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+
+To get your `OPENAI_API_KEY`, navigate to [API keys](https://platform.openai.com/account/api-keys) on your OpenAI account and create a new secret key.
+
+To find your `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`, head to your Supabase project's [API settings](https://supabase.com/dashboard/project/_/settings/api). 
+
+- `SUPABASE_URL` corresponds to the Project URL
+- `SUPABASE_SERVICE_KEY` corresponds to the `service_role` API key
+
 
 ```shell
-poetry run poe add self-query-supabase
+export SUPABASE_URL=
+export SUPABASE_SERVICE_KEY=
+export OPENAI_API_KEY=
 ```
 
 ## Setup Supabase Database
@@ -57,47 +70,59 @@ Use these steps to setup your Supabase database if you haven't already.
    $$;
    ```
 
-## Setup Environment Variables
+## Usage
 
-Since we are using [`SupabaseVectorStore`](https://python.langchain.com/docs/integrations/vectorstores/supabase) and [`OpenAIEmbeddings`](https://python.langchain.com/docs/integrations/text_embedding/openai), we need to load their API keys.
-
-Create a `.env` file in the root of your project:
-
-_.env_
+To use this package, install the LangChain CLI first:
 
 ```shell
-SUPABASE_URL=
-SUPABASE_SERVICE_KEY=
-OPENAI_API_KEY=
+pip install -U "langchain-cli[serve]"
 ```
 
-To find your `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`, head to your Supabase project's [API settings](https://supabase.com/dashboard/project/_/settings/api).
-
-- `SUPABASE_URL` corresponds to the Project URL
-- `SUPABASE_SERVICE_KEY` corresponds to the `service_role` API key
-
-To get your `OPENAI_API_KEY`, navigate to [API keys](https://platform.openai.com/account/api-keys) on your OpenAI account and create a new secret key.
-
-Add this file to your `.gitignore` if it isn't already there (so that we don't commit secrets):
-
-_.gitignore_
-
-```
-.env
-```
-
-Install [`python-dotenv`](https://github.com/theskumar/python-dotenv) which we will use to load the environment variables into the app:
+Create a new LangChain project and install this package as the only one:
 
 ```shell
-poetry add python-dotenv
+langchain app new my-app --package self-query-supabase
 ```
 
-Finally, call `load_dotenv()` in `server.py`.
+To add this to an existing project, run:
 
-_app/server.py_
+```shell
+langchain app add self-query-supabase
+```
+
+Add the following code to your `server.py` file:
+```python
+from self_query_supabase import chain as self_query_supabase_chain
+
+add_routes(app, self_query_supabase_chain, path="/self-query-supabase")
+```
+
+(Optional) If you have access to LangSmith, configure it to help trace, monitor and debug LangChain applications. If you don't have access, skip this section.
+
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+```
+
+If you are inside this directory, then you can spin up a LangServe instance directly by:
+
+```shell
+langchain serve
+```
+
+This will start the FastAPI app with a server running locally at 
+[http://localhost:8000](http://localhost:8000)
+
+You can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+Access the playground at [http://127.0.0.1:8000/self-query-supabase/playground](http://127.0.0.1:8000/self-query-supabase/playground)
+
+Access the template from code with:
 
 ```python
-from dotenv import load_dotenv
+from langserve.client import RemoteRunnable
 
-load_dotenv()
+runnable = RemoteRunnable("http://localhost:8000/self-query-supabase")
 ```
+
+TODO: Instructions to set up the Supabase database and install the package.

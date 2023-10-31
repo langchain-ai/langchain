@@ -1,15 +1,70 @@
-# Extraction with LLaMA2 Function Calling
 
-This template shows how to do extraction of structured data from unstructured data, using LLaMA2 [fine-tuned for grammars and jsonschema](https://replicate.com/andreasjansson/llama-2-13b-chat-gguf).
+# llama2-functions
 
-Specify the scehma you want to extract in `chain.py`
+This template performs extraction of structured data from unstructured data using a [LLaMA2 model that supports a specified JSON output schema](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md). 
 
-By default, it will extract the title and author of papers.
+The extraction schema can be set in `chain.py`.
 
-##  LLM
+## Environment Setup
 
-This template will use a `Replicate` [hosted version](https://replicate.com/andreasjansson/llama-2-13b-chat-gguf) of LLaMA2 that has support for grammars and jsonschema. 
+This will use a [LLaMA2-13b model hosted by Replicate](https://replicate.com/andreasjansson/llama-2-13b-chat-gguf/versions).
 
-Based on the `Replicate` example, these are supplied directly in the prompt.
+Ensure that `REPLICATE_API_TOKEN` is set in your environment.
 
-Be sure that `REPLICATE_API_TOKEN` is set in your environment.
+## Usage
+
+To use this package, you should first have the LangChain CLI installed:
+
+```shell
+pip install -U "langchain-cli[serve]"
+```
+
+To create a new LangChain project and install this as the only package, you can do:
+
+```shell
+langchain app new my-app --package llama2-functions
+```
+
+If you want to add this to an existing project, you can just run:
+
+```shell
+langchain app add llama2-functions
+```
+
+And add the following code to your `server.py` file:
+```python
+from llama2_functions import chain as llama2_functions_chain
+
+add_routes(app, llama2_functions_chain, path="/llama2-functions")
+```
+
+(Optional) Let's now configure LangSmith. 
+LangSmith will help us trace, monitor and debug LangChain applications. 
+LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+If you don't have access, you can skip this section
+
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+```
+
+If you are inside this directory, then you can spin up a LangServe instance directly by:
+
+```shell
+langchain serve
+```
+
+This will start the FastAPI app with a server is running locally at 
+[http://localhost:8000](http://localhost:8000)
+
+We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+We can access the playground at [http://127.0.0.1:8000/llama2-functions/playground](http://127.0.0.1:8000/llama2-functions/playground)  
+
+We can access the template from code with:
+
+```python
+from langserve.client import RemoteRunnable
+
+runnable = RemoteRunnable("http://localhost:8000/llama2-functions")
+```

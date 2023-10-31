@@ -1,15 +1,25 @@
-# RAG with Supabase
 
-> [Supabase](https://supabase.com/docs) is an open-source Firebase alternative. It is built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL), a free and open-source relational database management system (RDBMS) and uses [pgvector](https://github.com/pgvector/pgvector) to store embeddings within your tables.
+# rag_supabase
 
-Use this package to host a retrieval augment generation (RAG) API using LangServe + Supabase.
+This template performs RAG with Supabase.
 
-## Install Package
+[Supabase](https://supabase.com/docs) is an open-source Firebase alternative. It is built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL), a free and open-source relational database management system (RDBMS) and uses [pgvector](https://github.com/pgvector/pgvector) to store embeddings within your tables.
+## Environment Setup
 
-From within your `langservehub` project run:
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+
+To get your `OPENAI_API_KEY`, navigate to [API keys](https://platform.openai.com/account/api-keys) on your OpenAI account and create a new secret key.
+
+To find your `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`, head to your Supabase project's [API settings](https://supabase.com/dashboard/project/_/settings/api). 
+
+- `SUPABASE_URL` corresponds to the Project URL
+- `SUPABASE_SERVICE_KEY` corresponds to the `service_role` API key
+
 
 ```shell
-poetry run poe add rag-supabase
+export SUPABASE_URL=
+export SUPABASE_SERVICE_KEY=
+export OPENAI_API_KEY=
 ```
 
 ## Setup Supabase Database
@@ -61,43 +71,63 @@ Use these steps to setup your Supabase database if you haven't already.
 
 Since we are using [`SupabaseVectorStore`](https://python.langchain.com/docs/integrations/vectorstores/supabase) and [`OpenAIEmbeddings`](https://python.langchain.com/docs/integrations/text_embedding/openai), we need to load their API keys.
 
-Create a `.env` file in the root of your project:
+## Usage
 
-_.env_
-
-```shell
-SUPABASE_URL=
-SUPABASE_SERVICE_KEY=
-OPENAI_API_KEY=
-```
-
-To find your `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`, head to your Supabase project's [API settings](https://supabase.com/dashboard/project/_/settings/api).
-
-- `SUPABASE_URL` corresponds to the Project URL
-- `SUPABASE_SERVICE_KEY` corresponds to the `service_role` API key
-
-To get your `OPENAI_API_KEY`, navigate to [API keys](https://platform.openai.com/account/api-keys) on your OpenAI account and create a new secret key.
-
-Add this file to your `.gitignore` if it isn't already there (so that we don't commit secrets):
-
-_.gitignore_
-
-```
-.env
-```
-
-Install [`python-dotenv`](https://github.com/theskumar/python-dotenv) which we will use to load the environment variables into the app:
+First, install the LangChain CLI:
 
 ```shell
-poetry add python-dotenv
+pip install -U "langchain-cli[serve]"
 ```
 
-Finally, call `load_dotenv()` in `server.py`.
+To create a new LangChain project and install this as the only package, you can do:
 
-_app/server.py_
+```shell
+langchain app new my-app --package rag_supabase
+```
+
+If you want to add this to an existing project, you can just run:
+
+```shell
+langchain app add rag_supabase
+```
+
+And add the following code to your `server.py` file:
 
 ```python
 from dotenv import load_dotenv
 
 load_dotenv()
 ```
+
+(Optional) Let's now configure LangSmith. 
+LangSmith will help us trace, monitor and debug LangChain applications. 
+LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+If you don't have access, you can skip this section
+
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+```
+
+If you are inside this directory, then you can spin up a LangServe instance directly by:
+
+```shell
+langchain serve
+```
+
+This will start the FastAPI app with a server is running locally at 
+[http://localhost:8000](http://localhost:8000)
+
+We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+We can access the playground at [http://127.0.0.1:8000/rag_supabase/playground](http://127.0.0.1:8000/rag_supabase/playground)  
+
+We can access the template from code with:
+
+```python
+from langserve.client import RemoteRunnable
+
+runnable = RemoteRunnable("http://localhost:8000/rag_supabase")
+```
+
+TODO: Add details about setting up the Supabase database
