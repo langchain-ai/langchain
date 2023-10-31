@@ -300,7 +300,6 @@ all = [
     "momento",
     "singlestoredb",
     "tigrisdb",
-    "tiledb-vector-search",
     "nebula3-python",
     "awadb",
     "esprima",
