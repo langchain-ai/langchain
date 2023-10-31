@@ -1,12 +1,14 @@
-import logging
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from __future__ import annotations
 
-from transwarp_hippo_api.hippo_client import HippoClient, HippoField, HippoTable
-from transwarp_hippo_api.hippo_type import HippoType, IndexType, MetricType
+import logging
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
+
+if TYPE_CHECKING:
+    from transwarp_hippo_api.hippo_client import HippoClient
 
 # Default connection
 DEFAULT_HIPPO_CONNECTION = {
@@ -20,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 class Hippo(VectorStore):
-
     """`Hippo` vector store.
 
     You need to install `hippo-api` and run Hippo.
@@ -105,8 +106,8 @@ class Hippo(VectorStore):
         # Create the connection to the server
         if connection_args is None:
             connection_args = DEFAULT_HIPPO_CONNECTION
-        self.hc: HippoClient = self._create_connection_alias(connection_args)
-        self.col: HippoTable = Optional[HippoTable]
+        self.hc = self._create_connection_alias(connection_args)
+        self.col: Any = None
 
         # If the collection exists, delete it
         try:
@@ -136,6 +137,14 @@ class Hippo(VectorStore):
     def _create_connection_alias(self, connection_args: dict) -> HippoClient:
         """Create the connection to the Hippo server."""
         # Grab the connection arguments that are used for checking existing connection
+        try:
+            from transwarp_hippo_api.hippo_client import HippoClient
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import transwarp_hipp_api, please install with "
+                "`pip install hippo-api`."
+            ) from e
+
         host: str = connection_args.get("host", None)
         port: int = connection_args.get("port", None)
         username: str = connection_args.get("username", "shiva")
@@ -167,11 +176,13 @@ class Hippo(VectorStore):
             self._create_collection(embeddings, metadatas)
         self._extract_fields()
         self._create_index()
-        # self._create_search_params()
 
     def _create_collection(
         self, embeddings: list, metadatas: Optional[List[dict]] = None
     ) -> None:
+        from transwarp_hippo_api.hippo_client import HippoField
+        from transwarp_hippo_api.hippo_type import HippoType
+
         # Determine embedding dim
         dim = len(embeddings[0])
         logger.debug(f"[_create_collection] dim: {dim}")
@@ -233,8 +244,10 @@ class Hippo(VectorStore):
 
     def _extract_fields(self) -> None:
         """Grab the existing fields from the Collection"""
+        from transwarp_hippo_api.hippo_client import HippoTable
+
         if isinstance(self.col, HippoTable):
-            schema: List[HippoField] = self.col.schema
+            schema = self.col.schema
             logger.debug(f"[_extract_fields] schema:{schema}")
             for x in schema:
                 self.fields.append(x.name)
@@ -246,6 +259,8 @@ class Hippo(VectorStore):
     # vector type columns.
     def _get_index(self) -> Optional[Dict[str, Any]]:
         """Return the vector index information if it exists"""
+        from transwarp_hippo_api.hippo_client import HippoTable
+
         if isinstance(self.col, HippoTable):
             table_info = self.hc.get_table_info(
                 self.table_name, self.database_name
@@ -265,6 +280,8 @@ class Hippo(VectorStore):
     # TO Indexes can only be created for the self._vector_field field.
     def _create_index(self) -> None:
         """Create a index on the collection"""
+        from transwarp_hippo_api.hippo_client import HippoTable
+        from transwarp_hippo_api.hippo_type import IndexType, MetricType
 
         if isinstance(self.col, HippoTable) and self._get_index() is None:
             if self._get_index() is None:
@@ -403,6 +420,7 @@ class Hippo(VectorStore):
             If the collection has not yet been created,
             this method will create a new collection.
         """
+        from transwarp_hippo_api.hippo_client import HippoTable
 
         if not texts or all(t == "" for t in texts):
             logger.debug("Nothing to insert, skipping.")
