@@ -2,7 +2,7 @@
 name = "rag-matching-engine"
 version = "0.0.1"
 description = ""
-authors = [Leonid Kuligin]
+authors = ["Leonid Kuligin"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
