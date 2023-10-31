@@ -1,7 +1,7 @@
 
 # rag-elasticsearch
 
-This template performs RAG using ElasticSearch.
+This template performs RAG using [ElasticSearch](https://python.langchain.com/docs/integrations/vectorstores/elasticsearch).
 
 It relies on sentence transformer `MiniLM-L6-v2` for embedding passages and questions.
 
@@ -20,6 +20,11 @@ For local development with Docker, use:
 
 ```bash
 export ES_URL = "http://localhost:9200"
+```
+
+And run an Elasticsearch instance in Docker with
+```bash
+docker run -p 9200:9200 -e "discovery.type=single-node" -e "xpack.security.enabled=false" -e "xpack.security.http.ssl.enabled=false" docker.elastic.co/elasticsearch/elasticsearch:8.9.0
 ```
 
 ## Usage
