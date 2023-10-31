@@ -44,7 +44,7 @@ class TestQuipLoader:
         with pytest.raises(
             ValueError,
             match="Must specify at least one among `folder_ids`, `thread_ids` or "
-                  "set `include_all`_folders as True",
+            "set `include_all`_folders as True",
         ):
             quip_loader.load()
 

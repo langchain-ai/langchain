@@ -188,7 +188,8 @@ class QuipLoader(BaseLoader):
         except ImportError:
             raise ImportError(
                 "`Pillow or pytesseract` package not found, "
-                "please run " "`pip install Pillow` or `pip install pytesseract`"
+                "please run "
+                "`pip install Pillow` or `pip install pytesseract`"
             )
 
         for img in tree.iter("img"):
