@@ -35,7 +35,7 @@ retriever = WeaviateHybridSearchRetriever(
     index_name=WEAVIATE_INDEX_NAME,
     text_key="text",
     attributes=[],
-    create_schema_if_missing=True
+    create_schema_if_missing=True,
 )
 
 # # Ingest code - you may need to run this the first time
@@ -66,5 +66,3 @@ chain = (
     | model
     | StrOutputParser()
 )
-
-
