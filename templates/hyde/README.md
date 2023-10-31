@@ -29,9 +29,9 @@ langchain app add hyde
 
 And add the following code to your `server.py` file:
 ```python
-from hyde.chain import chain as hyde.chain_chain
+from hyde.chain import chain as hyde_chain
 
-add_routes(app, hyde.chain_chain, path="/hyde")
+add_routes(app, hyde_chain, path="/hyde")
 ```
 
 (Optional) Let's now configure LangSmith. 

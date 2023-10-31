@@ -45,9 +45,9 @@ langchain app add elastic-query-generator
 
 And add the following code to your `server.py` file:
 ```python
-from elastic_query_generator.chain import chain as elastic_query_generator.chain_chain
+from elastic_query_generator.chain import chain as elastic_query_generator_chain
 
-add_routes(app, elastic_query_generator.chain_chain, path="/elastic-query-generator")
+add_routes(app, elastic_query_generator_chain, path="/elastic-query-generator")
 ```
 
 (Optional) Let's now configure LangSmith. 
