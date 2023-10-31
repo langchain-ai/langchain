@@ -140,6 +140,8 @@ rspace_client = {version = "^2.5.0", optional = true}
 upstash-redis = {version = "^0.15.0", optional = true}
 google-cloud-documentai = {version = "^2.20.1", optional = true}
 fireworks-ai = {version = "^0.6.0", optional = true, python = ">=3.9,<4.0"}
+dateparser = {version = "^1.1.8", optional = true}
+pdf2image = {version = "^1.16.3", optional = true}
 
 
 [tool.poetry.group.test.dependencies]
