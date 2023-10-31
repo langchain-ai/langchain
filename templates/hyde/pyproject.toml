@@ -9,6 +9,8 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.313, <0.1"
 openai = "^0.28.1"
+chromadb = "^0.4.15"
+tiktoken = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"

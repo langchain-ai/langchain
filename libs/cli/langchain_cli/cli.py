@@ -1,18 +1,20 @@
-import subprocess
 from typing import Optional
 
 import typer
 from typing_extensions import Annotated
 
-from langchain_cli.namespaces import hub, serve
+from langchain_cli.namespaces import app as app_namespace
+from langchain_cli.namespaces import template as template_namespace
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
-app.add_typer(hub.hub, name="hub", help=hub.__doc__)
-app.add_typer(serve.serve, name="serve", help=serve.__doc__)
+app.add_typer(
+    template_namespace.package_cli, name="template", help=template_namespace.__doc__
+)
+app.add_typer(app_namespace.app_cli, name="app", help=app_namespace.__doc__)
 
 
 @app.command()
-def start(
+def serve(
     *,
     port: Annotated[
         Optional[int], typer.Option(help="The port to run the server on")
@@ -22,14 +24,14 @@ def start(
     ] = None,
 ) -> None:
     """
-    Start the LangServe instance, whether it's a hub package or a serve project.
+    Start the LangServe app, whether it's a template or an app.
     """
-    cmd = ["poetry", "run", "poe", "start"]
-    if port is not None:
-        cmd += ["--port", str(port)]
-    if host is not None:
-        cmd += ["--host", host]
-    subprocess.run(cmd)
+
+    # try starting template package, if error, try langserve
+    try:
+        template_namespace.serve(port=port, host=host)
+    except KeyError:
+        app_namespace.serve(port=port, host=host)
 
 
 if __name__ == "__main__":

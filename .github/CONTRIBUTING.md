@@ -136,9 +136,16 @@ Run these locally before submitting a PR; the CI system will check also.
 
 Formatting for this project is done via a combination of [Black](https://black.readthedocs.io/en/stable/) and [ruff](https://docs.astral.sh/ruff/rules/).
 
-To run formatting for this project:
+To run formatting for docs, cookbook and templates:
 
 ```bash
+make format
+```
+
+To run formatting for a library, run the same command from the relevant library directory:
+
+```bash
+cd libs/{LIBRARY}
 make format
 ```
 
@@ -154,9 +161,16 @@ This is especially useful when you have made changes to a subset of the project 
 
 Linting for this project is done via a combination of [Black](https://black.readthedocs.io/en/stable/), [ruff](https://docs.astral.sh/ruff/rules/), and [mypy](http://mypy-lang.org/).
 
-To run linting for this project:
+To run linting for docs, cookbook and templates:
 
 ```bash
+make lint
+```
+
+To run linting for a library, run the same command from the relevant library directory:
+
+```bash
+cd libs/{LIBRARY}
 make lint
 ```
 

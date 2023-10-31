@@ -4,7 +4,7 @@ import hmac
 import json
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Type, Union
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 from urllib.parse import urlparse
 
 import requests
@@ -27,7 +27,11 @@ from langchain.schema.messages import (
     HumanMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -114,13 +118,6 @@ def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
     token_usage = response["usage"]
     llm_output = {"token_usage": token_usage}
     return ChatResult(generations=generations, llm_output=llm_output)
-
-
-def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
 
 
 class ChatHunyuan(BaseChatModel):
@@ -213,7 +210,7 @@ class ChatHunyuan(BaseChatModel):
             "hunyuan_secret_id",
             "HUNYUAN_SECRET_ID",
         )
-        values["hunyuan_secret_key"] = _to_secret(
+        values["hunyuan_secret_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
                 "hunyuan_secret_key",
