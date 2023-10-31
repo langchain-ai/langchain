@@ -63,6 +63,7 @@ class TileDB(VectorStore):
         embedding: Embeddings,
         index_uri: str,
         metric: str,
+        *,
         vector_index_uri: str = "",
         docs_array_uri: str = "",
         config: Optional[Mapping[str, Any]] = None,
@@ -108,13 +109,13 @@ class TileDB(VectorStore):
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
-        # TODO: Accept embedding object directly
-        return None
+        return self.embedding
 
     def process_index_results(
         self,
         ids: List[int],
         scores: List[float],
+        *,
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
         score_threshold: float = MAX_FLOAT,
@@ -170,6 +171,7 @@ class TileDB(VectorStore):
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
+        *,
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
         fetch_k: int = 20,
@@ -208,6 +210,7 @@ class TileDB(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
+        *,
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
         fetch_k: int = 20,
@@ -229,7 +232,7 @@ class TileDB(VectorStore):
         embedding = self.embedding_function(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding,
-            k,
+            k=k,
             filter=filter,
             fetch_k=fetch_k,
             **kwargs,
@@ -239,6 +242,7 @@ class TileDB(VectorStore):
     def similarity_search_by_vector(
         self,
         embedding: List[float],
+        *,
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
         fetch_k: int = 20,
@@ -258,7 +262,7 @@ class TileDB(VectorStore):
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
             embedding,
-            k,
+            k=k,
             filter=filter,
             fetch_k=fetch_k,
             **kwargs,
@@ -268,6 +272,7 @@ class TileDB(VectorStore):
     def similarity_search(
         self,
         query: str,
+        *,
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
         fetch_k: int = 20,
@@ -286,7 +291,7 @@ class TileDB(VectorStore):
             List of Documents most similar to the query.
         """
         docs_and_scores = self.similarity_search_with_score(
-            query, k, filter=filter, fetch_k=fetch_k, **kwargs
+            query, k=k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -352,6 +357,7 @@ class TileDB(VectorStore):
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
+        *,
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -388,6 +394,7 @@ class TileDB(VectorStore):
     def max_marginal_relevance_search(
         self,
         query: str,
+        *,
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -429,6 +436,7 @@ class TileDB(VectorStore):
         index_type: str,
         dimensions: int,
         vector_type: np.dtype,
+        *,
         metadatas: bool = True,
         config: Optional[Mapping[str, Any]] = None,
     ) -> None:
@@ -489,6 +497,7 @@ class TileDB(VectorStore):
         embeddings: List[List[float]],
         embedding: Embeddings,
         index_uri: str,
+        *,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         metric: str = DEFAULT_METRIC,
@@ -583,6 +592,7 @@ class TileDB(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
+        *,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         timestamp: int = 0,
@@ -640,6 +650,7 @@ class TileDB(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
+        *,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         metric: str = DEFAULT_METRIC,
@@ -692,6 +703,7 @@ class TileDB(VectorStore):
         text_embeddings: List[Tuple[str, List[float]]],
         embedding: Embeddings,
         index_uri: str,
+        *,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         metric: str = DEFAULT_METRIC,
@@ -744,6 +756,7 @@ class TileDB(VectorStore):
         cls,
         index_uri: str,
         embedding: Embeddings,
+        *,
         metric: str = DEFAULT_METRIC,
         config: Optional[Mapping[str, Any]] = None,
         timestamp: Any = None,
