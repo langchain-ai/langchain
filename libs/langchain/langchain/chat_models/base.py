@@ -1,7 +1,6 @@
 import asyncio
 import inspect
 import warnings
-from pydantic import ValidationError
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import (
@@ -125,7 +124,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             try:
                 return ChatPromptValue(messages=input)
             except BaseException as e:
-                raise ValidationError(
+                raise TypeError(
                     f"There must be some element in the messages that is inappropraite for ChatPromptValue. "
                 ) from e
         else:
