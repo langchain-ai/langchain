@@ -1,18 +1,42 @@
 # Chat Feedback Template
 
-This template captures implicit feedback from human behavior in a simple chat bot. It instructs an LLM to reference a user's responses within a conversation to evaluate the chat bot's previous replies.
+This template shows how to evaluate your chat bot without explicit user feedback. It defines a simple chat bot in [chain.py](./conversational_feedback/chain.py) and custom evaluator that scores bot response effectiveness based on the subsequent user response. You can apply this run evaluator to your own chat bot by calling `with_config` on the chat bot before serving. You can also directly deploy your chat app using this template.
 
-[Chat bots](https://python.langchain.com/docs/use_cases/chatbots) serve as one of the most common interfaces for deploying LLMs. The quality of chat bots varies, making continuous development important. But users are wont to leave explicit feedback through mechanisms like thumbs-up or thumbs-down buttons. Furthermore, traditional analytics such as "session length" or "conversation length" often lack clarity. However, multi-turn conversations with a chat bot can provide a wealth of information, which we can transform into metrics for fine-tuning, evaluation, and product analytics.
+[Chat bots](https://python.langchain.com/docs/use_cases/chatbots) are one of the most common interfaces for deploying LLMs. The quality of chat bots varies, making continuous development important. But users are wont to leave explicit feedback through mechanisms like thumbs-up or thumbs-down buttons. Furthermore, traditional analytics such as "session length" or "conversation length" often lack clarity. However, multi-turn conversations with a chat bot can provide a wealth of information, which we can transform into metrics for fine-tuning, evaluation, and product analytics.
 
-Taking [Chat Langchain](https://chat.langchain.com/) as a case study, only about 0.04% of all queries receive explicit feedback. Yet, approximately 70% of the queries are follow-ups to previous questions. A significant portion of these follow-up queries continue useful information we can use to infer the quality of the previous AI response.
+Taking [Chat Langchain](https://chat.langchain.com/) as a case study, only about 0.04% of all queries receive explicit feedback. Yet, approximately 70% of the queries are follow-ups to previous questions. A significant portion of these follow-up queries continue useful information we can use to infer the quality of the previous AI response. 
+
+
+This template helps solve this "feedback scarcity" problem. Below is an example invocation of this chat bot:
+
+[![Chat Interaction](./static/chat_interaction.png)](https://smith.langchain.com/public/3378daea-133c-4fe8-b4da-0a3044c5dbe8/r?runtab=1)
+
+When the user responds to this ([link](https://smith.langchain.com/public/a7e2df54-4194-455d-9978-cecd8be0df1e/r)), the response evaluator is invoked, resulting in the following evaluationrun:
+
+[![Evaluator Run](./static/evaluator.png)](https://smith.langchain.com/public/534184ee-db8f-4831-a386-3f578145114c/r)
+
+As shown, the evaluator sees that the user is increasingly frustrated, indicating that the prior response was not effective
 
 ## LangSmith Feedback
 
-[LangSmith](https://smith.langchain.com/) is a platform for building production-grade LLM applications. Beyond its debugging and offline evaluation features, LangSmith helps you capture both user and model-assisted feedback to refine your LLM application. For more examples on collecting feedback using LangSmith, consult the [documentation](https://docs.smith.langchain.com/cookbook/feedback-examples).
+[LangSmith](https://smith.langchain.com/) is a platform for building production-grade LLM applications. Beyond its debugging and offline evaluation features, LangSmith helps you capture both user and model-assisted feedback to refine your LLM application. This template uses an LLM to generate feedback for your application, which you can use to continuously improve your service. For more examples on collecting feedback using LangSmith, consult the [documentation](https://docs.smith.langchain.com/cookbook/feedback-examples).
 
-## Implementation
+## Evaluator Implementation
 
-Feedback collection occurs within a custom `RunEvaluator`. This evaluator is called using the `EvaluatorCallbackHandler`, which run it in a separate thread to avoid interfering with the chat bot's runtime. 
+The user feedback is inferred by custom `RunEvaluator`. This evaluator is called using the `EvaluatorCallbackHandler`, which run it in a separate thread to avoid interfering with the chat bot's runtime. You can use this custom evaluator on any compatible chat bot by calling the following function on your LangChain object:
+
+```python
+my_chain
+.with_config(
+        callbacks=[
+            EvaluatorCallbackHandler(
+                evaluators=[
+                    ResponseEffectivenessEvaluator(evaluate_response_effectiveness)
+                ]
+            )
+        ],
+    )
+```
 
 The evaluator instructs an LLM, specifically `gpt-3.5-turbo`, to evaluate the AI's most recent chat message based on the user's followup response. It generates a score and accompanying reasoning that is converted to feedback in LangSmith, applied to the value provided as the `last_run_id`.
 
@@ -26,6 +50,7 @@ Ensure that `OPENAI_API_KEY` is set to use OpenAI models. Also, configure LangSm
 export OPENAI_API_KEY=sk-...
 export LANGSMITH_API_KEY=...
 export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_PROJECT=my-project # Set to the project you want to save to
 ```
 
 ## Usage
@@ -84,3 +109,8 @@ chat_history.extend([HumanMessage(content=text), AIMessage(content=response_mess
 ```
 
 This uses the  `tracing_v2_enabled` callback manager to get the run ID of the call, which we provide in subsequent calls in the same chat thread, so the evaluator can assign feedback to the appropriate trace.
+
+
+## Conclusion
+
+This template provides a simple chat bot definition you can directly deploy using LangServe. It defines a custom evaluator to log evaluation feedback for the bot without any explicit user ratings. This is an effective way to augment your analytics and to better select data points for fine-tuning and evaluation.

@@ -5,7 +5,6 @@ from typing import List, Optional
 from langchain import hub
 from langchain.callbacks.tracers.evaluation import EvaluatorCallbackHandler
 from langchain.callbacks.tracers.schemas import Run
-from langchain.chains.openai_functions.base import convert_to_openai_function
 from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -21,9 +20,14 @@ from langsmith.evaluation import EvaluationResult, RunEvaluator
 from langsmith.schemas import Example
 from pydantic import BaseModel, Field
 
-### The feedback model used for the "function definition" provided to OpenAI
-# For use with open source models, you can add the schema directly,
-# but some modifications to the prompt and parser will be needed
+###############################################################################
+# |   Chat Bot Evaluator Definition
+# | This section defines an evaluator that evaluates any chat bot
+# | without explicit user feedback. It formats the dialog up to
+# | the current message and then instructs an LLM to grade the last AI response
+# | based on the subsequent user response. If no chat history is present,
+# V the evaluator is not called.
+###############################################################################
 
 
 class ResponseEffectiveness(BaseModel):
@@ -66,15 +70,16 @@ def normalize_score(response: dict) -> dict:
     return response
 
 
+# To view the prompt in the playground: https://smith.langchain.com/hub/wfh/response-effectiveness
 evaluation_prompt = hub.pull("wfh/response-effectiveness")
 evaluate_response_effectiveness = (
-    # format_messages is a function that takes a dict and returns a dict
     format_dialog
     | evaluation_prompt
-    # bind() provides the requested schemas to the model for structured prediction
-    | ChatOpenAI(model="gpt-3.5-turbo").bind(
-        functions=[convert_to_openai_function(ResponseEffectiveness)],
-        function_call={"name": "ResponseEffectiveness"},
+    # bind_functions formats the schema for the OpenAI function
+    # calling endpoint, which returns more reliable structured data.
+    | ChatOpenAI(model="gpt-3.5-turbo").bind_functions(
+        functions=[ResponseEffectiveness],
+        function_call="ResponseEffectiveness",
     )
     # Convert the model's output to a dict
     | JsonOutputFunctionsParser(args_only=True)
@@ -105,6 +110,7 @@ class ResponseEffectivenessEvaluator(RunEvaluator):
             return EvaluationResult(
                 key="response_effectiveness", comment="No last run ID present."
             )
+        # Call the LLM to evaluate the response
         eval_grade: Optional[dict] = self.runnable.invoke(run.inputs)
         target_run_id = run.inputs["last_run_id"]
         return EvaluationResult(
@@ -124,11 +130,13 @@ class ResponseEffectivenessEvaluator(RunEvaluator):
 
 
 class ChainInput(BaseModel):
+    """Input for the chat bot."""
+
     chat_history: Optional[List[BaseMessage]] = Field(
         description="Previous chat messages."
     )
     text: str = Field(..., description="User's latest query.")
-    last_run_id: Optional[str] = Field("", description="ID of the last run.")
+    last_run_id: Optional[str] = Field("", description="Run ID of the last run.")
 
 
 _prompt = ChatPromptTemplate.from_messages(
@@ -144,8 +152,7 @@ _prompt = ChatPromptTemplate.from_messages(
 _model = ChatOpenAI()
 
 
-def format_chat_history(chain_input: ChainInput) -> dict:
-    # This is a hack to get the chat history into the prompt
+def format_chat_history(chain_input: dict) -> dict:
     messages = format_messages(chain_input)
 
     return {
@@ -158,6 +165,7 @@ def format_chat_history(chain_input: ChainInput) -> dict:
 # with the new `tool.langserve.export_attr`
 chain = (
     (format_chat_history | _prompt | _model | StrOutputParser())
+    .with_types(input_type=ChainInput)
     # This is to add the evaluators as "listeners"
     # and to customize the name of the chain.
     # Any chain that accepts a compatible input type works here.
