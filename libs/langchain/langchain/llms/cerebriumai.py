@@ -1,4 +1,5 @@
 import logging
+import requests
 from typing import Any, Dict, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
@@ -44,7 +45,8 @@ class CerebriumAI(LLM):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+        all_required_field_names = {
+            field.alias for field in cls.__fields__.values()}
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
@@ -88,21 +90,15 @@ class CerebriumAI(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Call to CerebriumAI endpoint."""
-        try:
-            from cerebrium import model_api_request
-        except ImportError:
-            raise ValueError(
-                "Could not import cerebrium python package. "
-                "Please install it with `pip install cerebrium`."
-            )
 
+        headers = {
+            'Authorization': self.cerebriumai_api_key,
+            'Content-Type': 'application/json'
+        }
         params = self.model_kwargs or {}
-        response = model_api_request(
-            self.endpoint_url,
-            {"prompt": prompt, **params, **kwargs},
-            self.cerebriumai_api_key,
-        )
+        payload = {"prompt": prompt, **params, **kwargs}
+        response = requests.post(
+            self.endpoint_url, json=payload, headers=headers)
         text = response["data"]["result"]
         if stop is not None:
             # I believe this is required since the stop tokens
