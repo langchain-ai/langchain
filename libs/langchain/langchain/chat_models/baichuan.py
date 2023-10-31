@@ -2,7 +2,7 @@ import hashlib
 import json
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Type, Union
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 
 import requests
 
@@ -24,7 +24,11 @@ from langchain.schema.messages import (
     HumanMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -69,13 +73,6 @@ def _convert_delta_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)
     else:
         return default_class(content=content)
-
-
-def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
 
 
 # signature generation
@@ -171,7 +168,7 @@ class ChatBaichuan(BaseChatModel):
             "baichuan_api_key",
             "BAICHUAN_API_KEY",
         )
-        values["baichuan_secret_key"] = _to_secret(
+        values["baichuan_secret_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
                 "baichuan_secret_key",
@@ -186,6 +183,7 @@ class ChatBaichuan(BaseChatModel):
         """Get the default parameters for calling Baichuan API."""
         normal_params = {
             "model": self.model,
+            "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k": self.top_k,
             "with_search_enhance": self.with_search_enhance,

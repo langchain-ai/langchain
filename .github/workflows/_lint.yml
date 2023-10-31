@@ -120,9 +120,9 @@ jobs:
 
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
-        if: ${{ inputs.working-directory != 'libs/langchain' }}
+        if: ${{ inputs.langchain-location }}
         env:
-          LANGCHAIN_LOCATION: ${{ inputs.langchain-location || '../langchain'}}
+          LANGCHAIN_LOCATION: ${{ inputs.langchain-location }}
         run: |
           pip install -e "$LANGCHAIN_LOCATION"
 

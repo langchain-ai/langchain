@@ -15,7 +15,7 @@ jq = "^1.6.0"
 tiktoken = "^0.5.1"
 
 [tool.langserve]
-export_module = "rag-elasticsearch"
+export_module = "rag_elasticsearch"
 export_attr = "chain"
 
 

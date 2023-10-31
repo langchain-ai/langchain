@@ -22,13 +22,10 @@ _EXPECTED = [
     "Tool",
     "XMLAgent",
     "ZeroShotAgent",
-    "create_csv_agent",
     "create_json_agent",
     "create_openapi_agent",
-    "create_pandas_dataframe_agent",
     "create_pbi_agent",
     "create_pbi_chat_agent",
-    "create_spark_dataframe_agent",
     "create_spark_sql_agent",
     "create_sql_agent",
     "create_vectorstore_agent",
@@ -39,7 +36,6 @@ _EXPECTED = [
     "load_huggingface_tool",
     "load_tools",
     "tool",
-    "create_xorbits_agent",
 ]
 
 
