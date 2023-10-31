@@ -94,9 +94,9 @@ class _LlamaCppCommon(BaseLanguageModel):
         )
         response.encoding = "utf-8"
         if response.status_code != 200:
-            optional_detail = response.json().get("error")
+            optional_detail = response.text
             raise ValueError(
-                f"Ollama call failed with status code {response.status_code}."
+                f"Llama.cpp call failed with status code {response.status_code}."
                 f" Details: {optional_detail}"
             )
         return response.iter_lines(decode_unicode=True)
