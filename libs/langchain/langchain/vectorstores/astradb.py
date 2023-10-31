@@ -183,10 +183,11 @@ class AstraDB(VectorStore):
         if ids is None:
             raise ValueError("No ids provided to delete.")
 
-        deletion_responses = [
-            self.delete_by_document_id(document_id)
-            for document_id in ids
-        ]
+        with ThreadPoolExecutor(max_workers=20) as tpe:
+            deletion_responses = list(tpe.map(
+                self.delete_by_document_id,
+                ids,
+            ))
         return all(deletion_responses)
 
     def add_texts(
