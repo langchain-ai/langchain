@@ -41,18 +41,22 @@ select = [
   "I",  # isort
 ]
 
-[tool.poe.tasks._bump_2]
-shell = """sed -i "" "/^__version__ =/c\\ \n__version__ = \\"$version\\"\n" langchain_cli/cli.py"""
-uses = { version = "version" }
-
 [tool.poe.tasks]
 test = "poetry run pytest"
 watch = "poetry run ptw"
-lint = "poetry run ruff ."
-format = "poetry run ruff . --fix"
-_bump_1 = "poetry version patch"
 version = "poetry version --short"
 bump = ["_bump_1", "_bump_2"]
+lint = ["_lint", "_check_formatting"]
+format = ["_lint_fix", "_format"]
+
+_bump_2.shell = """sed -i "" "/^__version__ =/c\\ \n__version__ = \\"$version\\"\n" langchain_cli/cli.py"""
+_bump_2.uses = { version = "version" }
+
+_bump_1 = "poetry version patch"
+_check_formatting = "poetry run ruff format . --diff"
+_lint = "poetry run ruff ."
+_format = "poetry run ruff format ."
+_lint_fix = "poetry run ruff . --fix"
 
 [build-system]
 requires = ["poetry-core"]
