@@ -1,5 +1,5 @@
 # langchain-cli
 
-[Docs](./DOCS.md)
+[Docs](https://github.com/langchain-ai/langchain/blob/master/libs/cli/DOCS.md)
 
-[LangServe Templates Quickstart](../../templates/README.md)
+[LangServe Templates Quickstart](https://github.com/langchain-ai/langchain/blob/master/templates/README.md)
