@@ -9,6 +9,7 @@ from tenacity import (
     retry,
     stop_after_attempt,
     wait_exponential,
+    retry_if_exception_type,
 )
 
 from langchain.docstore.document import Document
@@ -410,6 +411,15 @@ class ConfluenceLoader(BaseLoader):
             docs.extend(batch)
         return docs[:max_pages]
 
+    @retry(
+        retry=retry_if_exception_type(requests.exceptions.HTTPError),
+        reraise=True, 
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1,
+                              min=3,
+                              max=10),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
     def is_public_page(self, page: dict) -> bool:
         """Check if a page is publicly accessible."""
         restrictions = self.confluence.get_all_restrictions_for_content(page["id"])
