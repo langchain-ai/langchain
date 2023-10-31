@@ -34,7 +34,6 @@ def main(
 ):
     pass
 
-main()
 
 @app.command()
 def serve(
