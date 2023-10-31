@@ -474,6 +474,93 @@ class Chroma(VectorStore):
         )
         return docs
 
+    def max_marginal_relevance_search_by_vector_with_scores(
+            self,
+            embedding: List[float],
+            k: int = DEFAULT_K,
+            fetch_k: int = 20,
+            lambda_mult: float = 0.5,
+            filter: Optional[Dict[str, str]] = None,
+            where_document: Optional[Dict[str, str]] = None,
+            **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance with similarity score.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of selected by maximal marginal relevance
+            to the query text and cosine distance in float for each.
+        """
+        results = self.__query_collection(
+            query_embeddings=embedding,
+            n_results=fetch_k,
+            where=filter,
+            where_document=where_document,
+            include=["metadatas", "documents", "distances", "embeddings"],
+        )
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding, dtype=np.float32),
+            results["embeddings"][0],
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+
+        candidates = _results_to_docs_and_scores(results)
+
+        selected_results = [r for i, r in enumerate(candidates) if i in mmr_selected]
+        return selected_results
+
+    def max_marginal_relevance_search_with_scores(
+            self,
+            query: str,
+            k: int = DEFAULT_K,
+            fetch_k: int = 20,
+            lambda_mult: float = 0.5,
+            filter: Optional[Dict[str, str]] = None,
+            where_document: Optional[Dict[str, str]] = None,
+            **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance with similarity score.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of selected by maximal marginal relevance
+            to the query text and cosine distance in float for each.
+        """
+        if self._embedding_function is None:
+            raise ValueError("For MMR search, you must specify an embedding function on creation.")
+        embedding = self._embedding_function.embed_query(query)
+        return self.max_marginal_relevance_search_by_vector_with_scores(
+            embedding,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            where_document=where_document,
+        )
+
     def delete_collection(self) -> None:
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)

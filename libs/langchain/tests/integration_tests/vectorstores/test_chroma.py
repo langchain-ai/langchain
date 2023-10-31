@@ -176,6 +176,28 @@ def test_chroma_mmr_by_vector() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_chroma_mmr_with_score() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+    )
+    output = docsearch.max_marginal_relevance_search_with_scores("foo", k=1)
+    assert output == [(Document(page_content="foo"), 0.0)]
+
+
+def test_chroma_mmr_by_vector_with_score() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    embeddings = FakeEmbeddings()
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection", texts=texts, embedding=embeddings
+    )
+    embedded_query = embeddings.embed_query("foo")
+    output = docsearch.max_marginal_relevance_search_by_vector_with_scores(embedded_query, k=1)
+    assert output == [(Document(page_content="foo"), 0.0)]
+
+
 def test_chroma_with_include_parameter() -> None:
     """Test end to end construction and include parameter."""
     texts = ["foo", "bar", "baz"]
