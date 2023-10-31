@@ -1,6 +1,6 @@
-# Chat Feedback Template
+# Chat Bot Feedback Template
 
-This template shows how to evaluate your chat bot without explicit user feedback. It defines a simple chat bot in [chain.py](./conversational_feedback/chain.py) and custom evaluator that scores bot response effectiveness based on the subsequent user response. You can apply this run evaluator to your own chat bot by calling `with_config` on the chat bot before serving. You can also directly deploy your chat app using this template.
+This template shows how to evaluate your chat bot without explicit user feedback. It defines a simple chat bot in [chain.py](./chat_bot_feedback/chain.py) and custom evaluator that scores bot response effectiveness based on the subsequent user response. You can apply this run evaluator to your own chat bot by calling `with_config` on the chat bot before serving. You can also directly deploy your chat app using this template.
 
 [Chat bots](https://python.langchain.com/docs/use_cases/chatbots) are one of the most common interfaces for deploying LLMs. The quality of chat bots varies, making continuous development important. But users are wont to leave explicit feedback through mechanisms like thumbs-up or thumbs-down buttons. Furthermore, traditional analytics such as "session length" or "conversation length" often lack clarity. However, multi-turn conversations with a chat bot can provide a wealth of information, which we can transform into metrics for fine-tuning, evaluation, and product analytics.
 
@@ -58,9 +58,9 @@ export LANGCHAIN_PROJECT=my-project # Set to the project you want to save to
 If deploying via `LangServe`, we recommend configuring the server to return callback events as well. This will ensure the backend traces are included in whatever traces you generate using the `RemoteRunnable`.
 
 ```python
-from conversational_feedback.chain import chain
+from chat_bot_feedback.chain import chain
 
-add_routes(app, chain, path="/conversational-feedback", include_callback_events=True)
+add_routes(app, chain, path="/chat-bot-feedback", include_callback_events=True)
 ```
 
 With the server running, you can use the following code snippet to stream the chat bot responses for a 2 turn conversation.
@@ -73,7 +73,7 @@ from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.schema import BaseMessage, AIMessage, HumanMessage
 
 # Update with the URL provided by your LangServe server
-chain = RemoteRunnable("http://127.0.0.1:8031/conversational-feedback")
+chain = RemoteRunnable("http://127.0.0.1:8031/chat-bot-feedback")
 
 def stream_content(
     text: str,
