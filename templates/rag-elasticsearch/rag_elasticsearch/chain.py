@@ -1,8 +1,9 @@
 from operator import itemgetter
 from typing import List, Tuple
-from langchain.pydantic_v1 import BaseModel
+
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema import format_document
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableMap, RunnablePassthrough
