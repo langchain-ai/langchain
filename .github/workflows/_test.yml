@@ -12,7 +12,7 @@ env:
   POETRY_VERSION: "1.6.1"
 
 jobs:
-  build:
+  run-tests:
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -55,3 +55,124 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
+
+  # If this PR is for a new, not-yet-published version,
+  # we want to run a build and prepare it for uploading to test PyPI.
+  check-if-new-version:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    outputs:
+      new-version: ${{ steps.version-check.outputs.new-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11 + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: 3.11
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: core
+
+      - name: Get current version
+        id: current-version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PKG_NAME="$(poetry version | cut -d ' ' -f 1)"
+          VERSION="$(poetry version --short)"
+          echo pkg-name="$PKG_NAME" >> $GITHUB_OUTPUT
+          echo version="$VERSION" >> $GITHUB_OUTPUT
+
+      # We don't want to slam the PyPI APIs unnecessarily on every PR.
+      # If we find that a version number exists, we cache that response indefinitely.
+      # This is safe since we don't delete historical versions, so the data isn't stale.
+      # Most PRs don't change the version, so we don't hit PyPI's APIs at all
+      # in the most common case.
+      #
+      # If we find that a version number *does not* exist, we *do not cache* that
+      # negative response. This is because it might exist in the near future,
+      # and there's no safe interval of time that we can cache this response for.
+      - name: Check if our cache knows the version exists
+        uses: actions/cache/restore@v3
+        id: cache
+        with:
+          path: ${{ inputs.working-directory }}/.version-exists
+          key: pypi-version-exists-${{ steps.current-version.outputs.pkg-name }}-${{ steps.current-version.outputs.version }}
+
+      - name: Check if version exists on PyPI
+        id: check-pypi
+        if: steps.cache.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          PKG_NAME: ${{ steps.current-version.outputs.pkg-name }}
+          VERSION: ${{ steps.current-version.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          PYPI_PKG_API_URL="https://pypi.org/pypi/${PKG_NAME}/json"
+          curl -s -H "Accept: application/json" "$PYPI_PKG_API_URL" | \
+            jq -r '.releases | keys | .[]' | \
+            sort --version-sort | \
+            tee .versions
+
+          set +e
+          grep "^${VERSION}\$" .versions
+          GREP_OUTPUT="$?"
+          set -e
+
+          if [[ "$GREP_OUTPUT" == "0" ]]; then
+            echo "$PKG_NAME version $VERSION found on PyPI"
+
+            # Make the flag file we'll use to cache the fact that this version exists.
+            echo "${PKG_NAME}-${VERSION}" > .version-exists
+
+            echo version-exists=true >> $GITHUB_OUTPUT
+          else
+            echo "$PKG_NAME version $VERSION is not currently on PyPI"
+
+            echo version-exists=false >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cache PyPI response if version found
+        if: steps.cache.outputs.cache-hit != 'true' && steps.check-pypi.outputs.version-exists == 'true'
+        uses: actions/cache/save@v3
+        with:
+          path: ${{ inputs.working-directory }}/.version-exists
+          key: pypi-version-exists-${{ steps.current-version.outputs.pkg-name }}-${{ steps.current-version.outputs.version }}
+
+      # Combine the cache and no-cache paths into a single output for the job.
+      - name: Set job output
+        id: version-check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -f .version-exists ]; then
+            # Show the file's contents, so the logs can be used to verify
+            # that our caching logic indeed found the correct version.
+            echo "Found package version:"
+            cat .version-exists
+
+            # We've found the file, so it served its purpose.
+            # Delete it so we don't litter.
+            rm .version-exists
+
+            echo new-version=false >> $GITHUB_OUTPUT
+          else
+            echo new-version=true >> $GITHUB_OUTPUT
+          fi
+
+  test-publish-new-version:
+    needs:
+      - run-tests
+      - check-if-new-version
+    if: needs.check-if-new-version.outputs.new-version == 'true'
+    uses:
+      ./.github/workflows/_test_release.yml
+    with:
+      working-directory: ${{ inputs.working-directory }}
+    secrets: inherit
