@@ -34,9 +34,9 @@ class O365CreateDraftMessage(O365BaseTool):
     """Tool for creating a draft email in Office 365."""
 
     name: str = "create_email_draft"
-    description: str = (
-        "Use this tool to create a draft email with the provided message fields."
-    )
+    description: (
+        str
+    ) = "Use this tool to create a draft email with the provided message fields."
     args_schema: Type[CreateDraftMessageSchema] = CreateDraftMessageSchema
 
     def _run(

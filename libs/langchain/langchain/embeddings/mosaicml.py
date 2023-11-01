@@ -27,15 +27,15 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    endpoint_url: str = (
-        "https://models.hosted-on.mosaicml.hosting/instructor-xl/v1/predict"
-    )
+    endpoint_url: (
+        str
+    ) = "https://models.hosted-on.mosaicml.hosting/instructor-xl/v1/predict"
     """Endpoint URL to use."""
     embed_instruction: str = "Represent the document for retrieval: "
     """Instruction used to embed documents."""
-    query_instruction: str = (
-        "Represent the question for retrieving supporting documents: "
-    )
+    query_instruction: (
+        str
+    ) = "Represent the question for retrieving supporting documents: "
     """Instruction used to embed the query."""
     retry_sleep: float = 1.0
     """How long to try sleeping for if a rate limit is encountered"""

@@ -395,13 +395,13 @@ class TestAzureCosmosDBVectorSearch:
     def invoke_delete_with_no_args(
         self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> Optional[bool]:
-        vectorstore: AzureCosmosDBVectorSearch = (
-            AzureCosmosDBVectorSearch.from_connection_string(
-                CONNECTION_STRING,
-                NAMESPACE,
-                azure_openai_embeddings,
-                index_name=INDEX_NAME,
-            )
+        vectorstore: (
+            AzureCosmosDBVectorSearch
+        ) = AzureCosmosDBVectorSearch.from_connection_string(
+            CONNECTION_STRING,
+            NAMESPACE,
+            azure_openai_embeddings,
+            index_name=INDEX_NAME,
         )
 
         return vectorstore.delete()
@@ -409,13 +409,13 @@ class TestAzureCosmosDBVectorSearch:
     def invoke_delete_by_id_with_no_args(
         self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
-        vectorstore: AzureCosmosDBVectorSearch = (
-            AzureCosmosDBVectorSearch.from_connection_string(
-                CONNECTION_STRING,
-                NAMESPACE,
-                azure_openai_embeddings,
-                index_name=INDEX_NAME,
-            )
+        vectorstore: (
+            AzureCosmosDBVectorSearch
+        ) = AzureCosmosDBVectorSearch.from_connection_string(
+            CONNECTION_STRING,
+            NAMESPACE,
+            azure_openai_embeddings,
+            index_name=INDEX_NAME,
         )
 
         vectorstore.delete_document_by_id()

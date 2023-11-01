@@ -49,9 +49,9 @@ class O365SendEvent(O365BaseTool):
     """Tool for sending calendar events in Office 365."""
 
     name: str = "send_event"
-    description: str = (
-        "Use this tool to create and send an event with the provided event fields."
-    )
+    description: (
+        str
+    ) = "Use this tool to create and send an event with the provided event fields."
     args_schema: Type[SendEventSchema] = SendEventSchema
 
     def _run(

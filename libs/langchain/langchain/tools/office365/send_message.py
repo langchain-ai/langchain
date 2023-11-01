@@ -34,9 +34,9 @@ class O365SendMessage(O365BaseTool):
     """Tool for sending an email in Office 365."""
 
     name: str = "send_email"
-    description: str = (
-        "Use this tool to send an email with the provided message fields."
-    )
+    description: (
+        str
+    ) = "Use this tool to send an email with the provided message fields."
     args_schema: Type[SendMessageSchema] = SendMessageSchema
 
     def _run(

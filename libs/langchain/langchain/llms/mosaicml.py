@@ -46,9 +46,9 @@ class MosaicML(LLM):
             )
     """
 
-    endpoint_url: str = (
-        "https://models.hosted-on.mosaicml.hosting/mpt-7b-instruct/v1/predict"
-    )
+    endpoint_url: (
+        str
+    ) = "https://models.hosted-on.mosaicml.hosting/mpt-7b-instruct/v1/predict"
     """Endpoint URL to use."""
     inject_instruction_format: bool = False
     """Whether to inject the instruction format into the prompt."""

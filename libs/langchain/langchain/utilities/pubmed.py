@@ -34,9 +34,9 @@ class PubMedAPIWrapper(BaseModel):
 
     parse: Any  #: :meta private:
 
-    base_url_esearch: str = (
-        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
-    )
+    base_url_esearch: (
+        str
+    ) = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
     base_url_efetch: str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
     max_retry: int = 5
     sleep_time: float = 0.2
