@@ -132,7 +132,15 @@ class NeptuneGraph:
 
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
         """Query Neptune database."""
-        return self.client.execute_open_cypher_query(openCypherQuery=query)
+        try:
+            return self.client.execute_open_cypher_query(openCypherQuery=query)
+        except Exception as e:
+            raise NeptuneQueryException(
+                {
+                    "message": "An error occurred while executing the query.",
+                    "details": str(e),
+                }
+            )
 
     def _get_summary(self) -> Dict:
         try:
