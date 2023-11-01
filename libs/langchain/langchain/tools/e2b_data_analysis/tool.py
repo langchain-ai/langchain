@@ -9,8 +9,8 @@ from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
     CallbackManager,
+    CallbackManagerForToolRun,
 )
 from langchain.pydantic_v1 import BaseModel, Field, PrivateAttr
 from langchain.tools import BaseTool, Tool
