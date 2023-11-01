@@ -1,4 +1,4 @@
-"""Test Xinference embeddings."""
+"""Test Xinference chat."""
 import asyncio
 import time
 from typing import Any, AsyncGenerator, Tuple
