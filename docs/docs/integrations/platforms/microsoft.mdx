@@ -1,6 +1,6 @@
 # Microsoft
 
-All functionality related to Microsoft
+All functionality related to `Microsoft Azure` and other `Microsoft` products.
 
 ## LLM
 ### Azure OpenAI
@@ -70,13 +70,13 @@ from langchain.chat_models import AzureChatOpenAI
 pip install azure-storage-blob
 ```
 
-See a [usage example for the Azure Blob Storage](/docs/integrations/document_loaders/azure_blob_storage_container.html).
+See a [usage example for the Azure Blob Storage](/docs/integrations/document_loaders/azure_blob_storage_container).
 
 ```python
 from langchain.document_loaders import AzureBlobStorageContainerLoader
 ```
 
-See a [usage example for the Azure Files](/docs/integrations/document_loaders/azure_blob_storage_file.html).
+See a [usage example for the Azure Files](/docs/integrations/document_loaders/azure_blob_storage_file).
 
 ```python
 from langchain.document_loaders import AzureBlobStorageFileLoader
@@ -109,7 +109,39 @@ from langchain.document_loaders import UnstructuredWordDocumentLoader
 ```
 
 
-## Retriever
+## Vector stores
+
+### Azure Cosmos DB
+
+>[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/) makes it easy to create a database with full native MongoDB support.
+> You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
+> Use vector search in Azure Cosmos DB for MongoDB vCore to seamlessly integrate your AI-based applications with your data that's stored in Azure Cosmos DB.
+
+#### Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db).
+
+We need to install `pymongo` python package.
+
+```bash
+pip install pymongo
+```
+
+#### Deploy Azure Cosmos DB on Microsoft Azure
+
+Azure Cosmos DB for MongoDB vCore provides developers with a fully managed MongoDB-compatible database service for building modern applications with a familiar architecture.
+
+With Cosmos DB for MongoDB vCore, developers can enjoy the benefits of native Azure integrations, low total cost of ownership (TCO), and the familiar vCore architecture when migrating existing applications or building new ones.
+
+[Sign Up](https://azure.microsoft.com/en-us/free/) for free to get started today.
+
+See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db).
+
+```python
+from langchain.vectorstores import AzureCosmosDBVectorSearch
+```
+
+## Retrievers
 ### Azure Cognitive Search
 
 >[Azure Cognitive Search](https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search) (formerly known as `Azure Search`) is a cloud search service that gives developers infrastructure, APIs, and tools for building a rich search experience over private, heterogeneous content in web, mobile, and enterprise applications.
@@ -128,4 +160,60 @@ See a [usage example](/docs/integrations/retrievers/azure_cognitive_search).
 ```python
 from langchain.retrievers import AzureCognitiveSearchRetriever
 ```
+
+## Utilities
+
+### Bing Search API
+
+See a [usage example](/docs/integrations/tools/bing_search).
+
+```python
+from langchain.utilities import BingSearchAPIWrapper
+```
+
+## Toolkits
+
+### Azure Cognitive Services
+
+We need to install several python packages.
+
+```bash
+pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision
+```
+
+See a [usage example](/docs/integrations/toolkits/azure_cognitive_services).
+
+```python
+from langchain.agents.agent_toolkits import O365Toolkit
+```
+### Microsoft Office 365 email and calendar
+
+We need to install `O365` python package.
+
+```bash
+pip install O365
+```
+
+
+See a [usage example](/docs/integrations/toolkits/office365).
+
+```python
+from langchain.agents.agent_toolkits import O365Toolkit
+```
+
+### Microsoft Azure PowerBI
+
+We need to install `azure-identity` python package.
+
+```bash
+pip install azure-identity
+```
+
+See a [usage example](/docs/integrations/toolkits/powerbi).
+
+```python
+from langchain.agents.agent_toolkits import PowerBIToolkit
+from langchain.utilities.powerbi import PowerBIDataset
+```
+
 

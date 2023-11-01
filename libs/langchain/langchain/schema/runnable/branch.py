@@ -86,7 +86,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         default = branches[-1]
 
         if not isinstance(
-            default, (Runnable, Callable, Mapping)  # type: ignore[arg-type]
+            default,
+            (Runnable, Callable, Mapping),  # type: ignore[arg-type]
         ):
             raise TypeError(
                 "RunnableBranch default must be runnable, callable or mapping."
@@ -130,8 +131,9 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         """The namespace of a RunnableBranch is the namespace of its default branch."""
         return cls.__module__.split(".")[:-1]
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         runnables = (
             [self.default]
             + [r for _, r in self.branches]
@@ -139,10 +141,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         )
 
         for runnable in runnables:
-            if runnable.input_schema.schema().get("type") is not None:
-                return runnable.input_schema
+            if runnable.get_input_schema(config).schema().get("type") is not None:
+                return runnable.get_input_schema(config)
 
-        return super().input_schema
+        return super().get_input_schema(config)
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:

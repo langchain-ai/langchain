@@ -18,13 +18,13 @@ SUFFIXES_TO_IGNORE = (
     ".epub",
 )
 SUFFIXES_TO_IGNORE_REGEX = (
-    "(?!" + "|".join([re.escape(s) + "[\#'\"]" for s in SUFFIXES_TO_IGNORE]) + ")"
+    "(?!" + "|".join([re.escape(s) + r"[\#'\"]" for s in SUFFIXES_TO_IGNORE]) + ")"
 )
 PREFIXES_TO_IGNORE_REGEX = (
     "(?!" + "|".join([re.escape(s) for s in PREFIXES_TO_IGNORE]) + ")"
 )
 DEFAULT_LINK_REGEX = (
-    f"href=[\"']{PREFIXES_TO_IGNORE_REGEX}((?:{SUFFIXES_TO_IGNORE_REGEX}.)*?)[\#'\"]"
+    rf"href=[\"']{PREFIXES_TO_IGNORE_REGEX}((?:{SUFFIXES_TO_IGNORE_REGEX}.)*?)[\#'\"]"
 )
 
 

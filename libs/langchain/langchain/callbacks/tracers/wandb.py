@@ -27,7 +27,9 @@ if TYPE_CHECKING:
 PRINT_WARNINGS = True
 
 
-def _serialize_io(run_inputs: dict) -> dict:
+def _serialize_io(run_inputs: Optional[dict]) -> dict:
+    if not run_inputs:
+        return {}
     from google.protobuf.json_format import MessageToJson
     from google.protobuf.message import Message
 
@@ -79,7 +81,9 @@ class RunProcessor:
             span_id=str(run.id) if run.id is not None else None,
             name=run.name,
             start_time_ms=int(run.start_time.timestamp() * 1000),
-            end_time_ms=int(run.end_time.timestamp() * 1000),
+            end_time_ms=int(run.end_time.timestamp() * 1000)
+            if run.end_time is not None
+            else None,
             status_code=self.trace_tree.StatusCode.SUCCESS
             if run.error is None
             else self.trace_tree.StatusCode.ERROR,
@@ -95,7 +99,7 @@ class RunProcessor:
         base_span = self._convert_run_to_wb_span(run)
         if base_span.attributes is None:
             base_span.attributes = {}
-        base_span.attributes["llm_output"] = run.outputs.get("llm_output", {})
+        base_span.attributes["llm_output"] = (run.outputs or {}).get("llm_output", {})
 
         base_span.results = [
             self.trace_tree.Result(

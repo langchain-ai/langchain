@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
-from typing import Any, Callable, Dict, List, Set
+from string import Formatter
+from typing import Any, Callable, Dict, List, Literal, Set
 
 from langchain.schema.messages import BaseMessage, HumanMessage
 from langchain.schema.prompt import PromptValue
@@ -82,7 +83,16 @@ DEFAULT_VALIDATOR_MAPPING: Dict[str, Callable] = {
 def check_valid_template(
     template: str, template_format: str, input_variables: List[str]
 ) -> None:
-    """Check that template string is valid."""
+    """Check that template string is valid.
+
+    Args:
+        template: The template string.
+        template_format: The template format. Should be one of "f-string" or "jinja2".
+        input_variables: The input variables.
+
+    Raises:
+        ValueError: If the template format is not supported.
+    """
     if template_format not in DEFAULT_FORMATTER_MAPPING:
         valid_formats = list(DEFAULT_FORMATTER_MAPPING)
         raise ValueError(
@@ -99,11 +109,38 @@ def check_valid_template(
         )
 
 
+def get_template_variables(template: str, template_format: str) -> List[str]:
+    """Get the variables from the template.
+
+    Args:
+        template: The template string.
+        template_format: The template format. Should be one of "f-string" or "jinja2".
+
+    Returns:
+        The variables from the template.
+
+    Raises:
+        ValueError: If the template format is not supported.
+    """
+    if template_format == "jinja2":
+        # Get the variables for the template
+        input_variables = _get_jinja2_variables_from_template(template)
+    elif template_format == "f-string":
+        input_variables = {
+            v for _, v, _, _ in Formatter().parse(template) if v is not None
+        }
+    else:
+        raise ValueError(f"Unsupported template format: {template_format}")
+
+    return sorted(input_variables)
+
+
 class StringPromptValue(PromptValue):
     """String prompt value."""
 
     text: str
     """Prompt text."""
+    type: Literal["StringPromptValue"] = "StringPromptValue"
 
     def to_string(self) -> str:
         """Return prompt as string."""

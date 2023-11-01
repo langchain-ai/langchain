@@ -28,13 +28,24 @@ linkchecker = "^10.2.1"
 sphinx-copybutton = "^0.5.1"
 nbdoc = "^0.0.82"
 
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.1.3"
+black = { version = "23.10.1", extras = ["jupyter"] }
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
 
+[tool.poetry.group.dev.dependencies]
+
+
+[tool.poetry.group.test.dependencies]
+
+
+[tool.poetry.group.typing.dependencies]
+
 [tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates'
 # Ignore latin etc
 ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
