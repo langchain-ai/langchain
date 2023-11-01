@@ -634,6 +634,12 @@ def _import_wolfram_alpha_tool() -> Any:
     return WolframAlphaQueryRun
 
 
+def _import_yahoo_finance_news() -> Any:
+    from langchain.tools.yahoo_finance_news import YahooFinanceNewsTool
+
+    return YahooFinanceNewsTool
+
+
 def _import_youtube_search() -> Any:
     from langchain.tools.youtube.search import YouTubeSearchTool
 
@@ -865,6 +871,8 @@ def __getattr__(name: str) -> Any:
         return _import_wikipedia_tool()
     elif name == "WolframAlphaQueryRun":
         return _import_wolfram_alpha_tool()
+    elif name == "YahooFinanceNewsTool":
+        return _import_yahoo_finance_news()
     elif name == "YouTubeSearchTool":
         return _import_youtube_search()
     elif name == "ZapierNLAListActions":
@@ -897,6 +905,7 @@ __all__ = [
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
     "BaseTool",
+    "BearlyInterpreterTool",
     "BingSearchResults",
     "BingSearchRun",
     "BraveSearch",
@@ -906,13 +915,14 @@ __all__ = [
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
+    "E2BDataAnalysisTool",
     "EdenAiExplicitImageTool",
     "EdenAiObjectDetectionTool",
     "EdenAiParsingIDTool",
     "EdenAiParsingInvoiceTool",
-    "EdenAiTextToSpeechTool",
     "EdenAiSpeechToTextTool",
     "EdenAiTextModerationTool",
+    "EdenAiTextToSpeechTool",
     "EdenaiTool",
     "ElevenLabsText2SpeechTool",
     "ExtractHyperlinksTool",
@@ -946,12 +956,11 @@ __all__ = [
     "MoveFileTool",
     "NavigateBackTool",
     "NavigateTool",
+    "O365CreateDraftMessage",
     "O365SearchEmails",
     "O365SearchEvents",
-    "O365CreateDraftMessage",
-    "O365SendMessage",
     "O365SendEvent",
-    "authenticate",
+    "O365SendMessage",
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
@@ -980,11 +989,11 @@ __all__ = [
     "WikipediaQueryRun",
     "WolframAlphaQueryRun",
     "WriteFileTool",
+    "YahooFinanceNewsTool",
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "tool",
+    "authenticate",
     "format_tool_to_openai_function",
-    "BearlyInterpreterTool",
-    "E2BDataAnalysisTool",
+    "tool",
 ]

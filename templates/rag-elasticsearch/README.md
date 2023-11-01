@@ -1,7 +1,7 @@
 
 # rag-elasticsearch
 
-This template performs RAG using ElasticSearch.
+This template performs RAG using [ElasticSearch](https://python.langchain.com/docs/integrations/vectorstores/elasticsearch).
 
 It relies on sentence transformer `MiniLM-L6-v2` for embedding passages and questions.
 
@@ -19,7 +19,12 @@ export ELASTIC_PASSWORD = <ClOUD_PASSWORD>
 For local development with Docker, use:
 
 ```bash
-export ES_URL = "http://localhost:9200"
+export ES_URL="http://localhost:9200"
+```
+
+And run an Elasticsearch instance in Docker with
+```bash
+docker run -p 9200:9200 -e "discovery.type=single-node" -e "xpack.security.enabled=false" -e "xpack.security.http.ssl.enabled=false" docker.elastic.co/elasticsearch/elasticsearch:8.9.0
 ```
 
 ## Usage
@@ -83,7 +88,7 @@ runnable = RemoteRunnable("http://localhost:8000/rag-elasticsearch")
 For loading the fictional workplace documents, run the following command from the root of this repository:
 
 ```bash
-python ./data/load_documents.py
+python ingest.py
 ```
 
 However, you can choose from a large number of document loaders [here](https://python.langchain.com/docs/integrations/document_loaders).  

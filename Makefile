@@ -43,7 +43,7 @@ spell_fix:
 
 lint:
 	poetry run ruff docs templates cookbook
-	poetry run black docs templates cookbook --check
+	poetry run black docs templates cookbook --diff
 
 format format_diff:
 	poetry run black docs templates cookbook
