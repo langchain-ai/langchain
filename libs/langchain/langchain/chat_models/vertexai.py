@@ -259,9 +259,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     def _start_chat(
         self, history: _ChatHistory, **kwargs: Any
     ) -> Union[ChatSession, CodeChatSession]:
-        if not self.is_codey_model:
+        if self.is_codey_model:
+            return self.client.start_chat(message_history=history.history, **kwargs)
+        else:
             return self.client.start_chat(
                 context=history.context, message_history=history.history, **kwargs
             )
-        else:
-            return self.client.start_chat(message_history=history.history, **kwargs)
