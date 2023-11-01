@@ -22,9 +22,11 @@ class PromptTemplate(StringPromptTemplate):
     The template can be formatted using either f-strings (default) or jinja2 syntax.
 
     *Security warning*: Prefer using `template_format="f-string"` instead of
-    `template_format="jinja2"`, since jinja2 templates are not sandboxed and may
-    lead to arbitrary Python code execution. Do not construct a jinja2 `PromptTemplate`
-    from unverified or user-controlled inputs!
+        `template_format="jinja2"`, or make sure to never accept jinja2 templates
+        from untrusted sources as they may lead to arbitrary Python code execution.
+        Jinja2 templates as of LangChain 0.0.329 will be using Jinja2's
+        SandboxedEnvironment by default, but this sand-boxing should
+        be treated as a best-effort approach rather than a guarantee of security.
 
     Example:
 
@@ -195,6 +197,13 @@ class PromptTemplate(StringPromptTemplate):
         **kwargs: Any,
     ) -> PromptTemplate:
         """Load a prompt template from a template.
+
+        *Security warning*: Prefer using `template_format="f-string"` instead of
+            `template_format="jinja2"`, or make sure to never accept jinja2 templates
+            from untrusted sources as they may lead to arbitrary Python code execution.
+            Jinja2 templates as of LangChain 0.0.329 will be using Jinja2's
+            SandboxedEnvironment by default, but this sand-boxing should
+            be treated as a best-effort approach rather than a guarantee of security.
 
         Args:
             template: The template to load.
