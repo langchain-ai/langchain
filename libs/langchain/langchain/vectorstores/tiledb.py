@@ -242,7 +242,6 @@ class TileDB(VectorStore):
     def similarity_search_by_vector(
         self,
         embedding: List[float],
-        *,
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
         fetch_k: int = 20,
@@ -272,7 +271,6 @@ class TileDB(VectorStore):
     def similarity_search(
         self,
         query: str,
-        *,
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
         fetch_k: int = 20,
@@ -357,7 +355,6 @@ class TileDB(VectorStore):
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
-        *,
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -394,7 +391,6 @@ class TileDB(VectorStore):
     def max_marginal_relevance_search(
         self,
         query: str,
-        *,
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -592,7 +588,6 @@ class TileDB(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        *,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         timestamp: int = 0,
@@ -650,7 +645,6 @@ class TileDB(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
-        *,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         metric: str = DEFAULT_METRIC,
