@@ -336,14 +336,17 @@ class SagemakerEndpoint(LLM):
                 )
                 iterator = LineIterator(resp["Body"])
                 current_completion: str = ""
+
                 for line in iterator:
-                    resp = json.loads(line)
-                    resp_output = resp.get("outputs")[0]
+                    chunk_text = self.content_handler.transform_output(line)
+
                     if stop is not None:
                         # Uses same approach as below
-                        resp_output = enforce_stop_tokens(resp_output, stop)
-                    current_completion += resp_output
-                    run_manager.on_llm_new_token(resp_output)
+                        chunk_text = enforce_stop_tokens(chunk_text, stop)
+                    
+                    if chunk_text:
+                        current_completion += chunk_text
+                        run_manager.on_llm_new_token(chunk_text)
                 return current_completion
             except Exception as e:
                 raise ValueError(f"Error raised by streaming inference endpoint: {e}")
