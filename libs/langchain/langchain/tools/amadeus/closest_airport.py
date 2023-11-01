@@ -30,9 +30,9 @@ class AmadeusClosestAirport(AmadeusBaseTool):
     """Tool for finding the closest airport to a particular location."""
 
     name: str = "closest_airport"
-    description: str = (
-        "Use this tool to find the closest airport to a particular location."
-    )
+    description: (
+        str
+    ) = "Use this tool to find the closest airport to a particular location."
     args_schema: Type[ClosestAirportSchema] = ClosestAirportSchema
 
     def _run(

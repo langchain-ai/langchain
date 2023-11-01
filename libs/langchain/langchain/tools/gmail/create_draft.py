@@ -36,9 +36,9 @@ class GmailCreateDraft(GmailBaseTool):
     """Tool that creates a draft email for Gmail."""
 
     name: str = "create_gmail_draft"
-    description: str = (
-        "Use this tool to create a draft email with the provided message fields."
-    )
+    description: (
+        str
+    ) = "Use this tool to create a draft email with the provided message fields."
     args_schema: Type[CreateDraftSchema] = CreateDraftSchema
 
     def _prepare_draft_message(

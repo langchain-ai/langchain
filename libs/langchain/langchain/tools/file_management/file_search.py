@@ -30,9 +30,9 @@ class FileSearchTool(BaseFileToolMixin, BaseTool):
 
     name: str = "file_search"
     args_schema: Type[BaseModel] = FileSearchInput
-    description: str = (
-        "Recursively search for files in a subdirectory that match the regex pattern"
-    )
+    description: (
+        str
+    ) = "Recursively search for files in a subdirectory that match the regex pattern"
 
     def _run(
         self,
