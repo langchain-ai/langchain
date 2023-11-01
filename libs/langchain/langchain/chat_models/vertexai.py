@@ -139,7 +139,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
                         values["tuned_model_name"]
                     )
                 else:
-                    values["client"] = CodeChatModel.from_pretrained(values["model_name"])
+                    values["client"] = CodeChatModel.from_pretrained(
+                        values["model_name"]
+                    )
             else:
                 from vertexai.preview.language_models import ChatModel
 
