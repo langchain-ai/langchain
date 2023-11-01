@@ -284,7 +284,8 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                             },
                         }
                         for prompt, output in zip(
-                            prompts, chain_output_val  # type: ignore
+                            prompts,  # type: ignore
+                            chain_output_val,
                         )
                     ]
                 )
