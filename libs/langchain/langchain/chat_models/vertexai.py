@@ -134,7 +134,12 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             if is_codey_model(values["model_name"]):
                 from vertexai.preview.language_models import CodeChatModel
 
-                values["client"] = CodeChatModel.from_pretrained(values["model_name"])
+                if values["tuned_model_name"]:
+                    values["client"] = CodeChatModel.get_tuned_model(
+                        values["tuned_model_name"]
+                    )
+                else:
+                    values["client"] = CodeChatModel.from_pretrained(values["model_name"])
             else:
                 from vertexai.preview.language_models import ChatModel
 
