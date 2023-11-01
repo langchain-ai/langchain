@@ -3748,6 +3748,7 @@
                   ]
                 },
                 "config": {},
+                "config_factories": [],
                 "custom_input_type": null,
                 "custom_output_type": null
               }

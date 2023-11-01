@@ -32,7 +32,7 @@ def create_conversational_retrieval_agent(
     system_message: Optional[SystemMessage] = None,
     verbose: bool = False,
     max_token_limit: int = 2000,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> AgentExecutor:
     """A convenience method for creating a conversational retrieval agent.
 
@@ -83,5 +83,5 @@ def create_conversational_retrieval_agent(
         memory=memory,
         verbose=verbose,
         return_intermediate_steps=remember_intermediate_steps,
-        **kwargs
+        **kwargs,
     )

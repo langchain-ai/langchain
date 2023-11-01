@@ -57,7 +57,7 @@ def maximal_marginal_relevance(
 def filter_complex_metadata(
     documents: List[Document],
     *,
-    allowed_types: Tuple[Type, ...] = (str, bool, int, float)
+    allowed_types: Tuple[Type, ...] = (str, bool, int, float),
 ) -> List[Document]:
     """Filter out metadata types that are not supported for a vector store."""
     updated_documents = []

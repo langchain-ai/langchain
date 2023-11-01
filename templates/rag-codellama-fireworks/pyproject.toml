@@ -2,12 +2,14 @@
 name = "rag-codellama-fireworks"
 version = "0.1.0"
 description = ""
-authors = ["Lance Martin <lance@langchain.dev>"]
+authors = [
+    "Lance Martin <lance@langchain.dev>",
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain = ">=0.0.313, <0.1"
+python = ">=3.9,<4.0"
+langchain = ">=0.0.325"
 gpt4all = ">=1.0.8"
 tiktoken = ">=0.5.1"
 chromadb = ">=0.4.14"
@@ -18,5 +20,7 @@ export_module = "rag_codellama_fireworks"
 export_attr = "chain"
 
 [build-system]
-requires = ["poetry-core"]
+requires = [
+    "poetry-core",
+]
 build-backend = "poetry.core.masonry.api"

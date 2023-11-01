@@ -64,20 +64,14 @@ logger = logging.getLogger(__name__)
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
 )
-tracing_callback_var: ContextVar[
-    Optional[LangChainTracerV1]
-] = ContextVar(  # noqa: E501
+tracing_callback_var: ContextVar[Optional[LangChainTracerV1]] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
-wandb_tracing_callback_var: ContextVar[
-    Optional[WandbTracer]
-] = ContextVar(  # noqa: E501
+wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(  # noqa: E501
     "tracing_wandb_callback", default=None
 )
 
-tracing_v2_callback_var: ContextVar[
-    Optional[LangChainTracer]
-] = ContextVar(  # noqa: E501
+tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
 )
 run_collector_var: ContextVar[
@@ -1495,6 +1489,18 @@ class CallbackManagerForChainGroup(CallbackManager):
         )
         self.parent_run_manager = parent_run_manager
         self.ended = False
+
+    def copy(self) -> CallbackManagerForChainGroup:
+        return self.__class__(
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
+            parent_run_manager=self.parent_run_manager,
+        )
 
     def on_chain_end(self, outputs: Union[Dict[str, Any], Any], **kwargs: Any) -> None:
         """Run when traced chain group ends.
