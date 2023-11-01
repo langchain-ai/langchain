@@ -47,14 +47,14 @@ class PGVecto_rs(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: "PGVecto_rs",
+        cls,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         db_url: str = "",
         collection_name: str = str(uuid.uuid4().hex),
         **kwargs: Any,
-    ) -> "PGVecto_rs":
+    ):
         """Return VectorStore initialized from texts and optional metadatas."""
         sample_embedding = embedding.embed_query("Hello pgvecto_rs!")
         dimension = len(sample_embedding)
@@ -72,13 +72,13 @@ class PGVecto_rs(VectorStore):
 
     @classmethod
     def from_documents(
-        cls: "PGVecto_rs",
+        cls,
         documents: List[Document],
         embedding: Embeddings,
         db_url: str = "",
         collection_name: str = str(uuid.uuid4().hex),
         **kwargs: Any,
-    ) -> "PGVecto_rs":
+    ):
         """Return VectorStore initialized from documents."""
         texts = [document.page_content for document in documents]
         metadatas = [document.metadata for document in documents]
@@ -88,11 +88,11 @@ class PGVecto_rs(VectorStore):
 
     @classmethod
     def from_collection_name(
-        cls: "PGVecto_rs",
+        cls,
         embedding: Embeddings,
         db_url: str,
         collection_name: str,
-    ) -> "PGVecto_rs":
+    ):
         """Create new empty vectorstore with collection_name.
         Or connect to an existing vectorstore in database if exists.
         Arguments should be the same as when the vectorstore was created."""
