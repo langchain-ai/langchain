@@ -331,6 +331,7 @@ def _get_eleven_labs_text2speech(**kwargs: Any) -> BaseTool:
 def _get_memorize(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     return Memorize(llm=llm)
 
+
 def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
     return GoogleCloudTextToSpeechTool(**kwargs)
 
