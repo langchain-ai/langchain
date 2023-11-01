@@ -1,43 +1,8 @@
 # langchain-cli
 
-Install CLI
+This package implements the official CLI for LangChain. Right now, it is most useful
+for getting started with LangChain Templates!
 
-`pip install -U --pre langchain-cli`
+[CLI Docs](https://github.com/langchain-ai/langchain/blob/master/libs/cli/DOCS.md)
 
-Create new langchain app
-
-`langchain serve new my-app`
-
-Go into app
-
-`cd my-app`
-
-Install a package
-
-`langchain serve add extraction-summary`
-
-(Activate virtualenv)
-
-Install langserve
-
-`pip install "langserve[all]"`
-
-Install the langchain package
-
-`pip install -e packages/extraction-summary`
-
-Edit `app/server.py` to add that package to the routes
-
-```markdown
-from fastapi import FastAPI
-from langserve import add_routes 
-from extraction_summary.chain import chain
-
-app = FastAPI()
-
-add_routes(app, chain)
-```
-
-Run the app
-
-`python app/server.py`
+[LangServe Templates Quickstart](https://github.com/langchain-ai/langchain/blob/master/templates/README.md)

@@ -15,19 +15,33 @@ from langchain.utils.formatting import formatter
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
     """Format a template using jinja2.
 
-    *Security warning*: jinja2 templates are not sandboxed and may lead
-    to arbitrary Python code execution. Do not expand jinja2 templates
-    using unverified or user-controlled inputs!
+    *Security warning*: As of LangChain 0.0.329, this method uses Jinja2's
+        SandboxedEnvironment by default. However, this sand-boxing should
+        be treated as a best-effort approach rather than a guarantee of security.
+        Do not accept jinja2 templates from untrusted sources as they may lead
+        to arbitrary Python code execution.
+
+        https://jinja.palletsprojects.com/en/3.1.x/sandbox/
     """
     try:
-        from jinja2 import Template
+        from jinja2.sandbox import SandboxedEnvironment
     except ImportError:
         raise ImportError(
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
+            "Please be cautious when using jinja2 templates. "
+            "Do not expand jinja2 templates using unverified or user-controlled "
+            "inputs as that can result in arbitrary Python code execution."
         )
 
-    return Template(template).render(**kwargs)
+    # This uses a sandboxed environment to prevent arbitrary code execution.
+    # Jinja2 uses an opt-out rather than opt-in approach for sand-boxing.
+    # Please treat this sand-boxing as a best-effort approach rather than
+    # a guarantee of security.
+    # We recommend to never use jinja2 templates with untrusted inputs.
+    # https://jinja.palletsprojects.com/en/3.1.x/sandbox/
+    # approach not a guarantee of security.
+    return SandboxedEnvironment().from_string(template).render(**kwargs)
 
 
 def validate_jinja2(template: str, input_variables: List[str]) -> None:
