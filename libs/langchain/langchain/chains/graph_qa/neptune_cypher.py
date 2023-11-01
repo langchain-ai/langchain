@@ -7,7 +7,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import (
-    CYPHER_QA_PROMPT,
+    NEPTUNE_CYPHER_QA_PROMPT,
     NEPTUNE_OPENCYPHER_GENERATION_PROMPT,
     NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT,
 )
@@ -116,6 +116,8 @@ class NeptuneOpenCypherQAChain(Chain):
     """Whether or not to return the intermediate steps along with the final answer."""
     return_direct: bool = False
     """Whether or not to return the result of querying the graph directly."""
+    user_instructions: str = ""
+    """Extra instructions by the appended to the QA prompt."""
 
     @property
     def input_keys(self) -> List[str]:
@@ -139,8 +141,9 @@ class NeptuneOpenCypherQAChain(Chain):
         cls,
         llm: BaseLanguageModel,
         *,
-        qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
+        qa_prompt: BasePromptTemplate = NEPTUNE_CYPHER_QA_PROMPT,
         cypher_prompt: Optional[BasePromptTemplate] = None,
+        user_instructions: Optional[str] = None,
         **kwargs: Any,
     ) -> NeptuneOpenCypherQAChain:
         """Initialize from LLM."""
@@ -152,6 +155,7 @@ class NeptuneOpenCypherQAChain(Chain):
         return cls(
             qa_chain=qa_chain,
             cypher_generation_chain=cypher_generation_chain,
+            user_instructions=user_instructions,
             **kwargs,
         )
 
@@ -195,7 +199,11 @@ class NeptuneOpenCypherQAChain(Chain):
             intermediate_steps.append({"context": context})
 
             result = self.qa_chain(
-                {"question": question, "context": context},
+                {
+                    "question": question,
+                    "context": context,
+                    "user_instructions": self.user_instructions,
+                },
                 callbacks=callbacks,
             )
             final_result = result[self.qa_chain.output_key]

@@ -343,3 +343,19 @@ NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT = PromptTemplate(
     input_variables=["schema", "question"],
     template=NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE,
 )
+
+
+NEPTUNE_CYPHER_QA_TEMPLATE = """You are an assistant that helps to form nice and human understandable answers.
+The information part contains the provided information that you must use to construct an answer.
+The provided information is authoritative, you must never doubt it or try to use your internal knowledge to correct it.
+Make the answer sound as a response to the question. Do not mention that you based the result on the given information.
+If the provided information is empty, say that you don't know the answer. {user_instructions}
+Information:
+{context}
+
+Question: {question}
+Helpful Answer:"""
+NEPTUNE_CYPHER_QA_PROMPT = PromptTemplate(
+    input_variables=["user_instructions", "context", "question"],
+    template=NEPTUNE_CYPHER_QA_TEMPLATE,
+)
