@@ -138,7 +138,12 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             else:
                 from vertexai.preview.language_models import ChatModel
 
-                values["client"] = ChatModel.from_pretrained(values["model_name"])
+                if values["tuned_model_name"]:
+                    values["client"] = ChatModel.get_tuned_model(
+                        values["tuned_model_name"]
+                    )
+                else:
+                    values["client"] = ChatModel.from_pretrained(values["model_name"])
         except ImportError:
             raise_vertex_import_error()
         return values
