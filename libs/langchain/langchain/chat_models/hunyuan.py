@@ -4,7 +4,7 @@ import hmac
 import json
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Type, Union
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 from urllib.parse import urlparse
 
 import requests
@@ -27,12 +27,16 @@ from langchain.schema.messages import (
     HumanMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_HUNYUAN_API_BASE = "https://hunyuan.cloud.tencent.com"
-DEFAULT_HUNYUAN_PATH = "/hyllm/v1/chat/completions"
+DEFAULT_API_BASE = "https://hunyuan.cloud.tencent.com"
+DEFAULT_PATH = "/hyllm/v1/chat/completions"
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -116,13 +120,6 @@ def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
     return ChatResult(generations=generations, llm_output=llm_output)
 
 
-def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
-
-
 class ChatHunyuan(BaseChatModel):
     """Tencent Hunyuan chat models API by Tencent.
 
@@ -141,7 +138,7 @@ class ChatHunyuan(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    hunyuan_api_base: str = "https://hunyuan.cloud.tencent.com"
+    hunyuan_api_base: str = Field(default=DEFAULT_API_BASE)
     """Hunyuan custom endpoints"""
     hunyuan_app_id: Optional[str] = None
     """Hunyuan App ID"""
@@ -201,6 +198,7 @@ class ChatHunyuan(BaseChatModel):
             values,
             "hunyuan_api_base",
             "HUNYUAN_API_BASE",
+            DEFAULT_API_BASE,
         )
         values["hunyuan_app_id"] = get_from_dict_or_env(
             values,
@@ -212,7 +210,7 @@ class ChatHunyuan(BaseChatModel):
             "hunyuan_secret_id",
             "HUNYUAN_SECRET_ID",
         )
-        values["hunyuan_secret_key"] = _to_secret(
+        values["hunyuan_secret_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
                 "hunyuan_secret_key",
@@ -303,7 +301,7 @@ class ChatHunyuan(BaseChatModel):
         if self.streaming:
             payload["stream"] = 1
 
-        url = self.hunyuan_api_base + DEFAULT_HUNYUAN_PATH
+        url = self.hunyuan_api_base + DEFAULT_PATH
 
         res = requests.post(
             url=url,
