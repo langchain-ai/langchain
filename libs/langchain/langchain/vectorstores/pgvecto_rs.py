@@ -1,24 +1,24 @@
-from langchain.docstore.document import Document
+import uuid
+from typing import Any, Iterable, List, Optional
+
+import numpy as np
+import sqlalchemy
+from pgvecto_rs.sqlalchemy import Vector
+from sqlalchemy import insert, select
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm.session import Session
+
 from langchain.embeddings.base import Embeddings
 from langchain.schema import Document
-from langchain.vectorstores.base import VST, VectorStore
+from langchain.vectorstores.base import VectorStore
 
-from pgvecto_rs.sqlalchemy import Vector
-from typing import Any, Iterable, List, Optional, Type
-import sqlalchemy
-import uuid
-import numpy as np
-from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
-from sqlalchemy.orm.session import Session
-from sqlalchemy import select, insert
 
 class _ORMBase(DeclarativeBase):
     pass
 
 
 class PGVecto_rs(VectorStore):
-
     def __init__(
         self,
         embedding: Embeddings,
@@ -26,15 +26,17 @@ class PGVecto_rs(VectorStore):
         db_url: str,
         collection_name: str,
         new_table: bool = False,
-        ) -> None:
-
+    ) -> None:
         def define_table():
             class _Table(_ORMBase):
                 __tablename__ = f"collection_{collection_name}"
-                id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+                id: Mapped[uuid.UUID] = mapped_column(
+                    postgresql.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+                )
                 text: Mapped[str] = mapped_column(sqlalchemy.String)
                 meta: Mapped[dict] = mapped_column(postgresql.JSONB)
                 embedding: Mapped[np.ndarray] = mapped_column(Vector(dimension))
+
             return _Table
 
         self._engine = sqlalchemy.create_engine(db_url)
@@ -61,26 +63,28 @@ class PGVecto_rs(VectorStore):
         selv: PGVecto_rs = cls(
             embedding=embedding,
             dimension=dimension,
-            db_url = db_url,
-            collection_name = collection_name,
-            new_table = True,
+            db_url=db_url,
+            collection_name=collection_name,
+            new_table=True,
         )
         selv.add_texts(texts, metadatas, **kwargs)
         return selv
-    
+
     @classmethod
     def from_documents(
-        cls: "PGVecto_rs", 
-        documents: List[Document], 
-        embedding: Embeddings, 
+        cls: "PGVecto_rs",
+        documents: List[Document],
+        embedding: Embeddings,
         db_url: str = "",
         collection_name: str = str(uuid.uuid4().hex),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> "PGVecto_rs":
         """Return VectorStore initialized from documents."""
         texts = [document.page_content for document in documents]
         metadatas = [document.metadata for document in documents]
-        return cls.from_texts(texts, embedding, metadatas, db_url, collection_name, **kwargs)
+        return cls.from_texts(
+            texts, embedding, metadatas, db_url, collection_name, **kwargs
+        )
 
     @classmethod
     def from_collection_name(
@@ -89,8 +93,8 @@ class PGVecto_rs(VectorStore):
         db_url: str,
         collection_name: str,
     ) -> "PGVecto_rs":
-        """Create new empty vectorstore with collection_name. 
-        Or connect to an existing vectorstore in database if exists. 
+        """Create new empty vectorstore with collection_name.
+        Or connect to an existing vectorstore in database if exists.
         Arguments should be the same as when the vectorstore was created."""
         sample_embedding = embedding.embed_query("Hello pgvecto_rs!")
         return cls(
@@ -116,27 +120,26 @@ class PGVecto_rs(VectorStore):
         """
         embeddings = self._embedding.embed_documents(texts)
         with Session(self._engine) as _session:
-            for text, embedding, metadata in zip(texts, embeddings, metadatas or [dict()] * len(texts)):
-                t = insert(self._table).values(text=text, meta=metadata, embedding=embedding)
+            for text, embedding, metadata in zip(
+                texts, embeddings, metadatas or [dict()] * len(texts)
+            ):
+                t = insert(self._table).values(
+                    text=text, meta=metadata, embedding=embedding
+                )
                 _session.execute(t)
             _session.commit()
 
-    def add_documents(
-        self, 
-        documents: List[Document], 
-        **kwargs: Any
-    ) -> None:
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> None:
         """Run more documents through the embeddings and add to the vectorstore.
 
         Args:
             documents (List[Document]): List of documents to add to the vectorstore.
         """
         return self.add_texts(
-            [document.page_content for document in documents], 
-            [document.metadata for document in documents], 
-            **kwargs
+            [document.page_content for document in documents],
+            [document.metadata for document in documents],
+            **kwargs,
         )
-
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -144,7 +147,14 @@ class PGVecto_rs(VectorStore):
         """Return docs most similar to query."""
         with Session(self._engine) as _session:
             query_embedding = self._embedding.embed_documents([query])[0]
-            t = select(self._table).order_by(self._table.embedding.squared_euclidean_distance(query_embedding)).limit(k)
-            return [Document(page_content=row[0].text, metadata=row[0].meta) 
-                    for row in _session.execute(t)]
-
+            t = (
+                select(self._table)
+                .order_by(
+                    self._table.embedding.squared_euclidean_distance(query_embedding)
+                )
+                .limit(k)
+            )
+            return [
+                Document(page_content=row[0].text, metadata=row[0].meta)
+                for row in _session.execute(t)
+            ]
