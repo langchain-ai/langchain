@@ -10,9 +10,11 @@ def api_client() -> MerriamWebsterAPIWrapper:
 
 
 def test_call(api_client: MerriamWebsterAPIWrapper) -> None:
+    """Test that call gives correct answer."""
     output = api_client.run("LLM")
     assert "large language model" in output
 
 def test_call_no_result(api_client: MerriamWebsterAPIWrapper) -> None:
+    """Test that non-existent words return proper result."""
     output = api_client.run("NO_RESULT_NO_RESULT_NO_RESULT")
     assert "No Merriam-Webster definition was found for query" in output
