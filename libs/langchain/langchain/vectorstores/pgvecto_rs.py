@@ -1,17 +1,17 @@
 import uuid
+import numpy as np
 from typing import Any, Iterable, List, Optional
 
-import numpy as np
 import sqlalchemy
-from pgvecto_rs.sqlalchemy import Vector
 from sqlalchemy import insert, select
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.orm.session import Session
+from pgvecto_rs.sqlalchemy import Vector
 
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.schema import Document
-from langchain.vectorstores.base import VectorStore
 
 
 class _ORMBase(DeclarativeBase):
