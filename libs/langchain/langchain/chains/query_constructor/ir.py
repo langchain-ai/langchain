@@ -1,12 +1,11 @@
 """Internal representation of a structured query language."""
 from __future__ import annotations
 
-import datetime
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence, Union
 
-from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import BaseModel
 
 
 class Visitor(ABC):
@@ -53,12 +52,8 @@ def _to_snake_case(name: str) -> str:
     return snake_case
 
 
-class Expr(Serializable):
+class Expr(BaseModel):
     """Base class for all expressions."""
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        return True
 
     def accept(self, visitor: Visitor) -> Any:
         """Accept a visitor.
@@ -101,35 +96,12 @@ class FilterDirective(Expr, ABC):
     """A filtering expression."""
 
 
-class Iso8601Date(Serializable):
-    date: datetime.date
-
-    def __init__(self, date: Union[str, datetime.date], **kwargs: Any) -> None:
-        if isinstance(date, str):
-            date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
-        super().__init__(date=date, **kwargs)
-
-    @property
-    def lc_attributes(self) -> Dict:
-        return {"date": self.date.strftime("%Y-%m-%d")}
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        return True
-
-    def __str__(self) -> str:
-        return self.date.strftime("%Y-%m-%d")
-
-
-Primitive = Union[str, bool, int, Iso8601Date]
-
-
 class Comparison(FilterDirective):
     """A comparison to a value."""
 
     comparator: Comparator
     attribute: str
-    value: Union[Primitive, List[Primitive]]
+    value: Any
 
 
 class Operation(FilterDirective):

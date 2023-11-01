@@ -1,12 +1,11 @@
 """Logic for converting internal query language to a valid Milvus query."""
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
-    Primitive,
     StructuredQuery,
     Visitor,
 )
@@ -22,7 +21,7 @@ COMPARATOR_TO_BER = {
 UNARY_OPERATORS = [Operator.NOT]
 
 
-def process_value(value: Union[Primitive, List[Primitive]]) -> str:
+def process_value(value: Union[int, float, str]) -> str:
     """Convert a value to a string and add double quotes if it is a string.
 
     It required for comparators involving strings.
@@ -38,7 +37,7 @@ def process_value(value: Union[Primitive, List[Primitive]]) -> str:
         # If the value is already a string, add double quotes
         return f'"{value}"'
     else:
-        # If the value is not a string, convert it to a string without double quotes
+        # If the valueis not a string, convert it to a string without double quotes
         return str(value)
 
 

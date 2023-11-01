@@ -1,9 +1,8 @@
-from typing import Any, Dict, Tuple, Union
+from typing import Dict, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
-    Iso8601Date,
     Operation,
     Operator,
     StructuredQuery,
@@ -60,28 +59,33 @@ class ElasticsearchTranslator(Visitor):
             Comparator.LT,
             Comparator.LTE,
         ]
-        if isinstance(comparison.value, Iso8601Date):
-            value: Any = comparison.value.date.strftime("%Y-%m-%d")
-        else:
-            value = comparison.value
 
         if is_range_comparator:
-            return {"range": {field: {self._format_func(comparison.comparator): value}}}
-        elif comparison.comparator == Comparator.CONTAIN:
-            return {self._format_func(comparison.comparator): {field: {"query": value}}}
-
-        elif comparison.comparator == Comparator.LIKE:
             return {
-                self._format_func(comparison.comparator): {
-                    field: {"query": value, "fuzziness": "AUTO"}
+                "range": {
+                    field: {self._format_func(comparison.comparator): comparison.value}
                 }
             }
-        else:
-            # we assume that if the value is a string,
-            # we want to use the keyword field
-            field = f"{field}.keyword" if isinstance(comparison.value, str) else field
 
-            return {self._format_func(comparison.comparator): {field: value}}
+        if comparison.comparator == Comparator.CONTAIN:
+            return {
+                self._format_func(comparison.comparator): {
+                    field: {"query": comparison.value}
+                }
+            }
+
+        if comparison.comparator == Comparator.LIKE:
+            return {
+                self._format_func(comparison.comparator): {
+                    field: {"query": comparison.value, "fuzziness": "AUTO"}
+                }
+            }
+
+        # we assume that if the value is a string,
+        # we want to use the keyword field
+        field = f"{field}.keyword" if isinstance(comparison.value, str) else field
+
+        return {self._format_func(comparison.comparator): {field: comparison.value}}
 
     def visit_structured_query(
         self, structured_query: StructuredQuery

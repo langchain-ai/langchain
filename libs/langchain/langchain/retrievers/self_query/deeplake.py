@@ -1,12 +1,11 @@
 """Logic for converting internal query language to a valid Chroma query."""
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
-    Primitive,
     StructuredQuery,
     Visitor,
 )
@@ -27,10 +26,10 @@ OPERATOR_TO_TQL = {
 }
 
 
-def can_cast_to_float(string: Union[Primitive, List[Primitive]]) -> bool:
+def can_cast_to_float(string: str) -> bool:
     """Check if a string can be cast to a float."""
     try:
-        float(string)  # type: ignore
+        float(string)
         return True
     except ValueError:
         return False
