@@ -50,6 +50,7 @@ extended_testing = [
  "faker",
  "vowpal-wabbit-next",
  "sentence-transformers",
+ "wasm_exec"
 ]
 
 [tool.ruff]
