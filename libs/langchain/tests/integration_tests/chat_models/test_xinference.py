@@ -407,7 +407,6 @@ def test_full_example(setup) -> None:
         ),
     ]
     r = chat(messages)
-    print(repr(r))
     assert type(r) is AIMessage
     assert isinstance(r.content, str)
     assert r.content
@@ -433,7 +432,6 @@ def test_full_example(setup) -> None:
         ).to_messages(),
         generate_config={"max_tokens": 10},
     )
-    print(repr(r))
     assert type(r) is AIMessage
     assert isinstance(r.content, str)
     assert r.content
