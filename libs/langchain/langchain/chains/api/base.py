@@ -216,6 +216,7 @@ class APIChain(Chain):
         headers: Optional[dict] = None,
         api_url_prompt: BasePromptTemplate = API_URL_PROMPT,
         api_response_prompt: BasePromptTemplate = API_RESPONSE_PROMPT,
+        limit_to_domains: Optional[Sequence[str]] = tuple(),
         **kwargs: Any,
     ) -> APIChain:
         """Load chain from just an LLM and the api docs."""
@@ -227,6 +228,7 @@ class APIChain(Chain):
             api_answer_chain=get_answer_chain,
             requests_wrapper=requests_wrapper,
             api_docs=api_docs,
+            limit_to_domains=limit_to_domains,
             **kwargs,
         )
 
