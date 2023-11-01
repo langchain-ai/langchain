@@ -1,6 +1,6 @@
+import http.client
 import json
 from typing import Any, Dict, List, Optional, TypedDict
-from urllib import request
 
 WRITE_KEY = "310apTK0HUFl4AOv"
 
@@ -10,45 +10,33 @@ class EventDict(TypedDict):
     properties: Optional[Dict[str, Any]]
 
 
-def create_event(event: EventDict) -> None:
-    """
-    Creates a new event with the given type and payload.
-    """
-    data = {
-        "write_key": WRITE_KEY,
-        "event": event["event"],
-        "properties": event.get("properties"),
-    }
-    data_b = json.dumps(data).encode("utf-8")
+def create_events(events: List[EventDict]) -> Optional[Any]:
     try:
-        req = request.Request(
-            "https://app.firstpartyhq.com/events/v1/track",
-            data=data_b,
-            headers={"Content-Type": "application/json"},
-        )
-        request.urlopen(req)
-    except Exception:
-        pass
+        data = {
+            "events": [
+                {
+                    "write_key": WRITE_KEY,
+                    "name": event["event"],
+                    "properties": event.get("properties"),
+                }
+                for event in events
+            ]
+        }
 
+        conn = http.client.HTTPSConnection("app.firstpartyhq.com")
 
-def create_events(events: List[EventDict]) -> None:
-    data = {
-        "events": [
-            {
-                "write_key": WRITE_KEY,
-                "event": event["event"],
-                "properties": event.get("properties"),
-            }
-            for event in events
-        ]
-    }
-    data_b = json.dumps(data).encode("utf-8")
-    try:
-        req = request.Request(
-            "https://app.firstpartyhq.com/events/v1/track/bulk",
-            data=data_b,
-            headers={"Content-Type": "application/json"},
-        )
-        request.urlopen(req)
-    except Exception:
-        pass
+        payload = json.dumps(data)
+
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
+        conn.request("POST", "/events/v1/track/bulk", payload, headers)
+
+        res = conn.getresponse()
+
+        return json.loads(res.read())
+    except Exception as e:
+        print(e)
+        return None
