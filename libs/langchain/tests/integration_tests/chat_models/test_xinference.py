@@ -61,7 +61,7 @@ async def setup() -> AsyncGenerator[Tuple[str, str], None]:
         yield endpoint, model_uid
 
 
-def test_chat_openai(setup) -> None:
+def test_chat_xinference(setup) -> None:
     """Test ChatXinference wrapper."""
     endpoint, model_uid = setup
     chat = ChatXinference(endpoint=endpoint, model=model_uid, max_tokens=10)
@@ -71,8 +71,8 @@ def test_chat_openai(setup) -> None:
     assert isinstance(response.content, str)
 
 
-def test_chat_openai_model(setup) -> None:
-    """Test ChatOpenAI wrapper handles model_name."""
+def test_chat_xinference_model(setup) -> None:
+    """Test ChatXinference wrapper handles model_name."""
     endpoint, _ = setup
     with pytest.raises(ValueError):
         ChatXinference(endpoint=endpoint, model="foo")
@@ -80,8 +80,8 @@ def test_chat_openai_model(setup) -> None:
         ChatXinference(endpoint=endpoint, model_name="bar")
 
 
-def test_chat_openai_system_message(setup) -> None:
-    """Test ChatOpenAI wrapper with system message."""
+def test_chat_xinference_system_message(setup) -> None:
+    """Test ChatXinference wrapper with system message."""
     endpoint, model_uid = setup
     chat = ChatXinference(endpoint=endpoint, model=model_uid, max_tokens=10)
     system_message = SystemMessage(content="You are to chat with the user.")
@@ -93,7 +93,7 @@ def test_chat_openai_system_message(setup) -> None:
 
 @pytest.mark.skip(reason="n is not supported by Xinference chat.")
 def test_chat_xinference_generate(setup) -> None:
-    """Test ChatOpenAI wrapper with generate."""
+    """Test ChatXinference wrapper with generate."""
     endpoint, model_uid = setup
     chat = ChatXinference(endpoint=endpoint, model=model_uid, max_tokens=10, n=2)
     message = HumanMessage(content="Hello")
@@ -110,7 +110,7 @@ def test_chat_xinference_generate(setup) -> None:
 
 @pytest.mark.skip(reason="n is not supported by Xinference chat.")
 def test_chat_xinference_multiple_completions(setup) -> None:
-    """Test ChatOpenAI wrapper with multiple completions."""
+    """Test ChatXinference wrapper with multiple completions."""
     endpoint, model_uid = setup
     chat = ChatXinference(endpoint=endpoint, model=model_uid, max_tokens=10, n=5)
     message = HumanMessage(content="Hello")
@@ -256,7 +256,7 @@ async def test_async_chat_xinference_streaming(setup) -> None:
 
 
 def test_chat_xinference_extra_kwargs(setup) -> None:
-    """Test extra kwargs to chat openai."""
+    """Test extra kwargs to chat xinference."""
     endpoint, model_uid = setup
     # Check that foo is saved in extra_kwargs.
     llm = ChatXinference(endpoint=endpoint, model=model_uid, foo=3, max_tokens=10)
@@ -291,7 +291,7 @@ def test_chat_xinference_extra_kwargs(setup) -> None:
 
 
 def test_xinference_streaming(setup) -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from Xinference."""
     endpoint, model_uid = setup
     llm = ChatXinference(endpoint=endpoint, model=model_uid, max_tokens=10)
 
@@ -301,7 +301,7 @@ def test_xinference_streaming(setup) -> None:
 
 @pytest.mark.asyncio
 async def test_xinference_astream(setup) -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from Xinference."""
     endpoint, model_uid = setup
     llm = ChatXinference(endpoint=endpoint, model=model_uid, max_tokens=10)
 
@@ -311,7 +311,7 @@ async def test_xinference_astream(setup) -> None:
 
 @pytest.mark.asyncio
 async def test_xinference_abatch(setup) -> None:
-    """Test streaming tokens from ChatOpenAI."""
+    """Test streaming tokens from ChatXinference."""
     endpoint, model_uid = setup
     llm = ChatXinference(endpoint=endpoint, model=model_uid, max_tokens=10)
 
@@ -322,7 +322,7 @@ async def test_xinference_abatch(setup) -> None:
 
 @pytest.mark.asyncio
 async def test_xinference_abatch_tags(setup) -> None:
-    """Test batch tokens from ChatOpenAI."""
+    """Test batch tokens from ChatXinference."""
     endpoint, model_uid = setup
     llm = ChatXinference(endpoint=endpoint, model=model_uid, max_tokens=10)
 
@@ -334,7 +334,7 @@ async def test_xinference_abatch_tags(setup) -> None:
 
 
 def test_xinference_batch(setup) -> None:
-    """Test batch tokens from ChatOpenAI."""
+    """Test batch tokens from ChatXinference."""
     endpoint, model_uid = setup
     llm = ChatXinference(endpoint=endpoint, model=model_uid, max_tokens=10)
 
@@ -344,8 +344,8 @@ def test_xinference_batch(setup) -> None:
 
 
 @pytest.mark.asyncio
-async def test_openai_ainvoke(setup) -> None:
-    """Test invoke tokens from ChatOpenAI."""
+async def test_xinference_ainvoke(setup) -> None:
+    """Test invoke tokens from ChatXinference."""
     endpoint, model_uid = setup
     llm = ChatXinference(endpoint=endpoint, model=model_uid, max_tokens=10)
 
@@ -353,8 +353,8 @@ async def test_openai_ainvoke(setup) -> None:
     assert isinstance(result.content, str)
 
 
-def test_openai_invoke(setup) -> None:
-    """Test invoke tokens from ChatOpenAI."""
+def test_xinference_invoke(setup) -> None:
+    """Test invoke tokens from ChatXinference."""
     endpoint, model_uid = setup
     llm = ChatXinference(endpoint=endpoint, model=model_uid, max_tokens=10)
 
