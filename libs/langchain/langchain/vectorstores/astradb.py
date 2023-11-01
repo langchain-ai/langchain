@@ -299,7 +299,7 @@ class AstraDB(VectorStore):
                     filter={"_id": missing_document["_id"]},
                     replacement=missing_document,
                 )
-                return [replacement_result["data"]["document"]["_id"]]
+                return replacement_result["data"]["document"]["_id"]
 
             with ThreadPoolExecutor(max_workers=10) as tpe2:
                 batch_replaced = list(tpe2.map(
