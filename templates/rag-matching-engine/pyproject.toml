@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "rag_matching_engine"
+name = "rag-matching-engine"
 version = "0.0.1"
 description = ""
-authors = []
+authors = ["Leonid Kuligin"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -16,7 +16,7 @@ fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
-export_module = "rag_matching_engine.chain"
+export_module = "rag_matching_engine"
 export_attr = "chain"
 
 [build-system]
