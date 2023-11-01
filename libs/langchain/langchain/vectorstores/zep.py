@@ -466,7 +466,7 @@ class ZepVectorStore(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                     Zep determines this auotmatically and this parameter is
+                     Zep determines this automatically and this parameter is
                         ignored.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
@@ -560,7 +560,7 @@ class ZepVectorStore(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                     Zep determines this auotmatically and this parameter is
+                     Zep determines this automatically and this parameter is
                         ignored.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
