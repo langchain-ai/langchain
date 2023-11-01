@@ -37,6 +37,5 @@ def create_events(events: List[EventDict]) -> Optional[Any]:
         res = conn.getresponse()
 
         return json.loads(res.read())
-    except Exception as e:
-        print(e)
+    except Exception:
         return None
