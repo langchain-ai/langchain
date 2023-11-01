@@ -5,6 +5,7 @@ import asyncio
 import contextvars
 import functools
 import logging
+import types
 from typing import (
     Any,
     AsyncIterator,
@@ -77,7 +78,8 @@ async def _to_async_iter(sync_iter):
 
     def safe_next():
         # Converts StopIteration to a sentinel value to avoid:
-        # TypeError: StopIteration interacts badly with generators and cannot be raised into a Future
+        # TypeError: StopIteration interacts badly with generators
+        # and cannot be raised into a Future
         try:
             return next(it)
         except StopIteration:
@@ -190,6 +192,16 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
+def _openai_kwargs_to_xinference_kwargs(**kwargs):
+    messages = kwargs.pop("messages")
+    prompt_message = messages.pop()
+    return {
+        "prompt": prompt_message["content"],
+        "chat_history": messages,
+        "generate_config": kwargs,
+    }
+
+
 class ChatXinference(BaseChatModel):
     """`Xinference` Chat large language models API.
 
@@ -211,8 +223,10 @@ class ChatXinference(BaseChatModel):
         return True
 
     client: Any = None  #: :meta private:
-    model_name: str = Field(default="gpt-3.5-turbo", alias="model")
+    model_name: str = Field(alias="model")
     """Model name to use."""
+    endpoint: str
+    """The Xinference endpoint."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -262,14 +276,28 @@ class ChatXinference(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        try:
-            import xinference_client
+        endpoint = values.get("endpoint")
+        if not endpoint:
+            raise ValueError("Please specify the Xinference endpoint.")
+        model_name = values.get("model_name")
+        if not model_name:
+            raise ValueError("Please specify the Xinference model UID.")
 
+        try:
+            from xinference_client import RESTfulClient as Client
+
+            client = Client(endpoint)
+            values["client"] = client.get_model(model_uid=model_name)
         except ImportError:
             raise ValueError(
                 "Could not import xinference_client python package. "
                 "Please install it with `pip install xinference-client`."
             )
+        except Exception as e:
+            raise ValueError(
+                f"Could not connect to Xinference, "
+                f"endpoint: {endpoint}, model: {model_name}"
+            ) from e
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
@@ -297,7 +325,8 @@ class ChatXinference(BaseChatModel):
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
-            return self.client.create(**kwargs)
+            kwargs = _openai_kwargs_to_xinference_kwargs(**kwargs)
+            return self.client.chat(**kwargs)
 
         return _completion_with_retry(**kwargs)
 
@@ -311,8 +340,12 @@ class ChatXinference(BaseChatModel):
 
         @retry_decorator
         async def _completion_with_retry(**kwargs: Any) -> Any:
-            sync_iter = await asyncio.to_thread(self.client.chat, **kwargs)
-            return _to_async_iter(sync_iter)
+            kwargs = _openai_kwargs_to_xinference_kwargs(**kwargs)
+            maybe_sync_iter = await asyncio.to_thread(self.client.chat, **kwargs)
+            if isinstance(maybe_sync_iter, types.GeneratorType):
+                return _to_async_iter(maybe_sync_iter)
+            else:
+                return maybe_sync_iter
 
         return await _completion_with_retry(**kwargs)
 
