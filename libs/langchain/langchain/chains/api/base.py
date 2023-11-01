@@ -73,7 +73,7 @@ class APIChain(Chain):
     api_docs: str
     question_key: str = "question"  #: :meta private:
     output_key: str = "output"  #: :meta private:
-    limit_to_domains: Optional[Sequence[str]] = ()
+    limit_to_domains: Optional[Sequence[str]]
     """Use to limit the domains that can be accessed by the API chain.
     
     * For example, to limit to just the domain `https://www.example.com`, set
