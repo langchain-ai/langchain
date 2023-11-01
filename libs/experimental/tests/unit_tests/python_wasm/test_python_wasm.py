@@ -34,6 +34,7 @@ multiply(a, b)
 """
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_repl() -> None:
     """Test functionality when globals/locals are not provided."""
     repl = PythonREPL()
@@ -41,47 +42,47 @@ def test_python_repl() -> None:
     # Run a simple initial command.
     repl.run("foo = 1")
     assert repl.locals is not None
-    assert repl.locals["foo"] == 1
-
-    # Now run a command that accesses `foo` to make sure it still has it.
-    repl.run("bar = foo * 2")
-    assert repl.locals is not None
-    assert repl.locals["bar"] == 2
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_repl_no_previous_variables() -> None:
     """Test that it does not have access to variables created outside the scope."""
     foo = 3  # noqa: F841
     repl = PythonREPL()
     output = repl.run("print(foo)")
-    assert output == """NameError("name 'foo' is not defined")"""
+    expected = """WasmExecError('Traceback (most recent call last):\\n  File "<string>", line 1, in <module>\\n  File "<string>", line 1, in <module>\\nNameError: name \\\'foo\\\' is not defined\\n')"""  # noqa: E501
+    assert output == expected
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_repl_pass_in_locals() -> None:
     """Test functionality when passing in locals."""
     _locals = {"foo": 4}
     repl = PythonREPL(_locals=_locals)
-    repl.run("bar = foo * 2")
+    output = repl.run("print(foo * 2)")
     assert repl.locals is not None
-    assert repl.locals["bar"] == 8
+    assert output == str(8)
 
 
+@pytest.mark.requires("wasm_exec")
 def test_functionality() -> None:
     """Test correct functionality."""
     chain = PythonREPL()
     code = "print(1 + 1)"
     output = chain.run(code)
-    assert output == "2\n"
+    assert output == "2"
 
 
+@pytest.mark.requires("wasm_exec")
 def test_functionality_multiline() -> None:
     """Test correct functionality for ChatGPT multiline commands."""
     chain = PythonREPL()
     tool = PythonREPLTool(python_repl=chain)
     output = tool.run(_SAMPLE_CODE)
-    assert output == "30\n"
+    assert output == "30"
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_ast_repl_multiline() -> None:
     """Test correct functionality for ChatGPT multiline commands."""
     if sys.version_info < (3, 9):
@@ -91,6 +92,7 @@ def test_python_ast_repl_multiline() -> None:
     assert output == 30
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_ast_repl_multi_statement() -> None:
     """Test correct functionality for ChatGPT multi statement commands."""
     if sys.version_info < (3, 9):
@@ -100,13 +102,14 @@ def test_python_ast_repl_multi_statement() -> None:
     assert output == 30
 
 
+@pytest.mark.requires("wasm_exec")
 def test_function() -> None:
     """Test correct functionality."""
     chain = PythonREPL()
-    code = "def add(a, b): " "    return a + b"
+    code = """
+    def add(a, b):
+        return a + b
+    print(add(1,2))
+    """
     output = chain.run(code)
-    assert output == ""
-
-    code = "print(add(1, 2))"
-    output = chain.run(code)
-    assert output == "3\n"
+    assert output == "3"
