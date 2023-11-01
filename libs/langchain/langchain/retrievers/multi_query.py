@@ -61,6 +61,7 @@ class MultiQueryRetriever(BaseRetriever):
     llm_chain: LLMChain
     verbose: bool = True
     parser_key: str = "lines"
+    keep_orig: bool = True
 
     @classmethod
     def from_llm(
@@ -69,6 +70,7 @@ class MultiQueryRetriever(BaseRetriever):
         llm: BaseLLM,
         prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
         parser_key: str = "lines",
+        keep_orig: bool = True,
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.
 
@@ -102,6 +104,8 @@ class MultiQueryRetriever(BaseRetriever):
             Unique union of relevant documents from all generated queries
         """
         queries = await self.agenerate_queries(query, run_manager)
+        if keep_orig:
+            queries.append(query)
         documents = await self.aretrieve_documents(queries, run_manager)
         return self.unique_union(documents)
 
@@ -160,6 +164,8 @@ class MultiQueryRetriever(BaseRetriever):
             Unique union of relevant documents from all generated queries
         """
         queries = self.generate_queries(query, run_manager)
+        if keep_orig:
+            queries.append(query)
         documents = self.retrieve_documents(queries, run_manager)
         return self.unique_union(documents)
 
