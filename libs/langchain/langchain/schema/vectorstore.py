@@ -184,6 +184,13 @@ class VectorStore(ABC):
         return 1.0 - distance / math.sqrt(2)
 
     @staticmethod
+    def _cosine_similarity_relevance_score_fn(similarity: float) -> float:
+        """Return the 0..1 score as is. Value of 1 for cosine similarity
+        is most similar(or most relevant)"""
+
+        return similarity
+
+    @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
         """Normalize the distance to a score on a scale [0, 1]."""
 

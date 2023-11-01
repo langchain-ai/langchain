@@ -18,6 +18,7 @@ class DistanceStrategy(str, Enum):
     DOT_PRODUCT = "DOT_PRODUCT"
     JACCARD = "JACCARD"
     COSINE = "COSINE"
+    COSINE_SIMILARITY = "COSINE_SIMILARITY"
 
 
 def maximal_marginal_relevance(
