@@ -5,8 +5,8 @@ from typing import Any, Iterator, Tuple
 
 import pytest
 
-import langchain
 from langchain.cache import CassandraCache, CassandraSemanticCache
+from langchain.globals import get_llm_cache, set_llm_cache
 from langchain.schema import Generation, LLMResult
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -39,12 +39,12 @@ def cassandra_connection() -> Iterator[Tuple[Any, str]]:
 def test_cassandra_cache(cassandra_connection: Tuple[Any, str]) -> None:
     session, keyspace = cassandra_connection
     cache = CassandraCache(session=session, keyspace=keyspace)
-    langchain.llm_cache = cache
+    set_llm_cache(cache)
     llm = FakeLLM()
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo"])
     print(output)
     expected_output = LLMResult(
@@ -59,12 +59,12 @@ def test_cassandra_cache(cassandra_connection: Tuple[Any, str]) -> None:
 def test_cassandra_cache_ttl(cassandra_connection: Tuple[Any, str]) -> None:
     session, keyspace = cassandra_connection
     cache = CassandraCache(session=session, keyspace=keyspace, ttl_seconds=2)
-    langchain.llm_cache = cache
+    set_llm_cache(cache)
     llm = FakeLLM()
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     expected_output = LLMResult(
         generations=[[Generation(text="fizz")]],
         llm_output={},
@@ -85,12 +85,12 @@ def test_cassandra_semantic_cache(cassandra_connection: Tuple[Any, str]) -> None
         keyspace=keyspace,
         embedding=FakeEmbeddings(),
     )
-    langchain.llm_cache = sem_cache
+    set_llm_cache(sem_cache)
     llm = FakeLLM()
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["bar"])  # same embedding as 'foo'
     expected_output = LLMResult(
         generations=[[Generation(text="fizz")]],
