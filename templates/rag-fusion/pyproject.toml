@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.313"
+langchain = ">=0.0.325"
 openai = "^0.28.1"
 pinecone-client = "^2.2.4"
 langchainhub = "^0.1.13"
@@ -16,7 +16,8 @@ langchainhub = "^0.1.13"
 export_module = "rag_fusion.chain"
 export_attr = "chain"
 
-
 [build-system]
-requires = ["poetry-core"]
+requires = [
+    "poetry-core",
+]
 build-backend = "poetry.core.masonry.api"

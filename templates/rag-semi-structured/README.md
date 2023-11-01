@@ -2,6 +2,8 @@
 
 This template performs RAG on semi-structured data, such as a PDF with text and tables.
 
+See [this cookbook](https://github.com/langchain-ai/langchain/blob/master/cookbook/Semi_Structured_RAG.ipynb) as a reference.
+
 ## Environment Setup
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.

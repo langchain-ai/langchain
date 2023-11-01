@@ -393,9 +393,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     self,
                     input="",
                     **self._invocation_params,
-                )[
-                    "data"
-                ][0]["embedding"]
+                )["data"][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
