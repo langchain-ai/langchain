@@ -340,6 +340,16 @@ class ChatXinference(BaseChatModel):
                     overall_token_usage[k] = v
         return {"token_usage": overall_token_usage, "model_name": self.model_uid}
 
+    @staticmethod
+    def _get_merge_kwargs(kwargs1, kwargs2):
+        generate_config1 = kwargs1.get("generate_config", {})
+        generate_config2 = kwargs2.get("generate_config", {})
+        return {
+            **kwargs1,
+            **kwargs2,
+            "generate_config": {**generate_config1, **generate_config2},
+        }
+
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -347,12 +357,14 @@ class ChatXinference(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        generate_config = kwargs.get("generate_config", {})
-        generate_config = {**self.model_kwargs, **generate_config, "stream": True}
+        merged_kwargs = self._get_merge_kwargs(
+            {"generate_config": self.model_kwargs}, kwargs
+        )
+        generate_config = {**merged_kwargs.get("generate_config", {}), "stream": True}
         message_dicts, params = self._create_message_dicts(
             messages, stop, generate_config
         )
-        params = {**params, **kwargs}
+        params = self._get_merge_kwargs(params, kwargs)
 
         default_chunk_class = AIMessageChunk
         for chunk in self.completion_with_retry(
@@ -382,8 +394,10 @@ class ChatXinference(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        generate_config = kwargs.get("generate_config", {})
-        generate_config = {**self.model_kwargs, **generate_config}
+        merged_kwargs = self._get_merge_kwargs(
+            {"generate_config": self.model_kwargs}, kwargs
+        )
+        generate_config = merged_kwargs.get("generate_config", {})
         should_stream = generate_config and generate_config.get("stream")
         if should_stream:
             stream_iter = self._stream(
@@ -396,7 +410,7 @@ class ChatXinference(BaseChatModel):
         message_dicts, params = self._create_message_dicts(
             messages, stop, generate_config
         )
-        params = {**params, **kwargs}
+        params = self._get_merge_kwargs(params, kwargs)
         response = self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         )
@@ -435,12 +449,14 @@ class ChatXinference(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        generate_config = kwargs.get("generate_config", {})
-        generate_config = {**self.model_kwargs, **generate_config, "stream": True}
+        merged_kwargs = self._get_merge_kwargs(
+            {"generate_config": self.model_kwargs}, kwargs
+        )
+        generate_config = {**merged_kwargs.get("generate_config", {}), "stream": True}
         message_dicts, params = self._create_message_dicts(
             messages, stop, generate_config
         )
-        params = {**params, **kwargs}
+        params = self._get_merge_kwargs(params, kwargs)
 
         default_chunk_class = AIMessageChunk
         async for chunk in await self.acompletion_with_retry(
@@ -470,8 +486,10 @@ class ChatXinference(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        generate_config = kwargs.get("generate_config", {})
-        generate_config = {**self.model_kwargs, **generate_config}
+        merged_kwargs = self._get_merge_kwargs(
+            {"generate_config": self.model_kwargs}, kwargs
+        )
+        generate_config = merged_kwargs.get("generate_config", {})
         should_stream = generate_config and generate_config.get("stream")
         if should_stream:
             stream_iter = self._astream(
@@ -482,7 +500,7 @@ class ChatXinference(BaseChatModel):
         message_dicts, params = self._create_message_dicts(
             messages, stop, generate_config
         )
-        params = {**params, **kwargs}
+        params = self._get_merge_kwargs(params, kwargs)
         response = await self.acompletion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         )

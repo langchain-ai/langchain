@@ -2,6 +2,7 @@
 import asyncio
 import time
 from typing import Any, AsyncGenerator, Tuple
+from unittest.mock import MagicMock, patch
 
 import pytest
 import pytest_asyncio
@@ -280,6 +281,30 @@ def test_chat_xinference_extra_kwargs(setup) -> None:
             server_url=server_url, model_uid=model_uid, foo=3, model_kwargs={"foo": 2}
         )
 
+    # Test overwrite kwargs
+    llm = ChatXinference(
+        server_url=server_url,
+        model_uid=model_uid,
+        max_tokens=10,
+        model_kwargs={"temperature": 0},
+    )
+    assert llm.model_kwargs == {"max_tokens": 10, "temperature": 0}
+
+    mock_called = False
+
+    def _mock_patched_convert(**kwargs):
+        nonlocal mock_called
+        mock_called = True
+        assert kwargs["generate_config"] == {"max_tokens": 11, "temperature": 0}
+        return {"prompt": "Hello."}
+
+    with patch(
+        "langchain.chat_models.xinference._openai_kwargs_to_xinference_kwargs",
+        _mock_patched_convert,
+    ) as p:
+        llm([HumanMessage(content="Hello.")], generate_config={"max_tokens": 11})
+        assert mock_called
+
 
 def test_xinference_streaming(setup) -> None:
     """Test streaming tokens from Xinference."""
@@ -401,7 +426,8 @@ def test_full_example(setup) -> None:
             input_language="English",
             output_language="Italian",
             text="I love programming.",
-        ).to_messages()
+        ).to_messages(),
+        generate_config={"max_tokens": 10},
     )
     print(repr(r))
     assert type(r) is AIMessage
