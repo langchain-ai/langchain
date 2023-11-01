@@ -10,6 +10,7 @@ from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
+    CallbackManager,
 )
 from langchain.pydantic_v1 import BaseModel, Field, PrivateAttr
 from langchain.tools import BaseTool, Tool
@@ -151,14 +152,21 @@ class E2BDataAnalysisTool(BaseTool):
         return "\n".join(lines)
 
     def _run(
-        self, python_code: str, run_manager: Optional[CallbackManagerForToolRun] = None
+        self,
+        python_code: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        callbacks: CallbackManager = None,
     ) -> str:
         python_code = add_last_line_print(python_code)
-        stdout, stderr, _ = self.session.run_python(python_code)
+        on_artifact = getattr(callbacks.metadata, "on_artifact", None)
+        stdout, stderr, artifacts = self.session.run_python(
+            python_code, on_artifact=on_artifact
+        )
 
         out = {
             "stdout": stdout,
             "stderr": stderr,
+            "artifacts": list(map(lambda artifact: artifact.name, artifacts)),
         }
         return json.dumps(out)
 
