@@ -9,24 +9,16 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.313, <0.1"
 openai = "^0.28.1"
-fastapi = "^0.104.0"
-sse-starlette = "^1.6.5"
 duckduckgo-search = "^3.9.3" 
 
 [tool.poetry.group.dev.dependencies]
-langc = {git = "https://github.com/pingpong-templates/cli"}
-poethepoet = "^0.24.1"
+langchain-cli = {extras = ["serve"], version = "^0.0.10"}
+fastapi = "^0.104.0"
+sse-starlette = "^1.6.5"
 
 [tool.langserve]
 export_module = "solo_performance_prompting_agent.agent"
 export_attr = "agent_executor"
-
-[tool.poe.tasks.start]
-cmd="poetry run uvicorn langc.dev_scripts:create_demo_server --reload --port $port --host $host"
-args = [
-    {name = "port", help = "port to run on", default = "8000"},
-    {name = "host", help = "host to run on", default = "127.0.0.1"}
-]
 
 [build-system]
 requires = ["poetry-core"]
