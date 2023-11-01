@@ -1,6 +1,5 @@
 """Sagemaker InvokeEndpoint API."""
 import io
-import json
 from abc import abstractmethod
 from typing import Any, Dict, Generic, Iterator, List, Mapping, Optional, TypeVar, Union
 
@@ -8,6 +7,7 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, root_validator
+from langchain.schema.output import GenerationChunk
 
 INPUT_TYPE = TypeVar("INPUT_TYPE", bound=Union[str, List[str]])
 OUTPUT_TYPE = TypeVar("OUTPUT_TYPE", bound=Union[str, List[List[float]], Iterator])
@@ -297,6 +297,41 @@ class SagemakerEndpoint(LLM):
         """Return type of llm."""
         return "sagemaker_endpoint"
 
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        _model_kwargs = self.model_kwargs or {}
+        _model_kwargs = {**_model_kwargs, **kwargs}
+        _endpoint_kwargs = self.endpoint_kwargs or {}
+
+        try:
+            resp = self.client.invoke_endpoint_with_response_stream(
+                EndpointName=self.endpoint_name,
+                Body=self.content_handler.transform_input(prompt, _model_kwargs),
+                ContentType=self.content_handler.content_type,
+                **_endpoint_kwargs,
+            )
+            iterator = LineIterator(resp["Body"])
+
+            for line in iterator:
+                text = self.content_handler.transform_output(line)
+
+                if stop is not None:
+                    text = enforce_stop_tokens(text, stop)
+
+                if text:
+                    chunk = GenerationChunk(text=text)
+                    yield chunk
+                    if run_manager:
+                        run_manager.on_llm_new_token(chunk.text)
+
+        except Exception as e:
+            raise ValueError(f"Error raised by streaming inference endpoint: {e}")
+
     def _call(
         self,
         prompt: str,
@@ -322,39 +357,19 @@ class SagemakerEndpoint(LLM):
         _model_kwargs = {**_model_kwargs, **kwargs}
         _endpoint_kwargs = self.endpoint_kwargs or {}
 
-        body = self.content_handler.transform_input(prompt, _model_kwargs)
         content_type = self.content_handler.content_type
         accepts = self.content_handler.accepts
 
-        if self.streaming and run_manager:
-            try:
-                resp = self.client.invoke_endpoint_with_response_stream(
-                    EndpointName=self.endpoint_name,
-                    Body=body,
-                    ContentType=self.content_handler.content_type,
-                    **_endpoint_kwargs,
-                )
-                iterator = LineIterator(resp["Body"])
-                current_completion: str = ""
-
-                for line in iterator:
-                    chunk_text = self.content_handler.transform_output(line)
-
-                    if stop is not None:
-                        # Uses same approach as below
-                        chunk_text = enforce_stop_tokens(chunk_text, stop)
-                    
-                    if chunk_text:
-                        current_completion += chunk_text
-                        run_manager.on_llm_new_token(chunk_text)
-                return current_completion
-            except Exception as e:
-                raise ValueError(f"Error raised by streaming inference endpoint: {e}")
+        if self.streaming:
+            completion: str = ""
+            for chunk in self._stream(prompt, stop, run_manager, **kwargs):
+                completion += chunk.text
+            return completion
         else:
             try:
                 response = self.client.invoke_endpoint(
                     EndpointName=self.endpoint_name,
-                    Body=body,
+                    Body=self.content_handler.transform_input(prompt, _model_kwargs),
                     ContentType=content_type,
                     Accept=accepts,
                     **_endpoint_kwargs,
