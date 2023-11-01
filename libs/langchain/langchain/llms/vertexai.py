@@ -228,7 +228,7 @@ class _VertexAICommon(_VertexAIBase):
         params = {params_mapping.get(k, k): v for k, v in kwargs.items()}
         params = {**self._default_params, "stop_sequences": stop_sequences, **params}
         if stream or self.streaming:
-            params.pop("candidate_count")
+            params.pop("candidate_count", None)
         return params
 
 
