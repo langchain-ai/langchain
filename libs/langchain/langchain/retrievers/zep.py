@@ -11,16 +11,7 @@ from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever, Document
 
 if TYPE_CHECKING:
-    from zep_python.memory import MemorySearchResult
-
-
-class SearchScope(str, Enum):
-    """Which documents to search. Messages or Summaries?"""
-
-    messages = "messages"
-    """Search chat history messages."""
-    summary = "summary"
-    """Search chat history summaries."""
+    from zep_python import MemorySearchResult
 
 
 class SearchType(str, Enum):
@@ -71,8 +62,6 @@ class ZepRetriever(BaseRetriever):
     """Zep session ID."""
     top_k: Optional[int]
     """Number of items to return."""
-    search_scope: SearchScope = SearchScope.messages
-    """Which documents to search. Messages or Summaries?"""
     search_type: SearchType = SearchType.similarity
     """Type of search to perform (similarity / mmr)"""
     mmr_lambda: Optional[float] = None
@@ -93,7 +82,7 @@ class ZepRetriever(BaseRetriever):
         )
         return values
 
-    def _messages_search_result_to_doc(
+    def _search_result_to_doc(
         self, results: List[MemorySearchResult]
     ) -> List[Document]:
         return [
@@ -105,23 +94,6 @@ class ZepRetriever(BaseRetriever):
             if r.message
         ]
 
-    def _summary_search_result_to_doc(
-        self, results: List[MemorySearchResult]
-    ) -> List[Document]:
-        return [
-            Document(
-                page_content=r.summary.content,
-                metadata={
-                    "score": r.dist,
-                    "uuid": r.summary.uuid,
-                    "created_at": r.summary.created_at,
-                    "token_count": r.summary.token_count,
-                },
-            )
-            for r in results
-            if r.summary
-        ]
-
     def _get_relevant_documents(
         self,
         query: str,
@@ -129,15 +101,14 @@ class ZepRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
-        from zep_python.memory import MemorySearchPayload
+        from zep_python import MemorySearchPayload
 
         if not self.zep_client:
             raise RuntimeError("Zep client not initialized.")
 
-        payload = MemorySearchPayload(
+        payload: MemorySearchPayload = MemorySearchPayload(
             text=query,
             metadata=metadata,
-            search_scope=self.search_scope,
             search_type=self.search_type,
             mmr_lambda=self.mmr_lambda,
         )
@@ -146,10 +117,7 @@ class ZepRetriever(BaseRetriever):
             self.session_id, payload, limit=self.top_k
         )
 
-        if self.search_scope == SearchScope.summary:
-            return self._summary_search_result_to_doc(results)
-
-        return self._messages_search_result_to_doc(results)
+        return self._search_result_to_doc(results)
 
     async def _aget_relevant_documents(
         self,
@@ -158,15 +126,14 @@ class ZepRetriever(BaseRetriever):
         run_manager: AsyncCallbackManagerForRetrieverRun,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
-        from zep_python.memory import MemorySearchPayload
+        from zep_python import MemorySearchPayload
 
         if not self.zep_client:
             raise RuntimeError("Zep client not initialized.")
 
-        payload = MemorySearchPayload(
+        payload: MemorySearchPayload = MemorySearchPayload(
             text=query,
             metadata=metadata,
-            search_scope=self.search_scope,
             search_type=self.search_type,
             mmr_lambda=self.mmr_lambda,
         )
@@ -175,7 +142,4 @@ class ZepRetriever(BaseRetriever):
             self.session_id, payload, limit=self.top_k
         )
 
-        if self.search_scope == SearchScope.summary:
-            return self._summary_search_result_to_doc(results)
-
-        return self._messages_search_result_to_doc(results)
+        return self._search_result_to_doc(results)
