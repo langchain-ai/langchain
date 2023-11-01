@@ -351,3 +351,59 @@ def test_xinference_invoke(setup) -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+
+
+def test_full_example(setup) -> None:
+    server_url, model_uid = setup
+    from langchain.chat_models import ChatXinference
+    from langchain.prompts.chat import (
+        ChatPromptTemplate,
+        HumanMessagePromptTemplate,
+        SystemMessagePromptTemplate,
+    )
+    from langchain.schema import AIMessage, HumanMessage, SystemMessage
+
+    chat = ChatXinference(
+        server_url=server_url,
+        model_uid=model_uid,  # Use Xinference model UID
+        generate_config={
+            "max_tokens": 5,
+            "temperature": 0,
+        },
+    )
+
+    messages = [
+        SystemMessage(
+            content="You are a helpful assistant that translates English to Italian."
+        ),
+        HumanMessage(
+            content="Translate the following sentence from English to Italian: I love programming."
+        ),
+    ]
+    r = chat(messages)
+    print(repr(r))
+    assert type(r) is AIMessage
+    assert isinstance(r.content, str)
+    assert r.content
+
+    template = "You are a helpful assistant that translates {input_language} to {output_language}."
+    system_message_prompt = SystemMessagePromptTemplate.from_template(template)
+    human_template = "{text}"
+    human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [system_message_prompt, human_message_prompt]
+    )
+
+    # get a chat completion from the formatted messages
+    r = chat(
+        chat_prompt.format_prompt(
+            input_language="English",
+            output_language="Italian",
+            text="I love programming.",
+        ).to_messages()
+    )
+    print(repr(r))
+    assert type(r) is AIMessage
+    assert isinstance(r.content, str)
+    assert r.content
