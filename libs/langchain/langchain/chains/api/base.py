@@ -30,7 +30,7 @@ def _extract_scheme_and_domain(url: str) -> Tuple[str, str]:
     return parsed_uri.scheme, parsed_uri.netloc
 
 
-def _check_in_allowed_domain(url, limit_to_domains: Sequence[str]) -> bool:
+def _check_in_allowed_domain(url: str, limit_to_domains: Sequence[str]) -> bool:
     """Check if a URL is in the allowed domains.
 
     Args:
