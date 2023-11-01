@@ -74,6 +74,7 @@ class BaseCohere(Serializable):
     """A non-negative float that tunes the degree of randomness in generation."""
 
     cohere_api_key: Optional[SecretStr] = None
+    """Cohere API key. If not provided, will be read from the environment variable."""
 
     stop: Optional[List[str]] = None
 
@@ -91,11 +92,13 @@ class BaseCohere(Serializable):
                 "Please install it with `pip install cohere`."
             )
         else:
-            cohere_api_key = SecretStr(
+            cohere_api_key = (
                 get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
             )
-            values["client"] = cohere.Client(cohere_api_key)
-            values["async_client"] = cohere.AsyncClient(cohere_api_key)
+            values["client"] = cohere.Client(api_key=cohere_api_key.get_secret_value())
+            values["async_client"] = cohere.AsyncClient(
+                api_key=cohere_api_key.get_secret_value()
+            )
         return values
 
 
@@ -155,8 +158,8 @@ class Cohere(LLM, BaseCohere):
         }
 
     @property
-    def lc_secrets(self) -> Dict[str, SecretStr]:
-        return {"cohere_api_key": SecretStr("COHERE_API_KEY")}
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"cohere_api_key": "COHERE_API_KEY"}
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

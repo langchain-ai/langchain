@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from langchain.llms.cohere import Cohere
+from langchain.pydantic_v1 import SecretStr
 from langchain.llms.loading import load_llm
 from tests.integration_tests.llms.utils import assert_llm_equality
 
@@ -12,6 +13,12 @@ def test_cohere_call() -> None:
     llm = Cohere(max_tokens=10)
     output = llm("Say foo:")
     assert isinstance(output, str)
+
+
+def test_cohere_api_key() -> None:
+    """Test that cohere api key is a secret key."""
+    cohere = Cohere(cohere_api_key="1")
+    assert isinstance(cohere.cohere_api_key, SecretStr)
 
 
 def test_saving_loading_llm(tmp_path: Path) -> None:
