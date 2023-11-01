@@ -210,13 +210,8 @@ class SagemakerEndpoint(LLM):
     """The content handler class that provides an input and
     output transform functions to handle formats between LLM
     and the endpoint.
-    """
 
-    streaming: bool = False
-    """Whether to stream the results."""
-
-    """
-     Example:
+    Example:
         .. code-block:: python
 
         from langchain.llms.sagemaker_endpoint import LLMContentHandler
@@ -233,6 +228,9 @@ class SagemakerEndpoint(LLM):
                     response_json = json.loads(output.read().decode("utf-8"))
                     return response_json[0]["generated_text"]
     """
+
+    streaming: bool = False
+    """Whether to stream the results."""
 
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model."""
