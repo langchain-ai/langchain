@@ -793,6 +793,7 @@ class Language(str, Enum):
     KOTLIN = "kotlin"
     JS = "js"
     TS = "ts"
+    LUA = "lua"
     PHP = "php"
     PROTO = "proto"
     PYTHON = "python"
