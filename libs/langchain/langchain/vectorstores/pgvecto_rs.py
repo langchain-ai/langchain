@@ -60,15 +60,15 @@ class PGVecto_rs(VectorStore):
         dimension = len(sample_embedding)
         if db_url is None:
             raise ValueError("db_url must be provided")
-        selv: PGVecto_rs = cls(
+        _self: PGVecto_rs = cls(
             embedding=embedding,
             dimension=dimension,
             db_url=db_url,
             collection_name=collection_name,
             new_table=True,
         )
-        selv.add_texts(texts, metadatas, **kwargs)
-        return selv
+        _self.add_texts(texts, metadatas, **kwargs)
+        return _self
 
     @classmethod
     def from_documents(
