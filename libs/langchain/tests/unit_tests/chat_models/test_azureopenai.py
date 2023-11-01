@@ -4,8 +4,10 @@ from typing import Any, Mapping, cast
 from unittest import mock
 
 import pytest
+from pytest import MonkeyPatch
 
 from langchain.chat_models.azure_openai import AzureChatOpenAI
+from langchain.pydantic_v1 import SecretStr
 
 
 @mock.patch.dict(
@@ -55,3 +57,49 @@ def test_model_name_set_on_chat_result_when_present_in_response(
         chat_result.llm_output is not None
         and chat_result.llm_output["model_name"] == model_name
     )
+
+
+@mock.patch.dict(
+    os.environ,
+    {
+        "OPENAI_API_BASE": "https://oai.azure.com/",
+        "OPENAI_API_VERSION": "2023-05-01",
+    },
+)
+@pytest.mark.requires("openai")
+def test_api_key_is_secret_string_and_matches_input() -> None:
+    llm = AzureChatOpenAI(openai_api_key="secret-api-key")
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "secret-api-key"
+
+
+@mock.patch.dict(
+    os.environ,
+    {
+        "OPENAI_API_BASE": "https://oai.azure.com/",
+        "OPENAI_API_VERSION": "2023-05-01",
+    },
+)
+@pytest.mark.requires("openai")
+def test_api_key_masked_when_passed_via_constructor() -> None:
+    llm = AzureChatOpenAI(openai_api_key="secret-api-key")
+    assert str(llm.openai_api_key) == "**********"
+    assert "secret-api-key" not in repr(llm.openai_api_key)
+    assert "secret-api-key" not in repr(llm)
+
+
+@mock.patch.dict(
+    os.environ,
+    {
+        "OPENAI_API_BASE": "https://oai.azure.com/",
+        "OPENAI_API_VERSION": "2023-05-01",
+    },
+)
+@pytest.mark.requires("openai")
+def test_api_key_masked_when_passed_via_env() -> None:
+    with MonkeyPatch.context() as mp:
+        mp.setenv("OPENAI_API_KEY", "secret-api-key")
+        llm = AzureChatOpenAI()
+        assert str(llm.openai_api_key) == "**********"
+        assert "secret-api-key" not in repr(llm.openai_api_key)
+        assert "secret-api-key" not in repr(llm)

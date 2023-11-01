@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Mapping
+from typing import Any, Dict, Mapping, Optional
 
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.pydantic_v1 import root_validator
+from langchain.pydantic_v1 import SecretStr, root_validator
 from langchain.schema import ChatResult
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -56,17 +56,19 @@ class AzureChatOpenAI(ChatOpenAI):
     openai_api_type: str = ""
     openai_api_base: str = ""
     openai_api_version: str = ""
-    openai_api_key: str = ""
+    openai_api_key: Optional[SecretStr] = None
     openai_organization: str = ""
     openai_proxy: str = ""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values,
-            "openai_api_key",
-            "OPENAI_API_KEY",
+        values["openai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "openai_api_key",
+                "OPENAI_API_KEY",
+            )
         )
         values["openai_api_base"] = get_from_dict_or_env(
             values,
