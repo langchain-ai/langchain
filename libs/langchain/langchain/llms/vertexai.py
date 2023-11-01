@@ -138,8 +138,8 @@ async def acompletion_with_retry(
 class _VertexAIBase(BaseModel):
     project: Optional[str] = None
     "The default GCP project to use when making Vertex API calls."
-    location: str = "us-central1"
-    "The default location to use when making API calls."
+    location: str = None
+    "The location to use when making API calls from models in Model Garden"
     request_parallelism: int = 5
     "The amount of parallelism allowed for requests issued to VertexAI models. "
     "Default is 5."
@@ -238,7 +238,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
     model_name: str = "text-bison"
     "The name of the Vertex AI large language model."
     tuned_model_name: Optional[str] = None
-    "The name of a tuned model. If provided, model_name is ignored."
+    "The name of a tuned model. If provided, model_name is ignored. tuned_model_name should be in the format: 'projects/' + PROJECT_ID + '/locations/' + REGION +'/models/'+ model_id"
 
     @classmethod
     def is_lc_serializable(self) -> bool:
@@ -393,6 +393,10 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
             raise ValueError(
                 "A GCP project should be provided to run inference on Model Garden!"
             )
+        if values["location"] is None:                 
+            raise ValueError(
+                "The location of the endpoint must be provided to run inference on Model Garden!"
+            )
 
         client_options = ClientOptions(
             api_endpoint=f"{values['location']}-aiplatform.googleapis.com"
@@ -449,7 +453,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         generations: List[List[Generation]] = []
         for result in response.predictions:
             generations.append(
-                [Generation(text=prediction[self.result_arg]) for prediction in result]
+                [Generation(text=result)]
             )
         return LLMResult(generations=generations)
 
@@ -494,6 +498,6 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         generations: List[List[Generation]] = []
         for result in response.predictions:
             generations.append(
-                [Generation(text=prediction[self.result_arg]) for prediction in result]
+                [Generation(text=result)]
             )
         return LLMResult(generations=generations)
