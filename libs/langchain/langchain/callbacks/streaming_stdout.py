@@ -1,9 +1,10 @@
 """Callback Handler streams to stdout on new llm token."""
 import sys
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema.messages import BaseMessage
 
 
 class StreamingStdOutCallbackHandler(BaseCallbackHandler):
@@ -11,6 +12,14 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> None:
+        """Run when LLM starts running."""
+
+    def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        **kwargs: Any,
     ) -> None:
         """Run when LLM starts running."""
 
@@ -22,9 +31,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when LLM errors."""
 
     def on_chain_start(
@@ -35,9 +42,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when chain errors."""
 
     def on_tool_start(
@@ -52,9 +57,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when tool errors."""
 
     def on_text(self, text: str, **kwargs: Any) -> None:

@@ -1,9 +1,10 @@
 """Filter that uses an LLM to drop documents that aren't relevant to the query."""
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from langchain import LLMChain, PromptTemplate
 from langchain.callbacks.manager import Callbacks
+from langchain.chains import LLMChain
 from langchain.output_parsers.boolean import BooleanOutputParser
+from langchain.prompts import PromptTemplate
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_filter_prompt import (
     prompt_template,
@@ -52,21 +53,12 @@ class LLMChainFilter(BaseDocumentCompressor):
                 filtered_docs.append(doc)
         return filtered_docs
 
-    async def acompress_documents(
-        self,
-        documents: Sequence[Document],
-        query: str,
-        callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
-        """Filter down documents."""
-        raise NotImplementedError()
-
     @classmethod
     def from_llm(
         cls,
         llm: BaseLanguageModel,
         prompt: Optional[BasePromptTemplate] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> "LLMChainFilter":
         """Create a LLMChainFilter from a language model.
 

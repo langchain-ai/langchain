@@ -1,8 +1,11 @@
+import asyncio
 from typing import TYPE_CHECKING, Optional, Type
 
-from pydantic import BaseModel, Field
-
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
 
 if TYPE_CHECKING:
@@ -40,9 +43,14 @@ class MultionCreateSession(BaseTool):
     """
 
     name: str = "create_multion_session"
-    description: str = """Use this tool to create a new Multion Browser Window \
-        with provided fields.Always the first step to run \
-            any activities that can be done using browser."""
+    description: str = """
+        Create a new web browsing session based on a user's command or request. \
+        The command should include the full info required for the session. \
+        Also include an url (defaults to google.com if no better option) \
+        to start the session. \
+        Use this tool to create a new Browser Window with provided fields. \
+        Always the first step to run any activities that can be done using browser.
+        """
     args_schema: Type[CreateSessionSchema] = CreateSessionSchema
 
     def _run(
@@ -53,6 +61,20 @@ class MultionCreateSession(BaseTool):
     ) -> dict:
         try:
             response = multion.new_session({"input": query, "url": url})
-            return {"tabId": response["tabId"], "Response": response["message"]}
+            return {
+                "sessionId": response["session_id"],
+                "Response": response["message"],
+            }
         except Exception as e:
             raise Exception(f"An error occurred: {e}")
+
+    async def _arun(
+        self,
+        query: str,
+        url: Optional[str] = "https://www.google.com/",
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> dict:
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, self._run, query, url)
+
+        return result

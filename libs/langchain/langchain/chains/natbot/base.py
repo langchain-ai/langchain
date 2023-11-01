@@ -4,23 +4,35 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.natbot.prompt import PROMPT
 from langchain.llms.openai import OpenAI
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema.language_model import BaseLanguageModel
 
 
 class NatBotChain(Chain):
     """Implement an LLM driven browser.
 
+    **Security Note**: This toolkit provides code to control a web-browser.
+
+        The web-browser can be used to navigate to:
+
+        - Any URL (including any internal network URLs)
+        - And local files
+
+        Exercise care if exposing this chain to end-users. Control who is able to
+        access and use this chain, and isolate the network access of the server
+        that hosts this chain.
+
+        See https://python.langchain.com/docs/security for more information.
+
     Example:
         .. code-block:: python
 
-            from langchain import NatBotChain
+            from langchain.chains import NatBotChain
             natbot = NatBotChain.from_default("Buy me a new hat.")
     """
 

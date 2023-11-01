@@ -4,18 +4,18 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Optional, Set
+from typing import TYPE_CHECKING, Dict, Optional, Set
 
 import requests
-from pydantic import Field, root_validator
 
 from langchain.adapters.openai import convert_message_to_dict
 from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema.messages import BaseMessage
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 if TYPE_CHECKING:
     import tiktoken
@@ -28,7 +28,7 @@ DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
 
 class ChatAnyscale(ChatOpenAI):
-    """Wrapper around Anyscale Chat large language models.
+    """`Anyscale` Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``ANYSCALE_API_KEY`` set with your API key.
@@ -50,10 +50,10 @@ class ChatAnyscale(ChatOpenAI):
         return "anyscale-chat"
 
     @property
-    def lc_secrets(self) -> dict[str, str]:
+    def lc_secrets(self) -> Dict[str, str]:
         return {"anyscale_api_key": "ANYSCALE_API_KEY"}
 
-    anyscale_api_key: Optional[str] = None
+    anyscale_api_key: Optional[SecretStr] = None
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
@@ -98,10 +98,12 @@ class ChatAnyscale(ChatOpenAI):
     @root_validator(pre=True)
     def validate_environment_override(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values,
-            "anyscale_api_key",
-            "ANYSCALE_API_KEY",
+        values["openai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "anyscale_api_key",
+                "ANYSCALE_API_KEY",
+            )
         )
         values["openai_api_base"] = get_from_dict_or_env(
             values,
@@ -138,7 +140,7 @@ class ChatAnyscale(ChatOpenAI):
         model_name = values["model_name"]
 
         available_models = cls.get_available_models(
-            values["openai_api_key"],
+            values["openai_api_key"].get_secret_value(),
             values["openai_api_base"],
         )
 

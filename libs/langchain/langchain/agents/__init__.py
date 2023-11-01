@@ -28,6 +28,10 @@ Agents select and use **Tools** and **Toolkits** for actions.
     AgentAction, AgentFinish
     
 """  # noqa: E501
+from pathlib import Path
+from typing import Any
+
+from langchain._api.path import as_import_path
 from langchain.agents.agent import (
     Agent,
     AgentExecutor,
@@ -38,18 +42,14 @@ from langchain.agents.agent import (
 )
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_toolkits import (
-    create_csv_agent,
     create_json_agent,
     create_openapi_agent,
-    create_pandas_dataframe_agent,
     create_pbi_agent,
     create_pbi_chat_agent,
-    create_spark_dataframe_agent,
     create_spark_sql_agent,
     create_sql_agent,
     create_vectorstore_agent,
     create_vectorstore_router_agent,
-    create_xorbits_agent,
 )
 from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.base import ConversationalAgent
@@ -69,6 +69,29 @@ from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.agents.structured_chat.base import StructuredChatAgent
 from langchain.agents.tools import Tool, tool
 from langchain.agents.xml.base import XMLAgent
+
+DEPRECATED_CODE = [
+    "create_csv_agent",
+    "create_pandas_dataframe_agent",
+    "create_spark_dataframe_agent",
+    "create_xorbits_agent",
+]
+
+
+def __getattr__(name: str) -> Any:
+    """Get attr name."""
+    if name in DEPRECATED_CODE:
+        relative_path = as_import_path(Path(__file__).parent, suffix=name)
+        old_path = "langchain." + relative_path
+        new_path = "langchain_experimental." + relative_path
+        raise ImportError(
+            f"{name} has been moved to langchain experimental. "
+            "See https://github.com/langchain-ai/langchain/discussions/11680"
+            "for more information.\n"
+            f"Please update your import statement from: `{old_path}` to `{new_path}`."
+        )
+    raise ImportError(f"{name} does not exist")
+
 
 __all__ = [
     "Agent",
@@ -90,13 +113,10 @@ __all__ = [
     "StructuredChatAgent",
     "Tool",
     "ZeroShotAgent",
-    "create_csv_agent",
     "create_json_agent",
     "create_openapi_agent",
-    "create_pandas_dataframe_agent",
     "create_pbi_agent",
     "create_pbi_chat_agent",
-    "create_spark_dataframe_agent",
     "create_spark_sql_agent",
     "create_sql_agent",
     "create_vectorstore_agent",
@@ -107,6 +127,5 @@ __all__ = [
     "load_huggingface_tool",
     "load_tools",
     "tool",
-    "create_xorbits_agent",
     "XMLAgent",
 ]

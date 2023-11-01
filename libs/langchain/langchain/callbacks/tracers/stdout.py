@@ -44,7 +44,7 @@ def elapsed(run: Any) -> str:
 class FunctionCallbackHandler(BaseTracer):
     """Tracer that calls a function with a single str parameter."""
 
-    name = "function_callback_handler"
+    name: str = "function_callback_handler"
 
     def __init__(self, function: Callable[[str], None], **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -172,7 +172,7 @@ class FunctionCallbackHandler(BaseTracer):
 class ConsoleCallbackHandler(FunctionCallbackHandler):
     """Tracer that prints to the console."""
 
-    name = "console_callback_handler"
+    name: str = "console_callback_handler"
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(function=print, **kwargs)

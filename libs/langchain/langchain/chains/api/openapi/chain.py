@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, NamedTuple, Optional, cast
 
-from pydantic import BaseModel, Field
 from requests import Response
 
 from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
@@ -12,6 +11,7 @@ from langchain.chains.api.openapi.requests_chain import APIRequesterChain
 from langchain.chains.api.openapi.response_chain import APIResponderChain
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.utilities.requests import Requests
@@ -171,7 +171,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         llm: BaseLanguageModel,
         requests: Optional[Requests] = None,
         return_intermediate_steps: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpoint from a spec at the specified url."""
@@ -194,7 +194,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         return_intermediate_steps: bool = False,
         raw_response: bool = False,
         callbacks: Callbacks = None,
-        **kwargs: Any
+        **kwargs: Any,
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpointChain from an operation and a spec."""

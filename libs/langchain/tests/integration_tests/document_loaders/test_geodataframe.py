@@ -17,6 +17,7 @@ else:
 def sample_gdf() -> GeoDataFrame:
     import geopandas
 
+    # TODO: geopandas.datasets will be deprecated in 1.0
     path_to_data = geopandas.datasets.get_path("nybb")
     gdf = geopandas.read_file(path_to_data)
     gdf["area"] = gdf.area

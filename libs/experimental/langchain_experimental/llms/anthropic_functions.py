@@ -5,21 +5,20 @@ from typing import Any, DefaultDict, Dict, List, Optional
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
-    Callbacks,
 )
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
-    LLMResult,
 )
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     SystemMessage,
 )
-from pydantic import root_validator
+
+from langchain_experimental.pydantic_v1 import root_validator
 
 prompt = """In addition to responding, you can use tools. \
 You have access to the following tools.
@@ -123,11 +122,17 @@ def _destrip(tool_input: Any) -> Any:
 
 
 class AnthropicFunctions(BaseChatModel):
-    model: ChatAnthropic
+    llm: BaseChatModel
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        return {"model": ChatAnthropic(**values)}
+        values["llm"] = values.get("llm") or ChatAnthropic(**values)
+        return values
+
+    @property
+    def model(self) -> BaseChatModel:
+        """For backwards compatibility."""
+        return self.llm
 
     def _generate(
         self,
@@ -188,18 +193,6 @@ class AnthropicFunctions(BaseChatModel):
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
             return ChatResult(generations=[ChatGeneration(message=response)])
-
-    async def agenerate(
-        self,
-        messages: List[List[BaseMessage]],
-        stop: Optional[List[str]] = None,
-        callbacks: Callbacks = None,
-        *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> LLMResult:
-        raise NotImplementedError
 
     @property
     def _llm_type(self) -> str:

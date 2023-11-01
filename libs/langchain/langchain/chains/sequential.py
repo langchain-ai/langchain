@@ -1,13 +1,12 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils.input import get_color_mapping
 
 
@@ -53,7 +52,7 @@ class SequentialChain(Chain):
             if set(input_variables).intersection(set(memory_keys)):
                 overlapping_keys = set(input_variables) & set(memory_keys)
                 raise ValueError(
-                    f"The the input key(s) {''.join(overlapping_keys)} are found "
+                    f"The input key(s) {''.join(overlapping_keys)} are found "
                     f"in the Memory keys ({memory_keys}) - please use input and "
                     f"memory keys that don't overlap."
                 )
@@ -191,11 +190,12 @@ class SimpleSequentialChain(Chain):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
-        callbacks = _run_manager.get_child()
         _input = inputs[self.input_key]
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
         for i, chain in enumerate(self.chains):
-            _input = await chain.arun(_input, callbacks=callbacks)
+            _input = await chain.arun(
+                _input, callbacks=_run_manager.get_child(f"step_{i+1}")
+            )
             if self.strip_outputs:
                 _input = _input.strip()
             await _run_manager.on_text(

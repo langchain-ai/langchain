@@ -1,77 +1,75 @@
-"""Wrapper around Fireworks APIs"""
-import json
-import logging
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
-
-import requests
-from pydantic import Field, root_validator
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional, Union
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import BaseLLM
-from langchain.schema import Generation, LLMResult
-from langchain.utils import get_from_dict_or_env
+from langchain.llms.base import BaseLLM, create_base_retry_decorator
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
+from langchain.schema.output import Generation, GenerationChunk, LLMResult
+from langchain.utils import convert_to_secret_str
+from langchain.utils.env import get_from_dict_or_env
 
-logger = logging.getLogger(__name__)
+
+def _stream_response_to_generation_chunk(
+    stream_response: Any,
+) -> GenerationChunk:
+    """Convert a stream response to a generation chunk."""
+    return GenerationChunk(
+        text=stream_response.choices[0].text,
+        generation_info=dict(
+            finish_reason=stream_response.choices[0].finish_reason,
+            logprobs=stream_response.choices[0].logprobs,
+        ),
+    )
 
 
-class BaseFireworks(BaseLLM):
-    """Wrapper around Fireworks large language models."""
+class Fireworks(BaseLLM):
+    """Fireworks models."""
 
-    model_id: str = Field("accounts/fireworks/models/llama-v2-7b-chat", alias="model")
-    """Model name to use."""
-    temperature: float = 0.7
-    """What sampling temperature to use."""
-    max_tokens: int = 512
-    """The maximum number of tokens to generate in the completion.
-    -1 returns as many tokens as possible given the prompt and
-    the models maximal context size."""
-    top_p: float = 1
-    """Total probability mass of tokens to consider at each step."""
-    fireworks_api_key: Optional[str] = None
-    """Api key to use fireworks API"""
+    model: str = "accounts/fireworks/models/llama-v2-7b-chat"
+    model_kwargs: dict = Field(
+        default_factory=lambda: {
+            "temperature": 0.7,
+            "max_tokens": 512,
+            "top_p": 1,
+        }.copy()
+    )
+    fireworks_api_key: Optional[SecretStr] = None
+    max_retries: int = 20
     batch_size: int = 20
-    """Batch size to use when passing multiple documents to generate."""
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
-    """Timeout for requests to Fireworks completion API. Default is 600 seconds."""
-    max_retries: int = 6
-    """Maximum number of retries to make when generating."""
+    use_retry: bool = True
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"fireworks_api_key": "FIREWORKS_API_KEY"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
-
-    def __new__(cls, **data: Any) -> Any:
-        """Initialize the Fireworks object."""
-        data.get("model_id", "")
-        return super().__new__(cls)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-        values["fireworks_api_key"] = get_from_dict_or_env(
-            values, "fireworks_api_key", "FIREWORKS_API_KEY"
+        """Validate that api key in environment."""
+        try:
+            import fireworks.client
+        except ImportError as e:
+            raise ImportError(
+                "Could not import fireworks-ai python package. "
+                "Please install it with `pip install fireworks-ai`."
+            ) from e
+        fireworks_api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "fireworks_api_key", "FIREWORKS_API_KEY")
         )
+        fireworks.client.api_key = fireworks_api_key.get_secret_value()
         return values
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "fireworks"
 
     def _generate(
         self,
@@ -87,18 +85,24 @@ class BaseFireworks(BaseLLM):
         Returns:
             The full LLM output.
         """
-        params = {"model": self.model_id}
-        params = {**params, **kwargs}
-        sub_prompts = self.get_batch_prompts(params, prompts, stop)
+        params = {
+            "model": self.model,
+            **self.model_kwargs,
+        }
+        sub_prompts = self.get_batch_prompts(prompts)
         choices = []
-        token_usage: Dict[str, int] = {}
-        _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
-            response = completion_with_retry(self, prompt=prompts, **params)
+            response = completion_with_retry_batching(
+                self,
+                self.use_retry,
+                prompt=_prompts,
+                run_manager=run_manager,
+                stop=stop,
+                **params,
+            )
             choices.extend(response)
-            update_token_usage(_keys, response, token_usage)
 
-        return self.create_llm_result(choices, prompts, token_usage)
+        return self.create_llm_result(choices, prompts)
 
     async def _agenerate(
         self,
@@ -108,270 +112,255 @@ class BaseFireworks(BaseLLM):
         **kwargs: Any,
     ) -> LLMResult:
         """Call out to Fireworks endpoint async with k unique prompts."""
-        params = {"model": self.model_id}
-        params = {**params, **kwargs}
-        sub_prompts = self.get_batch_prompts(params, prompts, stop)
+        params = {
+            "model": self.model,
+            **self.model_kwargs,
+        }
+        sub_prompts = self.get_batch_prompts(prompts)
         choices = []
-        token_usage: Dict[str, int] = {}
-        _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
-            response = await acompletion_with_retry(self, prompt=_prompts, **params)
+            response = await acompletion_with_retry_batching(
+                self,
+                self.use_retry,
+                prompt=_prompts,
+                run_manager=run_manager,
+                stop=stop,
+                **params,
+            )
             choices.extend(response)
-            update_token_usage(_keys, response, token_usage)
 
-        return self.create_llm_result(choices, prompts, token_usage)
+        return self.create_llm_result(choices, prompts)
 
     def get_batch_prompts(
         self,
-        params: Dict[str, Any],
         prompts: List[str],
-        stop: Optional[List[str]] = None,
     ) -> List[List[str]]:
         """Get the sub prompts for llm call."""
-        if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-
         sub_prompts = [
             prompts[i : i + self.batch_size]
             for i in range(0, len(prompts), self.batch_size)
         ]
         return sub_prompts
 
-    def create_llm_result(
-        self, choices: Any, prompts: List[str], token_usage: Dict[str, int]
-    ) -> LLMResult:
+    def create_llm_result(self, choices: Any, prompts: List[str]) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
-
         for i, _ in enumerate(prompts):
             sub_choices = choices[i : (i + 1)]
             generations.append(
                 [
                     Generation(
-                        text=choice,
+                        text=choice.__dict__["choices"][0].text,
                     )
                     for choice in sub_choices
                 ]
             )
-        llm_output = {"token_usage": token_usage, "model_id": self.model_id}
+        llm_output = {"model": self.model}
         return LLMResult(generations=generations, llm_output=llm_output)
 
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "fireworks"
-
-
-class FireworksChat(BaseLLM):
-    """Wrapper around Fireworks Chat large language models.
-    To use, you should have the ``fireworksai`` python package installed, and the
-    environment variable ``FIREWORKS_API_KEY`` set with your API key.
-    Any parameters that are valid to be passed to the fireworks.create
-    call can be passed in, even if not explicitly saved on this class.
-    Example:
-        .. code-block:: python
-            from langchain.llms import FireworksChat
-            fireworkschat = FireworksChat(model_id=""llama-v2-13b-chat"")
-    """
-
-    model_id: str = "accounts/fireworks/models/llama-v2-7b-chat"
-    """Model name to use."""
-    temperature: float = 0.7
-    """What sampling temperature to use."""
-    max_tokens: int = 512
-    """The maximum number of tokens to generate in the completion.
-    -1 returns as many tokens as possible given the prompt and
-    the models maximal context size."""
-    top_p: float = 1
-    """Total probability mass of tokens to consider at each step."""
-    fireworks_api_key: Optional[str] = None
-    max_retries: int = 6
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
-    """Timeout for requests to Fireworks completion API. Default is 600 seconds."""
-    """Maximum number of retries to make when generating."""
-    prefix_messages: List = Field(default_factory=list)
-    """Series of messages for Chat input."""
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment"""
-        values["fireworks_api_key"] = get_from_dict_or_env(
-            values, "fireworks_api_key", "FIREWORKS_API_KEY"
-        )
-        return values
-
-    def _get_chat_params(
-        self, prompts: List[str], stop: Optional[List[str]] = None
-    ) -> Tuple:
-        if len(prompts) > 1:
-            raise ValueError(
-                f"FireworksChat currently only supports single prompt, got {prompts}"
-            )
-        messages = self.prefix_messages + [{"role": "user", "content": prompts[0]}]
-        params: Dict[str, Any] = {**{"model": self.model_id}}
-        if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-
-        return messages, params
-
-    def _generate(
+    def _stream(
         self,
-        prompts: List[str],
+        prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> LLMResult:
-        messages, params = self._get_chat_params(prompts, stop)
-        params = {**params, **kwargs}
-        full_response = completion_with_retry(self, messages=messages, **params)
-        llm_output = {
-            "model_id": self.model_id,
+    ) -> Iterator[GenerationChunk]:
+        params = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": True,
+            **self.model_kwargs,
         }
-        return LLMResult(
-            generations=[[Generation(text=full_response[0])]],
-            llm_output=llm_output,
-        )
+        for stream_resp in completion_with_retry(
+            self, self.use_retry, run_manager=run_manager, stop=stop, **params
+        ):
+            chunk = _stream_response_to_generation_chunk(stream_resp)
+            yield chunk
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
-    async def _agenerate(
+    async def _astream(
         self,
-        prompts: List[str],
+        prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> LLMResult:
-        messages, params = self._get_chat_params(prompts, stop)
-        params = {**params, **kwargs}
-        full_response = await acompletion_with_retry(self, messages=messages, **params)
-        llm_output = {
-            "model_id": self.model_id,
+    ) -> AsyncIterator[GenerationChunk]:
+        params = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": True,
+            **self.model_kwargs,
         }
-        return LLMResult(
-            generations=[[Generation(text=full_response[0])]],
-            llm_output=llm_output,
-        )
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "fireworks-chat"
+        async for stream_resp in await acompletion_with_retry_streaming(
+            self, self.use_retry, run_manager=run_manager, stop=stop, **params
+        ):
+            chunk = _stream_response_to_generation_chunk(stream_resp)
+            yield chunk
+            if run_manager:
+                await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
 
-class Fireworks(BaseFireworks):
-    """Wrapper around Fireworks large language models.
-    To use, you should have the ``fireworks`` python package installed, and the
-    environment variable ``FIREWORKS_API_KEY`` set with your API key.
-    Any parameters that are valid to be passed to the fireworks.create
-    call can be passed in, even if not explicitly saved on this class.
-    Example:
-        .. code-block:: python
-            from langchain.llms import fireworks
-            llm = Fireworks(model_id="llama-v2-13b")
-    """
+def conditional_decorator(
+    condition: bool, decorator: Callable[[Any], Any]
+) -> Callable[[Any], Any]:
+    def actual_decorator(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        if condition:
+            return decorator(func)
+        return func
 
-
-def update_token_usage(
-    keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]
-) -> None:
-    """Update token usage."""
-    _keys_to_use = keys.intersection(response)
-    for _key in _keys_to_use:
-        if _key not in token_usage:
-            token_usage[_key] = response["usage"][_key]
-        else:
-            token_usage[_key] += response["usage"][_key]
-
-
-def execute(
-    prompt: str,
-    model: str,
-    api_key: Optional[str],
-    max_tokens: int = 256,
-    temperature: float = 0.0,
-    top_p: float = 1.0,
-) -> Any:
-    """Execute LLM query"""
-    requestUrl = "https://api.fireworks.ai/inference/v1/completions"
-    requestBody = {
-        "model": model,
-        "prompt": prompt,
-        "max_tokens": max_tokens,
-        "temperature": temperature,
-        "top_p": top_p,
-    }
-    requestHeaders = {
-        "Authorization": f"Bearer {api_key}",
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-    }
-    response = requests.post(requestUrl, headers=requestHeaders, json=requestBody)
-    return response.text
+    return actual_decorator
 
 
 def completion_with_retry(
-    llm: Union[BaseFireworks, FireworksChat], **kwargs: Any
+    llm: Fireworks,
+    use_retry: bool,
+    *,
+    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    if "prompt" not in kwargs.keys():
-        answers = []
-        for i in range(len(kwargs["messages"])):
-            result = kwargs["messages"][i]["content"]
-            result = execute(
-                result,
-                kwargs["model"],
-                llm.fireworks_api_key,
-                llm.max_tokens,
-                llm.temperature,
-                llm.top_p,
-            )
-            curr_string = json.loads(result)["choices"][0]["text"]
-            answers.append(curr_string)
-    else:
-        answers = []
-        for i in range(len(kwargs["prompt"])):
-            result = kwargs["prompt"][i]
-            result = execute(
-                result,
-                kwargs["model"],
-                llm.fireworks_api_key,
-                llm.max_tokens,
-                llm.temperature,
-                llm.top_p,
-            )
-            curr_string = json.loads(result)["choices"][0]["text"]
-            answers.append(curr_string)
-    return answers
+    import fireworks.client
+
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+
+    @conditional_decorator(use_retry, retry_decorator)
+    def _completion_with_retry(**kwargs: Any) -> Any:
+        return fireworks.client.Completion.create(
+            **kwargs,
+        )
+
+    return _completion_with_retry(**kwargs)
 
 
 async def acompletion_with_retry(
-    llm: Union[BaseFireworks, FireworksChat], **kwargs: Any
+    llm: Fireworks,
+    use_retry: bool,
+    *,
+    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    **kwargs: Any,
 ) -> Any:
-    """Use tenacity to retry the async completion call."""
-    if "prompt" not in kwargs.keys():
-        answers = []
-        for i in range(len(kwargs["messages"])):
-            result = kwargs["messages"][i]["content"]
-            result = execute(
-                result,
-                kwargs["model"],
-                llm.fireworks_api_key,
-                llm.max_tokens,
-                llm.temperature,
+    """Use tenacity to retry the completion call."""
+    import fireworks.client
+
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+
+    @conditional_decorator(use_retry, retry_decorator)
+    async def _completion_with_retry(**kwargs: Any) -> Any:
+        return await fireworks.client.Completion.acreate(
+            **kwargs,
+        )
+
+    return await _completion_with_retry(**kwargs)
+
+
+def completion_with_retry_batching(
+    llm: Fireworks,
+    use_retry: bool,
+    *,
+    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
+    """Use tenacity to retry the completion call."""
+    import fireworks.client
+
+    prompt = kwargs["prompt"]
+    del kwargs["prompt"]
+
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+
+    @conditional_decorator(use_retry, retry_decorator)
+    def _completion_with_retry(prompt: str) -> Any:
+        return fireworks.client.Completion.create(**kwargs, prompt=prompt)
+
+    def batch_sync_run() -> List:
+        with ThreadPoolExecutor() as executor:
+            results = list(executor.map(_completion_with_retry, prompt))
+        return results
+
+    return batch_sync_run()
+
+
+async def acompletion_with_retry_batching(
+    llm: Fireworks,
+    use_retry: bool,
+    *,
+    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
+    """Use tenacity to retry the completion call."""
+    import fireworks.client
+
+    prompt = kwargs["prompt"]
+    del kwargs["prompt"]
+
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+
+    @conditional_decorator(use_retry, retry_decorator)
+    async def _completion_with_retry(prompt: str) -> Any:
+        return await fireworks.client.Completion.acreate(**kwargs, prompt=prompt)
+
+    def run_coroutine_in_new_loop(
+        coroutine_func: Any, *args: Dict, **kwargs: Dict
+    ) -> Any:
+        new_loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(new_loop)
+            return new_loop.run_until_complete(coroutine_func(*args, **kwargs))
+        finally:
+            new_loop.close()
+
+    async def batch_sync_run() -> List:
+        with ThreadPoolExecutor() as executor:
+            results = list(
+                executor.map(
+                    run_coroutine_in_new_loop,
+                    [_completion_with_retry] * len(prompt),
+                    prompt,
+                )
             )
-            curr_string = json.loads(result)["choices"][0]["text"]
-            answers.append(curr_string)
-    else:
-        answers = []
-        for i in range(len(kwargs["prompt"])):
-            result = kwargs["prompt"][i]
-            result = execute(
-                result,
-                kwargs["model"],
-                llm.fireworks_api_key,
-                llm.max_tokens,
-                llm.temperature,
-            )
-            curr_string = json.loads(result)["choices"][0]["text"]
-            answers.append(curr_string)
-    return answers
+        return results
+
+    return await batch_sync_run()
+
+
+async def acompletion_with_retry_streaming(
+    llm: Fireworks,
+    use_retry: bool,
+    *,
+    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
+    """Use tenacity to retry the completion call for streaming."""
+    import fireworks.client
+
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+
+    @conditional_decorator(use_retry, retry_decorator)
+    async def _completion_with_retry(**kwargs: Any) -> Any:
+        return fireworks.client.Completion.acreate(
+            **kwargs,
+        )
+
+    return await _completion_with_retry(**kwargs)
+
+
+def _create_retry_decorator(
+    llm: Fireworks,
+    *,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
+    """Define retry mechanism."""
+    import fireworks.client
+
+    errors = [
+        fireworks.client.error.RateLimitError,
+        fireworks.client.error.InternalServerError,
+        fireworks.client.error.BadGatewayError,
+        fireworks.client.error.ServiceUnavailableError,
+    ]
+    return create_base_retry_decorator(
+        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
+    )

@@ -5,7 +5,7 @@ import logging
 import multiprocessing
 from typing import TYPE_CHECKING, Dict, Optional
 
-from pydantic import BaseModel, Field
+from langchain.pydantic_v1 import BaseModel, Field
 
 if TYPE_CHECKING:
     from wasm_exec import WasmExecutor

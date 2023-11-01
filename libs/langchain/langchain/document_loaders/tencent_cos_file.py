@@ -1,4 +1,3 @@
-"""Loading logic for loading documents from Tencent Cloud COS file."""
 import os
 import tempfile
 from typing import Any, Iterator, List
@@ -9,7 +8,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class TencentCOSFileLoader(BaseLoader):
-    """Loader for Tencent Cloud COS file."""
+    """Load from `Tencent Cloud COS` file."""
 
     def __init__(self, conf: Any, bucket: str, key: str):
         """Initialize with COS config, bucket and key name.

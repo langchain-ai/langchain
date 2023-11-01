@@ -1,4 +1,3 @@
-"""Wrapper around Atlas by Nomic."""
 from __future__ import annotations
 
 import logging
@@ -8,14 +7,16 @@ from typing import Any, Iterable, List, Optional, Type
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 
 logger = logging.getLogger(__name__)
 
 
 class AtlasDB(VectorStore):
-    """Wrapper around Atlas: Nomic's neural database and rhizomatic instrument.
+    """`Atlas` vector store.
+
+     Atlas is the `Nomic's` neural database and `rhizomatic` instrument.
 
     To use, you should have the ``nomic`` python package installed.
 
@@ -61,7 +62,7 @@ class AtlasDB(VectorStore):
             import nomic
             from nomic import AtlasProject
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import nomic python package. "
                 "Please install it with `pip install nomic`."
             )

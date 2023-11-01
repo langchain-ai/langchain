@@ -36,13 +36,17 @@ from langchain.memory.chat_message_histories import (
     ChatMessageHistory,
     CosmosDBChatMessageHistory,
     DynamoDBChatMessageHistory,
+    ElasticsearchChatMessageHistory,
     FileChatMessageHistory,
     MomentoChatMessageHistory,
     MongoDBChatMessageHistory,
     PostgresChatMessageHistory,
     RedisChatMessageHistory,
+    SingleStoreDBChatMessageHistory,
     SQLChatMessageHistory,
     StreamlitChatMessageHistory,
+    UpstashRedisChatMessageHistory,
+    XataChatMessageHistory,
     ZepChatMessageHistory,
 )
 from langchain.memory.combined import CombinedMemory
@@ -51,6 +55,7 @@ from langchain.memory.entity import (
     InMemoryEntityStore,
     RedisEntityStore,
     SQLiteEntityStore,
+    UpstashRedisEntityStore,
 )
 from langchain.memory.kg import ConversationKGMemory
 from langchain.memory.motorhead_memory import MotorheadMemory
@@ -76,6 +81,7 @@ __all__ = [
     "ConversationTokenBufferMemory",
     "CosmosDBChatMessageHistory",
     "DynamoDBChatMessageHistory",
+    "ElasticsearchChatMessageHistory",
     "FileChatMessageHistory",
     "InMemoryEntityStore",
     "MomentoChatMessageHistory",
@@ -85,11 +91,15 @@ __all__ = [
     "ReadOnlySharedMemory",
     "RedisChatMessageHistory",
     "RedisEntityStore",
+    "SingleStoreDBChatMessageHistory",
     "SQLChatMessageHistory",
     "SQLiteEntityStore",
     "SimpleMemory",
     "StreamlitChatMessageHistory",
     "VectorStoreRetrieverMemory",
+    "XataChatMessageHistory",
     "ZepChatMessageHistory",
     "ZepMemory",
+    "UpstashRedisEntityStore",
+    "UpstashRedisChatMessageHistory",
 ]

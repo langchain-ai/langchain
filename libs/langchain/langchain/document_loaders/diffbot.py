@@ -1,4 +1,3 @@
-"""Loader that uses Diffbot to load webpages in text format."""
 import logging
 from typing import Any, List
 
@@ -11,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class DiffbotLoader(BaseLoader):
-    """Loads Diffbot file json."""
+    """Load `Diffbot` json file."""
 
     def __init__(
         self, api_token: str, urls: List[str], continue_on_failure: bool = True

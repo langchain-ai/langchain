@@ -148,13 +148,27 @@ class ChainStringRunMapper(StringRunMapper):
     def map(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
         if not run.outputs:
-            raise ValueError(f"Run {run.id} has no outputs to evaluate.")
-        if self.input_key is not None and self.input_key not in run.inputs:
-            raise ValueError(f"Run {run.id} does not have input key {self.input_key}.")
-        elif self.prediction_key is not None and self.prediction_key not in run.outputs:
             raise ValueError(
-                f"Run {run.id} does not have prediction key {self.prediction_key}."
+                f"Run with ID {run.id} lacks outputs required for evaluation."
+                " Ensure the Run has valid outputs."
             )
+        if self.input_key is not None and self.input_key not in run.inputs:
+            raise ValueError(
+                f"Run with ID {run.id} is missing the expected input key"
+                f" '{self.input_key}'.\nAvailable input keys in this Run"
+                f"  are: {run.inputs.keys()}.\nAdjust the evaluator's"
+                f" input_key or ensure your input data includes key"
+                f" '{self.input_key}'."
+            )
+        elif self.prediction_key is not None and self.prediction_key not in run.outputs:
+            available_keys = ", ".join(run.outputs.keys())
+            raise ValueError(
+                f"Run with ID {run.id} doesn't have the expected prediction key"
+                f" '{self.prediction_key}'. Available prediction keys in this Run are:"
+                f" {available_keys}. Adjust the evaluator's prediction_key or"
+                " ensure the Run object's outputs the expected key."
+            )
+
         else:
             input_ = self._get_key(run.inputs, self.input_key, "input")
             prediction = self._get_key(run.outputs, self.prediction_key, "prediction")
@@ -212,7 +226,7 @@ class StringExampleMapper(Serializable):
         return {
             "reference": self.serialize_chat_messages([output])
             if isinstance(output, dict) and output.get("type") and output.get("data")
-            else str(output)
+            else output
         }
 
     def __call__(self, example: Example) -> Dict[str, str]:
@@ -290,7 +304,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     async def _acall(
         self,
         inputs: Dict[str, str],
-        run_manager: AsyncCallbackManagerForChainRun | None = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Call the evaluation chain."""
         evaluate_strings_inputs = self._prepare_input(inputs)
@@ -313,17 +327,30 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
         """Evaluate an example."""
-        result = self({"run": run, "example": example}, include_run_info=True)
-        return self._prepare_evaluator_output(result)
+        try:
+            result = self({"run": run, "example": example}, include_run_info=True)
+            return self._prepare_evaluator_output(result)
+        except Exception as e:
+            return EvaluationResult(
+                key=self.string_evaluator.evaluation_name,
+                comment=f"Error evaluating run {run.id}: {e}",
+                # TODO: Add run ID once we can declare it via callbacks
+            )
 
     async def aevaluate_run(
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
         """Evaluate an example."""
-        result = await self.acall(
-            {"run": run, "example": example}, include_run_info=True
-        )
-        return self._prepare_evaluator_output(result)
+        try:
+            result = await self.acall(
+                {"run": run, "example": example}, include_run_info=True
+            )
+            return self._prepare_evaluator_output(result)
+        except Exception as e:
+            return EvaluationResult(
+                key=self.string_evaluator.evaluation_name,
+                comment=f"Error evaluating run {run.id}: {e}",
+            )
 
     @classmethod
     def from_run_and_data_type(

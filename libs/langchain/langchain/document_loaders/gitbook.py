@@ -1,4 +1,3 @@
-"""Loads GitBook."""
 from typing import Any, List, Optional
 from urllib.parse import urljoin, urlparse
 
@@ -7,7 +6,7 @@ from langchain.document_loaders.web_base import WebBaseLoader
 
 
 class GitbookLoader(WebBaseLoader):
-    """Load GitBook data.
+    """Load `GitBook` data.
 
     1. load from either a single page, or
     2. load all (relative) paths in the navbar.
@@ -19,7 +18,7 @@ class GitbookLoader(WebBaseLoader):
         load_all_paths: bool = False,
         base_url: Optional[str] = None,
         content_selector: str = "main",
-        continue_on_failure: Optional[bool] = False,
+        continue_on_failure: bool = False,
     ):
         """Initialize with web page and whether to load all paths.
 
@@ -42,13 +41,10 @@ class GitbookLoader(WebBaseLoader):
             self.base_url = self.base_url[:-1]
         if load_all_paths:
             # set web_path to the sitemap if we want to crawl all paths
-            web_paths = f"{self.base_url}/sitemap.xml"
-        else:
-            web_paths = web_page
-        super().__init__(web_paths)
+            web_page = f"{self.base_url}/sitemap.xml"
+        super().__init__(web_paths=(web_page,), continue_on_failure=continue_on_failure)
         self.load_all_paths = load_all_paths
         self.content_selector = content_selector
-        self.continue_on_failure = continue_on_failure
 
     def load(self) -> List[Document]:
         """Fetch text from one single GitBook page."""

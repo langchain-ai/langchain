@@ -5,7 +5,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class OpenCityDataLoader(BaseLoader):
-    """Loads Open City data."""
+    """Load from `Open City`."""
 
     def __init__(self, city_id: str, dataset_id: str, limit: int):
         """Initialize with dataset_id.

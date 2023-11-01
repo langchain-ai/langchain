@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -12,13 +10,29 @@ from langchain.callbacks.manager import (
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities.requests import TextRequestsWrapper
 
 
 class APIChain(Chain):
-    """Chain that makes API calls and summarizes the responses to answer a question."""
+    """Chain that makes API calls and summarizes the responses to answer a question.
+
+    *Security Note*: This API chain uses the requests toolkit
+        to make GET, POST, PATCH, PUT, and DELETE requests to an API.
+
+        Exercise care in who is allowed to use this chain. If exposing
+        to end users, consider that users will be able to make arbitrary
+        requests on behalf of the server hosting the code. For example,
+        users could ask the server to make a request to a private API
+        that is only accessible from the server.
+
+        Control access to who can submit issue requests using this toolkit and
+        what network access it has.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     api_request_chain: LLMChain
     api_answer_chain: LLMChain

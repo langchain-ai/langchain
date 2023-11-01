@@ -1,4 +1,3 @@
-"""VectorStore wrapper around a Hologres database."""
 from __future__ import annotations
 
 import json
@@ -7,16 +6,16 @@ import uuid
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 
 ADA_TOKEN_COUNT = 1536
 _LANGCHAIN_DEFAULT_TABLE_NAME = "langchain_pg_embedding"
 
 
 class HologresWrapper:
-    """Wrapper around Hologres service."""
+    """`Hologres API` wrapper."""
 
     def __init__(self, connection_string: str, ndims: int, table_name: str) -> None:
         """Initialize the wrapper.
@@ -114,7 +113,7 @@ document text);"""
 
 
 class Hologres(VectorStore):
-    """VectorStore implementation using Hologres.
+    """`Hologres API` vector store.
 
     - `connection_string` is a hologres connection string.
     - `embedding_function` any embedding function implementing
@@ -404,7 +403,7 @@ class Hologres(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Hologres
+                from langchain.vectorstores import Hologres
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
@@ -436,7 +435,7 @@ class Hologres(VectorStore):
         **kwargs: Any,
     ) -> Hologres:
         """
-        Get intsance of an existing Hologres store.This method will
+        Get instance of an existing Hologres store.This method will
         return the instance of the store without inserting any new
         embeddings
         """

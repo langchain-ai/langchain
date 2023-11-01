@@ -5,7 +5,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class AirtableLoader(BaseLoader):
-    """Loader for Airtable tables."""
+    """Load the `Airtable` tables."""
 
     def __init__(self, api_token: str, table_id: str, base_id: str):
         """Initialize with API token and the IDs for table and base"""

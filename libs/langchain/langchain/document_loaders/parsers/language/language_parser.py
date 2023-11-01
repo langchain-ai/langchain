@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterator, Optional
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
+from langchain.document_loaders.parsers.language.cobol import CobolSegmenter
 from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
 from langchain.document_loaders.parsers.language.python import PythonSegmenter
 from langchain.text_splitter import Language
@@ -10,17 +11,18 @@ from langchain.text_splitter import Language
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "py": Language.PYTHON,
     "js": Language.JS,
+    "cobol": Language.COBOL,
 }
 
 LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     Language.PYTHON: PythonSegmenter,
     Language.JS: JavaScriptSegmenter,
+    Language.COBOL: CobolSegmenter,
 }
 
 
 class LanguageParser(BaseBlobParser):
-    """
-    Language parser that split code using the respective language syntax.
+    """Parse using the respective programming language syntax.
 
     Each top-level function and class in the code is loaded into separate documents.
     Furthermore, an extra document is generated, containing the remaining top-level code
