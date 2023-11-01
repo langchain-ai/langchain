@@ -57,6 +57,30 @@ def test_extract_nested_tags() -> None:
     assert docs_transformed[0].page_content == "First paragraph. Second paragraph."
 
 
+@pytest.mark.requires("bs4")
+def test_extract_more_nested_tags() -> None:
+    bs_transformer = BeautifulSoupTransformer()
+    nested_html = (
+        "<html><div class='some_style'>"
+        "<p><span>First</span> paragraph.</p>"
+        "<p>Second paragraph.</p>"
+        "<p>Third paragraph with a list:"
+        "<ul>"
+        "<li>First list item.</li>"
+        "<li>Second list item.</li>"
+        "</ul>"
+        "</p>"
+        "</div><html>"
+    )
+    documents = [Document(page_content=nested_html)]
+    docs_transformed = bs_transformer.transform_documents(documents)
+    assert docs_transformed[0].page_content == (
+        "First paragraph. Second paragraph. "
+        "Third paragraph with a list: "
+        "First list item. Second list item."
+    )
+
+
 # FIXME: This test proves that the order of the tags is NOT preserved.
 #        Documenting the current behavior here, but this should be fixed.
 @pytest.mark.requires("bs4")
