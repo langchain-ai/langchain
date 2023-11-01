@@ -99,7 +99,9 @@ def _create_retry_decorator(
     ] = None,
 ) -> Callable[[Any], Any]:
     return create_base_retry_decorator(
-        error_types=[Exception], max_retries=llm.max_retries, run_manager=run_manager
+        error_types=[Exception],
+        max_retries=llm.model_kwargs.get("max_retries", 1),
+        run_manager=run_manager,
     )
 
 
@@ -198,7 +200,7 @@ def _openai_kwargs_to_xinference_kwargs(**kwargs):
     return {
         "prompt": prompt_message["content"],
         "chat_history": messages,
-        "generate_config": kwargs,
+        "generate_config": kwargs.pop("generate_config"),
     }
 
 
@@ -223,24 +225,12 @@ class ChatXinference(BaseChatModel):
         return True
 
     client: Any = None  #: :meta private:
-    model_name: str = Field(alias="model")
-    """Model name to use."""
-    endpoint: str
-    """The Xinference endpoint."""
-    temperature: float = 0.7
-    """What sampling temperature to use."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    server_url: str
+    """URL of the xinference server"""
+    model_uid: str
+    """UID of the launched model"""
+    model_kwargs: Dict[str, Any]
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
-    """Timeout for requests to Xinference completion API. Default is 600 seconds."""
-    max_retries: int = 6
-    """Maximum number of retries to make when generating."""
-    streaming: bool = False
-    """Whether to stream the results or not."""
-    n: int = 1
-    """Number of chat completions to generate for each prompt."""
-    max_tokens: Optional[int] = None
-    """Maximum number of tokens to generate."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -276,18 +266,22 @@ class ChatXinference(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        endpoint = values.get("endpoint")
-        if not endpoint:
-            raise ValueError("Please specify the Xinference endpoint.")
-        model_name = values.get("model_name")
-        if not model_name:
+        server_url = values.get("server_url")
+        if not server_url:
+            raise ValueError("Please specify the Xinference endpoint URL.")
+        model_uid = values.get("model_uid")
+        if not model_uid:
             raise ValueError("Please specify the Xinference model UID.")
+        if values.get("model_kwargs", {}).get("n"):
+            raise ValueError("n is not supported by Xinference.")
+        if values.get("model_kwargs", {}).get("streaming"):
+            raise ValueError("Please use stream instead of streaming.")
 
         try:
             from xinference_client import RESTfulClient as Client
 
-            client = Client(endpoint)
-            values["client"] = client.get_model(model_uid=model_name)
+            client = Client(server_url)
+            values["client"] = client.get_model(model_uid=model_uid)
         except ImportError:
             raise ValueError(
                 "Could not import xinference_client python package. "
@@ -296,26 +290,9 @@ class ChatXinference(BaseChatModel):
         except Exception as e:
             raise ValueError(
                 f"Could not connect to Xinference, "
-                f"endpoint: {endpoint}, model: {model_name}"
+                f"endpoint: {server_url}, model: {model_uid}"
             ) from e
-        if values["n"] < 1:
-            raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
-            raise ValueError("n must be 1 when streaming.")
         return values
-
-    @property
-    def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Xinference API."""
-        return {
-            "model": self.model_name,
-            "request_timeout": self.request_timeout,
-            "max_tokens": self.max_tokens,
-            "stream": self.streaming,
-            "n": self.n,
-            "temperature": self.temperature,
-            **self.model_kwargs,
-        }
 
     def completion_with_retry(
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
@@ -361,7 +338,7 @@ class ChatXinference(BaseChatModel):
                     overall_token_usage[k] += v
                 else:
                     overall_token_usage[k] = v
-        return {"token_usage": overall_token_usage, "model_name": self.model_name}
+        return {"token_usage": overall_token_usage, "model_name": self.model_uid}
 
     def _stream(
         self,
@@ -370,12 +347,18 @@ class ChatXinference(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
+        generate_config = kwargs.get("generate_config", {})
+        generate_config = {**self.model_kwargs, **generate_config, "stream": True}
+        message_dicts, params = self._create_message_dicts(
+            messages, stop, generate_config
+        )
+        params = {**params, **kwargs}
 
         default_chunk_class = AIMessageChunk
         for chunk in self.completion_with_retry(
-            messages=message_dicts, run_manager=run_manager, **params
+            messages=message_dicts,
+            run_manager=run_manager,
+            **params,
         ):
             if len(chunk["choices"]) == 0:
                 continue
@@ -397,16 +380,22 @@ class ChatXinference(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
+        generate_config = kwargs.get("generate_config", {})
+        generate_config = {**self.model_kwargs, **generate_config}
+        should_stream = generate_config and generate_config.get("stream")
         if should_stream:
             stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
             )
             return _generate_from_stream(stream_iter)
-        message_dicts, params = self._create_message_dicts(messages, stop)
+        message_dicts, params = self._create_message_dicts(
+            messages, stop, generate_config
+        )
         params = {**params, **kwargs}
         response = self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
@@ -414,15 +403,17 @@ class ChatXinference(BaseChatModel):
         return self._create_chat_result(response)
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]],
+        generate_config: Optional[Dict],
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params = self._client_params
         if stop is not None:
-            if "stop" in params:
+            if "stop" in generate_config:
                 raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
+            generate_config["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
-        return message_dicts, params
+        return message_dicts, {"generate_config": generate_config}
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = []
@@ -434,7 +425,7 @@ class ChatXinference(BaseChatModel):
             )
             generations.append(gen)
         token_usage = response.get("usage", {})
-        llm_output = {"token_usage": token_usage, "model_name": self.model_name}
+        llm_output = {"token_usage": token_usage, "model_name": self.model_uid}
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
@@ -444,12 +435,18 @@ class ChatXinference(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
+        generate_config = kwargs.get("generate_config", {})
+        generate_config = {**self.model_kwargs, **generate_config, "stream": True}
+        message_dicts, params = self._create_message_dicts(
+            messages, stop, generate_config
+        )
+        params = {**params, **kwargs}
 
         default_chunk_class = AIMessageChunk
         async for chunk in await self.acompletion_with_retry(
-            messages=message_dicts, run_manager=run_manager, **params
+            messages=message_dicts,
+            run_manager=run_manager,
+            **params,
         ):
             if len(chunk["choices"]) == 0:
                 continue
@@ -471,17 +468,20 @@ class ChatXinference(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
+        generate_config = kwargs.get("generate_config", {})
+        generate_config = {**self.model_kwargs, **generate_config}
+        should_stream = generate_config and generate_config.get("stream")
         if should_stream:
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await _agenerate_from_stream(stream_iter)
 
-        message_dicts, params = self._create_message_dicts(messages, stop)
+        message_dicts, params = self._create_message_dicts(
+            messages, stop, generate_config
+        )
         params = {**params, **kwargs}
         response = await self.acompletion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
@@ -491,25 +491,10 @@ class ChatXinference(BaseChatModel):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
-
-    @property
-    def _client_params(self) -> Dict[str, Any]:
-        """Get the parameters used for the Xinference client."""
-        client_params: Dict[str, Any] = {
-            "model": self.model_name,
-        }
-        return {**self._default_params, **client_params}
-
-    def _get_invocation_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
-    ) -> Dict[str, Any]:
-        """Get the parameters used to invoke the model."""
         return {
-            "model": self.model_name,
-            **super()._get_invocation_params(stop=stop),
-            **self._default_params,
-            **kwargs,
+            **{"server_url": self.server_url},
+            **{"model_uid": self.model_uid},
+            **{"model_kwargs": self.model_kwargs},
         }
 
     @property
