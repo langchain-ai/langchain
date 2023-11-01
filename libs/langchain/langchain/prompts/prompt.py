@@ -22,11 +22,16 @@ class PromptTemplate(StringPromptTemplate):
     The template can be formatted using either f-strings (default) or jinja2 syntax.
 
     *Security warning*: Prefer using `template_format="f-string"` instead of
-        `template_format="jinja2"`, or make sure to never accept jinja2 templates
+        `template_format="jinja2"`, or make sure to NEVER accept jinja2 templates
         from untrusted sources as they may lead to arbitrary Python code execution.
-        Jinja2 templates as of LangChain 0.0.329 will be using Jinja2's
-        SandboxedEnvironment by default, but this sand-boxing should
-        be treated as a best-effort approach rather than a guarantee of security.
+
+        As of LangChain 0.0.329, Jinja2 templates will be rendered using
+        Jinja2's SandboxedEnvironment by default. This sand-boxing should
+        be treated as a best-effort approach rather than a guarantee of security,
+        as it is an opt-out rather than opt-in approach.
+
+        Despite the sand-boxing, we recommend to never use jinja2 templates
+        from untrusted sources.
 
     Example:
 
@@ -199,11 +204,16 @@ class PromptTemplate(StringPromptTemplate):
         """Load a prompt template from a template.
 
         *Security warning*: Prefer using `template_format="f-string"` instead of
-            `template_format="jinja2"`, or make sure to never accept jinja2 templates
+            `template_format="jinja2"`, or make sure to NEVER accept jinja2 templates
             from untrusted sources as they may lead to arbitrary Python code execution.
-            Jinja2 templates as of LangChain 0.0.329 will be using Jinja2's
-            SandboxedEnvironment by default, but this sand-boxing should
-            be treated as a best-effort approach rather than a guarantee of security.
+
+            As of LangChain 0.0.329, Jinja2 templates will be rendered using
+            Jinja2's SandboxedEnvironment by default. This sand-boxing should
+            be treated as a best-effort approach rather than a guarantee of security,
+            as it is an opt-out rather than opt-in approach.
+
+            Despite the sand-boxing, we recommend to never use jinja2 templates
+            from untrusted sources.
 
         Args:
             template: The template to load.
