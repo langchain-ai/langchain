@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import logging
-from typing import Any, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
@@ -177,6 +177,19 @@ class HuggingFacePipeline(BaseLLM):
     @property
     def _llm_type(self) -> str:
         return "huggingface_pipeline"
+
+    @property
+    def _invocation_params(self) -> Dict[str, Any]:
+        params = super()._invocation_params
+        try:
+            params["model_config"] = self.pipeline.model.config
+        except NameError as e:
+            logger.warning(
+                "Unable to get model config in invocation params."
+                f" Received error:\n\n{e}"
+            )
+            pass
+        return params
 
     def _generate(
         self,
