@@ -56,7 +56,7 @@ _inputs = RunnableMap(
     | CONDENSE_QUESTION_PROMPT
     | llm
     | StrOutputParser(),
-).with_types(input_type=ChainInput)
+)
 
 _context = {
     "context": itemgetter("standalone_question") | retriever | _combine_documents,
@@ -64,3 +64,5 @@ _context = {
 }
 
 chain = _inputs | _context | LLM_CONTEXT_PROMPT | llm | StrOutputParser()
+
+chain = chain.with_types(input_type=ChainInput)
