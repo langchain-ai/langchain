@@ -79,11 +79,3 @@ from langserve.client import RemoteRunnable
 
 runnable = RemoteRunnable("http://localhost:8000/rag-elasticsearch")
 ```
-
-For loading the fictional workplace documents, run the following command from the root of this repository:
-
-```bash
-python ./data/load_documents.py
-```
-
-However, you can choose from a large number of document loaders [here](https://python.langchain.com/docs/integrations/document_loaders).  

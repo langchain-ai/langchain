@@ -1,11 +1,10 @@
+# rag-self-query
 
-# rag-elasticsearch
-
-This template performs RAG using ElasticSearch.
-
-It relies on sentence transformer `MiniLM-L6-v2` for embedding passages and questions.
+This template performs RAG using the self-query retrieval technique. The main idea is to let an LLM convert unstructured queries into structured queries. See the [docs for more on how this works](https://python.langchain.com/docs/modules/data_connection/retrievers/self_query).
 
 ## Environment Setup
+
+In this template we'll use OpenAI models and an Elasticsearch vector store, but the approach generalizes to all LLMs/ChatModels and [a number of vector stores](https://python.langchain.com/docs/integrations/retrievers/self_query/).
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
@@ -20,6 +19,7 @@ For local development with Docker, use:
 
 ```bash
 export ES_URL = "http://localhost:9200"
+docker run -p 9200:9200 -e "discovery.type=single-node" -e "xpack.security.enabled=false" -e "xpack.security.http.ssl.enabled=false" docker.elastic.co/elasticsearch/elasticsearch:8.9.0
 ```
 
 ## Usage
@@ -33,20 +33,25 @@ pip install -U "langchain-cli[serve]"
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package rag-elasticsearch
+langchain app new my-app --package rag-self-query
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add rag-elasticsearch
+langchain app add rag-self-query
 ```
 
 And add the following code to your `server.py` file:
 ```python
-from rag_elasticsearch import chain as rag_elasticsearch_chain
+from rag_self_query import chain
 
-add_routes(app, rag_elasticsearch_chain, path="/rag-elasticsearch")
+add_routes(app, chain, path="/rag-elasticsearch")
+```
+
+To populate the vector store with the sample data, from the root of the directory run:
+```bash
+python ingest.py
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -77,13 +82,5 @@ We can access the template from code with:
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/rag-elasticsearch")
+runnable = RemoteRunnable("http://localhost:8000/rag-self-query")
 ```
-
-For loading the fictional workplace documents, run the following command from the root of this repository:
-
-```bash
-python ./data/load_documents.py
-```
-
-However, you can choose from a large number of document loaders [here](https://python.langchain.com/docs/integrations/document_loaders).  

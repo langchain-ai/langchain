@@ -1,10 +1,10 @@
-import datetime
 import re
 from typing import Any, Callable, Dict, Tuple
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
+    Iso8601Date,
     Operation,
     Operator,
     StructuredQuery,
@@ -106,13 +106,13 @@ class MyScaleTranslator(Visitor):
         value = f"'{value}'" if isinstance(value, str) else value
 
         # convert timestamp for datetime objects
-        if type(value) is datetime.date:
+        if isinstance(value, Iso8601Date):
             attr = f"parseDateTime32BestEffort({attr})"
-            value = f"parseDateTime32BestEffort('{value.strftime('%Y-%m-%d')}')"
+            value = f"parseDateTime32BestEffort('{value.date.strftime('%Y-%m-%d')}')"
 
         # string pattern match
         if comp is Comparator.LIKE:
-            value = f"'%{value[1:-1]}%'"
+            value = f"'%{value[1:-1]}%'"  # type: ignore
         return self.map_dict[comp](attr, value)
 
     def visit_structured_query(

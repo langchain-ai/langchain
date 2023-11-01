@@ -1,16 +1,17 @@
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
+    Primitive,
     StructuredQuery,
     Visitor,
 )
 
 
-def process_value(value: Union[int, float, str]) -> str:
+def process_value(value: Union[Primitive, List[Primitive]]) -> str:
     """Convert a value to a string and add single quotes if it is a string."""
     if isinstance(value, str):
         return f"'{value}'"

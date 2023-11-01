@@ -2,7 +2,7 @@
 name = "rag-self-query"
 version = "0.0.1"
 description = ""
-authors = ["foo bar <foo@bar.com>"]
+authors = []
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -13,13 +13,13 @@ elasticsearch = "^8.10.0"
 sentence-transformers = "^2.2.2"
 jq = "^1.6.0"
 tiktoken = "^0.5.1"
+lark = "^1.1.8"
+pydantic = "^2.4.2"
 
 [tool.langserve]
 export_module = "rag_self_query"
 export_attr = "chain"
 
 [build-system]
-requires = [
-    "poetry-core",
-]
+requires = ["poetry-core",]
 build-backend = "poetry.core.masonry.api"

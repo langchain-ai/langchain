@@ -1,4 +1,3 @@
-import datetime
 from typing import Any, Optional, Sequence, Union
 
 from langchain.utils import check_package_version
@@ -19,6 +18,7 @@ from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
     FilterDirective,
+    Iso8601Date,
     Operation,
     Operator,
 )
@@ -129,9 +129,9 @@ class QueryTransformer(Transformer):
     def float(self, item: Any) -> float:
         return float(item)
 
-    def timestamp(self, item: Any) -> datetime.date:
-        item = item.replace("'", '"')
-        return datetime.datetime.strptime(item, '"%Y-%m-%d"').date()
+    def timestamp(self, item: Any) -> Iso8601Date:
+        item = item.replace("'", "").replace('"', "")
+        return Iso8601Date(date=item)
 
     def string(self, item: Any) -> str:
         # Remove escaped quotes

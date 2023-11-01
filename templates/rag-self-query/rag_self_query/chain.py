@@ -7,97 +7,55 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers import SelfQueryRetriever
 from langchain.schema import format_document
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import ConfigurableField, RunnablePassthrough
-from langchain.vectorstores import ElasticsearchStore
-from pydantic import BaseModel, Field
+from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
+from langchain.vectorstores.elasticsearch import ElasticsearchStore
+from pydantic.v1 import BaseModel, Field
 
-from .connection import es_connection_details
 from .prompts import CONDENSE_QUESTION_PROMPT, DOCUMENT_PROMPT, LLM_CONTEXT_PROMPT
 
-llm = ChatOpenAI(temperature=0)
+ELASTIC_CLOUD_ID = os.getenv("ELASTIC_CLOUD_ID")
+ELASTIC_USERNAME = os.getenv("ELASTIC_USERNAME", "elastic")
+ELASTIC_PASSWORD = os.getenv("ELASTIC_PASSWORD")
+ES_URL = os.getenv("ES_URL", "http://localhost:9200")
+ELASTIC_INDEX_NAME = os.getenv("ELASTIC_INDEX_NAME", "workspace-search-example")
 
-DOCUMENT_CONTENTS = ""
-METADATA_FIELD_INFO = {}
+if ELASTIC_CLOUD_ID and ELASTIC_USERNAME and ELASTIC_PASSWORD:
+    es_connection_details = {
+        "es_cloud_id": ELASTIC_CLOUD_ID,
+        "es_user": ELASTIC_USERNAME,
+        "es_password": ELASTIC_PASSWORD,
+    }
+else:
+    es_connection_details = {"es_url": ES_URL}
 
-
-def retriever_from_vecstore(vecstore):
-    return SelfQueryRetriever.from_llm(
-        llm, vecstore, DOCUMENT_CONTENTS, METADATA_FIELD_INFO
-    )
-
-
-def _init_chroma():
-    from langchain.vectorstores import Chroma
-
-    vecstore = Chroma(
-        collection_name=os.environ.get("CHROMA_COLLECTION_NAME"),
-        embedding_function=OpenAIEmbeddings(),
-    )
-    return retriever_from_vecstore(vecstore)
-
-
-def _init_redis():
-    from langchain.vectorstores import Redis
-
-    index_name = os.environ["REDIS_INDEX_NAME"]
-    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
-    return Redis(redis_url, index_name, OpenAIEmbeddings())
-
-
-def _init_pinecone():
-    from langchain.vectorstores import Pinecone
-
-    index_name = os.environ["PINECONE_INDEX_NAME"]
-    return Pinecone.from_existing_index(index_name, OpenAIEmbeddings())
-
-
-def _init_supabase():
-    from langchain.vectorstores import SupabaseVectorStore
-    from supabase.client import create_client
-
-    supabase_client = create_client(
-        os.environ["SUPABASE_URL"], os.getenv("SUPABASE_KEY"), OpenAIEmbeddings()
-    )
-    return SupabaseVectorStore(
-        supabase_client, OpenAIEmbeddings(), os.getenv("SUPABASE_TABLE_NAME")
-    )
-
-
-def _init_timescale():
-    from langchain.vectorstores import TimescaleVector
-
-    return TimescaleVector(
-        os.environ["TIMESCALE_SERVICE_URL"],
-        OpenAIEmbeddings(),
-        os.getenv("TIMESCALE_COLLECTION_NAME"),
-    )
-
-
-def _init_weaviate():
-    import weaviate
-    from langchain.vectorstores import Weaviate
-
-    client = weaviate.Client(
-        url=os.environ["WEAVIATE_URL"], api_key=os.getenv("WEAVIATE_API_KEY")
-    )
-    return Weaviate(
-        client, os.getenv("WEAVIATE_INDEX_NAME"), os.getenv("WEAVIATE_TEXT_KEY", "text")
-    )
-
-
-elastic = ElasticsearchStore(
-    **es_connection_details,
+vecstore = ElasticsearchStore(
+    ELASTIC_INDEX_NAME,
     embedding=OpenAIEmbeddings(),
-    index_name="workplace-search-example",
+    **es_connection_details,
 )
-retriever = retriever_from_vecstore(elastic).configurable_alternatives(
-    ConfigurableField(id="retriever"),
-    chroma=_init_chroma,
-    redis=_init_redis,
-    pinecone=_init_pinecone,
-    supabase=_init_supabase,
-    timescale=_init_timescale,
-    weaviate=_init_weaviate,
+
+document_contents = "The purpose and specifications of a workplace policy."
+metadata_field_info = [
+    {"name": "name", "type": "string", "description": "Name of the workplace policy."},
+    {
+        "name": "created_on",
+        "type": "date",
+        "description": "The date the policy was created in ISO 8601 date format (YYYY-MM-DD).",  # noqa: E501
+    },
+    {
+        "name": "updated_at",
+        "type": "date",
+        "description": "The date the policy was last updated in ISO 8601 date format (YYYY-MM-DD).",  # noqa: E501
+    },
+    {
+        "name": "location",
+        "type": "string",
+        "description": "Where the policy text is stored. The only valid values are ['github', 'sharepoint'].",  # noqa: E501
+    },
+]
+llm = ChatOpenAI(temperature=0)
+retriever = SelfQueryRetriever.from_llm(
+    llm, vecstore, document_contents, metadata_field_info
 )
 
 
@@ -122,11 +80,22 @@ standalone_question = (
     | CONDENSE_QUESTION_PROMPT
     | llm
     | StrOutputParser()
+)
+
+
+def route_question(input):
+    if input.get("chat_history"):
+        return standalone_question
+    else:
+        return RunnablePassthrough()
+
+
+_context = RunnableParallel(
+    context=retriever | _combine_documents,
+    question=RunnablePassthrough(),
+)
+
+
+chain = (
+    standalone_question | _context | LLM_CONTEXT_PROMPT | llm | StrOutputParser()
 ).with_types(input_type=InputType)
-
-_context = {
-    "context": retriever | _combine_documents,
-    "question": RunnablePassthrough(),
-}
-
-chain = standalone_question | _context | LLM_CONTEXT_PROMPT | llm | StrOutputParser()
