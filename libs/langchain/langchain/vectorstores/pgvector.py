@@ -130,6 +130,7 @@ class PGVector(VectorStore):
         self.engine_args = engine_args or {}
         # Create a connection if not provided, otherwise use the provided connection
         self._conn = connection if connection else self.connect()
+        self.__post_init__()
 
     def __post_init__(
         self,

@@ -165,7 +165,6 @@ def format_chat_history(chain_input: dict) -> dict:
 # with the new `tool.langserve.export_attr`
 chain = (
     (format_chat_history | _prompt | _model | StrOutputParser())
-    .with_types(input_type=ChainInput)
     # This is to add the evaluators as "listeners"
     # and to customize the name of the chain.
     # Any chain that accepts a compatible input type works here.
@@ -180,3 +179,5 @@ chain = (
         ],
     )
 )
+
+chain = chain.with_types(input_type=ChainInput)
