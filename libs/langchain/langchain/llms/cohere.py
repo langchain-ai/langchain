@@ -19,7 +19,7 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Extra, Field, SecretStr, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -95,21 +95,18 @@ class BaseCohere(Serializable):
                 "Please install it with `pip install cohere`."
             )
         else:
-            cohere_api_key = (
+            values["cohere_api_key"] = convert_to_secret_str(
                 get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
             )
-            values["client"] = cohere.Client(api_key=cohere_api_key.get_secret_value())
-            values["async_client"] = cohere.AsyncClient(
-                api_key=cohere_api_key.get_secret_value()
-            )
-<<<<<<< HEAD
-=======
             client_name = values["user_agent"]
-            values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
-            values["async_client"] = cohere.AsyncClient(
-                cohere_api_key, client_name=client_name
+            values["client"] = cohere.Client(
+                api_key=values["cohere_api_key"].get_secret_value(),
+                client_name=client_name,
             )
->>>>>>> master
+            values["async_client"] = cohere.AsyncClient(
+                api_key=values["cohere_api_key"].get_secret_value(),
+                client_name=client_name,
+            )
         return values
 
 
