@@ -168,9 +168,9 @@ def test_chat_prompt_template_from_messages_using_role_strings() -> None:
 
 
 def test_chat_prompt_template_with_messages() -> None:
-    messages: List[
-        Union[BaseMessagePromptTemplate, BaseMessage]
-    ] = create_messages() + [HumanMessage(content="foo")]
+    messages: List[Union[BaseMessagePromptTemplate, BaseMessage]] = (
+        create_messages() + [HumanMessage(content="foo")]
+    )
     chat_prompt_template = ChatPromptTemplate.from_messages(messages)
     assert sorted(chat_prompt_template.input_variables) == sorted(
         ["context", "foo", "bar"]
@@ -186,13 +186,24 @@ def test_chat_prompt_template_with_messages() -> None:
 def test_chat_invalid_input_variables_extra() -> None:
     messages = [HumanMessage(content="foo")]
     with pytest.raises(ValueError):
-        ChatPromptTemplate(messages=messages, input_variables=["foo"])
+        ChatPromptTemplate(
+            messages=messages, input_variables=["foo"], validate_template=True
+        )
+    assert (
+        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables
+        == []
+    )
 
 
 def test_chat_invalid_input_variables_missing() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
     with pytest.raises(ValueError):
-        ChatPromptTemplate(messages=messages, input_variables=[])
+        ChatPromptTemplate(
+            messages=messages, input_variables=[], validate_template=True
+        )
+    assert ChatPromptTemplate(
+        messages=messages, input_variables=[]
+    ).input_variables == ["foo"]
 
 
 def test_infer_variables() -> None:

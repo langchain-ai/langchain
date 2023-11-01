@@ -12,18 +12,22 @@ from langchain.schema.retriever import Document
 
 
 class ArceeRoute(str, Enum):
+    """Routes available for the Arcee API as enumerator."""
+
     generate = "models/generate"
     retrieve = "models/retrieve"
     model_training_status = "models/status/{id_or_name}"
 
 
 class DALMFilterType(str, Enum):
+    """Filter types available for a DALM retrieval as enumerator."""
+
     fuzzy_search = "fuzzy_search"
     strict_search = "strict_search"
 
 
 class DALMFilter(BaseModel):
-    """Filters available for a dalm retrieval and generation
+    """Filters available for a DALM retrieval and generation.
 
     Arguments:
         field_name: The field to filter on. Can be 'document' or 'name' to filter
@@ -55,7 +59,46 @@ class DALMFilter(BaseModel):
         return values
 
 
+class ArceeDocumentSource(BaseModel):
+    """Source of an Arcee document."""
+
+    document: str
+    name: str
+    id: str
+
+
+class ArceeDocument(BaseModel):
+    """Arcee document."""
+
+    index: str
+    id: str
+    score: float
+    source: ArceeDocumentSource
+
+
+class ArceeDocumentAdapter:
+    """Adapter for Arcee documents"""
+
+    @classmethod
+    def adapt(cls, arcee_document: ArceeDocument) -> Document:
+        """Adapts an `ArceeDocument` to a langchain's `Document` object."""
+        return Document(
+            page_content=arcee_document.source.document,
+            metadata={
+                # arcee document; source metadata
+                "name": arcee_document.source.name,
+                "source_id": arcee_document.source.id,
+                # arcee document metadata
+                "index": arcee_document.index,
+                "id": arcee_document.id,
+                "score": arcee_document.score,
+            },
+        )
+
+
 class ArceeWrapper:
+    """Wrapper for Arcee API."""
+
     def __init__(
         self,
         arcee_api_key: str,
@@ -64,6 +107,16 @@ class ArceeWrapper:
         model_kwargs: Optional[Dict[str, Any]],
         model_name: str,
     ):
+        """Initialize ArceeWrapper.
+
+        Arguments:
+            arcee_api_key: API key for Arcee API.
+            arcee_api_url: URL for Arcee API.
+            arcee_api_version: Version of Arcee API.
+            model_kwargs: Keyword arguments for Arcee API.
+            model_name: Name of an Arcee model.
+
+        """
         self.arcee_api_key = arcee_api_key
         self.model_kwargs = model_kwargs
         self.arcee_api_url = arcee_api_url
@@ -150,13 +203,13 @@ class ArceeWrapper:
         Args:
             prompt: Prompt to generate text from.
             size: The max number of context results to retrieve. Defaults to 3.
-            (Can be less if filters are provided).
+              (Can be less if filters are provided).
             filters: Filters to apply to the context dataset.
         """
 
         response = self._make_request(
             method="post",
-            route=ArceeRoute.generate,
+            route=ArceeRoute.generate.value,
             body=self._make_request_body_for_models(
                 prompt=prompt,
                 **kwargs,
@@ -174,16 +227,19 @@ class ArceeWrapper:
         Args:
             query: Query to submit to the model
             size: The max number of context results to retrieve. Defaults to 3.
-            (Can be less if filters are provided).
+              (Can be less if filters are provided).
             filters: Filters to apply to the context dataset.
         """
 
         response = self._make_request(
             method="post",
-            route=ArceeRoute.retrieve,
+            route=ArceeRoute.retrieve.value,
             body=self._make_request_body_for_models(
                 prompt=query,
                 **kwargs,
             ),
         )
-        return [Document(**doc) for doc in response["documents"]]
+        return [
+            ArceeDocumentAdapter.adapt(ArceeDocument(**doc))
+            for doc in response["results"]
+        ]

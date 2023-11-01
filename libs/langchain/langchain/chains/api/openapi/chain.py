@@ -171,7 +171,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         llm: BaseLanguageModel,
         requests: Optional[Requests] = None,
         return_intermediate_steps: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpoint from a spec at the specified url."""
@@ -194,7 +194,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         return_intermediate_steps: bool = False,
         raw_response: bool = False,
         callbacks: Callbacks = None,
-        **kwargs: Any
+        **kwargs: Any,
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpointChain from an operation and a spec."""
