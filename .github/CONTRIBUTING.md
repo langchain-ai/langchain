@@ -134,7 +134,7 @@ Run these locally before submitting a PR; the CI system will check also.
 
 #### Code Formatting
 
-Formatting for this project is done via a combination of [Black](https://black.readthedocs.io/en/stable/) and [ruff](https://docs.astral.sh/ruff/rules/).
+Formatting for this project is done via [ruff](https://docs.astral.sh/ruff/rules/).
 
 To run formatting for docs, cookbook and templates:
 
@@ -159,7 +159,7 @@ This is especially useful when you have made changes to a subset of the project 
 
 #### Linting
 
-Linting for this project is done via a combination of [Black](https://black.readthedocs.io/en/stable/), [ruff](https://docs.astral.sh/ruff/rules/), and [mypy](http://mypy-lang.org/).
+Linting for this project is done via a combination of [ruff](https://docs.astral.sh/ruff/rules/) and [mypy](http://mypy-lang.org/).
 
 To run linting for docs, cookbook and templates:
 
@@ -302,8 +302,8 @@ make api_docs_linkcheck
 
 ### Verify Documentation changes
 
-After pushing documentation changes to the repository, you can preview and verify that the changes are 
-what you wanted by clicking the `View deployment` or `Visit Preview` buttons on the pull request `Conversation` page. 
+After pushing documentation changes to the repository, you can preview and verify that the changes are
+what you wanted by clicking the `View deployment` or `Visit Preview` buttons on the pull request `Conversation` page.
 This will take you to a preview of the documentation changes.
 This preview is created by [Vercel](https://vercel.com/docs/getting-started-with-vercel).
 

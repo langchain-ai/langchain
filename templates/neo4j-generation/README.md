@@ -1,10 +1,13 @@
+
 # neo4j-generation
 
-The neo4j-generation template is designed to convert plain text into structured knowledge graphs. 
+This template pairs LLM-based knowledge graph extraction with Neo4j AuraDB, a fully managed cloud graph database.
 
-By using OpenAI's language model, it can efficiently extract structured information from text and construct a knowledge graph in Neo4j. 
+You can create a free instance on [Neo4j Aura](https://neo4j.com/cloud/platform/aura-graph-database?utm_source=langchain&utm_content=langserve).
 
-This package is flexible and allows users to guide the extraction process by specifying a list of node labels and relationship types.
+When you initiate a free database instance, you'll receive credentials to access the database.
+
+This template is flexible and allows users to guide the extraction process by specifying a list of node labels and relationship types.
 
 For more details on the functionality and capabilities of this package, please refer to [this blog post](https://blog.langchain.dev/constructing-knowledge-graphs-from-text-using-openai-functions/).
 

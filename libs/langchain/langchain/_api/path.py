@@ -22,7 +22,7 @@ def as_import_path(
     file: Union[Path, str],
     *,
     suffix: Optional[str] = None,
-    relative_to: Path = PACKAGE_DIR
+    relative_to: Path = PACKAGE_DIR,
 ) -> str:
     """Path of the file as a LangChain import exclude langchain top namespace."""
     if isinstance(file, str):

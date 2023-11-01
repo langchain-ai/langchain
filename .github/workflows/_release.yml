@@ -58,36 +58,17 @@ jobs:
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: |
-          echo pkg-name="$(poetry version | cut -d' ' -f 1)" >> $GITHUB_OUTPUT
+          echo pkg-name="$(poetry version | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
           echo version="$(poetry version --short)" >> $GITHUB_OUTPUT
 
   test-pypi-publish:
     needs:
       - build
-    runs-on: ubuntu-latest
-    permissions:
-      # This permission is used for trusted publishing:
-      # https://blog.pypi.org/posts/2023-04-20-introducing-trusted-publishers/
-      #
-      # Trusted publishing has to also be configured on PyPI for each package:
-      # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: dist
-          path: ${{ inputs.working-directory }}/dist/
-
-      - name: Publish to test PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: ${{ inputs.working-directory }}/dist/
-          verbose: true
-          print-hash: true
-          repository-url: https://test.pypi.org/legacy/
+    uses:
+      ./.github/workflows/_test_release.yml
+    with:
+      working-directory: ${{ inputs.working-directory }}
+    secrets: inherit
 
   pre-release-checks:
     needs:
@@ -131,7 +112,11 @@ jobs:
             --extra-index-url https://pypi.org/simple/ \
             "$PKG_NAME==$VERSION"
 
-          python -c "import $PKG_NAME; print(dir($PKG_NAME))"
+          # Replace all dashes in the package name with underscores,
+          # since that's how Python imports packages with dashes in the name.
+          IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g)"
+
+          python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
 
   publish:
     needs:
