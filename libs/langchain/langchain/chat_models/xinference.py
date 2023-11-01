@@ -30,7 +30,7 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
     AIMessage,

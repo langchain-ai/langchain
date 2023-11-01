@@ -307,6 +307,7 @@ all = [
     "amadeus",
     "librosa",
     "python-arango",
+    "xinference-client",
 ]
 
 cli = [
@@ -374,6 +375,7 @@ extended_testing = [
  "upstash-redis",
  "rspace_client",
  "fireworks-ai",
+ "xinference-client",
 ]
 
 [tool.ruff]

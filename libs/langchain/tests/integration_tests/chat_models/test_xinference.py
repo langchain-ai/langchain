@@ -2,7 +2,7 @@
 import asyncio
 import time
 from typing import Any, AsyncGenerator, Tuple
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
@@ -301,7 +301,7 @@ def test_chat_xinference_extra_kwargs(setup) -> None:
     with patch(
         "langchain.chat_models.xinference._openai_kwargs_to_xinference_kwargs",
         _mock_patched_convert,
-    ) as p:
+    ):
         llm([HumanMessage(content="Hello.")], generate_config={"max_tokens": 11})
         assert mock_called
 
@@ -402,7 +402,8 @@ def test_full_example(setup) -> None:
             content="You are a helpful assistant that translates English to Italian."
         ),
         HumanMessage(
-            content="Translate the following sentence from English to Italian: I love programming."
+            content="Translate the following sentence from English to Italian: "
+            "I love programming."
         ),
     ]
     r = chat(messages)
@@ -411,7 +412,10 @@ def test_full_example(setup) -> None:
     assert isinstance(r.content, str)
     assert r.content
 
-    template = "You are a helpful assistant that translates {input_language} to {output_language}."
+    template = (
+        "You are a helpful assistant that translates "
+        "{input_language} to {output_language}."
+    )
     system_message_prompt = SystemMessagePromptTemplate.from_template(template)
     human_template = "{text}"
     human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
