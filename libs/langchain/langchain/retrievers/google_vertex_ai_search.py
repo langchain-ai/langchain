@@ -372,8 +372,6 @@ class GoogleVertexAIMultiTurnSearchRetriever(
 
     conversation_id: str = "-"
     """Vertex AI Search Conversation ID."""
-    conversation_name: Optional[str] = None
-    """Vertex AI Search full Conversation Path"""
 
     _client: ConversationalSearchServiceClient
     _serving_config: str
@@ -404,14 +402,6 @@ class GoogleVertexAIMultiTurnSearchRetriever(
             serving_config=self.serving_config_id,
         )
 
-        if not self.conversation_name:
-            self.conversation_name = self._client.conversation_path(
-                self.project_id,
-                self.location_id,
-                self.data_store_id,
-                self.conversation_id,
-            )
-
         if self.engine_data_type == 1:
             raise NotImplementedError(
                 "Data store type 1 (Structured)"
@@ -429,14 +419,16 @@ class GoogleVertexAIMultiTurnSearchRetriever(
         )
 
         request = ConverseConversationRequest(
-            name=self.conversation_name,
+            name=self._client.conversation_path(
+                self.project_id,
+                self.location_id,
+                self.data_store_id,
+                self.conversation_id,
+            ),
             serving_config=self._serving_config,
             query=TextInput(input=query),
         )
         response = self._client.converse_conversation(request)
-
-        # Preserve Conversation State between requests
-        self.conversation_name = response.conversation.name
 
         if self.engine_data_type == 2:
             return self._convert_website_search_response(response.search_results)
