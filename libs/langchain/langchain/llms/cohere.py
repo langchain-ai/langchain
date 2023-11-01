@@ -81,6 +81,9 @@ class BaseCohere(Serializable):
     streaming: bool = Field(default=False)
     """Whether to stream the results."""
 
+    user_agent: str = "langchain"
+    """Identifier for the application making the request."""
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -99,6 +102,14 @@ class BaseCohere(Serializable):
             values["async_client"] = cohere.AsyncClient(
                 api_key=cohere_api_key.get_secret_value()
             )
+<<<<<<< HEAD
+=======
+            client_name = values["user_agent"]
+            values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
+            values["async_client"] = cohere.AsyncClient(
+                cohere_api_key, client_name=client_name
+            )
+>>>>>>> master
         return values
 
 
