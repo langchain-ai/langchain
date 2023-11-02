@@ -1,5 +1,6 @@
 """Test CallbackManager."""
 from typing import List, Tuple
+from unittest.mock import patch
 
 import pytest
 
@@ -300,12 +301,13 @@ def test_callback_manager_configure(monkeypatch: pytest.MonkeyPatch) -> None:
     assert isinstance(async_configured_manager, AsyncCallbackManager)
 
 
+@patch.object(LangChainTracer, "_persist_run_single")
 def test_callback_manager_configure_context_vars(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("LANGCHAIN_TRACING_V2", "false")
+    """Test callback manager configuration."""
+    monkeypatch.setenv("LANGCHAIN_TRACING_V2", "true")
     monkeypatch.setenv("LANGCHAIN_TRACING", "false")
-
     with trace_as_chain_group("test") as group_manager:
         assert len(group_manager.handlers) == 1
         tracer = group_manager.handlers[0]
@@ -370,3 +372,4 @@ def test_callback_manager_configure_context_vars(
             assert cb.prompt_tokens == 2
             assert cb.completion_tokens == 1
             assert cb.total_cost > 0
+    assert LangChainTracer._persist_run_single.call_count == 1

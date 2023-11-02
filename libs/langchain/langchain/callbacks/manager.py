@@ -1920,7 +1920,7 @@ def _get_tracer_project():
         run_tree,
         "session_name",
         getattr(
-            # Note, if people are trying to nest @traceable functions and the 
+            # Note, if people are trying to nest @traceable functions and the
             # tracing_v2_enabled context manager, this will likely mess up the
             # tree structure.
             tracing_v2_callback_var.get(),
