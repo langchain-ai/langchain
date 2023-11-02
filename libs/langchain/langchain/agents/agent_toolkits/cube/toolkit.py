@@ -32,11 +32,7 @@ class CubeToolkit(BaseToolkit):
 
         if self.examples is not None and self.examples != "":
             load_cube_tool.description = (
-                load_cube_tool.description
-                + f"""
-            Examples:
-            {self.examples}
-            """
+                load_cube_tool.description + f"Examples:\n{self.examples}"
             )
 
         return [

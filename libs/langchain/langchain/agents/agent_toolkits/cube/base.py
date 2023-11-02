@@ -27,6 +27,7 @@ from langchain.tools import BaseTool
 def create_cube_agent(
     llm: BaseLanguageModel,
     toolkit: CubeToolkit,
+    *,
     agent_type: AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = CUBE_PREFIX,

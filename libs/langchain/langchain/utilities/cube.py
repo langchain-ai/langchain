@@ -119,6 +119,7 @@ class Cube:
         self,
         cube_api_url: str,
         cube_api_token: SecretStr,
+        *,
         ignore_models: Optional[List[str]] = None,
         include_models: Optional[List[str]] = None,
         custom_model_info: Optional[dict] = None,

@@ -12,10 +12,8 @@ from langchain.tools.base import BaseTool
 from langchain.utilities.cube import Cube, Query
 
 LOAD_CUBE_INPUT_FORMAT_INSTRUCTIONS = """The input should be formatted as a JSON instance that conforms to the JSON schema below.
-
 As an example, for the schema {{"properties": {{"foo": {{"title": "Foo", "description": "a list of strings", "type": "array", "items": {{"type": "string"}}}}}}, "required": ["foo"]}}
 the object {{"foo": ["bar", "baz"]}} is a well-formatted instance of the schema. The object {{"properties": {{"foo": ["bar", "baz"]}}}} is not well-formatted.
-
 Here is the input schema:
 ```
 {schema}
@@ -53,19 +51,19 @@ class LoadCubeTool(BaseCubeTool, BaseTool):
     """Tool for getting the data for a query."""
 
     name: str = "load_cube"
-    description: str = f"""
-    Input to this tool is a detailed and correct Cube query, query format is JSON. Output is a result from the Cube, 
-    query format is JSON.
-    This current date is {date.today().isoformat()}.
-    If the query is not correct, an error message will be returned.
-    If an error is returned, rewrite the query, check the query, and try again.
-    
-    {_get_format_instructions()}
-    """
+    description: str = (
+        "Input to this tool is a detailed and correct Cube query, it format is JSON. "
+        "Output is a result from the Cube, it format is JSON."
+        f"This current date is {date.today().isoformat()}."
+        "If the query is not correct, an error message will be returned."
+        "If an error is returned, rewrite the query, check the query, and try again.\n"
+        f"{_get_format_instructions()}"
+    )
 
     def _run(
         self,
         query: str,
+        *,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get the data for a query."""
@@ -82,16 +80,17 @@ class MetaInformationCubeTool(BaseCubeTool, BaseTool):
     """Tool for getting meta-information about a Cube Semantic Layer."""
 
     name: str = "meta_information_cube"
-    description: str = """
-    Input to this tool is a comma-separated list of models, output is a Markdown table of the meta-information for those models.
-    Be sure that the models actually exist by calling list_models_cube first!
-
-    Example Input: "model1, model2, model3"
-    """
+    description: str = (
+        "Input to this tool is a comma-separated list of models, "
+        "output is a Markdown table of the meta-information for those models."
+        "Be sure that the models actually exist by calling list_models_cube first!"
+        'Example Input: "model1, model2, model3"'
+    )
 
     def _run(
         self,
         model_names: str,
+        *,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get the meta-information of the Cube Semantic Layer."""
@@ -109,6 +108,7 @@ class ListCubeTool(BaseCubeTool, BaseTool):
     def _run(
         self,
         tool_input: str = "",
+        *,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get the names, descriptions of the models."""

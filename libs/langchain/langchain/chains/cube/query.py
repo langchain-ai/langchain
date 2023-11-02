@@ -29,6 +29,7 @@ class CubeQueryInputWithModels(TypedDict):
 def create_cube_query_chain(
     llm: BaseLanguageModel,
     cube: Cube,
+    *,
     prompt: Optional[BasePromptTemplate] = None,
     k: int = 5,
 ) -> Runnable[Union[CubeQueryInput, CubeQueryInputWithModels], Query]:
