@@ -13,7 +13,7 @@ from langchain.callbacks.manager import (
     tracing_v2_enabled,
 )
 from langchain.callbacks.stdout import StdOutCallbackHandler
-from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.tracers.langchain import LangChainTracer, wait_for_all_tracers
 from langchain.llms.openai import BaseOpenAI
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
@@ -376,7 +376,8 @@ def test_callback_manager_configure_context_vars(
                 assert cb.prompt_tokens == 2
                 assert cb.completion_tokens == 1
                 assert cb.total_cost > 0
-            assert LangChainTracer._persist_run_single.call_count == 1
+        wait_for_all_tracers()
+        assert LangChainTracer._persist_run_single.call_count == 1
 
 
 def test_trace_as_chain_group_within_tracing_v2_context_manager(
@@ -394,7 +395,8 @@ def test_trace_as_chain_group_within_tracing_v2_context_manager(
                 assert len(group_manager.handlers) == 1
                 tracer = group_manager.handlers[0]
                 assert isinstance(tracer, LangChainTracer)
-                assert LangChainTracer._persist_run_single.call_count == 1
+            wait_for_all_tracers()
+            assert LangChainTracer._persist_run_single.call_count == 1
 
 
 def test_trace_as_chain_group_tracing_disabled(
