@@ -238,7 +238,9 @@ class VertexAI(_VertexAICommon, BaseLLM):
     model_name: str = "text-bison"
     "The name of the Vertex AI large language model."
     tuned_model_name: Optional[str] = None
-    "The name of a tuned model. If provided, model_name is ignored. tuned_model_name should be in the format: 'projects/' + PROJECT_ID + '/locations/' + REGION +'/models/'+ model_id"
+    "The name of a tuned model. If provided, model_name is ignored." 
+    "tuned_model_name should be in the format: "
+    "'projects/' + PROJECT_ID + '/locations/' + REGION +'/models/'+ model_id"
 
     @classmethod
     def is_lc_serializable(self) -> bool:
@@ -395,7 +397,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
             )
         if values["location"] is None:                 
             raise ValueError(
-                "The location of the endpoint must be provided to run inference on Model Garden!"
+                "The location of the endpoint must be provided to run inference!"
             )
 
         client_options = ClientOptions(
