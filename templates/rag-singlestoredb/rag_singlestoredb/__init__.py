@@ -1,3 +1,3 @@
-from rag_pinecone.chain import chain
+from rag_singlestoredb.chain import chain
 
 __all__ = ["chain"]
