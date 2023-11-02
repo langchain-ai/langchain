@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Iterable, List, Literal, Optional, no_type_check
+from typing import Any, Iterable, List, Literal, Optional, Tuple, no_type_check
 
 import numpy as np
 import sqlalchemy
@@ -15,10 +15,18 @@ from langchain.schema.vectorstore import VectorStore
 
 
 class _ORMBase(DeclarativeBase):
-    pass
+    __tablename__: str
+    id: Mapped[uuid.UUID]
+    text: Mapped[str]
+    meta: Mapped[dict]
+    embedding: Mapped[np.ndarray]
 
 
 class PGVecto_rs(VectorStore):
+    _engine: sqlalchemy.engine.Engine
+    _table: _ORMBase
+    _embedding: Embeddings
+
     @no_type_check
     def __init__(
         self,
@@ -43,6 +51,7 @@ class PGVecto_rs(VectorStore):
         self._embedding = embedding
         print("Initialized PGVecto_rs with collection name: " + collection_name)
 
+    # ================ Create interface =================
     @classmethod
     def from_texts(
         cls,
@@ -102,6 +111,8 @@ class PGVecto_rs(VectorStore):
             collection_name=collection_name,
         )
 
+    # ================ Insert interface =================
+
     @no_type_check
     def add_texts(
         self,
@@ -115,6 +126,9 @@ class PGVecto_rs(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             kwargs: vectorstore specific parameters
+
+        Returns:
+            List of ids of the added texts.
 
         """
         embeddings = self._embedding.embed_documents(list(texts))
@@ -136,6 +150,9 @@ class PGVecto_rs(VectorStore):
 
         Args:
             documents (List[Document]): List of documents to add to the vectorstore.
+
+        Returns:
+            List of ids of the added documents.
         """
         return self.add_texts(
             [document.page_content for document in documents],
@@ -143,19 +160,19 @@ class PGVecto_rs(VectorStore):
             **kwargs,
         )
 
+    # ================ Query interface =================
     @no_type_check
-    def similarity_search(
+    def similarity_search_with_score_by_vector(
         self,
-        query: str,
+        query_vector: List[float],
         k: int = 4,
         distance_func: Literal[
             "sqrt_euclid", "neg_dot_prod", "ned_cos"
         ] = "sqrt_euclid",
         **kwargs: Any,
-    ) -> List[Document]:
-        """Return docs most similar to query."""
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query vector, with its score."""
         with Session(self._engine) as _session:
-            query_embedding = self._embedding.embed_documents([query])[0]
             real_distance_func = (
                 self._table.embedding.squared_euclidean_distance
                 if distance_func == "sqrt_euclid"
@@ -169,11 +186,59 @@ class PGVecto_rs(VectorStore):
                 raise ValueError("Invalid distance function")
 
             t = (
-                select(self._table)
-                .order_by(real_distance_func(query_embedding))
+                select(self._table, real_distance_func(query_vector).label("score"))
+                .order_by("score")
                 .limit(k)
             )
             return [
-                Document(page_content=row[0].text, metadata=row[0].meta)
+                (Document(page_content=row[0].text, metadata=row[0].meta), row[1])
                 for row in _session.execute(t)
             ]
+
+    def similarity_search_by_vector(
+        self,
+        query_vector: List[float],
+        k: int = 4,
+        distance_func: Literal[
+            "sqrt_euclid", "neg_dot_prod", "ned_cos"
+        ] = "sqrt_euclid",
+        **kwargs: Any,
+    ) -> List[Document]:
+        return [
+            doc
+            for doc, score in self.similarity_search_with_score_by_vector(
+                query_vector, k, distance_func, **kwargs
+            )
+        ]
+
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        distance_func: Literal[
+            "sqrt_euclid", "neg_dot_prod", "ned_cos"
+        ] = "sqrt_euclid",
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        query_vector = self._embedding.embed_query(query)
+        return self.similarity_search_with_score_by_vector(
+            query_vector, k, distance_func, **kwargs
+        )
+
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        distance_func: Literal[
+            "sqrt_euclid", "neg_dot_prod", "ned_cos"
+        ] = "sqrt_euclid",
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to query."""
+        query_vector = self._embedding.embed_query(query)
+        return [
+            doc
+            for doc, score in self.similarity_search_with_score_by_vector(
+                query_vector, k, distance_func, **kwargs
+            )
+        ]
