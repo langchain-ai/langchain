@@ -10,6 +10,7 @@ from langchain.callbacks.manager import (
     CallbackManager,
     get_openai_callback,
     trace_as_chain_group,
+    tracing_v2_enabled,
 )
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
@@ -301,14 +302,17 @@ def test_callback_manager_configure(monkeypatch: pytest.MonkeyPatch) -> None:
     assert isinstance(async_configured_manager, AsyncCallbackManager)
 
 
-@patch.object(LangChainTracer, "_persist_run_single")
 def test_callback_manager_configure_context_vars(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test callback manager configuration."""
     monkeypatch.setenv("LANGCHAIN_TRACING_V2", "true")
     monkeypatch.setenv("LANGCHAIN_TRACING", "false")
-    with trace_as_chain_group("test") as group_manager:
+    with (
+        patch.object(LangChainTracer, "_persist_run_single"),
+        patch.object(LangChainTracer, "_update_run_single"),
+        trace_as_chain_group("test") as group_manager,
+    ):
         assert len(group_manager.handlers) == 1
         tracer = group_manager.handlers[0]
         assert isinstance(tracer, LangChainTracer)
@@ -372,4 +376,37 @@ def test_callback_manager_configure_context_vars(
             assert cb.prompt_tokens == 2
             assert cb.completion_tokens == 1
             assert cb.total_cost > 0
-    assert LangChainTracer._persist_run_single.call_count == 1
+        assert LangChainTracer._persist_run_single.call_count == 1
+
+
+def test_trace_as_chain_group_within_tracing_v2_context_manager(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test callback manager configuration."""
+    monkeypatch.setenv("LANGCHAIN_TRACING_V2", "false")
+    monkeypatch.setenv("LANGCHAIN_TRACING", "false")
+    with tracing_v2_enabled():
+        with (
+            patch.object(LangChainTracer, "_persist_run_single"),
+            patch.object(LangChainTracer, "_update_run_single"),
+            trace_as_chain_group("test") as group_manager,
+        ):
+            assert len(group_manager.handlers) == 1
+            tracer = group_manager.handlers[0]
+            assert isinstance(tracer, LangChainTracer)
+            assert LangChainTracer._persist_run_single.call_count == 1
+
+
+def test_trace_as_chain_group_tracing_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test callback manager configuration."""
+    monkeypatch.setenv("LANGCHAIN_TRACING_V2", "false")
+    monkeypatch.setenv("LANGCHAIN_TRACING", "false")
+    with (
+        patch.object(LangChainTracer, "_persist_run_single"),
+        patch.object(LangChainTracer, "_update_run_single"),
+        trace_as_chain_group("test") as group_manager,
+    ):
+        assert len(group_manager.handlers) == 0
+        assert LangChainTracer._persist_run_single.call_count == 0

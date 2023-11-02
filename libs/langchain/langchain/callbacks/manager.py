@@ -282,7 +282,9 @@ def trace_as_chain_group(
                 res = llm.predict(llm_input, callbacks=manager)
                 manager.on_chain_end({"output": res})
     """  # noqa: E501
-    cb = _get_trace_callbacks(project_name, example_id)
+    cb = _get_trace_callbacks(
+        project_name, example_id, callback_manager=callback_manager
+    )
     cm = CallbackManager.configure(
         inheritable_callbacks=cb,
         inheritable_tags=tags,
@@ -351,7 +353,9 @@ async def atrace_as_chain_group(
                 res = await llm.apredict(llm_input, callbacks=manager)
                 await manager.on_chain_end({"output": res})
     """  # noqa: E501
-    cb = _get_trace_callbacks(project_name, example_id)
+    cb = _get_trace_callbacks(
+        project_name, example_id, callback_manager=callback_manager
+    )
     cm = AsyncCallbackManager.configure(inheritable_callbacks=cb, inheritable_tags=tags)
 
     run_manager = await cm.on_chain_start(
