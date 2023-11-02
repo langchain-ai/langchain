@@ -1,12 +1,123 @@
 """Taken from: https://docs.pinecone.io/docs/hybrid-search"""
 
+from __future__ import annotations
+
 import hashlib
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.embeddings import Embeddings
+from langchain.utils.iter import batch_iterate
+
+if TYPE_CHECKING:
+    from pinecone import Index
+from abc import ABCMeta, abstractmethod
+
+
+class PineconeIndexUpsert(metaclass=ABCMeta):
+    """
+    An interface for upserting vectors into a Pinecone index.
+    """
+
+    def __init__(self, index: Index):
+        self.index = index
+
+    @abstractmethod
+    def upsert(
+        self,
+        vectors: List[Dict[str, Any]],
+        namespace: Optional[str] = None,
+        batch_size: int = 64,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """Upsert vectors into a Pinecone index.
+
+        Args:
+            vectors: List of vectors to upsert.
+            namespace: Namespace of the index.
+            batch_size: Batch size for upserting.
+
+        Returns:
+            None
+        """
+        ...
+
+    def __call__(
+        self,
+        vectors: List[Dict[str, Any]],
+        namespace: Optional[str] = None,
+        batch_size: int = 64,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        return self.upsert(vectors=vectors, namespace=namespace, batch_size=batch_size)
+
+    @classmethod
+    def get_index_upsert(
+        cls, index_name: str, pool_threads: int = 1
+    ) -> PineconeIndexUpsert:
+        """Get an instance of PineconeIndexUpsert.
+
+        It is a wrapper around pinecone.Index that provides an
+        interface for upserting vectors either synchronously or using threads.
+        """
+        import pinecone
+
+        ret: Optional[PineconeIndexUpsert] = None
+        if pool_threads > 1:
+            index = pinecone.Index(index_name, pool_threads=pool_threads)
+            ret = ThreadedIndexUpsert(index)
+        else:
+            index = pinecone.Index(index_name)
+            ret = SyncIndexUpsert(index)
+        return ret
+
+
+class ThreadedIndexUpsert(PineconeIndexUpsert):
+    """Upsert vectors into a Pinecone index using threads."""
+
+    def __init__(self, index: Index) -> None:
+        super().__init__(index)
+
+    def upsert(
+        self,
+        vectors: List[Dict[str, Any]],
+        namespace: Optional[str] = None,
+        batch_size: int = 64,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        # A threaded parallel implementation of upserting vectors into a Pinecone index.
+        # It works only for REST API, not gRPC.
+        async_res = [
+            self.index.upsert(
+                batch, namespace=namespace, async_req=True, *args, **kwargs
+            )
+            for batch in batch_iterate(batch_size, vectors)
+        ]
+        [res.get() for res in async_res]
+
+
+class SyncIndexUpsert(PineconeIndexUpsert):
+    """Upsert vectors into a Pinecone index synchronously."""
+
+    def __init__(self, index: Index) -> None:
+        super().__init__(index)
+
+    def upsert(
+        self,
+        vectors: List[Dict[str, Any]],
+        namespace: Optional[str] = None,
+        batch_size: int = 64,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        self.index.upsert(
+            vectors, namespace=namespace, batch_size=batch_size, *args, **kwargs
+        )
 
 
 def hash_text(text: str) -> str:
@@ -23,12 +134,14 @@ def hash_text(text: str) -> str:
 
 def create_index(
     contexts: List[str],
-    index: Any,
+    index_upsert: PineconeIndexUpsert,
     embeddings: Embeddings,
     sparse_encoder: Any,
     ids: Optional[List[str]] = None,
     metadatas: Optional[List[dict]] = None,
     namespace: Optional[str] = None,
+    batch_size: int = 32,
+    chunk_size: int = 1000,
 ) -> None:
     """Create an index from a list of contexts.
 
@@ -36,14 +149,17 @@ def create_index(
 
     Args:
         contexts: List of contexts to embed.
-        index: Index to use.
+        index_upsert: PineconeIndexUpsert instance to use for upserting.
         embeddings: Embeddings model to use.
         sparse_encoder: Sparse encoder to use.
         ids: List of ids to use for the documents.
         metadatas: List of metadata to use for the documents.
+        namespace: Namespace to use for the documents.
+        batch_size: Batch size to use for the index upsert.
+        chunk_size: Chunk size to use for the calculating embeddings.
     """
-    batch_size = 32
-    _iterator = range(0, len(contexts), batch_size)
+    # get index upsert threaded or not
+    _iterator = range(0, len(contexts), chunk_size)
     try:
         from tqdm.auto import tqdm
 
@@ -55,44 +171,35 @@ def create_index(
         # create unique ids using hash of the text
         ids = [hash_text(context) for context in contexts]
 
+    metadatas = metadatas or [{} for _ in contexts]
+    for metadata, context in zip(metadatas, contexts):
+        metadata["context"] = context
+
     for i in _iterator:
-        # find end of batch
-        i_end = min(i + batch_size, len(contexts))
         # extract batch
-        context_batch = contexts[i:i_end]
-        batch_ids = ids[i:i_end]
-        metadata_batch = (
-            metadatas[i:i_end] if metadatas else [{} for _ in context_batch]
-        )
-        # add context passages as metadata
-        meta = [
-            {"context": context, **metadata}
-            for context, metadata in zip(context_batch, metadata_batch)
-        ]
+        chunk_batch = contexts[i : i + chunk_size]
+        chunk_ids = ids[i : i + chunk_size]
+        chunk_metadata = metadatas[i : i + chunk_size]
 
         # create dense vectors
-        dense_embeds = embeddings.embed_documents(context_batch)
+        dense_embeds = embeddings.embed_documents(chunk_batch)
         # create sparse vectors
-        sparse_embeds = sparse_encoder.encode_documents(context_batch)
+        sparse_embeds = sparse_encoder.encode_documents(chunk_batch)
         for s in sparse_embeds:
             s["values"] = [float(s1) for s1 in s["values"]]
 
-        vectors = []
-        # loop through the data and create dictionaries for upserts
-        for doc_id, sparse, dense, metadata in zip(
-            batch_ids, sparse_embeds, dense_embeds, meta
-        ):
-            vectors.append(
-                {
-                    "id": doc_id,
-                    "sparse_values": sparse,
-                    "values": dense,
-                    "metadata": metadata,
-                }
+        vectors = [
+            {
+                "id": doc_id,
+                "sparse_values": sparse,
+                "values": dense,
+                "metadata": metadata,
+            }
+            for doc_id, sparse, dense, metadata in zip(
+                chunk_ids, sparse_embeds, dense_embeds, chunk_metadata
             )
-
-        # upload the documents to the new hybrid index
-        index.upsert(vectors, namespace=namespace)
+        ]
+        index_upsert.upsert(vectors, namespace=namespace, batch_size=batch_size)
 
 
 class PineconeHybridSearchRetriever(BaseRetriever):
@@ -103,7 +210,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     """description"""
     sparse_encoder: Any
     """Sparse encoder to use."""
-    index: Any
+    index_upsert: PineconeIndexUpsert
     """Pinecone index to use."""
     top_k: int = 4
     """Number of documents to return."""
@@ -124,15 +231,19 @@ class PineconeHybridSearchRetriever(BaseRetriever):
         ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
         namespace: Optional[str] = None,
+        batch_size: int = 32,
+        chunk_size: int = 1000,
     ) -> None:
         create_index(
             texts,
-            self.index,
+            self.index_upsert,
             self.embeddings,
             self.sparse_encoder,
             ids=ids,
             metadatas=metadatas,
             namespace=namespace,
+            batch_size=batch_size,
+            chunk_size=chunk_size,
         )
 
     @root_validator()
@@ -162,7 +273,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
         dense_vec, sparse_vec = hybrid_convex_scale(dense_vec, sparse_vec, self.alpha)
         sparse_vec["values"] = [float(s1) for s1 in sparse_vec["values"]]
         # query pinecone with the query parameters
-        result = self.index.query(
+        result = self.index_upsert.index.query(
             vector=dense_vec,
             sparse_vector=sparse_vec,
             top_k=self.top_k,
