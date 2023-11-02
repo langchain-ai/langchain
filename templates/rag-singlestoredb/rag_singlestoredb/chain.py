@@ -11,7 +11,7 @@ from langchain.vectorstores import singlestoredb
 if os.environ.get("SINGLESTOREDB_URL", None) is None:
     raise Exception("Missing `SINGLESTOREDB_URL` environment variable.")
 
-# SINGLESTOREDB_URL takes the form of: "admin:password@svc-xxx.svc.singlestore.com:3306/db_name"
+# SINGLESTOREDB_URL takes the form of: "admin:password@host:port/db_name"
 
 ### Ingest code - you may need to run this the first time
 # Load
