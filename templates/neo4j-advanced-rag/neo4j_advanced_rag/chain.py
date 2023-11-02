@@ -23,6 +23,7 @@ model = ChatOpenAI()
 
 retriever = summary_vectorstore.as_retriever().configurable_alternatives(
     ConfigurableField(id="strategy"),
+    default_key="summary",
     parent_document=parent_vectorstore.as_retriever(),
     hypothetical_questions=hypothetic_question_vectorstore.as_retriever(),
 )
