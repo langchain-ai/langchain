@@ -1272,7 +1272,7 @@ class AgentExecutor(Chain):
         input: Dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> Iterator[AgentStreamOutput]:
         """Enables streaming over steps taken to reach final output."""
         config = config or {}
         iterator = AgentExecutorIterator(
@@ -1286,19 +1286,19 @@ class AgentExecutor(Chain):
         )
         for step in iterator:
             if "intermediate_step" in step:
-                yield AddableDict(
+                yield AgentStreamOutput(
                     actions=[a for a, o in step["intermediate_step"]],
                     observations=[o for a, o in step["intermediate_step"]],
                 )
             else:
-                yield AddableDict(step)
+                yield AgentStreamOutput(step)
 
     async def astream(
         self,
         input: Dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Dict[str, Any]]:
+    ) -> AsyncIterator[AgentStreamOutput]:
         """Enables streaming over steps taken to reach final output."""
         config = config or {}
         iterator = AgentExecutorIterator(
@@ -1312,9 +1312,28 @@ class AgentExecutor(Chain):
         )
         async for step in iterator:
             if "intermediate_step" in step:
-                yield AddableDict(
+                yield AgentStreamOutput(
                     actions=[a for a, o in step["intermediate_step"]],
                     observations=[o for a, o in step["intermediate_step"]],
                 )
             else:
-                yield AddableDict(step)
+                yield AgentStreamOutput(step)
+
+
+class AgentStreamOutput(AddableDict):
+    """dict subclass for agent stream output.
+
+    Implements addition to allow for easy concatenation of stream outputs.
+
+    Additionally, adds a `intermediate_steps` key that contains the
+    combination of `actions` and `observations` from the stream output.
+    """
+
+    def __missing__(self, key: str) -> Any:
+        if key == "intermediate_steps":
+            return [
+                (a, o)
+                for a, o in zip(self.get("actions", []), self.get("observations", []))
+            ]
+        else:
+            raise KeyError(key)

@@ -187,7 +187,7 @@ class AddableDict(Dict[str, Any]):
     """
 
     def __add__(self, other: AddableDict) -> AddableDict:
-        chunk = AddableDict(self)
+        chunk = self.__class__(self)
         for key in other:
             if key not in chunk or chunk[key] is None:
                 chunk[key] = other[key]
@@ -196,7 +196,7 @@ class AddableDict(Dict[str, Any]):
         return chunk
 
     def __radd__(self, other: AddableDict) -> AddableDict:
-        chunk = AddableDict(other)
+        chunk = self.__class__(other)
         for key in self:
             if key not in chunk or chunk[key] is None:
                 chunk[key] = self[key]
