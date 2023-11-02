@@ -122,6 +122,8 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     "Underlying model name."
     examples: Optional[List[BaseMessage]] = None
 
+    tuned_model_name: Optional[str] = None
+
     @classmethod
     def is_lc_serializable(self) -> bool:
         return True
