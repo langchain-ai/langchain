@@ -2356,7 +2356,9 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
-    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
+    def config_schema(
+        self, *, include: Optional[Sequence[str]] = None
+    ) -> Type[BaseModel]:
         return self.bound.config_schema(include=include)
 
     @classmethod
@@ -2518,7 +2520,9 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
-    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
+    def config_schema(
+        self, *, include: Optional[Sequence[str]] = None
+    ) -> Type[BaseModel]:
         return self.bound.config_schema(include=include)
 
     @classmethod
