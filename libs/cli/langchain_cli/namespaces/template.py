@@ -58,7 +58,7 @@ def new(
     pyproject = destination_dir / "pyproject.toml"
     pyproject_contents = pyproject.read_text()
     pyproject.write_text(
-        pyproject_contents.replace("__package_name__", module_name).replace(
+        pyproject_contents.replace("__package_name__", package_name).replace(
             "__module_name__", module_name
         )
     )

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rag-timescale-hybrid-search-time"
+name = "solo-performance-prompting-agent"
 version = "0.0.1"
 description = ""
 authors = []
@@ -9,18 +9,16 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.313, <0.1"
 openai = "^0.28.1"
-fastapi = "^0.104.0"
-sse-starlette = "^1.6.5"
-timescale-vector = "^0.0.3"
-lark = "^1.1.8"
-tiktoken = "^0.5.1"
+duckduckgo-search = "^3.9.3" 
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = {extras = ["serve"], version = "^0.0.11"}
+langchain-cli = {extras = ["serve"], version = "^0.0.10"}
+fastapi = "^0.104.0"
+sse-starlette = "^1.6.5"
 
 [tool.langserve]
-export_module = "rag_timescale_hybrid_search_time.chain"
-export_attr = "chain"
+export_module = "solo_performance_prompting_agent.agent"
+export_attr = "agent_executor"
 
 [build-system]
 requires = ["poetry-core"]
