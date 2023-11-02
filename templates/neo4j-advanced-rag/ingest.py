@@ -17,6 +17,7 @@ graph = Neo4jGraph()
 
 # Embeddings & LLM models
 embeddings = OpenAIEmbeddings()
+embedding_dimension = 1536
 llm = ChatOpenAI(temperature=0)
 
 # Load the text file
@@ -42,6 +43,7 @@ for i, parent in enumerate(parent_documents):
             for ic, c in enumerate(child_documents)
         ],
     }
+    # Ingest data
     graph.query(
         """
     MERGE (p:Parent {id: $parent_id})
@@ -49,13 +51,24 @@ for i, parent in enumerate(parent_documents):
     WITH p 
     UNWIND $children AS child
     MERGE (c:Child {id: child.id})
-    SET c.text = child.text,
-        c.embedding = child.embedding
+    SET c.text = child.text
     MERGE (c)<-[:HAS_CHILD]-(p)
+    WITH c, child
+    CALL db.create.setVectorProperty(c, 'embedding', child.embedding)
+    YIELD node
+    RETURN count(*)
     """,
         params,
     )
-
+    # Create vector index index
+    try:
+        graph.query(
+            "CALL db.index.vector.createNodeIndex('parent_document', "
+            "'Child', 'embedding', $dimension, 'cosine')",
+            {"dimension": embedding_dimension},
+        )
+    except:  # already exists
+        pass
 # Ingest hypothethical questions
 
 
@@ -90,6 +103,7 @@ for i, parent in enumerate(parent_documents):
         "questions": [
             {"text": q, "id": iq, "embedding": embeddings.embed_query(q)}
             for iq, q in enumerate(questions)
+            if q
         ],
     }
     graph.query(
@@ -98,12 +112,24 @@ for i, parent in enumerate(parent_documents):
     WITH p
     UNWIND $questions AS question
     CREATE (q:Question {id: question.id})
-    SET q.text = question.text,
-        q.embedding = question.embedding
+    SET q.text = question.text
     MERGE (q)<-[:HAS_QUESTION]-(p)
+    WITH q, question
+    CALL db.create.setVectorProperty(q, 'embedding', question.embedding)
+    YIELD node
+    RETURN count(*)
     """,
         params,
     )
+    # Create vector index index
+    try:
+        graph.query(
+            "CALL db.index.vector.createNodeIndex('hypothetical_questions', "
+            "'Question', 'embedding', $dimension, 'cosine')",
+            {"dimension": embedding_dimension},
+        )
+    except:  # already exists
+        pass
 
 # Ingest summaries
 
@@ -127,14 +153,26 @@ for i, parent in enumerate(parent_documents):
     params = {
         "parent_id": i,
         "summary": summary,
-        "embedding": embeddings.embed_query(summary)
+        "embedding": embeddings.embed_query(summary),
     }
     graph.query(
         """
     MERGE (p:Parent {id: $parent_id})
     MERGE (p)-[:HAS_SUMMARY]->(s:Summary)
-    SET s.text = $summary,
-        s.embedding = $embedding
+    SET s.text = $summary
+    WITH s
+    CALL db.create.setVectorProperty(s, 'embedding', $embedding)
+    YIELD node
+    RETURN count(*)
     """,
         params,
     )
+    # Create vector index index
+    try:
+        graph.query(
+            "CALL db.index.vector.createNodeIndex('summary', "
+            "'Summary', 'embedding', $dimension, 'cosine')",
+            {"dimension": embedding_dimension},
+        )
+    except:  # already exists
+        pass
