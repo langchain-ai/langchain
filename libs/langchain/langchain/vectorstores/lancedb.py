@@ -54,6 +54,7 @@ class LanceDB(VectorStore):
                 "Could not import lancedb python package. "
                 "Please install it with `pip install lancedb`."
             )
+        self.lancedb = lancedb
         self._embedding = embedding
         self._vector_key = vector_key
         self._id_key = id_key
@@ -61,7 +62,7 @@ class LanceDB(VectorStore):
         self._table_name = table_name
 
         if self._embedding is None:
-            self._embedding = OpenAIEmbeddings()
+            raise ValueError("embedding should be provided")
 
         if connection is not None:
             if not isinstance(connection, lancedb.db.LanceTable):
@@ -167,7 +168,6 @@ class LanceDB(VectorStore):
         return instance
 
     def _init_table(self) -> Any:
-        import lancedb
         import pyarrow as pa
 
         schema = pa.schema(
@@ -183,6 +183,6 @@ class LanceDB(VectorStore):
                 pa.field(self._text_key, pa.string()),
             ]
         )
-        db = lancedb.connect("./lancedb")
+        db = self.lancedb.connect("./lancedb")
         tbl = db.create_table(self._table_name, schema=schema, mode="overwrite")
         return tbl
