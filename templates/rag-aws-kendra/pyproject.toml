@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.325"
+gigachain = ">=0.0.325"
 tiktoken = ">=0.5.1"
 boto3 = ">=1.28.57"
 awscli = ">=1.29.57"
@@ -17,7 +17,7 @@ gigachain-cli = ">=0.0.4"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
-[tool.langserve]
+[tool.gigaserve]
 export_module = "rag_aws_kendra.chain"
 export_attr = "chain"
 

@@ -18,17 +18,17 @@ You can then run the following command to create a new skeleton of a package.
 By convention, package names should use `-` delimeters (not `_`).
 
 ```shell
-langchain template new $PROJECT_NAME
+gigachain template new $PROJECT_NAME
 ```
 
 You can then edit the contents of the package as you desire.
 Note that by default we expect the main chain to be exposed as `chain` in the `__init__.py` file of the package.
-You can change this (either the name or the location), but if you do so it is important to update the `tool.langchain`
+You can change this (either the name or the location), but if you do so it is important to update the `tool.gigachain`
 part of `pyproject.toml`.
 For example, if you update the main chain exposed to be called `agent_executor`, then that section should look like:
 
 ```text
-[tool.langserve]
+[tool.gigaserve]
 export_module = "..."
 export_attr = "agent_executor"
 ```

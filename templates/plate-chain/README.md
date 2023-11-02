@@ -22,13 +22,13 @@ pip install -U "gigachain-cli[serve]"
 Creating a new LangChain project and installing plate-chain as the only package can be done with:
 
 ```shell
-langchain app new my-app --package plate-chain
+gigachain app new my-app --package plate-chain
 ```
 
 If you wish to add this to an existing project, simply run:
 
 ```shell
-langchain app add plate-chain
+gigachain app add plate-chain
 ```
 
 Then add the following code to your `server.py` file:
@@ -50,7 +50,7 @@ export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "defaul
 If you're in this directory, you can start a LangServe instance directly by:
 
 ```shell
-langchain serve
+gigachain serve
 ```
 
 This starts the FastAPI app with a server running locally at 

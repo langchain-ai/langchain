@@ -49,7 +49,7 @@ def serve(
     Start the LangServe app, whether it's a template or an app.
     """
 
-    # try starting template package, if error, try langserve
+    # try starting template package, if error, try gigaserve
     try:
         template_namespace.serve(port=port, host=host)
     except KeyError:

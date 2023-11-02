@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.313, <0.1"
+gigachain = ">=0.0.313, <0.1"
 openai = "^0.28.1"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
@@ -16,7 +16,7 @@ sse-starlette = "^1.6.5"
 langc = {git = "https://github.com/pingpong-templates/cli"}
 poethepoet = "^0.24.1"
 
-[tool.langserve]
+[tool.gigaserve]
 export_module = "rag_timescale_hybrid_search_time.chain"
 export_attr = "chain"
 

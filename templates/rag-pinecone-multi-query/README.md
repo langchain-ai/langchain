@@ -24,13 +24,13 @@ pip install -U "gigachain-cli[serve]"
 To create a new LangChain project and install this package, do:
 
 ```shell
-langchain app new my-app --package rag-pinecone-multi-query
+gigachain app new my-app --package rag-pinecone-multi-query
 ```
 
 To add this package to an existing project, run:
 
 ```shell
-langchain app add rag-pinecone-multi-query
+gigachain app add rag-pinecone-multi-query
 ```
 
 And add the following code to your `server.py` file:
@@ -52,7 +52,7 @@ export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "defaul
 If you are inside this directory, then you can spin up a LangServe instance directly by:
 
 ```shell
-langchain serve
+gigachain serve
 ```
 
 This will start the FastAPI app with a server running locally at [http://localhost:8000](http://localhost:8000)

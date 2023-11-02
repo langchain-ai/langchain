@@ -107,7 +107,7 @@ def serve(
     command = [
         "uvicorn",
         "--factory",
-        "langchain_cli.dev_scripts:create_demo_server",
+        "gigachain_cli.dev_scripts:create_demo_server",
         "--reload",
         "--port",
         port_str,

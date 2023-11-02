@@ -81,13 +81,13 @@ pip install -U "gigachain-cli[serve]"
 Create a new LangChain project and install this package as the only one:
 
 ```shell
-langchain app new my-app --package self-query-supabase
+gigachain app new my-app --package self-query-supabase
 ```
 
 To add this to an existing project, run:
 
 ```shell
-langchain app add self-query-supabase
+gigachain app add self-query-supabase
 ```
 
 Add the following code to your `server.py` file:
@@ -108,7 +108,7 @@ export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "defaul
 If you are inside this directory, then you can spin up a LangServe instance directly by:
 
 ```shell
-langchain serve
+gigachain serve
 ```
 
 This will start the FastAPI app with a server running locally at 

@@ -10,7 +10,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.325"
+gigachain = ">=0.0.325"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 openai = "^0.28.1"
@@ -29,11 +29,11 @@ extras = [
 poethepoet = "^0.24.1"
 
 [tool.poetry.group.dev.dependencies.gigachain-cli]
-git = "https://github.com/langchain-ai/langchain.git"
+git = "https://github.com/ai-forever/gigachain.git"
 rev = "erick/cli"
 subdirectory = "libs/cli"
 
-[tool.langserve]
+[tool.gigaserve]
 export_module = "rag_redis.chain"
 export_attr = "chain"
 

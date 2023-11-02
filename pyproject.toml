@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "langchain-monorepo"
+name = "gigachain-monorepo"
 version = "0.0.1"
 description = "LangChain mono-repo"
 authors = []
@@ -12,7 +12,7 @@ repository = "https://www.github.com/ai-forever/gigachain"
 python = ">=3.8.1,<4.0"
 
 [tool.poetry.group.docs.dependencies]
-langchain = { path = "libs/langchain/", develop = true }
+gigachain = { path = "libs/langchain/", develop = true }
 autodoc_pydantic = "^1.8.0"
 myst_parser = "^0.18.1"
 nbsphinx = "^0.8.9"
