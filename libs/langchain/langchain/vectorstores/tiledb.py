@@ -36,6 +36,14 @@ def dependable_tiledb_import() -> Any:
     return tiledb_vs, tiledb
 
 
+def get_vector_index_uri_from_group(group: Any) -> str:
+    return group[VECTOR_INDEX_NAME].uri
+
+
+def get_documents_array_uri_from_group(group: Any) -> str:
+    return group[DOCUMENTS_ARRAY_NAME].uri
+
+
 def get_vector_index_uri(uri: str) -> str:
     return f"{uri}/{VECTOR_INDEX_NAME}"
 
@@ -76,36 +84,39 @@ class TileDB(VectorStore):
         self.index_uri = index_uri
         self.metric = metric
         self.config = config
-        self.vector_index_uri = (
-            vector_index_uri
-            if vector_index_uri != ""
-            else get_vector_index_uri(self.index_uri)
-        )
-        self.docs_array_uri = (
-            docs_array_uri
-            if docs_array_uri != ""
-            else get_documents_array_uri(self.index_uri)
-        )
 
         tiledb_vs, tiledb = dependable_tiledb_import()
-        group = tiledb.Group(self.vector_index_uri, "r")
-        self.index_type = group.meta.get("index_type")
-        group.close()
-        self.timestamp = timestamp
-        if self.index_type == "FLAT":
-            self.vector_index = tiledb_vs.flat_index.FlatIndex(
-                uri=self.vector_index_uri,
-                config=self.config,
-                timestamp=self.timestamp,
-                **kwargs,
+        with tiledb.scope_ctx(ctx_or_config=config):
+            index_group = tiledb.Group(self.index_uri, "r")
+            self.vector_index_uri = (
+                vector_index_uri
+                if vector_index_uri != ""
+                else get_vector_index_uri_from_group(index_group)
             )
-        elif self.index_type == "IVF_FLAT":
-            self.vector_index = tiledb_vs.ivf_flat_index.IVFFlatIndex(
-                uri=self.vector_index_uri,
-                config=self.config,
-                timestamp=self.timestamp,
-                **kwargs,
+            self.docs_array_uri = (
+                docs_array_uri
+                if docs_array_uri != ""
+                else get_documents_array_uri_from_group(index_group)
             )
+            index_group.close()
+            group = tiledb.Group(self.vector_index_uri, "r")
+            self.index_type = group.meta.get("index_type")
+            group.close()
+            self.timestamp = timestamp
+            if self.index_type == "FLAT":
+                self.vector_index = tiledb_vs.flat_index.FlatIndex(
+                    uri=self.vector_index_uri,
+                    config=self.config,
+                    timestamp=self.timestamp,
+                    **kwargs,
+                )
+            elif self.index_type == "IVF_FLAT":
+                self.vector_index = tiledb_vs.ivf_flat_index.IVFFlatIndex(
+                    uri=self.vector_index_uri,
+                    config=self.config,
+                    timestamp=self.timestamp,
+                    **kwargs,
+                )
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
