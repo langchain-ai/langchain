@@ -37,6 +37,9 @@ DEFAULT_BULK_INSERT_OVERWRITE_CONCURRENCY = 10
 # Number of threads (for deleting multiple rows concurrently):
 DEFAULT_BULK_DELETE_CONCURRENCY = 20
 
+# Similarity function for the store
+DEFAULT_COLLECTION_METRIC = "cosine"
+
 
 def _unique_list(lst, key: lambda itm: itm):
     visited_keys = set()
@@ -115,6 +118,7 @@ class AstraDB(VectorStore):
         api_endpoint: Optional[str] = None,
         astra_db_client: Optional[Any] = None,  # 'astrapy.db.AstraDB' if passed
         namespace: Optional[str] = None,
+        metric: Optional[str] = None,
         batch_size: Optional[int] = DEFAULT_BATCH_SIZE,
         bulk_insert_batch_concurrency: Optional[int] = DEFAULT_BULK_INSERT_BATCH_CONCURRENCY,
         bulk_insert_overwrite_concurrency: Optional[int] = DEFAULT_BULK_INSERT_OVERWRITE_CONCURRENCY,
@@ -143,6 +147,10 @@ class AstraDB(VectorStore):
                 you can pass an already-created 'astrapy.db.AstraDB' instance.
             namespace (Optional[str]): namespace (aka keyspace) where the
                 collection is created. Defaults to the database's "default namespace".
+            metric (Optional[str]): similarity function to use out of those
+                available in Astra DB. If left out, it will use Astra DB API's
+                defaults (i.e. "cosine" - but, for performance reasons,
+                "dot_product" is suggested if embeddings are normalized to one).
 
         Advanced arguments (coming with sensible defaults):
             batch_size (Optional[int]): Size of batches for bulk insertions.
@@ -161,7 +169,7 @@ class AstraDB(VectorStore):
                     "You cannot pass 'astra_db_client' to AstraDB if passing "
                     "'token' and 'api_endpoint'."
                 )
-        #
+
         self.embedding = embedding
         self.collection_name = collection_name
         self.token = token
@@ -172,16 +180,17 @@ class AstraDB(VectorStore):
         self.bulk_insert_batch_concurrency = bulk_insert_batch_concurrency
         self.bulk_insert_overwrite_concurrency = bulk_insert_overwrite_concurrency
         self.bulk_delete_concurrency = bulk_delete_concurrency
-        #
+        # "vector-related" settings
         self._embedding_dimension = None
-        #
+        self.metric = metric
+
         self.astra_db = LibAstraDB(
             token = self.token,
             api_endpoint = self.api_endpoint,
             namespace=self.namespace,
         )
         self._provision_collection()
-        #
+
         self.collection = LibAstraDBCollection(
             collection_name=self.collection_name,
             astra_db=self.astra_db,
@@ -208,6 +217,7 @@ class AstraDB(VectorStore):
         provision_collection_response = self.astra_db.create_collection(
             dimension=self._get_embedding_dimension(),
             collection_name=self.collection_name,
+            metric=self.metric,
         )
         return None
 
@@ -217,7 +227,7 @@ class AstraDB(VectorStore):
 
     @staticmethod
     def _dont_flip_the_cos_score(similarity0to1: float) -> float:
-        # the identity
+        """Keep similarity from client unchanged ad it's in [0:1] already."""
         return similarity0to1
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
@@ -320,7 +330,7 @@ class AstraDB(VectorStore):
                 "which will be ignored."
             )
 
-        _texts = list(texts)  # lest it be a generator or something
+        _texts = list(texts)
         if ids is None:
             ids = [uuid.uuid4().hex for _ in _texts]
         if metadatas is None:
@@ -411,7 +421,6 @@ class AstraDB(VectorStore):
 
         return all_ids
 
-    # id-returning search facilities
     def similarity_search_with_score_id_by_vector(
         self,
         embedding: List[float],
@@ -465,7 +474,6 @@ class AstraDB(VectorStore):
             filter=filter,
         )
 
-    # id-unaware search facilities
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -569,7 +577,6 @@ class AstraDB(VectorStore):
             }
         ))
 
-        # let the mmr utility pick the *indices* in the above array
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
             [prefetch_hit["$vector"] for prefetch_hit in prefetch_hits],
@@ -652,6 +659,7 @@ class AstraDB(VectorStore):
             "api_endpoint",
             "astra_db_client",
             "namespace",
+            "metric",
             "batch_size",
             "bulk_insert_batch_concurrency",
             "bulk_insert_overwrite_concurrency",
@@ -669,12 +677,13 @@ class AstraDB(VectorStore):
                     "which will be ignored."
                 )
 
-        collection_name=kwargs.get("collection_name")
-        token=kwargs.get("token")
-        api_endpoint=kwargs.get("api_endpoint")
-        astra_db_client=kwargs.get("astra_db_client")
-        namespace=kwargs.get("namespace")
-        #
+        collection_name = kwargs.get("collection_name")
+        token = kwargs.get("token")
+        api_endpoint = kwargs.get("api_endpoint")
+        astra_db_client = kwargs.get("astra_db_client")
+        namespace = kwargs.get("namespace")
+        metric = kwargs.get("metric")
+
         astra_db_store = cls(
             embedding=embedding,
             collection_name=collection_name,
@@ -682,6 +691,7 @@ class AstraDB(VectorStore):
             api_endpoint=api_endpoint,
             astra_db_client=astra_db_client,
             namespace=namespace,
+            metric=metric,
             batch_size=kwargs.get("batch_size"),
             bulk_insert_batch_concurrency=kwargs.get("bulk_insert_batch_concurrency"),
             bulk_insert_overwrite_concurrency=kwargs.get("bulk_insert_overwrite_concurrency"),
