@@ -276,15 +276,6 @@ class LogStreamCallbackHandler(BaseTracer):
             )
         finally:
             if run.id == self.root_id:
-                self.send_stream.send_nowait(
-                    RunLogPatch(
-                        {
-                            "op": "replace",
-                            "path": "/final_output",
-                            "value": load(run.outputs),
-                        }
-                    )
-                )
                 if self.auto_close:
                     self.send_stream.close()
 

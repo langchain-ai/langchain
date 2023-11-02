@@ -617,27 +617,26 @@ def test_lambda_schemas() -> None:
             "byebye": input["yo"],
         }
 
-    assert (
-        RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
-        == {
-            "title": "RunnableLambdaInput",
-            "$ref": "#/definitions/InputType",
-            "definitions": {
-                "InputType": {
-                    "properties": {
-                        "variable_name": {
-                            "title": "Variable " "Name",
-                            "type": "string",
-                        },
-                        "yo": {"title": "Yo", "type": "integer"},
+    assert RunnableLambda(
+        aget_values_typed
+    ).input_schema.schema() == {  # type: ignore[arg-type]
+        "title": "RunnableLambdaInput",
+        "$ref": "#/definitions/InputType",
+        "definitions": {
+            "InputType": {
+                "properties": {
+                    "variable_name": {
+                        "title": "Variable " "Name",
+                        "type": "string",
                     },
-                    "required": ["variable_name", "yo"],
-                    "title": "InputType",
-                    "type": "object",
-                }
-            },
-        }
-    )
+                    "yo": {"title": "Yo", "type": "integer"},
+                },
+                "required": ["variable_name", "yo"],
+                "title": "InputType",
+                "type": "object",
+            }
+        },
+    }
 
     assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
         "title": "RunnableLambdaOutput",
@@ -1490,6 +1489,7 @@ async def test_prompt() -> None:
 
     assert stream_log[1:] == [
         RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": expected},
             {
                 "op": "replace",
                 "path": "/final_output",
@@ -1499,9 +1499,8 @@ async def test_prompt() -> None:
                         HumanMessage(content="What is your name?"),
                     ]
                 ),
-            }
+            },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
     ]
 
     stream_log_state = [
@@ -1560,6 +1559,7 @@ async def test_prompt() -> None:
 
     assert stream_log_nested[1:] == [
         RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": expected},
             {
                 "op": "replace",
                 "path": "/final_output",
@@ -1569,9 +1569,8 @@ async def test_prompt() -> None:
                         HumanMessage(content="What is your name?"),
                     ]
                 ),
-            }
+            },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
     ]
 
 
@@ -1917,9 +1916,9 @@ async def test_prompt_with_llm(
                 "value": "2023-01-01T00:00:00.000",
             },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": "foo"}),
         RunLogPatch(
-            {"op": "replace", "path": "/final_output", "value": {"output": "foo"}}
+            {"op": "add", "path": "/streamed_output/-", "value": "foo"},
+            {"op": "replace", "path": "/final_output", "value": "foo"},
         ),
     ]
 
@@ -1954,293 +1953,6 @@ async def test_stream_log_retriever() -> None:
             ):
                 del op["value"]["id"]
 
-    assert stream_log[:-9] in [
-        [
-            RunLogPatch(
-                {
-                    "op": "replace",
-                    "path": "",
-                    "value": {
-                        "logs": {},
-                        "final_output": None,
-                        "streamed_output": [],
-                    },
-                }
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableParallel",
-                    "value": {
-                        "end_time": None,
-                        "final_output": None,
-                        "metadata": {},
-                        "name": "RunnableParallel",
-                        "start_time": "2023-01-01T00:00:00.000",
-                        "streamed_output_str": [],
-                        "tags": ["seq:step:1"],
-                        "type": "chain",
-                    },
-                }
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableLambda",
-                    "value": {
-                        "end_time": None,
-                        "final_output": None,
-                        "metadata": {},
-                        "name": "RunnableLambda",
-                        "start_time": "2023-01-01T00:00:00.000",
-                        "streamed_output_str": [],
-                        "tags": ["map:key:question"],
-                        "type": "chain",
-                    },
-                }
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableLambda/final_output",
-                    "value": {"output": "What is your name?"},
-                },
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableLambda/end_time",
-                    "value": "2023-01-01T00:00:00.000",
-                },
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/Retriever",
-                    "value": {
-                        "end_time": None,
-                        "final_output": None,
-                        "metadata": {},
-                        "name": "Retriever",
-                        "start_time": "2023-01-01T00:00:00.000",
-                        "streamed_output_str": [],
-                        "tags": ["map:key:documents"],
-                        "type": "retriever",
-                    },
-                }
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/Retriever/final_output",
-                    "value": {
-                        "documents": [
-                            Document(page_content="foo"),
-                            Document(page_content="bar"),
-                        ]
-                    },
-                },
-                {
-                    "op": "add",
-                    "path": "/logs/Retriever/end_time",
-                    "value": "2023-01-01T00:00:00.000",
-                },
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableParallel/final_output",
-                    "value": {
-                        "documents": [
-                            Document(page_content="foo"),
-                            Document(page_content="bar"),
-                        ],
-                        "question": "What is your name?",
-                    },
-                },
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableParallel/end_time",
-                    "value": "2023-01-01T00:00:00.000",
-                },
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/ChatPromptTemplate",
-                    "value": {
-                        "end_time": None,
-                        "final_output": None,
-                        "metadata": {},
-                        "name": "ChatPromptTemplate",
-                        "start_time": "2023-01-01T00:00:00.000",
-                        "streamed_output_str": [],
-                        "tags": ["seq:step:2"],
-                        "type": "prompt",
-                    },
-                }
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/ChatPromptTemplate/final_output",
-                    "value": ChatPromptValue(
-                        messages=[
-                            SystemMessage(content="You are a nice assistant."),
-                            HumanMessage(
-                                content="[Document(page_content='foo'), Document(page_content='bar')]"  # noqa: E501
-                            ),
-                            HumanMessage(content="What is your name?"),
-                        ]
-                    ),
-                },
-                {
-                    "op": "add",
-                    "path": "/logs/ChatPromptTemplate/end_time",
-                    "value": "2023-01-01T00:00:00.000",
-                },
-            ),
-        ],
-        [
-            RunLogPatch(
-                {
-                    "op": "replace",
-                    "path": "",
-                    "value": {"final_output": None, "logs": {}, "streamed_output": []},
-                }
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableParallel",
-                    "value": {
-                        "end_time": None,
-                        "final_output": None,
-                        "metadata": {},
-                        "name": "RunnableParallel",
-                        "start_time": "2023-01-01T00:00:00.000",
-                        "streamed_output_str": [],
-                        "tags": ["seq:step:1"],
-                        "type": "chain",
-                    },
-                }
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/Retriever",
-                    "value": {
-                        "end_time": None,
-                        "final_output": None,
-                        "metadata": {},
-                        "name": "Retriever",
-                        "start_time": "2023-01-01T00:00:00.000",
-                        "streamed_output_str": [],
-                        "tags": ["map:key:documents"],
-                        "type": "retriever",
-                    },
-                }
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableLambda",
-                    "value": {
-                        "end_time": None,
-                        "final_output": None,
-                        "metadata": {},
-                        "name": "RunnableLambda",
-                        "start_time": "2023-01-01T00:00:00.000",
-                        "streamed_output_str": [],
-                        "tags": ["map:key:question"],
-                        "type": "chain",
-                    },
-                }
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableLambda/final_output",
-                    "value": {"output": "What is your name?"},
-                },
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableLambda/end_time",
-                    "value": "2023-01-01T00:00:00.000",
-                },
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/Retriever/final_output",
-                    "value": {
-                        "documents": [
-                            Document(page_content="foo"),
-                            Document(page_content="bar"),
-                        ]
-                    },
-                },
-                {
-                    "op": "add",
-                    "path": "/logs/Retriever/end_time",
-                    "value": "2023-01-01T00:00:00.000",
-                },
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableParallel/final_output",
-                    "value": {
-                        "documents": [
-                            Document(page_content="foo"),
-                            Document(page_content="bar"),
-                        ],
-                        "question": "What is your name?",
-                    },
-                },
-                {
-                    "op": "add",
-                    "path": "/logs/RunnableParallel/end_time",
-                    "value": "2023-01-01T00:00:00.000",
-                },
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/ChatPromptTemplate",
-                    "value": {
-                        "end_time": None,
-                        "final_output": None,
-                        "metadata": {},
-                        "name": "ChatPromptTemplate",
-                        "start_time": "2023-01-01T00:00:00.000",
-                        "streamed_output_str": [],
-                        "tags": ["seq:step:2"],
-                        "type": "prompt",
-                    },
-                }
-            ),
-            RunLogPatch(
-                {
-                    "op": "add",
-                    "path": "/logs/ChatPromptTemplate/final_output",
-                    "value": ChatPromptValue(
-                        messages=[
-                            SystemMessage(content="You are a nice assistant."),
-                            HumanMessage(
-                                content="[Document(page_content='foo'), Document(page_content='bar')]"  # noqa: E501
-                            ),
-                            HumanMessage(content="What is your name?"),
-                        ]
-                    ),
-                },
-                {
-                    "op": "add",
-                    "path": "/logs/ChatPromptTemplate/end_time",
-                    "value": "2023-01-01T00:00:00.000",
-                },
-            ),
-        ],
-    ]
-
     assert sorted(cast(RunLog, add(stream_log)).state["logs"]) == [
         "ChatPromptTemplate",
         "FakeListLLM",
@@ -2250,6 +1962,66 @@ async def test_stream_log_retriever() -> None:
         "RunnableParallel",
         "RunnableParallel:2",
     ]
+
+
+@pytest.mark.asyncio
+@freeze_time("2023-01-01")
+async def test_stream_log_lists() -> None:
+    async def list_producer(input: AsyncIterator[Any]) -> AsyncIterator[List[str]]:
+        for i in range(4):
+            yield [str(i)]
+
+    chain: Runnable = RunnableGenerator(list_producer)
+
+    stream_log = [
+        part async for part in chain.astream_log({"question": "What is your name?"})
+    ]
+
+    # remove ids from logs
+    for part in stream_log:
+        for op in part.ops:
+            if (
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
+            ):
+                del op["value"]["id"]
+
+    assert stream_log == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "",
+                "value": {"final_output": None, "logs": {}, "streamed_output": []},
+            }
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": ["0"]},
+            {"op": "replace", "path": "/final_output", "value": ["0"]},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": ["1"]},
+            {"op": "add", "path": "/final_output/1", "value": "1"},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": ["2"]},
+            {"op": "add", "path": "/final_output/2", "value": "2"},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": ["3"]},
+            {"op": "add", "path": "/final_output/3", "value": "3"},
+        ),
+    ]
+
+    state = add(stream_log)
+
+    assert isinstance(state, RunLog)
+
+    assert state.state == {
+        "final_output": ["0", "1", "2", "3"],
+        "logs": {},
+        "streamed_output": [["0"], ["1"], ["2"], ["3"]],
+    }
 
 
 @pytest.mark.asyncio

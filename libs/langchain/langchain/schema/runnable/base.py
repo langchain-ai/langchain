@@ -5,6 +5,7 @@ import inspect
 import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
+from copy import copy
 from functools import partial
 from itertools import tee
 from operator import itemgetter
@@ -43,7 +44,7 @@ if TYPE_CHECKING:
     )
 
 
-from langchain.load.dump import dumpd
+from langchain.load.dump import dumpd, dumps
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import BaseModel, Field, create_model
 from langchain.schema.runnable.config import (
@@ -418,6 +419,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         diff: bool = True,
+        with_streamed_output_list: bool = True,
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -435,7 +437,21 @@ class Runnable(Generic[Input, Output], ABC):
         step, and the final state of the run.
 
         The jsonpatch ops can be applied in order to construct state.
+
+        Args:
+            input: The input to the runnable.
+            config: The config to use for the runnable.
+            diff: Whether to yield diffs between each step, or the current state.
+            with_streamed_output_list: Whether to yield the streamed_output list.
+            include_names: Only include logs with these names.
+            include_types: Only include logs with these types.
+            include_tags: Only include logs with these tags.
+            exclude_names: Exclude logs with these names.
+            exclude_types: Exclude logs with these types.
+            exclude_tags: Exclude logs with these tags.
         """
+
+        import jsonpatch
 
         from langchain.callbacks.base import BaseCallbackManager
         from langchain.callbacks.tracers.log_stream import (
@@ -476,14 +492,38 @@ class Runnable(Generic[Input, Output], ABC):
         # add each chunk to the output stream
         async def consume_astream() -> None:
             try:
+                prev_final_output: Optional[Output] = None
+                final_output: Optional[Output] = None
                 async for chunk in self.astream(input, config, **kwargs):
+                    prev_final_output = final_output
+                    if final_output is None:
+                        final_output = chunk
+                    else:
+                        try:
+                            final_output = final_output + chunk  # type: ignore
+                        except TypeError:
+                            final_output = chunk
                     await stream.send_stream.send(
                         RunLogPatch(
-                            {
-                                "op": "add",
-                                "path": "/streamed_output/-",
-                                "value": chunk,
-                            }
+                            *(
+                                (
+                                    {
+                                        "op": "add",
+                                        "path": "/streamed_output/-",
+                                        # chunk cannot be shared between
+                                        # streamed_output and final_output
+                                        "value": copy(chunk),
+                                    },
+                                )
+                                if with_streamed_output_list
+                                else ()
+                            ),
+                            *(
+                                {**op, "path": f"/final_output{op['path']}"}
+                                for op in jsonpatch.JsonPatch.from_diff(
+                                    prev_final_output, final_output, dumps=dumps
+                                )
+                            ),
                         )
                     )
             finally:
