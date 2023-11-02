@@ -27,21 +27,18 @@ class PGVecto_rs(VectorStore):
         collection_name: str,
         new_table: bool = False,
     ) -> None:
-        def define_table():
-            class _Table(_ORMBase):
-                __tablename__ = f"collection_{collection_name}"
-                id: Mapped[uuid.UUID] = mapped_column(
-                    postgresql.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-                )
-                text: Mapped[str] = mapped_column(sqlalchemy.String)
-                meta: Mapped[dict] = mapped_column(postgresql.JSONB)
-                embedding: Mapped[np.ndarray] = mapped_column(Vector(dimension))
-
-            return _Table
+        class _Table(_ORMBase):
+            __tablename__ = f"collection_{collection_name}"
+            id: Mapped[uuid.UUID] = mapped_column(
+                postgresql.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+            )
+            text: Mapped[str] = mapped_column(sqlalchemy.String)
+            meta: Mapped[dict] = mapped_column(postgresql.JSONB)
+            embedding: Mapped[np.ndarray] = mapped_column(Vector(dimension))
 
         self._engine = sqlalchemy.create_engine(db_url)
-        self._table = define_table()
-        self._table.__table__.create(self._engine, checkfirst=not new_table)
+        self._table = _Table
+        self._table.__table__.create(self._engine, checkfirst=not new_table)  # type: ignore
         self._embedding = embedding
         print("Initialized PGVecto_rs with collection name: " + collection_name)
 
@@ -109,7 +106,7 @@ class PGVecto_rs(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -118,18 +115,21 @@ class PGVecto_rs(VectorStore):
             kwargs: vectorstore specific parameters
 
         """
-        embeddings = self._embedding.embed_documents(texts)
+        embeddings = self._embedding.embed_documents(list(texts))
         with Session(self._engine) as _session:
+            results: List[str] = []
             for text, embedding, metadata in zip(
-                texts, embeddings, metadatas or [dict()] * len(texts)
+                texts, embeddings, metadatas or [dict()] * len(list(texts))
             ):
                 t = insert(self._table).values(
                     text=text, meta=metadata, embedding=embedding
                 )
-                _session.execute(t)
+                id = _session.execute(t).inserted_primary_key[0]  # type: ignore
+                results.append(str(id))
             _session.commit()
+            return results
 
-    def add_documents(self, documents: List[Document], **kwargs: Any) -> None:
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Run more documents through the embeddings and add to the vectorstore.
 
         Args:
@@ -148,7 +148,7 @@ class PGVecto_rs(VectorStore):
         with Session(self._engine) as _session:
             query_embedding = self._embedding.embed_documents([query])[0]
             t = (
-                select(self._table)
+                select(self._table)  # type: ignore
                 .order_by(
                     self._table.embedding.squared_euclidean_distance(query_embedding)
                 )
