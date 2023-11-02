@@ -58,7 +58,7 @@ def new(
     pyproject = destination_dir / "pyproject.toml"
     pyproject_contents = pyproject.read_text()
     pyproject.write_text(
-        pyproject_contents.replace("__package_name__", module_name).replace(
+        pyproject_contents.replace("__package_name__", package_name).replace(
             "__module_name__", module_name
         )
     )
@@ -71,7 +71,7 @@ def new(
     readme = destination_dir / "README.md"
     readme_contents = readme.read_text()
     readme.write_text(
-        readme_contents.replace("__package_name_last__", package_name).replace(
+        readme_contents.replace("__package_name__", package_name).replace(
             "__app_route_code__", app_route_code
         )
     )
