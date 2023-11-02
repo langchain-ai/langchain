@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import uuid
-from typing import Any, Iterable, List, Literal, Optional, Tuple, no_type_check
+from typing import Any, Iterable, List, Literal, Optional, Tuple, Type
 
 import numpy as np
 import sqlalchemy
-from pgvecto_rs.sqlalchemy import Vector  # type: ignore
 from sqlalchemy import insert, select
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -24,10 +25,9 @@ class _ORMBase(DeclarativeBase):
 
 class PGVecto_rs(VectorStore):
     _engine: sqlalchemy.engine.Engine
-    _table: _ORMBase
+    _table: Type[_ORMBase]
     _embedding: Embeddings
 
-    @no_type_check
     def __init__(
         self,
         embedding: Embeddings,
@@ -36,6 +36,14 @@ class PGVecto_rs(VectorStore):
         collection_name: str,
         new_table: bool = False,
     ) -> None:
+        try:
+            from pgvecto_rs.sqlalchemy import Vector
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import pgvector_rs, please install with "
+                "`pip install pgvector_rs`."
+            ) from e
+
         class _Table(_ORMBase):
             __tablename__ = f"collection_{collection_name}"
             id: Mapped[uuid.UUID] = mapped_column(
@@ -49,7 +57,6 @@ class PGVecto_rs(VectorStore):
         self._table = _Table
         self._table.__table__.create(self._engine, checkfirst=not new_table)  # type: ignore
         self._embedding = embedding
-        print("Initialized PGVecto_rs with collection name: " + collection_name)
 
     # ================ Create interface =================
     @classmethod
@@ -61,7 +68,7 @@ class PGVecto_rs(VectorStore):
         db_url: str = "",
         collection_name: str = str(uuid.uuid4().hex),
         **kwargs: Any,
-    ):
+    ) -> PGVecto_rs:
         """Return VectorStore initialized from texts and optional metadatas."""
         sample_embedding = embedding.embed_query("Hello pgvecto_rs!")
         dimension = len(sample_embedding)
@@ -85,7 +92,7 @@ class PGVecto_rs(VectorStore):
         db_url: str = "",
         collection_name: str = str(uuid.uuid4().hex),
         **kwargs: Any,
-    ):
+    ) -> PGVecto_rs:
         """Return VectorStore initialized from documents."""
         texts = [document.page_content for document in documents]
         metadatas = [document.metadata for document in documents]
@@ -99,7 +106,7 @@ class PGVecto_rs(VectorStore):
         embedding: Embeddings,
         db_url: str,
         collection_name: str,
-    ):
+    ) -> PGVecto_rs:
         """Create new empty vectorstore with collection_name.
         Or connect to an existing vectorstore in database if exists.
         Arguments should be the same as when the vectorstore was created."""
@@ -113,7 +120,6 @@ class PGVecto_rs(VectorStore):
 
     # ================ Insert interface =================
 
-    @no_type_check
     def add_texts(
         self,
         texts: Iterable[str],
@@ -161,7 +167,6 @@ class PGVecto_rs(VectorStore):
         )
 
     # ================ Query interface =================
-    @no_type_check
     def similarity_search_with_score_by_vector(
         self,
         query_vector: List[float],
@@ -188,7 +193,7 @@ class PGVecto_rs(VectorStore):
             t = (
                 select(self._table, real_distance_func(query_vector).label("score"))
                 .order_by("score")
-                .limit(k)
+                .limit(k)  # type: ignore
             )
             return [
                 (Document(page_content=row[0].text, metadata=row[0].meta), row[1])
@@ -197,7 +202,7 @@ class PGVecto_rs(VectorStore):
 
     def similarity_search_by_vector(
         self,
-        query_vector: List[float],
+        embedding: List[float],
         k: int = 4,
         distance_func: Literal[
             "sqrt_euclid", "neg_dot_prod", "ned_cos"
@@ -207,7 +212,7 @@ class PGVecto_rs(VectorStore):
         return [
             doc
             for doc, score in self.similarity_search_with_score_by_vector(
-                query_vector, k, distance_func, **kwargs
+                embedding, k, distance_func, **kwargs
             )
         ]
 
