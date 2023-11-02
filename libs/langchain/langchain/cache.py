@@ -460,6 +460,10 @@ class RedisSemanticCache(BaseCache):
             redis_url (str): URL to connect to Redis.
             embedding (Embedding): Embedding provider for semantic encoding and search.
             score_threshold (float, 0.2):
+            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
+                If provided, it sets the time duration for how long cached
+                items will remain valid. If not provided, cached items will not
+                have an automatic expiration.
 
         Example:
 
