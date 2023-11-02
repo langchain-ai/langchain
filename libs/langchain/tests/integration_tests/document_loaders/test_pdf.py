@@ -56,6 +56,19 @@ def test_pdfminer_loader() -> None:
     docs = loader.load()
     assert len(docs) == 1
 
+    # Verify that concatenating pages parameter works
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PDFMinerLoader(str(file_path), concatenate_pages=True)
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PDFMinerLoader(str(file_path), concatenate_pages=False)
+
+    docs = loader.load()
+    assert len(docs) == 16
+
 
 def test_pdfminer_pdf_as_html_loader() -> None:
     """Test PDFMinerPDFasHTMLLoader."""
