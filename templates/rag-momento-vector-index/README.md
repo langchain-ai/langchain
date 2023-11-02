@@ -72,3 +72,7 @@ from langserve.client import RemoteRunnable
 
 runnable = RemoteRunnable("http://localhost:8000/rag-momento-vector-index")
 ```
+
+## Indexing Data
+
+We have included a sample module to index data. That is available at `rag_momento_vector_index/ingest.py`. You will see a commented out line in `chain.py` that invokes this. Uncomment to use.
