@@ -37,7 +37,7 @@ for i, parent in enumerate(parent_documents):
         "children": [
             {
                 "text": c.page_content,
-                "id": ic,
+                "id": f"{i}-{ic}",
                 "embedding": embeddings.embed_query(c.page_content),
             }
             for ic, c in enumerate(child_documents)
@@ -85,7 +85,10 @@ questions_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are generating hypothetical questions based on the information found in the text.",
+            (
+                "You are generating hypothetical questions based on the information found in the text."
+                "Make sure to provide full context in the generated questions."
+            ),
         ),
         (
             "human",
@@ -101,7 +104,7 @@ for i, parent in enumerate(parent_documents):
     params = {
         "parent_id": i,
         "questions": [
-            {"text": q, "id": iq, "embedding": embeddings.embed_query(q)}
+            {"text": q, "id": f"{i}-{iq}", "embedding": embeddings.embed_query(q)}
             for iq, q in enumerate(questions)
             if q
         ],

@@ -1,3 +1,3 @@
-from neo4j_parent.chain import chain
+from neo4j_advanced_rag.chain import chain
 
 __all__ = ["chain"]

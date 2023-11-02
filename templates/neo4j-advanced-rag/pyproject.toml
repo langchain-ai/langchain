@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "neo4j-parent"
+name = "neo4j-advanced-rag"
 version = "0.1.0"
 description = ""
 authors = [
@@ -15,7 +15,7 @@ openai = "^0.28.1"
 neo4j = "^5.14.0"
 
 [tool.langserve]
-export_module = "neo4j_parent"
+export_module = "neo4j_advanced_rag"
 export_attr = "chain"
 
 [build-system]
