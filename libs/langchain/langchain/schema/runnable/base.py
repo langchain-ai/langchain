@@ -202,7 +202,9 @@ class Runnable(Generic[Input, Output], ABC):
         """List configurable fields for this runnable."""
         return []
 
-    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
+    def config_schema(
+        self, *, include: Optional[Sequence[str]] = None
+    ) -> Type[BaseModel]:
         """The type of config this runnable accepts specified as a pydantic model.
 
         To mark a field as configurable, see the `configurable_fields`
@@ -233,7 +235,7 @@ class Runnable(Generic[Input, Output], ABC):
                     for spec in config_specs
                 },
             )
-            if config_specs and "configurable" in include
+            if config_specs
             else None
         )
 
