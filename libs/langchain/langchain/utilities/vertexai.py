@@ -21,7 +21,7 @@ def raise_vertex_import_error(minimum_expected_version: str = "1.35.0") -> None:
     )
 
 
-def raise_vertex_import_version_error(exc: TypeError):
+def raise_vertex_import_version_error(exc: TypeError) -> None:
     if "unexpected keyword argument 'candidate_count'" in str(exc):
         raise ImportError(
             "You are using an unsupported version of Vertex AI. "
