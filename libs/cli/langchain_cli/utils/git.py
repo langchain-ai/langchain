@@ -1,28 +1,41 @@
-from typing import Optional, TypedDict
-from pathlib import Path
-
-import shutil
+import hashlib
 import re
+import shutil
+from pathlib import Path
+from typing import Dict, List, Optional, Sequence, TypedDict
+
+from git import Repo
+
 from langchain_cli.constants import (
+    DEFAULT_GIT_REF,
     DEFAULT_GIT_REPO,
     DEFAULT_GIT_SUBDIRECTORY,
-    DEFAULT_GIT_REF,
 )
-import hashlib
-from git import Repo
 
 
 class DependencySource(TypedDict):
     git: str
     ref: Optional[str]
     subdirectory: Optional[str]
+    api_path: Optional[str]
+    event_metadata: Dict
 
 
 # use poetry dependency string format
-def parse_dependency_string(package_string: str) -> DependencySource:
-    if package_string.startswith("git+"):
+def parse_dependency_string(
+    dep: Optional[str],
+    repo: Optional[str],
+    branch: Optional[str],
+    api_path: Optional[str],
+) -> DependencySource:
+    if dep is not None and dep.startswith("git+"):
+        if repo is not None or branch is not None:
+            raise ValueError(
+                "If a dependency starts with git+, you cannot manually specify "
+                "a repo or branch."
+            )
         # remove git+
-        gitstring = package_string[4:]
+        gitstring = dep[4:]
         subdirectory = None
         ref = None
         # first check for #subdirectory= on the end
@@ -61,22 +74,83 @@ def parse_dependency_string(package_string: str) -> DependencySource:
             git=gitstring,
             ref=ref,
             subdirectory=subdirectory,
+            api_path=api_path,
+            event_metadata={"dependency_string": dep},
         )
 
-    elif package_string.startswith("https://"):
-        raise NotImplementedError("url dependencies are not supported yet")
+    elif dep is not None and dep.startswith("https://"):
+        raise ValueError("Only git dependencies are supported")
     else:
+        # if repo is none, use default, including subdirectory
+        base_subdir = Path(DEFAULT_GIT_SUBDIRECTORY) if repo is None else Path()
+        subdir = str(base_subdir / dep) if dep is not None else None
+        gitstring = (
+            DEFAULT_GIT_REPO
+            if repo is None
+            else f"https://github.com/{repo.strip('/')}.git"
+        )
+        ref = DEFAULT_GIT_REF if branch is None else branch
         # it's a default git repo dependency
-        gitstring = DEFAULT_GIT_REPO
-        subdirectory = str(Path(DEFAULT_GIT_SUBDIRECTORY) / package_string)
         return DependencySource(
-            git=gitstring, ref=DEFAULT_GIT_REF, subdirectory=subdirectory
+            git=gitstring,
+            ref=ref,
+            subdirectory=subdir,
+            api_path=api_path,
+            event_metadata={
+                "dependency_string": dep,
+                "used_repo_flag": repo is not None,
+                "used_branch_flag": branch is not None,
+            },
         )
 
 
-def _get_repo_path(gitstring: str, repo_dir: Path) -> Path:
+def _list_arg_to_length(arg: Optional[List[str]], num: int) -> Sequence[Optional[str]]:
+    if not arg:
+        return [None] * num
+    elif len(arg) == 1:
+        return arg * num
+    elif len(arg) == num:
+        return arg
+    else:
+        raise ValueError(f"Argument must be of length 1 or {num}")
+
+
+def parse_dependencies(
+    dependencies: Optional[List[str]],
+    repo: List[str],
+    branch: List[str],
+    api_path: List[str],
+) -> List[DependencySource]:
+    num_deps = max(
+        len(dependencies) if dependencies is not None else 0, len(repo), len(branch)
+    )
+    if (
+        (dependencies and len(dependencies) != num_deps)
+        or (api_path and len(api_path) != num_deps)
+        or (repo and len(repo) not in [1, num_deps])
+        or (branch and len(branch) not in [1, num_deps])
+    ):
+        raise ValueError(
+            "Number of defined repos/branches/api_paths did not match the "
+            "number of templates."
+        )
+    inner_deps = _list_arg_to_length(dependencies, num_deps)
+    inner_api_paths = _list_arg_to_length(api_path, num_deps)
+    inner_repos = _list_arg_to_length(repo, num_deps)
+    inner_branches = _list_arg_to_length(branch, num_deps)
+
+    return [
+        parse_dependency_string(iter_dep, iter_repo, iter_branch, iter_api_path)
+        for iter_dep, iter_repo, iter_branch, iter_api_path in zip(
+            inner_deps, inner_repos, inner_branches, inner_api_paths
+        )
+    ]
+
+
+def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     # only based on git for now
-    hashed = hashlib.sha256(gitstring.encode("utf-8")).hexdigest()[:8]
+    ref_str = ref if ref is not None else ""
+    hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode("utf-8")).hexdigest()[:8]
 
     removed_protocol = gitstring.split("://")[-1]
     removed_basename = re.split(r"[/:]", removed_protocol, 1)[-1]
@@ -89,12 +163,21 @@ def _get_repo_path(gitstring: str, repo_dir: Path) -> Path:
 
 def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     # see if path already saved
-    repo_path = _get_repo_path(gitstring, repo_dir)
+    repo_path = _get_repo_path(gitstring, ref, repo_dir)
     if repo_path.exists():
-        shutil.rmtree(repo_path)
+        # try pulling
+        try:
+            repo = Repo(repo_path)
+            if repo.active_branch.name != ref:
+                raise ValueError()
+            repo.remotes.origin.pull()
+        except Exception:
+            # if it fails, delete and clone again
+            shutil.rmtree(repo_path)
+            Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
+    else:
+        Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
 
-    # now we have fresh dir
-    Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
     return repo_path
 
 

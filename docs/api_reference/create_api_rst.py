@@ -2,9 +2,9 @@
 import importlib
 import inspect
 import typing
-from pathlib import Path
-from typing import TypedDict, Sequence, List, Dict, Literal, Union, Optional
 from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
 from pydantic import BaseModel
 

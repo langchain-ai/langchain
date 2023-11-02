@@ -1,6 +1,5 @@
 from neo4j_generation.chain import chain
 
-
 if __name__ == "__main__":
     text = "Harrison works at LangChain, which is located in San Francisco"
     allowed_nodes = ["Person", "Organization", "Location"]

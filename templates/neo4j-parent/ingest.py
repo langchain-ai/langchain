@@ -1,16 +1,17 @@
-from langchain.graphs import Neo4jGraph
-from langchain.vectorstores import Neo4jVector
-from langchain.document_loaders import TextLoader
-from langchain.text_splitter import TokenTextSplitter
-from langchain.embeddings.openai import OpenAIEmbeddings
 from pathlib import Path
+
+from langchain.document_loaders import TextLoader
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.graphs import Neo4jGraph
+from langchain.text_splitter import TokenTextSplitter
+from langchain.vectorstores import Neo4jVector
 
 txt_path = Path(__file__).parent / "dune.txt"
 
 graph = Neo4jGraph()
 
 # Load the text file
-loader = TextLoader(txt_path)
+loader = TextLoader(str(txt_path))
 documents = loader.load()
 
 # Define chunking strategy

@@ -83,16 +83,34 @@ First, we need to install several python packages.
 pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 ```
 
-See a [usage example and authorizing instructions](/docs/integrations/document_loaders/google_drive).
+See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_drive).
 
 ```python
 from langchain.document_loaders import GoogleDriveLoader
 ```
 
-## Vector Store
-### Google Vertex AI Vector Search
+### Speech-to-Text
 
-> [Google Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview),
+> [Google Cloud Speech-to-Text](https://cloud.google.com/speech-to-text) is an audio transcription API powered by Google's speech recognition models.
+
+This document loader transcribes audio files and outputs the text results as Documents.
+
+First, we need to install the python package.
+
+```bash
+pip install google-cloud-speech
+```
+
+See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_speech_to_text).
+
+```python
+from langchain.document_loaders import GoogleSpeechToTextLoader
+```
+
+## Vector Store
+### Vertex AI Vector Search
+
+> [Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview),
 > formerly known as Vertex AI Matching Engine, provides the industry's leading high-scale 
 > low latency vector database. These vector databases are commonly
 > referred to as vector similarity-matching or an approximate nearest neighbor (ANN) service.
@@ -203,14 +221,13 @@ pip install googlemaps
 from langchain.tools import GooglePlacesTool
 ```
 
-## Document Transformer
+## Document Transformers
+
 ### Google Document AI
 
 >[Document AI](https://cloud.google.com/document-ai/docs/overview) is a `Google Cloud Platform` 
 > service to transform unstructured data from documents into structured data, making it easier 
 > to understand, analyze, and consume.  
-
-
 
 We need to set up a [`GCS` bucket and create your own OCR processor](https://cloud.google.com/document-ai/docs/create-processor)  
 The `GCS_OUTPUT_PATH` should be a path to a folder on GCS (starting with `gs://`) 
@@ -223,12 +240,33 @@ pip install google-cloud-documentai
 pip install google-cloud-documentai-toolbox
 ```
 
-
 See a [usage example](/docs/integrations/document_transformers/docai).
 
 ```python
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers import DocAIParser
+```
+
+### Google Translate
+
+> [Google Translate](https://translate.google.com/) is a multilingual neural machine
+> translation service developed by Google to translate text, documents and websites
+> from one language into another.
+
+The `GoogleTranslateTransformer` allows you to translate text and HTML with the [Google Cloud Translation API](https://cloud.google.com/translate).
+
+To use it, you should have the `google-cloud-translate` python package installed, and a Google Cloud project with the [Translation API enabled](https://cloud.google.com/translate/docs/setup). This transformer uses the [Advanced edition (v3)](https://cloud.google.com/translate/docs/intro-to-v3).
+
+First, we need to install the python package.
+
+```bash
+pip install google-cloud-translate
+```
+
+See a [usage example and authorization instructions](/docs/integrations/document_transformers/google_translate).
+
+```python
+from langchain.document_transformers import GoogleTranslateTransformer
 ```
 
 ## Chat loaders
@@ -242,7 +280,7 @@ First, we need to install several python packages.
 pip install --upgrade google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
 ```
 
-See a [usage example and authorizing instructions](/docs/integrations/chat_loaders/gmail).
+See a [usage example and authorization instructions](/docs/integrations/chat_loaders/gmail).
 
 ```python
 from langchain.chat_loaders.gmail import GMailLoader
@@ -251,7 +289,7 @@ from langchain.chat_loaders.gmail import GMailLoader
 ## Agents and Toolkits
 ### Gmail
 
-See a [usage example and authorizing instructions](/docs/integrations/toolkits/gmail).
+See a [usage example and authorization instructions](/docs/integrations/toolkits/gmail).
 
 ```python
 from langchain.agents.agent_toolkits import GmailToolkit
@@ -261,7 +299,7 @@ toolkit = GmailToolkit()
 
 ### Google Drive
 
-See a [usage example and authorizing instructions](/docs/integrations/toolkits/google_drive).
+See a [usage example and authorization instructions](/docs/integrations/toolkits/google_drive).
 
 ```python
 from langchain_googledrive.utilities.google_drive import GoogleDriveAPIWrapper
