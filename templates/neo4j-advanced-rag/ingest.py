@@ -1,14 +1,13 @@
 from pathlib import Path
 from typing import List
+
 from langchain.chains.openai_functions import create_structured_output_chain
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.prompts import ChatPromptTemplate
-
-
+from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import TextLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.chat_models import ChatOpenAI
 from langchain.graphs import Neo4jGraph
+from langchain.prompts import ChatPromptTemplate
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.text_splitter import TokenTextSplitter
 
 txt_path = Path(__file__).parent / "dune.txt"

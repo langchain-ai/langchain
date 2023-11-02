@@ -1,16 +1,15 @@
+from operator import itemgetter
+
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel
-from langchain.schema.runnable import ConfigurableField
-
-from operator import itemgetter
+from langchain.schema.runnable import ConfigurableField, RunnableParallel
 
 from neo4j_advanced_rag.retrievers import (
-    summary_vectorstore,
-    parent_vectorstore,
     hypothetic_question_vectorstore,
+    parent_vectorstore,
+    summary_vectorstore,
 )
 
 template = """Answer the question based only on the following context:

@@ -1,6 +1,5 @@
-from langchain.vectorstores import Neo4jVector
 from langchain.embeddings import OpenAIEmbeddings
-
+from langchain.vectorstores import Neo4jVector
 
 # Parent retriever
 
