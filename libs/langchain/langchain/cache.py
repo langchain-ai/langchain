@@ -439,8 +439,6 @@ class RedisCache(BaseCache):
 class RedisSemanticCache(BaseCache):
     """Cache that uses Redis as a vector-store backend."""
 
-    # TODO - implement a TTL policy in Redis
-
     DEFAULT_SCHEMA = {
         "content_key": "prompt",
         "text": [
@@ -450,7 +448,11 @@ class RedisSemanticCache(BaseCache):
     }
 
     def __init__(
-        self, redis_url: str, embedding: Embeddings, score_threshold: float = 0.2
+        self,
+        redis_url: str,
+        embedding: Embeddings,
+        score_threshold: float = 0.2,
+        ttl: Optional[int] = None,
     ):
         """Initialize by passing in the `init` GPTCache func
 
@@ -478,6 +480,7 @@ class RedisSemanticCache(BaseCache):
         self.redis_url = redis_url
         self.embedding = embedding
         self.score_threshold = score_threshold
+        self.ttl = ttl
 
     def _index_name(self, llm_string: str) -> str:
         hashed_index = _hash(llm_string)
@@ -563,7 +566,15 @@ class RedisSemanticCache(BaseCache):
             "prompt": prompt,
             "return_val": dumps([g for g in return_val]),
         }
-        llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
+        keys = llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
+
+        # if using TTL, set expiration for the keys that were updated
+        if self.ttl:
+            redis_client = self._cache_dict[self._index_name(llm_string)].client
+            with redis_client.pipeline() as pipe:
+                for key in keys:
+                    pipe.expire(key, self.ttl)
+                pipe.execute()
 
 
 class GPTCache(BaseCache):
