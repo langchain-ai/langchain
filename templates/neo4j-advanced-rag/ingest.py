@@ -1,0 +1,140 @@
+from pathlib import Path
+from typing import List
+from langchain.chains.openai_functions import create_structured_output_chain
+from langchain.pydantic_v1 import BaseModel, Field
+from langchain.prompts import ChatPromptTemplate
+
+
+from langchain.document_loaders import TextLoader
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.chat_models import ChatOpenAI
+from langchain.graphs import Neo4jGraph
+from langchain.text_splitter import TokenTextSplitter
+
+txt_path = Path(__file__).parent / "dune.txt"
+
+graph = Neo4jGraph()
+
+# Embeddings & LLM models
+embeddings = OpenAIEmbeddings()
+llm = ChatOpenAI(temperature=0)
+
+# Load the text file
+loader = TextLoader(str(txt_path))
+documents = loader.load()
+
+# Ingest Parent-Child node pairs
+parent_splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=24)
+child_splitter = TokenTextSplitter(chunk_size=100, chunk_overlap=24)
+parent_documents = parent_splitter.split_documents(documents)
+
+for i, parent in enumerate(parent_documents):
+    child_documents = child_splitter.split_documents([parent])
+    params = {
+        "parent_text": parent.page_content,
+        "parent_id": i,
+        "children": [
+            {
+                "text": c.page_content,
+                "id": ic,
+                "embedding": embeddings.embed_query(c.page_content),
+            }
+            for ic, c in enumerate(child_documents)
+        ],
+    }
+    graph.query(
+        """
+    MERGE (p:Parent {id: $parent_id})
+    SET p.text = $parent_text
+    WITH p 
+    UNWIND $children AS child
+    MERGE (c:Child {id: child.id})
+    SET c.text = child.text,
+        c.embedding = child.embedding
+    MERGE (c)<-[:HAS_CHILD]-(p)
+    """,
+        params,
+    )
+
+# Ingest hypothethical questions
+
+
+class Questions(BaseModel):
+    """Generating hypothetical questions about text."""
+
+    questions: List[str] = Field(
+        ...,
+        description="Generated hypothetical questions based on the information from the text",
+    )
+
+
+questions_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are generating hypothetical questions based on the information found in the text.",
+        ),
+        (
+            "human",
+            "Use the given format to generate hypothetical questions from the following input: {input}",
+        ),
+    ]
+)
+
+question_chain = create_structured_output_chain(Questions, llm, questions_prompt)
+
+for i, parent in enumerate(parent_documents):
+    questions = question_chain.run(parent.page_content).questions
+    params = {
+        "parent_id": i,
+        "questions": [
+            {"text": q, "id": iq, "embedding": embeddings.embed_query(q)}
+            for iq, q in enumerate(questions)
+        ],
+    }
+    graph.query(
+        """
+    MERGE (p:Parent {id: $parent_id})
+    WITH p
+    UNWIND $questions AS question
+    CREATE (q:Question {id: question.id})
+    SET q.text = question.text,
+        q.embedding = question.embedding
+    MERGE (q)<-[:HAS_QUESTION]-(p)
+    """,
+        params,
+    )
+
+# Ingest summaries
+
+summary_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are generating concise and accurate summaries based on the information found in the text.",
+        ),
+        (
+            "human",
+            "Generate a summary of the following input: {question}\nSummary:",
+        ),
+    ]
+)
+
+summary_chain = summary_prompt | llm
+
+for i, parent in enumerate(parent_documents):
+    summary = summary_chain.invoke({"question": parent.page_content}).content
+    params = {
+        "parent_id": i,
+        "summary": summary,
+        "embedding": embeddings.embed_query(summary)
+    }
+    graph.query(
+        """
+    MERGE (p:Parent {id: $parent_id})
+    MERGE (p)-[:HAS_SUMMARY]->(s:Summary)
+    SET s.text = $summary,
+        s.embedding = $embedding
+    """,
+        params,
+    )
