@@ -2,6 +2,7 @@ import unittest
 
 from langchain.document_loaders.parsers.language.lua import LuaSegmenter
 
+
 # @pytest.mark.requires("tree-sitter", "tree-sitter-languages")
 class TestLuaSegmenter(unittest.TestCase):
     def setUp(self) -> None:
@@ -18,8 +19,8 @@ end"""
 -- Code for: local function G()"""
 
         self.expected_extracted_code = [
-            "function F()\n    print(\"Hello\")\nend",
-            "local function G()\n    print(\"Goodbye\")\nend"
+            'function F()\n    print("Hello")\nend',
+            'local function G()\n    print("Goodbye")\nend',
         ]
 
     def test_is_valid(self) -> None:

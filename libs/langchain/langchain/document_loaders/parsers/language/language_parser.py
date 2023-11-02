@@ -6,14 +6,15 @@ from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.language.c import CSegmenter
 from langchain.document_loaders.parsers.language.cpp import CPPSegmenter
 from langchain.document_loaders.parsers.language.csharp import CSharpSegmenter
+from langchain.document_loaders.parsers.language.go import GoSegmenter
 from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
+from langchain.document_loaders.parsers.language.kotlin import KotlinSegmenter
+from langchain.document_loaders.parsers.language.lua import LuaSegmenter
+from langchain.document_loaders.parsers.language.perl import PerlSegmenter
 from langchain.document_loaders.parsers.language.python import PythonSegmenter
 from langchain.document_loaders.parsers.language.ruby import RubySegmenter
 from langchain.document_loaders.parsers.language.rust import RustSegmenter
 from langchain.document_loaders.parsers.language.scala import ScalaSegmenter
-from langchain.document_loaders.parsers.language.go import GoSegmenter
-from langchain.document_loaders.parsers.language.kotlin import KotlinSegmenter
-from langchain.document_loaders.parsers.language.lua import LuaSegmenter
 from langchain.text_splitter import Language
 
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
@@ -28,6 +29,7 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "go": Language.GO,
     "kt": Language.KOTLIN,
     "lua": Language.LUA,
+    "pl": Language.PERL,
 }
 
 LANGUAGE_SEGMENTERS: Dict[str, Any] = {
@@ -42,6 +44,7 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     Language.GO: GoSegmenter,
     Language.KOTLIN: KotlinSegmenter,
     Language.LUA: LuaSegmenter,
+    Language.PERL: PerlSegmenter,
 }
 
 

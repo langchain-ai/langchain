@@ -4,14 +4,10 @@ from langchain.document_loaders.parsers.language.tree_sitter_segmenter import (
 
 CHUNK_QUERY = """
     [
-        (class_definition 
-            name: (identifier)) @class
-        (function_definition
-            name: (identifier)) @function
-        (object_definition
-            name: (identifier)) @object
-        (trait_definition
-            name: (identifier)) @trait
+        (class_definition) @class
+        (function_definition) @function
+        (object_definition) @object
+        (trait_definition) @trait
     ]
 """.strip()
 

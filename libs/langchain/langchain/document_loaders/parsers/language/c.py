@@ -14,6 +14,7 @@ CHUNK_QUERY = """
     ]
 """.strip()
 
+
 class CSegmenter(TreeSitterSegmenter):
     """Code segmenter for C."""
 

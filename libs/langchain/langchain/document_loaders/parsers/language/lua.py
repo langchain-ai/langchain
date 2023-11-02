@@ -11,6 +11,7 @@ CHUNK_QUERY = """
     ]
 """.strip()
 
+
 class LuaSegmenter(TreeSitterSegmenter):
     """Code segmenter for Lua."""
 

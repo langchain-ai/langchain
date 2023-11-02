@@ -4,20 +4,18 @@ from langchain.document_loaders.parsers.language.tree_sitter_segmenter import (
 
 CHUNK_QUERY = """
     [
-        (method) @method
-        (module) @module
-        (class) @class
+        (function_definition) @subroutine
     ]
 """.strip()
 
 
-class RubySegmenter(TreeSitterSegmenter):
-    """Code segmenter for Ruby."""
+class PerlSegmenter(TreeSitterSegmenter):
+    """Code segmenter for Perl."""
 
     def get_language(self):
         from tree_sitter_languages import get_language
 
-        return get_language("ruby")
+        return get_language("perl")
 
     def get_chunk_query(self) -> str:
         return CHUNK_QUERY
