@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-# import typing
-from concurrent.futures import ThreadPoolExecutor
 import uuid
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from typing import (
-    # Any,
-    # Callable,
-    # Dict,
+    Any,
+    Callable,
+    Dict,
     Iterable,
-    # List,
-    # Optional,
-    # Tuple,
-    # Type,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
     TypeVar,
-    # Union,
+    Union,
 )
 
 import numpy as np
@@ -25,6 +25,9 @@ from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 ADBVST = TypeVar("ADBVST", bound="AstraDB")
+T = TypeVar("T")
+U = TypeVar("U")
+DocDict = Dict[str, Any]  # dicts expressing entries to insert
 
 # Batch/concurrency default values (if parameters not provided):
 # Size of batches for bulk insertions:
@@ -38,8 +41,8 @@ DEFAULT_BULK_INSERT_OVERWRITE_CONCURRENCY = 10
 DEFAULT_BULK_DELETE_CONCURRENCY = 20
 
 
-def _unique_list(lst, key: lambda itm: itm):
-    visited_keys = set()
+def _unique_list(lst: List[T], key: Callable[[T], U]) -> List[T]:
+    visited_keys: Set[U] = set()
     new_lst = []
     for item in lst:
         item_key = key(item)
@@ -94,10 +97,7 @@ class AstraDB(VectorStore):
         if filter_dict is None:
             return {}
         else:
-            return {
-                f"metadata.{mdk}": mdv
-                for mdk, mdv in filter_dict.items()
-            }
+            return {f"metadata.{mdk}": mdv for mdk, mdv in filter_dict.items()}
 
     def _get_embedding_dimension(self) -> int:
         if self._embedding_dimension is None:
@@ -116,14 +116,16 @@ class AstraDB(VectorStore):
         astra_db_client: Optional[Any] = None,  # 'astrapy.db.AstraDB' if passed
         namespace: Optional[str] = None,
         metric: Optional[str] = None,
-        batch_size: Optional[int] = DEFAULT_BATCH_SIZE,
-        bulk_insert_batch_concurrency: Optional[int] = DEFAULT_BULK_INSERT_BATCH_CONCURRENCY,
-        bulk_insert_overwrite_concurrency: Optional[int] = DEFAULT_BULK_INSERT_OVERWRITE_CONCURRENCY,
-        bulk_delete_concurrency: Optional[int] = DEFAULT_BULK_DELETE_CONCURRENCY,
+        batch_size: Optional[int] = None,
+        bulk_insert_batch_concurrency: Optional[int] = None,
+        bulk_insert_overwrite_concurrency: Optional[int] = None,
+        bulk_delete_concurrency: Optional[int] = None,
     ) -> None:
         try:
             from astrapy.db import (
                 AstraDB as LibAstraDB,
+            )
+            from astrapy.db import (
                 AstraDBCollection as LibAstraDBCollection,
             )
         except (ImportError, ModuleNotFoundError):
@@ -173,10 +175,17 @@ class AstraDB(VectorStore):
         self.api_endpoint = api_endpoint
         self.namespace = namespace
         # Concurrency settings
-        self.batch_size = batch_size
-        self.bulk_insert_batch_concurrency = bulk_insert_batch_concurrency
-        self.bulk_insert_overwrite_concurrency = bulk_insert_overwrite_concurrency
-        self.bulk_delete_concurrency = bulk_delete_concurrency
+        self.batch_size: int = batch_size or DEFAULT_BATCH_SIZE
+        self.bulk_insert_batch_concurrency: int = (
+            bulk_insert_batch_concurrency or DEFAULT_BULK_INSERT_BATCH_CONCURRENCY
+        )
+        self.bulk_insert_overwrite_concurrency: int = (
+            bulk_insert_overwrite_concurrency
+            or DEFAULT_BULK_INSERT_OVERWRITE_CONCURRENCY
+        )
+        self.bulk_delete_concurrency: int = (
+            bulk_delete_concurrency or DEFAULT_BULK_DELETE_CONCURRENCY
+        )
         # "vector-related" settings
         self._embedding_dimension = None
         self.metric = metric
@@ -185,8 +194,8 @@ class AstraDB(VectorStore):
             self.astra_db = astra_db_client
         else:
             self.astra_db = LibAstraDB(
-                token = self.token,
-                api_endpoint = self.api_endpoint,
+                token=self.token,
+                api_endpoint=self.api_endpoint,
                 namespace=self.namespace,
             )
         self._provision_collection()
@@ -203,9 +212,10 @@ class AstraDB(VectorStore):
         This is meant as an internal-usage method, no members
         are set other than actual deletion on the backend.
         """
-        drop_collection_response = self.astra_db.delete_collection(
+        _ = self.astra_db.delete_collection(
             collection_name=self.collection_name,
         )
+        return None
 
     def _provision_collection(self) -> None:
         """
@@ -214,7 +224,7 @@ class AstraDB(VectorStore):
         Internal-usage method, no object members are set,
         other than working on the underlying actual storage.
         """
-        provision_collection_response = self.astra_db.create_collection(
+        _ = self.astra_db.create_collection(
             dimension=self._get_embedding_dimension(),
             collection_name=self.collection_name,
             metric=self.metric,
@@ -242,13 +252,21 @@ class AstraDB(VectorStore):
         """Empty the collection of all its stored entries."""
         self._drop_collection()
         self._provision_collection()
+        return None
 
     def delete_by_document_id(self, document_id: str) -> bool:
         """Remove a single document from the store, given its document_id (str)."""
         deletion_response = self.collection.delete(document_id)
-        return ((deletion_response or {}).get("status") or {}).get("deletedCount", 0) == 1
+        return ((deletion_response or {}).get("status") or {}).get(
+            "deletedCount", 0
+        ) == 1
 
-    def delete(self, ids: Optional[List[str]] = None, concurrency: Optional[int] = None, **kwargs: Any) -> Optional[bool]:
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        concurrency: Optional[int] = None,
+        **kwargs: Any,
+    ) -> Optional[bool]:
         """Delete by vector ids.
 
         Args:
@@ -264,7 +282,7 @@ class AstraDB(VectorStore):
         if kwargs:
             warnings.warn(
                 "Method 'delete' of AstraDB vector store invoked with "
-                f"unsupported arguments ({', '.join(kwargs.keys())}), "
+                f"unsupported arguments ({', '.join(sorted(kwargs.keys()))}), "
                 "which will be ignored."
             )
 
@@ -273,10 +291,12 @@ class AstraDB(VectorStore):
 
         _max_workers = concurrency or self.bulk_delete_concurrency
         with ThreadPoolExecutor(max_workers=_max_workers) as tpe:
-            deletion_responses = list(tpe.map(
-                self.delete_by_document_id,
-                ids,
-            ))
+            deletion_responses = list(
+                tpe.map(
+                    self.delete_by_document_id,
+                    ids,
+                )
+            )
         return all(deletion_responses)
 
     def delete_collection(self) -> None:
@@ -287,6 +307,7 @@ class AstraDB(VectorStore):
         Use with caution.
         """
         self._drop_collection()
+        return None
 
     def add_texts(
         self,
@@ -326,7 +347,7 @@ class AstraDB(VectorStore):
         if kwargs:
             warnings.warn(
                 "Method 'add_texts' of AstraDB vector store invoked with "
-                f"unsupported arguments ({', '.join(kwargs.keys())}), "
+                f"unsupported arguments ({', '.join(sorted(kwargs.keys()))}), "
                 "which will be ignored."
             )
 
@@ -360,7 +381,7 @@ class AstraDB(VectorStore):
 
         all_ids = []
 
-        def _handle_batch(document_batch):
+        def _handle_batch(document_batch: List[DocDict]) -> List[str]:
             im_result = self.collection.insert_many(
                 documents=document_batch,
                 options={"ordered": False},
@@ -373,11 +394,15 @@ class AstraDB(VectorStore):
 
             batch_inserted = im_result["status"]["insertedIds"]
             # estimation of the preexisting documents that failed
-            missed_inserted_ids = {document["_id"] for document in document_batch} - set(batch_inserted)
+            missed_inserted_ids = {
+                document["_id"] for document in document_batch
+            } - set(batch_inserted)
             errors = im_result.get("errors", [])
             # careful for other sources of error other than "doc already exists"
             num_errors = len(errors)
-            unexpected_errors = any(error.get("errorCode") != "DOCUMENT_ALREADY_EXISTS" for error in errors)
+            unexpected_errors = any(
+                error.get("errorCode") != "DOCUMENT_ALREADY_EXISTS" for error in errors
+            )
             if num_errors != len(missed_inserted_ids) or unexpected_errors:
                 raise ValueError(
                     f"API Exception while running bulk insertion: {str(errors)}"
@@ -390,19 +415,23 @@ class AstraDB(VectorStore):
                 if document["_id"] in missed_inserted_ids
             ]
 
-            def _handle_missing_document(missing_document):
+            def _handle_missing_document(missing_document: DocDict) -> str:
                 replacement_result = self.collection.find_one_and_replace(
                     filter={"_id": missing_document["_id"]},
                     replacement=missing_document,
                 )
                 return replacement_result["data"]["document"]["_id"]
 
-            _u_max_workers = overwrite_concurrency or self.bulk_insert_overwrite_concurrency
+            _u_max_workers = (
+                overwrite_concurrency or self.bulk_insert_overwrite_concurrency
+            )
             with ThreadPoolExecutor(max_workers=_u_max_workers) as tpe2:
-                batch_replaced = list(tpe2.map(
-                    _handle_missing_document,
-                    missing_from_batch,
-                ))
+                batch_replaced = list(
+                    tpe2.map(
+                        _handle_missing_document,
+                        missing_from_batch,
+                    )
+                )
 
             upsert_ids = batch_inserted + batch_replaced
             return upsert_ids
@@ -437,17 +466,19 @@ class AstraDB(VectorStore):
         """
         metadata_parameter = self._filter_to_metadata(filter)
         #
-        hits = list(self.collection.paginated_find(
-            filter=metadata_parameter,
-            sort={"$vector": embedding},
-            options={"limit": k},
-            projection={
-                "_id": 1,
-                "content": 1,
-                "metadata": 1,
-                "$similarity": 1,
-            }
-        ))
+        hits = list(
+            self.collection.paginated_find(
+                filter=metadata_parameter,
+                sort={"$vector": embedding},
+                options={"limit": k},
+                projection={
+                    "_id": 1,
+                    "content": 1,
+                    "metadata": 1,
+                    "$similarity": 1,
+                },
+            )
+        )
         #
         return [
             (
@@ -564,18 +595,20 @@ class AstraDB(VectorStore):
         """
         metadata_parameter = self._filter_to_metadata(filter)
 
-        prefetch_hits = list(self.collection.paginated_find(
-            filter=metadata_parameter,
-            sort={"$vector": embedding},
-            options={"limit": fetch_k},
-            projection={
-                "_id": 1,
-                "content": 1,
-                "metadata": 1,
-                "$similarity": 1,
-                "$vector": 1,
-            }
-        ))
+        prefetch_hits = list(
+            self.collection.paginated_find(
+                filter=metadata_parameter,
+                sort={"$vector": embedding},
+                options={"limit": fetch_k},
+                projection={
+                    "_id": 1,
+                    "content": 1,
+                    "metadata": 1,
+                    "$similarity": 1,
+                    "$vector": 1,
+                },
+            )
+        )
 
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
@@ -672,11 +705,11 @@ class AstraDB(VectorStore):
             if unknown_kwargs:
                 warnings.warn(
                     "Method 'from_texts' of AstraDB vector store invoked with "
-                    f"unsupported arguments ({', '.join(unknown_kwargs.keys())}), "
+                    f"unsupported arguments ({', '.join(sorted(unknown_kwargs))}), "
                     "which will be ignored."
                 )
 
-        collection_name = kwargs.get("collection_name")
+        collection_name: str = kwargs["collection_name"]
         token = kwargs.get("token")
         api_endpoint = kwargs.get("api_endpoint")
         astra_db_client = kwargs.get("astra_db_client")
@@ -693,7 +726,9 @@ class AstraDB(VectorStore):
             metric=metric,
             batch_size=kwargs.get("batch_size"),
             bulk_insert_batch_concurrency=kwargs.get("bulk_insert_batch_concurrency"),
-            bulk_insert_overwrite_concurrency=kwargs.get("bulk_insert_overwrite_concurrency"),
+            bulk_insert_overwrite_concurrency=kwargs.get(
+                "bulk_insert_overwrite_concurrency"
+            ),
             bulk_delete_concurrency=kwargs.get("bulk_delete_concurrency"),
         )
         astra_db_store.add_texts(
