@@ -300,9 +300,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 for i, batch in enumerate(batches)
                 for output in self.batch(
                     batch,
-                    config=config[i*max_concurrency:(i+1)*max_concurrency],
+                    config=config[i * max_concurrency : (i + 1) * max_concurrency],
                     return_exceptions=return_exceptions,
-                    **kwargs
+                    **kwargs,
                 )
             ]
 
@@ -346,9 +346,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 for i, batch in enumerate(batches)
                 for output in await self.abatch(
                     batch,
-                    config=config[i*max_concurrency:(i+1)*max_concurrency],
+                    config=config[i * max_concurrency : (i + 1) * max_concurrency],
                     return_exceptions=return_exceptions,
-                    **kwargs
+                    **kwargs,
                 )
             ]
 
