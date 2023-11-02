@@ -106,7 +106,7 @@ This tool will fetch a list of all branches in the repository. It will return th
 """
 
 SET_ACTIVE_BRANCH_PROMPT = """
-This tool will set the active branch in the repository, equivalent to `git checkout <branch_name>`. **VERY IMPORTANT**: You must specify the name of the branch as a string input parameter.
+This tool will set the active branch in the repository, similar to `git checkout <branch_name>` and `git switch -c <branch_name>`. **VERY IMPORTANT**: You must specify the name of the branch as a string input parameter.
 """
 
 CREATE_BRANCH_PROMPT = """

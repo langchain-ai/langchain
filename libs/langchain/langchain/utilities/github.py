@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import requests
 import tiktoken
 from github import GithubException
-
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
@@ -527,6 +526,9 @@ class GitHubAPIWrapper(BaseModel):
         Returns:
             str: A success or failure message
         """
+        if self.active_branch == self.github_base_branch:
+            return(f"You're attempting to commit to the directly to the {self.github_base_branch} branch, which is protected. Please create a new branch and try again.")
+
         file_path = file_query.split("\n")[0]
         file_contents = file_query[len(file_path) + 2 :]
 
@@ -589,6 +591,8 @@ class GitHubAPIWrapper(BaseModel):
         Returns:
             A success or failure message
         """
+        if self.active_branch == self.github_base_branch:
+            return(f"You're attempting to commit to the directly to the {self.github_base_branch} branch, which is protected. Please create a new branch and try again.")
         try:
             file_path = file_query.split("\n")[0]
             old_file_contents = (
@@ -631,6 +635,8 @@ class GitHubAPIWrapper(BaseModel):
         Returns:
             str: Success or failure message
         """
+        if self.active_branch == self.github_base_branch:
+            return(f"You're attempting to commit to the directly to the {self.github_base_branch} branch, which is protected. Please create a new branch and try again.")
         try:
             self.github_repo_instance.delete_file(
                 path=file_path,
