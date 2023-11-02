@@ -8,6 +8,8 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.vectorstores import Cassandra
 
+from .populate_vector_store import populate
+
 use_cassandra = int(os.environ.get("USE_CASSANDRA_CLUSTER", "0"))
 if use_cassandra:
     from .cassandra_cluster_init import get_cassandra_connection
@@ -35,6 +37,12 @@ vector_store = Cassandra(
     table_name="langserve_rag_demo",
 )
 retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+
+# For demo reasons, let's ensure there are rows on the vector store.
+# Please remove this and/or adapt to your use case!
+inserted_lines = populate(vector_store)
+if inserted_lines:
+    print(f"Done ({inserted_lines} lines inserted).")
 
 entomology_template = """
 You are an expert entomologist, tasked with answering enthusiast biologists' questions.

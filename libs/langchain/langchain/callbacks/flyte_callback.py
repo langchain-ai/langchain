@@ -195,7 +195,9 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                         )
                     )
 
-                    complexity_metrics: Dict[str, float] = generation_resp.pop("text_complexity_metrics")  # type: ignore  # noqa: E501
+                    complexity_metrics: Dict[str, float] = generation_resp.pop(
+                        "text_complexity_metrics"
+                    )  # type: ignore  # noqa: E501
                     self.deck.append(
                         self.markdown_renderer().to_html("#### Text Complexity Metrics")
                     )
