@@ -13,5 +13,5 @@ _prompt = ChatPromptTemplate.from_messages(
 _model = ChatOpenAI()
 
 # if you update this, you MUST also update ../pyproject.toml
-# with the new `tool.langserve.export_attr`
+# with the new `tool.gigaserve.export_attr`
 chain = _prompt | _model
