@@ -117,6 +117,7 @@ __all__ = [
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
+    "BookendEmbeddings",
 ]
 
 
