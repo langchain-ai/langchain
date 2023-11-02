@@ -18,6 +18,7 @@ import pytest
 from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
+from typing_extensions import TypedDict
 
 from langchain.callbacks.manager import (
     Callbacks,
@@ -508,6 +509,41 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     }
 
 
+def test_passthrough_assign_schema() -> None:
+    retriever = FakeRetriever()  # str -> List[Document]
+    prompt = PromptTemplate.from_template("{context} {question}")
+    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+
+    seq_w_assign: Runnable = (
+        RunnablePassthrough.assign(context=itemgetter("question") | retriever)
+        | prompt
+        | fake_llm
+    )
+
+    assert seq_w_assign.input_schema.schema() == {
+        "properties": {"question": {"title": "Question", "type": "string"}},
+        "title": "RunnableSequenceInput",
+        "type": "object",
+    }
+    assert seq_w_assign.output_schema.schema() == {
+        "title": "FakeListLLMOutput",
+        "type": "string",
+    }
+
+    invalid_seq_w_assign: Runnable = (
+        RunnablePassthrough.assign(context=itemgetter("question") | retriever)
+        | fake_llm
+    )
+
+    # fallback to RunnableAssign.input_schema if next runnable doesn't have
+    # expected dict input_schema
+    assert invalid_seq_w_assign.input_schema.schema() == {
+        "properties": {"question": {"title": "Question"}},
+        "title": "RunnableParallelInput",
+        "type": "object",
+    }
+
+
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )
@@ -565,6 +601,61 @@ def test_lambda_schemas() -> None:
         },
     }
 
+    class InputType(TypedDict):
+        variable_name: str
+        yo: int
+
+    class OutputType(TypedDict):
+        hello: str
+        bye: str
+        byebye: int
+
+    async def aget_values_typed(input: InputType) -> OutputType:
+        return {
+            "hello": input["variable_name"],
+            "bye": input["variable_name"],
+            "byebye": input["yo"],
+        }
+
+    assert (
+        RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
+        == {
+            "title": "RunnableLambdaInput",
+            "$ref": "#/definitions/InputType",
+            "definitions": {
+                "InputType": {
+                    "properties": {
+                        "variable_name": {
+                            "title": "Variable " "Name",
+                            "type": "string",
+                        },
+                        "yo": {"title": "Yo", "type": "integer"},
+                    },
+                    "required": ["variable_name", "yo"],
+                    "title": "InputType",
+                    "type": "object",
+                }
+            },
+        }
+    )
+
+    assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
+        "title": "RunnableLambdaOutput",
+        "$ref": "#/definitions/OutputType",
+        "definitions": {
+            "OutputType": {
+                "properties": {
+                    "bye": {"title": "Bye", "type": "string"},
+                    "byebye": {"title": "Byebye", "type": "integer"},
+                    "hello": {"title": "Hello", "type": "string"},
+                },
+                "required": ["hello", "bye", "byebye"],
+                "title": "OutputType",
+                "type": "object",
+            }
+        },
+    }
+
 
 def test_with_types_with_type_generics() -> None:
     """Verify that with_types works if we use things like List[int]"""
@@ -575,10 +666,12 @@ def test_with_types_with_type_generics() -> None:
 
     # Try specifying some
     RunnableLambda(foo).with_types(
-        output_type=List[int], input_type=List[int]  # type: ignore
+        output_type=List[int],  # type: ignore[arg-type]
+        input_type=List[int],  # type: ignore[arg-type]
     )
     RunnableLambda(foo).with_types(
-        output_type=Sequence[int], input_type=Sequence[int]  # type: ignore[arg-type]
+        output_type=Sequence[int],  # type: ignore[arg-type]
+        input_type=Sequence[int],  # type: ignore[arg-type]
     )
 
 

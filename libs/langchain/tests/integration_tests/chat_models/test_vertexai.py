@@ -186,7 +186,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
             context=None,
             message_history=[],
             **prompt_params,
-            stop_sequences=expected_stop_sequence
+            stop_sequences=expected_stop_sequence,
         )
 
 

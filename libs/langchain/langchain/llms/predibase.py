@@ -25,7 +25,7 @@ class Predibase(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         try:
             from predibase import PredibaseClient
