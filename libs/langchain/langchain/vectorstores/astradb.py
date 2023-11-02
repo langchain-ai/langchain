@@ -161,7 +161,7 @@ class AstraDB(VectorStore):
 
         # Conflicting-arg checks:
         if astra_db_client is not None:
-            if self.token is not None or self.api_endpoint is not None:
+            if token is not None or api_endpoint is not None:
                 raise ValueError(
                     "You cannot pass 'astra_db_client' to AstraDB if passing "
                     "'token' and 'api_endpoint'."
@@ -181,11 +181,14 @@ class AstraDB(VectorStore):
         self._embedding_dimension = None
         self.metric = metric
 
-        self.astra_db = LibAstraDB(
-            token = self.token,
-            api_endpoint = self.api_endpoint,
-            namespace=self.namespace,
-        )
+        if astra_db_client is not None:
+            self.astra_db = astra_db_client
+        else:
+            self.astra_db = LibAstraDB(
+                token = self.token,
+                api_endpoint = self.api_endpoint,
+                namespace=self.namespace,
+            )
         self._provision_collection()
 
         self.collection = LibAstraDBCollection(
