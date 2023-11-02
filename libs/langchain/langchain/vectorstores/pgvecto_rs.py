@@ -1,9 +1,9 @@
 import uuid
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Literal, Optional, no_type_check
 
 import numpy as np
 import sqlalchemy
-from pgvecto_rs.sqlalchemy import Vector
+from pgvecto_rs.sqlalchemy import Vector  # type: ignore
 from sqlalchemy import insert, select
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -19,6 +19,7 @@ class _ORMBase(DeclarativeBase):
 
 
 class PGVecto_rs(VectorStore):
+    @no_type_check
     def __init__(
         self,
         embedding: Embeddings,
@@ -101,6 +102,7 @@ class PGVecto_rs(VectorStore):
             collection_name=collection_name,
         )
 
+    @no_type_check
     def add_texts(
         self,
         texts: Iterable[str],
@@ -141,17 +143,34 @@ class PGVecto_rs(VectorStore):
             **kwargs,
         )
 
+    @no_type_check
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        distance_func: Literal[
+            "sqrt_euclid", "neg_dot_prod", "ned_cos"
+        ] = "sqrt_euclid",
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query."""
         with Session(self._engine) as _session:
             query_embedding = self._embedding.embed_documents([query])[0]
+            real_distance_func = (
+                self._table.embedding.squared_euclidean_distance
+                if distance_func == "sqrt_euclid"
+                else self._table.embedding.negative_dot_product_distance
+                if distance_func == "neg_dot_prod"
+                else self._table.embedding.negative_cosine_distance
+                if distance_func == "ned_cos"
+                else None
+            )
+            if real_distance_func is None:
+                raise ValueError("Invalid distance function")
+
             t = (
-                select(self._table)  # type: ignore
-                .order_by(
-                    self._table.embedding.squared_euclidean_distance(query_embedding)
-                )
+                select(self._table)
+                .order_by(real_distance_func(query_embedding))
                 .limit(k)
             )
             return [
