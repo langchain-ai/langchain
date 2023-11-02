@@ -28,6 +28,7 @@ from langchain.utilities.vertexai import (
     get_client_info,
     init_vertexai,
     raise_vertex_import_error,
+    raise_vertex_import_version_error,
 )
 
 if TYPE_CHECKING:
@@ -95,7 +96,10 @@ def completion_with_retry(
 
     @retry_decorator
     def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
-        return llm.client.predict(*args, **kwargs)
+        try:
+            return llm.client.predict(*args, **kwargs)
+        except TypeError as exc:
+            raise_vertex_import_version_error(exc)
 
     return _completion_with_retry(*args, **kwargs)
 
@@ -111,7 +115,10 @@ def stream_completion_with_retry(
 
     @retry_decorator
     def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
-        return llm.client.predict_streaming(*args, **kwargs)
+        try:
+            return llm.client.predict_streaming(*args, **kwargs)
+        except TypeError as exc:
+            raise_vertex_import_version_error(exc)
 
     return _completion_with_retry(*args, **kwargs)
 
@@ -127,7 +134,10 @@ async def acompletion_with_retry(
 
     @retry_decorator
     async def _acompletion_with_retry(*args: Any, **kwargs: Any) -> Any:
-        return await llm.client.predict_async(*args, **kwargs)
+        try:
+            return await llm.client.predict_async(*args, **kwargs)
+        except TypeError as exc:
+            raise_vertex_import_version_error(exc)
 
     return await _acompletion_with_retry(*args, **kwargs)
 

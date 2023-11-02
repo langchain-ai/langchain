@@ -21,7 +21,10 @@ from langchain.schema.messages import (
     SystemMessage,
 )
 from langchain.schema.output import ChatGenerationChunk
-from langchain.utilities.vertexai import raise_vertex_import_error
+from langchain.utilities.vertexai import (
+    raise_vertex_import_error,
+    raise_vertex_import_version_error,
+)
 
 if TYPE_CHECKING:
     from vertexai.language_models import (
@@ -186,7 +189,12 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             msg_params["candidate_count"] = params.pop("candidate_count")
 
         chat = self._start_chat(history, **params)
-        response = chat.send_message(question.content, **msg_params)
+
+        try:
+            response = chat.send_message(question.content, **msg_params)
+        except TypeError as exc:
+            raise_vertex_import_version_error(exc)
+
         generations = [
             ChatGeneration(message=AIMessage(content=r.text))
             for r in response.candidates
@@ -228,7 +236,12 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         if "candidate_count" in params:
             msg_params["candidate_count"] = params.pop("candidate_count")
         chat = self._start_chat(history, **params)
-        response = await chat.send_message_async(question.content, **msg_params)
+
+        try:
+            response = await chat.send_message_async(question.content, **msg_params)
+        except TypeError as exc:
+            raise_vertex_import_version_error(exc)
+
         generations = [
             ChatGeneration(message=AIMessage(content=r.text))
             for r in response.candidates
@@ -250,7 +263,12 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             params["examples"] = _parse_examples(examples)
 
         chat = self._start_chat(history, **params)
-        responses = chat.send_message_streaming(question.content, **params)
+
+        try:
+            responses = chat.send_message_streaming(question.content, **params)
+        except TypeError as exc:
+            raise_vertex_import_version_error(exc)
+
         for response in responses:
             if run_manager:
                 run_manager.on_llm_new_token(response.text)

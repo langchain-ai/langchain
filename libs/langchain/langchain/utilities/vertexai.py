@@ -21,6 +21,15 @@ def raise_vertex_import_error(minimum_expected_version: str = "1.35.0") -> None:
     )
 
 
+def raise_vertex_import_version_error(exc: TypeError):
+    if "unexpected keyword argument 'candidate_count'" in str(exc):
+        raise ImportError(
+            "You are using an unsupported version of Vertex AI. "
+            "Please install it with: "
+            "`pip install --upgrade google-cloud-aiplatform>=1.35.0`"
+        ) from exc
+
+
 def init_vertexai(
     project: Optional[str] = None,
     location: Optional[str] = None,
