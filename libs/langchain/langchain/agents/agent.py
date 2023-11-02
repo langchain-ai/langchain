@@ -9,8 +9,10 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Dict,
+    Iterator,
     List,
     Optional,
     Sequence,
@@ -46,6 +48,8 @@ from langchain.schema import (
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
 from langchain.schema.runnable import Runnable
+from langchain.schema.runnable.config import RunnableConfig
+from langchain.schema.runnable.utils import AddableDict
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 from langchain.utils.input import get_color_mapping
@@ -849,7 +853,6 @@ class AgentExecutor(Chain):
             callbacks,
             tags=self.tags,
             include_run_info=include_run_info,
-            async_=async_,
         )
 
     @property
@@ -1263,3 +1266,55 @@ class AgentExecutor(Chain):
             return self.trim_intermediate_steps(intermediate_steps)
         else:
             return intermediate_steps
+
+    def stream(
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Iterator[Dict[str, Any]]:
+        """Enables streaming over steps taken to reach final output."""
+        config = config or {}
+        iterator = AgentExecutorIterator(
+            self,
+            input,
+            config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
+            **kwargs,
+        )
+        for step in iterator:
+            if "intermediate_step" in step:
+                yield AddableDict(
+                    actions=[a for a, o in step["intermediate_step"]],
+                    observations=[o for a, o in step["intermediate_step"]],
+                )
+            else:
+                yield AddableDict(step)
+
+    async def astream(
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """Enables streaming over steps taken to reach final output."""
+        config = config or {}
+        iterator = AgentExecutorIterator(
+            self,
+            input,
+            config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
+            **kwargs,
+        )
+        async for step in iterator:
+            if "intermediate_step" in step:
+                yield AddableDict(
+                    actions=[a for a, o in step["intermediate_step"]],
+                    observations=[o for a, o in step["intermediate_step"]],
+                )
+            else:
+                yield AddableDict(step)
