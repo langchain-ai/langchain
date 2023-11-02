@@ -1,2 +1,3 @@
+from plate_chain.chain import chain
 
-__ALL__ = ["chain"]
+__all__ = ["chain"]

@@ -15,10 +15,10 @@ pip install -U "langchain-cli[serve]"
 ```
 
 You can then run the following command to create a new skeleton of a package.
-By convention, package names should use `-` delimeters (not `_`).
+By convention, package names should use `-` delimiters (not `_`).
 
 ```shell
-langchain hub new $PROJECT_NAME
+langchain template new $PROJECT_NAME
 ```
 
 You can then edit the contents of the package as you desire.
