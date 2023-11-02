@@ -1,11 +1,12 @@
 """Wrapper around Bookend AI embedding models."""
 
 import json
+from typing import Any, List
+
 import requests
 
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema.embeddings import Embeddings
-from typing import Any, List
 
 API_URL = "https://api.bookend.ai/"
 DEFAULT_TASK = "embeddings"
@@ -17,6 +18,7 @@ class BookendEmbeddings(BaseModel, Embeddings):
 
     Example:
         .. code-block:: python
+
             from langchain.embeddings import BookendEmbeddings
 
             bookend = BookendEmbeddings(
@@ -28,14 +30,16 @@ class BookendEmbeddings(BaseModel, Embeddings):
                 "Please put on these earmuffs because I can't you hear.",
                 "Baby wipes are made of chocolate stardust.",
             ])
-            bookend.embed_query("She only paints with bold colors; she does not like pastels.")
+            bookend.embed_query(
+                "She only paints with bold colors; she does not like pastels."
+            )
     """
 
-    domain: str = Field()
-    """Request for a domain and API token at https://bookend.ai/ to use this embeddings module."""
-    api_token: str = Field()
-    """Request for a domain and API token at https://bookend.ai/ to use this embeddings module."""
-    model_id: str = Field()
+    domain: str
+    """Request for a domain at https://bookend.ai/ to use this embeddings module."""
+    api_token: str
+    """Request for an API token at https://bookend.ai/ to use this embeddings module."""
+    model_id: str
     """Embeddings model ID to use."""
     auth_header: dict = Field(default_factory=dict)
 
@@ -53,21 +57,24 @@ class BookendEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         result = []
+        headers = self.auth_header
+        headers["Content-Type"] = "application/json; charset=utf-8"
+        params = {
+            "model_id": self.model_id,
+            "task": DEFAULT_TASK,
+        }
 
         for text in texts:
-            headers = self.auth_header
-            headers["Content-Type"] = "application/json; charset=utf-8"
-            params = {
-                "model_id": self.model_id,
-                "task": DEFAULT_TASK,
-            }
-            data = json.dumps({
-                "text": text,
-                "question": None,
-                "context": None,
-                "instruction": None
-            })
-            r = requests.request('POST', API_URL + self.domain + PATH, headers=headers, params=params, data=data)
+            data = json.dumps(
+                {"text": text, "question": None, "context": None, "instruction": None}
+            )
+            r = requests.request(
+                "POST",
+                API_URL + self.domain + PATH,
+                headers=headers,
+                params=params,
+                data=data,
+            )
             result.append(r.json()[0]["data"])
 
         return result

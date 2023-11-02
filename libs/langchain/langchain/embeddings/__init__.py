@@ -21,6 +21,7 @@ from langchain.embeddings.aleph_alpha import (
 from langchain.embeddings.awa import AwaEmbeddings
 from langchain.embeddings.baidu_qianfan_endpoint import QianfanEmbeddingsEndpoint
 from langchain.embeddings.bedrock import BedrockEmbeddings
+from langchain.embeddings.bookend import BookendEmbeddings
 from langchain.embeddings.cache import CacheBackedEmbeddings
 from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
