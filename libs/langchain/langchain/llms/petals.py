@@ -1,11 +1,11 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, Field, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import Extra, Field, SecretStr, root_validator
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class Petals(LLM):
         .. code-block:: python
 
             from langchain.llms import petals
-            petals = Petals()
+            petals = Petals(huggingface_api_key="my-api-key")
 
     """
 
@@ -59,7 +59,7 @@ class Petals(LLM):
     """Holds any model parameters valid for `create` call
     not explicitly specified."""
 
-    huggingface_api_key: Optional[str] = None
+    huggingface_api_key: Optional[SecretStr] = None
 
     class Config:
         """Configuration for this pydantic config."""
@@ -88,8 +88,8 @@ class Petals(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        huggingface_api_key = get_from_dict_or_env(
-            values, "huggingface_api_key", "HUGGINGFACE_API_KEY"
+        values["huggingface_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "huggingface_api_key", "HUGGINGFACE_API_KEY")
         )
         try:
             from petals import AutoDistributedModelForCausalLM
@@ -100,7 +100,7 @@ class Petals(LLM):
             values["client"] = AutoDistributedModelForCausalLM.from_pretrained(
                 model_name
             )
-            values["huggingface_api_key"] = huggingface_api_key
+            values["huggingface_api_key"].get_secret_value(),
 
         except ImportError:
             raise ImportError(
@@ -142,6 +142,7 @@ class Petals(LLM):
         """Call the Petals API."""
         params = self._default_params
         params = {**params, **kwargs}
+        # self.huggingface_api_key = cast(SecretStr, self.huggingface_api_key)
         inputs = self.tokenizer(prompt, return_tensors="pt")["input_ids"]
         outputs = self.client.generate(inputs, **params)
         text = self.tokenizer.decode(outputs[0])
