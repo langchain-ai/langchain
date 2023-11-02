@@ -48,6 +48,9 @@ def test_google_vertex_ai_multiturnsearch_get_relevant_documents() -> None:
         assert doc.metadata["id"]
         assert doc.metadata["source"]
 
+    # Check for preserved state
+    assert retriever.conversation_name and "-" not in retriever.conversation_name
+
 
 @pytest.mark.requires("google_api_core")
 def test_google_vertex_ai_search_enterprise_search_deprecation() -> None:
