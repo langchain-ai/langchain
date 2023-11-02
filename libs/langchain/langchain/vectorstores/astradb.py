@@ -87,7 +87,7 @@ class AstraDB(VectorStore):
                 )
 
                 vectorstore.add_texts(["Giraffes", "All good here"])
-                resutls = vectorstore.similarity_search("Everything's ok", k=1)
+                results = vectorstore.similarity_search("Everything's ok", k=1)
     """
 
     _embedding_dimension: Union[int, None]

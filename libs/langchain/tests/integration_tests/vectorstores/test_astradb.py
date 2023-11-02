@@ -168,7 +168,7 @@ class TestAstraDB:
         v_store_2 = AstraDB.from_documents(
             [
                 Document(page_content="Hee"),
-                Document(page_content="Haa"),
+                Document(page_content="Hoi"),
             ],
             embedding=emb,
             collection_name="lc_test_fd",
@@ -176,7 +176,7 @@ class TestAstraDB:
             api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
-        assert v_store_2.similarity_search("Haa", k=1)[0].page_content == "Haa"
+        assert v_store_2.similarity_search("Hoi", k=1)[0].page_content == "Hoi"
         v_store_2.clear()
         # manual collection delete
         v_store_2.delete_collection()
@@ -373,7 +373,7 @@ class TestAstraDB:
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         v_store_kenny.delete_collection()
-        # droppped on DB, but 'v_store' should have no clue:
+        # dropped on DB, but 'v_store' should have no clue:
         with pytest.raises(ValueError):
             _ = v_store.similarity_search("hah", k=10)
 
