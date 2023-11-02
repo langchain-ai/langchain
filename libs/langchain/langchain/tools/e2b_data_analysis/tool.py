@@ -155,10 +155,15 @@ class E2BDataAnalysisTool(BaseTool):
         self,
         python_code: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        callbacks: CallbackManager = None,
+        callbacks: Optional[CallbackManager] = None,
     ) -> str:
         python_code = add_last_line_print(python_code)
-        on_artifact = getattr(callbacks.metadata, "on_artifact", None)
+
+        if callbacks is not None:
+            on_artifact = getattr(callbacks.metadata, "on_artifact", None)
+        else:
+            on_artifact = None
+
         stdout, stderr, artifacts = self.session.run_python(
             python_code, on_artifact=on_artifact
         )
