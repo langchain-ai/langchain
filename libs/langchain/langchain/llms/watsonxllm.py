@@ -23,12 +23,23 @@ class WatsonxLLM(LLM):
     Example:
         .. code-block:: python
 
+            from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames
+            parameters = {
+                GenTextParamsMetaNames.DECODING_METHOD: "sample",
+                GenTextParamsMetaNames.MAX_NEW_TOKENS: 100,
+                GenTextParamsMetaNames.MIN_NEW_TOKENS: 1,
+                GenTextParamsMetaNames.TEMPERATURE: 0.5,
+                GenTextParamsMetaNames.TOP_K: 50,
+                GenTextParamsMetaNames.TOP_P: 1,
+            }
+
             from langchain.llms import WatsonxLLM
             llm = WatsonxLLM(
                 model_id='google/flan-ul2',
                 credentials = {"url": "https://us-south.ml.cloud.ibm.com",
                                    "apikey": "*****"},
-                project_id="*****"
+                project_id="*****",
+                params=parameters,
             )
     """
 
