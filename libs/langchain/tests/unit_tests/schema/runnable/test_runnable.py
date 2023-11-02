@@ -72,6 +72,7 @@ from langchain.schema.runnable.base import (
     RunnableGenerator,
 )
 from langchain.schema.runnable.utils import (
+    AddableDict,
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
     add,
@@ -617,26 +618,27 @@ def test_lambda_schemas() -> None:
             "byebye": input["yo"],
         }
 
-    assert RunnableLambda(
-        aget_values_typed
-    ).input_schema.schema() == {  # type: ignore[arg-type]
-        "title": "RunnableLambdaInput",
-        "$ref": "#/definitions/InputType",
-        "definitions": {
-            "InputType": {
-                "properties": {
-                    "variable_name": {
-                        "title": "Variable " "Name",
-                        "type": "string",
+    assert (
+        RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
+        == {
+            "title": "RunnableLambdaInput",
+            "$ref": "#/definitions/InputType",
+            "definitions": {
+                "InputType": {
+                    "properties": {
+                        "variable_name": {
+                            "title": "Variable " "Name",
+                            "type": "string",
+                        },
+                        "yo": {"title": "Yo", "type": "integer"},
                     },
-                    "yo": {"title": "Yo", "type": "integer"},
-                },
-                "required": ["variable_name", "yo"],
-                "title": "InputType",
-                "type": "object",
-            }
-        },
-    }
+                    "required": ["variable_name", "yo"],
+                    "title": "InputType",
+                    "type": "object",
+                }
+            },
+        }
+    )
 
     assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
         "title": "RunnableLambdaOutput",
@@ -1967,9 +1969,9 @@ async def test_stream_log_retriever() -> None:
 @pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_stream_log_lists() -> None:
-    async def list_producer(input: AsyncIterator[Any]) -> AsyncIterator[List[str]]:
+    async def list_producer(input: AsyncIterator[Any]) -> AsyncIterator[AddableDict]:
         for i in range(4):
-            yield [str(i)]
+            yield AddableDict(alist=[str(i)])
 
     chain: Runnable = RunnableGenerator(list_producer)
 
@@ -1996,20 +1998,20 @@ async def test_stream_log_lists() -> None:
             }
         ),
         RunLogPatch(
-            {"op": "add", "path": "/streamed_output/-", "value": ["0"]},
-            {"op": "replace", "path": "/final_output", "value": ["0"]},
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["0"]}},
+            {"op": "replace", "path": "/final_output", "value": {"alist": ["0"]}},
         ),
         RunLogPatch(
-            {"op": "add", "path": "/streamed_output/-", "value": ["1"]},
-            {"op": "add", "path": "/final_output/1", "value": "1"},
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["1"]}},
+            {"op": "add", "path": "/final_output/alist/1", "value": "1"},
         ),
         RunLogPatch(
-            {"op": "add", "path": "/streamed_output/-", "value": ["2"]},
-            {"op": "add", "path": "/final_output/2", "value": "2"},
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["2"]}},
+            {"op": "add", "path": "/final_output/alist/2", "value": "2"},
         ),
         RunLogPatch(
-            {"op": "add", "path": "/streamed_output/-", "value": ["3"]},
-            {"op": "add", "path": "/final_output/3", "value": "3"},
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["3"]}},
+            {"op": "add", "path": "/final_output/alist/3", "value": "3"},
         ),
     ]
 
@@ -2018,9 +2020,14 @@ async def test_stream_log_lists() -> None:
     assert isinstance(state, RunLog)
 
     assert state.state == {
-        "final_output": ["0", "1", "2", "3"],
+        "final_output": {"alist": ["0", "1", "2", "3"]},
         "logs": {},
-        "streamed_output": [["0"], ["1"], ["2"], ["3"]],
+        "streamed_output": [
+            {"alist": ["0"]},
+            {"alist": ["1"]},
+            {"alist": ["2"]},
+            {"alist": ["3"]},
+        ],
     }
 
 

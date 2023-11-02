@@ -5,7 +5,7 @@ import inspect
 import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
-from copy import copy
+from copy import deepcopy
 from functools import partial
 from itertools import tee
 from operator import itemgetter
@@ -386,6 +386,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         diff: Literal[True] = True,
+        with_streamed_output_list: bool = True,
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -403,6 +404,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         diff: Literal[False],
+        with_streamed_output_list: bool = True,
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -512,7 +514,9 @@ class Runnable(Generic[Input, Output], ABC):
                                         "path": "/streamed_output/-",
                                         # chunk cannot be shared between
                                         # streamed_output and final_output
-                                        "value": copy(chunk),
+                                        # otherwise jsonpatch.apply will
+                                        # modify both
+                                        "value": deepcopy(chunk),
                                     },
                                 )
                                 if with_streamed_output_list
