@@ -113,7 +113,17 @@ class Query(BaseModel):
 
 
 class Cube:
-    """Cube Client."""
+    """Cube Client.
+
+    *Security Note*: This Cube Client interacts with an external service.
+
+        Control access to who can use this Cube Client.
+
+        Make sure that the capabilities given by this Cube Client to the calling
+        code are appropriately scoped to the application.
+
+        See https://python.langchain.com/docs/security or https://cube.dev/security for more information.
+    """
 
     def __init__(
         self,

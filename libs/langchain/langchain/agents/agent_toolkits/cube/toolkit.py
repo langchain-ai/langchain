@@ -14,7 +14,17 @@ from langchain.utilities.cube import Cube
 
 
 class CubeToolkit(BaseToolkit):
-    """Toolkit for interacting with Cube Semantic Layer."""
+    """Toolkit for interacting with Cube Semantic Layer.
+
+    *Security Note*: This toolkit interacts with an external service.
+
+        Control access to who can use this toolkit.
+
+        Make sure that the capabilities given by this toolkit to the calling
+        code are appropriately scoped to the application.
+
+        See https://python.langchain.com/docs/security or https://cube.dev/security for more information.
+    """
 
     cube: Cube = Field(exclude=True)
     llm: BaseLanguageModel = Field(exclude=True)

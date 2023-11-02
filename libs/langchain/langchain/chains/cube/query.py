@@ -33,6 +33,17 @@ def create_cube_query_chain(
     prompt: Optional[BasePromptTemplate] = None,
     k: int = 5,
 ) -> Runnable[Union[CubeQueryInput, CubeQueryInputWithModels], Query]:
+    """Chain for question-answering against a Cube Query.
+
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security or https://cube.dev/security for more information.
+    """
     if prompt is not None:
         prompt_to_use = prompt
     else:
