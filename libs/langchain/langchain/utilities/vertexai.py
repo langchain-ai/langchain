@@ -17,7 +17,7 @@ def raise_vertex_import_error(minimum_expected_version: str = "1.35.0") -> None:
     """
     raise ImportError(
         "Could not import VertexAI. Please, install it with "
-        f"pip install google-cloud-aiplatform>={minimum_expected_version}"
+        f"pip install google-cloud-aiplatform=={minimum_expected_version}"
     )
 
 
@@ -26,7 +26,7 @@ def raise_vertex_import_version_error(exc: TypeError) -> None:
         raise ImportError(
             "You are using an unsupported version of Vertex AI. "
             "Please install it with: "
-            "`pip install --upgrade google-cloud-aiplatform>=1.35.0`"
+            "`pip install --upgrade google-cloud-aiplatform==1.35.0`"
         ) from exc
 
 
