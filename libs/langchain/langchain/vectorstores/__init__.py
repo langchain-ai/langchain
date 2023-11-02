@@ -20,6 +20,7 @@ and retrieve the data that are 'most similar' to the embedded query.
 """  # noqa: E501
 
 from typing import Any
+from langchain.schema.vectorstore import VectorStore
 
 
 def _import_alibaba_cloud_open_search() -> Any:
@@ -605,4 +606,5 @@ __all__ = [
     "Zilliz",
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
+    "VectorStore"
 ]
