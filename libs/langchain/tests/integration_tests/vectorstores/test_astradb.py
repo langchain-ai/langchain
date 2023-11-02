@@ -11,18 +11,19 @@ Required to run this test:
         export ASTRA_DB_KEYSPACE="my_keyspace"
 """
 
-import os
 import json
 import math
-from typing import List
+import os
+from typing import Iterable, List
 
 import pytest
 
-from langchain.vectorstores import AstraDB
 from langchain.embeddings.base import Embeddings
 from langchain.schema import Document
+from langchain.vectorstores import AstraDB
 
 # Ad-hoc embedding classes:
+
 
 class SomeEmbeddings(Embeddings):
     """
@@ -30,7 +31,7 @@ class SomeEmbeddings(Embeddings):
     Not important how. It is deterministic is all that counts.
     """
 
-    def __init__(self, dimension):
+    def __init__(self, dimension: int) -> None:
         self.dimension = dimension
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -58,7 +59,7 @@ class ParserEmbeddings(Embeddings):
     Otherwise, return all zeros and call it a day.
     """
 
-    def __init__(self, dimension):
+    def __init__(self, dimension: int) -> None:
         self.dimension = dimension
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -82,7 +83,8 @@ class ParserEmbeddings(Embeddings):
 
 def _can_use_astradb() -> bool:
     try:
-        import astrapy
+        import astrapy  # noqa: F401
+
         _ = os.environ["ASTRA_DB_APPLICATION_TOKEN"]
         _ = os.environ["ASTRA_DB_API_ENDPOINT"]
         return True
@@ -91,7 +93,7 @@ def _can_use_astradb() -> bool:
 
 
 @pytest.fixture(scope="function")
-def store_someemb():
+def store_someemb() -> Iterable[AstraDB]:
     emb = SomeEmbeddings(dimension=2)
     v_store = AstraDB(
         embedding=emb,
@@ -105,11 +107,11 @@ def store_someemb():
 
 
 @pytest.fixture(scope="function")
-def store_parseremb():
+def store_parseremb() -> Iterable[AstraDB]:
     emb = ParserEmbeddings(dimension=2)
     v_store = AstraDB(
         embedding=emb,
-        collection_name="lc_test_s",
+        collection_name="lc_test_p",
         token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
         api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
         namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
@@ -120,8 +122,7 @@ def store_parseremb():
 
 @pytest.mark.skipif(not _can_use_astradb(), reason="Missing astrapy or envvars")
 class TestAstraDB:
-
-    def test_astradb_vectorstore_create_delete(self):
+    def test_astradb_vectorstore_create_delete(self) -> None:
         """Create and delete."""
         emb = SomeEmbeddings(dimension=2)
         # creation by passing the connection secrets
@@ -135,6 +136,7 @@ class TestAstraDB:
         v_store.delete_collection()
         # Creation by passing a ready-made astrapy client:
         from astrapy.db import AstraDB as LibAstraDB
+
         astra_db_client = LibAstraDB(
             token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
             api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
@@ -147,14 +149,14 @@ class TestAstraDB:
         )
         v_store_2.delete_collection()
 
-    def test_astradb_vectorstore_from_x(self):
+    def test_astradb_vectorstore_from_x(self) -> None:
         """from_texts and from_documents methods."""
         emb = SomeEmbeddings(dimension=2)
         # from_texts
         v_store = AstraDB.from_texts(
             texts=["Hi", "Ho"],
             embedding=emb,
-            collection_name="lc_test_f",
+            collection_name="lc_test_ft",
             token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
             api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
@@ -169,7 +171,7 @@ class TestAstraDB:
                 Document(page_content="Haa"),
             ],
             embedding=emb,
-            collection_name="lc_test_f",
+            collection_name="lc_test_fd",
             token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
             api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
@@ -179,7 +181,7 @@ class TestAstraDB:
         # manual collection delete
         v_store_2.delete_collection()
 
-    def test_astradb_vectorstore_crud(self, store_someemb):
+    def test_astradb_vectorstore_crud(self, store_someemb: AstraDB) -> None:
         """Basic add/delete/update behaviour."""
         res0 = store_someemb.similarity_search("Abc", k=2)
         assert res0 == []
@@ -215,9 +217,9 @@ class TestAstraDB:
         assert id3 == "c"
         # delete and count again
         del1_res = store_someemb.delete(["b"])
-        assert del1_res == True
+        assert del1_res is True
         del2_res = store_someemb.delete(["a", "c", "Z!"])
-        assert del2_res == False  # a non-existing ID was supplied
+        assert del2_res is False  # a non-existing ID was supplied
         assert len(store_someemb.similarity_search("xy", k=10)) == 1
         # clear store
         store_someemb.clear()
@@ -234,13 +236,14 @@ class TestAstraDB:
         res4 = store_someemb.similarity_search("ww", k=1)
         assert res4[0].metadata["ord"] == 205
 
-    def test_astradb_vectorstore_mmr(self, store_parseremb):
+    def test_astradb_vectorstore_mmr(self, store_parseremb: AstraDB) -> None:
         """
         MMR testing. We work on the unit circle with angle multiples
         of 2*pi/20 and prepare a store with known vectors for a controlled
         MMR outcome.
         """
-        def _v_from_i(i, N):
+
+        def _v_from_i(i: int, N: int) -> str:
             angle = 2 * math.pi * i / N
             vector = [math.cos(angle), math.sin(angle)]
             return json.dumps(vector)
@@ -248,8 +251,7 @@ class TestAstraDB:
         i_vals = [0, 4, 5, 13]
         N_val = 20
         store_parseremb.add_texts(
-            [_v_from_i(i, N_val) for i in i_vals],
-            metadatas=[{"i": i} for i in i_vals]
+            [_v_from_i(i, N_val) for i in i_vals], metadatas=[{"i": i} for i in i_vals]
         )
         res1 = store_parseremb.max_marginal_relevance_search(
             _v_from_i(3, N_val),
@@ -259,34 +261,36 @@ class TestAstraDB:
         res_i_vals = {doc.metadata["i"] for doc in res1}
         assert res_i_vals == {0, 4}
 
-    def test_astradb_vectorstore_metadata(self, store_someemb):
+    def test_astradb_vectorstore_metadata(self, store_someemb: AstraDB) -> None:
         """Metadata filtering."""
-        store_someemb.add_documents([
-            Document(
-                page_content="q",
-                metadata={"ord": ord("q"), "group": "consonant"},
-            ),
-            Document(
-                page_content="w",
-                metadata={"ord": ord("w"), "group": "consonant"},
-            ),
-            Document(
-                page_content="r",
-                metadata={"ord": ord("r"), "group": "consonant"},
-            ),
-            Document(
-                page_content="e",
-                metadata={"ord": ord("e"), "group": "vowel"},
-            ),
-            Document(
-                page_content="i",
-                metadata={"ord": ord("i"), "group": "vowel"},
-            ),
-            Document(
-                page_content="o",
-                metadata={"ord": ord("o"), "group": "vowel"},
-            ),
-        ])
+        store_someemb.add_documents(
+            [
+                Document(
+                    page_content="q",
+                    metadata={"ord": ord("q"), "group": "consonant"},
+                ),
+                Document(
+                    page_content="w",
+                    metadata={"ord": ord("w"), "group": "consonant"},
+                ),
+                Document(
+                    page_content="r",
+                    metadata={"ord": ord("r"), "group": "consonant"},
+                ),
+                Document(
+                    page_content="e",
+                    metadata={"ord": ord("e"), "group": "vowel"},
+                ),
+                Document(
+                    page_content="i",
+                    metadata={"ord": ord("i"), "group": "vowel"},
+                ),
+                Document(
+                    page_content="o",
+                    metadata={"ord": ord("o"), "group": "vowel"},
+                ),
+            ]
+        )
         # no filters
         res0 = store_someemb.similarity_search("x", k=10)
         assert {doc.page_content for doc in res0} == set("qwreio")
@@ -312,7 +316,9 @@ class TestAstraDB:
         )
         assert res3 == []
 
-    def test_astradb_vectorstore_similarity_scale(self, store_parseremb):
+    def test_astradb_vectorstore_similarity_scale(
+        self, store_parseremb: AstraDB
+    ) -> None:
         """Scale of the similarity scores."""
         store_parseremb.add_texts(
             texts=[
@@ -328,3 +334,137 @@ class TestAstraDB:
         scores = [sco for _, sco in res1]
         sco_near, sco_far = scores
         assert abs(1 - sco_near) < 0.001 and abs(sco_far) < 0.001
+
+    def test_astradb_vectorstore_massive_delete(self, store_someemb: AstraDB) -> None:
+        """Larger-scale bulk deletes."""
+        M = 50
+        texts = [str(i + 1 / 7.0) for i in range(2 * M)]
+        ids0 = ["doc_%i" % i for i in range(M)]
+        ids1 = ["doc_%i" % (i + M) for i in range(M)]
+        ids = ids0 + ids1
+        store_someemb.add_texts(texts=texts, ids=ids)
+        # deleting a bunch of these
+        del_res0 = store_someemb.delete(ids0)
+        assert del_res0 is True
+        # deleting the rest plus a fake one
+        del_res1 = store_someemb.delete(ids1 + ["ghost!"])
+        assert del_res1 is False  # not *all* ids could be deleted...
+        # nothing left
+        assert store_someemb.similarity_search("x", k=2 * M) == []
+
+    def test_astradb_vectorstore_drop(self) -> None:
+        """behaviour of 'delete_collection'."""
+        emb = SomeEmbeddings(dimension=2)
+        v_store = AstraDB(
+            embedding=emb,
+            collection_name="lc_test_d",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+        )
+        v_store.add_texts(["huh"])
+        assert len(v_store.similarity_search("hah", k=10)) == 1
+        # another instance pointing to the same collection on DB
+        v_store_kenny = AstraDB(
+            embedding=emb,
+            collection_name="lc_test_d",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+        )
+        v_store_kenny.delete_collection()
+        # droppped on DB, but 'v_store' should have no clue:
+        with pytest.raises(ValueError):
+            _ = v_store.similarity_search("hah", k=10)
+
+    def test_astradb_vectorstore_custom_params(self) -> None:
+        """Custom batch size and concurrency params."""
+        emb = SomeEmbeddings(dimension=2)
+        v_store = AstraDB(
+            embedding=emb,
+            collection_name="lc_test_c",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+            batch_size=17,
+            bulk_insert_batch_concurrency=13,
+            bulk_insert_overwrite_concurrency=7,
+            bulk_delete_concurrency=19,
+        )
+        # add_texts
+        N = 50
+        texts = [str(i + 1 / 7.0) for i in range(N)]
+        ids = ["doc_%i" % i for i in range(N)]
+        v_store.add_texts(texts=texts, ids=ids)
+        v_store.add_texts(
+            texts=texts,
+            ids=ids,
+            batch_size=19,
+            batch_concurrency=7,
+            overwrite_concurrency=13,
+        )
+        #
+        _ = v_store.delete(ids[: N // 2])
+        _ = v_store.delete(ids[N // 2 :], concurrency=23)
+        #
+        v_store.delete_collection()
+
+    def test_astradb_vectorstore_metrics(self) -> None:
+        """
+        Different choices of similarity metric.
+        Both stores (with "cosine" and "euclidea" metrics) contain these two:
+            - a vector slightly rotated w.r.t query vector
+            - a vector which is a long multiple of query vector
+        so, which one is "the closest one" depends on the metric.
+        """
+        emb = ParserEmbeddings(dimension=2)
+        isq2 = 0.5**0.5
+        isa = 0.7
+        isb = (1.0 - isa * isa) ** 0.5
+        texts = [
+            json.dumps([isa, isb]),
+            json.dumps([10 * isq2, 10 * isq2]),
+        ]
+        ids = [
+            "rotated",
+            "scaled",
+        ]
+        query_text = json.dumps([isq2, isq2])
+        # creation, population, query - cosine
+        vstore_cos = AstraDB(
+            embedding=emb,
+            collection_name="lc_test_m_c",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+            metric="cosine",
+        )
+        vstore_cos.add_texts(
+            texts=texts,
+            ids=ids,
+        )
+        _, _, id_from_cos = vstore_cos.similarity_search_with_score_id(
+            query_text,
+            k=1,
+        )[0]
+        assert id_from_cos == "scaled"
+        vstore_cos.delete_collection()
+        # creation, population, query - euclidean
+        vstore_euc = AstraDB(
+            embedding=emb,
+            collection_name="lc_test_m_e",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+            metric="euclidean",
+        )
+        vstore_euc.add_texts(
+            texts=texts,
+            ids=ids,
+        )
+        _, _, id_from_euc = vstore_euc.similarity_search_with_score_id(
+            query_text,
+            k=1,
+        )[0]
+        assert id_from_euc == "rotated"
+        vstore_euc.delete_collection()

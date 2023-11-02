@@ -664,7 +664,6 @@ class AstraDB(VectorStore):
             "bulk_insert_batch_concurrency",
             "bulk_insert_overwrite_concurrency",
             "bulk_delete_concurrency",
-            "batch_size",
             "batch_concurrency",
             "overwrite_concurrency",
         }
