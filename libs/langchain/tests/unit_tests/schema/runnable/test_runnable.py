@@ -18,8 +18,14 @@ import pytest
 from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
+from typing_extensions import TypedDict
 
-from langchain.callbacks.manager import Callbacks, collect_runs
+from langchain.callbacks.manager import (
+    Callbacks,
+    atrace_as_chain_group,
+    collect_runs,
+    trace_as_chain_group,
+)
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.callbacks.tracers.schemas import Run
@@ -60,7 +66,11 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
-from langchain.schema.runnable.base import ConfigurableField, RunnableGenerator
+from langchain.schema.runnable.base import (
+    ConfigurableField,
+    RunnableBinding,
+    RunnableGenerator,
+)
 from langchain.schema.runnable.utils import (
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
@@ -499,6 +509,41 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     }
 
 
+def test_passthrough_assign_schema() -> None:
+    retriever = FakeRetriever()  # str -> List[Document]
+    prompt = PromptTemplate.from_template("{context} {question}")
+    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+
+    seq_w_assign: Runnable = (
+        RunnablePassthrough.assign(context=itemgetter("question") | retriever)
+        | prompt
+        | fake_llm
+    )
+
+    assert seq_w_assign.input_schema.schema() == {
+        "properties": {"question": {"title": "Question", "type": "string"}},
+        "title": "RunnableSequenceInput",
+        "type": "object",
+    }
+    assert seq_w_assign.output_schema.schema() == {
+        "title": "FakeListLLMOutput",
+        "type": "string",
+    }
+
+    invalid_seq_w_assign: Runnable = (
+        RunnablePassthrough.assign(context=itemgetter("question") | retriever)
+        | fake_llm
+    )
+
+    # fallback to RunnableAssign.input_schema if next runnable doesn't have
+    # expected dict input_schema
+    assert invalid_seq_w_assign.input_schema.schema() == {
+        "properties": {"question": {"title": "Question"}},
+        "title": "RunnableParallelInput",
+        "type": "object",
+    }
+
+
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )
@@ -555,6 +600,79 @@ def test_lambda_schemas() -> None:
             "yo": {"title": "Yo"},
         },
     }
+
+    class InputType(TypedDict):
+        variable_name: str
+        yo: int
+
+    class OutputType(TypedDict):
+        hello: str
+        bye: str
+        byebye: int
+
+    async def aget_values_typed(input: InputType) -> OutputType:
+        return {
+            "hello": input["variable_name"],
+            "bye": input["variable_name"],
+            "byebye": input["yo"],
+        }
+
+    assert (
+        RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
+        == {
+            "title": "RunnableLambdaInput",
+            "$ref": "#/definitions/InputType",
+            "definitions": {
+                "InputType": {
+                    "properties": {
+                        "variable_name": {
+                            "title": "Variable " "Name",
+                            "type": "string",
+                        },
+                        "yo": {"title": "Yo", "type": "integer"},
+                    },
+                    "required": ["variable_name", "yo"],
+                    "title": "InputType",
+                    "type": "object",
+                }
+            },
+        }
+    )
+
+    assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
+        "title": "RunnableLambdaOutput",
+        "$ref": "#/definitions/OutputType",
+        "definitions": {
+            "OutputType": {
+                "properties": {
+                    "bye": {"title": "Bye", "type": "string"},
+                    "byebye": {"title": "Byebye", "type": "integer"},
+                    "hello": {"title": "Hello", "type": "string"},
+                },
+                "required": ["hello", "bye", "byebye"],
+                "title": "OutputType",
+                "type": "object",
+            }
+        },
+    }
+
+
+def test_with_types_with_type_generics() -> None:
+    """Verify that with_types works if we use things like List[int]"""
+
+    def foo(x: int) -> None:
+        """Add one to the input."""
+        raise NotImplementedError()
+
+    # Try specifying some
+    RunnableLambda(foo).with_types(
+        output_type=List[int],  # type: ignore[arg-type]
+        input_type=List[int],  # type: ignore[arg-type]
+    )
+    RunnableLambda(foo).with_types(
+        output_type=Sequence[int],  # type: ignore[arg-type]
+        input_type=Sequence[int],  # type: ignore[arg-type]
+    )
 
 
 def test_schema_complex_seq() -> None:
@@ -1209,7 +1327,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -1219,7 +1336,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -1290,7 +1406,6 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                locals={},
                 recursion_limit=25,
             ),
         ),
@@ -1300,7 +1415,6 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                locals={},
                 recursion_limit=25,
             ),
         ),
@@ -1426,6 +1540,40 @@ async def test_prompt() -> None:
         },
     )
 
+    # nested inside trace_with_chain_group
+
+    async with atrace_as_chain_group("a_group") as manager:
+        stream_log_nested = [
+            part
+            async for part in prompt.astream_log(
+                {"question": "What is your name?"}, config={"callbacks": manager}
+            )
+        ]
+
+    assert len(stream_log_nested[0].ops) == 1
+    assert stream_log_nested[0].ops[0]["op"] == "replace"
+    assert stream_log_nested[0].ops[0]["path"] == ""
+    assert stream_log_nested[0].ops[0]["value"]["logs"] == {}
+    assert stream_log_nested[0].ops[0]["value"]["final_output"] is None
+    assert stream_log_nested[0].ops[0]["value"]["streamed_output"] == []
+    assert isinstance(stream_log_nested[0].ops[0]["value"]["id"], str)
+
+    assert stream_log_nested[1:] == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "/final_output",
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
+            }
+        ),
+        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
+    ]
+
 
 def test_prompt_template_params() -> None:
     prompt = ChatPromptTemplate.from_template(
@@ -1443,6 +1591,39 @@ def test_prompt_template_params() -> None:
 
     with pytest.raises(KeyError):
         prompt.invoke({})
+
+
+def test_with_listeners(mocker: MockerFixture) -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    chat = FakeListChatModel(responses=["foo"])
+
+    chain = prompt | chat
+
+    mock_start = mocker.Mock()
+    mock_end = mocker.Mock()
+
+    chain.with_listeners(on_start=mock_start, on_end=mock_end).invoke(
+        {"question": "Who are you?"}
+    )
+
+    assert mock_start.call_count == 1
+    assert mock_start.call_args[0][0].name == "RunnableSequence"
+    assert mock_end.call_count == 1
+
+    mock_start.reset_mock()
+    mock_end.reset_mock()
+
+    with trace_as_chain_group("hello") as manager:
+        chain.with_listeners(on_start=mock_start, on_end=mock_end).invoke(
+            {"question": "Who are you?"}, {"callbacks": manager}
+        )
+
+    assert mock_start.call_count == 1
+    assert mock_start.call_args[0][0].name == "RunnableSequence"
+    assert mock_end.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -1723,7 +1904,9 @@ async def test_prompt_with_llm(
                 "op": "add",
                 "path": "/logs/FakeListLLM/final_output",
                 "value": {
-                    "generations": [[{"generation_info": None, "text": "foo"}]],
+                    "generations": [
+                        [{"generation_info": None, "text": "foo", "type": "Generation"}]
+                    ],
                     "llm_output": None,
                     "run": None,
                 },
@@ -2853,6 +3036,7 @@ def test_metadata_is_merged() -> None:
     with collect_runs() as cb:
         foo.invoke("hi", {"metadata": {"my_other_key": "my_other_value"}})
         run = cb.traced_runs[0]
+    assert run.extra is not None
     assert run.extra["metadata"] == expected_metadata
 
 
@@ -3512,6 +3696,7 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
     assert parent_run_qux.error is None
+    assert parent_run_qux.outputs is not None
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
@@ -3634,6 +3819,7 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
     assert parent_run_qux.error is None
+    assert parent_run_qux.outputs is not None
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
@@ -3982,3 +4168,11 @@ async def test_runnable_gen_transform() -> None:
 
     assert list(chain.stream(3)) == [1, 2, 3]
     assert [p async for p in achain.astream(4)] == [1, 2, 3, 4]
+
+
+def test_with_config_callbacks() -> None:
+    result = RunnableLambda(lambda x: x).with_config({"callbacks": []})
+    # Bugfix from version 0.0.325
+    # ConfigError: field "callbacks" not yet prepared so type is still a ForwardRef,
+    # you might need to call RunnableConfig.update_forward_refs().
+    assert isinstance(result, RunnableBinding)

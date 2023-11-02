@@ -13,6 +13,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -29,8 +30,9 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.language_model import LanguageModelInput
 from langchain.schema.messages import (
     AIMessageChunk,
     BaseMessage,
@@ -41,10 +43,12 @@ from langchain.schema.messages import (
     SystemMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
+from langchain.schema.runnable import Runnable
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 if TYPE_CHECKING:
     import tiktoken
+
 
 logger = logging.getLogger(__name__)
 
@@ -540,3 +544,45 @@ class ChatOpenAI(BaseChatModel):
         # every reply is primed with <im_start>assistant
         num_tokens += 3
         return num_tokens
+
+    def bind_functions(
+        self,
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+        function_call: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind functions (and other objects) to this chat model.
+
+        Args:
+            functions: A list of function definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, or callable. Pydantic
+                models and callables will be automatically converted to
+                their schema dictionary representation.
+            function_call: Which function to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any).
+            kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+        from langchain.chains.openai_functions.base import convert_to_openai_function
+
+        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
+        function_call_ = None
+        if function_call is not None:
+            if len(formatted_functions) != 1:
+                raise ValueError(
+                    "When specifying `function_call`, you must provide exactly one "
+                    "function."
+                )
+            if formatted_functions[0]["name"] != function_call:
+                raise ValueError(
+                    f"Function call {function_call} was specified, but the only "
+                    f"provided function was {formatted_functions[0]['name']}."
+                )
+            function_call_ = {"name": function_call}
+            kwargs = {**kwargs, "function_call": function_call_}
+        return super().bind(
+            functions=formatted_functions,
+            **kwargs,
+        )

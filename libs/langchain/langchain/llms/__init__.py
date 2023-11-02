@@ -184,6 +184,12 @@ def _import_forefrontai() -> Any:
     return ForefrontAI
 
 
+def _import_gigachat() -> Any:
+    from langchain.llms.gigachat import GigaChat
+
+    return GigaChat
+
+
 def _import_google_palm() -> Any:
     from langchain.llms.google_palm import GooglePalm
 
@@ -438,6 +444,12 @@ def _import_titan_takeoff() -> Any:
     return TitanTakeoff
 
 
+def _import_titan_takeoff_pro() -> Any:
+    from langchain.llms.titan_takeoff_pro import TitanTakeoffPro
+
+    return TitanTakeoffPro
+
+
 def _import_together() -> Any:
     from langchain.llms.together import Together
 
@@ -547,6 +559,8 @@ def __getattr__(name: str) -> Any:
         return _import_fireworks()
     elif name == "ForefrontAI":
         return _import_forefrontai()
+    elif name == "GigaChat":
+        return _import_gigachat()
     elif name == "GooglePalm":
         return _import_google_palm()
     elif name == "GooseAI":
@@ -631,6 +645,8 @@ def __getattr__(name: str) -> Any:
         return _import_textgen()
     elif name == "TitanTakeoff":
         return _import_titan_takeoff()
+    elif name == "TitanTakeoffPro":
+        return _import_titan_takeoff_pro()
     elif name == "Together":
         return _import_together()
     elif name == "Tongyi":
@@ -686,6 +702,7 @@ __all__ = [
     "FakeListLLM",
     "Fireworks",
     "ForefrontAI",
+    "GigaChat",
     "GPT4All",
     "GooglePalm",
     "GooseAI",
@@ -726,6 +743,7 @@ __all__ = [
     "SelfHostedPipeline",
     "StochasticAI",
     "TitanTakeoff",
+    "TitanTakeoffPro",
     "Tongyi",
     "VertexAI",
     "VertexAIModelGarden",
@@ -767,6 +785,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "edenai": _import_edenai,
         "fake-list": _import_fake,
         "forefrontai": _import_forefrontai,
+        "giga-chat-model": _import_gigachat,
         "google_palm": _import_google_palm,
         "gooseai": _import_gooseai,
         "gradient": _import_gradient_ai,
@@ -803,6 +822,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "together": _import_together,
         "tongyi": _import_tongyi,
         "titan_takeoff": _import_titan_takeoff,
+        "titan_takeoff_pro": _import_titan_takeoff_pro,
         "vertexai": _import_vertex,
         "vertexai_model_garden": _import_vertex_model_garden,
         "openllm": _import_openllm,
