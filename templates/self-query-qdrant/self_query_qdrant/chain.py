@@ -5,12 +5,12 @@ from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.llms import BaseLLM
 from langchain.llms.openai import OpenAI
+from langchain.pydantic_v1 import BaseModel
 from langchain.retrievers import SelfQueryRetriever
 from langchain.schema import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.vectorstores.qdrant import Qdrant
-from langchain.pydantic_v1 import BaseModel
 from qdrant_client import QdrantClient
 
 from self_query_qdrant import defaults
