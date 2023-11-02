@@ -2,19 +2,15 @@ from __future__ import annotations
 
 import logging
 import time
-from abc import ABC, abstractmethod
 from asyncio import CancelledError
-from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
     List,
     NoReturn,
     Optional,
     Tuple,
-    Type,
     Union,
 )
 
@@ -38,28 +34,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class BaseAgentExecutorIterator(ABC):
-    """Base class for AgentExecutorIterator."""
-
-    @abstractmethod
-    def build_callback_manager(self) -> None:
-        pass
-
-
-def rebuild_callback_manager_on_set(
-    setter_method: Callable[..., None]
-) -> Callable[..., None]:
-    """Decorator to force setters to rebuild callback mgr"""
-
-    @wraps(setter_method)
-    def wrapper(self: BaseAgentExecutorIterator, *args: Any, **kwargs: Any) -> None:
-        setter_method(self, *args, **kwargs)
-        self.build_callback_manager()
-
-    return wrapper
-
-
-class AgentExecutorIterator(BaseAgentExecutorIterator):
+class AgentExecutorIterator:
     """Iterator for AgentExecutor."""
 
     def __init__(
@@ -69,8 +44,9 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
         include_run_info: bool = False,
-        async_: bool = False,
     ):
         """
         Initialize the AgentExecutorIterator with the given AgentExecutor,
@@ -78,17 +54,23 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         """
         self._agent_executor = agent_executor
         self.inputs = inputs
-        self.async_ = async_
-        # build callback manager on tags setter
-        self._callbacks = callbacks
+        self.callbacks = callbacks
         self.tags = tags
+        self.metadata = metadata
+        self.run_name = run_name
         self.include_run_info = include_run_info
         self.run_manager = None
         self.reset()
 
-    _callback_manager: Union[AsyncCallbackManager, CallbackManager]
-    _inputs: dict[str, str]
+    _inputs: Dict[str, str]
+    callbacks: Callbacks
+    tags: Optional[list[str]]
+    metadata: Optional[Dict[str, Any]]
+    run_name: Optional[str]
+    include_run_info: bool
+
     _final_outputs: Optional[dict[str, str]]
+
     run_manager: Optional[
         Union[AsyncCallbackManagerForChainRun, CallbackManagerForChainRun]
     ]
@@ -103,55 +85,14 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self._inputs = self.agent_executor.prep_inputs(inputs)
 
     @property
-    def callbacks(self) -> Callbacks:
-        return self._callbacks
-
-    @callbacks.setter
-    @rebuild_callback_manager_on_set
-    def callbacks(self, callbacks: Callbacks) -> None:
-        """When callbacks are changed after __init__, rebuild callback mgr"""
-        self._callbacks = callbacks
-
-    @property
-    def tags(self) -> Optional[List[str]]:
-        return self._tags
-
-    @tags.setter
-    @rebuild_callback_manager_on_set
-    def tags(self, tags: Optional[List[str]]) -> None:
-        """When tags are changed after __init__, rebuild callback mgr"""
-        self._tags = tags
-
-    @property
     def agent_executor(self) -> AgentExecutor:
         return self._agent_executor
 
     @agent_executor.setter
-    @rebuild_callback_manager_on_set
     def agent_executor(self, agent_executor: AgentExecutor) -> None:
         self._agent_executor = agent_executor
         # force re-prep inputs in case agent_executor's prep_inputs fn changed
         self.inputs = self.inputs
-
-    @property
-    def callback_manager(self) -> Union[AsyncCallbackManager, CallbackManager]:
-        return self._callback_manager
-
-    def build_callback_manager(self) -> None:
-        """
-        Create and configure the callback manager based on the current
-        callbacks and tags.
-        """
-        CallbackMgr: Union[Type[AsyncCallbackManager], Type[CallbackManager]] = (
-            AsyncCallbackManager if self.async_ else CallbackManager
-        )
-        self._callback_manager = CallbackMgr.configure(
-            self.callbacks,
-            self.agent_executor.callbacks,
-            self.agent_executor.verbose,
-            self.tags,
-            self.agent_executor.tags,
-        )
 
     @property
     def name_to_tool_map(self) -> dict[str, BaseTool]:
@@ -219,17 +160,25 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
                 self.inputs, outputs, return_only_outputs=True
             )
             if self.include_run_info and self.run_manager is not None:
-                logger.debug("Assign run key")
                 prepared_outputs[RUN_KEY] = RunInfo(run_id=self.run_manager.run_id)
             self._final_outputs = prepared_outputs
 
     def __iter__(self: "AgentExecutorIterator") -> "AgentExecutorIterator":
         logger.debug("Initialising AgentExecutorIterator")
         self.reset()
-        assert isinstance(self.callback_manager, CallbackManager)
-        self.run_manager = self.callback_manager.on_chain_start(
+        callback_manager = CallbackManager.configure(
+            self.callbacks,
+            self.agent_executor.callbacks,
+            self.agent_executor.verbose,
+            self.tags,
+            self.agent_executor.tags,
+            self.metadata,
+            self.agent_executor.metadata,
+        )
+        self.run_manager = callback_manager.on_chain_start(
             dumpd(self.agent_executor),
             self.inputs,
+            name=self.run_name,
         )
         return self
 
@@ -260,10 +209,19 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         """
         # on first step, need to await callback manager and start async timeout ctxmgr
         if self.iterations == 0:
-            assert isinstance(self.callback_manager, AsyncCallbackManager)
-            self.run_manager = await self.callback_manager.on_chain_start(
+            callback_manager = AsyncCallbackManager.configure(
+                self.callbacks,
+                self.agent_executor.callbacks,
+                self.agent_executor.verbose,
+                self.tags,
+                self.agent_executor.tags,
+                self.metadata,
+                self.agent_executor.metadata,
+            )
+            self.run_manager = await callback_manager.on_chain_start(
                 dumpd(self.agent_executor),
                 self.inputs,
+                name=self.run_name,
             )
             if self.timeout_manager:
                 await self.timeout_manager.__aenter__()
