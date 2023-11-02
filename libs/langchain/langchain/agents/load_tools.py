@@ -37,6 +37,7 @@ from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechToo
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.google_scholar.tool import GoogleScholarQueryRun
 from langchain.tools.metaphor_search.tool import MetaphorSearchResults
+from langchain.tools.serpapi.tool import SerpApiResults, SerpApiRun
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
 from langchain.tools.searchapi.tool import SearchAPIResults, SearchAPIRun
 from langchain.tools.graphql.tool import BaseGraphQLTool
@@ -253,12 +254,7 @@ def _get_searchapi_results_json(**kwargs: Any) -> BaseTool:
 
 
 def _get_serpapi(**kwargs: Any) -> BaseTool:
-    return Tool(
-        name="Search",
-        description="A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
-        func=SerpAPIWrapper(**kwargs).run,
-        coroutine=SerpAPIWrapper(**kwargs).arun,
-    )
+    return SerpApiRun(api_wrapper=SerpAPIWrapper(**kwargs))
 
 
 def _get_dalle_image_generator(**kwargs: Any) -> Tool:

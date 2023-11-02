@@ -264,6 +264,18 @@ def _import_google_search_tool_GoogleSearchRun() -> Any:
     return GoogleSearchRun
 
 
+def _import_serpapi_tool_SerpApiResults() -> Any:
+    from langchain.tools.serpapi.tool import SerpApiResults
+
+    return SerpApiResults
+
+
+def _import_serpapi_tool_SerpApiRun() -> Any:
+    from langchain.tools.serpapi.tool import SerpApiRun
+
+    return SerpApiRun
+
+
 def _import_google_serper_tool_GoogleSerperResults() -> Any:
     from langchain.tools.google_serper.tool import GoogleSerperResults
 
@@ -861,6 +873,10 @@ def __getattr__(name: str) -> Any:
         return _import_sql_database_tool_QuerySQLCheckerTool()
     elif name == "QuerySQLDataBaseTool":
         return _import_sql_database_tool_QuerySQLDataBaseTool()
+    elif name == "SerpApiResults":
+        return _import_serpapi_tool_SerpApiResults()
+    elif name == "SerpApiRun":
+        return _import_serpapi_tool_SerpApiRun()
     elif name == "SteamshipImageGenerationTool":
         return _import_steamship_image_generation()
     elif name == "VectorStoreQATool":
@@ -978,6 +994,8 @@ __all__ = [
     "SceneXplainTool",
     "SearxSearchResults",
     "SearxSearchRun",
+    "SerpApiResults",
+    "SerpApiRun",
     "ShellTool",
     "SleepTool",
     "StdInInquireTool",

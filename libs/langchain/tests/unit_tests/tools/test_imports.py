@@ -91,6 +91,8 @@ EXPECTED_ALL = [
     "SceneXplainTool",
     "SearxSearchResults",
     "SearxSearchRun",
+    "SerpApiResults",
+    "SerpApiRun",
     "ShellTool",
     "SleepTool",
     "StdInInquireTool",
