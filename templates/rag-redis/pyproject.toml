@@ -28,7 +28,7 @@ extras = [
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"
 
-[tool.poetry.group.dev.dependencies.langchain-cli]
+[tool.poetry.group.dev.dependencies.gigachain-cli]
 git = "https://github.com/langchain-ai/langchain.git"
 rev = "erick/cli"
 subdirectory = "libs/cli"
