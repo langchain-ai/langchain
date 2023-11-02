@@ -37,9 +37,6 @@ DEFAULT_BULK_INSERT_OVERWRITE_CONCURRENCY = 10
 # Number of threads (for deleting multiple rows concurrently):
 DEFAULT_BULK_DELETE_CONCURRENCY = 20
 
-# Similarity function for the store
-DEFAULT_COLLECTION_METRIC = "cosine"
-
 
 def _unique_list(lst, key: lambda itm: itm):
     visited_keys = set()
