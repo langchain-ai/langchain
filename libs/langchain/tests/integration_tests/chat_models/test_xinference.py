@@ -11,7 +11,6 @@ from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.xinference import ChatXinference
 from langchain.schema import (
     ChatGeneration,
-    ChatResult,
     LLMResult,
 )
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
@@ -88,41 +87,6 @@ def test_chat_xinference_system_message(setup) -> None:
     response = chat([system_message, human_message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
-
-
-@pytest.mark.skip(reason="n is not supported by Xinference chat.")
-def test_chat_xinference_generate(setup) -> None:
-    """Test ChatXinference wrapper with generate."""
-    server_url, model_uid = setup
-    chat = ChatXinference(
-        server_url=server_url, model_uid=model_uid, max_tokens=10, n=2
-    )
-    message = HumanMessage(content="Hello")
-    response = chat.generate([[message], [message]])
-    assert isinstance(response, LLMResult)
-    assert len(response.generations) == 2
-    for generations in response.generations:
-        assert len(generations) == 2
-        for generation in generations:
-            assert isinstance(generation, ChatGeneration)
-            assert isinstance(generation.text, str)
-            assert generation.text == generation.message.content
-
-
-@pytest.mark.skip(reason="n is not supported by Xinference chat.")
-def test_chat_xinference_multiple_completions(setup) -> None:
-    """Test ChatXinference wrapper with multiple completions."""
-    server_url, model_uid = setup
-    chat = ChatXinference(
-        server_url=server_url, model_uid=model_uid, max_tokens=10, n=5
-    )
-    message = HumanMessage(content="Hello")
-    response = chat._generate([message])
-    assert isinstance(response, ChatResult)
-    assert len(response.generations) == 5
-    for generation in response.generations:
-        assert isinstance(generation.message, BaseMessage)
-        assert isinstance(generation.message.content, str)
 
 
 def test_chat_xinference_streaming(setup) -> None:
@@ -207,28 +171,7 @@ def test_chat_xinference_invalid_streaming_params(setup) -> None:
             max_tokens=10,
             streaming=True,
             temperature=0,
-            n=5,
         )
-
-
-@pytest.mark.skip(reason="n is not supported by Xinference chat.")
-@pytest.mark.asyncio
-async def test_async_chat_xinference(setup) -> None:
-    """Test async generation."""
-    server_url, model_uid = setup
-    chat = ChatXinference(
-        server_url=server_url, model_uid=model_uid, max_tokens=10, n=2
-    )
-    message = HumanMessage(content="Hello")
-    response = await chat.agenerate([[message], [message]])
-    assert isinstance(response, LLMResult)
-    assert len(response.generations) == 2
-    for generations in response.generations:
-        assert len(generations) == 2
-        for generation in generations:
-            assert isinstance(generation, ChatGeneration)
-            assert isinstance(generation.text, str)
-            assert generation.text == generation.message.content
 
 
 @pytest.mark.skip(reason="Parallel generation is not supported by ggml.")
