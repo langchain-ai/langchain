@@ -17,7 +17,7 @@ pip install -U "langchain-cli[serve]"
 Next, create a new LangChain project:
 
 ```shell
-langchain app new my-app
+langchain-cli app new my-app
 ```
 
 This will create a new directory called `my-app` with two folders:
@@ -36,7 +36,7 @@ In this getting started guide, we will add a simple `pirate-speak` project.
 All this project does is convert user input into pirate speak.
 
 ```shell
-langchain app add pirate-speak
+langchain-cli app add pirate-speak
 ```
 
 This will pull in the specified template into `packages/pirate-speak`
@@ -96,7 +96,7 @@ export OPENAI_API_KEY=sk-...
 You can then spin up production-ready endpoints, along with a playground, by running:
 
 ```shell
-langchain serve
+langchain-cli serve
 ```
 
 This now gives a fully deployed LangServe application.
