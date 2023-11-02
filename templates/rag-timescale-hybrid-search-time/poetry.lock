@@ -698,7 +698,7 @@ develop = false
 
 [package.dependencies]
 httpx = ">=0.23.0"
-langchain = ">=0.0.322"
+gigachain = ">=0.0.322"
 pydantic = "^1"
 
 [package.extras]

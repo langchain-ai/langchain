@@ -24,7 +24,7 @@ Manage LangChain apps
 **Usage**:
 
 ```console
-$ langchain app [OPTIONS] COMMAND [ARGS]...
+$ gigachain app [OPTIONS] COMMAND [ARGS]...
 ```
 
 **Options**:
@@ -38,18 +38,18 @@ $ langchain app [OPTIONS] COMMAND [ARGS]...
 * `remove`: Removes the specified package from the...
 * `serve`: Starts the LangServe app.
 
-### `langchain app add`
+### `gigachain app add`
 
 Adds the specified template to the current LangServe app.
 
 e.g.:
-langchain app add extraction-openai-functions
-langchain app add git+ssh://git@github.com/efriis/simple-pirate.git
+gigachain app add extraction-openai-functions
+gigachain app add git+ssh://git@github.com/efriis/simple-pirate.git
 
 **Usage**:
 
 ```console
-$ langchain app add [OPTIONS] [DEPENDENCIES]...
+$ gigachain app add [OPTIONS] [DEPENDENCIES]...
 ```
 
 **Arguments**:
@@ -64,14 +64,14 @@ $ langchain app add [OPTIONS] [DEPENDENCIES]...
 * `--branch TEXT`: Install templates from a specific branch
 * `--help`: Show this message and exit.
 
-### `langchain app new`
+### `gigachain app new`
 
 Create a new LangServe application.
 
 **Usage**:
 
 ```console
-$ langchain app new [OPTIONS] NAME
+$ gigachain app new [OPTIONS] NAME
 ```
 
 **Arguments**:
@@ -83,14 +83,14 @@ $ langchain app new [OPTIONS] NAME
 * `--package TEXT`: Packages to seed the project with
 * `--help`: Show this message and exit.
 
-### `langchain app remove`
+### `gigachain app remove`
 
 Removes the specified package from the current LangServe app.
 
 **Usage**:
 
 ```console
-$ langchain app remove [OPTIONS] API_PATHS...
+$ gigachain app remove [OPTIONS] API_PATHS...
 ```
 
 **Arguments**:
@@ -101,14 +101,14 @@ $ langchain app remove [OPTIONS] API_PATHS...
 
 * `--help`: Show this message and exit.
 
-### `langchain app serve`
+### `gigachain app serve`
 
 Starts the LangServe app.
 
 **Usage**:
 
 ```console
-$ langchain app serve [OPTIONS]
+$ gigachain app serve [OPTIONS]
 ```
 
 **Options**:
@@ -118,14 +118,14 @@ $ langchain app serve [OPTIONS]
 * `--app TEXT`: The app to run, e.g. `app.server:app`
 * `--help`: Show this message and exit.
 
-## `langchain serve`
+## `gigachain serve`
 
 Start the LangServe app, whether it's a template or an app.
 
 **Usage**:
 
 ```console
-$ langchain serve [OPTIONS]
+$ gigachain serve [OPTIONS]
 ```
 
 **Options**:
@@ -134,14 +134,14 @@ $ langchain serve [OPTIONS]
 * `--host TEXT`: The host to run the server on
 * `--help`: Show this message and exit.
 
-## `langchain template`
+## `gigachain template`
 
 Develop installable templates.
 
 **Usage**:
 
 ```console
-$ langchain template [OPTIONS] COMMAND [ARGS]...
+$ gigachain template [OPTIONS] COMMAND [ARGS]...
 ```
 
 **Options**:
@@ -153,14 +153,14 @@ $ langchain template [OPTIONS] COMMAND [ARGS]...
 * `new`: Creates a new template package.
 * `serve`: Starts a demo app for this template.
 
-### `langchain template new`
+### `gigachain template new`
 
 Creates a new template package.
 
 **Usage**:
 
 ```console
-$ langchain template new [OPTIONS] NAME
+$ gigachain template new [OPTIONS] NAME
 ```
 
 **Arguments**:
@@ -172,14 +172,14 @@ $ langchain template new [OPTIONS] NAME
 * `--with-poetry / --no-poetry`: Don't run poetry install  [default: no-poetry]
 * `--help`: Show this message and exit.
 
-### `langchain template serve`
+### `gigachain template serve`
 
 Starts a demo app for this template.
 
 **Usage**:
 
 ```console
-$ langchain template serve [OPTIONS]
+$ gigachain template serve [OPTIONS]
 ```
 
 **Options**:

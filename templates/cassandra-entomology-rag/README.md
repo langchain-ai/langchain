@@ -25,13 +25,13 @@ pip install -U "gigachain-cli[serve]"
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package cassandra-entomology-rag
+gigachain app new my-app --package cassandra-entomology-rag
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add cassandra-entomology-rag
+gigachain app add cassandra-entomology-rag
 ```
 
 And add the following code to your `server.py` file:
@@ -66,7 +66,7 @@ Note: In a full application, the vector store might be populated in other ways. 
 If you are inside this directory, then you can spin up a LangServe instance directly by:
 
 ```shell
-langchain serve
+gigachain serve
 ```
 
 This will start the FastAPI app with a server is running locally at 

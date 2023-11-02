@@ -13,11 +13,11 @@ cd pirate-speak
 ```
 
 Inside this package there is a `pyproject.toml` file.
-This file contains a `tool.langchain` section that contains information on how this package should be used.
+This file contains a `tool.gigachain` section that contains information on how this package should be used.
 For example, in `pirate-speak` we see:
 
 ```text
-[tool.langserve]
+[tool.gigaserve]
 export_module = "pirate_speak.chain"
 export_attr = "chain"
 ```
@@ -32,7 +32,7 @@ pip install -U "gigachain-cli[serve]"
 You can then run:
 
 ```shell
-langchain template serve
+gigachain template serve
 ```
 
 This will spin up endpoints, documentation, and playground for this chain.

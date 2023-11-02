@@ -20,7 +20,7 @@ if os.environ.get("FIREWORKS_API_KEY", None) is None:
 # Set local path
 repo_path = "/Users/rlm/Desktop/tmp_repo"
 # Use LangChain as an example
-repo = Repo.clone_from("https://github.com/langchain-ai/langchain", to_path=repo_path)
+repo = Repo.clone_from("https://github.com/ai-forever/gigachain", to_path=repo_path)
 loader = GenericLoader.from_filesystem(
     repo_path + "/libs/langchain/langchain",
     glob="**/*",

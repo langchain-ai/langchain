@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "langservehub-template"
+name = "gigaservehub-template"
 version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
@@ -11,7 +11,7 @@ sse-starlette = "^1.6.5"
 tomli-w = "^1.0.0"
 uvicorn = "^0.23.2"
 fastapi = "^0.103.2"
-langserve = ">=0.0.16"
+gigaserve = ">=0.0.16"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"

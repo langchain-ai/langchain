@@ -24,13 +24,13 @@ pip install -U "gigachain-cli[serve]"
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package sql-llama2
+gigachain app new my-app --package sql-llama2
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add sql-llama2
+gigachain app add sql-llama2
 ```
 
 And add the following code to your `server.py` file:
@@ -55,7 +55,7 @@ export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "defaul
 If you are inside this directory, then you can spin up a LangServe instance directly by:
 
 ```shell
-langchain serve
+gigachain serve
 ```
 
 This will start the FastAPI app with a server is running locally at 

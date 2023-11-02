@@ -9,11 +9,11 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.325"
+gigachain = ">=0.0.325"
 neo4j = ">5.12"
 openai = "^0.28.1"
 
-[tool.langserve]
+[tool.gigaserve]
 export_module = "neo4j_cypher"
 export_attr = "chain"
 

@@ -58,6 +58,6 @@ to help the LLM convert the question into filters on the metadata when searching
 
 ## Using in your own applications
 
-This is a standard LangServe template. Instructions on how to use it with your LangServe applications are [here](https://github.com/langchain-ai/langchain/blob/master/templates/README.md).
+This is a standard GigaServe template. Instructions on how to use it with your LangServe applications are [here](https://github.com/ai-forever/gigachain/blob/master/templates/README.md).
 
 

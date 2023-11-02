@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.325"
+gigachain = ">=0.0.325"
 openai = "^0.28.1"
 chromadb = "^0.4.15"
 tiktoken = "^0.5.1"
@@ -18,7 +18,7 @@ gigachain-cli = ">=0.0.4"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
-[tool.langserve]
+[tool.gigaserve]
 export_module = "hyde.chain"
 export_attr = "chain"
 
