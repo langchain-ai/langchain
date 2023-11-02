@@ -20,6 +20,7 @@ and retrieve the data that are 'most similar' to the embedded query.
 """  # noqa: E501
 
 from typing import Any
+
 from langchain.schema.vectorstore import VectorStore
 
 
@@ -606,5 +607,5 @@ __all__ = [
     "Zilliz",
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
-    "VectorStore"
+    "VectorStore",
 ]

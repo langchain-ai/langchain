@@ -65,7 +65,7 @@ _EXPECTED = [
     "Zilliz",
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
-    "VectorStore"
+    "VectorStore",
 ]
 
 
