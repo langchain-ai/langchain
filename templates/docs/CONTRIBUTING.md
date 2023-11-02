@@ -8,10 +8,10 @@ To contribute a new template, first fork this repository.
 Then clone that fork and pull it down locally.
 Set up an appropriate dev environment, and make sure you are in this `templates` directory.
 
-Make sure you have `langchain-cli` installed.
+Make sure you have `gigachain-cli` installed.
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U "gigachain-cli[serve]"
 ```
 
 You can then run the following command to create a new skeleton of a package.
