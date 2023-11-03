@@ -194,7 +194,9 @@ def test_chroma_mmr_by_vector_with_score() -> None:
         collection_name="test_collection", texts=texts, embedding=embeddings
     )
     embedded_query = embeddings.embed_query("foo")
-    output = docsearch.max_marginal_relevance_search_by_vector_with_scores(embedded_query, k=1)
+    output = docsearch.max_marginal_relevance_search_by_vector_with_scores(
+        embedded_query, k=1
+    )
     assert output == [(Document(page_content="foo"), 0.0)]
 
 
