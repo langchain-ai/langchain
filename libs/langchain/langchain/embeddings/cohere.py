@@ -27,6 +27,17 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """Cohere async client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
+    input_type: str = "search_document"
+    """
+    This applies to embed v3 models only and is required by them.
+
+    input_type="search_document": Use this for texts (documents) you want to store in your vector database
+    input_type="search_query": Use this for search queries to find the most relevant documents in your vector database
+    input_type="classification": Use this if you use the embeddings as an input for a classification system
+    input_type="clustering": Use this if you use the embeddings for text clustering
+
+    Using these input types ensures the highest possible quality for the respective tasks. If you want to use the embeddings for multiple use cases, we recommend using input_type="search_document".
+    """
 
     truncate: Optional[str] = None
     """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
@@ -87,7 +98,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         embeddings = self.client.embed(
-            model=self.model, texts=texts, truncate=self.truncate
+            model=self.model, texts=texts, truncate=self.truncate, input_type=self.input_type
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
@@ -101,7 +112,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         embeddings = await self.async_client.embed(
-            model=self.model, texts=texts, truncate=self.truncate
+            model=self.model, texts=texts, truncate=self.truncate, input_type=self.input_type
         )
         return [list(map(float, e)) for e in embeddings.embeddings]
 
