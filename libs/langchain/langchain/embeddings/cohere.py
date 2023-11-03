@@ -98,7 +98,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         embeddings = self.client.embed(
-            model=self.model, texts=texts, truncate=self.truncate, input_type=self.input_type
+            model=self.model,
+            texts=texts,
+            truncate=self.truncate,
+            input_type=self.input_type,
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
@@ -112,7 +115,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         embeddings = await self.async_client.embed(
-            model=self.model, texts=texts, truncate=self.truncate, input_type=self.input_type
+            model=self.model,
+            texts=texts,
+            truncate=self.truncate,
+            input_type=self.input_type,
         )
         return [list(map(float, e)) for e in embeddings.embeddings]
 
