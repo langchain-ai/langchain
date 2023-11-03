@@ -18,7 +18,7 @@ from langchain.schema.runnable import (
 )
 from langchain.schema.runnable.utils import ConfigurableFieldSingleOption
 from langchain.vectorstores.zep import CollectionConfig, ZepVectorStore
-from pydantic import BaseModel, Field
+from langchain.pydantic_v1 import BaseModel, Field
 
 ZEP_API_URL = os.environ.get("ZEP_API_URL", "http://localhost:8000")
 ZEP_API_KEY = os.environ.get("ZEP_API_KEY", None)
