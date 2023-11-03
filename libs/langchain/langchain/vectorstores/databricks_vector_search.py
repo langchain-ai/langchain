@@ -31,7 +31,7 @@ class DatabricksVectorSearch(VectorStore):
         columns: Optional[
             List[str]
         ] = None,  # list of column names to get when doing the search
-        embeddings: Optional[Embeddings] = None,
+        embedding: Optional[Embeddings] = None,
         **kwargs: Any,
     ):
         try:
@@ -55,8 +55,7 @@ class DatabricksVectorSearch(VectorStore):
         )
         self.index_details = self.index.describe()
 
-        # TODO: for delta-sync index with managed embedding, we can get source column from index_details
-        # If customer set source_column, we should validate that it is equal to the source column in index_details
+        # text_column
         if self._is_delta_sync_index() and self._is_managed_embedding():
             if text_column is not None:
                 assert (
@@ -81,16 +80,16 @@ class DatabricksVectorSearch(VectorStore):
 
         # embedding model
         if not self._is_delta_sync_index() or not self._is_managed_embedding():
-            if not embeddings:
+            if not embedding:
                 raise ValueError("An embedding function is required for this index.")
             # TODO: validate embedding dimension
-            self._embedding = embeddings
+            self._embedding = embedding
 
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
+        ids: Optional[List[Any]] = None,
         **kwargs: Any,
     ) -> List[str]:
         return self._add(texts=texts, metadatas=metadatas, ids=ids, **kwargs)
@@ -99,7 +98,7 @@ class DatabricksVectorSearch(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         return self.embeddings
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+    def delete(self, ids: Optional[List[Any]] = None, **kwargs: Any) -> Optional[bool]:
         self.index.delete(primary_keys=ids)
         return True
 
@@ -122,7 +121,7 @@ class DatabricksVectorSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         endpoint_name: Optional[str] = None,  # required
         index_name: Optional[str] = None,  # required
-        ids: Optional[List[str]] = None,
+        ids: Optional[List[Any]] = None,
         id_column: Optional[str] = None,  # required
         dimension: Optional[int] = None,
         text_column: Optional[str] = None,
@@ -135,6 +134,7 @@ class DatabricksVectorSearch(VectorStore):
             raise ValueError("endpoint_name is required.")
         if not index_name:
             raise ValueError("index_name is required.")
+        # TODO: validate index does not exist
         # TODO: check index_name 3-level format
         if not id_column:
             raise ValueError("id_column is required.")
@@ -217,7 +217,7 @@ class DatabricksVectorSearch(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
+        ids: Optional[List[Any]] = None,
         **kwargs: Any,
     ):
         if self._is_delta_sync_index():
