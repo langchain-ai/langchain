@@ -1,6 +1,12 @@
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Neo4jVector
 
+# Typical RAG retriever
+
+typical_rag = Neo4jVector.from_existing_index(
+    OpenAIEmbeddings(), index_name="typical_rag"
+)
+
 # Parent retriever
 
 parent_query = """

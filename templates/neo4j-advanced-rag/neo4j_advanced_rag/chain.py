@@ -10,6 +10,7 @@ from neo4j_advanced_rag.retrievers import (
     hypothetic_question_vectorstore,
     parent_vectorstore,
     summary_vectorstore,
+    typical_rag,
 )
 
 template = """Answer the question based only on the following context:
@@ -21,11 +22,12 @@ prompt = ChatPromptTemplate.from_template(template)
 
 model = ChatOpenAI()
 
-retriever = summary_vectorstore.as_retriever().configurable_alternatives(
+retriever = typical_rag.as_retriever().configurable_alternatives(
     ConfigurableField(id="strategy"),
-    default_key="summary",
-    parent_document=parent_vectorstore.as_retriever(),
+    default_key="typical_rag",
+    parent_strategy=parent_vectorstore.as_retriever(),
     hypothetical_questions=hypothetic_question_vectorstore.as_retriever(),
+    summary_strategy=summary_vectorstore.as_retriever(),
 )
 
 chain = (

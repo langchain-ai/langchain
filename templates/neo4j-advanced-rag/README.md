@@ -1,8 +1,20 @@
 # neo4j-advanced-rag
 
-This template allows you to balance precise embeddings and context retention by splitting documents into smaller chunks and retrieving their original or larger text information. 
+This template allows you to balance precise embeddings and context retention by implementing advanced retrieval strategies.
 
-Using a Neo4j vector index, the package queries child nodes using vector similarity search and retrieves the corresponding parent's text by defining an appropriate `retrieval_query` parameter.
+## Strategies
+
+1. **Typical RAG**:
+   - Traditional method where the exact data indexed is the data retrieved.
+2. **Parent retriever**:
+   - Instead of indexing entire documents, data is divided into smaller chunks, referred to as Parent and Child documents.
+   - Child documents are indexed for better representation of specific concepts, while parent documents is retrieved to ensure context retention.
+3. **Hypothetical Questions**:
+     - Documents are processed to determine potential questions they might answer.
+     - These questions are then indexed for better representation of specific concepts, while parent documents are retrieved to ensure context retention.
+4. **Summaries**:
+     - Instead of indexing the entire document, a summary of the document is created and indexed.
+     - Similarly, the parent document is retrieved in a RAG application.
 
 ## Environment Setup
 
@@ -21,8 +33,10 @@ If you want to populate the DB with some example data, you can run `python inges
 The script process and stores sections of the text from the file `dune.txt` into a Neo4j graph database.
 First, the text is divided into larger chunks ("parents") and then further subdivided into smaller chunks ("children"), where both parent and child chunks overlap slightly to maintain context.
 After storing these chunks in the database, embeddings for the child nodes are computed using OpenAI's embeddings and stored back in the graph for future retrieval or analysis.
-Additionally, a vector index named `retrieval` is created for efficient querying of these embeddings.
+For every parent node, hypothetical questions and summaries are generated, embedded, and added to the database. 
+Additionally, a vector index for each retrieval strategy is created for efficient querying of these embeddings.
 
+*Note that ingestion can take a minute or two due to LLMs velocity of generating hypothetical questions and summaries.*
 
 ## Usage
 

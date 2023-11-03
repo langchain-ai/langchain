@@ -9,6 +9,7 @@ from langchain.graphs import Neo4jGraph
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.text_splitter import TokenTextSplitter
+from neo4j.exceptions import ClientError
 
 txt_path = Path(__file__).parent / "dune.txt"
 
@@ -33,6 +34,7 @@ for i, parent in enumerate(parent_documents):
     params = {
         "parent_text": parent.page_content,
         "parent_id": i,
+        "parent_embedding": embeddings.embed_query(parent.page_content),
         "children": [
             {
                 "text": c.page_content,
@@ -47,6 +49,9 @@ for i, parent in enumerate(parent_documents):
         """
     MERGE (p:Parent {id: $parent_id})
     SET p.text = $parent_text
+    WITH p
+    CALL db.create.setVectorProperty(p, 'embedding', $parent_embedding)
+    YIELD node
     WITH p 
     UNWIND $children AS child
     MERGE (c:Child {id: child.id})
@@ -59,14 +64,23 @@ for i, parent in enumerate(parent_documents):
     """,
         params,
     )
-    # Create vector index index
+    # Create vector index for child
     try:
         graph.query(
             "CALL db.index.vector.createNodeIndex('parent_document', "
             "'Child', 'embedding', $dimension, 'cosine')",
             {"dimension": embedding_dimension},
         )
-    except:  # already exists
+    except ClientError:  # already exists
+        pass
+    # Create vector index for parents
+    try:
+        graph.query(
+            "CALL db.index.vector.createNodeIndex('typical_rag', "
+            "'Parent', 'embedding', $dimension, 'cosine')",
+            {"dimension": embedding_dimension},
+        )
+    except ClientError:  # already exists
         pass
 # Ingest hypothethical questions
 
@@ -76,7 +90,9 @@ class Questions(BaseModel):
 
     questions: List[str] = Field(
         ...,
-        description="Generated hypothetical questions based on the information from the text",
+        description=(
+            "Generated hypothetical questions based on " "the information from the text"
+        ),
     )
 
 
@@ -85,13 +101,17 @@ questions_prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             (
-                "You are generating hypothetical questions based on the information found in the text."
-                "Make sure to provide full context in the generated questions."
+                "You are generating hypothetical questions based on the information "
+                "found in the text. Make sure to provide full context in the generated "
+                "questions."
             ),
         ),
         (
             "human",
-            "Use the given format to generate hypothetical questions from the following input: {input}",
+            (
+                "Use the given format to generate hypothetical questions from the "
+                "following input: {input}"
+            ),
         ),
     ]
 )
@@ -123,14 +143,14 @@ for i, parent in enumerate(parent_documents):
     """,
         params,
     )
-    # Create vector index index
+    # Create vector index
     try:
         graph.query(
             "CALL db.index.vector.createNodeIndex('hypothetical_questions', "
             "'Question', 'embedding', $dimension, 'cosine')",
             {"dimension": embedding_dimension},
         )
-    except:  # already exists
+    except ClientError:  # already exists
         pass
 
 # Ingest summaries
@@ -139,11 +159,14 @@ summary_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are generating concise and accurate summaries based on the information found in the text.",
+            (
+                "You are generating concise and accurate summaries based on the "
+                "information found in the text."
+            ),
         ),
         (
             "human",
-            "Generate a summary of the following input: {question}\nSummary:",
+            ("Generate a summary of the following input: {question}\n" "Summary:"),
         ),
     ]
 )
@@ -169,12 +192,12 @@ for i, parent in enumerate(parent_documents):
     """,
         params,
     )
-    # Create vector index index
+    # Create vector index
     try:
         graph.query(
             "CALL db.index.vector.createNodeIndex('summary', "
             "'Summary', 'embedding', $dimension, 'cosine')",
             {"dimension": embedding_dimension},
         )
-    except:  # already exists
+    except ClientError:  # already exists
         pass
