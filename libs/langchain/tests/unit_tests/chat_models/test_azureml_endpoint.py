@@ -32,7 +32,6 @@ def api_passed_via_constructor_fixture() -> AzureMLChatOnlineEndpoint:
     return azure_chat
 
 
-# @pytest.mark.requires("azureml_chat_endpoint")
 @pytest.mark.parametrize(
     "fixture_name",
     ["api_passed_via_constructor_fixture", "api_passed_via_environment_fixture"],
