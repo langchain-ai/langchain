@@ -5,11 +5,89 @@ This template performs RAG using MongoDB and OpenAI.
 
 ## Environment Setup
 
-The environment variables that need to be set are:
+### MongoDB Setup
 
-Set the `MONGO_URI` for connecting to MongoDB Atlas Vector Search.
+First, we need to setup our MongoDB account and ingest data.
+We will first follow the standard MongoDB Atlas setup instructions [here](https://www.mongodb.com/docs/atlas/getting-started/).
 
-Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+1. Create an account (if not already done)
+2. Create a new project (if not already done)
+3. Locate your MongoDB URI.
+
+This can be done by going to the deployement overview page and connecting to you database
+
+![connect.png](_images/connect.png)
+
+We then look at the drivers available
+
+![driver.png](_images/driver.png)
+
+Among which we will see our URI listed
+
+![uri.png](_images/uri.png)
+
+Let's then set that as an environment variable locally:
+
+```shell
+export MONGO_URI=...
+```
+
+4. Let's also set an environment variable for OpenAI (which we will use as an LLM)
+
+```shell
+export OPENAI_API_KEY=...
+```
+
+5. Let's now ingest some data! We can do that by running the code in `ingest.py`, eg:
+
+```shell
+python ingest.py
+```
+
+Note that you can (and should!) change this to ingest data of your choice
+
+6. We now need to set up a vector index on our data.
+
+We can first connect to the cluster where our database lives
+
+![cluster.png](_images%2Fcluster.png)
+
+We can then navigate to where all our collections are listed
+
+![collections.png](_images%2Fcollections.png)
+
+We can then find the collection we want and look at the search indexes for that collection
+
+![search-indexes.png](_images%2Fsearch-indexes.png)
+
+That should likely be empty, and we want to create a new one:
+
+![create.png](_images%2Fcreate.png)
+
+We will use the JSON editor to create it
+
+![json_editor.png](_images%2Fjson_editor.png)
+
+And we will paste the following JSON in:
+
+```text
+ {
+   "mappings": {
+     "dynamic": true,
+     "fields": {
+       "embedding": {
+         "dimensions": 1536,
+         "similarity": "cosine",
+         "type": "knnVector"
+       }
+     }
+   }
+ }
+```
+![json.png](_images%2Fjson.png)
+
+From there, hit "Next" and then "Create Search Index". It will take a little bit but you should then have an index over your data!
+
 
 ## Usage
 
