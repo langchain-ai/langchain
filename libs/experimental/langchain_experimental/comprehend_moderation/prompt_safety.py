@@ -1,6 +1,5 @@
 import asyncio
-import warnings
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from langchain_experimental.comprehend_moderation.base_moderation_exceptions import (
     ModerationPromptSafetyError,
@@ -30,9 +29,7 @@ class ComprehendPromptSafety:
         prompt_safety_endpoint = "document-classifier-endpoint/prompt-safety"
         return f"arn:aws:{service}:{region_name}:aws:{prompt_safety_endpoint}"
 
-    def validate(
-        self, prompt_value: str, config: Optional[Dict[str, Any]] = None
-    ) -> str:
+    def validate(self, prompt_value: str, config: Any = None) -> str:
         """
         Check and validate the safety of the given prompt text.
 
@@ -58,19 +55,9 @@ class ComprehendPromptSafety:
             config = {"threshold": 0.7}
             checked_prompt = check_prompt_safety(comprehend_client, prompt_text, config)
         """
-        from langchain_experimental.comprehend_moderation.base_moderation_enums import (
-            BaseModerationActions,
-        )
 
         threshold = config.get("threshold")
         unsafe_prompt = False
-
-        if action == BaseModerationActions.ALLOW:
-            warnings.warn(
-                "You have allowed content with Harmful content."
-                "Defaulting to STOP action..."
-            )
-            action = BaseModerationActions.STOP
 
         endpoint_arn = self._get_arn()
         response = self.client.classify_document(
