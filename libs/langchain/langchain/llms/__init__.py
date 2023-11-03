@@ -450,6 +450,12 @@ def _import_titan_takeoff_pro() -> Any:
     return TitanTakeoffPro
 
 
+def _import_trt_llm() -> Any:
+    from langchain.llms.trt_llm import TritonRTLLM
+    
+    return TritonRTLLM
+
+
 def _import_together() -> Any:
     from langchain.llms.together import Together
 
@@ -745,6 +751,7 @@ __all__ = [
     "TitanTakeoff",
     "TitanTakeoffPro",
     "Tongyi",
+    "TritonRTLLM",
     "VertexAI",
     "VertexAIModelGarden",
     "VLLM",
@@ -823,6 +830,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "tongyi": _import_tongyi,
         "titan_takeoff": _import_titan_takeoff,
         "titan_takeoff_pro": _import_titan_takeoff_pro,
+        "trt_llm": _import_trt_llm,
         "vertexai": _import_vertex,
         "vertexai_model_garden": _import_vertex_model_garden,
         "openllm": _import_openllm,
