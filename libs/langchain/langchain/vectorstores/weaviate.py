@@ -461,7 +461,7 @@ class Weaviate(VectorStore):
         index_name = index_name or f"LangChain_{uuid4().hex}"
         schema = _default_schema(index_name)
         # check whether the index already exists
-        if not client.schema.contains(schema):
+        if not client.schema.exists(index_name):
             client.schema.create_class(schema)
 
         embeddings = embedding.embed_documents(texts) if embedding else None

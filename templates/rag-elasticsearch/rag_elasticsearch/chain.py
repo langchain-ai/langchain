@@ -1,12 +1,13 @@
 from operator import itemgetter
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.schema import format_document
+from langchain.schema import BaseMessage, format_document
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableMap, RunnablePassthrough
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
+from pydantic import BaseModel, Field
 
 from .connection import es_connection_details
 from .prompts import CONDENSE_QUESTION_PROMPT, DOCUMENT_PROMPT, LLM_CONTEXT_PROMPT
@@ -41,6 +42,13 @@ def _format_chat_history(chat_history: List[Tuple]) -> str:
     return buffer
 
 
+class ChainInput(BaseModel):
+    chat_history: Optional[List[BaseMessage]] = Field(
+        description="Previous chat messages."
+    )
+    question: str = Field(..., description="The question to answer.")
+
+
 _inputs = RunnableMap(
     standalone_question=RunnablePassthrough.assign(
         chat_history=lambda x: _format_chat_history(x["chat_history"])
@@ -56,3 +64,5 @@ _context = {
 }
 
 chain = _inputs | _context | LLM_CONTEXT_PROMPT | llm | StrOutputParser()
+
+chain = chain.with_types(input_type=ChainInput)
