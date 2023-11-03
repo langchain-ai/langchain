@@ -478,6 +478,14 @@ class Chroma(VectorStore):
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
 
+    def get_ids(self) -> List[str]:
+        """Returns all ids od Documents that are currently present in the collection
+
+        Returns:
+            List[str]: list of all ids currently present in the collection
+        """
+        self.get()["ids"]
+
     def get(
         self,
         ids: Optional[OneOrMany[ID]] = None,
