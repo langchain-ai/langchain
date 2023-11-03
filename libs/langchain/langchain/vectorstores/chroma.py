@@ -484,7 +484,7 @@ class Chroma(VectorStore):
         Returns:
             List[str]: list of all ids currently present in the collection
         """
-        self.get()["ids"]
+        return self.get()["ids"]
 
     def get(
         self,
