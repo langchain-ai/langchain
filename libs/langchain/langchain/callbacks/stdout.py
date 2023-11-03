@@ -13,24 +13,6 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Initialize callback handler."""
         self.color = color
 
-    def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
-    ) -> None:
-        """Print out the prompts."""
-        pass
-
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Do nothing."""
-        pass
-
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        """Do nothing."""
-        pass
-
-    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
-        """Do nothing."""
-        pass
-
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
@@ -41,19 +23,6 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
         print("\n\033[1m> Finished chain.\033[0m")
-
-    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
-        """Do nothing."""
-        pass
-
-    def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        **kwargs: Any,
-    ) -> None:
-        """Do nothing."""
-        pass
 
     def on_agent_action(
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
@@ -75,10 +44,6 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         print_text(output, color=color or self.color)
         if llm_prefix is not None:
             print_text(f"\n{llm_prefix}")
-
-    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
-        """Do nothing."""
-        pass
 
     def on_text(
         self,
