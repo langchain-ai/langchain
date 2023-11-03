@@ -128,7 +128,7 @@ def tracing_enabled(
         tracing_callback_var.set(cb)
         yield session
     finally:
-        tracing_v2_callback_var.set(None)
+        tracing_callback_var.set(None)
 
 
 @contextmanager
