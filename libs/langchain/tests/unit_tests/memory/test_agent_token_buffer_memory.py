@@ -110,3 +110,17 @@ def test_memory_is_kept_trimmed(
     # expect only last two messages
     assert memory.buffer[0].content == "i2"
     assert memory.buffer[1].content == "o2"
+
+
+def test_memory_clear(chat_history: ChatMessageHistory, llm: BaseChatModel) -> None:
+    memory = AgentTokenBufferMemory(
+        chat_memory=chat_history,
+        max_token_limit=4,
+        llm=llm,
+    )
+
+    assert len(memory.buffer) > 0
+
+    memory.clear()
+    # expect only two messages,2 characters/tokens each
+    assert len(memory.buffer) == 0

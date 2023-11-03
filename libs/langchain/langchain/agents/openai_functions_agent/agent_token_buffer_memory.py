@@ -85,6 +85,10 @@ class AgentTokenBufferMemory(BaseChatMemory):
             self._add_message(msg)
         self._add_ai_message(output_str)
 
+    def clear(self) -> None:
+        """Clear buffer contents but keep history intact."""
+        self._chat_buffer.clear()
+
     def _add_user_message(self, message: str) -> None:
         """Convenience method for adding a human message string to memory and history.
 
