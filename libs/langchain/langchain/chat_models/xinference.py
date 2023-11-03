@@ -6,6 +6,7 @@ import contextvars
 import functools
 import logging
 import types
+import typing
 from typing import (
     Any,
     AsyncIterator,
@@ -52,7 +53,7 @@ from langchain.utils import get_pydantic_field_names
 logger = logging.getLogger(__name__)
 
 
-async def to_thread(func, /, *args, **kwargs):
+async def to_thread(func: Callable, /, *args: Any, **kwargs: Any) -> Any:
     """
     Copy from CPython for compatible with Python < 3.9
 
@@ -71,12 +72,12 @@ async def to_thread(func, /, *args, **kwargs):
     return await loop.run_in_executor(None, func_call)
 
 
-async def _to_async_iter(sync_iter):
+async def _to_async_iter(sync_iter: typing.Iterable) -> AsyncIterator:
     """Convert a sync iterator to an async iterator."""
     it = iter(sync_iter)
     done = object()
 
-    def safe_next():
+    def safe_next() -> Any:
         # Converts StopIteration to a sentinel value to avoid:
         # TypeError: StopIteration interacts badly with generators
         # and cannot be raised into a Future
@@ -172,7 +173,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    role = _dict.get("role")
+    role = _dict.get("role") or ""
     content = _dict.get("content") or ""
     # TODO(codingl2k1): support function call
     if _dict.get("function_call"):
@@ -194,7 +195,7 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-def _openai_kwargs_to_xinference_kwargs(**kwargs):
+def _openai_kwargs_to_xinference_kwargs(**kwargs: Any) -> Dict:
     messages = kwargs.pop("messages")
     prompt_message = messages.pop()
     return {
@@ -341,7 +342,7 @@ class ChatXinference(BaseChatModel):
         return {"token_usage": overall_token_usage, "model_name": self.model_uid}
 
     @staticmethod
-    def _get_merge_kwargs(kwargs1, kwargs2):
+    def _get_merge_kwargs(kwargs1: Dict, kwargs2: Dict) -> Dict:
         generate_config1 = kwargs1.get("generate_config", {})
         generate_config2 = kwargs2.get("generate_config", {})
         return {
@@ -422,7 +423,7 @@ class ChatXinference(BaseChatModel):
         stop: Optional[List[str]],
         generate_config: Optional[Dict],
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        if stop is not None:
+        if stop is not None and generate_config is not None:
             if "stop" in generate_config:
                 raise ValueError("`stop` found in both the input and default params.")
             generate_config["stop"] = stop
