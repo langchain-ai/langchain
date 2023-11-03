@@ -11,6 +11,9 @@ langchain = ">=0.0.325"
 duckduckgo-search = "^3.9.3"
 openai = "^0.28.1"
 
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+
 [tool.langserve]
 export_module = "rewrite_retrieve_read.chain"
 export_attr = "chain"
