@@ -29,7 +29,7 @@ langchain app add pirate-speak
 
 And add the following code to your `server.py` file:
 ```python
-from pirate_speak import chain as pirate_speak_chain
+from pirate_speak.chain import chain as pirate_speak_chain
 
 add_routes(app, pirate_speak_chain, path="/pirate-speak")
 ```

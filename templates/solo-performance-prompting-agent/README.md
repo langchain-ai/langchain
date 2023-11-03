@@ -32,7 +32,7 @@ langchain app add solo-performance-prompting-agent
 
 And add the following code to your `server.py` file:
 ```python
-from solo_performance_prompting_agent import chain as solo_performance_prompting_agent_chain
+from solo_performance_prompting_agent.agent import agent_executor as solo_performance_prompting_agent_chain
 
 add_routes(app, solo_performance_prompting_agent_chain, path="/solo-performance-prompting-agent")
 ```

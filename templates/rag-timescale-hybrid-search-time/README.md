@@ -64,7 +64,7 @@ langchain app add rag-timescale-hybrid-search-time
 
 And add the following code to your `server.py` file:
 ```python
-from rag_timescale_hybrid_search import chain as rag_timescale_hybrid_search_chain
+from rag_timescale_hybrid_search.chain import chain as rag_timescale_hybrid_search_chain
 
 add_routes(app, rag_timescale_hybrid_search_chain, path="/rag-timescale-hybrid-search")
 ```
