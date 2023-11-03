@@ -19,7 +19,7 @@ class PandasDataFrameOutputParser(BaseOutputParser):
 
         raise TypeError("Wrong type for 'dataframe', must be subclass of Pandas DataFrame (pd.DataFrame)")
     
-    def parse_array(self, array: str, original_request_params: str) -> List[int]:
+    def parse_array(self, array: str, original_request_params: str) -> Tuple[List[int], str]:
         parsed_array = []
 
         # Check if the format is [1,3,5]
