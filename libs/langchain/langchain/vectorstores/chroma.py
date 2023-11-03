@@ -469,7 +469,7 @@ class Chroma(VectorStore):
             **kwargs,
         )
 
-        return [doc for doc, score in results_with_scores]
+        return [doc for doc, _ in results_with_scores]
 
     def max_marginal_relevance_search(
         self,
