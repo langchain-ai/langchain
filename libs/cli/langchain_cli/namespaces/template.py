@@ -67,6 +67,11 @@ def new(
     package_dir = destination_dir / module_name
     shutil.move(destination_dir / "package_template", package_dir)
 
+    # update init
+    init = package_dir / "__init__.py"
+    init_contents = init.read_text()
+    init.write_text(init_contents.replace("__module_name__", module_name))
+
     # replace readme
     readme = destination_dir / "README.md"
     readme_contents = readme.read_text()
