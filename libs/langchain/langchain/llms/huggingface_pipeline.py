@@ -10,8 +10,6 @@ from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra
 from langchain.schema import Generation, LLMResult
 
-DEFAULT_MODEL_ID = "gpt2"
-DEFAULT_TASK = "text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 DEFAULT_BATCH_SIZE = 4
 
@@ -50,7 +48,7 @@ class HuggingFacePipeline(BaseLLM):
     """
 
     pipeline: Any  #: :meta private:
-    model_id: str = DEFAULT_MODEL_ID
+    model_id: Optional[str] = None
     """Model name to use."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
@@ -58,6 +56,23 @@ class HuggingFacePipeline(BaseLLM):
     """Keyword arguments passed to the pipeline."""
     batch_size: int = DEFAULT_BATCH_SIZE
     """Batch size to use when passing multiple documents to generate."""
+
+    def __init__(self, **data: Any):
+        """Initialize parameters if pipeline passed in directly."""
+
+        super().__init__(**data)
+        if self.pipeline is not None:
+            try:
+                self.model_id = (
+                    self.pipeline.model.name_or_path if self.pipeline.model else None
+                )
+                self.pipeline_kwargs = (
+                    self.pipeline._forward_params
+                    if self.pipeline._forward_params
+                    else None
+                )
+            except AttributeError:
+                raise ValueError("Pipeline must be a valid transformers pipeline.")
 
     class Config:
         """Configuration for this pydantic object."""
