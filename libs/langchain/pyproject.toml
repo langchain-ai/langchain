@@ -316,6 +316,7 @@ cli = [
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
 extended_testing = [
+ "azureml-chat-endpoint",
  "aleph-alpha-client",
  "aiosqlite",
  "assemblyai",
