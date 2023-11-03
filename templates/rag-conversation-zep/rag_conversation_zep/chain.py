@@ -6,26 +6,23 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AIMessage, HumanMessage, format_document
+from langchain.schema.document import Document
+from langchain.schema.messages import BaseMessage
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import (
+    ConfigurableField,
     RunnableBranch,
     RunnableLambda,
     RunnableMap,
     RunnablePassthrough,
 )
+from langchain.schema.runnable.utils import ConfigurableFieldSingleOption
 from langchain.vectorstores.zep import CollectionConfig, ZepVectorStore
 from pydantic import BaseModel, Field
 
 ZEP_API_URL = os.environ.get("ZEP_API_URL", "http://localhost:8000")
 ZEP_API_KEY = os.environ.get("ZEP_API_KEY", None)
 ZEP_COLLECTION_NAME = os.environ.get("ZEP_COLLECTION", "langchaintest")
-
-# Zep offers native, hardware-accelerated MMR. Enabling this will improve
-# the diversity of results, but may also reduce relevance. You can tune
-# the lambda parameter to control the tradeoff between relevance and diversity.
-# Enabling is a good default.
-ZEP_MMR = True
-ZEP_MMR_LAMBDA = 0.5
 
 collection_config = CollectionConfig(
     name=ZEP_COLLECTION_NAME,
@@ -35,34 +32,6 @@ collection_config = CollectionConfig(
     is_auto_embedded=True,
 )
 
-
-# ## Ingest code - you may need to run this the first time
-# # Load
-# from langchain.document_loaders import WebBaseLoader
-
-# loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
-# data = loader.load()
-
-# # Split
-# from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-# text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
-# all_splits = text_splitter.split_documents(data)
-
-# # Add to vectorDB
-# from langchain.embeddings import FakeEmbeddings
-
-# vectorstore = ZepVectorStore.from_documents(
-#     documents=all_splits,
-#     collection_name=ZEP_COLLECTION_NAME,
-#     config=collection_config,
-#     api_url=ZEP_API_URL,
-#     api_key=ZEP_API_KEY,
-#     embedding=FakeEmbeddings(size=1),
-# )
-# retriever = vectorstore.as_retriever()
-
-
 vectorstore = ZepVectorStore(
     collection_name=ZEP_COLLECTION_NAME,
     config=collection_config,
@@ -70,9 +39,27 @@ vectorstore = ZepVectorStore(
     api_key=ZEP_API_KEY,
     embedding=None,
 )
-retriever = vectorstore.as_retriever(
-    search_type="mmr" if ZEP_MMR else "similarity",
-    search_kwargs={"k": 4, "lambda_mult": ZEP_MMR_LAMBDA},
+
+# Zep offers native, hardware-accelerated MMR. Enabling this will improve
+# the diversity of results, but may also reduce relevance. You can tune
+# the lambda parameter to control the tradeoff between relevance and diversity.
+# Enabling is a good default.
+retriever = vectorstore.as_retriever().configurable_fields(
+    search_type=ConfigurableFieldSingleOption(
+        id="search_type",
+        options={"Similarity": "similarity", "Similarity with MMR Reranking": "mmr"},
+        default="mmr",
+        name="Search Type",
+        description="Type of search to perform: 'similarity' or 'mmr'",
+    ),
+    search_kwargs=ConfigurableField(
+        id="search_kwargs",
+        name="Search kwargs",
+        description=(
+            "Specify 'k' for number of results to return and 'lambda_mult' for tuning"
+            " MMR relevance vs diversity."
+        ),
+    ),
 )
 
 # Condense a chat history and follow-up question into a standalone question
@@ -101,18 +88,43 @@ DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}"
 
 
 def _combine_documents(
-    docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, document_separator="\n\n"
+    docs: List[Document],
+    document_prompt: PromptTemplate = DEFAULT_DOCUMENT_PROMPT,
+    document_separator: str = "\n\n",
 ):
     doc_strings = [format_document(doc, document_prompt) for doc in docs]
     return document_separator.join(doc_strings)
 
 
-def _format_chat_history(chat_history: List[Tuple[str, str]]) -> List:
-    buffer = []
+def _format_chat_history(chat_history: List[Tuple[str, str]]) -> List[BaseMessage]:
+    buffer: List[BaseMessage] = []
     for human, ai in chat_history:
         buffer.append(HumanMessage(content=human))
         buffer.append(AIMessage(content=ai))
     return buffer
+
+
+_condense_chain = (
+    RunnablePassthrough.assign(
+        chat_history=lambda x: _format_chat_history(x["chat_history"])
+    )
+    | CONDENSE_QUESTION_PROMPT
+    | ChatOpenAI(temperature=0)
+    | StrOutputParser()
+)
+
+_search_query = RunnableBranch(
+    # If input includes chat_history, we condense it with the follow-up question
+    (
+        RunnableLambda(lambda x: bool(x.get("chat_history"))).with_config(
+            run_name="HasChatHistoryCheck"
+        ),
+        # Condense follow-up question and chat into a standalone_question
+        _condense_chain,
+    ),
+    # Else, we have no chat history, so just pass through the question
+    RunnableLambda(itemgetter("question")),
+)
 
 
 # User input
@@ -120,23 +132,6 @@ class ChatHistory(BaseModel):
     chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat"}})
     question: str
 
-
-_search_query = RunnableBranch(
-    # If input includes chat_history, we condense it with the follow-up question
-    (
-        RunnableLambda(lambda x: bool(x.get("chat_history"))).with_config(
-            run_name="HasChatHistoryCheck"
-        ),  # Condense follow-up question and chat into a standalone_question
-        RunnablePassthrough.assign(
-            chat_history=lambda x: _format_chat_history(x["chat_history"])
-        )
-        | CONDENSE_QUESTION_PROMPT
-        | ChatOpenAI(temperature=0)
-        | StrOutputParser(),
-    ),
-    # Else, we have no chat history, so just pass through the question
-    RunnableLambda(itemgetter("question")),
-)
 
 _inputs = RunnableMap(
     {
