@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 import numpy as np
+
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
 
