@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 
 import pytest
 
@@ -15,10 +15,10 @@ from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
 class FakeMessagesListChatModelWithCharCounting(FakeMessagesListChatModel):
     """Modifies token counting to count characters of text for easier testing"""
 
-    def __init__(self, responses: list[BaseMessage], **kwargs: Any) -> None:
+    def __init__(self, responses: List[BaseMessage], **kwargs: Any) -> None:
         super().__init__(responses=responses, **kwargs)
 
-    def get_token_ids(self, text: str) -> list[int]:
+    def get_token_ids(self, text: str) -> List[int]:
         """Return the ordered ids of the characters in text.
         This is to simplify token counting for testing.
 
@@ -31,7 +31,7 @@ class FakeMessagesListChatModelWithCharCounting(FakeMessagesListChatModel):
         """
         return list(range(len(text)))
 
-    def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Get the number of charcters in the messages.
         This is to simplify token counting.
 
@@ -47,7 +47,7 @@ class FakeMessagesListChatModelWithCharCounting(FakeMessagesListChatModel):
                 self.get_num_tokens(
                     get_buffer_string([m], ai_prefix="", human_prefix="")
                 )
-                - 2
+                - 2  # compensate for ': ' prefix added to the message
                 for m in messages
             ]
         )

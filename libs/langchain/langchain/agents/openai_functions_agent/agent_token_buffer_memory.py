@@ -1,5 +1,5 @@
 """Memory used to save agent output AND intermediate steps."""
-from typing import Any
+from typing import Any, Dict, List
 
 from langchain.agents.format_scratchpad.openai_functions import (
     format_to_openai_functions,
@@ -29,7 +29,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
     output_key: str = "output"
     intermediate_steps_key: str = "intermediate_steps"
 
-    _chat_buffer: list[BaseMessage] = PrivateAttr(default_factory=list)
+    _chat_buffer: List[BaseMessage] = PrivateAttr(default_factory=list)
     """The local chat buffer that holds latest messages whose total token size
     does not exceed max_token_limit"""
 
@@ -50,19 +50,19 @@ class AgentTokenBufferMemory(BaseChatMemory):
         self._chat_buffer = list(reversed(temp_chat_buffer))
 
     @property
-    def buffer(self) -> list[BaseMessage]:
+    def buffer(self) -> List[BaseMessage]:
         """Message buffer for the chat."""
         return self._chat_buffer
 
     @property
-    def memory_variables(self) -> list[str]:
+    def memory_variables(self) -> List[str]:
         """Will always return list of memory variables.
 
         :meta private:
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
         if self.return_messages:
             final_buffer: Any = self.buffer
@@ -74,7 +74,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
             )
         return {self.memory_key: final_buffer}
 
-    def save_context(self, inputs: dict[str, Any], outputs: dict[str, Any]) -> None:
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, Any]) -> None:
         """Save context from this conversation to buffer, making sure the total
         buffer size does not go over specified token limit"""
 
