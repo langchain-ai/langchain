@@ -7,13 +7,13 @@ from langchain.llms import BaseLLM
 from langchain.llms.openai import OpenAI
 from langchain.pydantic_v1 import BaseModel
 from langchain.retrievers import SelfQueryRetriever
-from langchain.schema import Document
+from langchain.schema import Document, StrOutputParser
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.vectorstores.qdrant import Qdrant
 from qdrant_client import QdrantClient
 
-from self_query_qdrant import defaults
+from self_query_qdrant import defaults, helper, prompts
 
 
 class Query(BaseModel):
@@ -58,8 +58,12 @@ def create_chain(
         llm, vectorstore, document_contents, metadata_field_info, verbose=True
     )
 
-    runnable = RunnableParallel({"query": RunnablePassthrough()}) | retriever
-    return runnable.with_types(input_type=Query, output_type=List[Document])
+    context = RunnableParallel(
+        context=retriever | helper.combine_documents,
+        query=RunnablePassthrough(),
+    )
+    pipeline = context | prompts.LLM_CONTEXT_PROMPT | llm | StrOutputParser()
+    return pipeline.with_types(input_type=Query)
 
 
 def initialize(
