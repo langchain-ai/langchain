@@ -30,10 +30,11 @@ class AgentTokenBufferMemory(BaseChatMemory):
     intermediate_steps_key: str = "intermediate_steps"
 
     _chat_buffer: list[BaseMessage] = PrivateAttr(default_factory=list)
-    """The local buffer of size max_token_limit that holds latest messages."""
+    """The local chat buffer that holds latest messages whose total token size
+    does not exceed max_token_limit"""
 
-    def __init__(self, **kw) -> None:
-        super().__init__(**kw)
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
 
         # fill in _chat_buffer with messages from chat_history until it reaches
         # max token limit
@@ -103,7 +104,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
         self._add_message(m)
 
     def _add_message(self, message: BaseMessage) -> None:
-        """Add a Message object to the store.
+        """Add a Message object to the memory and history.
 
         Args:
             message: A BaseMessage object to memory and history.

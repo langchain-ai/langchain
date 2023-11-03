@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from langchain.agents.openai_functions_agent.agent_token_buffer_memory import (
@@ -9,9 +11,12 @@ from langchain.memory.chat_message_histories import ChatMessageHistory
 from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
 
 
+# NOTE;tch: consider factoring it out to separate class if useful outside of this test
 class FakeMessagesListChatModelWithCharCounting(FakeMessagesListChatModel):
-    def __init__(self, responses: list[BaseMessage], *kwargs) -> None:
-        super().__init__(responses=responses, *kwargs)
+    """Modifies token counting to count characters of text for easier testing"""
+
+    def __init__(self, responses: list[BaseMessage], **kwargs: Any) -> None:
+        super().__init__(responses=responses, **kwargs)
 
     def get_token_ids(self, text: str) -> list[int]:
         """Return the ordered ids of the characters in text.
@@ -36,7 +41,7 @@ class FakeMessagesListChatModelWithCharCounting(FakeMessagesListChatModel):
         Returns:
             The sum of the number of charaaters across the messages.
         """
-        # count charcters, remove and compenstate for prefixes
+        # count charcters, remove and compensate for prefixes
         return sum(
             [
                 self.get_num_tokens(
@@ -64,7 +69,9 @@ def llm() -> BaseChatModel:
     return FakeMessagesListChatModelWithCharCounting(responses=[])
 
 
-def test_memory_after_load_is_trimmed(chat_history, llm) -> None:
+def test_memory_after_load_is_trimmed(
+    chat_history: ChatMessageHistory, llm: BaseChatModel
+) -> None:
     memory = AgentTokenBufferMemory(
         chat_memory=chat_history,
         max_token_limit=4,
@@ -80,7 +87,9 @@ def test_memory_after_load_is_trimmed(chat_history, llm) -> None:
     assert memory.buffer[1].content == "h3"
 
 
-def test_memory_is_kept_trimmed(chat_history, llm) -> None:
+def test_memory_is_kept_trimmed(
+    chat_history: ChatMessageHistory, llm: BaseChatModel
+) -> None:
     memory = AgentTokenBufferMemory(
         chat_memory=chat_history,
         max_token_limit=4,
