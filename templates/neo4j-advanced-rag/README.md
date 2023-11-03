@@ -49,20 +49,20 @@ pip install -U "langchain-cli[serve]"
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package neo4j-parent
+langchain app new my-app --package neo4j-advanced-rag
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add neo4j-parent
+langchain app add neo4j-advanced-rag
 ```
 
 And add the following code to your `server.py` file:
 ```python
-from neo4j_parent import chain as neo4j_parent_chain
+from neo4j_advanced_rag import chain as neo4j_advanced_chain
 
-add_routes(app, neo4j_parent_chain, path="/neo4j-parent")
+add_routes(app, neo4j_advanced_chain, path="/neo4j-advanced-rag")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -86,12 +86,12 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/neo4j-parent/playground](http://127.0.0.1:8000/neo4j-parent/playground)  
+We can access the playground at [http://127.0.0.1:8000/neo4j-advanced-rag/playground](http://127.0.0.1:8000/neo4j-advanced-rag/playground)  
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/neo4j-parent")
+runnable = RemoteRunnable("http://localhost:8000/neo4j-advanced-rag")
 ```
