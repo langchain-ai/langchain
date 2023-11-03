@@ -26,7 +26,7 @@ This information can be used to launch a LangServe instance automatically.
 In order to do this, first make sure the CLI is installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 You can then run:
