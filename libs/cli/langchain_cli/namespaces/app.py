@@ -221,7 +221,7 @@ def serve(
     """
 
     # add current dir as first entry of path
-    sys.path.insert(0, str(Path.cwd()))
+    sys.path.append(str(Path.cwd()))
 
     app_str = app if app is not None else "app.server:app"
     host_str = host if host is not None else "127.0.0.1"
