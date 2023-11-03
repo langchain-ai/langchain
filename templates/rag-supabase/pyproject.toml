@@ -14,6 +14,8 @@ openai = "^0.28.1"
 tiktoken = "^0.5.1"
 supabase = "^1.2.0"
 
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
 [tool.poetry.group.dev.dependencies.python-dotenv]
 extras = [
     "cli",
