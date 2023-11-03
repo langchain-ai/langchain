@@ -162,7 +162,7 @@ class TestAstraDB:
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         assert v_store.similarity_search("Ho", k=1)[0].page_content == "Ho"
-        v_store.clear()
+        v_store.delete_collection()
 
         # from_texts
         v_store_2 = AstraDB.from_documents(
@@ -177,7 +177,6 @@ class TestAstraDB:
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         assert v_store_2.similarity_search("Hoi", k=1)[0].page_content == "Hoi"
-        v_store_2.clear()
         # manual collection delete
         v_store_2.delete_collection()
 
