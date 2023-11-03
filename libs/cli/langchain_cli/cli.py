@@ -6,7 +6,7 @@ from typing_extensions import Annotated
 from langchain_cli.namespaces import app as app_namespace
 from langchain_cli.namespaces import template as template_namespace
 
-__version__ = "0.0.13"
+__version__ = "0.0.14"
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(
