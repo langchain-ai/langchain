@@ -1,6 +1,7 @@
 import logging
-import requests
 from typing import Any, Dict, List, Mapping, Optional
+
+import requests
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -45,8 +46,7 @@ class CerebriumAI(LLM):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {
-            field.alias for field in cls.__fields__.values()}
+        all_required_field_names = {field.alias for field in cls.__fields__.values()}
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
@@ -90,15 +90,13 @@ class CerebriumAI(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-
         headers = {
-            'Authorization': self.cerebriumai_api_key,
-            'Content-Type': 'application/json'
+            "Authorization": self.cerebriumai_api_key,
+            "Content-Type": "application/json",
         }
         params = self.model_kwargs or {}
         payload = {"prompt": prompt, **params, **kwargs}
-        response = requests.post(
-            self.endpoint_url, json=payload, headers=headers)
+        response = requests.post(self.endpoint_url, json=payload, headers=headers)
         if response.status_code == 200:
             data = response.json()
             text = data["result"]
