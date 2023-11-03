@@ -2,11 +2,14 @@
 import pytest
 
 from langchain.retrievers.document_compressors.encoded_chain_extract import (
-    SequenceListParser, extract_numbered_sequences, number_sequences)
+    SequenceListParser,
+    extract_numbered_sequences,
+    number_sequences,
+)
 from langchain.schema.output_parser import OutputParserException
 
 
-def test_parser():
+def test_parser() -> None:
     parser = SequenceListParser()
     assert parser.parse("1,2,3") == [1, 2, 3]
     assert parser.parse("1-3") == [1, 2, 3]
@@ -18,7 +21,7 @@ def test_parser():
         assert parser.parse("1,6,a")
 
 
-def test_number_sequences():
+def test_number_sequences() -> None:
     assert number_sequences("foo") == "#|1|# foo"
     assert number_sequences("foo bar") == "#|1|# foo bar"
     assert number_sequences("foo\nbar") == "#|1|# foo\nbar"
@@ -33,7 +36,7 @@ def test_number_sequences():
     )
 
 
-def test_extract_numbered_sequences():
+def test_extract_numbered_sequences() -> None:
     assert extract_numbered_sequences("#|1|# foo", []) == ""
     assert extract_numbered_sequences("#|1|# foo", [1]) == "foo"
     assert extract_numbered_sequences("#|1|# foo", [2]) == ""

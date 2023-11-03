@@ -10,19 +10,20 @@ from typing import Callable, Dict, List, Optional, Sequence
 
 import nltk
 
-from langchain import LLMChain, PromptTemplate
 from langchain.callbacks.manager import Callbacks
-from langchain.retrievers.document_compressors.base import \
-    BaseDocumentCompressor
-from langchain.retrievers.document_compressors.encoded_chain_extract_prompt import \
-    prompt_template
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
+from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
+from langchain.retrievers.document_compressors.encoded_chain_extract_prompt import (
+    prompt_template,
+)
 from langchain.schema import BaseOutputParser, Document, OutputParserException
 from langchain.schema.language_model import BaseLanguageModel
 
 NO_OUTPUT_STR: str = "NO_OUTPUT"
 
 
-class SequenceListParser(BaseOutputParser[str]):
+class SequenceListParser(BaseOutputParser[List[int]]):
     """Parse outputs that contain a sequence list"""
 
     def _expand_range(self, range_str: str) -> List[int]:
@@ -148,7 +149,7 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
     llm_chain: LLMChain
     """LLM wrapper to use for compressing documents."""
 
-    get_input: Callable[[str, Document], dict] = default_get_input
+    get_input: Callable[[str, str], dict] = default_get_input
     """Callable for constructing the chain input from the query and a Document."""
 
     def compress_documents(
@@ -199,19 +200,24 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
             list of compressed Documents
         """
         numbered_sequence_docs = [
-            number_sequences(doc.page_content) for doc in documents
+            Document(
+                page_content=number_sequences(doc.page_content), metadata=doc.metadata
+            )
+            for doc in documents
         ]
         sequence_lists = await asyncio.gather(
             *[
                 self.llm_chain.apredict(
-                    **self.get_input(query, doc), callbacks=callbacks
+                    **self.get_input(query, doc.page_content), callbacks=callbacks
                 )
                 for doc in numbered_sequence_docs
             ]
         )
         return [
             Document(
-                page_content=extract_numbered_sequences(doc, sequence_lists[i]),
+                page_content=extract_numbered_sequences(
+                    doc.page_content, sequence_lists[i]
+                ),
                 metadata=doc.metadata,
             )
             for i, doc in enumerate(numbered_sequence_docs)
@@ -222,7 +228,7 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        get_input: Optional[Callable[[str, Document], str]] = None,
+        get_input: Optional[Callable[[str, str], dict[str, str]]] = None,
         llm_chain_kwargs: Optional[dict] = None,
     ) -> LLMEncodedChainExtractor:
         """Initialize from LLM.
@@ -230,7 +236,7 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
         Args:
             llm: the LLM to use
             get_input: callable for constructing the chain input from the query
-                        and a Document
+                        and context
             llm_chain_kwargs: kwargs to pass to the LLM chain
 
         Returns:
