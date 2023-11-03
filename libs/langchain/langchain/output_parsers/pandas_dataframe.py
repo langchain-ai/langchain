@@ -19,17 +19,29 @@ class PandasDataFrameOutputParser(BaseOutputParser):
 
         raise TypeError("Wrong type for 'dataframe', must be subclass of Pandas DataFrame (pd.DataFrame)")
     
-    def parse_array(self, array: str) -> List[int]:
+    def parse_array(self, array: str, original_request_params: str) -> List[int]:
+        parsed_array = []
+
         # Check if the format is [1,3,5]
         if re.match(r'\[\d+(,\s*\d+)*\]', array):
-            return [int(i) for i in re.findall(r'\d+', array)]
+            parsed_array = [int(i) for i in re.findall(r'\d+', array)]
         # Check if the format is [1..5]
         elif re.match(r'\[(\d+)\.\.(\d+)\]', array):
             match = re.match(r'\[(\d+)\.\.(\d+)\]', array)
             start, end = map(int, match.groups())
-            return list(range(start, end + 1))
+            parsed_array = list(range(start, end + 1))
 
-        return []
+        # Validate the array
+        if parsed_array == []:
+            raise OutputParserException(
+                f"Request parameter '{original_request_params}' has an invalid array format. Please refer to the format instructions."
+            )
+        elif parsed_array[-1] > self.dataframe.index.max():
+            raise OutputParserException(
+                f"The specified maximum index {parsed_array[-1]} exceeds the maximum index of the Pandas DataFrame {self.dataframe.index.max()}"
+            )
+
+        return parsed_array, original_request_params.split('[')[0]
 
     # NOTE: LLM will use format instructions to generate query in correct format.
     #       parse() function will then take the output and apply it to the DataFrame
@@ -56,11 +68,9 @@ class PandasDataFrameOutputParser(BaseOutputParser):
                 case _:
                     array_exists = re.search(r'(\[.*?\])', request_params)
                     if array_exists:
-                        parsed_array = self.parse_array(array_exists.group(1))
-                        if parsed_array == []:
-                            raise OutputParserException(
-                                "The array provided is not correctly defined. Please refer to the format instructions."
-                            )
+                        parsed_array, stripped_request_params = self.parse_array(array_exists.group(1), request_params)
+                        filtered_df = self.dataframe[self.dataframe.index.isin(parsed_array)]
+                        result[request_type] = getattr(filtered_df[stripped_request_params], request_type)()
                     else:
                         result[request_type] = getattr(self.dataframe[request_params], request_type)()
         except AttributeError:
