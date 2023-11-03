@@ -15,6 +15,8 @@ qdrant-client = ">=1.6"
 lark = "^1.1.8"
 tiktoken = "^0.5.1"
 
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
 [tool.poetry.group.dev.dependencies.python-dotenv]
 extras = [
     "cli",
@@ -22,7 +24,7 @@ extras = [
 version = "^1.0.0"
 
 [tool.langserve]
-export_module = "self_query_qdrant.chain"
+export_module = "self_query_qdrant"
 export_attr = "chain"
 
 [build-system]
