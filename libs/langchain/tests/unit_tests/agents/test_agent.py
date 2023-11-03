@@ -6,7 +6,7 @@ from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.schema.agent import AgentAction, AgentObservation
+from langchain.schema.agent import AgentAction, AgentStep
 from langchain.schema.runnable.utils import add
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
@@ -186,8 +186,8 @@ def test_agent_stream() -> None:
             ]
         },
         {
-            "observations": [
-                AgentObservation(
+            "steps": [
+                AgentStep(
                     action=AgentAction(
                         tool="Search",
                         tool_input="misalignment",
@@ -207,8 +207,8 @@ def test_agent_stream() -> None:
             ]
         },
         {
-            "observations": [
-                AgentObservation(
+            "steps": [
+                AgentStep(
                     action=AgentAction(
                         tool="Search",
                         tool_input="something else",
@@ -233,8 +233,8 @@ def test_agent_stream() -> None:
                 log="FooBarBaz\nAction: Search\nAction Input: something else",
             ),
         ],
-        "observations": [
-            AgentObservation(
+        "steps": [
+            AgentStep(
                 action=AgentAction(
                     tool="Search",
                     tool_input="misalignment",
@@ -242,7 +242,7 @@ def test_agent_stream() -> None:
                 ),
                 observation="Results for: misalignment",
             ),
-            AgentObservation(
+            AgentStep(
                 action=AgentAction(
                     tool="Search",
                     tool_input="something else",

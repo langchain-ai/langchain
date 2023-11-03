@@ -24,7 +24,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.load.dump import dumpd
 from langchain.schema import RUN_KEY, AgentAction, AgentFinish, RunInfo
-from langchain.schema.agent import AgentObservation
+from langchain.schema.agent import AgentStep
 from langchain.schema.runnable.utils import AddableDict
 from langchain.tools import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
@@ -178,8 +178,8 @@ class AgentExecutorIterator:
                     if self.yield_actions:
                         if isinstance(chunk, AgentAction):
                             yield AddableDict(actions=[chunk])
-                        elif isinstance(chunk, AgentObservation):
-                            yield AddableDict(observations=[chunk])
+                        elif isinstance(chunk, AgentStep):
+                            yield AddableDict(steps=[chunk])
 
                 # convert iterator output to format handled by _process_next_step_output
                 next_step = self.agent_executor._consume_next_step(next_step_seq)
@@ -244,8 +244,8 @@ class AgentExecutorIterator:
                         if self.yield_actions:
                             if isinstance(chunk, AgentAction):
                                 yield AddableDict(actions=[chunk])
-                            elif isinstance(chunk, AgentObservation):
-                                yield AddableDict(observations=[chunk])
+                            elif isinstance(chunk, AgentStep):
+                                yield AddableDict(steps=[chunk])
 
                     # convert iterator output to format handled by _process_next_step
                     next_step = self.agent_executor._consume_next_step(next_step_seq)

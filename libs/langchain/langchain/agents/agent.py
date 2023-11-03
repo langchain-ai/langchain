@@ -45,7 +45,7 @@ from langchain.schema import (
     BasePromptTemplate,
     OutputParserException,
 )
-from langchain.schema.agent import AgentObservation
+from langchain.schema.agent import AgentStep
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
 from langchain.schema.runnable import Runnable
@@ -730,7 +730,7 @@ class ExceptionTool(BaseTool):
         return query
 
 
-NextStepOutput = List[Union[AgentFinish, AgentAction, AgentObservation]]
+NextStepOutput = List[Union[AgentFinish, AgentAction, AgentStep]]
 
 
 class AgentExecutor(Chain):
@@ -929,9 +929,7 @@ class AgentExecutor(Chain):
             return values[-1]
         else:
             return [
-                (a.action, a.observation)
-                for a in values
-                if isinstance(a, AgentObservation)
+                (a.action, a.observation) for a in values if isinstance(a, AgentStep)
             ]
 
     def _take_next_step(
@@ -962,7 +960,7 @@ class AgentExecutor(Chain):
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Iterator[Union[AgentFinish, AgentAction, AgentObservation]]:
+    ) -> Iterator[Union[AgentFinish, AgentAction, AgentStep]]:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
@@ -1012,7 +1010,7 @@ class AgentExecutor(Chain):
                 callbacks=run_manager.get_child() if run_manager else None,
                 **tool_run_kwargs,
             )
-            yield AgentObservation(action=output, observation=observation)
+            yield AgentStep(action=output, observation=observation)
             return
 
         # If the tool chosen is the finishing tool, then we end and return.
@@ -1058,7 +1056,7 @@ class AgentExecutor(Chain):
                     callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
-            yield AgentObservation(action=agent_action, observation=observation)
+            yield AgentStep(action=agent_action, observation=observation)
 
     async def _atake_next_step(
         self,
@@ -1088,7 +1086,7 @@ class AgentExecutor(Chain):
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> AsyncIterator[Union[AgentFinish, AgentAction, AgentObservation]]:
+    ) -> AsyncIterator[Union[AgentFinish, AgentAction, AgentStep]]:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
@@ -1136,7 +1134,7 @@ class AgentExecutor(Chain):
                 callbacks=run_manager.get_child() if run_manager else None,
                 **tool_run_kwargs,
             )
-            yield AgentObservation(action=output, observation=observation)
+            yield AgentStep(action=output, observation=observation)
             return
 
         # If the tool chosen is the finishing tool, then we end and return.
@@ -1154,7 +1152,7 @@ class AgentExecutor(Chain):
 
         async def _aperform_agent_action(
             agent_action: AgentAction,
-        ) -> AgentObservation:
+        ) -> AgentStep:
             if run_manager:
                 await run_manager.on_agent_action(
                     agent_action, verbose=self.verbose, color="green"
@@ -1187,7 +1185,7 @@ class AgentExecutor(Chain):
                     callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
-            return AgentObservation(action=agent_action, observation=observation)
+            return AgentStep(action=agent_action, observation=observation)
 
         # Use asyncio.gather to run multiple tool.arun() calls concurrently
         result = await asyncio.gather(
