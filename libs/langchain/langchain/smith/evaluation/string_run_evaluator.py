@@ -226,7 +226,7 @@ class StringExampleMapper(Serializable):
         return {
             "reference": self.serialize_chat_messages([output])
             if isinstance(output, dict) and output.get("type") and output.get("data")
-            else str(output)
+            else output
         }
 
     def __call__(self, example: Example) -> Dict[str, str]:
@@ -304,7 +304,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     async def _acall(
         self,
         inputs: Dict[str, str],
-        run_manager: AsyncCallbackManagerForChainRun | None = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Call the evaluation chain."""
         evaluate_strings_inputs = self._prepare_input(inputs)

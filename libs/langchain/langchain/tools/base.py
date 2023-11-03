@@ -187,8 +187,9 @@ class ChildTool(BaseTool):
 
     # --- Runnable ---
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         """The tool's input schema."""
         if self.args_schema is not None:
             return self.args_schema
@@ -217,10 +218,6 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        if type(self)._arun == BaseTool._arun:
-            # If the tool does not implement async, fall back to default implementation
-            return await super().ainvoke(input, config, **kwargs)
-
         config = config or {}
         return await self.arun(
             input,
@@ -657,7 +654,6 @@ class StructuredTool(BaseTool):
             )
         return await asyncio.get_running_loop().run_in_executor(
             None,
-            self._run,
             partial(self._run, run_manager=run_manager, **kwargs),
             *args,
         )

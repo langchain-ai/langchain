@@ -26,7 +26,7 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
         self,
         model_name: str = "paraphrase-multilingual-mpnet-base-v2",
         gpu: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(model_name=model_name, gpu=gpu, **kwargs)
 

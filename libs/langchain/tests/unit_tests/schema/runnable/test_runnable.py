@@ -1,4 +1,5 @@
 import sys
+from functools import partial
 from operator import itemgetter
 from typing import (
     Any,
@@ -17,8 +18,14 @@ import pytest
 from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
+from typing_extensions import TypedDict
 
-from langchain.callbacks.manager import Callbacks, collect_runs
+from langchain.callbacks.manager import (
+    Callbacks,
+    atrace_as_chain_group,
+    collect_runs,
+    trace_as_chain_group,
+)
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain.callbacks.tracers.schemas import Run
@@ -35,8 +42,10 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     ChatPromptValue,
     HumanMessagePromptTemplate,
+    MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.document import Document
 from langchain.schema.messages import (
     AIMessage,
@@ -52,13 +61,21 @@ from langchain.schema.runnable import (
     RunnableBranch,
     RunnableConfig,
     RunnableLambda,
-    RunnableMap,
+    RunnableParallel,
     RunnablePassthrough,
     RunnableSequence,
     RunnableWithFallbacks,
 )
-from langchain.schema.runnable.base import ConfigurableField, RunnableGenerator
-from langchain.schema.runnable.utils import add
+from langchain.schema.runnable.base import (
+    ConfigurableField,
+    RunnableBinding,
+    RunnableGenerator,
+)
+from langchain.schema.runnable.utils import (
+    ConfigurableFieldMultiOption,
+    ConfigurableFieldSingleOption,
+    add,
+)
 from langchain.tools.base import BaseTool, tool
 from langchain.tools.json.tool import JsonListKeysTool, JsonSpec
 
@@ -222,6 +239,12 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "enum": ["Document"],
+                        "default": "Document",
+                        "type": "string",
+                    },
                 },
                 "required": ["page_content"],
             }
@@ -241,12 +264,149 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     assert fake_chat.input_schema.schema() == snapshot
     assert fake_chat.output_schema.schema() == snapshot
 
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [
+            MessagesPlaceholder(variable_name="history"),
+            ("human", "Hello, how are you?"),
+        ]
+    )
+
+    assert chat_prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {
+            "history": {
+                "title": "History",
+                "type": "array",
+                "items": {
+                    "anyOf": [
+                        {"$ref": "#/definitions/AIMessage"},
+                        {"$ref": "#/definitions/HumanMessage"},
+                        {"$ref": "#/definitions/ChatMessage"},
+                        {"$ref": "#/definitions/SystemMessage"},
+                        {"$ref": "#/definitions/FunctionMessage"},
+                    ]
+                },
+            }
+        },
+        "definitions": {
+            "AIMessage": {
+                "title": "AIMessage",
+                "description": "A Message from an AI.",
+                "type": "object",
+                "properties": {
+                    "content": {"title": "Content", "type": "string"},
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "type": {
+                        "title": "Type",
+                        "default": "ai",
+                        "enum": ["ai"],
+                        "type": "string",
+                    },
+                    "example": {
+                        "title": "Example",
+                        "default": False,
+                        "type": "boolean",
+                    },
+                },
+                "required": ["content"],
+            },
+            "HumanMessage": {
+                "title": "HumanMessage",
+                "description": "A Message from a human.",
+                "type": "object",
+                "properties": {
+                    "content": {"title": "Content", "type": "string"},
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "type": {
+                        "title": "Type",
+                        "default": "human",
+                        "enum": ["human"],
+                        "type": "string",
+                    },
+                    "example": {
+                        "title": "Example",
+                        "default": False,
+                        "type": "boolean",
+                    },
+                },
+                "required": ["content"],
+            },
+            "ChatMessage": {
+                "title": "ChatMessage",
+                "description": "A Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "content": {"title": "Content", "type": "string"},
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "type": {
+                        "title": "Type",
+                        "default": "chat",
+                        "enum": ["chat"],
+                        "type": "string",
+                    },
+                    "role": {"title": "Role", "type": "string"},
+                },
+                "required": ["content", "role"],
+            },
+            "SystemMessage": {
+                "title": "SystemMessage",
+                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "content": {"title": "Content", "type": "string"},
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "type": {
+                        "title": "Type",
+                        "default": "system",
+                        "enum": ["system"],
+                        "type": "string",
+                    },
+                },
+                "required": ["content"],
+            },
+            "FunctionMessage": {
+                "title": "FunctionMessage",
+                "description": "A Message for passing the result of executing a function back to a model.",  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "content": {"title": "Content", "type": "string"},
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "type": {
+                        "title": "Type",
+                        "default": "function",
+                        "enum": ["function"],
+                        "type": "string",
+                    },
+                    "name": {"title": "Name", "type": "string"},
+                },
+                "required": ["content", "name"],
+            },
+        },
+    }
+    assert chat_prompt.output_schema.schema() == snapshot
+
     prompt = PromptTemplate.from_template("Hello, {name}!")
 
     assert prompt.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"name": {"title": "Name"}},
+        "properties": {"name": {"title": "Name", "type": "string"}},
     }
     assert prompt.output_schema.schema() == snapshot
 
@@ -255,7 +415,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     assert prompt_mapper.input_schema.schema() == {
         "definitions": {
             "PromptInput": {
-                "properties": {"name": {"title": "Name"}},
+                "properties": {"name": {"title": "Name", "type": "string"}},
                 "title": "PromptInput",
                 "type": "object",
             }
@@ -280,7 +440,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     assert seq.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"name": {"title": "Name"}},
+        "properties": {"name": {"title": "Name", "type": "string"}},
     }
     assert seq.output_schema.schema() == {
         "type": "array",
@@ -320,10 +480,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     assert seq_w_map.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"name": {"title": "Name"}},
+        "properties": {"name": {"title": "Name", "type": "string"}},
     }
     assert seq_w_map.output_schema.schema() == {
-        "title": "RunnableMapOutput",
+        "title": "RunnableParallelOutput",
         "type": "object",
         "properties": {
             "original": {"title": "Original", "type": "string"},
@@ -346,6 +506,41 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     }
     assert json_list_keys_tool.output_schema.schema() == {
         "title": "JsonListKeysToolOutput"
+    }
+
+
+def test_passthrough_assign_schema() -> None:
+    retriever = FakeRetriever()  # str -> List[Document]
+    prompt = PromptTemplate.from_template("{context} {question}")
+    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+
+    seq_w_assign: Runnable = (
+        RunnablePassthrough.assign(context=itemgetter("question") | retriever)
+        | prompt
+        | fake_llm
+    )
+
+    assert seq_w_assign.input_schema.schema() == {
+        "properties": {"question": {"title": "Question", "type": "string"}},
+        "title": "RunnableSequenceInput",
+        "type": "object",
+    }
+    assert seq_w_assign.output_schema.schema() == {
+        "title": "FakeListLLMOutput",
+        "type": "string",
+    }
+
+    invalid_seq_w_assign: Runnable = (
+        RunnablePassthrough.assign(context=itemgetter("question") | retriever)
+        | fake_llm
+    )
+
+    # fallback to RunnableAssign.input_schema if next runnable doesn't have
+    # expected dict input_schema
+    assert invalid_seq_w_assign.input_schema.schema() == {
+        "properties": {"question": {"title": "Question"}},
+        "title": "RunnableParallelInput",
+        "type": "object",
     }
 
 
@@ -406,6 +601,79 @@ def test_lambda_schemas() -> None:
         },
     }
 
+    class InputType(TypedDict):
+        variable_name: str
+        yo: int
+
+    class OutputType(TypedDict):
+        hello: str
+        bye: str
+        byebye: int
+
+    async def aget_values_typed(input: InputType) -> OutputType:
+        return {
+            "hello": input["variable_name"],
+            "bye": input["variable_name"],
+            "byebye": input["yo"],
+        }
+
+    assert (
+        RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
+        == {
+            "title": "RunnableLambdaInput",
+            "$ref": "#/definitions/InputType",
+            "definitions": {
+                "InputType": {
+                    "properties": {
+                        "variable_name": {
+                            "title": "Variable " "Name",
+                            "type": "string",
+                        },
+                        "yo": {"title": "Yo", "type": "integer"},
+                    },
+                    "required": ["variable_name", "yo"],
+                    "title": "InputType",
+                    "type": "object",
+                }
+            },
+        }
+    )
+
+    assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
+        "title": "RunnableLambdaOutput",
+        "$ref": "#/definitions/OutputType",
+        "definitions": {
+            "OutputType": {
+                "properties": {
+                    "bye": {"title": "Bye", "type": "string"},
+                    "byebye": {"title": "Byebye", "type": "integer"},
+                    "hello": {"title": "Hello", "type": "string"},
+                },
+                "required": ["hello", "bye", "byebye"],
+                "title": "OutputType",
+                "type": "object",
+            }
+        },
+    }
+
+
+def test_with_types_with_type_generics() -> None:
+    """Verify that with_types works if we use things like List[int]"""
+
+    def foo(x: int) -> None:
+        """Add one to the input."""
+        raise NotImplementedError()
+
+    # Try specifying some
+    RunnableLambda(foo).with_types(
+        output_type=List[int],  # type: ignore[arg-type]
+        input_type=List[int],  # type: ignore[arg-type]
+    )
+    RunnableLambda(foo).with_types(
+        output_type=Sequence[int],  # type: ignore[arg-type]
+        input_type=Sequence[int],  # type: ignore[arg-type]
+    )
+
 
 def test_schema_complex_seq() -> None:
     prompt1 = ChatPromptTemplate.from_template("what is the city {person} is from?")
@@ -425,10 +693,10 @@ def test_schema_complex_seq() -> None:
     )
 
     assert chain2.input_schema.schema() == {
-        "title": "RunnableMapInput",
+        "title": "RunnableParallelInput",
         "type": "object",
         "properties": {
-            "person": {"title": "Person"},
+            "person": {"title": "Person", "type": "string"},
             "language": {"title": "Language"},
         },
     }
@@ -436,6 +704,26 @@ def test_schema_complex_seq() -> None:
     assert chain2.output_schema.schema() == {
         "title": "StrOutputParserOutput",
         "type": "string",
+    }
+
+    assert chain2.with_types(input_type=str).input_schema.schema() == {
+        "title": "RunnableBindingInput",
+        "type": "string",
+    }
+
+    assert chain2.with_types(input_type=int).output_schema.schema() == {
+        "title": "StrOutputParserOutput",
+        "type": "string",
+    }
+
+    class InputType(BaseModel):
+        person: str
+
+    assert chain2.with_types(input_type=InputType).input_schema.schema() == {
+        "title": "InputType",
+        "type": "object",
+        "properties": {"person": {"title": "Person", "type": "string"}},
+        "required": ["person"],
     }
 
 
@@ -462,6 +750,12 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "type": "string",
+                        "enum": ["Document"],
+                        "default": "Document",
+                    },
                 },
                 "required": ["page_content"],
             }
@@ -495,6 +789,12 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "type": "string",
+                        "enum": ["Document"],
+                        "default": "Document",
+                    },
                 },
                 "required": ["page_content"],
             }
@@ -533,6 +833,12 @@ def test_schema_chains() -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "type": {
+                        "title": "Type",
+                        "type": "string",
+                        "enum": ["Document"],
+                        "default": "Document",
+                    },
                 },
                 "required": ["page_content"],
             }
@@ -634,6 +940,17 @@ def test_configurable_fields() -> None:
         text="Hello, John! John!"
     )
 
+    assert prompt_configurable.with_config(
+        configurable={"prompt_template": "Hello {name} in {lang}"}
+    ).input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {
+            "lang": {"title": "Lang", "type": "string"},
+            "name": {"title": "Name", "type": "string"},
+        },
+    }
+
     chain_configurable = prompt_configurable | fake_llm_configurable | StrOutputParser()
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
@@ -668,12 +985,26 @@ def test_configurable_fields() -> None:
     assert (
         chain_configurable.with_config(
             configurable={
-                "prompt_template": "A very good morning to you, {name}!",
+                "prompt_template": "A very good morning to you, {name} {lang}!",
                 "llm_responses": ["c"],
             }
-        ).invoke({"name": "John"})
+        ).invoke({"name": "John", "lang": "en"})
         == "c"
     )
+
+    assert chain_configurable.with_config(
+        configurable={
+            "prompt_template": "A very good morning to you, {name} {lang}!",
+            "llm_responses": ["c"],
+        }
+    ).input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {
+            "lang": {"title": "Lang", "type": "string"},
+            "name": {"title": "Name", "type": "string"},
+        },
+    }
 
     chain_with_map_configurable: Runnable = prompt_configurable | {
         "llm1": fake_llm_configurable | StrOutputParser(),
@@ -732,7 +1063,30 @@ def test_configurable_fields() -> None:
     ).invoke({"name": "John"}) == {"llm1": "c", "llm2": "c", "llm3": "d"}
 
 
+def test_configurable_alts_factory() -> None:
+    fake_llm = FakeListLLM(responses=["a"]).configurable_alternatives(
+        ConfigurableField(id="llm", name="LLM"),
+        chat=partial(FakeListLLM, responses=["b"]),
+    )
+
+    assert fake_llm.invoke("...") == "a"
+
+    assert fake_llm.with_config(configurable={"llm": "chat"}).invoke("...") == "b"
+
+
 def test_configurable_fields_example() -> None:
+    fake_chat = FakeListChatModel(responses=["b"]).configurable_fields(
+        responses=ConfigurableFieldMultiOption(
+            id="chat_responses",
+            name="Chat Responses",
+            options={
+                "hello": "A good morning to you!",
+                "bye": "See you later!",
+                "helpful": "How can I help you?",
+            },
+            default=["hello", "bye"],
+        )
+    )
     fake_llm = (
         FakeListLLM(responses=["a"])
         .configurable_fields(
@@ -744,19 +1098,25 @@ def test_configurable_fields_example() -> None:
         )
         .configurable_alternatives(
             ConfigurableField(id="llm", name="LLM"),
-            chat=FakeListChatModel(responses=["b"]) | StrOutputParser(),
+            chat=fake_chat | StrOutputParser(),
         )
     )
 
     prompt = PromptTemplate.from_template("Hello, {name}!").configurable_fields(
-        template=ConfigurableField(
+        template=ConfigurableFieldSingleOption(
             id="prompt_template",
             name="Prompt Template",
             description="The prompt template for this chain",
+            options={
+                "hello": "Hello, {name}!",
+                "good_morning": "A very good morning to you, {name}!",
+            },
+            default="hello",
         )
     )
 
-    chain_configurable = prompt | fake_llm
+    # deduplication of configurable fields
+    chain_configurable = prompt | fake_llm | (lambda x: {"name": x}) | prompt | fake_llm
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
@@ -765,17 +1125,38 @@ def test_configurable_fields_example() -> None:
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
         "definitions": {
+            "LLM": {
+                "title": "LLM",
+                "description": "An enumeration.",
+                "enum": ["chat", "default"],
+                "type": "string",
+            },
+            "Chat_Responses": {
+                "description": "An enumeration.",
+                "enum": ["hello", "bye", "helpful"],
+                "title": "Chat Responses",
+                "type": "string",
+            },
+            "Prompt_Template": {
+                "description": "An enumeration.",
+                "enum": ["hello", "good_morning"],
+                "title": "Prompt Template",
+                "type": "string",
+            },
             "Configurable": {
                 "title": "Configurable",
                 "type": "object",
                 "properties": {
+                    "chat_responses": {
+                        "default": ["hello", "bye"],
+                        "items": {"$ref": "#/definitions/Chat_Responses"},
+                        "title": "Chat Responses",
+                        "type": "array",
+                    },
                     "llm": {
                         "title": "LLM",
                         "default": "default",
-                        "anyOf": [
-                            {"enum": ["chat"], "type": "string"},
-                            {"enum": ["default"], "type": "string"},
-                        ],
+                        "allOf": [{"$ref": "#/definitions/LLM"}],
                     },
                     "llm_responses": {
                         "title": "LLM Responses",
@@ -787,20 +1168,58 @@ def test_configurable_fields_example() -> None:
                     "prompt_template": {
                         "title": "Prompt Template",
                         "description": "The prompt template for this chain",
-                        "default": "Hello, {name}!",
-                        "type": "string",
+                        "default": "hello",
+                        "allOf": [{"$ref": "#/definitions/Prompt_Template"}],
                     },
                 },
-            }
+            },
         },
     }
+
+    with pytest.raises(ValueError):
+        chain_configurable.with_config(configurable={"llm123": "chat"})
 
     assert (
         chain_configurable.with_config(configurable={"llm": "chat"}).invoke(
             {"name": "John"}
         )
-        == "b"
+        == "A good morning to you!"
     )
+
+    assert (
+        chain_configurable.with_config(
+            configurable={"llm": "chat", "chat_responses": ["helpful"]}
+        ).invoke({"name": "John"})
+        == "How can I help you?"
+    )
+
+
+@pytest.mark.asyncio
+async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
+    fake = FakeRunnable()
+    mock = mocker.Mock()
+
+    seq: Runnable = fake | RunnablePassthrough(mock)
+
+    assert await seq.ainvoke("hello") == 5
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+    assert [
+        part async for part in seq.astream("hello", dict(metadata={"key": "value"}))
+    ] == [5]
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+    assert seq.invoke("hello") == 5
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+    assert [part for part in seq.stream("hello", dict(metadata={"key": "value"}))] == [
+        5
+    ]
+    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
 
 
 @pytest.mark.asyncio
@@ -906,7 +1325,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -916,7 +1334,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=["c"],
                 callbacks=None,
-                locals={},
                 recursion_limit=5,
             ),
         ),
@@ -987,8 +1404,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
         mocker.call(
@@ -997,8 +1413,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 metadata={"key": "value"},
                 tags=[],
                 callbacks=None,
-                locals={},
-                recursion_limit=10,
+                recursion_limit=25,
             ),
         ),
     ]
@@ -1066,7 +1481,7 @@ async def test_prompt() -> None:
     assert len(stream_log[0].ops) == 1
     assert stream_log[0].ops[0]["op"] == "replace"
     assert stream_log[0].ops[0]["path"] == ""
-    assert stream_log[0].ops[0]["value"]["logs"] == []
+    assert stream_log[0].ops[0]["value"]["logs"] == {}
     assert stream_log[0].ops[0]["value"]["final_output"] is None
     assert stream_log[0].ops[0]["value"]["streamed_output"] == []
     assert isinstance(stream_log[0].ops[0]["value"]["id"], str)
@@ -1076,40 +1491,82 @@ async def test_prompt() -> None:
             {
                 "op": "replace",
                 "path": "/final_output",
-                "value": {
-                    "id": ["langchain", "prompts", "chat", "ChatPromptValue"],
-                    "kwargs": {
-                        "messages": [
-                            {
-                                "id": [
-                                    "langchain",
-                                    "schema",
-                                    "messages",
-                                    "SystemMessage",
-                                ],
-                                "kwargs": {"content": "You are a nice " "assistant."},
-                                "lc": 1,
-                                "type": "constructor",
-                            },
-                            {
-                                "id": [
-                                    "langchain",
-                                    "schema",
-                                    "messages",
-                                    "HumanMessage",
-                                ],
-                                "kwargs": {
-                                    "additional_kwargs": {},
-                                    "content": "What is your " "name?",
-                                },
-                                "lc": 1,
-                                "type": "constructor",
-                            },
-                        ]
-                    },
-                    "lc": 1,
-                    "type": "constructor",
-                },
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
+            }
+        ),
+        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
+    ]
+
+    stream_log_state = [
+        part
+        async for part in prompt.astream_log(
+            {"question": "What is your name?"}, diff=False
+        )
+    ]
+
+    # remove random id
+    stream_log[0].ops[0]["value"]["id"] = "00000000-0000-0000-0000-000000000000"
+    stream_log_state[-1].ops[0]["value"]["id"] = "00000000-0000-0000-0000-000000000000"
+    stream_log_state[-1].state["id"] = "00000000-0000-0000-0000-000000000000"
+
+    # assert output with diff=False matches output with diff=True
+    assert stream_log_state[-1].ops == [op for chunk in stream_log for op in chunk.ops]
+    assert stream_log_state[-1] == RunLog(
+        *[op for chunk in stream_log for op in chunk.ops],
+        state={
+            "final_output": ChatPromptValue(
+                messages=[
+                    SystemMessage(content="You are a nice assistant."),
+                    HumanMessage(content="What is your name?"),
+                ]
+            ),
+            "id": "00000000-0000-0000-0000-000000000000",
+            "logs": {},
+            "streamed_output": [
+                ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                )
+            ],
+        },
+    )
+
+    # nested inside trace_with_chain_group
+
+    async with atrace_as_chain_group("a_group") as manager:
+        stream_log_nested = [
+            part
+            async for part in prompt.astream_log(
+                {"question": "What is your name?"}, config={"callbacks": manager}
+            )
+        ]
+
+    assert len(stream_log_nested[0].ops) == 1
+    assert stream_log_nested[0].ops[0]["op"] == "replace"
+    assert stream_log_nested[0].ops[0]["path"] == ""
+    assert stream_log_nested[0].ops[0]["value"]["logs"] == {}
+    assert stream_log_nested[0].ops[0]["value"]["final_output"] is None
+    assert stream_log_nested[0].ops[0]["value"]["streamed_output"] == []
+    assert isinstance(stream_log_nested[0].ops[0]["value"]["id"], str)
+
+    assert stream_log_nested[1:] == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "/final_output",
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
             }
         ),
         RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
@@ -1132,6 +1589,39 @@ def test_prompt_template_params() -> None:
 
     with pytest.raises(KeyError):
         prompt.invoke({})
+
+
+def test_with_listeners(mocker: MockerFixture) -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    chat = FakeListChatModel(responses=["foo"])
+
+    chain = prompt | chat
+
+    mock_start = mocker.Mock()
+    mock_end = mocker.Mock()
+
+    chain.with_listeners(on_start=mock_start, on_end=mock_end).invoke(
+        {"question": "Who are you?"}
+    )
+
+    assert mock_start.call_count == 1
+    assert mock_start.call_args[0][0].name == "RunnableSequence"
+    assert mock_end.call_count == 1
+
+    mock_start.reset_mock()
+    mock_end.reset_mock()
+
+    with trace_as_chain_group("hello") as manager:
+        chain.with_listeners(on_start=mock_start, on_end=mock_end).invoke(
+            {"question": "Who are you?"}, {"callbacks": manager}
+        )
+
+    assert mock_start.call_count == 1
+    assert mock_start.call_args[0][0].name == "RunnableSequence"
+    assert mock_end.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -1352,7 +1842,7 @@ async def test_prompt_with_llm(
                 "op": "replace",
                 "path": "",
                 "value": {
-                    "logs": [],
+                    "logs": {},
                     "final_output": None,
                     "streamed_output": [],
                 },
@@ -1361,7 +1851,7 @@ async def test_prompt_with_llm(
         RunLogPatch(
             {
                 "op": "add",
-                "path": "/logs/0",
+                "path": "/logs/ChatPromptTemplate",
                 "value": {
                     "end_time": None,
                     "final_output": None,
@@ -1377,55 +1867,24 @@ async def test_prompt_with_llm(
         RunLogPatch(
             {
                 "op": "add",
-                "path": "/logs/0/final_output",
-                "value": {
-                    "id": ["langchain", "prompts", "chat", "ChatPromptValue"],
-                    "kwargs": {
-                        "messages": [
-                            {
-                                "id": [
-                                    "langchain",
-                                    "schema",
-                                    "messages",
-                                    "SystemMessage",
-                                ],
-                                "kwargs": {
-                                    "additional_kwargs": {},
-                                    "content": "You are a nice " "assistant.",
-                                },
-                                "lc": 1,
-                                "type": "constructor",
-                            },
-                            {
-                                "id": [
-                                    "langchain",
-                                    "schema",
-                                    "messages",
-                                    "HumanMessage",
-                                ],
-                                "kwargs": {
-                                    "additional_kwargs": {},
-                                    "content": "What is your " "name?",
-                                },
-                                "lc": 1,
-                                "type": "constructor",
-                            },
-                        ]
-                    },
-                    "lc": 1,
-                    "type": "constructor",
-                },
+                "path": "/logs/ChatPromptTemplate/final_output",
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
             },
             {
                 "op": "add",
-                "path": "/logs/0/end_time",
+                "path": "/logs/ChatPromptTemplate/end_time",
                 "value": "2023-01-01T00:00:00.000",
             },
         ),
         RunLogPatch(
             {
                 "op": "add",
-                "path": "/logs/1",
+                "path": "/logs/FakeListLLM",
                 "value": {
                     "end_time": None,
                     "final_output": None,
@@ -1441,16 +1900,18 @@ async def test_prompt_with_llm(
         RunLogPatch(
             {
                 "op": "add",
-                "path": "/logs/1/final_output",
+                "path": "/logs/FakeListLLM/final_output",
                 "value": {
-                    "generations": [[{"generation_info": None, "text": "foo"}]],
+                    "generations": [
+                        [{"generation_info": None, "text": "foo", "type": "Generation"}]
+                    ],
                     "llm_output": None,
                     "run": None,
                 },
             },
             {
                 "op": "add",
-                "path": "/logs/1/end_time",
+                "path": "/logs/FakeListLLM/end_time",
                 "value": "2023-01-01T00:00:00.000",
             },
         ),
@@ -1458,6 +1919,334 @@ async def test_prompt_with_llm(
         RunLogPatch(
             {"op": "replace", "path": "/final_output", "value": {"output": "foo"}}
         ),
+    ]
+
+
+@pytest.mark.asyncio
+@freeze_time("2023-01-01")
+async def test_stream_log_retriever() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{documents}"
+        + "{question}"
+    )
+    llm = FakeListLLM(responses=["foo", "bar"])
+
+    chain: Runnable = (
+        {"documents": FakeRetriever(), "question": itemgetter("question")}
+        | prompt
+        | {"one": llm, "two": llm}
+    )
+
+    stream_log = [
+        part async for part in chain.astream_log({"question": "What is your name?"})
+    ]
+
+    # remove ids from logs
+    for part in stream_log:
+        for op in part.ops:
+            if (
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
+            ):
+                del op["value"]["id"]
+
+    assert stream_log[:-9] in [
+        [
+            RunLogPatch(
+                {
+                    "op": "replace",
+                    "path": "",
+                    "value": {
+                        "logs": {},
+                        "final_output": None,
+                        "streamed_output": [],
+                    },
+                }
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableParallel",
+                    "value": {
+                        "end_time": None,
+                        "final_output": None,
+                        "metadata": {},
+                        "name": "RunnableParallel",
+                        "start_time": "2023-01-01T00:00:00.000",
+                        "streamed_output_str": [],
+                        "tags": ["seq:step:1"],
+                        "type": "chain",
+                    },
+                }
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableLambda",
+                    "value": {
+                        "end_time": None,
+                        "final_output": None,
+                        "metadata": {},
+                        "name": "RunnableLambda",
+                        "start_time": "2023-01-01T00:00:00.000",
+                        "streamed_output_str": [],
+                        "tags": ["map:key:question"],
+                        "type": "chain",
+                    },
+                }
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableLambda/final_output",
+                    "value": {"output": "What is your name?"},
+                },
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableLambda/end_time",
+                    "value": "2023-01-01T00:00:00.000",
+                },
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/Retriever",
+                    "value": {
+                        "end_time": None,
+                        "final_output": None,
+                        "metadata": {},
+                        "name": "Retriever",
+                        "start_time": "2023-01-01T00:00:00.000",
+                        "streamed_output_str": [],
+                        "tags": ["map:key:documents"],
+                        "type": "retriever",
+                    },
+                }
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/Retriever/final_output",
+                    "value": {
+                        "documents": [
+                            Document(page_content="foo"),
+                            Document(page_content="bar"),
+                        ]
+                    },
+                },
+                {
+                    "op": "add",
+                    "path": "/logs/Retriever/end_time",
+                    "value": "2023-01-01T00:00:00.000",
+                },
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableParallel/final_output",
+                    "value": {
+                        "documents": [
+                            Document(page_content="foo"),
+                            Document(page_content="bar"),
+                        ],
+                        "question": "What is your name?",
+                    },
+                },
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableParallel/end_time",
+                    "value": "2023-01-01T00:00:00.000",
+                },
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/ChatPromptTemplate",
+                    "value": {
+                        "end_time": None,
+                        "final_output": None,
+                        "metadata": {},
+                        "name": "ChatPromptTemplate",
+                        "start_time": "2023-01-01T00:00:00.000",
+                        "streamed_output_str": [],
+                        "tags": ["seq:step:2"],
+                        "type": "prompt",
+                    },
+                }
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/ChatPromptTemplate/final_output",
+                    "value": ChatPromptValue(
+                        messages=[
+                            SystemMessage(content="You are a nice assistant."),
+                            HumanMessage(
+                                content="[Document(page_content='foo'), Document(page_content='bar')]"  # noqa: E501
+                            ),
+                            HumanMessage(content="What is your name?"),
+                        ]
+                    ),
+                },
+                {
+                    "op": "add",
+                    "path": "/logs/ChatPromptTemplate/end_time",
+                    "value": "2023-01-01T00:00:00.000",
+                },
+            ),
+        ],
+        [
+            RunLogPatch(
+                {
+                    "op": "replace",
+                    "path": "",
+                    "value": {"final_output": None, "logs": {}, "streamed_output": []},
+                }
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableParallel",
+                    "value": {
+                        "end_time": None,
+                        "final_output": None,
+                        "metadata": {},
+                        "name": "RunnableParallel",
+                        "start_time": "2023-01-01T00:00:00.000",
+                        "streamed_output_str": [],
+                        "tags": ["seq:step:1"],
+                        "type": "chain",
+                    },
+                }
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/Retriever",
+                    "value": {
+                        "end_time": None,
+                        "final_output": None,
+                        "metadata": {},
+                        "name": "Retriever",
+                        "start_time": "2023-01-01T00:00:00.000",
+                        "streamed_output_str": [],
+                        "tags": ["map:key:documents"],
+                        "type": "retriever",
+                    },
+                }
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableLambda",
+                    "value": {
+                        "end_time": None,
+                        "final_output": None,
+                        "metadata": {},
+                        "name": "RunnableLambda",
+                        "start_time": "2023-01-01T00:00:00.000",
+                        "streamed_output_str": [],
+                        "tags": ["map:key:question"],
+                        "type": "chain",
+                    },
+                }
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableLambda/final_output",
+                    "value": {"output": "What is your name?"},
+                },
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableLambda/end_time",
+                    "value": "2023-01-01T00:00:00.000",
+                },
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/Retriever/final_output",
+                    "value": {
+                        "documents": [
+                            Document(page_content="foo"),
+                            Document(page_content="bar"),
+                        ]
+                    },
+                },
+                {
+                    "op": "add",
+                    "path": "/logs/Retriever/end_time",
+                    "value": "2023-01-01T00:00:00.000",
+                },
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableParallel/final_output",
+                    "value": {
+                        "documents": [
+                            Document(page_content="foo"),
+                            Document(page_content="bar"),
+                        ],
+                        "question": "What is your name?",
+                    },
+                },
+                {
+                    "op": "add",
+                    "path": "/logs/RunnableParallel/end_time",
+                    "value": "2023-01-01T00:00:00.000",
+                },
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/ChatPromptTemplate",
+                    "value": {
+                        "end_time": None,
+                        "final_output": None,
+                        "metadata": {},
+                        "name": "ChatPromptTemplate",
+                        "start_time": "2023-01-01T00:00:00.000",
+                        "streamed_output_str": [],
+                        "tags": ["seq:step:2"],
+                        "type": "prompt",
+                    },
+                }
+            ),
+            RunLogPatch(
+                {
+                    "op": "add",
+                    "path": "/logs/ChatPromptTemplate/final_output",
+                    "value": ChatPromptValue(
+                        messages=[
+                            SystemMessage(content="You are a nice assistant."),
+                            HumanMessage(
+                                content="[Document(page_content='foo'), Document(page_content='bar')]"  # noqa: E501
+                            ),
+                            HumanMessage(content="What is your name?"),
+                        ]
+                    ),
+                },
+                {
+                    "op": "add",
+                    "path": "/logs/ChatPromptTemplate/end_time",
+                    "value": "2023-01-01T00:00:00.000",
+                },
+            ),
+        ],
+    ]
+
+    assert sorted(cast(RunLog, add(stream_log)).state["logs"]) == [
+        "ChatPromptTemplate",
+        "FakeListLLM",
+        "FakeListLLM:2",
+        "Retriever",
+        "RunnableLambda",
+        "RunnableParallel",
+        "RunnableParallel:2",
     ]
 
 
@@ -1574,7 +2363,7 @@ def test_combining_sequences(
         lambda x: {"question": x[0] + x[1]}
     )
 
-    chain2 = input_formatter | prompt2 | chat2 | parser2
+    chain2 = cast(RunnableSequence, input_formatter | prompt2 | chat2 | parser2)
 
     assert isinstance(chain, RunnableSequence)
     assert chain2.first == input_formatter
@@ -1583,7 +2372,7 @@ def test_combining_sequences(
     if sys.version_info >= (3, 9):
         assert dumps(chain2, pretty=True) == snapshot
 
-    combined_chain = chain | chain2
+    combined_chain = cast(RunnableSequence, chain | chain2)
 
     assert combined_chain.first == prompt
     assert combined_chain.middle == [
@@ -1641,7 +2430,7 @@ Question:
 
     assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
-    assert isinstance(chain.first, RunnableMap)
+    assert isinstance(chain.first, RunnableParallel)
     assert chain.middle == [prompt, chat]
     assert chain.last == parser
     assert dumps(chain, pretty=True) == snapshot
@@ -1677,7 +2466,7 @@ What is your name?"""
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 4
     map_run = parent_run.child_runs[0]
-    assert map_run.name == "RunnableMap"
+    assert map_run.name == "RunnableParallel"
     assert len(map_run.child_runs) == 3
 
 
@@ -1707,7 +2496,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]
-    assert isinstance(chain.last, RunnableMap)
+    assert isinstance(chain.last, RunnableParallel)
     assert dumps(chain, pretty=True) == snapshot
 
     # Test invoke
@@ -1738,7 +2527,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 3
     map_run = parent_run.child_runs[2]
-    assert map_run.name == "RunnableMap"
+    assert map_run.name == "RunnableParallel"
     assert len(map_run.child_runs) == 2
 
 
@@ -1806,11 +2595,9 @@ async def test_higher_order_lambda_runnable(
     english_chain = ChatPromptTemplate.from_template(
         "You are an english major. Answer the question: {question}"
     ) | FakeListLLM(responses=["2"])
-    input_map: Runnable = RunnableMap(
-        {  # type: ignore[arg-type]
-            "key": lambda x: x["key"],
-            "input": {"question": lambda x: x["question"]},
-        }
+    input_map: Runnable = RunnableParallel(
+        key=lambda x: x["key"],
+        input={"question": lambda x: x["question"]},
     )
 
     def router(input: Dict[str, Any]) -> Runnable:
@@ -1822,7 +2609,8 @@ async def test_higher_order_lambda_runnable(
             raise ValueError(f"Unknown key: {input['key']}")
 
     chain: Runnable = input_map | router
-    assert dumps(chain, pretty=True) == snapshot
+    if sys.version_info >= (3, 9):
+        assert dumps(chain, pretty=True) == snapshot
 
     result = chain.invoke({"key": "math", "question": "2 + 2"})
     assert result == "4"
@@ -1920,7 +2708,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]
-    assert isinstance(chain.last, RunnableMap)
+    assert isinstance(chain.last, RunnableParallel)
     assert dumps(chain, pretty=True) == snapshot
 
     # Test invoke
@@ -1957,7 +2745,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 3
     map_run = parent_run.child_runs[2]
-    assert map_run.name == "RunnableMap"
+    assert map_run.name == "RunnableParallel"
     assert len(map_run.child_runs) == 3
 
 
@@ -2118,14 +2906,18 @@ async def test_map_astream() -> None:
     assert isinstance(final_state.state["id"], str)
     assert len(final_state.ops) == len(streamed_ops)
     assert len(final_state.state["logs"]) == 5
-    assert final_state.state["logs"][0]["name"] == "ChatPromptTemplate"
-    assert final_state.state["logs"][0]["final_output"] == dumpd(
-        prompt.invoke({"question": "What is your name?"})
+    assert (
+        final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
     )
-    assert final_state.state["logs"][1]["name"] == "RunnableMap"
-    assert sorted(log["name"] for log in final_state.state["logs"][2:]) == [
+    assert final_state.state["logs"]["ChatPromptTemplate"][
+        "final_output"
+    ] == prompt.invoke({"question": "What is your name?"})
+    assert final_state.state["logs"]["RunnableParallel"]["name"] == "RunnableParallel"
+    assert sorted(final_state.state["logs"]) == [
+        "ChatPromptTemplate",
         "FakeListChatModel",
         "FakeStreamingListLLM",
+        "RunnableParallel",
         "RunnablePassthrough",
     ]
 
@@ -2143,7 +2935,7 @@ async def test_map_astream() -> None:
     assert final_state.state["final_output"] == final_value
     assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
     assert len(final_state.state["logs"]) == 1
-    assert final_state.state["logs"][0]["name"] == "FakeListChatModel"
+    assert final_state.state["logs"]["FakeListChatModel"]["name"] == "FakeListChatModel"
 
     # Test astream_log with exclude filters
     final_state = None
@@ -2159,13 +2951,17 @@ async def test_map_astream() -> None:
     assert final_state.state["final_output"] == final_value
     assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
     assert len(final_state.state["logs"]) == 4
-    assert final_state.state["logs"][0]["name"] == "ChatPromptTemplate"
-    assert final_state.state["logs"][0]["final_output"] == dumpd(
+    assert (
+        final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
+    )
+    assert final_state.state["logs"]["ChatPromptTemplate"]["final_output"] == (
         prompt.invoke({"question": "What is your name?"})
     )
-    assert final_state.state["logs"][1]["name"] == "RunnableMap"
-    assert sorted(log["name"] for log in final_state.state["logs"][2:]) == [
+    assert final_state.state["logs"]["RunnableParallel"]["name"] == "RunnableParallel"
+    assert sorted(final_state.state["logs"]) == [
+        "ChatPromptTemplate",
         "FakeStreamingListLLM",
+        "RunnableParallel",
         "RunnablePassthrough",
     ]
 
@@ -2238,6 +3034,7 @@ def test_metadata_is_merged() -> None:
     with collect_runs() as cb:
         foo.invoke("hi", {"metadata": {"my_other_key": "my_other_value"}})
         run = cb.traced_runs[0]
+    assert run.extra is not None
     assert run.extra["metadata"] == expected_metadata
 
 
@@ -2313,7 +3110,7 @@ def test_deep_stream_assign() -> None:
     assert chain_with_assign.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"question": {"title": "Question"}},
+        "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign.output_schema.schema() == {
         "title": "RunnableAssignOutput",
@@ -2363,7 +3160,7 @@ def test_deep_stream_assign() -> None:
     assert chain_with_assign_shadow.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"question": {"title": "Question"}},
+        "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
         "title": "RunnableAssignOutput",
@@ -2439,7 +3236,7 @@ async def test_deep_astream_assign() -> None:
     assert chain_with_assign.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"question": {"title": "Question"}},
+        "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign.output_schema.schema() == {
         "title": "RunnableAssignOutput",
@@ -2489,7 +3286,7 @@ async def test_deep_astream_assign() -> None:
     assert chain_with_assign_shadow.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"question": {"title": "Question"}},
+        "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
         "title": "RunnableAssignOutput",
@@ -2561,12 +3358,12 @@ def llm_with_multi_fallbacks() -> RunnableWithFallbacks:
 
 
 @pytest.fixture()
-def llm_chain_with_fallbacks() -> RunnableSequence:
+def llm_chain_with_fallbacks() -> Runnable:
     error_llm = FakeListLLM(responses=["foo"], i=1)
     pass_llm = FakeListLLM(responses=["bar"])
 
     prompt = PromptTemplate.from_template("what did baz say to {buz}")
-    return RunnableMap({"buz": lambda x: x}) | (prompt | error_llm).with_fallbacks(
+    return RunnableParallel({"buz": lambda x: x}) | (prompt | error_llm).with_fallbacks(
         [prompt | pass_llm]
     )
 
@@ -2897,6 +3694,7 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
     assert parent_run_qux.error is None
+    assert parent_run_qux.outputs is not None
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
@@ -3019,6 +3817,7 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
     assert parent_run_qux.error is None
+    assert parent_run_qux.outputs is not None
     assert parent_run_qux.outputs["output"] == "quxaaaa"
     assert len(parent_run_qux.child_runs) == 4
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
@@ -3285,7 +4084,7 @@ async def test_tool_from_runnable() -> None:
     assert chain_tool.description.endswith(repr(chain))
     assert chain_tool.args_schema.schema() == chain.input_schema.schema()
     assert chain_tool.args_schema.schema() == {
-        "properties": {"question": {"title": "Question"}},
+        "properties": {"question": {"title": "Question", "type": "string"}},
         "title": "PromptInput",
         "type": "object",
     }
@@ -3367,3 +4166,11 @@ async def test_runnable_gen_transform() -> None:
 
     assert list(chain.stream(3)) == [1, 2, 3]
     assert [p async for p in achain.astream(4)] == [1, 2, 3, 4]
+
+
+def test_with_config_callbacks() -> None:
+    result = RunnableLambda(lambda x: x).with_config({"callbacks": []})
+    # Bugfix from version 0.0.325
+    # ConfigError: field "callbacks" not yet prepared so type is still a ForwardRef,
+    # you might need to call RunnableConfig.update_forward_refs().
+    assert isinstance(result, RunnableBinding)
