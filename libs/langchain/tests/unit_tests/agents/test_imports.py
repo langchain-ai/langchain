@@ -19,7 +19,9 @@ EXPECTED_ALL = [
     "SelfAskWithSearchChain",
     "StructuredChatAgent",
     "Tool",
+    "XMLAgent",
     "ZeroShotAgent",
+    "create_cube_agent",
     "create_json_agent",
     "create_openapi_agent",
     "create_pbi_agent",
@@ -34,7 +36,6 @@ EXPECTED_ALL = [
     "load_huggingface_tool",
     "load_tools",
     "tool",
-    "XMLAgent",
 ]
 
 

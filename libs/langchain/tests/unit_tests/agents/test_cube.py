@@ -6,7 +6,6 @@ from urllib.parse import urljoin
 import pytest
 import responses
 
-import langchain
 from langchain.agents import create_cube_agent
 from langchain.agents.agent_toolkits import CubeToolkit
 from langchain.pydantic_v1 import SecretStr
@@ -202,7 +201,6 @@ def mocked_load(mocked_responses: responses.RequestsMock) -> None:
 
 
 def test_create_cube_agent(mocked_responses: responses.RequestsMock) -> None:
-    langchain.debug = True
     mocked_load(mocked_responses)
 
     mocked_mata(mocked_responses)
