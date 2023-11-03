@@ -692,13 +692,13 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 
 [[package]]
 name = "langserve"
-version = "0.0.19"
+version = "0.0.20"
 description = ""
 optional = true
 python-versions = ">=3.8.1,<4.0.0"
 files = [
-    {file = "langserve-0.0.19-py3-none-any.whl", hash = "sha256:f644aed61dda42ad1c70770a41285e4069e0233435b7452b4af5b026188c00b0"},
-    {file = "langserve-0.0.19.tar.gz", hash = "sha256:930f6a6a090deec2ef3d6375212d06c95dd547ffb7cafe969c286df94fe6823f"},
+    {file = "langserve-0.0.20-py3-none-any.whl", hash = "sha256:7c0f0c9989a6423a72229c4b7d39d8c08d912a8a8b19e0bc0037ee24305bc13e"},
+    {file = "langserve-0.0.20.tar.gz", hash = "sha256:2b16a33e647f107388d2da644373368ff627bbb96358a401523b9ef6effed834"},
 ]
 
 [package.dependencies]

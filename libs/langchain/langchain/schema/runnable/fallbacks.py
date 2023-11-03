@@ -71,7 +71,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             for spec in step.config_specs
         )
 
-    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
+    def config_schema(
+        self, *, include: Optional[Sequence[str]] = None
+    ) -> Type[BaseModel]:
         return self.runnable.config_schema(include=include)
 
     @classmethod
