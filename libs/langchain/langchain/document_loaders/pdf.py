@@ -154,8 +154,8 @@ class PyPDFLoader(BasePDFLoader):
             raise ImportError(
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
-        self.parser = PyPDFParser(password=password, extract_images=extract_images)
         super().__init__(file_path, headers=headers)
+        self.parser = PyPDFParser(password=password, extract_images=extract_images)
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
@@ -165,7 +165,10 @@ class PyPDFLoader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
 
 
@@ -251,8 +254,15 @@ class PDFMinerLoader(BasePDFLoader):
         *,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
+        concatenate_pages: bool = True,
     ) -> None:
-        """Initialize with file path."""
+        """Initialize with file path.
+
+        Args:
+            extract_images: Whether to extract images from PDF.
+            concatenate_pages: If True, concatenate all PDF pages into one a single
+                               document. Otherwise, return one document per page.
+        """
         try:
             from pdfminer.high_level import extract_text  # noqa:F401
         except ImportError:
@@ -262,7 +272,9 @@ class PDFMinerLoader(BasePDFLoader):
             )
 
         super().__init__(file_path, headers=headers)
-        self.parser = PDFMinerParser(extract_images=extract_images)
+        self.parser = PDFMinerParser(
+            extract_images=extract_images, concatenate_pages=concatenate_pages
+        )
 
     def load(self) -> List[Document]:
         """Eagerly load the content."""

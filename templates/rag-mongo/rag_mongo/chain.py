@@ -22,29 +22,6 @@ client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 MONGODB_COLLECTION = db[COLLECTION_NAME]
 
-### Ingest code - you may need to run this the first time
-""" 
-# Load
-from langchain.document_loaders import WebBaseLoader
-loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
-data = loader.load()
-
-# Split
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
-all_splits = text_splitter.split_documents(data)
-
-# Add to vectorDB
-# Insert the documents in MongoDB Atlas Vector Search
-vectorstore = MongoDBAtlasVectorSearch.from_documents(
-     documents=all_splits, 
-     embedding=OpenAIEmbeddings(disallowed_special=()), 
-     collection=MONGODB_COLLECTION, 
-     index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME
- )
-retriever = vectorstore.as_retriever()
-"""
-
 # Read from MongoDB Atlas Vector Search
 vectorstore = MongoDBAtlasVectorSearch.from_connection_string(
     MONGO_URI,
