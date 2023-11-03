@@ -888,7 +888,8 @@ def _prepare_eval_run(
         )
     print(
         f"View the evaluation results for project '{project_name}'"
-        f" at:\n{project.url}?eval=true",
+        f" at:\n{project.url}?eval=true\n\n"
+        f"View all tests for Dataset {dataset_name} at:\n{dataset.url}",
         flush=True,
     )
     examples = list(client.list_examples(dataset_id=dataset.id))
