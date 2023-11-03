@@ -50,6 +50,15 @@ class AgentActionMessageLog(AgentAction):
     type: Literal["AgentActionMessageLog"] = "AgentActionMessageLog"  # type: ignore
 
 
+class AgentObservation(Serializable):
+    """The result of an AgentAction."""
+
+    action: AgentAction
+    """The AgentAction that was executed."""
+    observation: str
+    """The result of the AgentAction."""
+
+
 class AgentFinish(Serializable):
     """The final return value of an ActionAgent."""
 
