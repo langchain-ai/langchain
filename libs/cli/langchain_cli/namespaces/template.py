@@ -120,7 +120,6 @@ def serve(
         if not configurable
         else "langchain_cli.dev_scripts:create_demo_server_configurable"
     )
-    print("attempt")
 
     import uvicorn
 
