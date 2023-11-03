@@ -37,7 +37,7 @@ if TYPE_CHECKING:
         CallbackManagerForChainRun,
     )
     from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
-    from langchain.callbacks.tracers.schemas import Run
+    from langchain.callbacks.tracers.root_listeners import Listener
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import BaseModel, Field, create_model
+from langchain.schema.chat_history import BaseChatMessageHistory
 from langchain.schema.runnable.config import (
     RunnableConfig,
     acall_func_with_variable_args,
@@ -589,9 +590,9 @@ class Runnable(Generic[Input, Output], ABC):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Callable[[Run], None]] = None,
-        on_end: Optional[Callable[[Run], None]] = None,
-        on_error: Optional[Callable[[Run], None]] = None,
+        on_start: Optional[Listener] = None,
+        on_end: Optional[Listener] = None,
+        on_error: Optional[Listener] = None,
     ) -> Runnable[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -609,10 +610,13 @@ class Runnable(Generic[Input, Output], ABC):
         return RunnableBinding(
             bound=self,
             config_factories=[
-                lambda: {
+                lambda config: {
                     "callbacks": [
                         RootListenersTracer(
-                            on_start=on_start, on_end=on_end, on_error=on_error
+                            config=config,
+                            on_start=on_start,
+                            on_end=on_end,
+                            on_error=on_error,
                         )
                     ],
                 }
@@ -672,6 +676,24 @@ class Runnable(Generic[Input, Output], ABC):
             runnable=self,
             fallbacks=fallbacks,
             exceptions_to_handle=exceptions_to_handle,
+        )
+
+    def with_message_history(
+        self,
+        factory: Callable[[str], BaseChatMessageHistory],
+        input_key: str,
+        *,
+        output_key: Optional[str] = None,
+        history_key: str = "history",
+    ) -> Runnable[Input, Output]:
+        from langchain.schema.runnable.message_history import RunnableWithMessageHistory
+
+        return RunnableWithMessageHistory(
+            runnable=self,
+            factory=factory,
+            input_key=input_key,
+            output_key=output_key,
+            history_key=history_key,
         )
 
     """ --- Helper methods for Subclasses --- """
@@ -2376,9 +2398,9 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Callable[[Run], None]] = None,
-        on_end: Optional[Callable[[Run], None]] = None,
-        on_error: Optional[Callable[[Run], None]] = None,
+        on_start: Optional[Listener] = None,
+        on_end: Optional[Listener] = None,
+        on_error: Optional[Listener] = None,
     ) -> RunnableEach[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -2441,7 +2463,9 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
 
     config: RunnableConfig = Field(default_factory=dict)
 
-    config_factories: List[Callable[[], RunnableConfig]] = Field(default_factory=list)
+    config_factories: List[Callable[[RunnableConfig], RunnableConfig]] = Field(
+        default_factory=list
+    )
 
     # Union[Type[Input], BaseModel] + things like List[str]
     custom_input_type: Optional[Any] = None
@@ -2457,7 +2481,9 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         bound: Runnable[Input, Output],
         kwargs: Optional[Mapping[str, Any]] = None,
         config: Optional[RunnableConfig] = None,
-        config_factories: Optional[List[Callable[[], RunnableConfig]]] = None,
+        config_factories: Optional[
+            List[Callable[[RunnableConfig], RunnableConfig]]
+        ] = None,
         custom_input_type: Optional[Union[Type[Input], BaseModel]] = None,
         custom_output_type: Optional[Union[Type[Output], BaseModel]] = None,
         **other_kwargs: Any,
@@ -2553,9 +2579,9 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Callable[[Run], None]] = None,
-        on_end: Optional[Callable[[Run], None]] = None,
-        on_error: Optional[Callable[[Run], None]] = None,
+        on_start: Optional[Listener] = None,
+        on_end: Optional[Listener] = None,
+        on_error: Optional[Listener] = None,
     ) -> Runnable[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -2575,10 +2601,13 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
             kwargs=self.kwargs,
             config=self.config,
             config_factories=[
-                lambda: {
+                lambda config: {
                     "callbacks": [
                         RootListenersTracer(
-                            on_start=on_start, on_end=on_end, on_error=on_error
+                            config=config,
+                            on_start=on_start,
+                            on_end=on_end,
+                            on_error=on_error,
                         )
                     ],
                 }
@@ -2612,9 +2641,8 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         )
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
-        return merge_configs(
-            self.config, *(f() for f in self.config_factories), *configs
-        )
+        config = merge_configs(self.config, *configs)
+        return merge_configs(config, *(f(config) for f in self.config_factories))
 
     def invoke(
         self,
