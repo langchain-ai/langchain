@@ -52,6 +52,7 @@ _EXPECTED = [
     "StarRocks",
     "SupabaseVectorStore",
     "Tair",
+    "TileDB",
     "Tigris",
     "TimescaleVector",
     "Typesense",
