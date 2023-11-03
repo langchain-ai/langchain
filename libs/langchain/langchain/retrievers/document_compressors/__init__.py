@@ -12,6 +12,9 @@ from langchain.retrievers.document_compressors.cohere_rerank import CohereRerank
 from langchain.retrievers.document_compressors.embeddings_filter import (
     EmbeddingsFilter,
 )
+from langchain.retrievers.document_compressors.encoded_chain_extract import (
+    LLMEncodedChainExtractor,
+)
 
 __all__ = [
     "DocumentCompressorPipeline",
