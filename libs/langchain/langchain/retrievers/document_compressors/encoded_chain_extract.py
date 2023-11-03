@@ -10,6 +10,7 @@ from typing import Callable, Dict, List, Optional, Sequence
 
 import nltk
 
+
 from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
@@ -90,11 +91,11 @@ def number_sequences(text: str, len: int = 1) -> str:
 
     return "  \n\n  ".join(numbered_text)
 
-
+  
 def default_get_input(query: str, context: str) -> Dict[str, str]:
     """Return the compression chain input."""
     return {"question": query, "context": context}
-
+  
 
 def _get_default_chain_prompt() -> PromptTemplate:
     template = prompt_template.format(no_output_str=NO_OUTPUT_STR)
@@ -148,6 +149,7 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
 
     llm_chain: LLMChain
     """LLM wrapper to use for compressing documents."""
+
 
     get_input: Callable[[str, str], dict] = default_get_input
     """Callable for constructing the chain input from the query and a Document."""
@@ -208,6 +210,7 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
         sequence_lists = await asyncio.gather(
             *[
                 self.llm_chain.apredict(
+
                     **self.get_input(query, doc.page_content), callbacks=callbacks
                 )
                 for doc in numbered_sequence_docs
