@@ -1,0 +1,10 @@
+Paper,Question,Answer
+wildfire.pdf,What is the difference in acres burned from Wildfires between 1993 and 2022?,"Acres burned from wildfires increases from ~2M in 1993 to ~8M in 2022, a ~4x increase."
+wildfire.pdf,What is the trend in the total number of wildfires between 1993 and 2022?,The total number of wildfires between 1993 and 2022 has oscillated up and down without a clear trend in either direction. The total number of fires in 1993 is about equal to the number in 2022.
+housing.pdf,How does housing compare to medical care in CPI weights?,Housing is 42% of CPI whereas medical care is 9%.
+housing.pdf,What’s the share of recreation in the CPI weights?,Recreation is 6% of CPI.
+ai_labs.pdf,How does the share of large-large AI results shift from 2012 to 2022?,The majority of results in 2012 came from academia whereas by 2022 research consortiums and academia have an equal share.
+ai_labs.pdf,When did research consortiums start to play a role in large scale AI results?,Research consortiums started to produce large scale AI results in 2021.
+nvda.pdf,What is the acceleration benefit from A100 on Physics HPC applications?,A100 achieves 1.9x and 2.1x acceleration on LAMMPS and Chroma for physics.
+bridewater.pdf,What is the trend in call center employment from 2000 to 2023?,"Call center employment rose significantly between around 2005 and around 2015. It has then falling since around 2015, most notably in the past 19 months."
+bridewater.pdf,What is the typical time lag between the first examples of a new technology and the resulting rise in productivity growth?,There is typically a multi-year lag between the fist demonstration of technology and their resulting impact on productivity growth: for electrification it was around 20 years and for PCs it was also around 20 years.
