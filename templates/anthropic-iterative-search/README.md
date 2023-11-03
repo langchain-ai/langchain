@@ -31,7 +31,7 @@ langchain app add anthropic-iterative-search
 
 And add the following code to your `server.py` file:
 ```python
-from anthropic_iterative_search import final_chain as anthropic_iterative_search_chain
+from anthropic_iterative_search import chain as anthropic_iterative_search_chain
 
 add_routes(app, anthropic_iterative_search_chain, path="/anthropic-iterative-search")
 ```

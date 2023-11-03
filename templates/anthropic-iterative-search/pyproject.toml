@@ -13,7 +13,7 @@ wikipedia = "^1.4.0"
 
 [tool.langserve]
 export_module = "anthropic_iterative_search"
-export_attr = "final_chain"
+export_attr = "chain"
 
 [build-system]
 requires = [
