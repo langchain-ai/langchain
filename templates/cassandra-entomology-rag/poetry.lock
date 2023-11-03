@@ -754,25 +754,22 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 
 [[package]]
 name = "langchain-cli"
-version = "0.0.13"
+version = "0.0.15"
 description = "CLI for interacting with LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain_cli-0.0.13-py3-none-any.whl", hash = "sha256:7f9bc2178fcfa042180f4f2597c4a8a3de7c1a75a7cead99b52b943ac54f1649"},
-    {file = "langchain_cli-0.0.13.tar.gz", hash = "sha256:2ce9febfb312aad6a70a12f121644ca4695bb3758992cd4fcb13bc22a3803261"},
+    {file = "langchain_cli-0.0.15-py3-none-any.whl", hash = "sha256:88102d2bb9d7c9cc99a1da13302a7f95d60cb37b2dab264b808aa6e3887b046f"},
+    {file = "langchain_cli-0.0.15.tar.gz", hash = "sha256:b7ff1a8338922aadbc3b1a141ea92c0a33aaaa72124dfbfd12049fe9a4a95cec"},
 ]
 
 [package.dependencies]
 fastapi = ">=0.104.0,<0.105.0"
 gitpython = ">=3.1.40,<4.0.0"
-langserve = {version = ">=0.0.16", extras = ["all"], optional = true, markers = "extra == \"serve\""}
+langserve = {version = ">=0.0.16", extras = ["all"]}
 tomli = ">=2.0.1,<3.0.0"
 typer = {version = ">=0.9.0,<0.10.0", extras = ["all"]}
 uvicorn = ">=0.23.2,<0.24.0"
-
-[package.extras]
-serve = ["langserve[all] (>=0.0.16)"]
 
 [[package]]
 name = "langserve"
@@ -1664,4 +1661,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5af2d30d6630b0726ff9c2df5ee04bf931eb52bb1ac203f665dc3b8d4f5f19cb"
+content-hash = "2bbb41d6a2b203cdef7902704f626c0b0006d12a660d4f85b91a48d44db7d5b9"
