@@ -28,6 +28,10 @@ Zep project: https://github.com/getzep/zep | Docs: https://docs.getzep.com/
 
 Set up a Zep service by following the [Quick Start Guide](https://docs.getzep.com/deployment/quickstart/).
 
+## Ingesting Documents into a Zep Collection
+
+Run `python ingest.py` to ingest the test documents into a Zep Collection. Review the file to modify the Collection name and document source.
+
 
 ## Usage
 
