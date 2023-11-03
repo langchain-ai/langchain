@@ -48,7 +48,6 @@ EXPECTED_ALL = [
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
-    "OpenCLIPEmbeddings",
 ]
 
 
