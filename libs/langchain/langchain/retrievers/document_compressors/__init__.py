@@ -2,6 +2,9 @@ from langchain.retrievers.document_compressors.base import DocumentCompressorPip
 from langchain.retrievers.document_compressors.chain_extract import (
     LLMChainExtractor,
 )
+from langchain.retrievers.document_compressors.encoded_chain_extract import (
+    LLMEncodedChainExtractor,
+)
 from langchain.retrievers.document_compressors.chain_filter import (
     LLMChainFilter,
 )
@@ -14,6 +17,7 @@ __all__ = [
     "DocumentCompressorPipeline",
     "EmbeddingsFilter",
     "LLMChainExtractor",
+    "LLMEncodedChainExtractor",
     "LLMChainFilter",
     "CohereRerank",
 ]
