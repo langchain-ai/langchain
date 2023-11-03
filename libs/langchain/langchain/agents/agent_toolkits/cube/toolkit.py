@@ -23,7 +23,8 @@ class CubeToolkit(BaseToolkit):
         Make sure that the capabilities given by this toolkit to the calling
         code are appropriately scoped to the application.
 
-        See https://python.langchain.com/docs/security or https://cube.dev/security for more information.
+        See https://python.langchain.com/docs/security or https://cube.dev/security
+         for more information.
     """
 
     cube: Cube = Field(exclude=True)

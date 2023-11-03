@@ -4,8 +4,8 @@ from urllib.parse import urljoin
 
 import pytest
 import responses
-from pydantic.v1 import SecretStr
 
+from langchain.pydantic_v1 import SecretStr
 from langchain.utilities.cube import Cube
 
 CUBE_API_URL = "http://cube-api:4000"
@@ -23,7 +23,7 @@ CUBES = [
                 "aliasName": "users.count",
                 "type": "number",
                 "aggType": "count",
-                "drillMembers": ["users.id", "users.city", "users.createdAt"]
+                "drillMembers": ["users.id", "users.city", "users.createdAt"],
             }
         ],
         "dimensions": [
@@ -36,7 +36,7 @@ CUBES = [
                 "suggestFilterValues": True,
             }
         ],
-        "segments": []
+        "segments": [],
     },
     {
         "name": "Orders",
@@ -50,7 +50,7 @@ CUBES = [
                 "aliasName": "orders.count",
                 "type": "number",
                 "aggType": "count",
-                "drillMembers": ["orders.id", "orders.type", "orders.createdAt"]
+                "drillMembers": ["orders.id", "orders.type", "orders.createdAt"],
             }
         ],
         "dimensions": [
@@ -63,8 +63,8 @@ CUBES = [
                 "suggestFilterValues": True,
             }
         ],
-        "segments": []
-    }
+        "segments": [],
+    },
 ]
 
 
@@ -75,17 +75,15 @@ def mocked_responses() -> Iterable[responses.RequestsMock]:
         yield rsps
 
 
-def mocked_mata(mocked_responses: responses.RequestsMock):
+def mocked_mata(mocked_responses: responses.RequestsMock) -> None:
     mocked_responses.add(
         method=responses.GET,
         url=urljoin(CUBE_API_URL, "/meta"),
-        body=json.dumps({
-            "cubes": CUBES
-        }),
+        body=json.dumps({"cubes": CUBES}),
     )
 
 
-def test_meta_information(mocked_responses: responses.RequestsMock):
+def test_meta_information(mocked_responses: responses.RequestsMock) -> None:
     mocked_mata(mocked_responses)
 
     cube = Cube(
@@ -96,7 +94,7 @@ def test_meta_information(mocked_responses: responses.RequestsMock):
     assert cube.meta_information == CUBES
 
 
-def test_model_meta_information(mocked_responses: responses.RequestsMock):
+def test_model_meta_information(mocked_responses: responses.RequestsMock) -> None:
     mocked_mata(mocked_responses)
 
     cube = Cube(
@@ -133,7 +131,7 @@ def test_model_meta_information(mocked_responses: responses.RequestsMock):
     assert cube.model_meta_information == model_meta_information
 
 
-def test_get_model_meta_information(mocked_responses: responses.RequestsMock):
+def test_get_model_meta_information(mocked_responses: responses.RequestsMock) -> None:
     mocked_mata(mocked_responses)
 
     cube = Cube(
@@ -157,7 +155,7 @@ def test_get_model_meta_information(mocked_responses: responses.RequestsMock):
     assert cube.get_model_meta_information(["Users"]) == model_meta_information
 
 
-def test_get_usable_model_names(mocked_responses: responses.RequestsMock):
+def test_get_usable_model_names(mocked_responses: responses.RequestsMock) -> None:
     mocked_mata(mocked_responses)
 
     cube = Cube(
@@ -168,31 +166,35 @@ def test_get_usable_model_names(mocked_responses: responses.RequestsMock):
     assert cube.get_usable_model_names() == ["Orders", "Users"]
 
 
-def test_get_usable_model_names_with_ignore_models(mocked_responses: responses.RequestsMock):
+def test_get_usable_model_names_with_ignore_models(
+    mocked_responses: responses.RequestsMock
+) -> None:
     mocked_mata(mocked_responses)
 
     cube = Cube(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
-        ignore_models=["Users"]
+        ignore_models=["Users"],
     )
 
     assert cube.get_usable_model_names() == ["Orders"]
 
 
-def test_get_usable_model_names_with_include_models(mocked_responses: responses.RequestsMock):
+def test_get_usable_model_names_with_include_models(
+    mocked_responses: responses.RequestsMock
+) -> None:
     mocked_mata(mocked_responses)
 
     cube = Cube(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
-        include_models=["Users"]
+        include_models=["Users"],
     )
 
     assert cube.get_usable_model_names() == ["Users"]
 
 
-def test_get_usable_models(mocked_responses: responses.RequestsMock):
+def test_get_usable_models(mocked_responses: responses.RequestsMock) -> None:
     mocked_mata(mocked_responses)
 
     cube = Cube(
@@ -209,13 +211,15 @@ def test_get_usable_models(mocked_responses: responses.RequestsMock):
     assert cube.get_usable_models() == usable_models
 
 
-def test_get_usable_models_with_ignore_models(mocked_responses: responses.RequestsMock):
+def test_get_usable_models_with_ignore_models(
+    mocked_responses: responses.RequestsMock
+) -> None:
     mocked_mata(mocked_responses)
 
     cube = Cube(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
-        ignore_models=["Users"]
+        ignore_models=["Users"],
     )
 
     usable_models = """| Model | Description |
@@ -226,13 +230,15 @@ def test_get_usable_models_with_ignore_models(mocked_responses: responses.Reques
     assert cube.get_usable_models() == usable_models
 
 
-def test_get_usable_models_with_include_models(mocked_responses: responses.RequestsMock):
+def test_get_usable_models_with_include_models(
+    mocked_responses: responses.RequestsMock
+) -> None:
     mocked_mata(mocked_responses)
 
     cube = Cube(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
-        include_models=["Users"]
+        include_models=["Users"],
     )
 
     usable_models = """| Model | Description |
@@ -243,7 +249,9 @@ def test_get_usable_models_with_include_models(mocked_responses: responses.Reque
     assert cube.get_usable_models() == usable_models
 
 
-def test_get_model_meta_information_with_custom_model_info(mocked_responses: responses.RequestsMock):
+def test_get_model_meta_information_with_custom_model_info(
+    mocked_responses: responses.RequestsMock
+) -> None:
     mocked_mata(mocked_responses)
 
     users = """## Model: Users

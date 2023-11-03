@@ -5,11 +5,11 @@ from urllib.parse import urljoin
 
 import pytest
 import responses
-from pydantic.v1 import SecretStr
 
 import langchain
 from langchain.agents import create_cube_agent
 from langchain.agents.agent_toolkits import CubeToolkit
+from langchain.pydantic_v1 import SecretStr
 from langchain.utilities.cube import Cube
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -28,7 +28,7 @@ CUBES = [
                 "aliasName": "users.count",
                 "type": "number",
                 "aggType": "count",
-                "drillMembers": ["users.id", "users.city", "users.createdAt"]
+                "drillMembers": ["users.id", "users.city", "users.createdAt"],
             }
         ],
         "dimensions": [
@@ -41,7 +41,7 @@ CUBES = [
                 "suggestFilterValues": True,
             }
         ],
-        "segments": []
+        "segments": [],
     },
     {
         "name": "Orders",
@@ -55,7 +55,7 @@ CUBES = [
                 "aliasName": "orders.count",
                 "type": "number",
                 "aggType": "count",
-                "drillMembers": ["orders.id", "orders.type", "orders.createdAt"]
+                "drillMembers": ["orders.id", "orders.type", "orders.createdAt"],
             }
         ],
         "dimensions": [
@@ -68,8 +68,8 @@ CUBES = [
                 "suggestFilterValues": True,
             }
         ],
-        "segments": []
-    }
+        "segments": [],
+    },
 ]
 
 PROMPT = f"""You are an agent designed to interact with a Cube Semantic.
@@ -108,8 +108,10 @@ Final Answer: the final answer to the original input question
 Begin!
 Question: I'd like to get the data on our daily, weekly, and monthly active users.
 Thought: I should look at the models in the Cube to see what I can query.  Then I should query the meta-information of the most relevant models.
-"""
-LIST_MODELS_CUBE_PROMPT = PROMPT + """Action: list_models_cube
+"""  # noqa: E501
+LIST_MODELS_CUBE_PROMPT = (
+    PROMPT
+    + """Action: list_models_cube
 Action Input: ""
 Observation: | Model | Description |
 | --- | --- |
@@ -117,7 +119,10 @@ Observation: | Model | Description |
 | Orders | Orders |
 
 Thought:"""
-META_INFORMATION_CUBE_PROMPT = LIST_MODELS_CUBE_PROMPT + """Action: meta_information_cube
+)
+META_INFORMATION_CUBE_PROMPT = (
+    LIST_MODELS_CUBE_PROMPT
+    + """Action: meta_information_cube
 Action Input: "Users"
 Observation: ## Model: Users
 
@@ -132,15 +137,21 @@ Observation: ## Model: Users
 | City |  | users.city | string |
 
 Thought:"""
-LOAD_CUBE_PROMPT = META_INFORMATION_CUBE_PROMPT + """Action: load_cube
+)
+LOAD_CUBE_PROMPT = (
+    META_INFORMATION_CUBE_PROMPT
+    + """Action: load_cube
 Action Input: "{"measures":["stories.count"],"dimensions":["stories.category"],"filters":[{"member":"stories.isDraft","operator":"equals","values":["No"]}],"timeDimensions":[{"dimension":"stories.time","dateRange":["2015-01-01","2015-12-31"],"granularity":"month"}],"limit":100,"offset":50,"order":{"stories.time":"asc","stories.count":"desc"}}"
 Observation: [{"users.count": "700"}]
-Thought:"""
+Thought:"""  # noqa: E501
+)
 QUERIES = {
     PROMPT: 'Action: list_models_cube\nAction Input: ""',
     LIST_MODELS_CUBE_PROMPT: 'Action: meta_information_cube\nAction Input: "Users"',
-    META_INFORMATION_CUBE_PROMPT: 'Action: load_cube\nAction Input: "{"measures":["stories.count"],"dimensions":["stories.category"],"filters":[{"member":"stories.isDraft","operator":"equals","values":["No"]}],"timeDimensions":[{"dimension":"stories.time","dateRange":["2015-01-01","2015-12-31"],"granularity":"month"}],"limit":100,"offset":50,"order":{"stories.time":"asc","stories.count":"desc"}}"',
-    LOAD_CUBE_PROMPT: 'Final Answer: The daily, weekly, and monthly active users are all 700.'
+    META_INFORMATION_CUBE_PROMPT: "Action: load_cube\nAction Input: "
+    '"{"measures":["stories.count"],"dimensions":["stories.category"],"filters":[{"member":"stories.isDraft","operator":"equals","values":["No"]}],"timeDimensions":[{"dimension":"stories.time","dateRange":["2015-01-01","2015-12-31"],"granularity":"month"}],"limit":100,"offset":50,"order":{"stories.time":"asc","stories.count":"desc"}}"',
+    LOAD_CUBE_PROMPT: "Final Answer: The daily, weekly, and monthly active users are"
+    " all 700.",
 }
 
 
@@ -151,50 +162,46 @@ def mocked_responses() -> Iterable[responses.RequestsMock]:
         yield rsps
 
 
-def mocked_mata(mocked_responses: responses.RequestsMock):
+def mocked_mata(mocked_responses: responses.RequestsMock) -> None:
     mocked_responses.add(
         method=responses.GET,
         url=urljoin(CUBE_API_URL, "/meta"),
-        body=json.dumps({
-            "cubes": CUBES
-        }),
+        body=json.dumps({"cubes": CUBES}),
     )
 
 
-def mocked_load(mocked_responses: responses.RequestsMock):
+def mocked_load(mocked_responses: responses.RequestsMock) -> None:
     mocked_responses.add(
         method=responses.POST,
         url=urljoin(CUBE_API_URL, "/load"),
-        body=json.dumps({
-            "query": {
-                "measures": ["users.count"],
-                "filters": [],
-                "timezone": "UTC",
-                "dimensions": [],
-                "timeDimensions": []
-            },
-            "data": [
-                {
-                    "users.count": "700"
-                }
-            ],
-            "annotation": {
-                "measures": {
-                    "users.count": {
-                        "title": "Users Count",
-                        "shortTitle": "Count",
-                        "type": "number"
-                    }
+        body=json.dumps(
+            {
+                "query": {
+                    "measures": ["users.count"],
+                    "filters": [],
+                    "timezone": "UTC",
+                    "dimensions": [],
+                    "timeDimensions": [],
                 },
-                "dimensions": {},
-                "segments": {},
-                "timeDimensions": {}
+                "data": [{"users.count": "700"}],
+                "annotation": {
+                    "measures": {
+                        "users.count": {
+                            "title": "Users Count",
+                            "shortTitle": "Count",
+                            "type": "number",
+                        }
+                    },
+                    "dimensions": {},
+                    "segments": {},
+                    "timeDimensions": {},
+                },
             }
-        }),
+        ),
     )
 
 
-def test_create_cube_agent(mocked_responses: responses.RequestsMock):
+def test_create_cube_agent(mocked_responses: responses.RequestsMock) -> None:
     langchain.debug = True
     mocked_load(mocked_responses)
 
@@ -218,7 +225,9 @@ def test_create_cube_agent(mocked_responses: responses.RequestsMock):
         verbose=True,
     )
 
-    question = "I'd like to get the data on our daily, weekly, and monthly active users."
+    question = (
+        "I'd like to get the data on our daily, weekly, and monthly active users."
+    )
     answer = "The daily, weekly, and monthly active users are all 700."
 
     assert agent_executor.run(question) == answer

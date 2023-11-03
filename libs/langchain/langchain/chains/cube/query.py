@@ -42,7 +42,8 @@ def create_cube_query_chain(
         The best way to guard against such negative outcomes is to (as appropriate)
         limit the permissions granted to the credentials used with this tool.
 
-        See https://python.langchain.com/docs/security or https://cube.dev/security for more information.
+        See https://python.langchain.com/docs/security or https://cube.dev/security
+         for more information.
     """
     if prompt is not None:
         prompt_to_use = prompt
