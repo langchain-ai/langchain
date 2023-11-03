@@ -138,7 +138,7 @@ async def acompletion_with_retry(
 class _VertexAIBase(BaseModel):
     project: Optional[str] = None
     "The default GCP project to use when making Vertex API calls."
-    location: str = None
+    location: Optional[str] = None
     "The location to use when making API calls from models in Model Garden"
     request_parallelism: int = 5
     "The amount of parallelism allowed for requests issued to VertexAI models. "
