@@ -15,7 +15,7 @@ pip install -U "gigachain-cli[serve]"
 ```
 
 You can then run the following command to create a new skeleton of a package.
-By convention, package names should use `-` delimeters (not `_`).
+By convention, package names should use `-` delimiters (not `_`).
 
 ```shell
 gigachain template new $PROJECT_NAME
