@@ -1290,8 +1290,8 @@ class AgentExecutor(Chain):
         time_elapsed = 0.0
         start_time = time.time()
         # We now enter the agent loop (until it returns something).
-        async with asyncio_timeout(self.max_execution_time):
-            try:
+        try:
+            async with asyncio_timeout(self.max_execution_time):
                 while self._should_continue(iterations, time_elapsed):
                     next_step_output = await self._atake_next_step(
                         name_to_tool_map,
@@ -1325,14 +1325,14 @@ class AgentExecutor(Chain):
                 return await self._areturn(
                     output, intermediate_steps, run_manager=run_manager
                 )
-            except TimeoutError:
-                # stop early when interrupted by the async timeout
-                output = self.agent.return_stopped_response(
-                    self.early_stopping_method, intermediate_steps, **inputs
-                )
-                return await self._areturn(
-                    output, intermediate_steps, run_manager=run_manager
-                )
+        except (TimeoutError, asyncio.TimeoutError):
+            # stop early when interrupted by the async timeout
+            output = self.agent.return_stopped_response(
+                self.early_stopping_method, intermediate_steps, **inputs
+            )
+            return await self._areturn(
+                output, intermediate_steps, run_manager=run_manager
+            )
 
     def _get_tool_return(
         self, next_step_output: Tuple[AgentAction, str]
