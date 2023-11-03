@@ -3,24 +3,25 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from github import GithubException
-
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate,
-)
+from langchain.prompts.chat import (ChatPromptTemplate,
+                                    HumanMessagePromptTemplate,
+                                    SystemMessagePromptTemplate)
 
 if TYPE_CHECKING:
     from github.Issue import Issue
+    from langchain.chat_models.base import BaseChatModel
 
 
-def generate_branch_name(issue: Issue):
+def generate_branch_name(issue: Issue, llm: BaseChatModel=None):
     """
     Helper functions. Use `generate_branch_name()` to generate a meaningful 
     branch name that the Agent will use to commit it's new code against. 
     Later, it can use this branch to open a pull request.
     """
+    if not llm: 
+        llm = ChatOpenAI(temperature=0, model="gpt-4")
+
     system_template = "You are a helpful assistant that writes clear and concise" \
                       "GitHub branch names for new pull requests."
     system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
@@ -47,7 +48,6 @@ def generate_branch_name(issue: Issue):
         issue=str(issue), example_issue=str(example_issue)
     )
 
-    llm = ChatOpenAI(temperature=0, model="gpt-4")
     output = llm(formatted_messages)
     return _ensure_unique_branch_name(
         issue.repository, _sanitize_branch_name(output.content)
