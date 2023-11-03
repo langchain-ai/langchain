@@ -5,6 +5,7 @@ from typing import List, Tuple
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import AIMessage, HumanMessage, format_document
 from langchain.schema.document import Document
 from langchain.schema.messages import BaseMessage
@@ -18,7 +19,6 @@ from langchain.schema.runnable import (
 )
 from langchain.schema.runnable.utils import ConfigurableFieldSingleOption
 from langchain.vectorstores.zep import CollectionConfig, ZepVectorStore
-from langchain.pydantic_v1 import BaseModel, Field
 
 ZEP_API_URL = os.environ.get("ZEP_API_URL", "http://localhost:8000")
 ZEP_API_KEY = os.environ.get("ZEP_API_KEY", None)
