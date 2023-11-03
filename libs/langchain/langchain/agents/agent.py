@@ -1227,7 +1227,7 @@ class AgentExecutor(Chain):
                 return await self._areturn(
                     output, intermediate_steps, run_manager=run_manager
                 )
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):
             # stop early when interrupted by the async timeout
             output = self.agent.return_stopped_response(
                 self.early_stopping_method, intermediate_steps, **inputs
