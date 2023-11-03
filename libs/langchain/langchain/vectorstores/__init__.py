@@ -18,6 +18,7 @@ and retrieve the data that are 'most similar' to the embedded query.
 
     Embeddings, Document
 """  # noqa: E501
+
 from typing import Any
 
 from langchain.schema.vectorstore import VectorStore
@@ -35,6 +36,12 @@ def _import_alibaba_cloud_open_search_settings() -> Any:
     )
 
     return AlibabaCloudOpenSearchSettings
+
+
+def _import_azure_cosmos_db() -> Any:
+    from langchain.vectorstores.azure_cosmos_db import AzureCosmosDBVectorSearch
+
+    return AzureCosmosDBVectorSearch
 
 
 def _import_elastic_knn_search() -> Any:
@@ -83,6 +90,12 @@ def _import_bageldb() -> Any:
     from langchain.vectorstores.bageldb import Bagel
 
     return Bagel
+
+
+def _import_baiducloud_vector_search() -> Any:
+    from langchain.vectorstores.baiducloud_vector_search import BESVectorStore
+
+    return BESVectorStore
 
 
 def _import_cassandra() -> Any:
@@ -205,6 +218,12 @@ def _import_milvus() -> Any:
     return Milvus
 
 
+def _import_momento_vector_index() -> Any:
+    from langchain.vectorstores.momento_vector_index import MomentoVectorIndex
+
+    return MomentoVectorIndex
+
+
 def _import_mongodb_atlas() -> Any:
     from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 
@@ -283,6 +302,12 @@ def _import_scann() -> Any:
     return ScaNN
 
 
+def _import_semadb() -> Any:
+    from langchain.vectorstores.semadb import SemaDB
+
+    return SemaDB
+
+
 def _import_singlestoredb() -> Any:
     from langchain.vectorstores.singlestoredb import SingleStoreDB
 
@@ -323,6 +348,12 @@ def _import_tencentvectordb() -> Any:
     from langchain.vectorstores.tencentvectordb import TencentVectorDB
 
     return TencentVectorDB
+
+
+def _import_tiledb() -> Any:
+    from langchain.vectorstores.tiledb import TileDB
+
+    return TileDB
 
 
 def _import_tigris() -> Any:
@@ -392,6 +423,8 @@ def __getattr__(name: str) -> Any:
         return _import_alibaba_cloud_open_search()
     elif name == "AlibabaCloudOpenSearchSettings":
         return _import_alibaba_cloud_open_search_settings()
+    elif name == "AzureCosmosDBVectorSearch":
+        return _import_azure_cosmos_db()
     elif name == "ElasticKnnSearch":
         return _import_elastic_knn_search()
     elif name == "ElasticVectorSearch":
@@ -406,6 +439,8 @@ def __getattr__(name: str) -> Any:
         return _import_azuresearch()
     elif name == "Bagel":
         return _import_bageldb()
+    elif name == "BESVectorStore":
+        return _import_baiducloud_vector_search()
     elif name == "Cassandra":
         return _import_cassandra()
     elif name == "Chroma":
@@ -446,6 +481,8 @@ def __getattr__(name: str) -> Any:
         return _import_meilisearch()
     elif name == "Milvus":
         return _import_milvus()
+    elif name == "MomentoVectorIndex":
+        return _import_momento_vector_index()
     elif name == "MongoDBAtlasVectorSearch":
         return _import_mongodb_atlas()
     elif name == "MyScaleSettings":
@@ -470,6 +507,8 @@ def __getattr__(name: str) -> Any:
         return _import_rocksetdb()
     elif name == "ScaNN":
         return _import_scann()
+    elif name == "SemaDB":
+        return _import_semadb()
     elif name == "SingleStoreDB":
         return _import_singlestoredb()
     elif name == "SKLearnVectorStore":
@@ -484,6 +523,8 @@ def __getattr__(name: str) -> Any:
         return _import_tair()
     elif name == "TencentVectorDB":
         return _import_tencentvectordb()
+    elif name == "TileDB":
+        return _import_tiledb()
     elif name == "Tigris":
         return _import_tigris()
     elif name == "TimescaleVector":
@@ -515,20 +556,16 @@ __all__ = [
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
-    "Annoy",
-    "AtlasDB",
     "AtlasDB",
     "AwaDB",
     "AzureSearch",
     "Bagel",
     "Cassandra",
     "Chroma",
-    "Chroma",
     "Clarifai",
     "Clickhouse",
     "ClickhouseSettings",
     "DashVector",
-    "DeepLake",
     "DeepLake",
     "Dingo",
     "DocArrayHnswSearch",
@@ -545,11 +582,11 @@ __all__ = [
     "MatchingEngine",
     "Meilisearch",
     "Milvus",
+    "MomentoVectorIndex",
     "MongoDBAtlasVectorSearch",
     "MyScale",
     "MyScaleSettings",
     "Neo4jVector",
-    "OpenSearchVectorSearch",
     "OpenSearchVectorSearch",
     "PGEmbedding",
     "PGVector",
@@ -559,12 +596,13 @@ __all__ = [
     "Rockset",
     "SKLearnVectorStore",
     "ScaNN",
-    "SingleStoreDB",
+    "SemaDB",
     "SingleStoreDB",
     "SQLiteVSS",
     "StarRocks",
     "SupabaseVectorStore",
     "Tair",
+    "TileDB",
     "Tigris",
     "TimescaleVector",
     "Typesense",
@@ -572,11 +610,11 @@ __all__ = [
     "Vald",
     "Vearch",
     "Vectara",
-    "VectorStore",
     "VespaStore",
     "Weaviate",
     "ZepVectorStore",
     "Zilliz",
-    "Zilliz",
     "TencentVectorDB",
+    "AzureCosmosDBVectorSearch",
+    "VectorStore",
 ]
