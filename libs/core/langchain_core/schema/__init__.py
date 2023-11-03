@@ -1,5 +1,10 @@
 """**Schemas** are the LangChain Base Classes and Interfaces."""
-from langchain_core.schema.agent import AgentAction, AgentFinish
+from langchain_core.schema.agent import (
+    AgentAction,
+    AgentActionMessageLog,
+    AgentFinish,
+    AgentStep,
+)
 from langchain_core.schema.cache import BaseCache
 from langchain_core.schema.chat_history import BaseChatMessageHistory
 from langchain_core.schema.document import BaseDocumentTransformer, Document
@@ -45,6 +50,8 @@ __all__ = [
     "BaseStore",
     "AgentFinish",
     "AgentAction",
+    "AgentActionMessageLog",
+    "AgentStep",
     "Document",
     "BaseChatMessageHistory",
     "BaseDocumentTransformer",

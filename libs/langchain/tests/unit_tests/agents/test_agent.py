@@ -6,6 +6,8 @@ from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.schema.agent import AgentAction, AgentStep
+from langchain.schema.runnable.utils import add
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -147,6 +149,110 @@ def test_agent_with_callbacks() -> None:
         == handler2.chain_ends
         == 0
     )
+
+
+def test_agent_stream() -> None:
+    """Test react chain with callbacks by setting verbose globally."""
+    tool = "Search"
+    responses = [
+        f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
+        f"FooBarBaz\nAction: {tool}\nAction Input: something else",
+        "Oh well\nFinal Answer: curses foiled again",
+    ]
+    # Only fake LLM gets callbacks for handler2
+    fake_llm = FakeListLLM(responses=responses)
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: f"Results for: {x}",
+            description="Useful for searching",
+        ),
+    ]
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    )
+
+    output = [a for a in agent.stream("when was langchain made")]
+    assert output == [
+        {
+            "actions": [
+                AgentAction(
+                    tool="Search",
+                    tool_input="misalignment",
+                    log="FooBarBaz\nAction: Search\nAction Input: misalignment",
+                )
+            ]
+        },
+        {
+            "steps": [
+                AgentStep(
+                    action=AgentAction(
+                        tool="Search",
+                        tool_input="misalignment",
+                        log="FooBarBaz\nAction: Search\nAction Input: misalignment",
+                    ),
+                    observation="Results for: misalignment",
+                )
+            ]
+        },
+        {
+            "actions": [
+                AgentAction(
+                    tool="Search",
+                    tool_input="something else",
+                    log="FooBarBaz\nAction: Search\nAction Input: something else",
+                )
+            ]
+        },
+        {
+            "steps": [
+                AgentStep(
+                    action=AgentAction(
+                        tool="Search",
+                        tool_input="something else",
+                        log="FooBarBaz\nAction: Search\nAction Input: something else",
+                    ),
+                    observation="Results for: something else",
+                )
+            ]
+        },
+        {"output": "curses foiled again"},
+    ]
+    assert add(output) == {
+        "actions": [
+            AgentAction(
+                tool="Search",
+                tool_input="misalignment",
+                log="FooBarBaz\nAction: Search\nAction Input: misalignment",
+            ),
+            AgentAction(
+                tool="Search",
+                tool_input="something else",
+                log="FooBarBaz\nAction: Search\nAction Input: something else",
+            ),
+        ],
+        "steps": [
+            AgentStep(
+                action=AgentAction(
+                    tool="Search",
+                    tool_input="misalignment",
+                    log="FooBarBaz\nAction: Search\nAction Input: misalignment",
+                ),
+                observation="Results for: misalignment",
+            ),
+            AgentStep(
+                action=AgentAction(
+                    tool="Search",
+                    tool_input="something else",
+                    log="FooBarBaz\nAction: Search\nAction Input: something else",
+                ),
+                observation="Results for: something else",
+            ),
+        ],
+        "output": "curses foiled again",
+    }
 
 
 def test_agent_tool_return_direct() -> None:
