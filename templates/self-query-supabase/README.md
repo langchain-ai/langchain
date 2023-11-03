@@ -92,7 +92,7 @@ langchain app add self-query-supabase
 
 Add the following code to your `server.py` file:
 ```python
-from self_query_supabase import chain as self_query_supabase_chain
+from self_query_supabase.chain import chain as self_query_supabase_chain
 
 add_routes(app, self_query_supabase_chain, path="/self-query-supabase")
 ```

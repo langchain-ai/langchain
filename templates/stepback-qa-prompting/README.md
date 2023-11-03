@@ -34,7 +34,7 @@ langchain app add stepback-qa-prompting
 
 And add the following code to your `server.py` file:
 ```python
-from stepback_qa_prompting import chain as stepback_qa_prompting_chain
+from stepback_qa_prompting.chain import chain as stepback_qa_prompting_chain
 
 add_routes(app, stepback_qa_prompting_chain, path="/stepback-qa-prompting")
 ```

@@ -94,9 +94,9 @@ langchain app add rag_supabase
 And add the following code to your `server.py` file:
 
 ```python
-from dotenv import load_dotenv
+from rag_supabase.chain import chain as rag_supabase_chain
 
-load_dotenv()
+add_routes(app, rag_supabase_chain, path="/rag-supabase")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -120,7 +120,7 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/rag_supabase/playground](http://127.0.0.1:8000/rag_supabase/playground)  
+We can access the playground at [http://127.0.0.1:8000/rag-supabase/playground](http://127.0.0.1:8000/rag-supabase/playground)  
 
 We can access the template from code with:
 

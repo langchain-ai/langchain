@@ -21,7 +21,7 @@ extras = [
 version = "^1.0.0"
 
 [tool.langserve]
-export_module = "rag_weaviate"
+export_module = "hybrid_search_weaviate"
 export_attr = "chain"
 
 [build-system]

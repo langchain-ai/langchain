@@ -31,7 +31,7 @@ langchain app add rag-fusion
 
 And add the following code to your `server.py` file:
 ```python
-from rag_fusion import chain as rag_fusion_chain
+from rag_fusion.chain import chain as rag_fusion_chain
 
 add_routes(app, rag_fusion_chain, path="/rag-fusion")
 ```
