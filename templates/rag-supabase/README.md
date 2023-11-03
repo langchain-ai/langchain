@@ -76,7 +76,7 @@ Since we are using [`SupabaseVectorStore`](https://python.langchain.com/docs/int
 First, install the LangChain CLI:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:

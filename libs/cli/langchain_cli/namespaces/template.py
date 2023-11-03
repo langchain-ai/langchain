@@ -67,6 +67,11 @@ def new(
     package_dir = destination_dir / module_name
     shutil.move(destination_dir / "package_template", package_dir)
 
+    # update init
+    init = package_dir / "__init__.py"
+    init_contents = init.read_text()
+    init.write_text(init_contents.replace("__module_name__", module_name))
+
     # replace readme
     readme = destination_dir / "README.md"
     readme_contents = readme.read_text()
@@ -108,7 +113,6 @@ def serve(
     # get langserve export - throws KeyError if invalid
     get_langserve_export(pyproject)
 
-    port_str = str(port) if port is not None else "8000"
     host_str = host if host is not None else "127.0.0.1"
 
     script = (
@@ -117,14 +121,12 @@ def serve(
         else "langchain_cli.dev_scripts:create_demo_server_configurable"
     )
 
-    command = [
-        "uvicorn",
-        "--factory",
+    import uvicorn
+
+    uvicorn.run(
         script,
-        "--reload",
-        "--port",
-        port_str,
-        "--host",
-        host_str,
-    ]
-    subprocess.run(command)
+        factory=True,
+        reload=True,
+        port=port if port is not None else 8000,
+        host=host_str,
+    )
