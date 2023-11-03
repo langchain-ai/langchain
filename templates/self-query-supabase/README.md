@@ -75,7 +75,7 @@ Use these steps to setup your Supabase database if you haven't already.
 To use this package, install the LangChain CLI first:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 Create a new LangChain project and install this package as the only one:
