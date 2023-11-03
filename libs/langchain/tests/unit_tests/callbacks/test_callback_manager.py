@@ -308,76 +308,74 @@ def test_callback_manager_configure_context_vars(
     """Test callback manager configuration."""
     monkeypatch.setenv("LANGCHAIN_TRACING_V2", "true")
     monkeypatch.setenv("LANGCHAIN_TRACING", "false")
-    with (
-        patch.object(LangChainTracer, "_persist_run_single"),
-        patch.object(LangChainTracer, "_update_run_single"),
-    ):
-        with trace_as_chain_group("test") as group_manager:
-            assert len(group_manager.handlers) == 1
-            tracer = group_manager.handlers[0]
-            assert isinstance(tracer, LangChainTracer)
+    with patch.object(LangChainTracer, "_update_run_single"):
+        with patch.object(LangChainTracer, "_persist_run_single"):
+            with trace_as_chain_group("test") as group_manager:
+                assert len(group_manager.handlers) == 1
+                tracer = group_manager.handlers[0]
+                assert isinstance(tracer, LangChainTracer)
 
-            with get_openai_callback() as cb:
-                # This is a new empty callback handler
-                assert cb.successful_requests == 0
-                assert cb.total_tokens == 0
+                with get_openai_callback() as cb:
+                    # This is a new empty callback handler
+                    assert cb.successful_requests == 0
+                    assert cb.total_tokens == 0
 
-                # configure adds this openai cb but doesn't modify the group manager
-                mngr = CallbackManager.configure(group_manager)
-                assert mngr.handlers == [tracer, cb]
-                assert group_manager.handlers == [tracer]
+                    # configure adds this openai cb but doesn't modify the group manager
+                    mngr = CallbackManager.configure(group_manager)
+                    assert mngr.handlers == [tracer, cb]
+                    assert group_manager.handlers == [tracer]
 
-                response = LLMResult(
-                    generations=[],
-                    llm_output={
-                        "token_usage": {
-                            "prompt_tokens": 2,
-                            "completion_tokens": 1,
-                            "total_tokens": 3,
+                    response = LLMResult(
+                        generations=[],
+                        llm_output={
+                            "token_usage": {
+                                "prompt_tokens": 2,
+                                "completion_tokens": 1,
+                                "total_tokens": 3,
+                            },
+                            "model_name": BaseOpenAI.__fields__["model_name"].default,
                         },
-                        "model_name": BaseOpenAI.__fields__["model_name"].default,
-                    },
-                )
-                mngr.on_llm_start({}, ["prompt"])[0].on_llm_end(response)
+                    )
+                    mngr.on_llm_start({}, ["prompt"])[0].on_llm_end(response)
 
-                # The callback handler has been updated
-                assert cb.successful_requests == 1
-                assert cb.total_tokens == 3
-                assert cb.prompt_tokens == 2
-                assert cb.completion_tokens == 1
-                assert cb.total_cost > 0
+                    # The callback handler has been updated
+                    assert cb.successful_requests == 1
+                    assert cb.total_tokens == 3
+                    assert cb.prompt_tokens == 2
+                    assert cb.completion_tokens == 1
+                    assert cb.total_cost > 0
 
-            with get_openai_callback() as cb:
-                # This is a new empty callback handler
-                assert cb.successful_requests == 0
-                assert cb.total_tokens == 0
+                with get_openai_callback() as cb:
+                    # This is a new empty callback handler
+                    assert cb.successful_requests == 0
+                    assert cb.total_tokens == 0
 
-                # configure adds this openai cb but doesn't modify the group manager
-                mngr = CallbackManager.configure(group_manager)
-                assert mngr.handlers == [tracer, cb]
-                assert group_manager.handlers == [tracer]
+                    # configure adds this openai cb but doesn't modify the group manager
+                    mngr = CallbackManager.configure(group_manager)
+                    assert mngr.handlers == [tracer, cb]
+                    assert group_manager.handlers == [tracer]
 
-                response = LLMResult(
-                    generations=[],
-                    llm_output={
-                        "token_usage": {
-                            "prompt_tokens": 2,
-                            "completion_tokens": 1,
-                            "total_tokens": 3,
+                    response = LLMResult(
+                        generations=[],
+                        llm_output={
+                            "token_usage": {
+                                "prompt_tokens": 2,
+                                "completion_tokens": 1,
+                                "total_tokens": 3,
+                            },
+                            "model_name": BaseOpenAI.__fields__["model_name"].default,
                         },
-                        "model_name": BaseOpenAI.__fields__["model_name"].default,
-                    },
-                )
-                mngr.on_llm_start({}, ["prompt"])[0].on_llm_end(response)
+                    )
+                    mngr.on_llm_start({}, ["prompt"])[0].on_llm_end(response)
 
-                # The callback handler has been updated
-                assert cb.successful_requests == 1
-                assert cb.total_tokens == 3
-                assert cb.prompt_tokens == 2
-                assert cb.completion_tokens == 1
-                assert cb.total_cost > 0
-        wait_for_all_tracers()
-        assert LangChainTracer._persist_run_single.call_count == 1
+                    # The callback handler has been updated
+                    assert cb.successful_requests == 1
+                    assert cb.total_tokens == 3
+                    assert cb.prompt_tokens == 2
+                    assert cb.completion_tokens == 1
+                    assert cb.total_cost > 0
+            wait_for_all_tracers()
+            assert LangChainTracer._persist_run_single.call_count == 1  # type: ignore
 
 
 def test_trace_as_chain_group_within_tracing_v2_context_manager(
@@ -387,16 +385,14 @@ def test_trace_as_chain_group_within_tracing_v2_context_manager(
     monkeypatch.setenv("LANGCHAIN_TRACING_V2", "false")
     monkeypatch.setenv("LANGCHAIN_TRACING", "false")
     with tracing_v2_enabled():
-        with (
-            patch.object(LangChainTracer, "_persist_run_single"),
-            patch.object(LangChainTracer, "_update_run_single"),
-        ):
-            with trace_as_chain_group("test") as group_manager:
-                assert len(group_manager.handlers) == 1
-                tracer = group_manager.handlers[0]
-                assert isinstance(tracer, LangChainTracer)
-            wait_for_all_tracers()
-            assert LangChainTracer._persist_run_single.call_count == 1
+        with patch.object(LangChainTracer, "_update_run_single"):
+            with patch.object(LangChainTracer, "_persist_run_single"):
+                with trace_as_chain_group("test") as group_manager:
+                    assert len(group_manager.handlers) == 1
+                    tracer = group_manager.handlers[0]
+                    assert isinstance(tracer, LangChainTracer)
+                wait_for_all_tracers()
+                assert LangChainTracer._persist_run_single.call_count == 1  # type: ignore
 
 
 def test_trace_as_chain_group_tracing_disabled(
@@ -405,10 +401,8 @@ def test_trace_as_chain_group_tracing_disabled(
     """Test callback manager configuration."""
     monkeypatch.setenv("LANGCHAIN_TRACING_V2", "false")
     monkeypatch.setenv("LANGCHAIN_TRACING", "false")
-    with (
-        patch.object(LangChainTracer, "_persist_run_single"),
-        patch.object(LangChainTracer, "_update_run_single"),
-    ):
-        with trace_as_chain_group("test") as group_manager:
-            assert len(group_manager.handlers) == 0
-            assert LangChainTracer._persist_run_single.call_count == 0
+    with patch.object(LangChainTracer, "_update_run_single"):
+        with patch.object(LangChainTracer, "_persist_run_single"):
+            with trace_as_chain_group("test") as group_manager:
+                assert len(group_manager.handlers) == 0
+                assert LangChainTracer._persist_run_single.call_count == 0  # type: ignore

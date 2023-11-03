@@ -64,20 +64,14 @@ logger = logging.getLogger(__name__)
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
 )
-tracing_callback_var: ContextVar[
-    Optional[LangChainTracerV1]
-] = ContextVar(  # noqa: E501
+tracing_callback_var: ContextVar[Optional[LangChainTracerV1]] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
-wandb_tracing_callback_var: ContextVar[
-    Optional[WandbTracer]
-] = ContextVar(  # noqa: E501
+wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(  # noqa: E501
     "tracing_wandb_callback", default=None
 )
 
-tracing_v2_callback_var: ContextVar[
-    Optional[LangChainTracer]
-] = ContextVar(  # noqa: E501
+tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
 )
 run_collector_var: ContextVar[
@@ -1920,7 +1914,7 @@ def env_var_is_set(env_var: str) -> bool:
     )
 
 
-def _tracing_v2_is_enabled():
+def _tracing_v2_is_enabled() -> bool:
     return (
         env_var_is_set("LANGCHAIN_TRACING_V2")
         or tracing_v2_callback_var.get() is not None
@@ -1928,7 +1922,7 @@ def _tracing_v2_is_enabled():
     )
 
 
-def _get_tracer_project():
+def _get_tracer_project() -> str:
     run_tree = get_run_tree_context()
     return getattr(
         run_tree,
