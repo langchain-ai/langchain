@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import Extra, SecretStr, root_validator
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +35,9 @@ class WatsonxLLM(LLM):
 
             from langchain.llms import WatsonxLLM
             llm = WatsonxLLM(
-                model_id='google/flan-ul2',
-                credentials = {"url": "https://us-south.ml.cloud.ibm.com",
-                                   "apikey": "*****"},
+                model_id="google/flan-ul2",
+                url="https://us-south.ml.cloud.ibm.com",
+                apikey="*****",
                 project_id="*****",
                 params=parameters,
             )
@@ -52,8 +52,26 @@ class WatsonxLLM(LLM):
     space_id: str = ""
     """ID of the Watson Studio space."""
 
-    credentials: Optional[dict] = None
-    """Credentials to Watson Machine Learning instance"""
+    url: Optional[SecretStr] = None
+    """Url to Watson Machine Learning instance"""
+
+    apikey: Optional[SecretStr] = None
+    """Apikey to Watson Machine Learning instance"""
+
+    token: Optional[SecretStr] = None
+    """Token to Watson Machine Learning instance"""
+
+    password: Optional[SecretStr] = None
+    """Password to Watson Machine Learning instance"""
+
+    username: Optional[SecretStr] = None
+    """Username to Watson Machine Learning instance"""
+
+    instance_id: Optional[SecretStr] = None
+    """Instance_id of Watson Machine Learning instance"""
+
+    version: Optional[SecretStr] = None
+    """Version of Watson Machine Learning instance"""
 
     params: Optional[dict] = None
     """Model parameters to use during generate requests."""
@@ -75,19 +93,19 @@ class WatsonxLLM(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that credentials and python package exists in environment."""
-        if "url" not in values["credentials"]:
+        if not values["url"]:
             raise TypeError("`url` is not provided.")
-        if "cloud.ibm.com" in values["credentials"].get("url", ""):
-            values["credentials"]["apikey"] = get_from_dict_or_env(
-                values["credentials"], "apikey", "WATSONX_APIKEY"
+        elif "cloud.ibm.com" in values.get("url", "").get_secret_value():
+            values["apikey"] = convert_to_secret_str(
+                get_from_dict_or_env(values, "apikey", "WATSONX_APIKEY")
             )
         else:
             if (
-                "token" not in values["credentials"]
+                not values["token"]
                 and "WATSONX_TOKEN" not in os.environ
-                and "password" not in values["credentials"]
+                and not values["password"]
                 and "WATSONX_PASSWORD" not in os.environ
-                and "apikey" not in values["credentials"]
+                and not values["apikey"]
                 and "WATSONX_APIKEY" not in os.environ
             ):
                 raise ValueError(
@@ -96,35 +114,62 @@ class WatsonxLLM(LLM):
                     " `WATSONX_TOKEN`, 'WATSONX_PASSWORD' or 'WATSONX_APIKEY' "
                     "which contains it,"
                     " or pass 'token', 'password' or 'apikey'"
-                    " as a named parameter in `credentials`."
+                    " as a named parameter."
                 )
-            elif "token" in values["credentials"] or "WATSONX_TOKEN" in os.environ:
-                values["credentials"]["token"] = get_from_dict_or_env(
-                    values["credentials"], "token", "WATSONX_TOKEN"
+            elif values["token"] or "WATSONX_TOKEN" in os.environ:
+                values["token"] = convert_to_secret_str(
+                    get_from_dict_or_env(values, "token", "WATSONX_TOKEN")
                 )
-            elif (
-                "password" in values["credentials"] or "WATSONX_PASSWORD" in os.environ
-            ):
-                values["credentials"]["password"] = get_from_dict_or_env(
-                    values["credentials"], "password", "WATSONX_PASSWORD"
+            elif values["password"] or "WATSONX_PASSWORD" in os.environ:
+                values["password"] = convert_to_secret_str(
+                    get_from_dict_or_env(values, "password", "WATSONX_PASSWORD")
                 )
-                values["credentials"]["username"] = get_from_dict_or_env(
-                    values["credentials"], "username", "WATSONX_USERNAME"
+                values["username"] = convert_to_secret_str(
+                    get_from_dict_or_env(values, "username", "WATSONX_USERNAME")
                 )
-            elif "apikey" in values["credentials"] or "WATSONX_APIKEY" in os.environ:
-                values["credentials"]["apikey"] = get_from_dict_or_env(
-                    values["credentials"], "apikey", "WATSONX_APIKEY"
+            elif values["apikey"] or "WATSONX_APIKEY" in os.environ:
+                values["apikey"] = convert_to_secret_str(
+                    get_from_dict_or_env(values, "apikey", "WATSONX_APIKEY")
                 )
-                values["credentials"]["username"] = get_from_dict_or_env(
-                    values["credentials"], "username", "WATSONX_USERNAME"
+                values["username"] = convert_to_secret_str(
+                    get_from_dict_or_env(values, "username", "WATSONX_USERNAME")
+                )
+            if not values["instance_id"] or "WATSONX_INSTANCE_ID" not in os.environ:
+                values["instance_id"] = convert_to_secret_str(
+                    get_from_dict_or_env(values, "instance_id", "WATSONX_INSTANCE_ID")
                 )
 
         try:
             from ibm_watson_machine_learning.foundation_models import Model
 
+            credentials = {
+                "url": values["url"].get_secret_value() if values["url"] else None,
+                "apikey": values["apikey"].get_secret_value()
+                if values["apikey"]
+                else None,
+                "token": values["token"].get_secret_value()
+                if values["token"]
+                else None,
+                "password": values["password"].get_secret_value()
+                if values["password"]
+                else None,
+                "username": values["username"].get_secret_value()
+                if values["username"]
+                else None,
+                "instance_id": values["instance_id"].get_secret_value()
+                if values["instance_id"]
+                else None,
+                "version": values["version"].get_secret_value()
+                if values["version"]
+                else None,
+            }
+            credentials_without_none_value = {
+                key: value for key, value in credentials.items() if value is not None
+            }
+
             watsonx_model = Model(
                 model_id=values["model_id"],
-                credentials=values["credentials"],
+                credentials=credentials_without_none_value,
                 params=values["params"],
                 project_id=values["project_id"],
                 space_id=values["space_id"],
