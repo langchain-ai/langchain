@@ -1145,6 +1145,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "ScaNN",
         "SemaDB",
         "SupabaseVectorStore",
+        "TileDB",
         "TimescaleVector",
         "Vald",
         "Vearch",
