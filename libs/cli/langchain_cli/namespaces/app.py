@@ -4,6 +4,7 @@ Manage LangChain apps
 
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -218,6 +219,9 @@ def serve(
     """
     Starts the LangServe app.
     """
+
+    # add current dir as first entry of path
+    sys.path.append(str(Path.cwd()))
 
     app_str = app if app is not None else "app.server:app"
     host_str = host if host is not None else "127.0.0.1"
