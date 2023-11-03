@@ -1,7 +1,7 @@
 """Test Xinference chat."""
 import asyncio
 import time
-from typing import Any, AsyncGenerator, Tuple
+from typing import Any, AsyncGenerator, Dict, Generator, Tuple
 from unittest.mock import patch
 
 import pytest
@@ -18,7 +18,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 @pytest.fixture(scope="module")
-def event_loop():
+def event_loop() -> Generator:
     loop = asyncio.get_event_loop()
     yield loop
     loop.close()
@@ -61,7 +61,7 @@ async def setup() -> AsyncGenerator[Tuple[str, str], None]:
         yield endpoint, model_uid
 
 
-def test_chat_xinference(setup) -> None:
+def test_chat_xinference(setup: Tuple) -> None:
     """Test ChatXinference wrapper."""
     server_url, model_uid = setup
     chat = ChatXinference(server_url=server_url, model_uid=model_uid, max_tokens=10)
@@ -71,14 +71,14 @@ def test_chat_xinference(setup) -> None:
     assert isinstance(response.content, str)
 
 
-def test_chat_xinference_model(setup) -> None:
+def test_chat_xinference_model(setup: Tuple) -> None:
     """Test ChatXinference wrapper handles model_name."""
     server_url, _ = setup
     with pytest.raises(ValueError):
         ChatXinference(server_url=server_url, model_uid="foo")
 
 
-def test_chat_xinference_system_message(setup) -> None:
+def test_chat_xinference_system_message(setup: Tuple) -> None:
     """Test ChatXinference wrapper with system message."""
     server_url, model_uid = setup
     chat = ChatXinference(server_url=server_url, model_uid=model_uid, max_tokens=10)
@@ -89,7 +89,7 @@ def test_chat_xinference_system_message(setup) -> None:
     assert isinstance(response.content, str)
 
 
-def test_chat_xinference_streaming(setup) -> None:
+def test_chat_xinference_streaming(setup: Tuple) -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     server_url, model_uid = setup
     callback_handler = FakeCallbackHandler()
@@ -109,7 +109,7 @@ def test_chat_xinference_streaming(setup) -> None:
     assert isinstance(response, BaseMessage)
 
 
-def test_chat_xinference_streaming_generation_info(setup) -> None:
+def test_chat_xinference_streaming_generation_info(setup: Tuple) -> None:
     """Test that generation info is preserved when streaming."""
     server_url, model_uid = setup
 
@@ -139,7 +139,7 @@ def test_chat_xinference_streaming_generation_info(setup) -> None:
     assert "Hello!" in generation.generations[0][0].text
 
 
-def test_chat_xinference_llm_output_contains_model_name(setup) -> None:
+def test_chat_xinference_llm_output_contains_model_name(setup: Tuple) -> None:
     """Test llm_output contains model_name."""
     server_url, model_uid = setup
     chat = ChatXinference(server_url=server_url, model_uid=model_uid, max_tokens=10)
@@ -149,7 +149,7 @@ def test_chat_xinference_llm_output_contains_model_name(setup) -> None:
     assert llm_result.llm_output["model_name"] == chat.model_uid
 
 
-def test_chat_xinference_streaming_llm_output_contains_model_name(setup) -> None:
+def test_chat_xinference_streaming_llm_output_contains_model_name(setup: Tuple) -> None:
     """Test llm_output contains model_name."""
     server_url, model_uid = setup
     chat = ChatXinference(
@@ -161,7 +161,7 @@ def test_chat_xinference_streaming_llm_output_contains_model_name(setup) -> None
     assert llm_result.llm_output["model_name"] == chat.model_uid
 
 
-def test_chat_xinference_invalid_streaming_params(setup) -> None:
+def test_chat_xinference_invalid_streaming_params(setup: Tuple) -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     server_url, model_uid = setup
     with pytest.raises(ValueError):
@@ -176,7 +176,7 @@ def test_chat_xinference_invalid_streaming_params(setup) -> None:
 
 @pytest.mark.skip(reason="Parallel generation is not supported by ggml.")
 @pytest.mark.asyncio
-async def test_async_chat_xinference_streaming(setup) -> None:
+async def test_async_chat_xinference_streaming(setup: Tuple) -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     server_url, model_uid = setup
     callback_handler = FakeCallbackHandler()
@@ -203,7 +203,7 @@ async def test_async_chat_xinference_streaming(setup) -> None:
             assert generation.text == generation.message.content
 
 
-def test_chat_xinference_extra_kwargs(setup) -> None:
+def test_chat_xinference_extra_kwargs(setup: Tuple) -> None:
     """Test extra kwargs to chat xinference."""
     server_url, model_uid = setup
     # Check that foo is saved in extra_kwargs.
@@ -235,7 +235,7 @@ def test_chat_xinference_extra_kwargs(setup) -> None:
 
     mock_called = False
 
-    def _mock_patched_convert(**kwargs):
+    def _mock_patched_convert(**kwargs: Any) -> Dict:
         nonlocal mock_called
         mock_called = True
         assert kwargs["generate_config"] == {"max_tokens": 11, "temperature": 0}
@@ -249,7 +249,7 @@ def test_chat_xinference_extra_kwargs(setup) -> None:
         assert mock_called
 
 
-def test_xinference_streaming(setup) -> None:
+def test_xinference_streaming(setup: Tuple) -> None:
     """Test streaming tokens from Xinference."""
     server_url, model_uid = setup
     llm = ChatXinference(server_url=server_url, model_uid=model_uid, max_tokens=10)
@@ -259,7 +259,7 @@ def test_xinference_streaming(setup) -> None:
 
 
 @pytest.mark.asyncio
-async def test_xinference_astream(setup) -> None:
+async def test_xinference_astream(setup: Tuple) -> None:
     """Test streaming tokens from Xinference."""
     server_url, model_uid = setup
     llm = ChatXinference(server_url=server_url, model_uid=model_uid, max_tokens=10)
@@ -269,7 +269,7 @@ async def test_xinference_astream(setup) -> None:
 
 
 @pytest.mark.asyncio
-async def test_xinference_abatch(setup) -> None:
+async def test_xinference_abatch(setup: Tuple) -> None:
     """Test streaming tokens from ChatXinference."""
     server_url, model_uid = setup
     llm = ChatXinference(server_url=server_url, model_uid=model_uid, max_tokens=10)
@@ -280,7 +280,7 @@ async def test_xinference_abatch(setup) -> None:
 
 
 @pytest.mark.asyncio
-async def test_xinference_abatch_tags(setup) -> None:
+async def test_xinference_abatch_tags(setup: Tuple) -> None:
     """Test batch tokens from ChatXinference."""
     server_url, model_uid = setup
     llm = ChatXinference(server_url=server_url, model_uid=model_uid, max_tokens=10)
@@ -292,7 +292,7 @@ async def test_xinference_abatch_tags(setup) -> None:
         assert isinstance(token.content, str)
 
 
-def test_xinference_batch(setup) -> None:
+def test_xinference_batch(setup: Tuple) -> None:
     """Test batch tokens from ChatXinference."""
     server_url, model_uid = setup
     llm = ChatXinference(server_url=server_url, model_uid=model_uid, max_tokens=10)
@@ -303,7 +303,7 @@ def test_xinference_batch(setup) -> None:
 
 
 @pytest.mark.asyncio
-async def test_xinference_ainvoke(setup) -> None:
+async def test_xinference_ainvoke(setup: Tuple) -> None:
     """Test invoke tokens from ChatXinference."""
     server_url, model_uid = setup
     llm = ChatXinference(server_url=server_url, model_uid=model_uid, max_tokens=10)
@@ -312,7 +312,7 @@ async def test_xinference_ainvoke(setup) -> None:
     assert isinstance(result.content, str)
 
 
-def test_xinference_invoke(setup) -> None:
+def test_xinference_invoke(setup: Tuple) -> None:
     """Test invoke tokens from ChatXinference."""
     server_url, model_uid = setup
     llm = ChatXinference(server_url=server_url, model_uid=model_uid, max_tokens=10)
@@ -321,7 +321,7 @@ def test_xinference_invoke(setup) -> None:
     assert isinstance(result.content, str)
 
 
-def test_full_example(setup) -> None:
+def test_full_example(setup: Tuple) -> None:
     server_url, model_uid = setup
     from langchain.chat_models import ChatXinference
     from langchain.prompts.chat import (
