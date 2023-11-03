@@ -54,9 +54,6 @@ from langchain.agents.agent_toolkits import (
 from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
-from langchain.agents.conversational_context_chat.base import (
-    ConversationalChatContextAgent,
-)
 from langchain.agents.initialize import initialize_agent
 from langchain.agents.load_tools import (
     get_all_tool_names,
@@ -93,7 +90,7 @@ def __getattr__(name: str) -> Any:
             "for more information.\n"
             f"Please update your import statement from: `{old_path}` to `{new_path}`."
         )
-    raise ImportError(f"{name} does not exist")
+    raise AttributeError(f"{name} does not exist")
 
 
 __all__ = [
@@ -106,7 +103,6 @@ __all__ = [
     "BaseSingleActionAgent",
     "ConversationalAgent",
     "ConversationalChatAgent",
-    "ConversationalChatContextAgent",
     "LLMSingleActionAgent",
     "MRKLChain",
     "OpenAIFunctionsAgent",

@@ -617,27 +617,26 @@ def test_lambda_schemas() -> None:
             "byebye": input["yo"],
         }
 
-    assert (
-        RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
-        == {
-            "title": "RunnableLambdaInput",
-            "$ref": "#/definitions/InputType",
-            "definitions": {
-                "InputType": {
-                    "properties": {
-                        "variable_name": {
-                            "title": "Variable " "Name",
-                            "type": "string",
-                        },
-                        "yo": {"title": "Yo", "type": "integer"},
+    assert RunnableLambda(
+        aget_values_typed
+    ).input_schema.schema() == {  # type: ignore[arg-type]
+        "title": "RunnableLambdaInput",
+        "$ref": "#/definitions/InputType",
+        "definitions": {
+            "InputType": {
+                "properties": {
+                    "variable_name": {
+                        "title": "Variable " "Name",
+                        "type": "string",
                     },
-                    "required": ["variable_name", "yo"],
-                    "title": "InputType",
-                    "type": "object",
-                }
-            },
-        }
-    )
+                    "yo": {"title": "Yo", "type": "integer"},
+                },
+                "required": ["variable_name", "yo"],
+                "title": "InputType",
+                "type": "object",
+            }
+        },
+    }
 
     assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
         "title": "RunnableLambdaOutput",
@@ -869,7 +868,7 @@ def test_configurable_fields() -> None:
 
     assert fake_llm_configurable.invoke("...") == "a"
 
-    assert fake_llm_configurable.config_schema(include=["configurable"]).schema() == {
+    assert fake_llm_configurable.config_schema().schema() == {
         "title": "RunnableConfigurableFieldsConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -912,7 +911,7 @@ def test_configurable_fields() -> None:
         text="Hello, John!"
     )
 
-    assert prompt_configurable.config_schema(include=["configurable"]).schema() == {
+    assert prompt_configurable.config_schema().schema() == {
         "title": "RunnableConfigurableFieldsConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -955,7 +954,7 @@ def test_configurable_fields() -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    assert chain_configurable.config_schema(include=["configurable"]).schema() == {
+    assert chain_configurable.config_schema().schema() == {
         "title": "RunnableSequenceConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -1021,9 +1020,7 @@ def test_configurable_fields() -> None:
         "llm3": "a",
     }
 
-    assert chain_with_map_configurable.config_schema(
-        include=["configurable"]
-    ).schema() == {
+    assert chain_with_map_configurable.config_schema().schema() == {
         "title": "RunnableSequenceConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -1122,7 +1119,7 @@ def test_configurable_fields_example() -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    assert chain_configurable.config_schema(include=["configurable"]).schema() == {
+    assert chain_configurable.config_schema().schema() == {
         "title": "RunnableSequenceConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
