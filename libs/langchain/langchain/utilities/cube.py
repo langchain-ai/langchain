@@ -176,7 +176,9 @@ class Cube:
         return self._meta_information
 
     def _get_meta_information(self) -> List[Dict[str, Any]]:
-        """Metadata of the cube."""
+        """Metadata of the cube.
+        See https://cube.dev/docs/reference/rest-api#v1meta for more information.
+        """
         headers = {
             "Content-Type": "application/json",
             "Authorization": self.cube_api_token.get_secret_value(),
@@ -281,7 +283,9 @@ class Cube:
         return "\n\n".join(models)
 
     def load(self, query: Union[Dict[str, Any], str, Query]) -> Dict[str, Any]:
-        """Load of the cube."""
+        """Load of the cube.
+        See https://cube.dev/docs/reference/rest-api#v1load for more information.
+        """
 
         headers = {
             "Content-Type": "application/json",
@@ -310,7 +314,9 @@ class Cube:
         return raw
 
     def sql(self, query: Union[Dict[str, Any], Query]) -> Dict[str, Any]:
-        """SQL of the cube."""
+        """SQL of the cube.
+        See https://cube.dev/docs/reference/rest-api#v1sql for more information.
+        """
 
         headers = {
             "Content-Type": "application/json",
