@@ -141,8 +141,7 @@ class Petals(LLM):
     ) -> str:
         """Call the Petals API."""
         params = self._default_params
-        params = {**params, **kwargs}
-        # self.huggingface_api_key = cast(SecretStr, self.huggingface_api_key)
+        params = {**params, **kwargs},
         inputs = self.tokenizer(prompt, return_tensors="pt")["input_ids"]
         outputs = self.client.generate(inputs, **params)
         text = self.tokenizer.decode(outputs[0])
