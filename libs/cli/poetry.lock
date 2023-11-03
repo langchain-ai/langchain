@@ -4,7 +4,7 @@
 name = "aiohttp"
 version = "3.8.6"
 description = "Async http client/server framework (asyncio)"
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "aiohttp-3.8.6-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:41d55fc043954cddbbd82503d9cc3f4814a40bcef30b3569bc7b5e34130718c1"},
@@ -112,7 +112,7 @@ speedups = ["Brotli", "aiodns", "cchardet"]
 name = "aiosignal"
 version = "1.3.1"
 description = "aiosignal: a list of registered asynchronous callbacks"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "aiosignal-1.3.1-py3-none-any.whl", hash = "sha256:f8376fb07dd1e86a584e4fcdec80b36b7f81aac666ebc724e2c090300dd83b17"},
@@ -147,7 +147,7 @@ trio = ["trio (<0.22)"]
 name = "async-timeout"
 version = "4.0.3"
 description = "Timeout context manager for asyncio programs"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f"},
@@ -158,7 +158,7 @@ files = [
 name = "attrs"
 version = "23.1.0"
 description = "Classes Without Boilerplate"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "attrs-23.1.0-py3-none-any.whl", hash = "sha256:1f28b4522cdc2fb4256ac1a020c78acf9cba2c6b461ccd2c126f3aa8e8335d04"},
@@ -176,7 +176,7 @@ tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pyte
 name = "certifi"
 version = "2023.7.22"
 description = "Python package for providing Mozilla's CA Bundle."
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "certifi-2023.7.22-py3-none-any.whl", hash = "sha256:92d6037539857d8206b8f6ae472e8b77db8058fec5937a1ef3f54304089edbb9"},
@@ -187,7 +187,7 @@ files = [
 name = "charset-normalizer"
 version = "3.3.1"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
-optional = true
+optional = false
 python-versions = ">=3.7.0"
 files = [
     {file = "charset-normalizer-3.3.1.tar.gz", hash = "sha256:d9137a876020661972ca6eec0766d81aef8a5627df628b664b234b73396e727e"},
@@ -311,7 +311,7 @@ files = [
 name = "dataclasses-json"
 version = "0.6.1"
 description = "Easily serialize dataclasses to and from JSON."
-optional = true
+optional = false
 python-versions = ">=3.7,<4.0"
 files = [
     {file = "dataclasses_json-0.6.1-py3-none-any.whl", hash = "sha256:1bd8418a61fe3d588bb0079214d7fb71d44937da40742b787256fd53b26b6c80"},
@@ -370,7 +370,7 @@ all = ["email-validator (>=2.0.0)", "httpx (>=0.23.0)", "itsdangerous (>=1.1.0)"
 name = "frozenlist"
 version = "1.4.0"
 description = "A list-like structure which implements collections.abc.MutableSequence"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "frozenlist-1.4.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:764226ceef3125e53ea2cb275000e309c0aa5464d43bd72abd661e27fffc26ab"},
@@ -471,7 +471,7 @@ test = ["black", "coverage[toml]", "ddt (>=1.1.1,!=1.4.3)", "mock", "mypy", "pre
 name = "greenlet"
 version = "3.0.1"
 description = "Lightweight in-process concurrent programming"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "greenlet-3.0.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:f89e21afe925fcfa655965ca8ea10f24773a1791400989ff32f467badfe4a064"},
@@ -552,7 +552,7 @@ files = [
 name = "httpcore"
 version = "0.18.0"
 description = "A minimal low-level HTTP client."
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "httpcore-0.18.0-py3-none-any.whl", hash = "sha256:adc5398ee0a476567bf87467063ee63584a8bce86078bf748e48754f60202ced"},
@@ -573,7 +573,7 @@ socks = ["socksio (==1.*)"]
 name = "httpx"
 version = "0.25.0"
 description = "The next generation HTTP client."
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "httpx-0.25.0-py3-none-any.whl", hash = "sha256:181ea7f8ba3a82578be86ef4171554dd45fec26a02556a744db029a0a27b7100"},
@@ -596,7 +596,7 @@ socks = ["socksio (==1.*)"]
 name = "httpx-sse"
 version = "0.3.1"
 description = "Consume Server-Sent Event (SSE) messages with HTTPX."
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "httpx-sse-0.3.1.tar.gz", hash = "sha256:3bb3289b2867f50cbdb2fee3eeeefecb1e86653122e164faac0023f1ffc88aea"},
@@ -629,7 +629,7 @@ files = [
 name = "jsonpatch"
 version = "1.33"
 description = "Apply JSON-Patches (RFC 6902)"
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
 files = [
     {file = "jsonpatch-1.33-py2.py3-none-any.whl", hash = "sha256:0ae28c0cd062bbd8b8ecc26d7d164fbbea9652a1a3693f3b956c1eae5145dade"},
@@ -643,7 +643,7 @@ jsonpointer = ">=1.9"
 name = "jsonpointer"
 version = "2.4"
 description = "Identify specific nodes in a JSON document (RFC 6901)"
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
 files = [
     {file = "jsonpointer-2.4-py2.py3-none-any.whl", hash = "sha256:15d51bba20eea3165644553647711d150376234112651b4f1811022aecad7d7a"},
@@ -652,13 +652,13 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.0.325"
+version = "0.0.329"
 description = "Building applications with LLMs through composability"
-optional = true
+optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain-0.0.325-py3-none-any.whl", hash = "sha256:666bc3614cf323bd09046f0a50eb6bdb86c8b0f1c65edb7163384877f3423b82"},
-    {file = "langchain-0.0.325.tar.gz", hash = "sha256:423bbbf6706486100e56b111206e5ba8d50b41b07e94ebf9946413d5fd038d9d"},
+    {file = "langchain-0.0.329-py3-none-any.whl", hash = "sha256:5f3e884991271e8b55eda4c63a11105dcd7da119682ce0e3d5d1385b3a4103d2"},
+    {file = "langchain-0.0.329.tar.gz", hash = "sha256:488f3cb68a587696f136d4f01f97df8d8270e295b3cc56158057dab0f61f4166"},
 ]
 
 [package.dependencies]
@@ -676,14 +676,14 @@ SQLAlchemy = ">=1.4,<3"
 tenacity = ">=8.1.0,<9.0.0"
 
 [package.extras]
-all = ["O365 (>=2.0.26,<3.0.0)", "aleph-alpha-client (>=2.15.0,<3.0.0)", "amadeus (>=8.1.0)", "arxiv (>=1.4,<2.0)", "atlassian-python-api (>=3.36.0,<4.0.0)", "awadb (>=0.3.9,<0.4.0)", "azure-ai-formrecognizer (>=3.2.1,<4.0.0)", "azure-ai-vision (>=0.11.1b1,<0.12.0)", "azure-cognitiveservices-speech (>=1.28.0,<2.0.0)", "azure-cosmos (>=4.4.0b1,<5.0.0)", "azure-identity (>=1.12.0,<2.0.0)", "beautifulsoup4 (>=4,<5)", "clarifai (>=9.1.0)", "clickhouse-connect (>=0.5.14,<0.6.0)", "cohere (>=4,<5)", "deeplake (>=3.6.8,<4.0.0)", "docarray[hnswlib] (>=0.32.0,<0.33.0)", "duckduckgo-search (>=3.8.3,<4.0.0)", "elasticsearch (>=8,<9)", "esprima (>=4.0.1,<5.0.0)", "faiss-cpu (>=1,<2)", "google-api-python-client (==2.70.0)", "google-auth (>=2.18.1,<3.0.0)", "google-search-results (>=2,<3)", "gptcache (>=0.1.7)", "html2text (>=2020.1.16,<2021.0.0)", "huggingface_hub (>=0,<1)", "jinja2 (>=3,<4)", "jq (>=1.4.1,<2.0.0)", "lancedb (>=0.1,<0.2)", "langkit (>=0.0.6,<0.1.0)", "lark (>=1.1.5,<2.0.0)", "libdeeplake (>=0.0.60,<0.0.61)", "librosa (>=0.10.0.post2,<0.11.0)", "lxml (>=4.9.2,<5.0.0)", "manifest-ml (>=0.0.1,<0.0.2)", "marqo (>=1.2.4,<2.0.0)", "momento (>=1.10.1,<2.0.0)", "nebula3-python (>=3.4.0,<4.0.0)", "neo4j (>=5.8.1,<6.0.0)", "networkx (>=2.6.3,<4)", "nlpcloud (>=1,<2)", "nltk (>=3,<4)", "nomic (>=1.0.43,<2.0.0)", "openai (>=0,<1)", "openlm (>=0.0.5,<0.0.6)", "opensearch-py (>=2.0.0,<3.0.0)", "pdfminer-six (>=20221105,<20221106)", "pexpect (>=4.8.0,<5.0.0)", "pgvector (>=0.1.6,<0.2.0)", "pinecone-client (>=2,<3)", "pinecone-text (>=0.4.2,<0.5.0)", "psycopg2-binary (>=2.9.5,<3.0.0)", "pymongo (>=4.3.3,<5.0.0)", "pyowm (>=3.3.0,<4.0.0)", "pypdf (>=3.4.0,<4.0.0)", "pytesseract (>=0.3.10,<0.4.0)", "python-arango (>=7.5.9,<8.0.0)", "pyvespa (>=0.33.0,<0.34.0)", "qdrant-client (>=1.3.1,<2.0.0)", "rdflib (>=6.3.2,<7.0.0)", "redis (>=4,<5)", "requests-toolbelt (>=1.0.0,<2.0.0)", "sentence-transformers (>=2,<3)", "singlestoredb (>=0.7.1,<0.8.0)", "tensorflow-text (>=2.11.0,<3.0.0)", "tigrisdb (>=1.0.0b6,<2.0.0)", "tiktoken (>=0.3.2,<0.6.0)", "torch (>=1,<3)", "transformers (>=4,<5)", "weaviate-client (>=3,<4)", "wikipedia (>=1,<2)", "wolframalpha (==5.0.0)"]
+all = ["O365 (>=2.0.26,<3.0.0)", "aleph-alpha-client (>=2.15.0,<3.0.0)", "amadeus (>=8.1.0)", "arxiv (>=1.4,<2.0)", "atlassian-python-api (>=3.36.0,<4.0.0)", "awadb (>=0.3.9,<0.4.0)", "azure-ai-formrecognizer (>=3.2.1,<4.0.0)", "azure-ai-vision (>=0.11.1b1,<0.12.0)", "azure-cognitiveservices-speech (>=1.28.0,<2.0.0)", "azure-cosmos (>=4.4.0b1,<5.0.0)", "azure-identity (>=1.12.0,<2.0.0)", "beautifulsoup4 (>=4,<5)", "clarifai (>=9.1.0)", "clickhouse-connect (>=0.5.14,<0.6.0)", "cohere (>=4,<5)", "deeplake (>=3.8.3,<4.0.0)", "docarray[hnswlib] (>=0.32.0,<0.33.0)", "duckduckgo-search (>=3.8.3,<4.0.0)", "elasticsearch (>=8,<9)", "esprima (>=4.0.1,<5.0.0)", "faiss-cpu (>=1,<2)", "google-api-python-client (==2.70.0)", "google-auth (>=2.18.1,<3.0.0)", "google-search-results (>=2,<3)", "gptcache (>=0.1.7)", "html2text (>=2020.1.16,<2021.0.0)", "huggingface_hub (>=0,<1)", "jinja2 (>=3,<4)", "jq (>=1.4.1,<2.0.0)", "lancedb (>=0.1,<0.2)", "langkit (>=0.0.6,<0.1.0)", "lark (>=1.1.5,<2.0.0)", "librosa (>=0.10.0.post2,<0.11.0)", "lxml (>=4.9.2,<5.0.0)", "manifest-ml (>=0.0.1,<0.0.2)", "marqo (>=1.2.4,<2.0.0)", "momento (>=1.10.1,<2.0.0)", "nebula3-python (>=3.4.0,<4.0.0)", "neo4j (>=5.8.1,<6.0.0)", "networkx (>=2.6.3,<4)", "nlpcloud (>=1,<2)", "nltk (>=3,<4)", "nomic (>=1.0.43,<2.0.0)", "openai (>=0,<1)", "openlm (>=0.0.5,<0.0.6)", "opensearch-py (>=2.0.0,<3.0.0)", "pdfminer-six (>=20221105,<20221106)", "pexpect (>=4.8.0,<5.0.0)", "pgvector (>=0.1.6,<0.2.0)", "pinecone-client (>=2,<3)", "pinecone-text (>=0.4.2,<0.5.0)", "psycopg2-binary (>=2.9.5,<3.0.0)", "pymongo (>=4.3.3,<5.0.0)", "pyowm (>=3.3.0,<4.0.0)", "pypdf (>=3.4.0,<4.0.0)", "pytesseract (>=0.3.10,<0.4.0)", "python-arango (>=7.5.9,<8.0.0)", "pyvespa (>=0.33.0,<0.34.0)", "qdrant-client (>=1.3.1,<2.0.0)", "rdflib (>=6.3.2,<7.0.0)", "redis (>=4,<5)", "requests-toolbelt (>=1.0.0,<2.0.0)", "sentence-transformers (>=2,<3)", "singlestoredb (>=0.7.1,<0.8.0)", "tensorflow-text (>=2.11.0,<3.0.0)", "tigrisdb (>=1.0.0b6,<2.0.0)", "tiktoken (>=0.3.2,<0.6.0)", "torch (>=1,<3)", "transformers (>=4,<5)", "weaviate-client (>=3,<4)", "wikipedia (>=1,<2)", "wolframalpha (==5.0.0)"]
 azure = ["azure-ai-formrecognizer (>=3.2.1,<4.0.0)", "azure-ai-vision (>=0.11.1b1,<0.12.0)", "azure-cognitiveservices-speech (>=1.28.0,<2.0.0)", "azure-core (>=1.26.4,<2.0.0)", "azure-cosmos (>=4.4.0b1,<5.0.0)", "azure-identity (>=1.12.0,<2.0.0)", "azure-search-documents (==11.4.0b8)", "openai (>=0,<1)"]
 clarifai = ["clarifai (>=9.1.0)"]
 cli = ["typer (>=0.9.0,<0.10.0)"]
 cohere = ["cohere (>=4,<5)"]
 docarray = ["docarray[hnswlib] (>=0.32.0,<0.33.0)"]
 embeddings = ["sentence-transformers (>=2,<3)"]
-extended-testing = ["aiosqlite (>=0.19.0,<0.20.0)", "aleph-alpha-client (>=2.15.0,<3.0.0)", "amazon-textract-caller (<2)", "anthropic (>=0.3.11,<0.4.0)", "arxiv (>=1.4,<2.0)", "assemblyai (>=0.17.0,<0.18.0)", "atlassian-python-api (>=3.36.0,<4.0.0)", "beautifulsoup4 (>=4,<5)", "bibtexparser (>=1.4.0,<2.0.0)", "cassio (>=0.1.0,<0.2.0)", "chardet (>=5.1.0,<6.0.0)", "dashvector (>=1.0.1,<2.0.0)", "esprima (>=4.0.1,<5.0.0)", "faiss-cpu (>=1,<2)", "feedparser (>=6.0.10,<7.0.0)", "geopandas (>=0.13.1,<0.14.0)", "gitpython (>=3.1.32,<4.0.0)", "google-cloud-documentai (>=2.20.1,<3.0.0)", "gql (>=3.4.1,<4.0.0)", "html2text (>=2020.1.16,<2021.0.0)", "jinja2 (>=3,<4)", "jq (>=1.4.1,<2.0.0)", "jsonschema (>1)", "lxml (>=4.9.2,<5.0.0)", "markdownify (>=0.11.6,<0.12.0)", "motor (>=3.3.1,<4.0.0)", "mwparserfromhell (>=0.6.4,<0.7.0)", "mwxml (>=0.3.3,<0.4.0)", "newspaper3k (>=0.2.8,<0.3.0)", "numexpr (>=2.8.6,<3.0.0)", "openai (>=0,<1)", "openapi-pydantic (>=0.3.2,<0.4.0)", "pandas (>=2.0.1,<3.0.0)", "pdfminer-six (>=20221105,<20221106)", "pgvector (>=0.1.6,<0.2.0)", "psychicapi (>=0.8.0,<0.9.0)", "py-trello (>=0.19.0,<0.20.0)", "pymupdf (>=1.22.3,<2.0.0)", "pypdf (>=3.4.0,<4.0.0)", "pypdfium2 (>=4.10.0,<5.0.0)", "pyspark (>=3.4.0,<4.0.0)", "rank-bm25 (>=0.2.2,<0.3.0)", "rapidfuzz (>=3.1.1,<4.0.0)", "rapidocr-onnxruntime (>=1.3.2,<2.0.0)", "requests-toolbelt (>=1.0.0,<2.0.0)", "rspace_client (>=2.5.0,<3.0.0)", "scikit-learn (>=1.2.2,<2.0.0)", "sqlite-vss (>=0.1.2,<0.2.0)", "streamlit (>=1.18.0,<2.0.0)", "sympy (>=1.12,<2.0)", "telethon (>=1.28.5,<2.0.0)", "timescale-vector (>=0.0.1,<0.0.2)", "tqdm (>=4.48.0)", "upstash-redis (>=0.15.0,<0.16.0)", "xata (>=1.0.0a7,<2.0.0)", "xmltodict (>=0.13.0,<0.14.0)"]
+extended-testing = ["aiosqlite (>=0.19.0,<0.20.0)", "aleph-alpha-client (>=2.15.0,<3.0.0)", "anthropic (>=0.3.11,<0.4.0)", "arxiv (>=1.4,<2.0)", "assemblyai (>=0.17.0,<0.18.0)", "atlassian-python-api (>=3.36.0,<4.0.0)", "beautifulsoup4 (>=4,<5)", "bibtexparser (>=1.4.0,<2.0.0)", "cassio (>=0.1.0,<0.2.0)", "chardet (>=5.1.0,<6.0.0)", "dashvector (>=1.0.1,<2.0.0)", "esprima (>=4.0.1,<5.0.0)", "faiss-cpu (>=1,<2)", "feedparser (>=6.0.10,<7.0.0)", "fireworks-ai (>=0.6.0,<0.7.0)", "geopandas (>=0.13.1,<0.14.0)", "gitpython (>=3.1.32,<4.0.0)", "google-cloud-documentai (>=2.20.1,<3.0.0)", "gql (>=3.4.1,<4.0.0)", "html2text (>=2020.1.16,<2021.0.0)", "jinja2 (>=3,<4)", "jq (>=1.4.1,<2.0.0)", "jsonschema (>1)", "lxml (>=4.9.2,<5.0.0)", "markdownify (>=0.11.6,<0.12.0)", "motor (>=3.3.1,<4.0.0)", "mwparserfromhell (>=0.6.4,<0.7.0)", "mwxml (>=0.3.3,<0.4.0)", "newspaper3k (>=0.2.8,<0.3.0)", "numexpr (>=2.8.6,<3.0.0)", "openai (>=0,<1)", "openapi-pydantic (>=0.3.2,<0.4.0)", "pandas (>=2.0.1,<3.0.0)", "pdfminer-six (>=20221105,<20221106)", "pgvector (>=0.1.6,<0.2.0)", "psychicapi (>=0.8.0,<0.9.0)", "py-trello (>=0.19.0,<0.20.0)", "pymupdf (>=1.22.3,<2.0.0)", "pypdf (>=3.4.0,<4.0.0)", "pypdfium2 (>=4.10.0,<5.0.0)", "pyspark (>=3.4.0,<4.0.0)", "rank-bm25 (>=0.2.2,<0.3.0)", "rapidfuzz (>=3.1.1,<4.0.0)", "rapidocr-onnxruntime (>=1.3.2,<2.0.0)", "requests-toolbelt (>=1.0.0,<2.0.0)", "rspace_client (>=2.5.0,<3.0.0)", "scikit-learn (>=1.2.2,<2.0.0)", "sqlite-vss (>=0.1.2,<0.2.0)", "streamlit (>=1.18.0,<2.0.0)", "sympy (>=1.12,<2.0)", "telethon (>=1.28.5,<2.0.0)", "timescale-vector (>=0.0.1,<0.0.2)", "tqdm (>=4.48.0)", "upstash-redis (>=0.15.0,<0.16.0)", "xata (>=1.0.0a7,<2.0.0)", "xmltodict (>=0.13.0,<0.14.0)"]
 javascript = ["esprima (>=4.0.1,<5.0.0)"]
 llms = ["clarifai (>=9.1.0)", "cohere (>=4,<5)", "huggingface_hub (>=0,<1)", "manifest-ml (>=0.0.1,<0.0.2)", "nlpcloud (>=1,<2)", "openai (>=0,<1)", "openlm (>=0.0.5,<0.0.6)", "torch (>=1,<3)", "transformers (>=4,<5)"]
 openai = ["openai (>=0,<1)", "tiktoken (>=0.3.2,<0.6.0)"]
@@ -692,13 +692,13 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 
 [[package]]
 name = "langserve"
-version = "0.0.20"
+version = "0.0.22"
 description = ""
-optional = true
+optional = false
 python-versions = ">=3.8.1,<4.0.0"
 files = [
-    {file = "langserve-0.0.20-py3-none-any.whl", hash = "sha256:7c0f0c9989a6423a72229c4b7d39d8c08d912a8a8b19e0bc0037ee24305bc13e"},
-    {file = "langserve-0.0.20.tar.gz", hash = "sha256:2b16a33e647f107388d2da644373368ff627bbb96358a401523b9ef6effed834"},
+    {file = "langserve-0.0.22-py3-none-any.whl", hash = "sha256:908239209959fc23202a09113b42c0e5838d046404a4e725602fe56af96bf340"},
+    {file = "langserve-0.0.22.tar.gz", hash = "sha256:14a33986668c8d36aa2e58dc66307c021eaac18019d2b99e7fae30f6937650d1"},
 ]
 
 [package.dependencies]
@@ -718,7 +718,7 @@ server = ["fastapi (>=0.90.1)", "sse-starlette (>=1.3.0,<2.0.0)"]
 name = "langsmith"
 version = "0.0.52"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
-optional = true
+optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
     {file = "langsmith-0.0.52-py3-none-any.whl", hash = "sha256:d02a0ade5a53b36143084e57003ed38ccbdf5fc15a5a0eb14f8989ceaee0b807"},
@@ -757,7 +757,7 @@ testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions"]
 name = "marshmallow"
 version = "3.20.1"
 description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "marshmallow-3.20.1-py3-none-any.whl", hash = "sha256:684939db93e80ad3561392f47be0230743131560a41c5110684c16e21ade0a5c"},
@@ -788,7 +788,7 @@ files = [
 name = "multidict"
 version = "6.0.4"
 description = "multidict implementation"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "multidict-6.0.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:0b1a97283e0c85772d613878028fec909f003993e1007eafa715b24b377cb9b8"},
@@ -871,7 +871,7 @@ files = [
 name = "mypy-extensions"
 version = "1.0.0"
 description = "Type system extensions for programs checked with the mypy type checker."
-optional = true
+optional = false
 python-versions = ">=3.5"
 files = [
     {file = "mypy_extensions-1.0.0-py3-none-any.whl", hash = "sha256:4392f6c0eb8a5668a69e23d168ffa70f0be9ccfd32b5cc2d26a34ae5b844552d"},
@@ -882,7 +882,7 @@ files = [
 name = "numpy"
 version = "1.24.4"
 description = "Fundamental package for array computing in Python"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "numpy-1.24.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:c0bfb52d2169d58c1cdb8cc1f16989101639b34c7d3ce60ed70b19c63eba0b64"},
@@ -1078,7 +1078,7 @@ watchdog = ">=0.6.0"
 name = "pyyaml"
 version = "6.0.1"
 description = "YAML parser and emitter for Python"
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "PyYAML-6.0.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d858aa552c999bc8a8d57426ed01e40bef403cd8ccdd0fc5f6f04a00414cac2a"},
@@ -1127,7 +1127,7 @@ files = [
 name = "requests"
 version = "2.31.0"
 description = "Python HTTP for Humans."
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "requests-2.31.0-py3-none-any.whl", hash = "sha256:58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"},
@@ -1226,7 +1226,7 @@ files = [
 name = "sqlalchemy"
 version = "2.0.22"
 description = "Database Abstraction Library"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "SQLAlchemy-2.0.22.tar.gz", hash = "sha256:5434cc601aa17570d79e5377f5fd45ff92f9379e2abed0be5e8c2fba8d353d2b"},
@@ -1264,7 +1264,7 @@ sqlcipher = ["sqlcipher3_binary"]
 name = "sse-starlette"
 version = "1.6.5"
 description = "\"SSE plugin for Starlette\""
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "sse-starlette-1.6.5.tar.gz", hash = "sha256:819f2c421fb37067380fe3dcaba246c476b02651b7bb7601099a378ad802a0ac"},
@@ -1296,7 +1296,7 @@ full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyam
 name = "tenacity"
 version = "8.2.3"
 description = "Retry code until it succeeds"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "tenacity-8.2.3-py3-none-any.whl", hash = "sha256:ce510e327a630c9e1beaf17d42e6ffacc88185044ad85cf74c0a8887c6a0f88c"},
@@ -1356,7 +1356,7 @@ files = [
 name = "typing-inspect"
 version = "0.9.0"
 description = "Runtime inspection utilities for typing module."
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "typing_inspect-0.9.0-py3-none-any.whl", hash = "sha256:9ee6fc59062311ef8547596ab6b955e1b8aa46242d854bfc78f4f6b0eff35f9f"},
@@ -1371,7 +1371,7 @@ typing-extensions = ">=3.7.4"
 name = "urllib3"
 version = "2.0.7"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "urllib3-2.0.7-py3-none-any.whl", hash = "sha256:fdb6d215c776278489906c2f8916e6e7d4f5a9b602ccbcfdf7f016fc8da0596e"},
@@ -1446,7 +1446,7 @@ watchmedo = ["PyYAML (>=3.10)"]
 name = "yarl"
 version = "1.9.2"
 description = "Yet another URL library"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "yarl-1.9.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:8c2ad583743d16ddbdf6bb14b5cd76bf43b0d0006e918809d5d4ddf7bde8dd82"},
@@ -1530,9 +1530,9 @@ idna = ">=2.0"
 multidict = ">=4.0"
 
 [extras]
-serve = ["langserve"]
+serve = []
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "80e530d72b799e5d066f3f6e5f472e5b70a288aed9f3bf4ee6293e3bf5a9e987"
+content-hash = "0952bdae96fcb733d79128960e2d6ed6309b4366f9781ec142320aeccaeec07a"

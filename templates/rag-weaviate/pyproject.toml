@@ -3,7 +3,7 @@ name = "rag-weaviate"
 version = "0.1.0"
 description = ""
 authors = [
-    "Erika Cardenas <erika@weaviate.io",
+    "Erika Cardenas <erika@weaviate.io>",
 ]
 readme = "README.md"
 
@@ -14,6 +14,8 @@ openai = "^0.28.1"
 tiktoken = "^0.5.1"
 weaviate-client = ">=3.24.2"
 
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
 [tool.poetry.group.dev.dependencies.python-dotenv]
 extras = [
     "cli",

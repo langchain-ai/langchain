@@ -83,7 +83,9 @@ LangChain provides several objects to easily distinguish between different roles
 If none of those roles sound right, there is also a `ChatMessage` class where you can specify the role manually.
 For more information on how to use these different messages most effectively, see our prompting guide.
 
-LangChain provides a standard interface for both, but it's useful to understand this difference in order to construct prompts for a given language model.
+Langchain provides a common interface that's shared by both LLMs and ChatModels. 
+However it's useful to understand this difference in order to construct prompts for a given language model.
+
 The standard interface that LangChain provides has two methods:
 - `predict`: Takes in a string, returns a string
 - `predict_messages`: Takes in a list of messages, returns a message.
@@ -157,7 +159,7 @@ prompt = PromptTemplate.from_template("What is a good name for a company that ma
 prompt.format(product="colorful socks")
 ```
 
-```pycon
+```python
 What is a good name for a company that makes colorful socks?
 ```
 
@@ -274,4 +276,4 @@ To continue on your journey:
 - Learn the other [key components](/docs/modules)
 - Read up on [LangChain Expression Language](/docs/expression_language) to learn how to chain these components together
 - Check out our [helpful guides](/docs/guides) for detailed walkthroughs on particular topics
-- Explore [end-to-end use cases](/docs/use_cases)
+- Explore [end-to-end use cases](/docs/use_cases/qa_structured/sql)

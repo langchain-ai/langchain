@@ -4,6 +4,7 @@ Manage LangChain apps
 
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -219,9 +220,14 @@ def serve(
     Starts the LangServe app.
     """
 
+    # add current dir as first entry of path
+    sys.path.append(str(Path.cwd()))
+
     app_str = app if app is not None else "app.server:app"
-    port_str = str(port) if port is not None else "8000"
     host_str = host if host is not None else "127.0.0.1"
 
-    cmd = ["uvicorn", app_str, "--reload", "--port", port_str, "--host", host_str]
-    subprocess.run(cmd)
+    import uvicorn
+
+    uvicorn.run(
+        app_str, host=host_str, port=port if port is not None else 8000, reload=True
+    )
