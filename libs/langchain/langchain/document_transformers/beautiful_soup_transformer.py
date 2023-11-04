@@ -101,10 +101,10 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         text_parts: List[str] = []
         for element in soup.find_all():
             if element.name in tags:
-                # Extract all strings recursively in this element.
+                # Extract all navigable strings recursively from this element.
                 text_parts += get_navigable_strings(element)
 
-                # To avoid duplicate text, we remove all descendants from the soup
+                # To avoid duplicate text, remove all descendants from the soup.
                 element.decompose()
 
         return " ".join(text_parts)
@@ -123,13 +123,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         lines = content.split("\n")
         stripped_lines = [line.strip() for line in lines]
         non_empty_lines = [line for line in stripped_lines if line]
-        seen = set()
-        deduped_lines = []
-        for line in non_empty_lines:
-            if line not in seen:
-                seen.add(line)
-                deduped_lines.append(line)
-        cleaned_content = " ".join(deduped_lines)
+        cleaned_content = " ".join(non_empty_lines)
         return cleaned_content
 
     async def atransform_documents(

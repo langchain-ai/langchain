@@ -18,7 +18,7 @@ def test_transform_empty_html() -> None:
 def test_extract_paragraphs() -> None:
     bs_transformer = BeautifulSoupTransformer()
     paragraphs_html = (
-        "<html><h1>Header</h1><p>First paragraph.</p>" "<p>Second paragraph.</p><html>"
+        "<html><h1>Header</h1><p>First paragraph.</p><p>Second paragraph.</p><html>"
     )
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = bs_transformer.transform_documents(documents)
@@ -103,8 +103,17 @@ def test_remove_unwanted_lines() -> None:
     bs_transformer = BeautifulSoupTransformer()
     with_lines_html = "<html>\n\n<p>First \n\n     paragraph.</p>\n</html>\n\n"
     documents = [Document(page_content=with_lines_html)]
-    docs_transformed = bs_transformer.transform_documents(documents)
+    docs_transformed = bs_transformer.transform_documents(documents, remove_lines=True)
     assert docs_transformed[0].page_content == "First paragraph."
+
+
+@pytest.mark.requires("bs4")
+def test_do_not_remove_repeated_content() -> None:
+    bs_transformer = BeautifulSoupTransformer()
+    with_lines_html = "<p>1\n1\n1\n1</p>"
+    documents = [Document(page_content=with_lines_html)]
+    docs_transformed = bs_transformer.transform_documents(documents)
+    assert docs_transformed[0].page_content == "1 1 1 1"
 
 
 @pytest.mark.requires("bs4")
