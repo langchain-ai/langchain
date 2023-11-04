@@ -20,9 +20,9 @@ from typing import (
 )
 
 import google.ai.generativelanguage as genai
-from pydantic import BaseModel, PrivateAttr
 
 import langchain.vectorstores.google.generativeai.genai_extension as genaix
+from langchain.pydantic_v1 import BaseModel, PrivateAttr
 
 from .base import DoesNotExistsException
 

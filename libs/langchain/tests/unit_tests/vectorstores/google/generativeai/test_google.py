@@ -17,8 +17,7 @@ if has_google:
 
     # Make sure the tests do not hit actual production servers.
     genaix.set_defaults(
-        genaix.Config(
-            api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend")
+        genaix.Config(api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend")
     )
 
 
@@ -41,8 +40,7 @@ def test_load_corpus(mock_get_corpus: MagicMock) -> None:
 @patch("google.ai.generativelanguage.RetrieverServiceClient.get_document")
 def test_load_document(mock_get_document: MagicMock) -> None:
     # Arrange
-    mock_get_document.return_value = genai.Document(
-        name="corpora/123/documents/456")
+    mock_get_document.return_value = genai.Document(name="corpora/123/documents/456")
 
     # Act
     store = GoogleVectorStore(corpus_id="123", document_id="456")
