@@ -1,8 +1,11 @@
 import unittest
 
+import pytest
+
 from langchain.document_loaders.parsers.language.kotlin import KotlinSegmenter
 
 
+@pytest.mark.requires("tree-sitter", "tree-sitter-languages")
 class TestKotlinSegmenter(unittest.TestCase):
     def setUp(self) -> None:
         self.example_code = """fun foo(a: Int): Int {

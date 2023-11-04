@@ -1,9 +1,11 @@
 import unittest
 
+import pytest
+
 from langchain.document_loaders.parsers.language.go import GoSegmenter
 
 
-# @pytest.mark.requires("tree-sitter", "tree-sitter-languages")
+@pytest.mark.requires("tree-sitter", "tree-sitter-languages")
 class TestGoSegmenter(unittest.TestCase):
     def setUp(self) -> None:
         self.example_code = """func foo(a int) int {

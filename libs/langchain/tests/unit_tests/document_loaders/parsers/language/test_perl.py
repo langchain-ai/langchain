@@ -1,9 +1,11 @@
 import unittest
 
+import pytest
+
 from langchain.document_loaders.parsers.language.perl import PerlSegmenter
 
 
-# @pytest.mark.requires("tree-sitter", "tree-sitter-languages")
+@pytest.mark.requires("tree-sitter", "tree-sitter-languages")
 class TestPerlSegmenter(unittest.TestCase):
     def setUp(self) -> None:
         self.example_code = """sub Hello {

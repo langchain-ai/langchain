@@ -21,7 +21,7 @@ class TreeSitterSegmenter(CodeSegmenter):
             raise ImportError(
                 "Could not import tree_sitter/tree_sitter_languages Python packages. "
                 "Please install them with "
-                "`pip install tree_sitter tree_sitter_languages`."
+                "`pip install tree-sitter tree-sitter-languages`."
             )
 
     def is_valid(self) -> bool:

@@ -1,9 +1,11 @@
 import unittest
 
+import pytest
+
 from langchain.document_loaders.parsers.language.lua import LuaSegmenter
 
 
-# @pytest.mark.requires("tree-sitter", "tree-sitter-languages")
+@pytest.mark.requires("tree-sitter", "tree-sitter-languages")
 class TestLuaSegmenter(unittest.TestCase):
     def setUp(self) -> None:
         self.example_code = """function F()
