@@ -27,11 +27,7 @@ extras = [
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"
-
-[tool.poetry.group.dev.dependencies.langchain-cli]
-git = "https://github.com/langchain-ai/langchain.git"
-rev = "erick/cli"
-subdirectory = "libs/cli"
+langchain-cli = ">=0.0.15"
 
 [tool.langserve]
 export_module = "rag_redis.chain"
