@@ -44,8 +44,6 @@ class PandasDataFrameOutputParser(BaseOutputParser):
 
         return parsed_array, original_request_params.split('[')[0]
 
-    # NOTE: LLM will use format instructions to generate query in correct format.
-    #       parse() function will then take the output and apply it to the DataFrame
     def parse(self, request: str) -> Dict[str, Any]:
         splitted_request: Tuple[str, str] = request.strip().split(':')
         if len(splitted_request) != 2:
