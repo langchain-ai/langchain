@@ -7,6 +7,7 @@ from io import StringIO
 from sys import version_info
 from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type
 
+from langchain.agents import AgentExecutor
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -98,6 +99,7 @@ class E2BDataAnalysisTool(BaseTool):
     args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
     session: Any
     _uploaded_files: List[UploadedFile] = PrivateAttr(default_factory=list)
+    _agent: Optional[AgentExecutor] = PrivateAttr(default=None)
 
     def __init__(
         self,
@@ -134,6 +136,10 @@ class E2BDataAnalysisTool(BaseTool):
         """Close the cloud sandbox."""
         self._uploaded_files = []
         self.session.close()
+
+    def set_agent(self, agent: AgentExecutor) -> None:
+        self._agent = agent
+        self._update_description()
 
     @property
     def uploaded_files_description(self) -> str:
@@ -206,7 +212,7 @@ class E2BDataAnalysisTool(BaseTool):
             description=description,
         )
         self._uploaded_files.append(f)
-        self.description = self.description + "\n" + self.uploaded_files_description
+        self._update_description()
         return f
 
     def remove_uploaded_file(self, uploaded_file: UploadedFile) -> None:
@@ -217,7 +223,7 @@ class E2BDataAnalysisTool(BaseTool):
             for f in self._uploaded_files
             if f.remote_path != uploaded_file.remote_path
         ]
-        self.description = self.description + "\n" + self.uploaded_files_description
+        self._update_description()
 
     def as_tool(self) -> Tool:
         return Tool.from_function(
@@ -226,3 +232,13 @@ class E2BDataAnalysisTool(BaseTool):
             description=self.description,
             args_schema=self.args_schema,
         )
+
+    def _update_description(self) -> None:
+        self.description = base_description + "\n" + self.uploaded_files_description
+        if not self._agent:
+            return
+        print("UPDATING DESCRIPTION")
+        for tool in self._agent.tools:
+            if tool.name == self.name:
+                tool.description = self.description
+                break
