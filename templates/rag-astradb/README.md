@@ -1,5 +1,5 @@
 
-# astradb-entomology-rag
+# rag-astradb
 
 This template will perform RAG using Astra DB (`AstraDB` vector store class)
 
@@ -25,20 +25,20 @@ pip install -U "langchain-cli[serve]"
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package astradb-entomology-rag
+langchain app new my-app --package rag-astradb
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add astradb-entomology-rag
+langchain app add rag-astradb
 ```
 
 And add the following code to your `server.py` file:
 ```python
 from astradb_entomology_rag import chain as astradb_entomology_rag_chain
 
-add_routes(app, astradb_entomology_rag_chain, path="/astradb-entomology-rag")
+add_routes(app, astradb_entomology_rag_chain, path="/rag-astradb")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -63,14 +63,14 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/astradb-entomology-rag/playground](http://127.0.0.1:8000/astradb-entomology-rag/playground)  
+We can access the playground at [http://127.0.0.1:8000/rag-astradb/playground](http://127.0.0.1:8000/rag-astradb/playground)  
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/astradb-entomology-rag")
+runnable = RemoteRunnable("http://localhost:8000/rag-astradb")
 ```
 
 ## Reference
