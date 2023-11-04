@@ -32,16 +32,16 @@ class FakeMessagesListChatModelWithCharCounting(FakeMessagesListChatModel):
         return list(range(len(text)))
 
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        """Get the number of charcters in the messages.
+        """Get the number of characters in the messages.
         This is to simplify token counting.
 
         Args:
             messages: The message inputs to tokenize.
 
         Returns:
-            The sum of the number of charaaters across the messages.
+            The sum of the number of characters across the messages.
         """
-        # count charcters, remove and compensate for prefixes
+        # count characters, remove and compensate for prefixes
         return sum(
             [
                 self.get_num_tokens(
