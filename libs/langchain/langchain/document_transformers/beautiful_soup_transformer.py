@@ -104,7 +104,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
                 # Extract all strings recursively in this element.
                 text_parts += get_navigable_strings(element)
 
-                # To avoid duplicate text, we remove all descendents from the soup
+                # To avoid duplicate text, we remove all descendants from the soup
                 element.decompose()
 
         return " ".join(text_parts)
