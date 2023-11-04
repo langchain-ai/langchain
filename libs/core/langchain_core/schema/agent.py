@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import json
 from typing import Any, Literal, Sequence, Union
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.schema.messages import BaseMessage
+from langchain_core.schema.messages import (
+    AIMessage,
+    BaseMessage,
+    FunctionMessage,
+    HumanMessage,
+)
 
 
 class AgentAction(Serializable):
@@ -34,6 +40,11 @@ class AgentAction(Serializable):
         """Return whether or not the class is serializable."""
         return True
 
+    @property
+    def messages(self) -> Sequence[BaseMessage]:
+        """Return the messages that correspond to this action."""
+        return _convert_agent_action_to_messages(self)
+
 
 class AgentActionMessageLog(AgentAction):
     message_log: Sequence[BaseMessage]
@@ -51,12 +62,17 @@ class AgentActionMessageLog(AgentAction):
 
 
 class AgentStep(Serializable):
-    """The result of an AgentAction."""
+    """The result of running an AgentAction."""
 
     action: AgentAction
     """The AgentAction that was executed."""
     observation: Any
     """The result of the AgentAction."""
+
+    @property
+    def messages(self) -> Sequence[BaseMessage]:
+        """Return the messages that correspond to this observation."""
+        return _convert_agent_observation_to_messages(self.action, self.observation)
 
 
 class AgentFinish(Serializable):
@@ -81,3 +97,69 @@ class AgentFinish(Serializable):
     def is_lc_serializable(cls) -> bool:
         """Return whether or not the class is serializable."""
         return True
+
+    @property
+    def messages(self) -> Sequence[BaseMessage]:
+        """Return the messages that correspond to this observation."""
+        return [AIMessage(content=self.log)]
+
+
+def _convert_agent_action_to_messages(
+    agent_action: AgentAction
+) -> Sequence[BaseMessage]:
+    """Convert an agent action to a message.
+
+    This code is used to reconstruct the original AI message from the agent action.
+
+    Args:
+        agent_action: Agent action to convert.
+
+    Returns:
+        AIMessage that corresponds to the original tool invocation.
+    """
+    if isinstance(agent_action, AgentActionMessageLog):
+        return agent_action.message_log
+    else:
+        return [AIMessage(content=agent_action.log)]
+
+
+def _convert_agent_observation_to_messages(
+    agent_action: AgentAction, observation: Any
+) -> Sequence[BaseMessage]:
+    """Convert an agent action to a message.
+
+    This code is used to reconstruct the original AI message from the agent action.
+
+    Args:
+        agent_action: Agent action to convert.
+
+    Returns:
+        AIMessage that corresponds to the original tool invocation.
+    """
+    if isinstance(agent_action, AgentActionMessageLog):
+        return [_create_function_message(agent_action, observation)]
+    else:
+        return [HumanMessage(content=observation)]
+
+
+def _create_function_message(
+    agent_action: AgentAction, observation: Any
+) -> FunctionMessage:
+    """Convert agent action and observation into a function message.
+    Args:
+        agent_action: the tool invocation request from the agent
+        observation: the result of the tool invocation
+    Returns:
+        FunctionMessage that corresponds to the original tool invocation
+    """
+    if not isinstance(observation, str):
+        try:
+            content = json.dumps(observation, ensure_ascii=False)
+        except Exception:
+            content = str(observation)
+    else:
+        content = observation
+    return FunctionMessage(
+        name=agent_action.tool,
+        content=content,
+    )

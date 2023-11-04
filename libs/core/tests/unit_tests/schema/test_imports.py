@@ -6,6 +6,8 @@ EXPECTED_ALL = [
     "BaseStore",
     "AgentFinish",
     "AgentAction",
+    "AgentActionMessageLog",
+    "AgentStep",
     "Document",
     "BaseChatMessageHistory",
     "BaseDocumentTransformer",

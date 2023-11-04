@@ -183,9 +183,9 @@ class AgentExecutorIterator:
                     # do not yield AgentFinish, which will be handled below
                     if self.yield_actions:
                         if isinstance(chunk, AgentAction):
-                            yield AddableDict(actions=[chunk])
+                            yield AddableDict(actions=[chunk], messages=chunk.messages)
                         elif isinstance(chunk, AgentStep):
-                            yield AddableDict(steps=[chunk])
+                            yield AddableDict(steps=[chunk], messages=chunk.messages)
 
                 # convert iterator output to format handled by _process_next_step_output
                 next_step = self.agent_executor._consume_next_step(next_step_seq)
@@ -249,9 +249,13 @@ class AgentExecutorIterator:
                         # do not yield AgentFinish, which will be handled below
                         if self.yield_actions:
                             if isinstance(chunk, AgentAction):
-                                yield AddableDict(actions=[chunk])
+                                yield AddableDict(
+                                    actions=[chunk], messages=chunk.messages
+                                )
                             elif isinstance(chunk, AgentStep):
-                                yield AddableDict(steps=[chunk])
+                                yield AddableDict(
+                                    steps=[chunk], messages=chunk.messages
+                                )
 
                     # convert iterator output to format handled by _process_next_step
                     next_step = self.agent_executor._consume_next_step(next_step_seq)
@@ -293,11 +297,7 @@ class AgentExecutorIterator:
             logger.debug(
                 "Hit AgentFinish: _return -> on_chain_end -> run final output logic"
             )
-            output = self.agent_executor._return(
-                next_step_output, self.intermediate_steps, run_manager=run_manager
-            )
-            run_manager.on_chain_end(output)
-            return self.make_final_outputs(output, run_manager)
+            return self._return(next_step_output, run_manager=run_manager)
 
         self.intermediate_steps.extend(next_step_output)
         logger.debug("Updated intermediate_steps with step output")
@@ -307,11 +307,7 @@ class AgentExecutorIterator:
             next_step_action = next_step_output[0]
             tool_return = self.agent_executor._get_tool_return(next_step_action)
             if tool_return is not None:
-                output = self.agent_executor._return(
-                    tool_return, self.intermediate_steps, run_manager=run_manager
-                )
-                run_manager.on_chain_end(output)
-                return self.make_final_outputs(output, run_manager)
+                return self._return(tool_return, run_manager=run_manager)
 
         return AddableDict(intermediate_step=next_step_output)
 
@@ -329,11 +325,7 @@ class AgentExecutorIterator:
             logger.debug(
                 "Hit AgentFinish: _areturn -> on_chain_end -> run final output logic"
             )
-            output = await self.agent_executor._areturn(
-                next_step_output, self.intermediate_steps, run_manager=run_manager
-            )
-            await run_manager.on_chain_end(output)
-            return self.make_final_outputs(output, run_manager)
+            return await self._areturn(next_step_output, run_manager=run_manager)
 
         self.intermediate_steps.extend(next_step_output)
         logger.debug("Updated intermediate_steps with step output")
@@ -343,11 +335,7 @@ class AgentExecutorIterator:
             next_step_action = next_step_output[0]
             tool_return = self.agent_executor._get_tool_return(next_step_action)
             if tool_return is not None:
-                output = await self.agent_executor._areturn(
-                    tool_return, self.intermediate_steps, run_manager=run_manager
-                )
-                await run_manager.on_chain_end(output)
-                return self.make_final_outputs(output, run_manager)
+                return await self._areturn(tool_return, run_manager=run_manager)
 
         return AddableDict(intermediate_step=next_step_output)
 
@@ -362,10 +350,7 @@ class AgentExecutorIterator:
             self.intermediate_steps,
             **self.inputs,
         )
-        returned_output = self.agent_executor._return(
-            output, self.intermediate_steps, run_manager=run_manager
-        )
-        return self.make_final_outputs(returned_output, run_manager)
+        return self._return(output, run_manager=run_manager)
 
     async def _astop(self, run_manager: AsyncCallbackManagerForChainRun) -> AddableDict:
         """
@@ -378,7 +363,30 @@ class AgentExecutorIterator:
             self.intermediate_steps,
             **self.inputs,
         )
+        return await self._areturn(output, run_manager=run_manager)
+
+    def _return(
+        self, output: AgentFinish, run_manager: CallbackManagerForChainRun
+    ) -> AddableDict:
+        """
+        Return the final output of the iterator.
+        """
+        returned_output = self.agent_executor._return(
+            output, self.intermediate_steps, run_manager=run_manager
+        )
+        returned_output["messages"] = output.messages
+        run_manager.on_chain_end(returned_output)
+        return self.make_final_outputs(returned_output, run_manager)
+
+    async def _areturn(
+        self, output: AgentFinish, run_manager: AsyncCallbackManagerForChainRun
+    ) -> AddableDict:
+        """
+        Return the final output of the async iterator.
+        """
         returned_output = await self.agent_executor._areturn(
             output, self.intermediate_steps, run_manager=run_manager
         )
+        returned_output["messages"] = output.messages
+        await run_manager.on_chain_end(returned_output)
         return self.make_final_outputs(returned_output, run_manager)

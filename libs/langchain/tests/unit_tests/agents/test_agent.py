@@ -2,11 +2,13 @@
 
 from typing import Any, Dict, List, Optional
 
+from langchain_core.schema import AgentAction, AgentStep
+
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.schema.agent import AgentAction, AgentStep
+from langchain.schema.messages import AIMessage, HumanMessage
 from langchain.schema.runnable.utils import add
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
@@ -183,7 +185,12 @@ def test_agent_stream() -> None:
                     tool_input="misalignment",
                     log="FooBarBaz\nAction: Search\nAction Input: misalignment",
                 )
-            ]
+            ],
+            "messages": [
+                AIMessage(
+                    content="FooBarBaz\nAction: Search\nAction Input: misalignment"
+                )
+            ],
         },
         {
             "steps": [
@@ -195,7 +202,8 @@ def test_agent_stream() -> None:
                     ),
                     observation="Results for: misalignment",
                 )
-            ]
+            ],
+            "messages": [HumanMessage(content="Results for: misalignment")],
         },
         {
             "actions": [
@@ -204,7 +212,12 @@ def test_agent_stream() -> None:
                     tool_input="something else",
                     log="FooBarBaz\nAction: Search\nAction Input: something else",
                 )
-            ]
+            ],
+            "messages": [
+                AIMessage(
+                    content="FooBarBaz\nAction: Search\nAction Input: something else"
+                )
+            ],
         },
         {
             "steps": [
@@ -216,9 +229,15 @@ def test_agent_stream() -> None:
                     ),
                     observation="Results for: something else",
                 )
-            ]
+            ],
+            "messages": [HumanMessage(content="Results for: something else")],
         },
-        {"output": "curses foiled again"},
+        {
+            "output": "curses foiled again",
+            "messages": [
+                AIMessage(content="Oh well\nFinal Answer: curses foiled again")
+            ],
+        },
     ]
     assert add(output) == {
         "actions": [
@@ -250,6 +269,15 @@ def test_agent_stream() -> None:
                 ),
                 observation="Results for: something else",
             ),
+        ],
+        "messages": [
+            AIMessage(content="FooBarBaz\nAction: Search\nAction Input: misalignment"),
+            HumanMessage(content="Results for: misalignment"),
+            AIMessage(
+                content="FooBarBaz\nAction: Search\nAction Input: something else"
+            ),
+            HumanMessage(content="Results for: something else"),
+            AIMessage(content="Oh well\nFinal Answer: curses foiled again"),
         ],
         "output": "curses foiled again",
     }
