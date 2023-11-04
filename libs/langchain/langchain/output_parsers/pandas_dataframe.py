@@ -3,6 +3,7 @@ import re
 from typing import Any, Dict, List, Tuple
 from langchain.pydantic_v1 import validator
 from langchain.schema import BaseOutputParser, OutputParserException
+from langchain.output_parsers.format_instructions import PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS
 
 class PandasDataFrameOutputParser(BaseOutputParser):
     """Parse an output using Pandas DataFrame format."""
@@ -53,10 +54,13 @@ class PandasDataFrameOutputParser(BaseOutputParser):
             )
         result = {}
         try:
-            # NOTE: Can probably simplify using getattr(df, function_name)()
             # TODO: Implement data sanitization
             request_type, request_params = splitted_request
             match request_type:
+                case 'Invalid column', 'Invalid operation':
+                    raise OutputParserException(
+                        f"{request}. Please refer to the format instructions."
+                    )
                 case 'column':
                     # TODO: Implement multiple column parsing
                     p_query = self.dataframe[request_params].to_string(header=False, index=False)
@@ -80,4 +84,4 @@ class PandasDataFrameOutputParser(BaseOutputParser):
         return result
 
     def get_format_instructions(self) -> str:
-        return ""
+        return PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS.format(columns=', '.join(self.dataframe.columns))
