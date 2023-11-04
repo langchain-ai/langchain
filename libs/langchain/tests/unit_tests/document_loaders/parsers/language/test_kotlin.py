@@ -36,7 +36,8 @@ enum class P {
 
         self.expected_extracted_code = [
             "fun foo(a: Int): Int {\n    return a\n}",
-            'class T {\n    var a: Int = 0\n    var b: Boolean = false\n    var c: String = ""\n}',
+            "class T {\n    var a: Int = 0\n    var b: Boolean = false\n    "
+            'var c: String = ""\n}',
             "interface S {\n    fun bar(): Double\n}",
             "enum class P {\n    A,\n    B,\n    C\n}",
         ]

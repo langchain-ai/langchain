@@ -1,7 +1,10 @@
 from abc import abstractmethod
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from langchain.document_loaders.parsers.language.code_segmenter import CodeSegmenter
+
+if TYPE_CHECKING:
+    from tree_sitter import Language, Parser
 
 
 class TreeSitterSegmenter(CodeSegmenter):
@@ -12,11 +15,13 @@ class TreeSitterSegmenter(CodeSegmenter):
         self.source_lines = self.code.splitlines()
 
         try:
-            import tree_sitter, tree_sitter_languages  # noqa: F401
-        except ImportError as e:
+            import tree_sitter  # noqa: F401
+            import tree_sitter_languages  # noqa: F401
+        except ImportError:
             raise ImportError(
                 "Could not import tree_sitter/tree_sitter_languages Python packages. "
-                "Please install them with `pip install tree_sitter tree_sitter_languages`."
+                "Please install them with "
+                "`pip install tree_sitter tree_sitter_languages`."
             )
 
     def is_valid(self) -> bool:
@@ -81,7 +86,7 @@ class TreeSitterSegmenter(CodeSegmenter):
 
         return "\n".join(line for line in simplified_lines if line is not None)
 
-    def get_parser(self):
+    def get_parser(self) -> "Parser":
         from tree_sitter import Parser
 
         parser = Parser()
@@ -89,7 +94,7 @@ class TreeSitterSegmenter(CodeSegmenter):
         return parser
 
     @abstractmethod
-    def get_language(self):
+    def get_language(self) -> "Language":
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod

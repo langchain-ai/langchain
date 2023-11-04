@@ -1,6 +1,12 @@
+from typing import TYPE_CHECKING
+
 from langchain.document_loaders.parsers.language.tree_sitter_segmenter import (
     TreeSitterSegmenter,
 )
+
+if TYPE_CHECKING:
+    from tree_sitter import Language
+
 
 CHUNK_QUERY = """
     [
@@ -18,7 +24,7 @@ CHUNK_QUERY = """
 class CPPSegmenter(TreeSitterSegmenter):
     """Code segmenter for C++."""
 
-    def get_language(self):
+    def get_language(self) -> "Language":
         from tree_sitter_languages import get_language
 
         return get_language("cpp")

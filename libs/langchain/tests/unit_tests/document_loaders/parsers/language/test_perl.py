@@ -23,7 +23,8 @@ sub new {
 
         self.expected_extracted_code = [
             'sub Hello {\n  print "Hello, World!";\n}',
-            "sub new {\n  my $class = shift;\n  my $self = {};\n  bless $self, $class;\n  return $self;\n}",
+            "sub new {\n  my $class = shift;\n  my $self = {};\n  "
+            "bless $self, $class;\n  return $self;\n}",
         ]
 
     def test_is_valid(self) -> None:

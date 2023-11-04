@@ -3,8 +3,8 @@ from typing import Any, Dict, Iterator, Optional
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.document_loaders.parsers.language.cobol import CobolSegmenter
 from langchain.document_loaders.parsers.language.c import CSegmenter
+from langchain.document_loaders.parsers.language.cobol import CobolSegmenter
 from langchain.document_loaders.parsers.language.cpp import CPPSegmenter
 from langchain.document_loaders.parsers.language.csharp import CSharpSegmenter
 from langchain.document_loaders.parsers.language.go import GoSegmenter
