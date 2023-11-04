@@ -55,6 +55,8 @@ def retrieve(query: str):
     for result in results:
         res = result.metadata['parent_context'][0]
         text = res.pop("text")
+        # This causes serialization issues.
+        res.pop("_id")
         parent_doc = Document(page_content=text, metadata=res)
         if parent_doc.metadata[PARENT_DOC_ID_KEY] not in parent_doc_ids:
             parent_doc_ids.add(parent_doc.metadata[PARENT_DOC_ID_KEY])

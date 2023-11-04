@@ -3,6 +3,14 @@
 This template performs RAG using MongoDB and OpenAI.
 It does a more advanced form of RAG called Parent-Document Retrieval.
 
+In this form of retrieval, a large document is first split into medium sized chunks.
+From there, those medium size chunks are split into small chunks.
+Embeddings are created for the small chunks.
+When a query comes in, an embedding is created for that query and compared to the small chunks.
+But rather than passing the small chunks directly to the LLM for generation, the medium-sized chunks
+from whence the smaller chunks came are passed.
+This helps enable finer-grained search, but then passing of larger context (which can be useful during generation).
+
 ## Environment Setup
 
 You should export two environment variables, one being your MongoDB URI, the other being your OpenAI API KEY.
