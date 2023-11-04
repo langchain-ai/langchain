@@ -98,7 +98,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(html_content, "html.parser")
-        text_parts: list[str] = []
+        text_parts: List[str] = []
         for element in soup.find_all():
             if element.name in tags:
                 # Extract all strings recursively in this element.
