@@ -237,8 +237,8 @@ class E2BDataAnalysisTool(BaseTool):
         self.description = base_description + "\n" + self.uploaded_files_description
         if not self._agent:
             return
-        print("UPDATING DESCRIPTION")
+
         for tool in self._agent.tools:
-            if tool.name == self.name:
+            if tool.name == self.name and getattr(tool, "func") == self._run:
                 tool.description = self.description
                 break
