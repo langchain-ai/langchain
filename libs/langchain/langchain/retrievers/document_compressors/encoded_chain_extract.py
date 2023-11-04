@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import re
-from typing import Callable, Dict, List, Optional, Sequence
-
-import spacy
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
@@ -19,11 +17,9 @@ from langchain.retrievers.document_compressors.encoded_chain_extract_prompt impo
 )
 from langchain.schema import BaseOutputParser, Document, OutputParserException
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.text_splitter import _make_spacy_pipeline_for_splitting
 
 NO_OUTPUT_STR: str = "NO_OUTPUT"
-
-# Loading spacy model for sentence tokenization
-nlp = spacy.load("en_core_web_sm")
 
 
 class SequenceListParser(BaseOutputParser[List[int]]):
@@ -64,7 +60,11 @@ def _split_paragraphs(text: str) -> List[str]:
     return [para.strip() for para in paras if para.strip()]
 
 
-def number_sequences(text: str, len: int = 1) -> str:
+def get_default_tokenizer() -> Any:
+    return _make_spacy_pipeline_for_splitting(pipeline="en_core_web_sm")
+
+
+def number_sequences(text: str, len: int = 1, tokenizer: Any = None) -> str:
     """
     Number the sequences in a given text, preserving paragraph structure.
     The default number of sentences per sequence is 1.
@@ -79,9 +79,11 @@ def number_sequences(text: str, len: int = 1) -> str:
     numbered_text = []
     count = 0
 
+    if tokenizer is None:
+        tokenizer = get_default_tokenizer()
     paragraphs = _split_paragraphs(text)
     for paragraph in paragraphs:
-        sentences = [sent.text for sent in nlp(paragraph).sents]
+        sentences = [sent.text for sent in tokenizer(paragraph).sents]
         for i, sentence in enumerate(sentences):
             num = count // len + 1
             number_prefix = f"#|{num}|#" if count % len == 0 else ""
@@ -155,6 +157,9 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
     get_input: Callable[[str, str], dict] = default_get_input
     """Callable for constructing the chain input from the query and a Document."""
 
+    tokenizer: Any
+    """Tokenizer to use for splitting text into sentences."""
+
     def compress_documents(
         self,
         documents: Sequence[Document],
@@ -173,7 +178,7 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
         """
         compressed_docs: List[Document] = []
         for doc in documents:
-            doc_content = number_sequences(doc.page_content)
+            doc_content = number_sequences(doc.page_content, tokenizer=self.tokenizer)
             _input = self.get_input(query, doc_content)
             sequence_list = self.llm_chain.predict(**_input, callbacks=callbacks)
             assert isinstance(sequence_list, list)
@@ -205,7 +210,10 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
         """
         numbered_sequence_docs = [
             Document(
-                page_content=number_sequences(doc.page_content), metadata=doc.metadata
+                page_content=number_sequences(
+                    doc.page_content, tokenizer=self.tokenizer
+                ),
+                metadata=doc.metadata,
             )
             for doc in documents
         ]
@@ -233,6 +241,7 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
         cls,
         llm: BaseLanguageModel,
         get_input: Optional[Callable[[str, str], dict[str, str]]] = None,
+        pipeline: str = "en_core_web_sm",
         llm_chain_kwargs: Optional[dict] = None,
     ) -> LLMEncodedChainExtractor:
         """Initialize from LLM.
@@ -249,10 +258,15 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
         _prompt = _get_default_chain_prompt()
         _get_input = get_input if get_input is not None else default_get_input
         _output_parser = SequenceListParser()
+        tokenizer = (
+            _make_spacy_pipeline_for_splitting(pipeline=pipeline)
+            if pipeline
+            else get_default_tokenizer()
+        )
         llm_chain = LLMChain(
             llm=llm,
             prompt=_prompt,
             output_parser=_output_parser,
             **(llm_chain_kwargs or {}),
         )
-        return cls(llm_chain=llm_chain, get_input=_get_input)
+        return cls(llm_chain=llm_chain, get_input=_get_input, tokenizer=tokenizer)

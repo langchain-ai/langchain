@@ -21,6 +21,7 @@ def test_parser() -> None:
         assert parser.parse("1,6,a")
 
 
+@pytest.mark.requires("spacy")
 def test_number_sequences() -> None:
     assert number_sequences("foo") == "#|1|# foo"
     assert number_sequences("foo bar") == "#|1|# foo bar"

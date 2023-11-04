@@ -1,9 +1,12 @@
 """Integration tests for LLMEncodedChainExtractor."""
+import pytest
+
 from langchain.llms import OpenAI
 from langchain.retrievers.document_compressors import LLMEncodedChainExtractor
 from langchain.schema import Document
 
 
+@pytest.mark.requires("spacy")
 def test_llm_construction_with_kwargs() -> None:
     llm_chain_kwargs = {"verbose": True}
     compressor = LLMEncodedChainExtractor.from_llm(
@@ -12,6 +15,7 @@ def test_llm_construction_with_kwargs() -> None:
     assert compressor.llm_chain.verbose is True
 
 
+@pytest.mark.requires("spacy")
 def test_llm_chain_extractor() -> None:
     texts = [
         "The Roman Empire followed the Roman Republic.",
@@ -32,6 +36,7 @@ def test_llm_chain_extractor() -> None:
     assert all(texts[i] not in actual for i in expected_not_returned)
 
 
+@pytest.mark.requires("spacy")
 def test_llm_chain_extractor_empty() -> None:
     texts = [
         "I love chocolate chip cookies—my mother makes great cookies.",
