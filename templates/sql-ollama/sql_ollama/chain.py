@@ -9,7 +9,7 @@ from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.utilities import SQLDatabase
 
 # Add the LLM downloaded from Ollama
-ollama_llm = "llama2:13b-chat"
+ollama_llm = "zephyr"
 llm = ChatOllama(model=ollama_llm)
 
 
@@ -83,12 +83,16 @@ prompt_response = ChatPromptTemplate.from_messages(
     ]
 )
 
-# Supply the input types to the prompt 
+
+# Supply the input types to the prompt
 class InputType(BaseModel):
     question: str
 
+
 chain = (
-    RunnablePassthrough.assign(query=sql_response_memory).with_types(input_type=InputType)
+    RunnablePassthrough.assign(query=sql_response_memory).with_types(
+        input_type=InputType
+    )
     | RunnablePassthrough.assign(
         schema=get_schema,
         response=lambda x: db.run(x["query"]),

@@ -15,7 +15,7 @@ from langchain.schema.runnable import (
     RunnablePassthrough,
 )
 from langchain.vectorstores import Pinecone
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 if os.environ.get("PINECONE_API_KEY", None) is None:
     raise Exception("Missing `PINECONE_API_KEY` environment variable.")
@@ -26,7 +26,7 @@ if os.environ.get("PINECONE_ENVIRONMENT", None) is None:
 PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
 ### Ingest code - you may need to run this the first time
-# Load
+# # Load
 # from langchain.document_loaders import WebBaseLoader
 # loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
 # data = loader.load()
@@ -87,7 +87,7 @@ def _format_chat_history(chat_history: List[Tuple[str, str]]) -> List:
 
 # User input
 class ChatHistory(BaseModel):
-    chat_history: List[Tuple[str, str]]
+    chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat"}})
     question: str
 
 

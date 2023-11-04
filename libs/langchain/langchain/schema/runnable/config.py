@@ -32,6 +32,10 @@ if TYPE_CHECKING:
         CallbackManager,
         CallbackManagerForChainRun,
     )
+else:
+    # Pydantic validates through typed dicts, but
+    # the callbacks need forward refs updated
+    Callbacks = Optional[Union[List, Any]]
 
 
 class EmptyDict(TypedDict, total=False):
@@ -216,6 +220,51 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                     **base.get(key, {}),  # type: ignore
                     **(config.get(key) or {}),  # type: ignore
                 }
+            elif key == "callbacks":
+                base_callbacks = base.get("callbacks")
+                these_callbacks = config["callbacks"]
+                # callbacks can be either None, list[handler] or manager
+                # so merging two callbacks values has 6 cases
+                if isinstance(these_callbacks, list):
+                    if base_callbacks is None:
+                        base["callbacks"] = these_callbacks
+                    elif isinstance(base_callbacks, list):
+                        base["callbacks"] = base_callbacks + these_callbacks
+                    else:
+                        # base_callbacks is a manager
+                        mngr = base_callbacks.copy()
+                        for callback in these_callbacks:
+                            mngr.add_handler(callback, inherit=True)
+                        base["callbacks"] = mngr
+                elif these_callbacks is not None:
+                    # these_callbacks is a manager
+                    if base_callbacks is None:
+                        base["callbacks"] = these_callbacks
+                    elif isinstance(base_callbacks, list):
+                        mngr = these_callbacks.copy()
+                        for callback in base_callbacks:
+                            mngr.add_handler(callback, inherit=True)
+                        base["callbacks"] = mngr
+                    else:
+                        # base_callbacks is also a manager
+                        base["callbacks"] = base_callbacks.__class__(
+                            parent_run_id=base_callbacks.parent_run_id
+                            or these_callbacks.parent_run_id,
+                            handlers=base_callbacks.handlers + these_callbacks.handlers,
+                            inheritable_handlers=base_callbacks.inheritable_handlers
+                            + these_callbacks.inheritable_handlers,
+                            tags=list(set(base_callbacks.tags + these_callbacks.tags)),
+                            inheritable_tags=list(
+                                set(
+                                    base_callbacks.inheritable_tags
+                                    + these_callbacks.inheritable_tags
+                                )
+                            ),
+                            metadata={
+                                **base_callbacks.metadata,
+                                **these_callbacks.metadata,
+                            },
+                        )
             else:
                 base[key] = config[key] or base.get(key)  # type: ignore
     return base

@@ -192,7 +192,11 @@ class AddableDict(Dict[str, Any]):
             if key not in chunk or chunk[key] is None:
                 chunk[key] = other[key]
             elif other[key] is not None:
-                chunk[key] = chunk[key] + other[key]
+                try:
+                    added = chunk[key] + other[key]
+                except TypeError:
+                    added = other[key]
+                chunk[key] = added
         return chunk
 
     def __radd__(self, other: AddableDict) -> AddableDict:
@@ -201,7 +205,11 @@ class AddableDict(Dict[str, Any]):
             if key not in chunk or chunk[key] is None:
                 chunk[key] = self[key]
             elif self[key] is not None:
-                chunk[key] = chunk[key] + self[key]
+                try:
+                    added = chunk[key] + self[key]
+                except TypeError:
+                    added = self[key]
+                chunk[key] = added
         return chunk
 
 

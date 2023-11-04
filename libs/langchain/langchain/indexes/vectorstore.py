@@ -34,7 +34,7 @@ class VectorStoreIndexWrapper(BaseModel):
         question: str,
         llm: Optional[BaseLanguageModel] = None,
         retriever_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """Query the vectorstore."""
         llm = llm or OpenAI(temperature=0)
@@ -49,7 +49,7 @@ class VectorStoreIndexWrapper(BaseModel):
         question: str,
         llm: Optional[BaseLanguageModel] = None,
         retriever_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> dict:
         """Query the vectorstore and get back sources."""
         llm = llm or OpenAI(temperature=0)
