@@ -35,6 +35,29 @@ def test_remove_style() -> None:
 
 
 @pytest.mark.requires("bs4")
+def test_remove_nested_tags() -> None:
+    """
+    If a tag_to_extract is _inside_ an unwanted tag, it should be removed
+    (e.g. a <p> inside a <table> if <table> is unwanted).)
+    If an unwanted tag is _inside_ a tag_to_extract, it should be removed,
+    but the rest of the tag_to_extract should stay.
+    This means that "unwanted_tags" have a higher "priority" than "tags_to_extract".
+    """
+    bs_transformer = BeautifulSoupTransformer()
+    with_style_html = (
+        "<html><style>my_funky_style</style>"
+        "<table><td><p>First paragraph, inside a table.</p></td></table>"
+        "<p>Second paragraph<table><td> with a cell </td></table>.</p>"
+        "</html>"
+    )
+    documents = [Document(page_content=with_style_html)]
+    docs_transformed = bs_transformer.transform_documents(
+        documents, unwanted_tags=["script", "style", "table"]
+    )
+    assert docs_transformed[0].page_content == ("Second paragraph.")
+
+
+@pytest.mark.requires("bs4")
 def test_remove_unwanted_lines() -> None:
     bs_transformer = BeautifulSoupTransformer()
     with_lines_html = "<html>\n\n<p>First \n\n     paragraph.</p>\n</html>\n\n"
