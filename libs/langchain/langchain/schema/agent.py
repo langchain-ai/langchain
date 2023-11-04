@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List, Literal, Sequence, Union
+from typing import Any, Literal, Sequence, Union
 
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import (
@@ -41,7 +41,7 @@ class AgentAction(Serializable):
         return True
 
     @property
-    def messages(self) -> List[BaseMessage]:
+    def messages(self) -> Sequence[BaseMessage]:
         """Return the messages that correspond to this action."""
         return _convert_agent_action_to_messages(self)
 
@@ -70,7 +70,7 @@ class AgentStep(Serializable):
     """The result of the AgentAction."""
 
     @property
-    def messages(self) -> List[BaseMessage]:
+    def messages(self) -> Sequence[BaseMessage]:
         """Return the messages that correspond to this observation."""
         return _convert_agent_observation_to_messages(self.action, self.observation)
 
@@ -99,12 +99,14 @@ class AgentFinish(Serializable):
         return True
 
     @property
-    def messages(self) -> List[BaseMessage]:
+    def messages(self) -> Sequence[BaseMessage]:
         """Return the messages that correspond to this observation."""
         return [AIMessage(content=self.log)]
 
 
-def _convert_agent_action_to_messages(agent_action: AgentAction) -> List[BaseMessage]:
+def _convert_agent_action_to_messages(
+    agent_action: AgentAction
+) -> Sequence[BaseMessage]:
     """Convert an agent action to a message.
 
     This code is used to reconstruct the original AI message from the agent action.
@@ -123,7 +125,7 @@ def _convert_agent_action_to_messages(agent_action: AgentAction) -> List[BaseMes
 
 def _convert_agent_observation_to_messages(
     agent_action: AgentAction, observation: Any
-) -> List[BaseMessage]:
+) -> Sequence[BaseMessage]:
     """Convert an agent action to a message.
 
     This code is used to reconstruct the original AI message from the agent action.

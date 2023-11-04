@@ -369,7 +369,9 @@ class AgentExecutorIterator:
         returned_output = await self._areturn(output, run_manager=run_manager)
         return self.make_final_outputs(returned_output, run_manager)
 
-    def _return(self, output: AgentFinish, run_manager: CallbackManagerForChainRun):
+    def _return(
+        self, output: AgentFinish, run_manager: CallbackManagerForChainRun
+    ) -> AddableDict:
         """
         Return the final output of the iterator.
         """
@@ -381,7 +383,7 @@ class AgentExecutorIterator:
 
     async def _areturn(
         self, output: AgentFinish, run_manager: AsyncCallbackManagerForChainRun
-    ):
+    ) -> AddableDict:
         """
         Return the final output of the async iterator.
         """
