@@ -78,7 +78,7 @@ def test_remove_style() -> None:
 @pytest.mark.requires("bs4")
 def test_remove_nested_tags() -> None:
     """
-    If a tag_to_extract is _inside_ an unwanted tag, it should be removed
+    If a tag_to_extract is _inside_ an unwanted_tag, it should be removed
     (e.g. a <p> inside a <table> if <table> is unwanted).)
     If an unwanted tag is _inside_ a tag_to_extract, it should be removed,
     but the rest of the tag_to_extract should stay.
@@ -95,7 +95,7 @@ def test_remove_nested_tags() -> None:
     docs_transformed = bs_transformer.transform_documents(
         documents, unwanted_tags=["script", "style", "table"]
     )
-    assert docs_transformed[0].page_content == ("Second paragraph.")
+    assert docs_transformed[0].page_content == "Second paragraph."
 
 
 @pytest.mark.requires("bs4")
