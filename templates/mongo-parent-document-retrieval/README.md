@@ -61,6 +61,7 @@ export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "defaul
 ```
 
 If you DO NOT already have a Mongo Search Index you want to connect to, see `MongoDB Setup` section below before proceeding.
+Note that because Parent Document Retrieval uses a different indexing strategy, it's likely you will want to run this new setup.
 
 If you DO have a MongoDB Search index you want to connect to, edit the connection details in `rag_mongo/chain.py`
 
