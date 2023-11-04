@@ -21,8 +21,14 @@ from typing import (
     cast,
 )
 
+from langchain.llms.google.generativeai import (
+    AqaModelInput,
+    AqaModelOutput,
+    GenAIAqa,
+)
 from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
+from langchain.schema.runnable import Runnable, RunnableLambda, RunnablePassthrough
 from langchain.schema.vectorstore import VectorStore
 
 VST = TypeVar("VST", bound="GoogleVectorStore")
@@ -66,10 +72,18 @@ class GoogleVectorStore(VectorStore):
         store = GoogleVectorStore.create_corpus(
             corpus_id="123", display_name="My Google corpus")
 
-    Example: Query the corpus.
+    Example: Query the corpus for relevant passages.
 
         store.as_retriever() \
             .get_relevant_documents("Who caught the gingerbread man?")
+
+    Example: Ask the corpus for grounded responses!
+
+        aqa = store.as_aqa()
+        response = aqa.invoke("Who caught the gingerbread man?")
+        print(response.answer)
+        print(response.attributed_passages)
+        print(response.answerability_probability)
 
     You can also operate at Google's Document level.
 
@@ -351,3 +365,38 @@ class GoogleVectorStore(VectorStore):
         i.e. one in [0, 1] where higher means more *similar*.
         """
         return lambda score: score
+
+    def as_aqa(
+        self, *, answer_style: int, **kwargs: Any
+    ) -> Runnable[str, AqaModelOutput]:
+        """
+        Args:
+            answer_style: See `google.ai.generativelanguage.AnswerStyle`.
+        """
+        return (
+            RunnablePassthrough[str]()
+            | {
+                "prompt": RunnablePassthrough(),
+                "passages": self.as_retriever(),
+            }
+            | RunnableLambda(_toAqaInput)
+            | GenAIAqa(answer_style=answer_style, **kwargs)
+        )
+
+
+def _toAqaInput(input: Dict[str, Any]) -> AqaModelInput:
+    prompt = input["prompt"]
+    assert isinstance(prompt, str)
+
+    passages = input["passages"]
+    assert isinstance(passages, list)
+
+    source_passages: List[str] = []
+    for passage in passages:
+        assert isinstance(passage, Document)
+        source_passages.append(passage.page_content)
+
+    return AqaModelInput(
+        prompt=prompt,
+        source_passages=source_passages,
+    )

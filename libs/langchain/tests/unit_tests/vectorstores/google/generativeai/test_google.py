@@ -389,3 +389,52 @@ def test_delete(
     assert delete_chunk_request_2 == genai.DeleteChunkRequest(
         name="corpora/123/documents/456/chunks/1002",
     )
+
+
+@pytest.mark.requires("google.ai.generativelanguage")
+@patch("google.ai.generativelanguage.TextServiceClient.generate_text_answer")
+@patch("google.ai.generativelanguage.RetrieverServiceClient.query_corpus")
+@patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
+def test_aqa(
+    mock_get_corpus: MagicMock,
+    mock_query_corpus: MagicMock,
+    mock_generate_text_answer: MagicMock,
+) -> None:
+    # Arrange
+    mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
+    mock_query_corpus.return_value = genai.QueryCorpusResponse(
+        relevant_chunks=[
+            genai.RelevantChunk(
+                chunk=genai.Chunk(
+                    name="corpora/123/documents/456/chunks/789",
+                    data=genai.ChunkData(string_value="42"),
+                ),
+                chunk_relevance_score=0.9,
+            )
+        ]
+    )
+    mock_generate_text_answer.return_value = genai.GenerateTextAnswerResponse(
+        answer=genai.TextCompletion(
+            output="42",
+        ),
+        attributed_passages=[
+            genai.AttributedPassage(
+                text="Meaning of life is 42.",
+                passage_ids=["corpora/123/documents/456/chunks/789"],
+            ),
+        ],
+        answerable_probability=0.7,
+    )
+
+    # Act
+    store = GoogleVectorStore(corpus_id="123")
+    aqa = store.as_aqa(answer_style=genai.AnswerStyle.EXTRACTIVE)
+    response = aqa.invoke("What is the meaning of life?")
+
+    # Assert
+    assert response.answer == "42"
+    assert response.attributed_passages == ["Meaning of life is 42."]
+    assert response.answerable_probability == pytest.approx(0.7)
+
+    request = mock_generate_text_answer.call_args.args[0]
+    assert request.answer_style == genai.AnswerStyle.EXTRACTIVE
