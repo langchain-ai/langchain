@@ -3752,7 +3752,7 @@ files = [
 name = "joblib"
 version = "1.3.2"
 description = "Lightweight pipelining with Python functions"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "joblib-1.3.2-py3-none-any.whl", hash = "sha256:ef4331c65f239985f3f2220ecc87db222f08fd22097a3dd5698f693875f8cbb9"},
@@ -5591,7 +5591,7 @@ requests = "*"
 name = "nltk"
 version = "3.8.1"
 description = "Natural Language Toolkit"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "nltk-3.8.1-py3-none-any.whl", hash = "sha256:fd5c9109f976fa86bcadba8f91e47f5e9293bd034474752e92a520f81c93dda5"},
@@ -11588,4 +11588,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a07a78a5f8df154a8af1d6c36169523309fbfbfa9bd7fabd62fc07ba78386f78"
+content-hash = "7e34be9636e58477aa3d9a3766ccba1b71dc869116614553c40ad620e931fe5b"

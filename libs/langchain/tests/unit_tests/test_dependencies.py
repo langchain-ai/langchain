@@ -85,6 +85,8 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "responses",
             "syrupy",
             "requests-mock",
+            "spacy",
+            "en-core-web-sm",
         ]
     )
 
