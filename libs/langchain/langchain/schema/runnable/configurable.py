@@ -298,7 +298,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         with _enums_for_spec_lock:
-            if which_enum := _enums_for_spec.get(self.which):
+            if which_enum := _enums_for_spec.get(self.which.id):
                 pass
             else:
                 which_enum = StrEnum(  # type: ignore[call-overload]
@@ -308,7 +308,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                         for v in list(self.alternatives.keys()) + [self.default_key]
                     ),
                 )
-                _enums_for_spec[self.which] = cast(Type[StrEnum], which_enum)
+                _enums_for_spec[self.which.id] = cast(Type[StrEnum], which_enum)
         return [
             ConfigurableFieldSpec(
                 id=self.which.id,
@@ -358,14 +358,14 @@ def make_options_spec(
     """Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or
     ConfigurableFieldMultiOption."""
     with _enums_for_spec_lock:
-        if enum := _enums_for_spec.get(spec):
+        if enum := _enums_for_spec.get(spec.id):
             pass
         else:
             enum = StrEnum(  # type: ignore[call-overload]
                 spec.name or spec.id,
                 ((v, v) for v in list(spec.options.keys())),
             )
-            _enums_for_spec[spec] = cast(Type[StrEnum], enum)
+            _enums_for_spec[spec.id] = cast(Type[StrEnum], enum)
     if isinstance(spec, ConfigurableFieldSingleOption):
         return ConfigurableFieldSpec(
             id=spec.id,
