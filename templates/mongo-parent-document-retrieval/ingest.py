@@ -9,6 +9,7 @@ from pymongo import MongoClient
 
 PARENT_DOC_ID_KEY = "parent_doc_id"
 
+
 def parent_child_splitter(data, id_key=PARENT_DOC_ID_KEY):
     parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
     # This text splitter is used to create the child documents
@@ -29,6 +30,7 @@ def parent_child_splitter(data, id_key=PARENT_DOC_ID_KEY):
         doc.metadata["doc_level"] = "parent"
     return documents, docs
 
+
 MONGO_URI = os.environ["MONGO_URI"]
 
 # Note that if you change this, you also need to change it in `rag_mongo/chain.py`
@@ -46,11 +48,11 @@ if __name__ == "__main__":
     data = loader.load()
 
     # Split docs
-    parent_docs, child_docs  = parent_child_splitter(data)
+    parent_docs, child_docs = parent_child_splitter(data)
 
     # Insert the documents in MongoDB Atlas Vector Search
     _ = MongoDBAtlasVectorSearch.from_documents(
-        documents=parent_docs+child_docs,
+        documents=parent_docs + child_docs,
         embedding=OpenAIEmbeddings(disallowed_special=()),
         collection=MONGODB_COLLECTION,
         index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME,

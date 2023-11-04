@@ -26,34 +26,36 @@ vector_search = MongoDBAtlasVectorSearch.from_connection_string(
     MONGO_URI,
     DB_NAME + "." + COLLECTION_NAME,
     OpenAIEmbeddings(disallowed_special=()),
-    index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME
+    index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME,
 )
+
 
 def retrieve(query: str):
     results = vector_search.similarity_search(
         query,
         k=4,
-        pre_filter={
-            "doc_level": { "$eq": "child"}
-        },
+        pre_filter={"doc_level": {"$eq": "child"}},
         post_filter_pipeline=[
             {"$project": {"embedding": 0}},
-            {'$lookup' :
-                 {"from": COLLECTION_NAME,
-                  "localField": PARENT_DOC_ID_KEY,
-                  "foreignField": PARENT_DOC_ID_KEY,
-                  "as": "parent_context",
-                  "pipeline": [{"$match":{"doc_level": "parent"}},
-                               {"$limit": 1},
-                               {"$project": {"embedding": 0}}]
-                  }
-             }
-        ]
+            {
+                "$lookup": {
+                    "from": COLLECTION_NAME,
+                    "localField": PARENT_DOC_ID_KEY,
+                    "foreignField": PARENT_DOC_ID_KEY,
+                    "as": "parent_context",
+                    "pipeline": [
+                        {"$match": {"doc_level": "parent"}},
+                        {"$limit": 1},
+                        {"$project": {"embedding": 0}},
+                    ],
+                }
+            },
+        ],
     )
     parent_docs = []
     parent_doc_ids = set()
     for result in results:
-        res = result.metadata['parent_context'][0]
+        res = result.metadata["parent_context"][0]
         text = res.pop("text")
         # This causes serialization issues.
         res.pop("_id")
@@ -62,6 +64,7 @@ def retrieve(query: str):
             parent_doc_ids.add(parent_doc.metadata[PARENT_DOC_ID_KEY])
             parent_docs.append(parent_doc)
     return parent_docs
+
 
 # RAG prompt
 template = """Answer the question based only on the following context:
