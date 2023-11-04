@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "langservehub-template"
+name = "__app_name__"
 version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
@@ -7,15 +7,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-sse-starlette = "^1.6.5"
-tomli-w = "^1.0.0"
 uvicorn = "^0.23.2"
-fastapi = "^0.103.2"
-langserve = ">=0.0.16"
-
-[tool.poetry.group.dev.dependencies]
-uvicorn = "^0.23.2"
-pygithub = "^2.1.1"
+langserve = {extras = ["server"], version = "^0.0.22"}
 
 
 [build-system]

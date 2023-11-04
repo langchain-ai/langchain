@@ -20,6 +20,10 @@ from langchain_cli.utils.git import (
     update_repo,
 )
 from langchain_cli.utils.packages import get_package_root
+from langchain_cli.utils.pyproject import (
+    add_dependencies_to_pyproject_toml,
+    remove_dependencies_from_pyproject_toml,
+)
 
 REPO_DIR = Path(typer.get_app_dir("langchain")) / "git_repos"
 
@@ -98,6 +102,7 @@ def add(
         grouped[key_tup] = lst
 
     installed_destination_paths: List[Path] = []
+    installed_destination_names: List[str] = []
     installed_exports: List[Dict] = []
 
     for (git, ref), group_deps in grouped.items():
@@ -131,23 +136,39 @@ def add(
             copy_repo(source_path, destination_path)
             typer.echo(f" - Downloaded {dep['subdirectory']} to {inner_api_path}")
             installed_destination_paths.append(destination_path)
+            installed_destination_names.append(inner_api_path)
             installed_exports.append(langserve_export)
 
     if len(installed_destination_paths) == 0:
         typer.echo("No packages installed. Exiting.")
         return
 
-    cwd = Path.cwd()
-    installed_desination_strs = [
-        str(p.relative_to(cwd)) for p in installed_destination_paths
-    ]
-    cmd = ["pip", "install", "-e"] + installed_desination_strs
-    cmd_str = " \\\n  ".join(installed_desination_strs)
-    install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
-    typer.echo(install_str)
+    try:
+        add_dependencies_to_pyproject_toml(
+            project_root / "pyproject.toml",
+            zip(installed_destination_names, installed_destination_paths),
+        )
+    except Exception as e:
+        print(e)
+        # Can fail if user modified/removed pyproject.toml
+        typer.echo("Failed to add dependencies to pyproject.toml, continuing...")
 
-    if typer.confirm("Run it?"):
-        subprocess.run(cmd, cwd=cwd)
+    try:
+        cwd = Path.cwd()
+        installed_destination_strs = [
+            str(p.relative_to(cwd)) for p in installed_destination_paths
+        ]
+    except ValueError:
+        # Can fail if the cwd is not a parent of the package
+        typer.echo("Failed to print install command, continuing...")
+    else:
+        cmd = ["pip", "install", "-e"] + installed_destination_strs
+        cmd_str = " \\\n  ".join(installed_destination_strs)
+        install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
+        typer.echo(install_str)
+
+        if typer.confirm("Run it?"):
+            subprocess.run(cmd, cwd=cwd)
 
     if typer.confirm("\nGenerate route code for these packages?", default=True):
         chain_names = []
@@ -201,6 +222,11 @@ def remove(
         typer.echo(f"Removing {langserve_export['package_name']}...")
 
         shutil.rmtree(package_dir)
+        try:
+            remove_dependencies_from_pyproject_toml(pyproject, [api_path])
+        except Exception:
+            # Can fail if user modified/removed pyproject.toml
+            typer.echo("Failed to remove dependencies from pyproject.toml.")
 
 
 @app_cli.command()
