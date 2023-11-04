@@ -147,4 +147,7 @@ def get_navigable_strings(element: Any) -> Iterator[str]:
         if isinstance(child, Tag):
             yield from get_navigable_strings(child)
         elif isinstance(child, NavigableString):
-            yield child.strip()
+            if (element.name == "a") and (href := element.get("href")):
+                yield f"{child.strip()} ({href})"
+            else:
+                yield child.strip()

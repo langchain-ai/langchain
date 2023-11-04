@@ -184,3 +184,22 @@ def test_transform_keeps_order() -> None:
         docs_transformed_h1_then_p[0].page_content
         == "First heading. First paragraph. Second heading. Second paragraph."
     )
+
+
+@pytest.mark.requires("bs4")
+def test_extracts_href() -> None:
+    bs_transformer = BeautifulSoupTransformer()
+    multiple_tags_html = (
+        "<h1>First heading.</h1>"
+        "<p>First paragraph with an <a href='http://example.com'>example</a></p>"
+        "<p>Second paragraph with an <a>a tag without href</a></p>"
+    )
+    documents = [Document(page_content=multiple_tags_html)]
+
+    docs_transformed = bs_transformer.transform_documents(
+        documents, tags_to_extract=["p"]
+    )
+    assert docs_transformed[0].page_content == (
+        "First paragraph with an example (http://example.com) "
+        "Second paragraph with an a tag without href"
+    )
