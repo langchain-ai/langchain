@@ -23,7 +23,7 @@ from langchain.chains.query_constructor.ir import (
     Operator,
 )
 
-GRAMMAR = """
+GRAMMAR = r"""
     ?program: func_call
     ?expr: func_call
         | value

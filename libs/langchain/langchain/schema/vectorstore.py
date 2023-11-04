@@ -216,6 +216,17 @@ class VectorStore(ABC):
         """Run similarity search with distance."""
         raise NotImplementedError
 
+    async def asimilarity_search_with_score(
+        self, *args: Any, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Run similarity search with distance asynchronously."""
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self.similarity_search_with_score, *args, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
     def _similarity_search_with_relevance_scores(
         self,
         query: str,
@@ -241,6 +252,33 @@ class VectorStore(ABC):
         """
         relevance_score_fn = self._select_relevance_score_fn()
         docs_and_scores = self.similarity_search_with_score(query, k, **kwargs)
+        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
+
+    async def _asimilarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """
+        Default async similarity search with relevance scores. Modify if necessary
+        in subclass.
+        Return docs and relevance scores in the range [0, 1].
+
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            query: input text
+            k: Number of Documents to return. Defaults to 4.
+            **kwargs: kwargs to be passed to similarity search. Should include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of Tuples of (doc, similarity_score)
+        """
+        relevance_score_fn = self._select_relevance_score_fn()
+        docs_and_scores = await self.asimilarity_search_with_score(query, k, **kwargs)
         return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
 
     def similarity_search_with_relevance_scores(
@@ -291,17 +329,51 @@ class VectorStore(ABC):
         return docs_and_similarities
 
     async def asimilarity_search_with_relevance_scores(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to query."""
+        """Return docs and relevance scores in the range [0, 1], asynchronously.
 
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(
-            self.similarity_search_with_relevance_scores, query, k=k, **kwargs
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            query: input text
+            k: Number of Documents to return. Defaults to 4.
+            **kwargs: kwargs to be passed to similarity search. Should include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of Tuples of (doc, similarity_score)
+        """
+        score_threshold = kwargs.pop("score_threshold", None)
+
+        docs_and_similarities = await self._asimilarity_search_with_relevance_scores(
+            query, k=k, **kwargs
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
+        if any(
+            similarity < 0.0 or similarity > 1.0
+            for _, similarity in docs_and_similarities
+        ):
+            warnings.warn(
+                "Relevance scores must be between"
+                f" 0 and 1, got {docs_and_similarities}"
+            )
+
+        if score_threshold is not None:
+            docs_and_similarities = [
+                (doc, similarity)
+                for doc, similarity in docs_and_similarities
+                if similarity >= score_threshold
+            ]
+            if len(docs_and_similarities) == 0:
+                warnings.warn(
+                    "No relevant docs were retrieved using the relevance score"
+                    f" threshold {score_threshold}"
+                )
+        return docs_and_similarities
 
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
