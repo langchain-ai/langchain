@@ -164,7 +164,7 @@ pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
 spacy = {version="^3.7.2", optional = true, python = ">=3.9,<4.0"}
-en-core-web-sm = {url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0-py3-none-any.whl"}
+en-core-web-sm = {url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0-py3-none-any.whl", optional = true, python = ">=3.9,<4.0", }
 
 
 [tool.poetry.group.codespell.dependencies]
