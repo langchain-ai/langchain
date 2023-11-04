@@ -309,6 +309,8 @@ all = [
     "amadeus",
     "librosa",
     "python-arango",
+    "spacy",
+    "en-core-web-sm",
 ]
 
 cli = [
