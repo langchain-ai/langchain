@@ -142,8 +142,9 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                     str(self.credentials_path), SCOPES
                 )
                 creds = flow.run_local_server(port=0)
-            with open(self.token_path, "w") as token:
-                token.write(creds.to_json())
+            if creds:
+                with open(self.token_path, "w") as token:
+                    token.write(creds.to_json())
 
         # From Application Default Credentials
         if not creds:
