@@ -1,5 +1,6 @@
 import base64
 import email
+import re  # Added for OTP code extraction
 from typing import Dict, Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
@@ -53,6 +54,18 @@ class GmailGetMessage(GmailBaseTool):
                 cdispo = str(part.get("Content-Disposition"))
                 if ctype == "text/plain" and "attachment" not in cdispo:
                     message_body = part.get_payload(decode=True).decode("utf-8")
+                elif ctype == "text/html" and "attachment" not in cdispo:
+                    text_html = part.get_payload(decode=True).decode("utf-8")
+            if text_plain and text_html:
+                soup = BeautifulSoup(text_html, 'html.parser')
+                html_text = soup.get_text()
+                message_body = f"Text (plain): {text_plain}\nText (HTML): {html_text}"
+            elif text_plain:
+                message_body = f"Text (plain): {text_plain}"
+            elif text_html:
+                soup = BeautifulSoup(text_html, 'html.parser')
+                message_body = f"Text (HTML): {soup.get_text()}"
+                
                     break
         else:
             message_body = email_msg.get_payload(decode=True).decode("utf-8")
