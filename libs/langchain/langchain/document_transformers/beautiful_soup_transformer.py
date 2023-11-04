@@ -98,23 +98,15 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(html_content, "html.parser")
-        text_parts = []
-        for tag in tags:
-            other_tags = [t for t in tags if t != tag]
-            elements = soup.find_all(tag)
-            for element in elements:
-                # We want to extract text from the element recursively,
-                # but not from other tags we're also visiting separately.
-                text = "".join(get_strings(element, other_tags)).strip()
-                if tag == "a":
-                    href = element.get("href")
-                    if href:
-                        text_parts.append(f"{text} ({href})")
-                    elif text:
-                        text_parts.append(text)
-                elif text:
-                    # We don't want to add empty strings to the list.
-                    text_parts.append(text)
+        text_parts: list[str] = []
+        for element in soup.find_all():
+            if element.name in tags:
+                # Extract all strings recursively in this element.
+                text_parts += get_navigable_strings(element)
+
+                # To avoid duplicate text, we remove all descendents from the soup
+                element.decompose()
+
         return " ".join(text_parts)
 
     @staticmethod
@@ -148,12 +140,11 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         raise NotImplementedError
 
 
-def get_strings(element: Any, exclude_tags: Sequence[str]) -> Iterator[str]:
+def get_navigable_strings(element: Any) -> Iterator[str]:
     from bs4 import NavigableString, Tag
 
     for child in cast(Tag, element).children:
         if isinstance(child, Tag):
-            if child.name not in exclude_tags:
-                yield from get_strings(child, exclude_tags)
+            yield from get_navigable_strings(child)
         elif isinstance(child, NavigableString):
-            yield child
+            yield child.strip()
