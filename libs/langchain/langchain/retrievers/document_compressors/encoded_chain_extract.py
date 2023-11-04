@@ -8,7 +8,7 @@ import asyncio
 import re
 from typing import Callable, Dict, List, Optional, Sequence
 
-import nltk
+import spacy
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
@@ -22,6 +22,8 @@ from langchain.schema.language_model import BaseLanguageModel
 
 NO_OUTPUT_STR: str = "NO_OUTPUT"
 
+# Loading spacy model for sentence tokenization
+nlp = spacy.load("en_core_web_sm")
 
 class SequenceListParser(BaseOutputParser[List[int]]):
     """Parse outputs that contain a sequence list"""
@@ -78,7 +80,7 @@ def number_sequences(text: str, len: int = 1) -> str:
 
     paragraphs = _split_paragraphs(text)
     for paragraph in paragraphs:
-        sentences = nltk.sent_tokenize(paragraph)
+        sentences = list(nlp(paragraph).sents)
         for i, sentence in enumerate(sentences):
             num = count // len + 1
             number_prefix = f"#|{num}|#" if count % len == 0 else ""
