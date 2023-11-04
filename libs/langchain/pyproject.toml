@@ -238,6 +238,7 @@ extended_testing = [
  "cassio",
  "chardet",
  "datasets",
+ "google-ai-generativelanguage",
  "google-cloud-documentai",
  "esprima",
  "jq",

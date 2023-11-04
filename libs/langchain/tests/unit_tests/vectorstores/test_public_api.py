@@ -27,6 +27,7 @@ _EXPECTED = [
     "ElasticsearchStore",
     "Epsilla",
     "FAISS",
+    "GoogleVectorStore",
     "Hologres",
     "LanceDB",
     "LLMRails",

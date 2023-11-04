@@ -70,6 +70,7 @@ __all__ = [
     "ElasticsearchStore",
     "Epsilla",
     "FAISS",
+    "GoogleVectorStore",
     "Hologres",
     "LanceDB",
     "LLMRails",
