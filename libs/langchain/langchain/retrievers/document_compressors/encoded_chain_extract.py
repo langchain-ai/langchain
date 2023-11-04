@@ -25,6 +25,7 @@ NO_OUTPUT_STR: str = "NO_OUTPUT"
 # Loading spacy model for sentence tokenization
 nlp = spacy.load("en_core_web_sm")
 
+
 class SequenceListParser(BaseOutputParser[List[int]]):
     """Parse outputs that contain a sequence list"""
 
@@ -80,7 +81,7 @@ def number_sequences(text: str, len: int = 1) -> str:
 
     paragraphs = _split_paragraphs(text)
     for paragraph in paragraphs:
-        sentences = list(nlp(paragraph).sents)
+        sentences = [sent.text for sent in nlp(paragraph).sents]
         for i, sentence in enumerate(sentences):
             num = count // len + 1
             number_prefix = f"#|{num}|#" if count % len == 0 else ""
@@ -170,11 +171,12 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
         Returns:
             list of compressed Documents
         """
-        compressed_docs = []
+        compressed_docs: List[Document] = []
         for doc in documents:
             doc_content = number_sequences(doc.page_content)
             _input = self.get_input(query, doc_content)
             sequence_list = self.llm_chain.predict(**_input, callbacks=callbacks)
+            assert isinstance(sequence_list, list)
             if len(sequence_list) == 0:
                 continue
             compressed_docs.append(

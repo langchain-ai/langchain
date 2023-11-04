@@ -49,6 +49,8 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "python",
         "requests",
         "tenacity",
+        "spacy",
+        "en-core-web-sm",
     ]
 
     unrequired_dependencies = [
