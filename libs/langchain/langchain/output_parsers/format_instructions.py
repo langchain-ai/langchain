@@ -50,10 +50,10 @@ PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS = """The output should be formatted as a st
 4. If the column is not in the possible columns or the operation is not a valid Pandas DataFrame operation, return why it is invalid as a sentence starting with either "Invalid column" or "Invalid operation".
 
 As an example, for the formats:
-1. String "col:num_legs" is a well-formatted instance which gets the column num_legs, where num_legs is a possible column.
+1. String "column:num_legs" is a well-formatted instance which gets the column num_legs, where num_legs is a possible column.
 2. String "row:1" is a well-formatted instance which gets row 1.
-3. String "col:num_legs[1,2]" is a well-formatted instance which gets the column num_legs for rows 1 and 2, where num_legs is a possible column.
-4. String "row:1[num_legs]" is a well-formatted instance which gets row 1, but for just column num_legs, where num_legs is a possible column.
+3. String "column:num_legs[1,2]" is a well-formatted instance which gets the column num_legs for rows 1 and 2, where num_legs is a possible column.
+4. String "column:1[num_legs]" is a well-formatted instance which gets row 1, but for just column num_legs, where num_legs is a possible column.
 5. String "mean:num_legs[1..3]" is a well-formatted instance which takes the mean of num_legs from rows 1 to 3, where num_legs is a possible column and mean is a valid Pandas DataFrame operation.
 6. String "do_something:num_legs" is a badly-formatted instance, where do_something is not a valid Pandas DataFrame operation.
 7. String "mean:invalid_col" is a badly-formatted instance, where invalid_col is not a possible column.

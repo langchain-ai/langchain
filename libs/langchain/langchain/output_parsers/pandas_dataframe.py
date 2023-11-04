@@ -63,12 +63,10 @@ class PandasDataFrameOutputParser(BaseOutputParser):
                     )
                 case 'column':
                     # TODO: Implement multiple column parsing
-                    p_query = self.dataframe[request_params].to_string(header=False, index=False)
-                    result[request_params] = p_query.split("\n")
+                    result[request_params] = self.dataframe[request_params]
                 case 'row':
                     # TODO: Implement multiple row parsing
-                    p_query = self.dataframe.iloc[int(request_params)].to_string(header=False, index=False)
-                    result[request_params] = p_query.split("\n")
+                    result[request_params] = self.dataframe.iloc[int(request_params)]
                 case _:
                     array_exists = re.search(r'(\[.*?\])', request_params)
                     if array_exists:
