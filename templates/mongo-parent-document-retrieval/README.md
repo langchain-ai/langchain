@@ -32,20 +32,20 @@ pip install -U langchain-cli
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package rag-mongo
+langchain app new my-app --package mongo-parent-document-retrieval
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add rag-mongo
+langchain app add mongo-parent-document-retrieval
 ```
 
 And add the following code to your `server.py` file:
 ```python
-from rag_mongo import chain as rag_mongo_chain
+from mongo_parent_document_retrieval import chain as mongo_parent_document_retrieval_chain
 
-add_routes(app, rag_mongo_chain, path="/rag-mongo")
+add_routes(app, mongo_parent_document_retrieval_chain, path="/mongo-parent-document-retrieval")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -63,7 +63,7 @@ export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "defaul
 If you DO NOT already have a Mongo Search Index you want to connect to, see `MongoDB Setup` section below before proceeding.
 Note that because Parent Document Retrieval uses a different indexing strategy, it's likely you will want to run this new setup.
 
-If you DO have a MongoDB Search index you want to connect to, edit the connection details in `rag_mongo/chain.py`
+If you DO have a MongoDB Search index you want to connect to, edit the connection details in `mongo_parent_document_retrieval/chain.py`
 
 If you are inside this directory, then you can spin up a LangServe instance directly by:
 
@@ -75,14 +75,14 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/rag-mongo/playground](http://127.0.0.1:8000/rag-mongo/playground)  
+We can access the playground at [http://127.0.0.1:8000/mongo-parent-document-retrieval/playground](http://127.0.0.1:8000/mongo-parent-document-retrieval/playground)  
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/rag-mongo")
+runnable = RemoteRunnable("http://localhost:8000/mongo-parent-document-retrieval")
 ```
 
 For additional context, please refer to [this notebook](https://colab.research.google.com/drive/1cr2HBAHyBmwKUerJq2if0JaNhy-hIq7I#scrollTo=TZp7_CBfxTOB).
