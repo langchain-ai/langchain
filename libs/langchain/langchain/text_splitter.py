@@ -813,6 +813,7 @@ class Language(str, Enum):
     SOL = "sol"
     CSHARP = "csharp"
     COBOL = "cobol"
+    PERL = "pl"
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
