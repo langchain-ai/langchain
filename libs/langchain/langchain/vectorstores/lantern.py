@@ -48,9 +48,9 @@ def get_embedding_store(
     else:
         embedding_type = sqlalchemy.REAL  # type: ignore
 
-    Base = declarative_base(class_registry=dict())  # type: Any
+    DynamicBase = declarative_base(class_registry=dict())  # type: Any
 
-    class EmbeddingStore(Base, BaseEmbeddingStore):
+    class EmbeddingStore(DynamicBase, BaseEmbeddingStore):
         __tablename__ = collection_name
         uuid = sqlalchemy.Column(
             UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
