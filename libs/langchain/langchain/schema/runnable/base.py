@@ -14,6 +14,7 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
+    Coroutine,
     Dict,
     Generic,
     Iterator,
@@ -281,6 +282,10 @@ class Runnable(Generic[Input, Output], ABC):
         """Transform a single input into an output. Override to implement."""
         ...
 
+    def __call__(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+        """ Alias for invoke, which allows a runnable to be called directly."""
+        return self.invoke(input, config)
+
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -291,6 +296,14 @@ class Runnable(Generic[Input, Output], ABC):
         return await asyncio.get_running_loop().run_in_executor(
             None, partial(self.invoke, **kwargs), input, config
         )
+
+    def __await__(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Coroutine[None, None, Output]:
+        """
+        Alias for ainvoke, which allows a runnable to be called with await.
+        """
+        return self.ainvoke(input, config, **kwargs).__await__()
 
     def batch(
         self,
