@@ -188,6 +188,7 @@ def make_request(
 ) -> Any:
     """Generate text from the model."""
     params = params or {}
+    api_key = None
     if self.nebula_api_key is not None:
         api_key = self.nebula_api_key.get_secret_value()
     headers = {
