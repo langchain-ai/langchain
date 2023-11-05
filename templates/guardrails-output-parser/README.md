@@ -33,7 +33,7 @@ langchain app add guardrails-output-parser
 
 And add the following code to your `server.py` file:
 ```python
-from guardrails_output_parser import chain as guardrails_output_parser_chain
+from guardrails_output_parser.chain import chain as guardrails_output_parser_chain
 
 add_routes(app, guardrails_output_parser_chain, path="/guardrails-output-parser")
 ```
