@@ -1,4 +1,5 @@
 # flake8: noqa
+from langchain.prompts.prompt import PromptTemplate
 QUERY_CHECKER = """
 {query}
 Double check the {dialect} query above for common mistakes, including:
@@ -16,3 +17,9 @@ If there are any of the above mistakes, rewrite the query. If there are no mista
 Output the final SQL query only.
 
 SQL Query: """
+
+
+QUERY_CHECKER_PROMPT = PromptTemplate(
+    input_variables=["query", "dialect"],
+    template=QUERY_CHECKER,
+)
