@@ -55,7 +55,7 @@ class AgentStep(Serializable):
 
     action: AgentAction
     """The AgentAction that was executed."""
-    observation: str
+    observation: Any
     """The result of the AgentAction."""
 
 
