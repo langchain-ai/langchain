@@ -92,8 +92,8 @@ class Lantern(VectorStore):
     - `embedding_function` any embedding function implementing
         `langchain.embeddings.base.Embeddings` interface.
     - `collection_name` is the name of the collection to use. (default: langchain)
-        - NOTE: This is not the name of the table, but the name of the collection.
-            The tables will be created when initializing the store (if not exists)
+        - NOTE: This is the name of the table in which embedding data will be stored
+            The table will be created when initializing the store (if not exists)
             So, make sure the user has the right permissions to create tables.
     - `distance_strategy` is the distance strategy to use. (default: EUCLIDEAN)
         - `EUCLIDEAN` is the euclidean distance.
