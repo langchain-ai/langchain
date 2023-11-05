@@ -18,7 +18,8 @@ def test_transform_empty_html() -> None:
 def test_extract_paragraphs() -> None:
     bs_transformer = BeautifulSoupTransformer()
     paragraphs_html = (
-        "<html><h1>Header</h1><p>First paragraph.</p><p>Second paragraph.</p><html>"
+        "<html><h1>Header</h1><p>First paragraph.</p>"
+        "<p>Second paragraph.</p><h1>Ignore at end</h1></html>"
     )
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = bs_transformer.transform_documents(documents)
@@ -30,7 +31,7 @@ def test_strip_whitespace() -> None:
     bs_transformer = BeautifulSoupTransformer()
     paragraphs_html = (
         "<html><h1>Header</h1><p><span>First</span>   paragraph.</p>"
-        "<p>Second paragraph. </p><html>"
+        "<p>Second paragraph. </p></html>"
     )
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = bs_transformer.transform_documents(documents)
@@ -212,3 +213,20 @@ def test_extracts_href() -> None:
         "First paragraph with an example (http://example.com) "
         "Second paragraph with an a tag without href"
     )
+
+
+@pytest.mark.requires("bs4")
+def test_invalid_html() -> None:
+    bs_transformer = BeautifulSoupTransformer()
+    invalid_html_1 = "<html><h1>First heading."
+    invalid_html_2 = "<html 1234 xyz"
+    documents = [
+        Document(page_content=invalid_html_1),
+        Document(page_content=invalid_html_2),
+    ]
+
+    docs_transformed = bs_transformer.transform_documents(
+        documents, tags_to_extract=["h1"]
+    )
+    assert docs_transformed[0].page_content == "First heading."
+    assert docs_transformed[1].page_content == ""
