@@ -3,13 +3,15 @@
 
 This template performs RAG over clinical trial data from [Clinical Trials .gov](https://classic.clinicaltrials.gov/api/gui/ref/download_all).
 
-It builds a vectorstore from a sub-set of cinical trial data.
+It builds a vectorstore from a sub-set of cinical trial data using `build_db.ipynb` with specified metadata fields.
 
-It then uses self-query retriever. 
+It then uses [self-query retriever](https://python.langchain.com/docs/integrations/retrievers/self_query/chroma_self_query) to query using these metadata filters.
 
 ## Database
 
-The vectorstore is created using `biomedical_rag_build_db.ipynb`. 
+The vectorstore is created using `build_db.ipynb`. 
+
+Also see more general context on biomedical RAG in `biomedical_rag_introduction.ipynb`.
 
 ## Environment Setup
 
