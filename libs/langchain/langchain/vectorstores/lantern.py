@@ -1,6 +1,6 @@
 from __future__ import annotations
-import contextlib
 
+import contextlib
 import enum
 import logging
 import uuid
@@ -10,7 +10,8 @@ import numpy as np
 import sqlalchemy
 from sqlalchemy import delete, func
 from sqlalchemy.dialects.postgresql import JSON, UUID
-from sqlalchemy.orm import Session, relationship
+from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.orm import Session
 
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -24,18 +25,8 @@ from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
 
-Base = declarative_base()  # type: Any
-
-
 ADA_TOKEN_COUNT = 1536
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
-
-
-class BaseModel(Base):
-    """Base model for all SQL stores."""
-
-    __abstract__ = True
-    uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 
 def _results_to_docs(docs_and_scores: Any) -> List[Document]:
@@ -43,73 +34,41 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
     return [doc for doc, _ in docs_and_scores]
 
 
-class CollectionStore(BaseModel):
-    """Collection store."""
-
-    __tablename__ = "langchain_pg_collection"
-
-    name = sqlalchemy.Column(sqlalchemy.String)
-    cmetadata = sqlalchemy.Column(JSON)
-
-    embeddings = relationship(
-        "EmbeddingStore",
-        back_populates="collection",
-        passive_deletes=True,
-    )
-
-    @classmethod
-    def get_by_name(cls, session: Session, name: str) -> Optional["CollectionStore"]:
-        return session.query(cls).filter(cls.name == name).first()  # type: ignore
-
-    @classmethod
-    def get_or_create(
-        cls,
-        session: Session,
-        name: str,
-        cmetadata: Optional[dict] = None,
-    ) -> Tuple["CollectionStore", bool]:
-        """
-        Get or create a collection.
-        Returns [Collection, bool] where the bool is True if the collection was created.
-        """
-        created = False
-        collection = cls.get_by_name(session, name)
-        if collection:
-            return collection, created
-
-        collection = cls(name=name, cmetadata=cmetadata)
-        session.add(collection)
-        session.commit()
-        created = True
-        return collection, created
-
-
-class EmbeddingStore(BaseModel):
+class BaseEmbeddingStore:
     """Embedding store."""
 
-    __tablename__ = "langchain_lantern"
 
-    collection_id = sqlalchemy.Column(
-        UUID(as_uuid=True),
-        sqlalchemy.ForeignKey(
-            f"{CollectionStore.__tablename__}.uuid",
-            ondelete="CASCADE",
-        ),
-    )
-    collection = relationship(CollectionStore, back_populates="embeddings")
+def get_embedding_store(
+    distance_strategy: DistanceStrategy, collection_name: str
+) -> Any:
+    embedding_type = None
 
-    embedding = sqlalchemy.Column(sqlalchemy.ARRAY(sqlalchemy.REAL))  # type: ignore
-    document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    cmetadata = sqlalchemy.Column(JSON, nullable=True)
+    if distance_strategy == DistanceStrategy.HAMMING:
+        embedding_type = sqlalchemy.INTEGER  # type: ignore
+    else:
+        embedding_type = sqlalchemy.REAL  # type: ignore
 
-    # custom_id : any user defined id
-    custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    Base = declarative_base(class_registry=dict())  # type: Any
+
+    class EmbeddingStore(Base, BaseEmbeddingStore):
+        __tablename__ = collection_name
+        uuid = sqlalchemy.Column(
+            UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        )
+        __table_args__ = {"extend_existing": True}
+        document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        cmetadata = sqlalchemy.Column(JSON, nullable=True)
+        # custom_id : any user defined id
+        custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        embedding = sqlalchemy.Column(sqlalchemy.ARRAY(embedding_type))  # type: ignore
+
+    return EmbeddingStore
 
 
 class QueryResult:
     """Result from a query."""
 
-    EmbeddingStore: EmbeddingStore
+    EmbeddingStore: BaseEmbeddingStore
     distance: float
 
 
@@ -164,8 +123,9 @@ class Lantern(VectorStore):
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
-        self.CollectionStore = CollectionStore
-        self.EmbeddingStore = EmbeddingStore
+        self.EmbeddingStore = get_embedding_store(
+            self.distance_strategy, collection_name
+        )
         self.__post_init__()
 
     def __post_init__(
@@ -173,8 +133,24 @@ class Lantern(VectorStore):
     ) -> None:
         self._conn = self.connect()
         self.create_hnsw_extension()
-        self.create_tables_if_not_exists()
         self.create_collection()
+
+    @property
+    def distance_strategy(self) -> DistanceStrategy:
+        if isinstance(self._distance_strategy, DistanceStrategy):
+            return self._distance_strategy
+
+        if self._distance_strategy == DistanceStrategy.EUCLIDEAN.value:
+            return DistanceStrategy.EUCLIDEAN
+        elif self._distance_strategy == DistanceStrategy.COSINE.value:
+            return DistanceStrategy.COSINE
+        elif self._distance_strategy == DistanceStrategy.HAMMING.value:
+            return DistanceStrategy.HAMMING
+        else:
+            raise ValueError(
+                f"Got unexpected value for distance: {self._distance_strategy}. "
+                f"Should be one of {', '.join([ds.value for ds in DistanceStrategy])}."
+            )
 
     @property
     def embeddings(self) -> Embeddings:
@@ -192,7 +168,7 @@ class Lantern(VectorStore):
     ) -> str:
         """Return connection string from database parameters."""
         return f"postgresql+{driver}://{user}:{password}@{host}:{port}/{database}"
-    
+
     def connect(self) -> sqlalchemy.engine.Connection:
         engine = sqlalchemy.create_engine(self.connection_string)
         conn = engine.connect()
@@ -200,17 +176,12 @@ class Lantern(VectorStore):
 
     @property
     def distance_function(self) -> Any:
-        if self._distance_strategy == DistanceStrategy.EUCLIDEAN:
+        if self.distance_strategy == DistanceStrategy.EUCLIDEAN:
             return "l2sq_dist"
-        elif self._distance_strategy == DistanceStrategy.COSINE:
+        elif self.distance_strategy == DistanceStrategy.COSINE:
             return "cos_dist"
-        elif self._distance_strategy == DistanceStrategy.HAMMING:
+        elif self.distance_strategy == DistanceStrategy.HAMMING:
             return "hamming_dist"
-        else:
-            raise ValueError(
-                f"Got unexpected value for distance: {self._distance_strategy}. "
-                f"Should be one of {', '.join([ds.value for ds in DistanceStrategy])}."
-            )
 
     def create_hnsw_extension(self) -> None:
         try:
@@ -222,12 +193,19 @@ class Lantern(VectorStore):
             self.logger.exception(e)
 
     def create_tables_if_not_exists(self) -> None:
-        with self._conn.begin():
-            Base.metadata.create_all(self._conn)
+        try:
+            self.create_collection()
+        except ProgrammingError:
+            pass
+
+    def drop_table(self) -> None:
+        try:
+            self.EmbeddingStore.__table__.drop(self._conn.engine)
+        except ProgrammingError:
+            pass
 
     def drop_tables(self) -> None:
-        with self._conn.begin():
-            Base.metadata.drop_all(self._conn)
+        self.drop_table()
 
     def _hamming_relevance_score_fn(self, distance: float) -> float:
         return distance
@@ -246,11 +224,11 @@ class Lantern(VectorStore):
 
         # Default strategy is to rely on distance strategy provided
         # in vectorstore constructor
-        if self._distance_strategy == DistanceStrategy.COSINE:
+        if self.distance_strategy == DistanceStrategy.COSINE:
             return self._cosine_relevance_score_fn
-        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN:
+        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN:
             return self._euclidean_relevance_score_fn
-        elif self._distance_strategy == DistanceStrategy.HAMMING:
+        elif self.distance_strategy == DistanceStrategy.HAMMING:
             return self._hamming_relevance_score_fn
         else:
             raise ValueError(
@@ -258,6 +236,31 @@ class Lantern(VectorStore):
                 f" for distance_strategy of {self._distance_strategy}."
                 "Consider providing relevance_score_fn to Lantern constructor."
             )
+
+    def _get_op_class(self) -> str:
+        if self.distance_strategy == DistanceStrategy.COSINE:
+            return "dist_cos_ops"
+        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN:
+            return "dist_l2sq_ops"
+        elif self.distance_strategy == DistanceStrategy.HAMMING:
+            return "dist_hamming_ops"
+        else:
+            raise ValueError(
+                "No supported normalization function"
+                f" for distance_strategy of {self._distance_strategy}."
+                "Consider providing relevance_score_fn to Lantern constructor."
+            )
+
+    def _typed_arg_for_distance(
+        self, embedding: List[float | int]
+    ) -> List[float | int]:
+        if self.distance_strategy == DistanceStrategy.HAMMING:
+            return list(map(lambda x: int(x), embedding))
+        return embedding
+
+    @property
+    def _index_name(self) -> str:
+        return f"langchain_{self.collection_name}_idx"
 
     def create_hnsw_index(
         self,
@@ -267,44 +270,57 @@ class Lantern(VectorStore):
         ef_search: int = 16,
     ) -> None:
         create_index_query = sqlalchemy.text(
-            "CREATE INDEX IF NOT EXISTS langchain_lantern_idx "
-            "ON langchain_lantern USING hnsw (embedding) "
+            "CREATE INDEX IF NOT EXISTS {} "
+            "ON {} USING hnsw (embedding {}) "
             "WITH ("
             "dim = {}, "
             "m = {}, "
             "ef_construction = {}, "
             "ef = {}"
-            ");".format(dims, m, ef_construction, ef_search)
+            ");".format(
+                self._index_name,
+                self.collection_name,
+                self._get_op_class(),
+                dims,
+                m,
+                ef_construction,
+                ef_search,
+            )
         )
 
-        # Execute the queries
-        try:
-            with Session(self._conn) as session:
-                # Create the HNSW index
-                session.execute(create_index_query)
-                session.commit()
-            self.logger.info("HNSW extension and index created successfully.")
-        except Exception as e:
-            self.logger.error(f"Failed to create HNSW extension or index: {e}")
+        with Session(self._conn) as session:
+            # Create the HNSW index
+            session.execute(create_index_query)
+            session.commit()
+        self.logger.info("HNSW extension and index created successfully.")
+
+    def drop_index(self) -> None:
+        with Session(self._conn) as session:
+            # Drop the HNSW index
+            session.execute(
+                sqlalchemy.text("DROP INDEX IF EXISTS {}".format(self._index_name))
+            )
+            session.commit()
 
     def create_collection(self) -> None:
         if self.pre_delete_collection:
             self.delete_collection()
-        with Session(self._conn) as session:
-            self.CollectionStore.get_or_create(
-                session, self.collection_name, cmetadata=self.collection_metadata
-            )
+            self.drop_table()
+
+        with self._conn.begin():
+            try:
+                self.EmbeddingStore.__table__.create(self._conn.engine)
+            except ProgrammingError as e:
+                # Duplicate table
+                if e.code == "f405":
+                    pass
+                else:
+                    raise e
 
     def delete_collection(self) -> None:
         self.logger.debug("Trying to delete collection")
-        with Session(self._conn) as session:
-            collection = self.get_collection(session)
-            if not collection:
-                self.logger.warning("Collection not found")
-                return
-            session.delete(collection)
-            session.commit()
-            
+        self.drop_table()
+
     @contextlib.contextmanager
     def _make_session(self) -> Generator[Session, None, None]:
         """Create a context manager for the session, bind to _conn string."""
@@ -331,9 +347,6 @@ class Lantern(VectorStore):
                 )
                 session.execute(stmt)
             session.commit()
-            
-    def get_collection(self, session: Session) -> Optional["CollectionStore"]:
-        return self.CollectionStore.get_by_name(session, self.collection_name)
 
     @classmethod
     def _initialize_from_embeddings(
@@ -367,6 +380,7 @@ class Lantern(VectorStore):
         store.add_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
+
         store.create_hnsw_index()
 
         return store
@@ -380,9 +394,6 @@ class Lantern(VectorStore):
         **kwargs: Any,
     ) -> None:
         with Session(self._conn) as session:
-            collection = self.get_collection(session)
-            if not collection:
-                raise ValueError("Collection not found")
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
                 embedding_store = self.EmbeddingStore(
                     embedding=embedding,
@@ -390,7 +401,6 @@ class Lantern(VectorStore):
                     cmetadata=metadata,
                     custom_id=id,
                 )
-                collection.embeddings.append(embedding_store)
                 session.add(embedding_store)
             session.commit()
 
@@ -410,9 +420,6 @@ class Lantern(VectorStore):
             metadatas = [{} for _ in texts]
 
         with Session(self._conn) as session:
-            collection = self.get_collection(session)
-            if not collection:
-                raise ValueError("Collection not found")
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
                 embedding_store = self.EmbeddingStore(
                     embedding=embedding,
@@ -420,7 +427,6 @@ class Lantern(VectorStore):
                     cmetadata=metadata,
                     custom_id=id,
                 )
-                collection.embeddings.append(embedding_store)
                 session.add(embedding_store)
             session.commit()
 
@@ -483,16 +489,12 @@ class Lantern(VectorStore):
         filter: Optional[dict] = None,
     ) -> List[Any]:
         with Session(self._conn) as session:
-            collection = self.get_collection(session)
             set_enable_seqscan_stmt = sqlalchemy.text("SET enable_seqscan = off")
             set_init_k = sqlalchemy.text("SET hnsw.init_k = {}".format(k))
             session.execute(set_enable_seqscan_stmt)
             session.execute(set_init_k)
-            if not collection:
-                raise ValueError("Collection not found")
 
-            filter_by = self.EmbeddingStore.collection_id == collection.uuid
-
+            filter_by = None
             if filter is not None:
                 filter_clauses = []
                 for key, value in filter.items():
@@ -511,17 +513,21 @@ class Lantern(VectorStore):
                         ].astext == str(value)
                         filter_clauses.append(filter_by_metadata)
 
-                filter_by = sqlalchemy.and_(filter_by, *filter_clauses)
+                filter_by = sqlalchemy.and_(*filter_clauses)
+
+            embedding = self._typed_arg_for_distance(embedding)
+            query = session.query(
+                self.EmbeddingStore,
+                getattr(func, self.distance_function)(
+                    self.EmbeddingStore.embedding, embedding
+                ).label("distance"),
+            )  # Specify the columns you need here, e.g., EmbeddingStore.embedding
+
+            if filter_by is not None:
+                query = query.filter(filter_by)
 
             results: List[QueryResult] = (
-                session.query(
-                    self.EmbeddingStore,
-                    getattr(func, self.distance_function)(
-                        self.EmbeddingStore.embedding, embedding
-                    ).label("distance"),
-                )  # Specify the columns you need here, e.g., EmbeddingStore.embedding
-                .filter(filter_by)
-                .order_by(
+                query.order_by(
                     self.EmbeddingStore.embedding.op("<->")(embedding)
                 )  # Using PostgreSQL specific operator with the correct column name
                 .limit(k)
