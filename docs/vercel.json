@@ -414,7 +414,15 @@
     },
     {
       "source": "/docs/integrations/cassandra",
-      "destination": "/docs/integrations/providers/cassandra"
+      "destination": "/docs/integrations/providers/astradb"
+    },
+    {
+      "source": "/docs/integrations/providers/cassandra",
+      "destination": "/docs/integrations/providers/astradb"
+    },
+    {
+      "source": "/docs/integrations/vectorstores/cassandra",
+      "destination": "/docs/integrations/vectorstores/astradb"
     },
     {
       "source": "/docs/integrations/cerebriumai",
