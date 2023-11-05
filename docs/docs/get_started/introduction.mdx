@@ -4,21 +4,18 @@ sidebar_position: 0
 
 # Introduction
 
-**LangChain** the Python package is a framework for developing applications powered by language models. It enables applications that:
+**LangChain** is a framework for developing applications powered by language models. It enables applications that:
 - **Are context-aware**: connect a language model to sources of context (prompt instructions, few shot examples, content to ground its response in, etc.)
 - **Reason**: rely on a language model to reason (about how to answer based on provided context, what actions to take, etc.)
 
-The main value props of LangChain are:
-1. **Components**: composable tools and integrations for working with language models. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not
-2. **Off-the-shelf chains**: built-in assemblages of components for accomplishing higher-level tasks
+This framework consists of several parts.
+You can see how the parts interact with each other below:
 
-Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones.
+![LangChain Diagram](/img/langchain_diagram.png)
 
-## The LangChain stack
+These parts include:
 
-LangChain the Python package is just one part of the LangChain ecosystem. The other elements of the stack are:
-
-- **[LangChain.js](https://js.langchain.com)**: The JavaScript/TypeScript version of LangChain. We aim to keep LangChain.js and LangChain in sync as much as possible. In particular, the two libraries share a serialization scheme, allowing you to share serializable objects across them.
+- **[LangChain Packages]**: The Python and JavaScript packages. Contains interfaces and integrations for a myriad of components, a basic run time for combining these components into chains and agents, and off-the-shelf implementations of chains and agents.
 - **[LangChain Templates](https://github.com/langchain-ai/langchain/tree/master/templates)**: A collection of easily deployable reference architectures for a wide variety of tasks.
 - **[LangServe](https://github.com/langchain-ai/langserve)**: A library for deploying LangChain chains as a REST API.
 - **[LangSmith](https://smith.langchain.com/)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
@@ -27,6 +24,15 @@ Together, these products simplify the entire application lifecycle:
 - **Develop**: Write your applications in LangChain/LangChain.js. Hit the ground running using Templates for reference.
 - **Productionize**: Use LangSmith to inspect, test and monitor your chains, so that you can constantly improve and deploy with confidence.
 - **Deploy**: Turn any chain into an API with LangServe.
+
+## LangChain Packages
+
+The main value props of the LangChain packages are:
+1. **Components**: composable tools and integrations for working with language models. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not
+2. **Off-the-shelf chains**: built-in assemblages of components for accomplishing higher-level tasks
+
+Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones.
+
 
 ## Get started
 
@@ -59,7 +65,7 @@ Walkthroughs and techniques for common end-to-end use cases, like:
 - [Analyzing structured data](/docs/use_cases/qa_structured/sql/)
 - and much more...
 
-### [Guides](/docs/guides/adapters/openai)
+### [Guides](/docs/guides/)
 Best practices for developing with LangChain.
 
 ### [Ecosystem](/docs/integrations/providers/)

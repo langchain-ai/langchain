@@ -44,6 +44,19 @@ from langchain.llms import OpenAI
 llm = OpenAI(openai_api_key="...")
 ```
 
+## LangSmith Setup
+
+Many of the applications you build with LangChain will contain multiple steps with multiple invocations of LLM calls.
+As these applications get more and more complex, it becomes crucial to be able to inspect what exactly is going on inside your chain or agent.
+The best way to do this is with [LangSmith](smith.langchain.com).
+
+Note that LangSmith is not needed, but it is helpful.
+If you do want to use LangSmith, after you sign up at the link above, make sure to set your environment variables to start logging traces:
+
+```shell
+export LANGCHAIN_TRACING_V2="true"
+export LANGCHAIN_API_KEY=...
+```
 
 ## Building an application
 
