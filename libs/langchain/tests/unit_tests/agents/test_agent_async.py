@@ -1,7 +1,6 @@
 """Unit tests for agents."""
 
 from typing import Any, Dict, List, Optional
-from langchain.schema.messages import AIMessage, HumanMessage
 
 import pytest
 
@@ -10,6 +9,7 @@ from langchain.agents.tools import Tool
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.schema.agent import AgentAction, AgentStep
+from langchain.schema.messages import AIMessage, HumanMessage
 from langchain.schema.runnable.utils import add
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
