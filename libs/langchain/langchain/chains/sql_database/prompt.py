@@ -42,6 +42,22 @@ DECIDER_PROMPT = PromptTemplate(
     output_parser=CommaSeparatedListOutputParser(),
 )
 
+_DECIDER_TEMPLATE_WITH_QUESTION = """Given the following input question {query} 
+and following list of potential tables {table_names}, choose a list of Relevant Table Names that are needed to answer the question.
+
+Output your final answer in the following format:
+
+Question: {query}
+Answer: Final answer here as comma separated list"""
+
+DECIDER_PROMPT_WITH_QUESTION = PromptTemplate(
+    input_variables=["query", "table_names"],
+    template=_DECIDER_TEMPLATE_WITH_QUESTION,
+    output_parser=CommaSeparatedListOutputParser(),
+)
+
+
+
 _cratedb_prompt = """You are a CrateDB expert. Given an input question, first create a syntactically correct CrateDB query to run, then look at the results of the query and return the answer to the input question.
 Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per CrateDB. You can order the results to return the most informative data in the database.
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
