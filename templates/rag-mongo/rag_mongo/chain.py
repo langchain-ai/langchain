@@ -62,7 +62,7 @@ class Question(BaseModel):
 chain = chain.with_types(input_type=Question)
 
 
-def _ingest(url: str) -> None:
+def _ingest(url: str) -> dict:
     loader = PyPDFLoader(url)
     data = loader.load()
 
@@ -77,6 +77,7 @@ def _ingest(url: str) -> None:
         collection=MONGODB_COLLECTION,
         index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME,
     )
+    return {}
 
 
 ingest = RunnableLambda(_ingest)
