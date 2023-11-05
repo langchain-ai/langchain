@@ -31,13 +31,17 @@ class PandasDataFrameOutputParser(BaseOutputParser):
             match = re.match(r'\[(\d+)\.\.(\d+)\]', array)
             start, end = map(int, match.groups())
             parsed_array = list(range(start, end + 1))
+        # Check if the format is ["column_name"]
+        elif re.match(r'\[[a-zA-Z0-9_]+(?:,[a-zA-Z0-9_]+)*\]', array):
+            match = re.match(r'\[[a-zA-Z0-9_]+(?:,[a-zA-Z0-9_]+)*\]', array)
+            parsed_array = match.group().strip("[]").split(",")
 
         # Validate the array
         if parsed_array == []:
             raise OutputParserException(
                 f"Request parameter '{original_request_params}' has an invalid array format. Please refer to the format instructions."
             )
-        elif parsed_array[-1] > self.dataframe.index.max():
+        elif type(parsed_array[0]) == int and parsed_array[-1] > self.dataframe.index.max():
             raise OutputParserException(
                 f"The specified maximum index {parsed_array[-1]} exceeds the maximum index of the Pandas DataFrame {self.dataframe.index.max()}"
             )
@@ -52,7 +56,6 @@ class PandasDataFrameOutputParser(BaseOutputParser):
             )
         result = {}
         try:
-            # TODO: Implement data sanitization
             request_type, request_params = splitted_request
             match request_type:
                 case 'Invalid column', 'Invalid operation':
@@ -60,11 +63,21 @@ class PandasDataFrameOutputParser(BaseOutputParser):
                         f"{request}. Please refer to the format instructions."
                     )
                 case 'column':
-                    # TODO: Implement multiple column parsing
-                    result[request_params] = self.dataframe[request_params]
+                    array_exists = re.search(r'(\[.*?\])', request_params)
+                    if array_exists:
+                        parsed_array, stripped_request_params = self.parse_array(array_exists.group(1), request_params)
+                        filtered_df = self.dataframe[self.dataframe.index.isin(parsed_array)]
+                        result[stripped_request_params] = filtered_df[stripped_request_params]
+                    else:
+                        result[request_params] = self.dataframe[request_params]
                 case 'row':
-                    # TODO: Implement multiple row parsing
-                    result[request_params] = self.dataframe.iloc[int(request_params)]
+                    array_exists = re.search(r'(\[.*?\])', request_params)
+                    if array_exists:
+                        parsed_array, stripped_request_params = self.parse_array(array_exists.group(1), request_params)
+                        filtered_df = self.dataframe[self.dataframe.columns.intersection(parsed_array)] # need to get multiple columns
+                        result[stripped_request_params] = filtered_df.iloc[int(stripped_request_params)]
+                    else:
+                        result[request_params] = self.dataframe.iloc[int(request_params)]
                 case _:
                     array_exists = re.search(r'(\[.*?\])', request_params)
                     if array_exists:
