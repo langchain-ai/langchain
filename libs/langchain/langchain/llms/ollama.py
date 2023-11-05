@@ -124,11 +124,9 @@ class _OllamaCommon(BaseLanguageModel):
     ) -> Iterator[str]:
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
-            stop = self.stop
-        elif stop is None:
-            stop = []
-        params = {**self._default_params, "stop": stop, **kwargs}
+        elif stop is not None:
+            self.stop = stop
+        params = {**self._default_params, **kwargs}
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
             headers={"Content-Type": "application/json"},
