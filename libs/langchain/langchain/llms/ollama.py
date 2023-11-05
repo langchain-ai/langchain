@@ -122,9 +122,7 @@ class _OllamaCommon(BaseLanguageModel):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[str]:
-        if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif stop is not None:
+        if stop is not None:
             self.stop = stop
         params = {**self._default_params, **kwargs}
         response = requests.post(
