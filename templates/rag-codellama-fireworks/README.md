@@ -16,7 +16,7 @@ You can obtain it from [here](https://app.fireworks.ai/login?callbackURL=https:/
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
