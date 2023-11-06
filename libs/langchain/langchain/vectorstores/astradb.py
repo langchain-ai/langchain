@@ -255,7 +255,10 @@ class AstraDB(VectorStore):
         return None
 
     def delete_by_document_id(self, document_id: str) -> bool:
-        """Remove a single document from the store, given its document_id (str)."""
+        """
+        Remove a single document from the store, given its document_id (str).
+        Return True if a document has indeed been deleted, False if ID not found.
+        """
         deletion_response = self.collection.delete(document_id)
         return ((deletion_response or {}).get("status") or {}).get(
             "deletedCount", 0
@@ -297,7 +300,7 @@ class AstraDB(VectorStore):
                     ids,
                 )
             )
-        return all(deletion_responses)
+        return True
 
     def delete_collection(self) -> None:
         """
