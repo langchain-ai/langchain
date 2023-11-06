@@ -226,7 +226,6 @@ def test_lantern_relevance_score() -> None:
         connection_string=CONNECTION_STRING,
         pre_delete_collection=True,
     )
-    print("running function")
 
     output = fix_distance_precision(
         docsearch.similarity_search_with_relevance_scores("foo", k=3), 4
