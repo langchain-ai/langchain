@@ -100,8 +100,7 @@ cypher_prompt = ChatPromptTemplate.from_messages(
 )
 
 cypher_response = (
-    RunnablePassthrough.assign(
-        schema=lambda _: graph.get_schema, history=get_history)
+    RunnablePassthrough.assign(schema=lambda _: graph.get_schema, history=get_history)
     | cypher_prompt
     | cypher_llm.bind(stop=["\nCypherResult:"])
     | StrOutputParser()
