@@ -160,6 +160,12 @@ const config = {
             label: "Integrations",
           },
           {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "guides",
+            label: "Guides",
+          },
+          {
             href: "https://api.python.langchain.com",
             label: "API",
             position: "left",
@@ -193,29 +199,30 @@ const config = {
             ]
           },
           {
+            href: "https://chat.langchain.com",
+            label: "Chat our docs",
+            position: "right",
+          },
+          {
             type: "dropdown",
             label: "Also by LangChain",
             position: "right",
             items: [
               {
-                href: "https://chat.langchain.com",
-                label: "Chat our docs",
-              },
-              {
                 href: "https://smith.langchain.com",
                 label: "LangSmith",
+              },
+              {
+                href: "https://github.com/langchain-ai/langserve",
+                label: "LangServe GitHub",
               },
               {
                 href: "https://smith.langchain.com/hub",
                 label: "LangChain Hub",
               },
               {
-                href: "https://github.com/langchain-ai/langserve",
-                label: "LangServe",
-              },
-              {
-                href: "https://js.langchain.com/docs",
-                label: "JS/TS",
+                href: "https://js.langchain.com",
+                label: "JS/TS Docs",
               },
             ]
           },
