@@ -14,7 +14,7 @@ Two environment variables need to be set:
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
@@ -31,7 +31,7 @@ langchain app add xml-agent
 
 And add the following code to your `server.py` file:
 ```python
-from xml_agent import chain as xml_agent_chain
+from xml_agent import agent_executor as xml_agent_chain
 
 add_routes(app, xml_agent_chain, path="/xml-agent")
 ```
