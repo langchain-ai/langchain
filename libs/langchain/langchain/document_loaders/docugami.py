@@ -312,7 +312,12 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
         return chunks
 
-    def get_chain(self):
+    from langchain.chat_models import ChatOpenAI
+
+    def get_chain(
+        self,
+        llm=ChatOpenAI(temperature=0, model="gpt-4"),
+    ):
         if not self.access_token and self.docset_id:
             raise Exception(f"Please specify a docset ID to use agent executor")
 
@@ -323,6 +328,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
         from langchain.agents.agent_toolkits.sql.base import create_sql_agent
         from langchain.agents.agent_types import AgentType
+
         # from langchain_experimental.sql import SQLDatabaseChain
         # from langchain.schema.runnable.base import Runnable
         import sqlite3
@@ -357,8 +363,8 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 if not artifacts or not artifacts[0]["downloadUrl"]:
                     raise Exception(
                         f"Could not find download URL for latest artifact in project: {project_id}"
-                    )   
-                
+                    )
+
                 download_url = artifacts[0]["downloadUrl"]
 
                 response = requests.request(
@@ -368,7 +374,9 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     data={},
                 )
                 if response.ok:
-                    temp_xlsx_file = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+                    temp_xlsx_file = tempfile.NamedTemporaryFile(
+                        suffix=".xlsx", delete=False
+                    )
                     temp_xlsx_path = temp_xlsx_file.name
                     temp_xlsx_file.close()
 
@@ -396,12 +404,13 @@ class DocugamiLoader(BaseLoader, BaseModel):
                         in_memory_sqlite_connection.backup(disk_conn)
 
                     # Connect to the db file on disk
-                    db = SQLDatabase.from_uri(f"sqlite:///{temp_db_file.name}", sample_rows_in_table_info=3)
+                    db = SQLDatabase.from_uri(
+                        f"sqlite:///{temp_db_file.name}", sample_rows_in_table_info=3
+                    )
 
                     # def get_schema(_):
                     #     return db.get_table_info()
 
-                    # from langchain.chat_models import ChatOpenAI
                     # from langchain.schema.output_parser import StrOutputParser
                     # from langchain.schema.runnable import RunnablePassthrough
                     # from langchain.prompts import ChatPromptTemplate
@@ -442,14 +451,14 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
                     # return full_chain
 
-                    #*****
+                    # *****
                     # llm=OpenAI(temperature=0)
                     # return SQLDatabaseChain.from_llm(llm, db, verbose=True)
 
                     # *****
-                    toolkit = SQLDatabaseToolkit(db=db, llm=OpenAI(temperature=0))
+                    toolkit = SQLDatabaseToolkit(db=db, llm=llm)
                     return create_sql_agent(
-                        llm=OpenAI(temperature=0),
+                        llm=llm,
                         toolkit=toolkit,
                         verbose=True,
                         agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
