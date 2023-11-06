@@ -284,18 +284,18 @@ class ChatOpenAI(BaseChatModel):
 
         if _is_openai_v1():
             values["client"] = openai.OpenAI(
-                # api_key=values["openai_api_key"],
-                # timeout=values["request_timeout"],
-                # max_retries=values["max_retries"],
-                # organization=values["openai_organization"],
-                # base_url=values["openai_api_base"],
+                api_key=values["openai_api_key"],
+                timeout=values["request_timeout"],
+                max_retries=values["max_retries"],
+                organization=values["openai_organization"],
+                base_url=values["openai_api_base"] or None,
             ).chat.completions
             values["async_client"] = openai.AsyncOpenAI(
                 api_key=values["openai_api_key"],
                 timeout=values["request_timeout"],
                 max_retries=values["max_retries"],
                 organization=values["openai_organization"],
-                base_url=values["openai_api_base"],
+                base_url=values["openai_api_base"] or None,
             ).chat.completions
         else:
             values["client"] = openai.ChatCompletion
@@ -487,8 +487,18 @@ class ChatOpenAI(BaseChatModel):
             # "api_key": self.openai_api_key,
             # "api_base": self.openai_api_base,
             # "organization": self.openai_organization,
+        }
+        openai_creds: Dict[str, Any] = {
             "model": self.model_name,
         }
+        if not _is_openai_v1():
+            openai_creds.update(
+                {
+                    "api_key": self.openai_api_key,
+                    "api_base": self.openai_api_base,
+                    "organization": self.openai_organization,
+                }
+            )
         if self.openai_proxy:
             import openai
 
