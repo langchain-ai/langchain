@@ -67,14 +67,17 @@ class PandasDataFrameOutputParser(BaseOutputParser):
                     if array_exists:
                         parsed_array, stripped_request_params = self.parse_array(array_exists.group(1), request_params)
                         filtered_df = self.dataframe[self.dataframe.index.isin(parsed_array)]
-                        result[stripped_request_params] = filtered_df[stripped_request_params]
+                        if len(parsed_array) == 1:
+                            result[stripped_request_params] = filtered_df.iloc[stripped_request_params, parsed_array[0]]
+                        else:
+                            result[stripped_request_params] = filtered_df[stripped_request_params]
                     else:
                         result[request_params] = self.dataframe[request_params]
                 case 'row':
                     array_exists = re.search(r'(\[.*?\])', request_params)
                     if array_exists:
                         parsed_array, stripped_request_params = self.parse_array(array_exists.group(1), request_params)
-                        filtered_df = self.dataframe[self.dataframe.columns.intersection(parsed_array)] # need to get multiple columns
+                        filtered_df = self.dataframe[self.dataframe.columns.intersection(parsed_array)]
                         result[stripped_request_params] = filtered_df.iloc[int(stripped_request_params)]
                     else:
                         result[request_params] = self.dataframe.iloc[int(request_params)]
