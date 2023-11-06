@@ -246,6 +246,7 @@ class Chroma(VectorStore):
         query: str,
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
+        where_document: (Optional[Dict[str, str]]) = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search with Chroma.
@@ -254,11 +255,12 @@ class Chroma(VectorStore):
             query (str): Query text to search for.
             k (int): Number of results to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            where_document (Optional[Dict[str, str]]): filter by match to document content. Defaults to None
 
         Returns:
             List[Document]: List of documents most similar to the query text.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter)
+        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter, where_document= where_document)
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_by_vector(
@@ -274,6 +276,7 @@ class Chroma(VectorStore):
             embedding (List[float]): Embedding to look up documents similar to.
             k (int): Number of Documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            where_document (Optional[Dict[str, str]]): filter by match to document content. Defaults to None
         Returns:
             List of Documents most similar to the query vector.
         """
@@ -300,6 +303,7 @@ class Chroma(VectorStore):
             embedding (List[float]): Embedding to look up documents similar to.
             k (int): Number of Documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            where_document (Optional[Dict[str, str]]): filter by match to document content. Defaults to None
 
         Returns:
             List[Tuple[Document, float]]: List of documents most similar to
@@ -328,6 +332,8 @@ class Chroma(VectorStore):
             query (str): Query text to search for.
             k (int): Number of results to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            where_document (Optional[Dict[str, str]]): filter by match to document content. Defaults to None
+
 
         Returns:
             List[Tuple[Document, float]]: List of documents most similar to
@@ -407,6 +413,8 @@ class Chroma(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            where_document (Optional[Dict[str, str]]): filter by match to document content. Defaults to None
+
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -454,6 +462,8 @@ class Chroma(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            where_document (Optional[Dict[str, str]]): filter by match to document content. Defaults to None
+
 
         Returns:
             List of Documents selected by maximal marginal relevance.

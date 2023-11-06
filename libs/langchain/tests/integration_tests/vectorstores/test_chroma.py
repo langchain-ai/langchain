@@ -97,6 +97,31 @@ def test_chroma_search_filter() -> None:
     assert output == [Document(page_content="bar", metadata={"first_letter": "b"})]
 
 
+def test_chroma_search_where_document() -> None:
+    """Test end to end construction and search with 'where_document' to filter
+    by search content'."""
+    texts = ["far", "bar fizz", "baz fizz", "buzz fizz"]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+    )
+    output = docsearch.similarity_search_with_score("anything", k=4)
+    assert len(output) == 4
+
+    output = docsearch.similarity_search("anything", k=4, where_document={"$contains": "fizz"})
+    assert len(output) == 3
+
+    output = docsearch.similarity_search("anything", k=4,
+                                         where_document={"$and": [{"$contains": "bar"}, {"$contains": "fizz"}]})
+    assert len(output) == 1
+    assert output == [Document(page_content="bar fizz", metadata={})]
+
+    output = docsearch.similarity_search("anything", k=4,
+                                         where_document={"$or": [{"$contains": "far"}, {"$contains": "fizz"}]})
+    assert len(output) == 4
+
+
 def test_chroma_search_filter_with_scores() -> None:
     """Test end to end construction and scored search with metadata filtering."""
     texts = ["far", "bar", "baz"]
