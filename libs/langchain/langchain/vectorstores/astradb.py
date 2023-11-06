@@ -294,7 +294,7 @@ class AstraDB(VectorStore):
 
         _max_workers = concurrency or self.bulk_delete_concurrency
         with ThreadPoolExecutor(max_workers=_max_workers) as tpe:
-            deletion_responses = list(
+            _ = list(
                 tpe.map(
                     self.delete_by_document_id,
                     ids,
