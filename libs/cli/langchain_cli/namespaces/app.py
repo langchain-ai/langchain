@@ -144,7 +144,6 @@ def add(
         return
 
     try:
-        print(project_root)
         add_dependencies_to_pyproject_toml(
             project_root / "pyproject.toml",
             zip(installed_destination_names, installed_destination_paths),
