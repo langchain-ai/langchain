@@ -484,11 +484,6 @@ class ChatOpenAI(BaseChatModel):
     def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
         openai_creds: Dict[str, Any] = {
-            # "api_key": self.openai_api_key,
-            # "api_base": self.openai_api_base,
-            # "organization": self.openai_organization,
-        }
-        openai_creds: Dict[str, Any] = {
             "model": self.model_name,
         }
         if not _is_openai_v1():
