@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import warnings
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -28,6 +29,9 @@ from tenacity import (
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+
+if TYPE_CHECKING:
+    import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +183,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    request_timeout: Optional[Union[float, Tuple[float, float], httpx.Timeout]] = Field(
+        default=None, alias="timeout"
+    )
     """Timeout in seconds for the OpenAPI request."""
     headers: Any = None
     tiktoken_model_name: Optional[str] = None
@@ -231,7 +237,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(pre=True)
+    @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
