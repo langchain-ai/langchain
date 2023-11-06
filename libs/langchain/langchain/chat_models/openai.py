@@ -74,11 +74,12 @@ def _create_retry_decorator(
     import openai
 
     errors = [
-        openai.error.Timeout,
-        openai.error.APIError,
-        openai.error.APIConnectionError,
-        openai.error.RateLimitError,
-        openai.error.ServiceUnavailableError,
+        ValueError
+        # openai.error.Timeout,
+        # openai.error.APIError,
+        # openai.error.APIConnectionError,
+        # openai.error.RateLimitError,
+        # openai.error.ServiceUnavailableError,
     ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
@@ -264,7 +265,7 @@ class ChatOpenAI(BaseChatModel):
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = openai.ChatCompletion
+            values["client"] = openai.OpenAI()
         except AttributeError:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
@@ -282,7 +283,7 @@ class ChatOpenAI(BaseChatModel):
         """Get the default parameters for calling OpenAI API."""
         return {
             "model": self.model_name,
-            "request_timeout": self.request_timeout,
+            # "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
@@ -298,7 +299,7 @@ class ChatOpenAI(BaseChatModel):
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
-            return self.client.create(**kwargs)
+            return self.client.chat.completions.create(**kwargs)
 
         return _completion_with_retry(**kwargs)
 
@@ -308,7 +309,7 @@ class ChatOpenAI(BaseChatModel):
             if output is None:
                 # Happens in streaming
                 continue
-            token_usage = output["token_usage"]
+            token_usage = output["token_usage"].__dict__
             for k, v in token_usage.items():
                 if k in overall_token_usage:
                     overall_token_usage[k] += v
@@ -380,14 +381,14 @@ class ChatOpenAI(BaseChatModel):
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = []
-        for res in response["choices"]:
-            message = convert_dict_to_message(res["message"])
+        for res in response.choices:
+            message = convert_dict_to_message(res.message)
             gen = ChatGeneration(
                 message=message,
-                generation_info=dict(finish_reason=res.get("finish_reason")),
+                generation_info=dict(finish_reason=res.finish_reason),
             )
             generations.append(gen)
-        token_usage = response.get("usage", {})
+        token_usage = response.usage or {}
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)
 
@@ -452,9 +453,9 @@ class ChatOpenAI(BaseChatModel):
     def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
         openai_creds: Dict[str, Any] = {
-            "api_key": self.openai_api_key,
-            "api_base": self.openai_api_base,
-            "organization": self.openai_organization,
+            # "api_key": self.openai_api_key,
+            # "api_base": self.openai_api_base,
+            # "organization": self.openai_organization,
             "model": self.model_name,
         }
         if self.openai_proxy:

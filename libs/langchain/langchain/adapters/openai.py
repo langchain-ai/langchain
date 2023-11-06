@@ -47,24 +47,24 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     Returns:
         The LangChain message.
     """
-    role = _dict["role"]
+    role = _dict.role
     if role == "user":
-        return HumanMessage(content=_dict["content"])
+        return HumanMessage(content=_dict.content)
     elif role == "assistant":
         # Fix for azure
         # Also OpenAI returns None for tool invocations
-        content = _dict.get("content", "") or ""
-        if _dict.get("function_call"):
-            additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        content = _dict.content or ""
+        if _dict.function_call:
+            additional_kwargs = {"function_call": dict(_dict.function_call)}
         else:
             additional_kwargs = {}
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
-        return SystemMessage(content=_dict["content"])
+        return SystemMessage(content=_dict.content)
     elif role == "function":
-        return FunctionMessage(content=_dict["content"], name=_dict["name"])
+        return FunctionMessage(content=_dict.content, name=_dict.name)
     else:
-        return ChatMessage(content=_dict["content"], role=role)
+        return ChatMessage(content=_dict.content, role=role)
 
 
 def convert_message_to_dict(message: BaseMessage) -> dict:
