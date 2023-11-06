@@ -309,7 +309,7 @@ class ChatOpenAI(BaseChatModel):
             if output is None:
                 # Happens in streaming
                 continue
-            token_usage = output["token_usage"].__dict__
+            token_usage = output["token_usage"]
             for k, v in token_usage.items():
                 if k in overall_token_usage:
                     overall_token_usage[k] += v
@@ -381,14 +381,16 @@ class ChatOpenAI(BaseChatModel):
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = []
-        for res in response.choices:
-            message = convert_dict_to_message(res.message)
+        if not isinstance(response, dict):
+            response = response.dict()
+        for res in response["choices"]:
+            message = convert_dict_to_message(res["message"])
             gen = ChatGeneration(
                 message=message,
-                generation_info=dict(finish_reason=res.finish_reason),
+                generation_info=dict(finish_reason=res.get("finish_reason")),
             )
             generations.append(gen)
-        token_usage = response.usage or {}
+        token_usage = response.get("usage", {})
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)
 
