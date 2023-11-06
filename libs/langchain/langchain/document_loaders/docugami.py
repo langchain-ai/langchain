@@ -1,7 +1,6 @@
 import io
 import logging
 import os
-import re
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
@@ -312,3 +311,100 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     )
 
         return chunks
+
+    from langchain.agents import AgentExecutor
+
+    def get_agent_executor(self) -> AgentExecutor:
+        if not self.access_token and self.docset_id:
+            raise Exception(f"Please specify a docset ID to use agent executor")
+
+        from langchain.agents import create_sql_agent
+        from langchain.agents.agent_toolkits import SQLDatabaseToolkit
+        from langchain.sql_database import SQLDatabase
+        from langchain.llms.openai import OpenAI
+        from langchain.agents.agent_types import AgentType
+        from langchain.chat_models import ChatOpenAI
+        import sqlite3
+        import pandas as pd
+        import tempfile
+
+        response = requests.request(
+            "GET",
+            f"{self.api}/projects/?docset.id={self.docset_id}",
+            headers={"Authorization": f"Bearer {self.access_token}"},
+            data={},
+        )
+        if response.ok:
+            response_json = response.json()
+            projects = response_json["projects"]
+            if not projects or not projects[0]["id"]:
+                raise Exception(
+                    f"Could not access published projects for docset: {self.docset_id}"
+                )
+
+            project_id = projects[0]["id"]
+            project_name = projects[0].get("name") or "Report"
+            response = requests.request(
+                "GET",
+                f"{self.api}/projects/{project_id}/artifacts/latest?name=spreadsheet.xlsx",
+                headers={"Authorization": f"Bearer {self.access_token}"},
+                data={},
+            )
+            if response.ok:
+                response_json = response.json()["artifacts"]
+                xlsx_artifact = next(
+                    (
+                        item
+                        for item in response_json
+                        if item["name"].lower().endswith(".xlsx")
+                    ),
+                    None,
+                )
+                if xlsx_artifact:
+                    artifact_id = xlsx_artifact["id"]
+                    response = requests.request(
+                        "GET",
+                        f"{self.api}/projects/{project_id}/artifacts/{artifact_id}/content",
+                        headers={"Authorization": f"Bearer {self.access_token}"},
+                        data={},
+                    )
+                    if response.ok:
+                        temp_xlsx_file = tempfile.NamedTemporaryFile(suffix=".xlsx")
+                        with open(temp_xlsx_file, "wb") as f:
+                            f.write(response.content)
+
+                        # Create a temporary SQLite database in memory
+                        in_memory_sqlite_connection = sqlite3.connect(":memory:")
+
+                        # Read the Excel file using pandas (only the first sheet)
+                        df = pd.read_excel(temp_xlsx_file, sheet_name=0)
+
+                        # Write the Excel file from pandas to the in-memory sqlite connection
+                        df.to_sql(
+                            project_name,
+                            in_memory_sqlite_connection,
+                            if_exists="replace",
+                            index=False,
+                        )
+
+                        # Dump the in-memory sqlite connection to a db file on disk
+                        temp_db_file = tempfile.NamedTemporaryFile(suffix=".sqlite")
+                        with sqlite3.connect(temp_db_file.name) as disk_conn:
+                            in_memory_sqlite_connection.backup(disk_conn)
+
+                        # Connect to the db file on disk
+                        db = SQLDatabase.from_uri(f"sqlite:///{temp_db_file.name}")
+
+                        toolkit = SQLDatabaseToolkit(db=db, llm=OpenAI(temperature=0))
+                        return create_sql_agent(
+                            llm=OpenAI(temperature=0),
+                            toolkit=toolkit,
+                            verbose=True,
+                            agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+                        )
+                    else:
+                        raise Exception(f"Failed to download XLSX for {project_id}")
+                else:
+                    raise Exception(f"No XLSX artifact found for {project_id}")
+            else:
+                raise Exception("Failed to get docsets.")
