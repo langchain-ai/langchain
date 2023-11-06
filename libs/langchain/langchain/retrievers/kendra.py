@@ -153,6 +153,8 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
     """The document URI."""
     DocumentAttributes: Optional[List[DocumentAttribute]] = []
     """The document attributes."""
+    ScoreAttributes: Optional[dict]
+    """The kendra score confidence"""
 
     @abstractmethod
     def get_title(self) -> str:
@@ -178,6 +180,13 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
         """Document attributes dict."""
         return {attr.Key: attr.Value.value for attr in (self.DocumentAttributes or [])}
 
+    def get_score_attribute(self) -> str:
+        """Document attributes dict."""
+        if self.ScoreAttributes is not None:
+            return self.ScoreAttributes["ScoreConfidence"]
+        else:
+            return "Low"
+
     def to_doc(
         self, page_content_formatter: Callable[["ResultItem"], str] = combined_text
     ) -> Document:
@@ -192,9 +201,9 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
                 "title": self.get_title(),
                 "excerpt": self.get_excerpt(),
                 "document_attributes": self.get_document_attributes_dict(),
+                "score": self.get_score_attribute(),
             }
         )
-
         return Document(page_content=page_content, metadata=metadata)
 
 
@@ -336,6 +345,8 @@ class AmazonKendraRetriever(BaseRetriever):
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
     user_context: Optional[Dict] = None
+    score_confidence: Optional[str] = "LOW"
+    score_confidence_dict = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "VERY_HIGH": 4}
 
     @validator("top_k")
     def validate_top_k(cls, value: int) -> int:
@@ -404,6 +415,22 @@ class AmazonKendraRetriever(BaseRetriever):
         ]
         return top_docs
 
+    def _filter_by_score_confidence(self, docs: List[Document]) -> List[Document]:
+        """
+        Filter out the records which have score confidence less than required
+        """
+        filtered_docs = [
+            item
+            for item in docs
+            if (
+                item.metadata.get("score") is not None
+                and isinstance(item.metadata["score"], str)
+                and self.score_confidence_dict.get(str(item.metadata["score"]), 1)
+                >= self.score_confidence_dict.get(str(self.score_confidence), 1)
+            )
+        ]
+        return filtered_docs
+
     def _get_relevant_documents(
         self,
         query: str,
@@ -420,4 +447,5 @@ class AmazonKendraRetriever(BaseRetriever):
         """
         result_items = self._kendra_query(query)
         top_k_docs = self._get_top_k_docs(result_items)
-        return top_k_docs
+        filtered_doc = self._filter_by_score_confidence(top_k_docs)
+        return filtered_doc
