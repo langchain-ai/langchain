@@ -324,7 +324,6 @@ class DocugamiLoader(BaseLoader, BaseModel):
         # from langchain.agents import create_sql_agent
         # from langchain.agents.agent_toolkits import SQLDatabaseToolkit
         from langchain.sql_database import SQLDatabase
-        from langchain.llms.openai import OpenAI
         from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
         from langchain.agents.agent_toolkits.sql.base import create_sql_agent
         from langchain.agents.agent_types import AgentType
