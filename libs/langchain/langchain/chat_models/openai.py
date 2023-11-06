@@ -267,7 +267,9 @@ class ChatOpenAI(BaseChatModel):
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = openai.ChatCompletion
+            from openai import OpenAI
+            client = OpenAI()
+            values["client"] = client.chat.completions
         except AttributeError:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
