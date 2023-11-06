@@ -58,6 +58,7 @@ def test_chat_openai_generate() -> None:
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 2
+    assert response.llm_output
     assert "system_fingerprint" in response.llm_output
     for generations in response.generations:
         assert len(generations) == 2
@@ -164,6 +165,7 @@ async def test_async_chat_openai() -> None:
     response = await chat.agenerate([[message], [message]])
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 2
+    assert response.llm_output
     assert "system_fingerprint" in response.llm_output
     for generations in response.generations:
         assert len(generations) == 2
