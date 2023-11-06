@@ -76,54 +76,55 @@ class CohereEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install cohere`."
             )
         return values
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Call out to Cohere's embedding endpoint.
+    
+    def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
+        """Call Cohere's embed endpoint synchronously.
 
         Args:
             texts: The list of texts to embed.
+            input_type: The type of input for embedding.
 
         Returns:
             List of embeddings, one for each text.
         """
         embeddings = self.client.embed(
-            model=self.model, texts=texts, truncate=self.truncate
+            model=self.model,
+            texts=texts,
+            truncate=self.truncate,
+            input_type=input_type
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Async call out to Cohere's embedding endpoint.
+    async def _aembed(self, texts: List[str], input_type: str) -> List[List[float]]:
+        """Call Cohere's embed endpoint asynchronously.
 
         Args:
             texts: The list of texts to embed.
+            input_type: The type of input for embedding.
 
         Returns:
             List of embeddings, one for each text.
         """
         embeddings = await self.async_client.embed(
-            model=self.model, texts=texts, truncate=self.truncate
+            model=self.model,
+            texts=texts,
+            truncate=self.truncate,
+            input_type=input_type
         )
         return [list(map(float, e)) for e in embeddings.embeddings]
 
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed a list of documents."""
+        return self._embed(texts, "search_document")
+
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronously embed a list of documents."""
+        return await self._aembed(texts, "search_document")
+
     def embed_query(self, text: str) -> List[float]:
-        """Call out to Cohere's embedding endpoint.
-
-        Args:
-            text: The text to embed.
-
-        Returns:
-            Embeddings for the text.
-        """
-        return self.embed_documents([text])[0]
+        """Embed a single query."""
+        return self._embed([text], "search_query")[0]
 
     async def aembed_query(self, text: str) -> List[float]:
-        """Async call out to Cohere's embedding endpoint.
-
-        Args:
-            text: The text to embed.
-
-        Returns:
-            Embeddings for the text.
-        """
-        embeddings = await self.aembed_documents([text])
-        return embeddings[0]
+        """Asynchronously embed a single query."""
+        return (await self._aembed([text], "search_query"))[0]
