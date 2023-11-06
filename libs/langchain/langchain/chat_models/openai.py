@@ -118,6 +118,8 @@ def _convert_delta_to_message_chunk(
     content = _dict.get("content") or ""
     if _dict.get("function_call"):
         additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        if additional_kwargs["function_call"]["name"] is None:
+            additional_kwargs["function_call"]["name"] = ""
     else:
         additional_kwargs = {}
 
@@ -202,7 +204,7 @@ class ChatOpenAI(BaseChatModel):
         default=None, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
-    max_retries: int = 6
+    max_retries: int = 2
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
@@ -363,6 +365,8 @@ class ChatOpenAI(BaseChatModel):
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
+            if not isinstance(chunk, dict):
+                chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
@@ -440,6 +444,8 @@ class ChatOpenAI(BaseChatModel):
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
+            if not isinstance(chunk, dict):
+                chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
