@@ -159,7 +159,12 @@ class PGVector(VectorStore):
     def create_vector_extension(self) -> None:
         try:
             with Session(self._conn) as session:
-                statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
+                statement = sqlalchemy.text(
+                    "BEGIN;"
+                    "SELECT pg_advisory_xact_lock(1573678846307946496);"
+                    "CREATE EXTENSION IF NOT EXISTS vector;"
+                    "COMMIT;"
+                )
                 session.execute(statement)
                 session.commit()
         except Exception as e:
