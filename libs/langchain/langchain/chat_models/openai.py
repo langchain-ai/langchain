@@ -316,14 +316,16 @@ class ChatOpenAI(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        return {
+        params = {
             "model": self.model_name,
-            "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
             **self.model_kwargs,
         }
+        if "vision" not in self.model_name:
+            params["max_tokens"] = self.max_tokens
+        return params
 
     def completion_with_retry(
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
