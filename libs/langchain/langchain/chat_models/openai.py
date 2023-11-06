@@ -118,7 +118,10 @@ def _convert_delta_to_message_chunk(
     content = _dict.get("content") or ""
     if _dict.get("function_call"):
         additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        if additional_kwargs["function_call"]["name"] is None:
+        if (
+            "name" in additional_kwargs["function_call"]
+            and additional_kwargs["function_call"]["name"] is None
+        ):
             additional_kwargs["function_call"]["name"] = ""
     else:
         additional_kwargs = {}
