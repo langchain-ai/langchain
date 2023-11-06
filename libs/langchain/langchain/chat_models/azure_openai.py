@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Mapping
+from typing import Any, Dict, Union
 
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.pydantic_v1 import root_validator
+from langchain.chat_models.openai import ChatOpenAI, _is_openai_v1
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.schema import ChatResult
 from langchain.utils import get_from_dict_or_env
 
@@ -51,13 +51,13 @@ class AzureChatOpenAI(ChatOpenAI):
     in, even if not explicitly saved on this class.
     """
 
-    deployment_name: str = ""
+    deployment_name: str = Field(default="", alias="azure_deployment")
     model_version: str = ""
     openai_api_type: str = ""
-    openai_api_base: str = ""
-    openai_api_version: str = ""
-    openai_api_key: str = ""
-    openai_organization: str = ""
+    openai_api_base: str = Field(default="", alias="azure_endpoint")
+    openai_api_version: str = Field(default="", alias="api_version")
+    openai_api_key: str = Field(default="", alias="api_key")
+    openai_organization: str = Field(default="", alias="organization")
     openai_proxy: str = ""
 
     @root_validator()
@@ -101,14 +101,27 @@ class AzureChatOpenAI(ChatOpenAI):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        try:
+        if _is_openai_v1():
+            values["client"] = openai.AzureOpenAI(
+                azure_endpoint=values["openai_api_base"],
+                api_key=values["openai_api_key"],
+                timeout=values["request_timeout"],
+                max_retries=values["max_retries"],
+                organization=values["openai_organization"],
+                api_version=values["openai_api_version"],
+                azure_deployment=values["deployment_name"],
+            ).chat.completions
+            values["async_client"] = openai.AsyncAzureOpenAI(
+                azure_endpoint=values["openai_api_base"],
+                api_key=values["openai_api_key"],
+                timeout=values["request_timeout"],
+                max_retries=values["max_retries"],
+                organization=values["openai_organization"],
+                api_version=values["openai_api_version"],
+                azure_deployment=values["deployment_name"],
+            ).chat.completions
+        else:
             values["client"] = openai.ChatCompletion
-        except AttributeError:
-            raise ValueError(
-                "`openai` has no `ChatCompletion` attribute, this is likely "
-                "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`."
-            )
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
@@ -118,10 +131,13 @@ class AzureChatOpenAI(ChatOpenAI):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        return {
-            **super()._default_params,
-            "engine": self.deployment_name,
-        }
+        if _is_openai_v1():
+            return super()._default_params
+        else:
+            return {
+                **super()._default_params,
+                "engine": self.deployment_name,
+            }
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -131,11 +147,14 @@ class AzureChatOpenAI(ChatOpenAI):
     @property
     def _client_params(self) -> Dict[str, Any]:
         """Get the config params used for the openai client."""
-        return {
-            **super()._client_params,
-            "api_type": self.openai_api_type,
-            "api_version": self.openai_api_version,
-        }
+        if _is_openai_v1():
+            return super()._client_params
+        else:
+            return {
+                **super()._client_params,
+                "api_type": self.openai_api_type,
+                "api_version": self.openai_api_version,
+            }
 
     @property
     def _llm_type(self) -> str:
@@ -148,7 +167,9 @@ class AzureChatOpenAI(ChatOpenAI):
             "openai_api_version": self.openai_api_version,
         }
 
-    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
+        if not isinstance(response, dict):
+            response = response.dict()
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 raise ValueError(
