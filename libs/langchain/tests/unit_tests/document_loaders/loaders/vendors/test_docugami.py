@@ -8,7 +8,7 @@ from langchain.document_loaders import DocugamiLoader
 DOCUGAMI_XML_PATH = Path(__file__).parent / "test_data" / "docugami-example.xml"
 
 
-@pytest.mark.requires("lxml")
+@pytest.mark.requires("dgml-utils")
 def test_docugami_loader_local() -> None:
     """Test DocugamiLoader."""
     loader = DocugamiLoader(file_paths=[DOCUGAMI_XML_PATH])

@@ -11,7 +11,6 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.pydantic_v1 import BaseModel, root_validator
 
-TD_NAME = "{http://www.w3.org/1999/xhtml}td"
 TABLE_NAME = "{http://www.w3.org/1999/xhtml}table"
 
 XPATH_KEY = "xpath"
@@ -23,6 +22,8 @@ TAG_KEY = "tag"
 PROJECTS_KEY = "projects"
 
 DEFAULT_API_ENDPOINT = "https://api.docugami.com/v1preview1"
+DEFAULT_MAX_METADATA_LENGTH = 1024
+DEFAULT_MIN_CHUNK_SIZE = 32
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 class DocugamiLoader(BaseLoader, BaseModel):
     """Load from `Docugami`.
 
-    To use, you should have the ``lxml`` python package installed.
+    To use, you should have the ``dgml-utils`` python package installed.
     """
 
     api: str = DEFAULT_API_ENDPOINT
@@ -38,14 +39,30 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
     access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY")
     """The Docugami API access token to use."""
+
+    max_metadata_length = DEFAULT_MAX_METADATA_LENGTH
+    """Max length of metadata values."""
+
+    min_chunk_size: int = DEFAULT_MIN_CHUNK_SIZE
+    """Threshold under which chunks are appended to next chunk to avoid over-chunking."""
+
+    include_xml_tags: bool = False
+    """Set to true for XML tags in chunk output text."""
+
+    sub_chunk_tables: bool = False
+    """Set to True to return sub-chunks within tables."""
+
+    whitespace_normalize_text: bool = True
+    """Set to False if you want to full whitespace formatting in the original XML doc, including indentation."""
+
     docset_id: Optional[str]
     """The Docugami API docset ID to use."""
+
     document_ids: Optional[Sequence[str]]
     """The Docugami API document IDs to use."""
+
     file_paths: Optional[Sequence[Union[Path, str]]]
     """The local file paths to use."""
-    min_chunk_size: int = 32  # appended to the next chunk to avoid over-chunking
-    """The minimum chunk size to use when parsing DGML. Defaults to 32."""
 
     @root_validator
     def validate_local_or_remote(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -75,113 +92,53 @@ class DocugamiLoader(BaseLoader, BaseModel):
         try:
             from lxml import etree
         except ImportError:
-            raise ImportError(
+            raise ValueError(
                 "Could not import lxml python package. "
                 "Please install it with `pip install lxml`."
             )
 
-        # helpers
-        def _xpath_qname_for_chunk(chunk: Any) -> str:
-            """Get the xpath qname for a chunk."""
-            qname = f"{chunk.prefix}:{chunk.tag.split('}')[-1]}"
-
-            parent = chunk.getparent()
-            if parent is not None:
-                doppelgangers = [x for x in parent if x.tag == chunk.tag]
-                if len(doppelgangers) > 1:
-                    idx_of_self = doppelgangers.index(chunk)
-                    qname = f"{qname}[{idx_of_self + 1}]"
-
-            return qname
-
-        def _xpath_for_chunk(chunk: Any) -> str:
-            """Get the xpath for a chunk."""
-            ancestor_chain = chunk.xpath("ancestor-or-self::*")
-            return "/" + "/".join(_xpath_qname_for_chunk(x) for x in ancestor_chain)
-
-        def _structure_value(node: Any) -> str:
-            """Get the structure value for a node."""
-            structure = (
-                "table"
-                if node.tag == TABLE_NAME
-                else node.attrib["structure"]
-                if "structure" in node.attrib
-                else None
-            )
-            return structure
-
-        def _is_structural(node: Any) -> bool:
-            """Check if a node is structural."""
-            return _structure_value(node) is not None
-
-        def _is_heading(node: Any) -> bool:
-            """Check if a node is a heading."""
-            structure = _structure_value(node)
-            return structure is not None and structure.lower().startswith("h")
-
-        def _get_text(node: Any) -> str:
-            """Get the text of a node."""
-            return " ".join(node.itertext()).strip()
-
-        def _has_structural_descendant(node: Any) -> bool:
-            """Check if a node has a structural descendant."""
-            for child in node:
-                if _is_structural(child) or _has_structural_descendant(child):
-                    return True
-            return False
-
-        def _leaf_structural_nodes(node: Any) -> List:
-            """Get the leaf structural nodes of a node."""
-            if _is_structural(node) and not _has_structural_descendant(node):
-                return [node]
-            else:
-                leaf_nodes = []
-                for child in node:
-                    leaf_nodes.extend(_leaf_structural_nodes(child))
-                return leaf_nodes
-
-        def _create_doc(node: Any, text: str) -> Document:
-            """Create a Document from a node and text."""
-            metadata = {
-                XPATH_KEY: _xpath_for_chunk(node),
-                DOCUMENT_ID_KEY: document[DOCUMENT_ID_KEY],
-                DOCUMENT_NAME_KEY: document[DOCUMENT_NAME_KEY],
-                DOCUMENT_SOURCE_KEY: document[DOCUMENT_NAME_KEY],
-                STRUCTURE_KEY: node.attrib.get("structure", ""),
-                TAG_KEY: re.sub(r"\{.*\}", "", node.tag),
-            }
-
-            if doc_metadata:
-                metadata.update(doc_metadata)
-
-            return Document(
-                page_content=text,
-                metadata=metadata,
+        try:
+            from dgml_utils.segmentation import get_leaf_structural_chunks
+        except ImportError:
+            raise ValueError(
+                "Could not import from dgml-utils python package. "
+                "Please install it with `pip install dgml-utils`."
             )
 
         # parse the tree and return chunks
         tree = etree.parse(io.BytesIO(content))
         root = tree.getroot()
 
-        chunks: List[Document] = []
-        prev_small_chunk_text = None
-        for node in _leaf_structural_nodes(root):
-            text = _get_text(node)
-            if prev_small_chunk_text:
-                text = prev_small_chunk_text + " " + text
-                prev_small_chunk_text = None
+        framework_chunks: List[Document] = []
+        dg_chunks = get_leaf_structural_chunks(
+            root,
+            min_chunk_size=self.min_chunk_size,
+            whitespace_normalize_text=self.whitespace_normalize_text,
+            sub_chunk_tables=self.sub_chunk_tables,
+            include_xml_tags=self.include_xml_tags,
+        )
 
-            if _is_heading(node) or len(text) < self.min_chunk_size:
-                # Save headings or other small chunks to be appended to the next chunk
-                prev_small_chunk_text = text
-            else:
-                chunks.append(_create_doc(node, text))
+        for dg_chunk in dg_chunks:
+            metadata = {
+                XPATH_KEY: dg_chunk.xpath,
+                DOCUMENT_ID_KEY: document[DOCUMENT_ID_KEY],
+                DOCUMENT_NAME_KEY: document[DOCUMENT_NAME_KEY],
+                DOCUMENT_SOURCE_KEY: document[DOCUMENT_NAME_KEY],
+                STRUCTURE_KEY: dg_chunk.structure,
+                TAG_KEY: dg_chunk.tag,
+            }
 
-        if prev_small_chunk_text and len(chunks) > 0:
-            # small chunk at the end left over, just append to last chunk
-            chunks[-1].page_content += " " + prev_small_chunk_text
+            if doc_metadata:
+                metadata.update(doc_metadata)
 
-        return chunks
+            framework_chunks.append(
+                Document(
+                    page_content=dg_chunk.text,
+                    metadata=metadata,
+                )
+            )
+
+        return framework_chunks
 
     def _document_details_for_docset_id(self, docset_id: str) -> List[Dict]:
         """Gets all document details for the given docset ID"""
