@@ -8,8 +8,12 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 uvicorn = "^0.23.2"
-langserve = {extras = ["server"], version = "^0.0.22"}
+langserve = {extras = ["server"], version = ">=0.0.22"}
+fastapi = ">=0.103.2"
 
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
 
 [build-system]
 requires = ["poetry-core"]
