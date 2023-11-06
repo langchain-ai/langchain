@@ -12,7 +12,7 @@ openai = "^0.28.1"
 duckduckgo-search = "^3.9.3" 
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = {extras = ["serve"], version = "^0.0.10"}
+langchain-cli = ">=0.0.15"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 

@@ -490,7 +490,13 @@ async def test_arb_func_on_kv_singleio_dataset(
     )
 
     def my_func(x: dict) -> str:
-        return runnable.invoke(x).content
+        content = runnable.invoke(x).content
+        if isinstance(content, str):
+            return content
+        else:
+            raise ValueError(
+                f"Expected message with content type string, got {content}"
+            )
 
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     await arun_on_dataset(

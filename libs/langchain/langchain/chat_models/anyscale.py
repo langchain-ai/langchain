@@ -30,6 +30,8 @@ DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 class ChatAnyscale(ChatOpenAI):
     """`Anyscale` Chat large language models.
 
+    See https://www.anyscale.com/ for information about Anyscale.
+
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``ANYSCALE_API_KEY`` set with your API key.
     Alternatively, you can use the anyscale_api_key keyword argument.
@@ -53,7 +55,7 @@ class ChatAnyscale(ChatOpenAI):
     def lc_secrets(self) -> Dict[str, str]:
         return {"anyscale_api_key": "ANYSCALE_API_KEY"}
 
-    anyscale_api_key: Optional[SecretStr] = None
+    anyscale_api_key: SecretStr
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
@@ -98,7 +100,12 @@ class ChatAnyscale(ChatOpenAI):
     @root_validator(pre=True)
     def validate_environment_override(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = convert_to_secret_str(
+        values["openai_api_key"] = get_from_dict_or_env(
+            values,
+            "anyscale_api_key",
+            "ANYSCALE_API_KEY",
+        )
+        values["anyscale_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
                 "anyscale_api_key",

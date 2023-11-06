@@ -14,6 +14,9 @@ openai = ">=0.28.1"
 tiktoken = ">=0.5.1"
 pymongo = ">=4.5.0"
 
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+
 [tool.langserve]
 export_module = "rag_mongo"
 export_attr = "chain"
