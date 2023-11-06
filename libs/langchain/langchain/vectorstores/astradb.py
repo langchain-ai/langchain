@@ -70,7 +70,7 @@ class AstraDB(VectorStore):
     and an Astra DB cloud database.
 
     For quickstart and details, visit:
-        docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html
+        docs.datastax.com/en/astra/home/astra.html
 
     Example:
         .. code-block:: python
