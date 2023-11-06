@@ -1,4 +1,5 @@
 import warnings
+from typing import List
 
 import pytest
 
@@ -22,8 +23,25 @@ def test_shell_input_validation() -> None:
         )
 
 
+class PlaceholderProcess:
+    def __init__(self, output: str = "") -> None:
+        self._commands: List[str] = []
+        self.output = output
+
+    def _run(self, commands: List[str]) -> str:
+        self._commands = commands
+        return self.output
+
+    def run(self, commands: List[str]) -> str:
+        return self._run(commands)
+
+    async def arun(self, commands: List[str]) -> str:
+        return self._run(commands)
+
+
 def test_shell_tool_init() -> None:
-    shell_tool = ShellTool()
+    placeholder = PlaceholderProcess()
+    shell_tool = ShellTool(process=placeholder)
     assert shell_tool.name == "terminal"
     assert isinstance(shell_tool.description, str)
     assert shell_tool.args_schema == ShellInput
@@ -31,19 +49,22 @@ def test_shell_tool_init() -> None:
 
 
 def test_shell_tool_run() -> None:
-    shell_tool = ShellTool()
+    placeholder = PlaceholderProcess(output="hello")
+    shell_tool = ShellTool(process=placeholder)
     result = shell_tool._run(commands=test_commands)
-    assert result.strip() == "Hello, World!\nAnother command"
+    assert result.strip() == "hello"
 
 
 @pytest.mark.asyncio
 async def test_shell_tool_arun() -> None:
-    shell_tool = ShellTool()
+    placeholder = PlaceholderProcess(output="hello")
+    shell_tool = ShellTool(process=placeholder)
     result = await shell_tool._arun(commands=test_commands)
-    assert result.strip() == "Hello, World!\nAnother command"
+    assert result.strip() == "hello"
 
 
 def test_shell_tool_run_str() -> None:
-    shell_tool = ShellTool()
+    placeholder = PlaceholderProcess(output="hello")
+    shell_tool = ShellTool(process=placeholder)
     result = shell_tool._run(commands="echo 'Hello, World!'")
-    assert result.strip() == "Hello, World!"
+    assert result.strip() == "hello"

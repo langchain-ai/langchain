@@ -52,11 +52,25 @@ def test_missing_action_input() -> None:
     )
 
 
-def test_final_answer_and_parsable_action() -> None:
-    llm_output = """Final Answer: The best pizza to eat is margaritta 
-        I can use the `foo` tool to achieve the goal.
+def test_final_answer_before_parsable_action() -> None:
+    llm_output = """Final Answer: The best pizza to eat is margaritta
+
         Action: foo
         Action Input: bar
+        """
+    agent_finish: AgentFinish = mrkl_output_parser.parse(llm_output)  # type: ignore
+    assert (
+        agent_finish.return_values.get("output")
+        == "The best pizza to eat is margaritta"
+    )
+
+
+def test_final_answer_after_parsable_action() -> None:
+    llm_output = """
+        Observation: I can use the `foo` tool to achieve the goal.
+        Action: foo
+        Action Input: bar
+        Final Answer: The best pizza to eat is margaritta 
         """
     with pytest.raises(OutputParserException) as exception_info:
         mrkl_output_parser.parse(llm_output)
