@@ -144,12 +144,12 @@ def add(
         return
 
     try:
+        print(project_root)
         add_dependencies_to_pyproject_toml(
             project_root / "pyproject.toml",
             zip(installed_destination_names, installed_destination_paths),
         )
-    except Exception as e:
-        print(e)
+    except Exception:
         # Can fail if user modified/removed pyproject.toml
         typer.echo("Failed to add dependencies to pyproject.toml, continuing...")
 
@@ -208,25 +208,40 @@ def add(
 @app_cli.command()
 def remove(
     api_paths: Annotated[List[str], typer.Argument(help="The API paths to remove")],
+    *,
+    project_dir: Annotated[
+        Optional[Path], typer.Option(help="The project directory")
+    ] = None,
 ):
     """
     Removes the specified package from the current LangServe app.
     """
+
+    project_root = get_package_root(project_dir)
+
+    project_pyproject = project_root / "pyproject.toml"
+
+    package_root = project_root / "packages"
+
+    remove_deps: List[str] = []
+
     for api_path in api_paths:
-        package_dir = Path.cwd() / "packages" / api_path
+        package_dir = package_root / api_path
         if not package_dir.exists():
-            typer.echo(f"Endpoint {api_path} does not exist. Skipping...")
+            typer.echo(f"Package {api_path} does not exist. Skipping...")
             continue
         pyproject = package_dir / "pyproject.toml"
         langserve_export = get_langserve_export(pyproject)
         typer.echo(f"Removing {langserve_export['package_name']}...")
 
         shutil.rmtree(package_dir)
-        try:
-            remove_dependencies_from_pyproject_toml(pyproject, [api_path])
-        except Exception:
-            # Can fail if user modified/removed pyproject.toml
-            typer.echo("Failed to remove dependencies from pyproject.toml.")
+        remove_deps.append(api_path)
+
+    try:
+        remove_dependencies_from_pyproject_toml(project_pyproject, remove_deps)
+    except Exception:
+        # Can fail if user modified/removed pyproject.toml
+        typer.echo("Failed to remove dependencies from pyproject.toml.")
 
 
 @app_cli.command()
