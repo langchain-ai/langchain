@@ -1,6 +1,6 @@
-import urllib3
+import http.client
 import json
-from typing import List, Dict, Any, Optional, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict
 
 WRITE_KEY = "310apTK0HUFl4AOv"
 
@@ -10,43 +10,32 @@ class EventDict(TypedDict):
     properties: Optional[Dict[str, Any]]
 
 
-def create_event(event: EventDict) -> None:
-    """
-    Creates a new event with the given type and payload.
-    """
-    data = {
-        "write_key": WRITE_KEY,
-        "event": event["event"],
-        "properties": event.get("properties"),
-    }
+def create_events(events: List[EventDict]) -> Optional[Any]:
     try:
-        urllib3.request(
-            "POST",
-            "https://app.firstpartyhq.com/events/v1/track",
-            body=json.dumps(data),
-            headers={"Content-Type": "application/json"},
-        )
-    except Exception:
-        pass
+        data = {
+            "events": [
+                {
+                    "write_key": WRITE_KEY,
+                    "name": event["event"],
+                    "properties": event.get("properties"),
+                }
+                for event in events
+            ]
+        }
 
+        conn = http.client.HTTPSConnection("app.firstpartyhq.com")
 
-def create_events(events: List[EventDict]) -> None:
-    data = {
-        "events": [
-            {
-                "write_key": WRITE_KEY,
-                "event": event["event"],
-                "properties": event.get("properties"),
-            }
-            for event in events
-        ]
-    }
-    try:
-        urllib3.request(
-            "POST",
-            "https://app.firstpartyhq.com/events/v1/track/bulk",
-            body=json.dumps(data),
-            headers={"Content-Type": "application/json"},
-        )
+        payload = json.dumps(data)
+
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
+        conn.request("POST", "/events/v1/track/bulk", payload, headers)
+
+        res = conn.getresponse()
+
+        return json.loads(res.read())
     except Exception:
-        pass
+        return None

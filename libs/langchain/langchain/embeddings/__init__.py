@@ -43,6 +43,7 @@ from langchain.embeddings.huggingface import (
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings
 from langchain.embeddings.jina import JinaEmbeddings
+from langchain.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
 from langchain.embeddings.llamacpp import LlamaCppEmbeddings
 from langchain.embeddings.localai import LocalAIEmbeddings
 from langchain.embeddings.minimax import MiniMaxEmbeddings
@@ -52,6 +53,7 @@ from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 from langchain.embeddings.nlpcloud import NLPCloudEmbeddings
 from langchain.embeddings.octoai_embeddings import OctoAIEmbeddings
 from langchain.embeddings.ollama import OllamaEmbeddings
+from langchain.embeddings.open_clip import OpenCLIPEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
@@ -63,6 +65,7 @@ from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddi
 from langchain.embeddings.spacy_embeddings import SpacyEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain.embeddings.vertexai import VertexAIEmbeddings
+from langchain.embeddings.voyageai import VoyageEmbeddings
 from langchain.embeddings.xinference import XinferenceEmbeddings
 
 logger = logging.getLogger(__name__)
@@ -113,6 +116,9 @@ __all__ = [
     "JavelinAIGatewayEmbeddings",
     "OllamaEmbeddings",
     "QianfanEmbeddingsEndpoint",
+    "JohnSnowLabsEmbeddings",
+    "VoyageEmbeddings",
+    "OpenCLIPEmbeddings",
 ]
 
 

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import root_validator
@@ -17,6 +17,7 @@ class YouRetriever(BaseRetriever):
     """
 
     ydc_api_key: str
+    k: Optional[int] = None
     endpoint_type: str = "web"
 
     @root_validator(pre=True)
@@ -45,6 +46,8 @@ class YouRetriever(BaseRetriever):
             for hit in results["hits"]:
                 for snippet in hit["snippets"]:
                     docs.append(Document(page_content=snippet))
+                    if self.k is not None and len(docs) >= self.k:
+                        return docs
             return docs
         elif self.endpoint_type == "snippet":
             results = requests.get(

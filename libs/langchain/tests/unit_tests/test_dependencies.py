@@ -69,21 +69,24 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
     test_group_deps = sorted(poetry_conf["group"]["test"]["dependencies"])
 
-    assert test_group_deps == [
-        "duckdb-engine",
-        "freezegun",
-        "lark",
-        "pandas",
-        "pytest",
-        "pytest-asyncio",
-        "pytest-cov",
-        "pytest-dotenv",
-        "pytest-mock",
-        "pytest-socket",
-        "pytest-watcher",
-        "responses",
-        "syrupy",
-    ]
+    assert test_group_deps == sorted(
+        [
+            "duckdb-engine",
+            "freezegun",
+            "lark",
+            "pandas",
+            "pytest",
+            "pytest-asyncio",
+            "pytest-cov",
+            "pytest-dotenv",
+            "pytest-mock",
+            "pytest-socket",
+            "pytest-watcher",
+            "responses",
+            "syrupy",
+            "requests-mock",
+        ]
+    )
 
 
 def test_imports() -> None:
