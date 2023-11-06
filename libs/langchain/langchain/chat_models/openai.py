@@ -172,6 +172,9 @@ class ChatOpenAI(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
+    # When updating this to use a SecretStr
+    # Check for classes that derive from this class (as some of them
+    # may assume openai_api_key is a str)
     openai_api_key: Optional[str] = None
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
