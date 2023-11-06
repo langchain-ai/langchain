@@ -16,7 +16,7 @@ Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
@@ -33,7 +33,7 @@ langchain app add guardrails-output-parser
 
 And add the following code to your `server.py` file:
 ```python
-from guardrails_output_parser import chain as guardrails_output_parser_chain
+from guardrails_output_parser.chain import chain as guardrails_output_parser_chain
 
 add_routes(app, guardrails_output_parser_chain, path="/guardrails-output-parser")
 ```
