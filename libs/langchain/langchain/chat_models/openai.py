@@ -323,7 +323,7 @@ class ChatOpenAI(BaseChatModel):
             "temperature": self.temperature,
             **self.model_kwargs,
         }
-        if "vision" not in self.model_name:
+        if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
         return params
 
