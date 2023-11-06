@@ -1,9 +1,11 @@
 
-# neo4j_cypher
+# neo4j_cypher_memory
 
-This template allows you to interact with a Neo4j graph database in natural language, using an OpenAI LLM. 
-
+This template allows you to have conversations with a Neo4j graph database in natural language, using an OpenAI LLM.
 It transforms a natural language question into a Cypher query (used to fetch data from Neo4j databases), executes the query, and provides a natural language response based on the query results.
+Additionally, it features a conversational memory module that stores the dialogue history in the Neo4j graph database.
+The conversation memory is uniquely maintained for each user session, ensuring personalized interactions.
+To facilitate this, please supply both the `user_id` and `session_id` when using the conversation chain.
 
 ## Environment Setup
 
@@ -42,20 +44,20 @@ pip install -U langchain-cli
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package neo4j-cypher
+langchain app new my-app --package neo4j-cypher-memory
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add neo4j-cypher
+langchain app add neo4j-cypher-memory
 ```
 
 And add the following code to your `server.py` file:
 ```python
-from neo4j_cypher import chain as neo4j_cypher_chain
+from neo4j_cypher_memory import chain as neo4j_cypher_memory_chain
 
-add_routes(app, neo4j_cypher_chain, path="/neo4j-cypher")
+add_routes(app, neo4j_cypher_memory_chain, path="/neo4j-cypher-memory")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -79,12 +81,12 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/neo4j_cypher/playground](http://127.0.0.1:8000/neo4j_cypher/playground)  
+We can access the playground at [http://127.0.0.1:8000/neo4j_cypher_memory/playground](http://127.0.0.1:8000/neo4j_cypher/playground)  
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/neo4j-cypher")
+runnable = RemoteRunnable("http://localhost:8000/neo4j-cypher-memory")
 ```

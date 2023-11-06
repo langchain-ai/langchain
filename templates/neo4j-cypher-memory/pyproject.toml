@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "neo4j-cypher"
+name = "neo4j-cypher-memory"
 version = "0.1.0"
 description = ""
 authors = [
@@ -17,7 +17,7 @@ openai = "^0.28.1"
 langchain-cli = ">=0.0.15"
 
 [tool.langserve]
-export_module = "neo4j_cypher"
+export_module = "neo4j_cypher_memory"
 export_attr = "chain"
 
 [build-system]
