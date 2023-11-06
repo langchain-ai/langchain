@@ -81,15 +81,13 @@ class ParserEmbeddings(Embeddings):
         return self.embed_query(text)
 
 
-def _can_use_astradb() -> bool:
-    try:
-        import astrapy  # noqa: F401
-
-        _ = os.environ["ASTRA_DB_APPLICATION_TOKEN"]
-        _ = os.environ["ASTRA_DB_API_ENDPOINT"]
-        return True
-    except Exception:
-        return False
+def _has_env_vars() -> bool:
+    return all(
+        [
+            "ASTRA_DB_APPLICATION_TOKEN" in os.environ,
+            "ASTRA_DB_API_ENDPOINT" in os.environ,
+        ]
+    )
 
 
 @pytest.fixture(scope="function")
@@ -120,7 +118,8 @@ def store_parseremb() -> Iterable[AstraDB]:
     v_store.delete_collection()
 
 
-@pytest.mark.skipif(not _can_use_astradb(), reason="Missing astrapy or envvars")
+@pytest.mark.requires("astrapy")
+@pytest.mark.skipif(not _has_env_vars(), reason="Missing Astra DB env. vars")
 class TestAstraDB:
     def test_astradb_vectorstore_create_delete(self) -> None:
         """Create and delete."""
