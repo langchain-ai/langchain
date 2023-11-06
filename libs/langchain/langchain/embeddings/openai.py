@@ -281,7 +281,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         try:
             import openai
 
-            values["client"] = openai.Embedding
+            values["client"] = openai.OpenAI(
+                api_key=values["openai_api_key"],
+                timeout=values["request_timeout"],
+                max_retries=values["max_retries"],
+                organization=values["openai_organization"],
+                base_url=values["openai_api_base"] or None,
+            ).embeddings
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -393,7 +399,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     self,
                     input="",
                     **self._invocation_params,
-                )["data"][0]["embedding"]
+                )[
+                    "data"
+                ][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
