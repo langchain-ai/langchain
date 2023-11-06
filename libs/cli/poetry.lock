@@ -1546,4 +1546,4 @@ serve = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a710dfab5f108f715c69901e2a566e954511502314f5e46782184f7c23328ae7"
+content-hash = "1e87e449fe51e5b5585710e3b817fd7b30e2fce976f1f3b5bc83fbe94d9e6bc3"
