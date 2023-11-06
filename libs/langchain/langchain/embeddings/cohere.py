@@ -87,7 +87,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         embeddings = self.client.embed(
-            model=self.model, texts=texts, input_type="search_document", truncate=self.truncate
+            model=self.model,
+            texts=texts,
+            input_type="search_document",
+            truncate=self.truncate,
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
@@ -101,7 +104,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         embeddings = await self.async_client.embed(
-            model=self.model, texts=texts, input_type="search_document", truncate=self.truncate
+            model=self.model,
+            texts=texts,
+            input_type="search_document",
+            truncate=self.truncate,
         )
         return [list(map(float, e)) for e in embeddings.embeddings]
 
@@ -115,7 +121,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         embeddings = self.client.embed(
-            model=self.model, texts=[text], input_type="search_query", truncate=self.truncate
+            model=self.model,
+            texts=[text],
+            input_type="search_query",
+            truncate=self.truncate,
         ).embeddings
         return [list(map(float, e)) for e in embeddings][0]
 
@@ -129,6 +138,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         embeddings = await self.async_client.embed(
-            model=self.model, texts=[text], input_type="search_query", truncate=self.truncate
+            model=self.model,
+            texts=[text],
+            input_type="search_query",
+            truncate=self.truncate,
         )
         return [list(map(float, e)) for e in embeddings.embeddings][0]
