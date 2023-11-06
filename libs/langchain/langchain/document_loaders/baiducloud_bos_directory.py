@@ -44,7 +44,6 @@ class BaiduBOSDirectoryLoader(BaseLoader):
                 break
             marker = response.next_marker
         from langchain.document_loaders.baiducloud_bos_file import BaiduBOSFileLoader
-
         for content in contents:
             if str(content.key).endswith("/"):
                 continue
