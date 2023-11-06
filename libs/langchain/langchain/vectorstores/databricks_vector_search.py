@@ -27,7 +27,7 @@ class DatabricksVectorSearch(VectorStore):
         *,
         endpoint_name: str,
         index_name: str,
-        text_column: Optional[str],
+        text_column: Optional[str] = None,
         columns: Optional[
             List[str]
         ] = None,  # list of column names to get when doing the search
@@ -96,7 +96,7 @@ class DatabricksVectorSearch(VectorStore):
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
-        return self.embeddings
+        return self._embedding
 
     def delete(self, ids: Optional[List[Any]] = None, **kwargs: Any) -> Optional[bool]:
         self.index.delete(primary_keys=ids)
@@ -278,7 +278,7 @@ class DatabricksVectorSearch(VectorStore):
         return docs_with_score
 
     def _embedding_source_column_name(self) -> Optional[str]:
-        embedding_source_columns = self.index_details["index_spec"].get(
+        embedding_source_columns = self.index_details["delta_sync_index_spec"].get(
             "embedding_source_columns"
         )
         if (
@@ -289,7 +289,11 @@ class DatabricksVectorSearch(VectorStore):
             return embedding_source_columns[0].get("name")
 
     def _embedding_vector_column_name(self) -> Optional[str]:
-        embedding_vector_columns = self.index_details["index_spec"].get(
+        if self._is_delta_sync_index():
+            key = "delta_sync_index_spec"
+        else:
+            key = "direct_access_index_spec"
+        embedding_vector_columns = self.index_details[key].get(
             "embedding_vector_columns"
         )
         if (
@@ -300,7 +304,11 @@ class DatabricksVectorSearch(VectorStore):
             return embedding_vector_columns[0].get("name")
 
     def _embedding_vector_column_dimension(self) -> Optional[int]:
-        embedding_vector_columns = self.index_details["index_spec"].get(
+        if self._is_delta_sync_index():
+            key = "delta_sync_index_spec"
+        else:
+            key = "direct_access_index_spec"
+        embedding_vector_columns = self.index_details[key].get(
             "embedding_vector_columns"
         )
         if (
