@@ -48,7 +48,7 @@ llm = OpenAI(openai_api_key="...")
 
 Many of the applications you build with LangChain will contain multiple steps with multiple invocations of LLM calls.
 As these applications get more and more complex, it becomes crucial to be able to inspect what exactly is going on inside your chain or agent.
-The best way to do this is with [LangSmith](smith.langchain.com).
+The best way to do this is with [LangSmith](https://smith.langchain.com).
 
 Note that LangSmith is not needed, but it is helpful.
 If you do want to use LangSmith, after you sign up at the link above, make sure to set your environment variables to start logging traces:
@@ -61,7 +61,7 @@ export LANGCHAIN_API_KEY=...
 ## Building an application
 
 Now we can start building our language model application. LangChain provides many modules that can be used to build language model applications.
-Modules can be used as stand-alones in simple applications and they can be combined for more complex use cases.
+Modules can be used as standalones in simple applications and they can be combined for more complex use cases.
 
 The most common and most important chain that LangChain helps create contains three things:
 - LLM: The language model is the core reasoning engine here. In order to work with LangChain, you need to understand the different types of language models and how to work with them.
