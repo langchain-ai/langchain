@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from importlib.metadata import version
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -18,6 +19,8 @@ from typing import (
     Type,
     Union,
 )
+
+from packaging.version import Version, parse
 
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
@@ -44,7 +47,10 @@ from langchain.schema.messages import (
 )
 from langchain.schema.output import ChatGenerationChunk
 from langchain.schema.runnable import Runnable
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import (
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 
 if TYPE_CHECKING:
     import httpx
@@ -75,11 +81,11 @@ def _create_retry_decorator(
     import openai
 
     errors = [
-        openai.APITimeoutError,
-        openai.APIError,
-        openai.APIConnectionError,
-        openai.RateLimitError,
-        openai.APIStatusError,
+        openai.error.Timeout,
+        openai.error.APIError,
+        openai.error.APIConnectionError,
+        openai.error.RateLimitError,
+        openai.error.ServiceUnavailableError,
     ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
@@ -92,6 +98,9 @@ async def acompletion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
+    if _is_openai_v1():
+        return await llm.async_client.acreate(**kwargs)
+
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
@@ -124,6 +133,11 @@ def _convert_delta_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)
     else:
         return default_class(content=content)
+
+
+def _is_openai_v1() -> bool:
+    _version = parse(version("openai"))
+    return _version >= Version("1.0.0")
 
 
 class ChatOpenAI(BaseChatModel):
@@ -267,7 +281,8 @@ class ChatOpenAI(BaseChatModel):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        try:
+
+        if _is_openai_v1():
             values["client"] = openai.OpenAI(
                 api_key=values["openai_api_key"],
                 timeout=values["request_timeout"],
@@ -282,12 +297,8 @@ class ChatOpenAI(BaseChatModel):
                 organization=values["openai_organization"],
                 base_url=values["openai_api_base"],
             ).chat.completions
-        except AttributeError:
-            raise ValueError(
-                "`openai` has no `ChatCompletion` attribute, this is likely "
-                "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`."
-            )
+        else:
+            values["client"] = openai.ChatCompletion
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
@@ -310,6 +321,9 @@ class ChatOpenAI(BaseChatModel):
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
+        if _is_openai_v1():
+            return self.client.create(**kwargs)
+
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
         @retry_decorator
