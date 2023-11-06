@@ -99,14 +99,14 @@ async def acompletion_with_retry(
 ) -> Any:
     """Use tenacity to retry the async completion call."""
     if _is_openai_v1():
-        return await llm.async_client.acreate(**kwargs)
+        return await llm.async_client.create(**kwargs)
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
         # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-        return await llm.async_client.create(**kwargs)
+        return await llm.client.acreate(**kwargs)
 
     return await _completion_with_retry(**kwargs)
 
@@ -284,11 +284,11 @@ class ChatOpenAI(BaseChatModel):
 
         if _is_openai_v1():
             values["client"] = openai.OpenAI(
-                api_key=values["openai_api_key"],
-                timeout=values["request_timeout"],
-                max_retries=values["max_retries"],
-                organization=values["openai_organization"],
-                base_url=values["openai_api_base"],
+                # api_key=values["openai_api_key"],
+                # timeout=values["request_timeout"],
+                # max_retries=values["max_retries"],
+                # organization=values["openai_organization"],
+                # base_url=values["openai_api_base"],
             ).chat.completions
             values["async_client"] = openai.AsyncOpenAI(
                 api_key=values["openai_api_key"],
