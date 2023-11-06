@@ -47,6 +47,7 @@ from langchain.schema.runnable import Runnable
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 if TYPE_CHECKING:
+    import httpx
     import tiktoken
 
 
@@ -74,12 +75,11 @@ def _create_retry_decorator(
     import openai
 
     errors = [
-        ValueError
-        # openai.error.Timeout,
-        # openai.error.APIError,
-        # openai.error.APIConnectionError,
-        # openai.error.RateLimitError,
-        # openai.error.ServiceUnavailableError,
+        openai.APITimeoutError,
+        openai.APIError,
+        openai.APIConnectionError,
+        openai.RateLimitError,
+        openai.APIStatusError,
     ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
@@ -97,7 +97,7 @@ async def acompletion_with_retry(
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
         # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-        return await llm.client.acreate(**kwargs)
+        return await llm.async_client.create(**kwargs)
 
     return await _completion_with_retry(**kwargs)
 
@@ -167,20 +167,23 @@ class ChatOpenAI(BaseChatModel):
         return True
 
     client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[str] = None
+    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
-    openai_api_base: Optional[str] = None
-    openai_organization: Optional[str] = None
+    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_organization: Optional[str] = Field(default=None, alias="organization")
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    request_timeout: Union[float, Tuple[float, float], httpx.Timeout, None] = Field(
+        default=None, alias="timeout"
+    )
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
@@ -265,7 +268,20 @@ class ChatOpenAI(BaseChatModel):
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = openai.OpenAI()
+            values["client"] = openai.OpenAI(
+                api_key=values["openai_api_key"],
+                timeout=values["request_timeout"],
+                max_retries=values["max_retries"],
+                organization=values["openai_organization"],
+                base_url=values["openai_api_base"],
+            ).chat.completions
+            values["async_client"] = openai.AsyncOpenAI(
+                api_key=values["openai_api_key"],
+                timeout=values["request_timeout"],
+                max_retries=values["max_retries"],
+                organization=values["openai_organization"],
+                base_url=values["openai_api_base"],
+            ).chat.completions
         except AttributeError:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
@@ -283,7 +299,6 @@ class ChatOpenAI(BaseChatModel):
         """Get the default parameters for calling OpenAI API."""
         return {
             "model": self.model_name,
-            # "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
@@ -299,7 +314,7 @@ class ChatOpenAI(BaseChatModel):
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
-            return self.client.chat.completions.create(**kwargs)
+            return self.client.create(**kwargs)
 
         return _completion_with_retry(**kwargs)
 
@@ -379,7 +394,7 @@ class ChatOpenAI(BaseChatModel):
         message_dicts = [convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
             response = response.dict()
