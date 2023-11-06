@@ -64,7 +64,7 @@ class BaseMessage(Serializable):
     Messages are the inputs and outputs of ChatModels.
     """
 
-    content: str
+    content: Union[str, List[Dict[str, Any]]]
     """The string contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
