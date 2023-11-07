@@ -34,15 +34,23 @@ retriever = vectorstore.as_retriever()
 # Add to VectorDB
 embeddings = OpenAIEmbeddings()
 
-db = lancedb.connect('/tmp/lancedb')
-table = db.create_table("pandas_docs", data=[
-    {"vector": embeddings.embed_query(
-        "Hello langchain dev"), "text": "Hello langchain dev", "id": "1"}
-], mode="overwrite")
+db = lancedb.connect("/tmp/lancedb")
+table = db.create_table(
+    "pandas_docs",
+    data=[
+        {
+            "vector": embeddings.embed_query("Hello langchain dev"),
+            "text": "Hello langchain dev",
+            "id": "1",
+        }
+    ],
+    mode="overwrite",
+)
 
 
-vectorstore = LanceDB.from_text(["harrison worked at kensho"],
-                                embeddings, connection=table)
+vectorstore = LanceDB.from_texts(
+    ["harrison worked at kensho"], embeddings, connection=table
+)
 
 retriever = vectorstore.as_retriever()
 
