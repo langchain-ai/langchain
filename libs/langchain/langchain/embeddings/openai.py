@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import warnings
+from importlib.metadata import version
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,6 +18,7 @@ from typing import (
 )
 
 import numpy as np
+from packaging.version import Version, parse
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -101,6 +103,8 @@ def _check_response(response: dict, skip_empty: bool = False) -> dict:
 
 def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
+    if _is_openai_v1():
+        return embeddings.client.create(**kwargs)
     retry_decorator = _create_retry_decorator(embeddings)
 
     @retry_decorator
@@ -120,6 +124,11 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
         return _check_response(response, skip_empty=embeddings.skip_empty)
 
     return await _async_embed_with_retry(**kwargs)
+
+
+def _is_openai_v1() -> bool:
+    _version = parse(version("openai"))
+    return _version >= Version("1.0.0")
 
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
@@ -287,13 +296,16 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         try:
             import openai
 
-            values["client"] = openai.OpenAI(
-                api_key=values["openai_api_key"],
-                timeout=values["request_timeout"],
-                max_retries=values["max_retries"],
-                organization=values["openai_organization"],
-                base_url=values["openai_api_base"] or None,
-            ).embeddings
+            if _is_openai_v1():
+                values["client"] = openai.OpenAI(
+                    api_key=values["openai_api_key"],
+                    timeout=values["request_timeout"],
+                    max_retries=values["max_retries"],
+                    organization=values["openai_organization"],
+                    base_url=values["openai_api_base"] or None,
+                ).embeddings
+            else:
+                values["client"] = openai.Embedding
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
