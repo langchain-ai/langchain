@@ -1,5 +1,4 @@
 import json
-import os
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import Neo4jChatMessageHistory
@@ -9,9 +8,7 @@ from langchain.schema.messages import _message_to_dict
 def test_memory_with_message_store() -> None:
     """Test the memory with a message store."""
     # setup MongoDB as a message store
-    message_history = Neo4jChatMessageHistory(
-        session_id="test-session"
-    )
+    message_history = Neo4jChatMessageHistory(session_id="test-session")
     memory = ConversationBufferMemory(
         memory_key="baz", chat_memory=message_history, return_messages=True
     )

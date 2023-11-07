@@ -16,7 +16,7 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
         password: Optional[str] = None,
         database: str = "neo4j",
         node_label: str = "Session",
-        window: int = 3
+        window: int = 3,
     ):
         try:
             import neo4j
@@ -28,16 +28,14 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
 
         # Make sure session id is not null
         if not session_id:
-            raise ValueError(
-                "Please ensure that the session_id parameter is provided")
+            raise ValueError("Please ensure that the session_id parameter is provided")
 
         url = get_from_env("url", "NEO4J_URI", url)
         username = get_from_env("username", "NEO4J_USERNAME", username)
         password = get_from_env("password", "NEO4J_PASSWORD", password)
         database = get_from_env("database", "NEO4J_DATABASE", database)
 
-        self._driver = neo4j.GraphDatabase.driver(
-            url, auth=(username, password))
+        self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
         self._session_id = session_id
         self._node_label = node_label
@@ -59,7 +57,8 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
         # Create session node
         self._driver.execute_query(
             f"MERGE (s:`{self._node_label}` {{id:$session_id}})",
-            {"session_id": self._session_id}).summary
+            {"session_id": self._session_id},
+        ).summary
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
@@ -72,9 +71,10 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
             "RETURN {data:{content: node.content}, type:node.type} AS result"
         )
         records, _, _ = self._driver.execute_query(
-            query, {"session_id": self._session_id})
+            query, {"session_id": self._session_id}
+        )
 
-        messages = messages_from_dict([el['result'] for el in records])
+        messages = messages_from_dict([el["result"] for el in records])
         return messages
 
     def add_message(self, message: BaseMessage) -> None:
@@ -86,9 +86,16 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
             "SET new += {type:$type, content:$content} "
             "WITH new, lm, last_message WHERE last_message IS NOT NULL "
             "CREATE (last_message)-[:NEXT]->(new) "
-            "DELETE lm")
+            "DELETE lm"
+        )
         self._driver.execute_query(
-            query, {"type": message.type, "content": message.content, "session_id": self._session_id}).summary
+            query,
+            {
+                "type": message.type,
+                "content": message.content,
+                "session_id": self._session_id,
+            },
+        ).summary
 
     def clear(self) -> None:
         """Clear session memory from Neo4j"""
@@ -98,8 +105,7 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
             "WITH p, length(p) AS length ORDER BY length DESC LIMIT 1 "
             "UNWIND nodes(p) as node DETACH DELETE node;"
         )
-        self._driver.execute_query(
-            query, {"session_id": self._session_id}).summary
+        self._driver.execute_query(query, {"session_id": self._session_id}).summary
 
     def __del__(self) -> None:
         if self._driver:
