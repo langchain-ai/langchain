@@ -80,7 +80,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, Any]):
         openai_tools: List = []
         for tool in tools:
             if isinstance(tool, BaseTool):
-                tool = format_tool_to_openai_function(tool)
+                tool = {"type": "function", "function": format_tool_to_openai_function(tool)}
             openai_tools.append(tool)
         assistant = client.beta.assistants.create(
             name=name,
@@ -105,14 +105,18 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, Any]):
         """"""
         input = self._parse_input(input)
         if "thread_id" not in input:
-            run = self._create_thread_and_run(input)
-            _ = self.client.beta.threads.messages.create(
-                run.thread_id,
-                content=input["content"],
-                role="user",
-                file_ids=input.get("file_ids", []),
-                metadata=input.get("message_metadata"),
-            )
+            thread = {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": input["content"],
+                        "file_ids": input.get("file_ids", []),
+                        "metadata": input.get("message_metadata"),
+                    }
+                ],
+                "metadata": input.get("thread_metadata"),
+            }
+            run = self._create_thread_and_run(input, thread)
         elif "run_id" not in input:
             _ = self.client.beta.threads.messages.create(
                 input["thread_id"],
@@ -150,14 +154,15 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, Any]):
             **params,
         )
 
-    def _create_thread_and_run(self, input: dict) -> Any:
+    def _create_thread_and_run(self, input: dict, thread: dict) -> Any:
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "thread", "model", "tools", "run_metadata")
+            if k in ("instructions", "model", "tools", "run_metadata")
         }
         run = self.client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
+            thread=thread,
             **params,
         )
         return run
