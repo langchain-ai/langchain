@@ -8,10 +8,11 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain ">=0.0.330"
+langchain = ">=0.0.325"
 lancedb = ">=0.3.3"
 openai = ">=0.28.1"
 tiktoken = ">=0.5.1"
+
 
 [tool.poetry.group.docs.dependencies]
 langchain = { path = "libs/langchain/", develop = true }
