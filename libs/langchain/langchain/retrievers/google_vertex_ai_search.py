@@ -189,7 +189,8 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
             print(f"No {chunk_type} could be found.")
             if chunk_type == "extractive_answers":
                 print(
-                    "Make sure that your data store is using Advanced Website Indexing.\n"
+                    "Make sure that your data store is using Advanced Website "
+                    "Indexing.\n"
                     "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"  # noqa: E501
                 )
 
@@ -207,7 +208,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
     filter: Optional[str] = None
     """Filter expression."""
     get_extractive_answers: bool = False
-    """If True return Extractive Answers, otherwise return Extractive Segments or Snippets."""
+    """If True return Extractive Answers, otherwise return Extractive Segments or Snippets."""  # noqa: E501
     max_documents: int = Field(default=5, ge=1, le=100)
     """The maximum number of documents to return."""
     max_extractive_answer_count: int = Field(default=1, ge=1, le=5)
