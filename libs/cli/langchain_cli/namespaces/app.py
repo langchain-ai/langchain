@@ -147,7 +147,7 @@ def add(
             project_root / "pyproject.toml",
             zip(installed_destination_names, installed_destination_paths),
         )
-    except Exception:
+    except ImportError:
         # Can fail if user modified/removed pyproject.toml
         typer.echo("Failed to add dependencies to pyproject.toml, continuing...")
 

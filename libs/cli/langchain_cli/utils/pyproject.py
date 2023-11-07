@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterable, cast
+from typing import Iterable, cast, Dict, Any
 
 from tomlkit import dump, inline_table, load
 from tomlkit.container import Container
@@ -17,8 +17,9 @@ def add_dependencies_to_pyproject_toml(
 ) -> None:
     """Add dependencies to pyproject.toml."""
     with open(pyproject_toml, encoding="utf-8") as f:
-        pyproject = load(f)
-        cast(Container, pyproject["tool.poetry.dependencies"]).update(
+        # tomlkit types aren't amazing - treat as Dict instead
+        pyproject: Dict[str, Any] = load(f)
+        pyproject["tool"]["poetry"]["dependencies"].update(
             {
                 name: _get_dep_inline_table(loc.relative_to(pyproject_toml.parent))
                 for name, loc in local_editable_dependencies
@@ -33,8 +34,9 @@ def remove_dependencies_from_pyproject_toml(
 ) -> None:
     """Remove dependencies from pyproject.toml."""
     with open(pyproject_toml, encoding="utf-8") as f:
-        pyproject = load(f)
-        dependencies = cast(Container, pyproject["tool.poetry.dependencies"])
+        pyproject: Dict[str, Any] = load(f)
+        # tomlkit types aren't amazing - treat as Dict instead
+        dependencies = pyproject["tool"]["poetry"]["dependencies"]
         for name in local_editable_dependencies:
             try:
                 del dependencies[name]
