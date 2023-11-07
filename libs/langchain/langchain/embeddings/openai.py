@@ -250,7 +250,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
@@ -302,18 +302,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             if _is_openai_v1():
                 values["client"] = openai.OpenAI(
-                    api_key=values["openai_api_key"],
-                    timeout=values["request_timeout"],
-                    max_retries=values["max_retries"],
-                    organization=values["openai_organization"],
-                    base_url=values["openai_api_base"] or None,
+                    api_key=values.get("openai_api_key"),
+                    timeout=values.get("request_timeout"),
+                    max_retries=values.get("max_retries"),
+                    organization=values.get("openai_organization"),
+                    base_url=values.get("openai_api_base") or None,
                 ).embeddings
                 values["async_client"] = openai.AsyncOpenAI(
-                    api_key=values["openai_api_key"],
-                    timeout=values["request_timeout"],
-                    max_retries=values["max_retries"],
-                    organization=values["openai_organization"],
-                    base_url=values["openai_api_base"] or None,
+                    api_key=values.get("openai_api_key"),
+                    timeout=values.get("request_timeout"),
+                    max_retries=values.get("max_retries"),
+                    organization=values.get("openai_organization"),
+                    base_url=values.get("openai_api_base") or None,
                 ).chat.completions
             else:
                 values["client"] = openai.Embedding
