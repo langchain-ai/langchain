@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.prompts.base import StringPromptValue
@@ -17,7 +17,7 @@ class BaseModeration:
     def __init__(
         self,
         client: Any,
-        config: Optional[Dict[str, Any]] = None,
+        config: Optional[Any] = None,
         moderation_callback: Optional[Any] = None,
         unique_id: Optional[str] = None,
         run_manager: Optional[CallbackManagerForChainRun] = None,
@@ -125,6 +125,7 @@ class BaseModeration:
             # convert prompt to text
             input_text = self._convert_prompt_to_text(prompt=prompt)
             output_text = str()
+
             # perform moderation
             filter_functions = {
                 "pii": ComprehendPII,
@@ -148,36 +149,19 @@ class BaseModeration:
                         )
                     )
                 )
-                output_text = toxicity_validate(prompt_value=output_text)
+                if filter_name in filter_functions:
+                    self._log_message_for_verbose(
+                        f"Running {filter_name} Validation...\n"
+                    )
+                    validation_fn = self._moderation_class(
+                        moderation_class=filter_functions[filter_name]
+                    )
+                    input_text = input_text if not output_text else output_text
+                    output_text = validation_fn(
+                        prompt_value=input_text,
+                        config=_filter.dict(),
+                    )
 
-                self._log_message_for_verbose("Running intent validation...\n")
-                intent_validate = self._moderation_class(
-                    moderation_class=ComprehendIntent
-                )
-                output_text = intent_validate(prompt_value=output_text)
-            else:
-                filter_functions = {
-                    "pii": ComprehendPII,
-                    "toxicity": ComprehendToxicity,
-                    "intent": ComprehendIntent,
-                }
-                filters = self.config["filters"]
-                for _filter in filters:
-                    filter_name = f"{_filter}"
-                    if filter_name in filter_functions:
-                        self._log_message_for_verbose(
-                            f"Running {filter_name} Validation...\n"
-                        )
-                        validation_fn = self._moderation_class(
-                            moderation_class=filter_functions[filter_name]
-                        )
-                        input_text = input_text if not output_text else output_text
-                        output_text = validation_fn(
-                            prompt_value=input_text,
-                            config=self.config[filter_name]
-                            if filter_name in self.config
-                            else None,
-                        )
             # convert text to prompt and return
             return self._convert_text_to_prompt(prompt=prompt, text=output_text)
 
