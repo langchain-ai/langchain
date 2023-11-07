@@ -20,7 +20,23 @@ DEFAULT_API_URL = "https://app.llmonitor.com"
 user_ctx = ContextVar[Union[str, None]]("user_ctx", default=None)
 user_props_ctx = ContextVar[Union[str, None]]("user_props_ctx", default=None)
 
-PARAMS_TO_CAPTURE = ['temperature', 'top_p', 'top_k', 'stop','presence_penalty', 'frequence_penalty', 'seed', 'function_call', 'functions', 'tools', 'response_format', 'max_tokens', 'logit_bias', 'tool_choice']
+PARAMS_TO_CAPTURE = [
+    "temperature",
+    "top_p",
+    "top_k",
+    "stop",
+    "presence_penalty",
+    "frequence_penalty",
+    "seed",
+    "function_call",
+    "functions",
+    "tools",
+    "response_format",
+    "max_tokens",
+    "logit_bias",
+    "tool_choice",
+]
+
 
 class UserContextManager:
     """Context manager for LLMonitor user context."""
@@ -215,7 +231,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             )
             self.__has_valid_config = False
 
-        if parse(self.__llmonitor_version) < parse("0.0.20"):
+        if parse(self.__llmonitor_version) < parse("0.0.32"):
             warnings.warn(
                 f"""[LLMonitor] The installed `llmonitor` version is 
                 {self.__llmonitor_version} but `LLMonitorCallbackHandler` requires 
@@ -268,13 +284,19 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         try:
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
-            
+
             params = kwargs.get("invocation_params", {})
-            params.update(serialized.get('kwargs', {})) # Sometimes, for example with ChatAnthropic, `invocation_params` is empty 
-    
+            params.update(
+                serialized.get("kwargs", {})
+            )  # Sometimes, for example with ChatAnthropic, `invocation_params` is empty
+
             name = params.get("model") or params.get("model_name")
 
-            extra = {param: params.get(param) for param in PARAMS_TO_CAPTURE if params.get(param) is not None}
+            extra = {
+                param: params.get(param)
+                for param in PARAMS_TO_CAPTURE
+                if params.get(param) is not None
+            }
 
             input = _parse_input(prompts)
 
@@ -290,6 +312,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 extra=extra,
                 metadata=metadata,
                 user_props=user_props,
+                app_id=self.__app_id,
             )
         except Exception as e:
             warnings.warn(f"[LLMonitor] An error occurred in on_llm_start: {e}")
@@ -313,14 +336,20 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             user_props = _get_user_props(metadata)
 
             params = kwargs.get("invocation_params", {})
-            params.update(serialized.get('kwargs', {})) # Sometimes, for example with ChatAnthropic, `invocation_params` is empty 
-        
+            params.update(
+                serialized.get("kwargs", {})
+            )  # Sometimes, for example with ChatAnthropic, `invocation_params` is empty
+
             name = params.get("model") or params.get("model_name")
 
-            if not name and params.get("_type") == 'anthropic-chat':
-                name = 'claude-2'
+            if not name and params.get("_type") == "anthropic-chat":
+                name = "claude-2"
 
-            extra = {param: params.get(param) for param in PARAMS_TO_CAPTURE if params.get(param) is not None}
+            extra = {
+                param: params.get(param)
+                for param in PARAMS_TO_CAPTURE
+                if params.get(param) is not None
+            }
 
             input = _parse_lc_messages(messages[0])
 
@@ -336,6 +365,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 extra=extra,
                 metadata=metadata,
                 user_props=user_props,
+                app_id=self.__app_id,
             )
         except Exception as e:
             logging.warning(
@@ -352,8 +382,6 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     ) -> None:
         if self.__has_valid_config is False:
             return
-
-        print(response, kwargs)
 
         try:
             token_usage = (response.llm_output or {}).get("token_usage", {})
@@ -386,6 +414,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                     "prompt": token_usage.get("prompt_tokens"),
                     "completion": token_usage.get("completion_tokens"),
                 },
+                app_id=self.__app_id,
             )
         except Exception as e:
             warnings.warn(f"[LLMonitor] An error occurred in on_llm_end: {e}")
@@ -419,6 +448,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 tags=tags,
                 metadata=metadata,
                 user_props=user_props,
+                app_id=self.__app_id,
             )
         except Exception as e:
             warnings.warn(f"[LLMonitor] An error occurred in on_tool_start: {e}")
@@ -441,6 +471,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 run_id=str(run_id),
                 parent_run_id=str(parent_run_id) if parent_run_id else None,
                 output=output,
+                app_id=self.__app_id,
             )
         except Exception as e:
             warnings.warn(f"[LLMonitor] An error occurred in on_tool_end: {e}")
@@ -490,6 +521,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 tags=tags,
                 metadata=metadata,
                 user_props=user_props,
+                app_id=self.__app_id,
             )
         except Exception as e:
             warnings.warn(f"[LLMonitor] An error occurred in on_chain_start: {e}")
@@ -513,6 +545,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 run_id=str(run_id),
                 parent_run_id=str(parent_run_id) if parent_run_id else None,
                 output=output,
+                app_id=self.__app_id,
             )
         except Exception as e:
             logging.warning(f"[LLMonitor] An error occurred in on_chain_end: {e}")
@@ -538,6 +571,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 parent_run_id=str(parent_run_id) if parent_run_id else None,
                 name=name,
                 input=input,
+                app_id=self.__app_id,
             )
         except Exception as e:
             logging.warning(f"[LLMonitor] An error occurred in on_agent_action: {e}")
@@ -561,6 +595,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 run_id=str(run_id),
                 parent_run_id=str(parent_run_id) if parent_run_id else None,
                 output=output,
+                app_id=self.__app_id,
             )
         except Exception as e:
             logging.warning(f"[LLMonitor] An error occurred in on_agent_finish: {e}")
@@ -582,6 +617,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 run_id=str(run_id),
                 parent_run_id=str(parent_run_id) if parent_run_id else None,
                 error={"message": str(error), "stack": traceback.format_exc()},
+                app_id=self.__app_id,
             )
         except Exception as e:
             logging.warning(f"[LLMonitor] An error occurred in on_chain_error: {e}")
@@ -603,6 +639,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 run_id=str(run_id),
                 parent_run_id=str(parent_run_id) if parent_run_id else None,
                 error={"message": str(error), "stack": traceback.format_exc()},
+                app_id=self.__app_id,
             )
         except Exception as e:
             logging.warning(f"[LLMonitor] An error occurred in on_tool_error: {e}")
@@ -624,6 +661,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 run_id=str(run_id),
                 parent_run_id=str(parent_run_id) if parent_run_id else None,
                 error={"message": str(error), "stack": traceback.format_exc()},
+                app_id=self.__app_id,
             )
         except Exception as e:
             logging.warning(f"[LLMonitor] An error occurred in on_llm_error: {e}")
