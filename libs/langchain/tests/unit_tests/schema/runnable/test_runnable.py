@@ -295,7 +295,18 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "description": "A Message from an AI.",
                 "type": "object",
                 "properties": {
-                    "content": {"title": "Content", "type": "string"},
+                    "content": {
+                        "title": "Content",
+                        "anyOf": [
+                            {"type": "string"},
+                            {
+                                "type": "array",
+                                "items": {
+                                    "anyOf": [{"type": "string"}, {"type": "object"}]
+                                },
+                            },
+                        ],
+                    },
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
                         "type": "object",
@@ -319,7 +330,18 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "description": "A Message from a human.",
                 "type": "object",
                 "properties": {
-                    "content": {"title": "Content", "type": "string"},
+                    "content": {
+                        "title": "Content",
+                        "anyOf": [
+                            {"type": "string"},
+                            {
+                                "type": "array",
+                                "items": {
+                                    "anyOf": [{"type": "string"}, {"type": "object"}]
+                                },
+                            },
+                        ],
+                    },
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
                         "type": "object",
@@ -343,7 +365,18 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "description": "A Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
                 "type": "object",
                 "properties": {
-                    "content": {"title": "Content", "type": "string"},
+                    "content": {
+                        "title": "Content",
+                        "anyOf": [
+                            {"type": "string"},
+                            {
+                                "type": "array",
+                                "items": {
+                                    "anyOf": [{"type": "string"}, {"type": "object"}]
+                                },
+                            },
+                        ],
+                    },
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
                         "type": "object",
@@ -363,7 +396,18 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
                 "type": "object",
                 "properties": {
-                    "content": {"title": "Content", "type": "string"},
+                    "content": {
+                        "title": "Content",
+                        "anyOf": [
+                            {"type": "string"},
+                            {
+                                "type": "array",
+                                "items": {
+                                    "anyOf": [{"type": "string"}, {"type": "object"}]
+                                },
+                            },
+                        ],
+                    },
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
                         "type": "object",
@@ -382,7 +426,18 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "description": "A Message for passing the result of executing a function back to a model.",  # noqa: E501
                 "type": "object",
                 "properties": {
-                    "content": {"title": "Content", "type": "string"},
+                    "content": {
+                        "title": "Content",
+                        "anyOf": [
+                            {"type": "string"},
+                            {
+                                "type": "array",
+                                "items": {
+                                    "anyOf": [{"type": "string"}, {"type": "object"}]
+                                },
+                            },
+                        ],
+                    },
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
                         "type": "object",
@@ -869,7 +924,7 @@ def test_configurable_fields() -> None:
 
     assert fake_llm_configurable.invoke("...") == "a"
 
-    assert fake_llm_configurable.config_schema(include=["configurable"]).schema() == {
+    assert fake_llm_configurable.config_schema().schema() == {
         "title": "RunnableConfigurableFieldsConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -912,7 +967,7 @@ def test_configurable_fields() -> None:
         text="Hello, John!"
     )
 
-    assert prompt_configurable.config_schema(include=["configurable"]).schema() == {
+    assert prompt_configurable.config_schema().schema() == {
         "title": "RunnableConfigurableFieldsConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -955,7 +1010,7 @@ def test_configurable_fields() -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    assert chain_configurable.config_schema(include=["configurable"]).schema() == {
+    assert chain_configurable.config_schema().schema() == {
         "title": "RunnableSequenceConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -1021,9 +1076,7 @@ def test_configurable_fields() -> None:
         "llm3": "a",
     }
 
-    assert chain_with_map_configurable.config_schema(
-        include=["configurable"]
-    ).schema() == {
+    assert chain_with_map_configurable.config_schema().schema() == {
         "title": "RunnableSequenceConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
@@ -1122,7 +1175,7 @@ def test_configurable_fields_example() -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    assert chain_configurable.config_schema(include=["configurable"]).schema() == {
+    assert chain_configurable.config_schema().schema() == {
         "title": "RunnableSequenceConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},

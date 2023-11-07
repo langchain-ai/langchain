@@ -12,6 +12,9 @@ openai = "^0.28.1"
 pinecone-client = "^2.2.4"
 langchainhub = "^0.1.13"
 
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+
 [tool.langserve]
 export_module = "rag_fusion.chain"
 export_attr = "chain"

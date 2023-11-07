@@ -11,7 +11,7 @@ def __getattr__(name: str) -> Any:
 
     old_path = "langchain." + here + "." + name
     new_path = "langchain_experimental." + here + "." + name
-    raise ImportError(
+    raise AttributeError(
         "This agent has been moved to langchain experiment. "
         "This agent relies on python REPL tool under the hood, so to use it "
         "safely please sandbox the python REPL. "
