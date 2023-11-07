@@ -250,7 +250,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
@@ -302,19 +302,19 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             if _is_openai_v1():
                 values["client"] = openai.OpenAI(
-                    api_key=values["openai_api_key"],
-                    timeout=values["request_timeout"],
-                    max_retries=values["max_retries"],
-                    organization=values["openai_organization"],
-                    base_url=values["openai_api_base"] or None,
+                    api_key=values.get("openai_api_key"),
+                    timeout=values.get("request_timeout"),
+                    max_retries=values.get("max_retries"),
+                    organization=values.get("openai_organization"),
+                    base_url=values.get("openai_api_base") or None,
                 ).embeddings
                 values["async_client"] = openai.AsyncOpenAI(
-                    api_key=values["openai_api_key"],
-                    timeout=values["request_timeout"],
-                    max_retries=values["max_retries"],
-                    organization=values["openai_organization"],
-                    base_url=values["openai_api_base"] or None,
-                ).chat.completions
+                    api_key=values.get("openai_api_key"),
+                    timeout=values.get("request_timeout"),
+                    max_retries=values.get("max_retries"),
+                    organization=values.get("openai_organization"),
+                    base_url=values.get("openai_api_base") or None,
+                ).embeddings
             else:
                 values["client"] = openai.Embedding
         except ImportError:
@@ -415,10 +415,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
             )
-            if _is_openai_v1():
-                batched_embeddings.extend(r.embedding for r in response.data)
-            else:
-                batched_embeddings.extend(r["embedding"] for r in response["data"])
+            if not isinstance(response, dict):
+                response = response.dict()
+            batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
@@ -436,11 +435,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     input="",
                     **self._invocation_params,
                 )
-                average = (
-                    average_embedded.data[0].embedding
-                    if _is_openai_v1()
-                    else average_embedded["data"][0]["embedding"]
-                )
+                if not isinstance(average_embedded, dict):
+                    average_embedded = average_embedded.dict()
+                average = average_embedded["data"][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
@@ -494,10 +491,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 **self._invocation_params,
             )
 
-            if _is_openai_v1():
-                batched_embeddings.extend(r.embedding for r in response.data)
-            else:
-                batched_embeddings.extend(r["embedding"] for r in response["data"])
+            if not isinstance(response, dict):
+                response = response.dict()
+            batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
@@ -513,11 +509,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     input="",
                     **self._invocation_params,
                 )
-                average = (
-                    average_embedded.data[0].embedding
-                    if _is_openai_v1()
-                    else average_embedded["data"][0]["embedding"]
-                )
+                if not isinstance(average_embedded, dict):
+                    average_embedded = average_embedded.dict()
+                average = average_embedded["data"][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
