@@ -109,7 +109,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         input_type = "search_document" if self.input_type is None else self.input_type
-        
+
         """Async call out to Cohere's embedding endpoint.
 
         Args:
