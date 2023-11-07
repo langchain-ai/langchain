@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Optional
 
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.docarray.base import (
     DocArrayIndex,
     _check_docarray_import,
@@ -11,7 +11,7 @@ from langchain.vectorstores.docarray.base import (
 
 
 class DocArrayInMemorySearch(DocArrayIndex):
-    """Wrapper around in-memory storage for exact search.
+    """In-memory `DocArray` storage for exact search.
 
     To use it, you should have the ``docarray`` package with version >=0.32.0 installed.
     You can install it with `pip install "langchain[docarray]"`.

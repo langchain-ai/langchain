@@ -1,4 +1,3 @@
-"""Wrapper around ScaNN vector database."""
 from __future__ import annotations
 
 import operator
@@ -12,19 +11,20 @@ import numpy as np
 from langchain.docstore.base import AddableMixin, Docstore
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy
 
 
 def normalize(x: np.ndarray) -> np.ndarray:
+    """Normalize vectors to unit length."""
     x /= np.clip(np.linalg.norm(x, axis=-1, keepdims=True), 1e-12, None)
     return x
 
 
 def dependable_scann_import() -> Any:
     """
-    Import scann if available, otherwise raise error.
+    Import `scann` if available, otherwise raise error.
     """
     try:
         import scann
@@ -37,7 +37,7 @@ def dependable_scann_import() -> Any:
 
 
 class ScaNN(VectorStore):
-    """Wrapper around ScaNN vector database.
+    """`ScaNN` vector store.
 
     To use, you should have the ``scann`` python package installed.
 
@@ -382,7 +382,7 @@ class ScaNN(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import ScaNN
+                from langchain.vectorstores import ScaNN
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 scann = ScaNN.from_texts(texts, embeddings)
@@ -418,7 +418,7 @@ class ScaNN(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import ScaNN
+                from langchain.vectorstores import ScaNN
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)

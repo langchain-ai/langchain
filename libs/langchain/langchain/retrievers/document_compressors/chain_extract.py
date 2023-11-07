@@ -4,8 +4,9 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from langchain import LLMChain, PromptTemplate
 from langchain.callbacks.manager import Callbacks
+from langchain.chains.llm import LLMChain
+from langchain.prompts import PromptTemplate
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_extract_prompt import (
     prompt_template,
@@ -42,7 +43,7 @@ def _get_default_chain_prompt() -> PromptTemplate:
 
 
 class LLMChainExtractor(BaseDocumentCompressor):
-    """DocumentCompressor that uses an LLM chain to extract
+    """Document compressor that uses an LLM chain to extract
     the relevant parts of documents."""
 
     llm_chain: LLMChain

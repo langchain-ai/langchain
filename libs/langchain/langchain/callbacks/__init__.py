@@ -18,7 +18,10 @@ from langchain.callbacks.file import FileCallbackHandler
 from langchain.callbacks.flyte_callback import FlyteCallbackHandler
 from langchain.callbacks.human import HumanApprovalCallbackHandler
 from langchain.callbacks.infino_callback import InfinoCallbackHandler
+from langchain.callbacks.labelstudio_callback import LabelStudioCallbackHandler
+from langchain.callbacks.llmonitor_callback import LLMonitorCallbackHandler
 from langchain.callbacks.manager import (
+    collect_runs,
     get_openai_callback,
     tracing_enabled,
     tracing_v2_enabled,
@@ -37,6 +40,7 @@ from langchain.callbacks.streaming_stdout_final_only import (
 from langchain.callbacks.streamlit import LLMThoughtLabeler, StreamlitCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.callbacks.vocode_callback import VocodeCallbackHandler
+from langchain.callbacks.trubrics_callback import TrubricsCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 
@@ -55,6 +59,7 @@ __all__ = [
     "HumanApprovalCallbackHandler",
     "InfinoCallbackHandler",
     "MlflowCallbackHandler",
+    "LLMonitorCallbackHandler",
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
     "SageMakerCallbackHandler",
@@ -69,5 +74,10 @@ __all__ = [
     "get_openai_callback",
     "tracing_enabled",
     "tracing_v2_enabled",
+    "collect_runs",
     "wandb_tracing_enabled",
+    "FlyteCallbackHandler",
+    "SageMakerCallbackHandler",
+    "LabelStudioCallbackHandler",
+    "TrubricsCallbackHandler",
 ]

@@ -2,15 +2,14 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
-from pydantic import BaseModel, Extra, root_validator, validator
-
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator, validator
 from langchain.schema import BaseRetriever
 
 
 def clean_excerpt(excerpt: str) -> str:
-    """Cleans an excerpt from Kendra.
+    """Clean an excerpt from Kendra.
 
     Args:
         excerpt: The excerpt to clean.
@@ -21,12 +20,12 @@ def clean_excerpt(excerpt: str) -> str:
     """
     if not excerpt:
         return excerpt
-    res = re.sub("\s+", " ", excerpt).replace("...", "")
+    res = re.sub(r"\s+", " ", excerpt).replace("...", "")
     return res
 
 
 def combined_text(item: "ResultItem") -> str:
-    """Combines a ResultItem title and excerpt into a single string.
+    """Combine a ResultItem title and excerpt into a single string.
 
     Args:
         item: the ResultItem of a Kendra search.
@@ -46,14 +45,15 @@ def combined_text(item: "ResultItem") -> str:
 
 
 DocumentAttributeValueType = Union[str, int, List[str], None]
-"""Possible types of a DocumentAttributeValue. Dates are also represented as str."""
+"""Possible types of a DocumentAttributeValue.
+
+Dates are also represented as str.
+"""
 
 
-class Highlight(BaseModel, extra=Extra.allow):
-    """
-    Represents the information that can be
-    used to highlight key words in the excerpt.
-    """
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class Highlight(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+    """Information that highlights the keywords in the excerpt."""
 
     BeginOffset: int
     """The zero-based location in the excerpt where the highlight starts."""
@@ -65,7 +65,8 @@ class Highlight(BaseModel, extra=Extra.allow):
     """The highlight type: STANDARD or THESAURUS_SYNONYM."""
 
 
-class TextWithHighLights(BaseModel, extra=Extra.allow):
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class TextWithHighLights(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """Text with highlights."""
 
     Text: str
@@ -74,15 +75,19 @@ class TextWithHighLights(BaseModel, extra=Extra.allow):
     """The highlights."""
 
 
-class AdditionalResultAttributeValue(BaseModel, extra=Extra.allow):
-    """The value of an additional result attribute."""
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class AdditionalResultAttributeValue(  # type: ignore[call-arg]
+    BaseModel, extra=Extra.allow
+):
+    """Value of an additional result attribute."""
 
     TextWithHighlightsValue: TextWithHighLights
     """The text with highlights value."""
 
 
-class AdditionalResultAttribute(BaseModel, extra=Extra.allow):
-    """An additional result attribute."""
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class AdditionalResultAttribute(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+    """Additional result attribute."""
 
     Key: str
     """The key of the attribute."""
@@ -95,8 +100,9 @@ class AdditionalResultAttribute(BaseModel, extra=Extra.allow):
         return self.Value.TextWithHighlightsValue.Text
 
 
-class DocumentAttributeValue(BaseModel, extra=Extra.allow):
-    """The value of a document attribute."""
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class DocumentAttributeValue(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+    """Value of a document attribute."""
 
     DateValue: Optional[str]
     """The date expressed as an ISO 8601 string."""
@@ -125,8 +131,9 @@ class DocumentAttributeValue(BaseModel, extra=Extra.allow):
         return None
 
 
-class DocumentAttribute(BaseModel, extra=Extra.allow):
-    """A document attribute."""
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class DocumentAttribute(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+    """Document attribute."""
 
     Key: str
     """The key of the attribute."""
@@ -134,8 +141,9 @@ class DocumentAttribute(BaseModel, extra=Extra.allow):
     """The value of the attribute."""
 
 
-class ResultItem(BaseModel, ABC, extra=Extra.allow):
-    """Abstract class that represents a result item."""
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
+    """Base class of a result item."""
 
     Id: Optional[str]
     """The ID of the relevant result item."""
@@ -191,7 +199,7 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):
 
 
 class QueryResultItem(ResultItem):
-    """A Query API result item."""
+    """Query API result item."""
 
     DocumentTitle: TextWithHighLights
     """The document title."""
@@ -240,7 +248,7 @@ class QueryResultItem(ResultItem):
 
 
 class RetrieveResultItem(ResultItem):
-    """A Retrieve API result item."""
+    """Retrieve API result item."""
 
     DocumentTitle: Optional[str]
     """The document title."""
@@ -254,21 +262,25 @@ class RetrieveResultItem(ResultItem):
         return self.Content or ""
 
 
-class QueryResult(BaseModel, extra=Extra.allow):
-    """
-    Represents an Amazon Kendra Query API search result, which is composed of:
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class QueryResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+    """`Amazon Kendra Query API` search result.
+
+    It is composed of:
         * Relevant suggested answers: either a text excerpt or table excerpt.
         * Matching FAQs or questions-answer from your FAQ file.
-        * Documents including an excerpt of each document with the its title.
+        * Documents including an excerpt of each document with its title.
     """
 
     ResultItems: List[QueryResultItem]
     """The result items."""
 
 
-class RetrieveResult(BaseModel, extra=Extra.allow):
-    """
-    Represents an Amazon Kendra Retrieve API search result, which is composed of:
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class RetrieveResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+    """`Amazon Kendra Retrieve API` search result.
+
+    It is composed of:
         * relevant passages or text excerpts given an input query.
     """
 
@@ -279,7 +291,7 @@ class RetrieveResult(BaseModel, extra=Extra.allow):
 
 
 class AmazonKendraRetriever(BaseRetriever):
-    """Retriever for the Amazon Kendra Index.
+    """`Amazon Kendra Index` retriever.
 
     Args:
         index_id: Kendra index id

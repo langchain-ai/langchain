@@ -222,13 +222,15 @@ def test_trace_as_group() -> None:
         template="What is a good name for a company that makes {product}?",
     )
     chain = LLMChain(llm=llm, prompt=prompt)
-    with trace_as_chain_group("my_group") as group_manager:
+    with trace_as_chain_group("my_group", inputs={"input": "cars"}) as group_manager:
         chain.run(product="cars", callbacks=group_manager)
         chain.run(product="computers", callbacks=group_manager)
-        chain.run(product="toys", callbacks=group_manager)
+        final_res = chain.run(product="toys", callbacks=group_manager)
+        group_manager.on_chain_end({"output": final_res})
 
-    with trace_as_chain_group("my_group_2") as group_manager:
-        chain.run(product="toys", callbacks=group_manager)
+    with trace_as_chain_group("my_group_2", inputs={"input": "toys"}) as group_manager:
+        final_res = chain.run(product="toys", callbacks=group_manager)
+        group_manager.on_chain_end({"output": final_res})
 
 
 def test_trace_as_group_with_env_set() -> None:
@@ -239,13 +241,19 @@ def test_trace_as_group_with_env_set() -> None:
         template="What is a good name for a company that makes {product}?",
     )
     chain = LLMChain(llm=llm, prompt=prompt)
-    with trace_as_chain_group("my_group") as group_manager:
+    with trace_as_chain_group(
+        "my_group_env_set", inputs={"input": "cars"}
+    ) as group_manager:
         chain.run(product="cars", callbacks=group_manager)
         chain.run(product="computers", callbacks=group_manager)
-        chain.run(product="toys", callbacks=group_manager)
+        final_res = chain.run(product="toys", callbacks=group_manager)
+        group_manager.on_chain_end({"output": final_res})
 
-    with trace_as_chain_group("my_group_2") as group_manager:
-        chain.run(product="toys", callbacks=group_manager)
+    with trace_as_chain_group(
+        "my_group_2_env_set", inputs={"input": "toys"}
+    ) as group_manager:
+        final_res = chain.run(product="toys", callbacks=group_manager)
+        group_manager.on_chain_end({"output": final_res})
 
 
 @pytest.mark.asyncio
@@ -256,16 +264,19 @@ async def test_trace_as_group_async() -> None:
         template="What is a good name for a company that makes {product}?",
     )
     chain = LLMChain(llm=llm, prompt=prompt)
-    async with atrace_as_chain_group("my_group") as group_manager:
+    async with atrace_as_chain_group("my_async_group") as group_manager:
         await chain.arun(product="cars", callbacks=group_manager)
         await chain.arun(product="computers", callbacks=group_manager)
         await chain.arun(product="toys", callbacks=group_manager)
 
-    async with atrace_as_chain_group("my_group_2") as group_manager:
-        await asyncio.gather(
+    async with atrace_as_chain_group(
+        "my_async_group_2", inputs={"input": "toys"}
+    ) as group_manager:
+        res = await asyncio.gather(
             *[
                 chain.arun(product="toys", callbacks=group_manager),
                 chain.arun(product="computers", callbacks=group_manager),
                 chain.arun(product="cars", callbacks=group_manager),
             ]
         )
+        await group_manager.on_chain_end({"output": res})

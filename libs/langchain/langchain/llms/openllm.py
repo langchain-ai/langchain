@@ -15,13 +15,12 @@ from typing import (
     overload,
 )
 
-from pydantic import PrivateAttr
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import PrivateAttr
 
 if TYPE_CHECKING:
     import openllm
@@ -86,10 +85,10 @@ class OpenLLM(LLM):
     server_type: ServerType = "http"
     """Optional server type. Either 'http' or 'grpc'."""
     embedded: bool = True
-    """Initialize this LLM instance in current process by default. Should 
+    """Initialize this LLM instance in current process by default. Should
     only set to False when using in conjunction with BentoML Service."""
     llm_kwargs: Dict[str, Any]
-    """Key word arguments to be passed to openllm.LLM"""
+    """Keyword arguments to be passed to openllm.LLM"""
 
     _runner: Optional[openllm.LLMRunner] = PrivateAttr(default=None)
     _client: Union[
@@ -218,9 +217,9 @@ class OpenLLM(LLM):
     def _identifying_params(self) -> IdentifyingParams:
         """Get the identifying parameters."""
         if self._client is not None:
-            self.llm_kwargs.update(self._client.configuration)
-            model_name = self._client.model_name
-            model_id = self._client.model_id
+            self.llm_kwargs.update(self._client._config())
+            model_name = self._client._metadata()["model_name"]
+            model_id = self._client._metadata()["model_id"]
         else:
             if self._runner is None:
                 raise ValueError("Runner must be initialized.")
@@ -249,7 +248,7 @@ class OpenLLM(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-        run_manager: CallbackManagerForLLMRun | None = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         try:
@@ -266,10 +265,21 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            return self._client.query(prompt, **config.model_dump(flatten=True))
+            res = self._client.generate(
+                prompt, **config.model_dump(flatten=True)
+            ).responses[0]
         else:
             assert self._runner is not None
-            return self._runner(prompt, **config.model_dump(flatten=True))
+            res = self._runner(prompt, **config.model_dump(flatten=True))
+        if isinstance(res, dict) and "text" in res:
+            return res["text"]
+        elif isinstance(res, str):
+            return res
+        else:
+            raise ValueError(
+                "Expected result to be a dict with key 'text' or a string. "
+                f"Received {res}"
+            )
 
     async def _acall(
         self,
@@ -292,9 +302,10 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            return await self._client.acall(
-                "generate", prompt, **config.model_dump(flatten=True)
-            )
+            async_client = openllm.client.AsyncHTTPClient(self.server_url)
+            res = (
+                await async_client.generate(prompt, **config.model_dump(flatten=True))
+            ).responses[0]
         else:
             assert self._runner is not None
             (
@@ -305,6 +316,16 @@ class OpenLLM(LLM):
             generated_result = await self._runner.generate.async_run(
                 prompt, **generate_kwargs
             )
-            return self._runner.llm.postprocess_generate(
+            res = self._runner.llm.postprocess_generate(
                 prompt, generated_result, **postprocess_kwargs
+            )
+
+        if isinstance(res, dict) and "text" in res:
+            return res["text"]
+        elif isinstance(res, str):
+            return res
+        else:
+            raise ValueError(
+                "Expected result to be a dict with key 'text' or a string. "
+                f"Received {res}"
             )

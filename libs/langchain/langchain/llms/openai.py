@@ -20,13 +20,12 @@ from typing import (
     Union,
 )
 
-from pydantic import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
@@ -140,11 +139,25 @@ class BaseOpenAI(BaseLLM):
         return {"openai_api_key": "OPENAI_API_KEY"}
 
     @property
-    def lc_serializable(self) -> bool:
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+        if self.openai_api_base != "":
+            attributes["openai_api_base"] = self.openai_api_base
+
+        if self.openai_organization != "":
+            attributes["openai_organization"] = self.openai_organization
+
+        if self.openai_proxy != "":
+            attributes["openai_proxy"] = self.openai_proxy
+
+        return attributes
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
-    client: Any  #: :meta private:
-    model_name: str = Field("text-davinci-003", alias="model")
+    client: Any = None  #: :meta private:
+    model_name: str = Field(default="text-davinci-003", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -197,7 +210,9 @@ class BaseOpenAI(BaseLLM):
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
         model_name = data.get("model_name", "")
-        if model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4"):
+        if (
+            model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4")
+        ) and "-instruct" not in model_name:
             warnings.warn(
                 "You are trying to use a chat model. This way of initializing it is "
                 "no longer supported. Instead, please use: "
@@ -298,6 +313,7 @@ class BaseOpenAI(BaseLLM):
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
+                    chunk=chunk,
                     verbose=self.verbose,
                     logprobs=chunk.generation_info["logprobs"]
                     if chunk.generation_info
@@ -321,6 +337,7 @@ class BaseOpenAI(BaseLLM):
             if run_manager:
                 await run_manager.on_llm_new_token(
                     chunk.text,
+                    chunk=chunk,
                     verbose=self.verbose,
                     logprobs=chunk.generation_info["logprobs"]
                     if chunk.generation_info
@@ -561,6 +578,7 @@ class BaseOpenAI(BaseLLM):
             "gpt-3.5-turbo-0613": 4096,
             "gpt-3.5-turbo-16k": 16385,
             "gpt-3.5-turbo-16k-0613": 16385,
+            "gpt-3.5-turbo-instruct": 4096,
             "text-ada-001": 2049,
             "ada": 2049,
             "text-babbage-001": 2040,
@@ -687,6 +705,13 @@ class AzureOpenAI(BaseOpenAI):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "azure"
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        return {
+            "openai_api_type": self.openai_api_type,
+            "openai_api_version": self.openai_api_version,
+        }
 
 
 class OpenAIChat(BaseLLM):
@@ -826,9 +851,10 @@ class OpenAIChat(BaseLLM):
             self, messages=messages, run_manager=run_manager, **params
         ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
-            yield GenerationChunk(text=token)
+            chunk = GenerationChunk(text=token)
+            yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(token)
+                run_manager.on_llm_new_token(token, chunk=chunk)
 
     async def _astream(
         self,
@@ -843,9 +869,10 @@ class OpenAIChat(BaseLLM):
             self, messages=messages, run_manager=run_manager, **params
         ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
-            yield GenerationChunk(text=token)
+            chunk = GenerationChunk(text=token)
+            yield chunk
             if run_manager:
-                await run_manager.on_llm_new_token(token)
+                await run_manager.on_llm_new_token(token, chunk=chunk)
 
     def _generate(
         self,

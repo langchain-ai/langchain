@@ -7,7 +7,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class BrowserlessLoader(BaseLoader):
-    """Loads the content of webpages using Browserless' /content endpoint"""
+    """Load webpages with `Browserless` /content endpoint."""
 
     def __init__(
         self, api_token: str, urls: Union[str, List[str]], text_content: bool = True

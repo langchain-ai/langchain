@@ -5,7 +5,6 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
 import yaml
-from pydantic import Field
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.openapi.planner_prompt import (
@@ -20,10 +19,12 @@ from langchain.agents.agent_toolkits.openapi.planner_prompt import (
     PARSING_GET_PROMPT,
     PARSING_PATCH_PROMPT,
     PARSING_POST_PROMPT,
+    PARSING_PUT_PROMPT,
     REQUESTS_DELETE_TOOL_DESCRIPTION,
     REQUESTS_GET_TOOL_DESCRIPTION,
     REQUESTS_PATCH_TOOL_DESCRIPTION,
     REQUESTS_POST_TOOL_DESCRIPTION,
+    REQUESTS_PUT_TOOL_DESCRIPTION,
 )
 from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
 from langchain.agents.mrkl.base import ZeroShotAgent
@@ -33,6 +34,7 @@ from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
 from langchain.prompts import PromptTemplate
+from langchain.pydantic_v1 import Field
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
@@ -66,7 +68,7 @@ def _get_default_llm_chain_factory(
 class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
     """Requests GET tool with LLM-instructed extraction of truncated responses."""
 
-    name = "requests_get"
+    name: str = "requests_get"
     """Tool name."""
     description = REQUESTS_GET_TOOL_DESCRIPTION
     """Tool description."""
@@ -96,7 +98,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
 class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
     """Requests POST tool with LLM-instructed extraction of truncated responses."""
 
-    name = "requests_post"
+    name: str = "requests_post"
     """Tool name."""
     description = REQUESTS_POST_TOOL_DESCRIPTION
     """Tool description."""
@@ -125,7 +127,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
 class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
     """Requests PATCH tool with LLM-instructed extraction of truncated responses."""
 
-    name = "requests_patch"
+    name: str = "requests_patch"
     """Tool name."""
     description = REQUESTS_PATCH_TOOL_DESCRIPTION
     """Tool description."""
@@ -151,10 +153,39 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
         raise NotImplementedError()
 
 
+class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
+    """Requests PUT tool with LLM-instructed extraction of truncated responses."""
+
+    name: str = "requests_put"
+    """Tool name."""
+    description = REQUESTS_PUT_TOOL_DESCRIPTION
+    """Tool description."""
+    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    """Maximum length of the response to be returned."""
+    llm_chain: LLMChain = Field(
+        default_factory=_get_default_llm_chain_factory(PARSING_PUT_PROMPT)
+    )
+    """LLMChain used to extract the response."""
+
+    def _run(self, text: str) -> str:
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise e
+        response = self.requests_wrapper.put(data["url"], data["data"])
+        response = response[: self.response_length]
+        return self.llm_chain.predict(
+            response=response, instructions=data["output_instructions"]
+        ).strip()
+
+    async def _arun(self, text: str) -> str:
+        raise NotImplementedError()
+
+
 class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
     """A tool that sends a DELETE request and parses the response."""
 
-    name = "requests_delete"
+    name: str = "requests_delete"
     """The name of the tool."""
     description = REQUESTS_DELETE_TOOL_DESCRIPTION
     """The description of the tool."""
@@ -260,13 +291,16 @@ def _create_api_controller_tool(
             "{method} {route}".format(method=method, route=route.split("?")[0])
             for method, route in matches
         ]
-        endpoint_docs_by_name = {name: docs for name, _, docs in api_spec.endpoints}
         docs_str = ""
         for endpoint_name in endpoint_names:
-            docs = endpoint_docs_by_name.get(endpoint_name)
-            if not docs:
+            found_match = False
+            for name, _, docs in api_spec.endpoints:
+                regex_name = re.compile(re.sub("\{.*?\}", ".*", name))
+                if regex_name.match(endpoint_name):
+                    found_match = True
+                    docs_str += f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
+            if not found_match:
                 raise ValueError(f"{endpoint_name} endpoint does not exist.")
-            docs_str += f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
 
         agent = _create_api_controller_agent(base_url, docs_str, requests_wrapper, llm)
         return agent.run(plan_str)
@@ -286,7 +320,7 @@ def create_openapi_agent(
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = True,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Instantiate OpenAI API planner and controller for a given spec.
 

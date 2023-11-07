@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence
 
-from pydantic import Field
-
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.agents.agent_toolkits.nla.tool import NLATool
+from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
@@ -14,7 +13,19 @@ from langchain.utilities.requests import Requests
 
 
 class NLAToolkit(BaseToolkit):
-    """Natural Language API Toolkit."""
+    """Natural Language API Toolkit.
+
+    *Security Note*: This toolkit creates tools that enable making calls
+        to an Open API compliant API.
+
+        The tools created by this toolkit may be able to make GET, POST,
+        PATCH, PUT, DELETE requests to any of the exposed endpoints on
+        the API.
+
+        Control access to who can use this toolkit.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     nla_tools: Sequence[NLATool] = Field(...)
     """List of API Endpoint Tools."""

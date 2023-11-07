@@ -2,12 +2,13 @@ import random
 
 import pytest
 import requests
-from bs4 import BeautifulSoup
 
 from langchain.document_loaders import NewsURLLoader
 
 
 def get_random_news_url() -> str:
+    from bs4 import BeautifulSoup
+
     response = requests.get("https://news.google.com")
     soup = BeautifulSoup(response.text, "html.parser")
 

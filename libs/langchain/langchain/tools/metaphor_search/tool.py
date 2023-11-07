@@ -13,8 +13,8 @@ from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 class MetaphorSearchResults(BaseTool):
     """Tool that queries the Metaphor Search API and gets back json."""
 
-    name = "metaphor_search_results_json"
-    description = (
+    name: str = "metaphor_search_results_json"
+    description: str = (
         "A wrapper around Metaphor Search. "
         "Input should be a Metaphor-optimized query. "
         "Output is a JSON array of the query results"

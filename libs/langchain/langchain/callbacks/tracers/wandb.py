@@ -27,12 +27,23 @@ if TYPE_CHECKING:
 PRINT_WARNINGS = True
 
 
-def _serialize_inputs(run_inputs: dict) -> dict:
-    if "input_documents" in run_inputs:
-        docs = run_inputs["input_documents"]
-        return {f"input_document_{i}": doc.json() for i, doc in enumerate(docs)}
-    else:
-        return run_inputs
+def _serialize_io(run_inputs: Optional[dict]) -> dict:
+    if not run_inputs:
+        return {}
+    from google.protobuf.json_format import MessageToJson
+    from google.protobuf.message import Message
+
+    serialized_inputs = {}
+    for key, value in run_inputs.items():
+        if isinstance(value, Message):
+            serialized_inputs[key] = MessageToJson(value)
+        elif key == "input_documents":
+            serialized_inputs.update(
+                {f"input_document_{i}": doc.json() for i, doc in enumerate(value)}
+            )
+        else:
+            serialized_inputs[key] = value
+    return serialized_inputs
 
 
 class RunProcessor:
@@ -70,7 +81,9 @@ class RunProcessor:
             span_id=str(run.id) if run.id is not None else None,
             name=run.name,
             start_time_ms=int(run.start_time.timestamp() * 1000),
-            end_time_ms=int(run.end_time.timestamp() * 1000),
+            end_time_ms=int(run.end_time.timestamp() * 1000)
+            if run.end_time is not None
+            else None,
             status_code=self.trace_tree.StatusCode.SUCCESS
             if run.error is None
             else self.trace_tree.StatusCode.ERROR,
@@ -86,7 +99,7 @@ class RunProcessor:
         base_span = self._convert_run_to_wb_span(run)
         if base_span.attributes is None:
             base_span.attributes = {}
-        base_span.attributes["llm_output"] = run.outputs.get("llm_output", {})
+        base_span.attributes["llm_output"] = (run.outputs or {}).get("llm_output", {})
 
         base_span.results = [
             self.trace_tree.Result(
@@ -117,7 +130,7 @@ class RunProcessor:
 
         base_span.results = [
             self.trace_tree.Result(
-                inputs=_serialize_inputs(run.inputs), outputs=run.outputs
+                inputs=_serialize_io(run.inputs), outputs=_serialize_io(run.outputs)
             )
         ]
         base_span.child_spans = [
@@ -139,7 +152,7 @@ class RunProcessor:
         base_span = self._convert_run_to_wb_span(run)
         base_span.results = [
             self.trace_tree.Result(
-                inputs=_serialize_inputs(run.inputs), outputs=run.outputs
+                inputs=_serialize_io(run.inputs), outputs=_serialize_io(run.outputs)
             )
         ]
         base_span.child_spans = [
@@ -476,29 +489,25 @@ class WandbTracer(BaseTracer):
         If not, will start a new run with the provided run_args.
         """
         if self._wandb.run is None:
-            # Make a shallow copy of the run args, so we don't modify the original
             run_args = self._run_args or {}  # type: ignore
             run_args: dict = {**run_args}  # type: ignore
 
-            # Prefer to run in silent mode since W&B has a lot of output
-            # which can be undesirable when dealing with text-based models.
             if "settings" not in run_args:  # type: ignore
                 run_args["settings"] = {"silent": True}  # type: ignore
 
-            # Start the run and add the stream table
             self._wandb.init(**run_args)
-            if self._wandb.run is not None:
-                if should_print_url:
-                    run_url = self._wandb.run.settings.run_url
-                    self._wandb.termlog(
-                        f"Streaming LangChain activity to W&B at {run_url}\n"
-                        "`WandbTracer` is currently in beta.\n"
-                        "Please report any issues to "
-                        "https://github.com/wandb/wandb/issues with the tag "
-                        "`langchain`."
-                    )
+        if self._wandb.run is not None:
+            if should_print_url:
+                run_url = self._wandb.run.settings.run_url
+                self._wandb.termlog(
+                    f"Streaming LangChain activity to W&B at {run_url}\n"
+                    "`WandbTracer` is currently in beta.\n"
+                    "Please report any issues to "
+                    "https://github.com/wandb/wandb/issues with the tag "
+                    "`langchain`."
+                )
 
-                self._wandb.run._label(repo="langchain")
+            self._wandb.run._label(repo="langchain")
 
     def _persist_run(self, run: "Run") -> None:
         """Persist a run."""

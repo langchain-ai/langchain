@@ -39,7 +39,12 @@ def test_prompt_missing_input_variables() -> None:
     template = "This is a {foo} test."
     input_variables: list = []
     with pytest.raises(ValueError):
-        PromptTemplate(input_variables=input_variables, template=template)
+        PromptTemplate(
+            input_variables=input_variables, template=template, validate_template=True
+        )
+    assert PromptTemplate(
+        input_variables=input_variables, template=template
+    ).input_variables == ["foo"]
 
 
 def test_prompt_extra_input_variables() -> None:
@@ -47,7 +52,12 @@ def test_prompt_extra_input_variables() -> None:
     template = "This is a {foo} test."
     input_variables = ["foo", "bar"]
     with pytest.raises(ValueError):
-        PromptTemplate(input_variables=input_variables, template=template)
+        PromptTemplate(
+            input_variables=input_variables, template=template, validate_template=True
+        )
+    assert PromptTemplate(
+        input_variables=input_variables, template=template
+    ).input_variables == ["foo"]
 
 
 def test_prompt_wrong_input_variables() -> None:
@@ -55,7 +65,12 @@ def test_prompt_wrong_input_variables() -> None:
     template = "This is a {foo} test."
     input_variables = ["bar"]
     with pytest.raises(ValueError):
-        PromptTemplate(input_variables=input_variables, template=template)
+        PromptTemplate(
+            input_variables=input_variables, template=template, validate_template=True
+        )
+    assert PromptTemplate(
+        input_variables=input_variables, template=template
+    ).input_variables == ["foo"]
 
 
 def test_prompt_from_examples_valid() -> None:
@@ -163,6 +178,17 @@ Will it get confused{ }?
 
 
 @pytest.mark.requires("jinja2")
+def test_basic_sandboxing_with_jinja2() -> None:
+    """Test basic sandboxing with jinja2."""
+    import jinja2
+
+    template = " {{''.__class__.__bases__[0] }} "  # malicious code
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    with pytest.raises(jinja2.exceptions.SecurityError):
+        assert prompt.format() == []
+
+
+@pytest.mark.requires("jinja2")
 def test_prompt_from_jinja2_template_multiple_inputs() -> None:
     """Test with multiple input variables."""
     # Multiple input variables.
@@ -229,8 +255,14 @@ def test_prompt_jinja2_missing_input_variables() -> None:
     input_variables: list = []
     with pytest.warns(UserWarning):
         PromptTemplate(
-            input_variables=input_variables, template=template, template_format="jinja2"
+            input_variables=input_variables,
+            template=template,
+            template_format="jinja2",
+            validate_template=True,
         )
+    assert PromptTemplate(
+        input_variables=input_variables, template=template, template_format="jinja2"
+    ).input_variables == ["foo"]
 
 
 @pytest.mark.requires("jinja2")
@@ -240,8 +272,14 @@ def test_prompt_jinja2_extra_input_variables() -> None:
     input_variables = ["foo", "bar"]
     with pytest.warns(UserWarning):
         PromptTemplate(
-            input_variables=input_variables, template=template, template_format="jinja2"
+            input_variables=input_variables,
+            template=template,
+            template_format="jinja2",
+            validate_template=True,
         )
+    assert PromptTemplate(
+        input_variables=input_variables, template=template, template_format="jinja2"
+    ).input_variables == ["foo"]
 
 
 @pytest.mark.requires("jinja2")
@@ -251,5 +289,11 @@ def test_prompt_jinja2_wrong_input_variables() -> None:
     input_variables = ["bar"]
     with pytest.warns(UserWarning):
         PromptTemplate(
-            input_variables=input_variables, template=template, template_format="jinja2"
+            input_variables=input_variables,
+            template=template,
+            template_format="jinja2",
+            validate_template=True,
         )
+    assert PromptTemplate(
+        input_variables=input_variables, template=template, template_format="jinja2"
+    ).input_variables == ["foo"]

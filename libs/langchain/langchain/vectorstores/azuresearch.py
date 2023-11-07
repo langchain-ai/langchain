@@ -1,4 +1,3 @@
-"""Wrapper around Azure Cognitive Search."""
 from __future__ import annotations
 
 import base64
@@ -18,17 +17,17 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_env
-from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
 
@@ -74,29 +73,33 @@ def _get_search_client(
     scoring_profiles: Optional[List[ScoringProfile]] = None,
     default_scoring_profile: Optional[str] = None,
     default_fields: Optional[List[SearchField]] = None,
+    user_agent: Optional[str] = "langchain",
 ) -> SearchClient:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
-    from azure.identity import DefaultAzureCredential
+    from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
+        HnswVectorSearchAlgorithmConfiguration,
         PrioritizedFields,
         SearchIndex,
         SemanticConfiguration,
         SemanticField,
         SemanticSettings,
         VectorSearch,
-        VectorSearchAlgorithmConfiguration,
     )
 
     default_fields = default_fields or []
     if key is None:
         credential = DefaultAzureCredential()
+    elif key.upper() == "INTERACTIVE":
+        credential = InteractiveBrowserCredential()
+        credential.get_token("https://search.azure.com/.default")
     else:
         credential = AzureKeyCredential(key)
     index_client: SearchIndexClient = SearchIndexClient(
-        endpoint=endpoint, credential=credential, user_agent="langchain"
+        endpoint=endpoint, credential=credential, user_agent=user_agent
     )
     try:
         index_client.get_index(name=index_name)
@@ -113,12 +116,15 @@ def _get_search_client(
                 - set(fields_types.items())
             }
             if len(missing_fields) > 0:
-                fmt_err = lambda x: (  # noqa: E731
-                    f"{x} current type: '{fields_types.get(x, 'MISSING')}'. It has to "
-                    f"be '{mandatory_fields.get(x)}' or you can point to a different "
-                    f"'{mandatory_fields.get(x)}' field name by using the env variable "
-                    f"'AZURESEARCH_FIELDS_{x.upper()}'"
-                )
+                # Helper for formatting field information for each missing field.
+                def fmt_err(x: str) -> str:
+                    return (
+                        f"{x} current type: '{fields_types.get(x, 'MISSING')}'. "
+                        f"It has to be '{mandatory_fields.get(x)}' or you can point "
+                        f"to a different '{mandatory_fields.get(x)}' field name by "
+                        f"using the env variable 'AZURESEARCH_FIELDS_{x.upper()}'"
+                    )
+
                 error = "\n".join([fmt_err(x) for x in missing_fields])
                 raise ValueError(
                     f"You need to specify at least the following fields "
@@ -131,10 +137,10 @@ def _get_search_client(
         if vector_search is None:
             vector_search = VectorSearch(
                 algorithm_configurations=[
-                    VectorSearchAlgorithmConfiguration(
+                    HnswVectorSearchAlgorithmConfiguration(
                         name="default",
                         kind="hnsw",
-                        hnsw_parameters={  # type: ignore
+                        parameters={  # type: ignore
                             "m": 4,
                             "efConstruction": 400,
                             "efSearch": 500,
@@ -172,12 +178,12 @@ def _get_search_client(
         endpoint=endpoint,
         index_name=index_name,
         credential=credential,
-        user_agent="langchain",
+        user_agent=user_agent,
     )
 
 
 class AzureSearch(VectorStore):
-    """Azure Cognitive Search vector store."""
+    """`Azure Cognitive Search` vector store."""
 
     def __init__(
         self,
@@ -228,6 +234,9 @@ class AzureSearch(VectorStore):
                 type=SearchFieldDataType.String,
             ),
         ]
+        user_agent = "langchain"
+        if "user_agent" in kwargs and kwargs["user_agent"]:
+            user_agent += " " + kwargs["user_agent"]
         self.client = _get_search_client(
             azure_search_endpoint,
             azure_search_key,
@@ -239,6 +248,7 @@ class AzureSearch(VectorStore):
             scoring_profiles=scoring_profiles,
             default_scoring_profile=default_scoring_profile,
             default_fields=default_fields,
+            user_agent=user_agent,
         )
         self.search_type = search_type
         self.semantic_configuration_name = semantic_configuration_name
@@ -322,6 +332,17 @@ class AzureSearch(VectorStore):
             raise ValueError(f"search_type of {search_type} not allowed.")
         return docs
 
+    def similarity_search_with_relevance_scores(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        score_threshold = kwargs.pop("score_threshold", None)
+        result = self.vector_search_with_score(query, k=k, **kwargs)
+        return (
+            result
+            if score_threshold is None
+            else [r for r in result if r[1] >= score_threshold]
+        )
+
     def vector_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
@@ -350,21 +371,31 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        from azure.search.documents.models import Vector
 
         results = self.client.search(
             search_text="",
-            vector=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
-            top_k=k,
-            vector_fields=FIELDS_CONTENT_VECTOR,
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
+            vectors=[
+                Vector(
+                    value=np.array(
+                        self.embedding_function(query), dtype=np.float32
+                    ).tolist(),
+                    k=k,
+                    fields=FIELDS_CONTENT_VECTOR,
+                )
+            ],
             filter=filters,
         )
         # Convert results to Document objects
         docs = [
             (
                 Document(
-                    page_content=result[FIELDS_CONTENT],
-                    metadata=json.loads(result[FIELDS_METADATA]),
+                    page_content=result.pop(FIELDS_CONTENT),
+                    metadata=json.loads(result[FIELDS_METADATA])
+                    if FIELDS_METADATA in result
+                    else {
+                        k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR
+                    },
                 ),
                 float(result["@search.score"]),
             )
@@ -400,13 +431,19 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        from azure.search.documents.models import Vector
 
         results = self.client.search(
             search_text=query,
-            vector=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
-            top_k=k,
-            vector_fields=FIELDS_CONTENT_VECTOR,
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
+            vectors=[
+                Vector(
+                    value=np.array(
+                        self.embedding_function(query), dtype=np.float32
+                    ).tolist(),
+                    k=k,
+                    fields=FIELDS_CONTENT_VECTOR,
+                )
+            ],
             filter=filters,
             top=k,
         )
@@ -414,8 +451,12 @@ class AzureSearch(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result[FIELDS_CONTENT],
-                    metadata=json.loads(result[FIELDS_METADATA]),
+                    page_content=result.pop(FIELDS_CONTENT),
+                    metadata=json.loads(result[FIELDS_METADATA])
+                    if FIELDS_METADATA in result
+                    else {
+                        k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR
+                    },
                 ),
                 float(result["@search.score"]),
             )
@@ -436,14 +477,32 @@ class AzureSearch(VectorStore):
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
-        docs_and_scores = self.semantic_hybrid_search_with_score(
+        docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
             query, k=k, filters=kwargs.get("filters", None)
         )
-        return [doc for doc, _ in docs_and_scores]
+        return [doc for doc, _, _ in docs_and_scores]
 
     def semantic_hybrid_search_with_score(
-        self, query: str, k: int = 4, filters: Optional[str] = None
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
+        """
+        Returns the most similar indexed documents to the query text.
+
+        Args:
+            query (str): The query text for which to find similar documents.
+            k (int): The number of documents to return. Default is 4.
+
+        Returns:
+            List[Document]: A list of documents that are most similar to the query text.
+        """
+        docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
+            query, k=k, filters=kwargs.get("filters", None)
+        )
+        return [(doc, score) for doc, score, _ in docs_and_scores]
+
+    def semantic_hybrid_search_with_score_and_rerank(
+        self, query: str, k: int = 4, filters: Optional[str] = None
+    ) -> List[Tuple[Document, float, float]]:
         """Return docs most similar to query with an hybrid query.
 
         Args:
@@ -453,12 +512,19 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        from azure.search.documents.models import Vector
+
         results = self.client.search(
             search_text=query,
-            vector=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
-            top_k=50,  # Hardcoded value to maximize L2 retrieval
-            vector_fields=FIELDS_CONTENT_VECTOR,
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
+            vectors=[
+                Vector(
+                    value=np.array(
+                        self.embedding_function(query), dtype=np.float32
+                    ).tolist(),
+                    k=50,
+                    fields=FIELDS_CONTENT_VECTOR,
+                )
+            ],
             filter=filters,
             query_type="semantic",
             query_language=self.semantic_query_language,
@@ -479,9 +545,17 @@ class AzureSearch(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result["content"],
+                    page_content=result.pop(FIELDS_CONTENT),
                     metadata={
-                        **json.loads(result["metadata"]),
+                        **(
+                            json.loads(result[FIELDS_METADATA])
+                            if FIELDS_METADATA in result
+                            else {
+                                k: v
+                                for k, v in result.items()
+                                if k != FIELDS_CONTENT_VECTOR
+                            }
+                        ),
                         **{
                             "captions": {
                                 "text": result.get("@search.captions", [{}])[0].text,
@@ -498,6 +572,7 @@ class AzureSearch(VectorStore):
                     },
                 ),
                 float(result["@search.score"]),
+                float(result["@search.reranker_score"]),
             )
             for result in results
         ]
@@ -526,12 +601,12 @@ class AzureSearch(VectorStore):
 
 
 class AzureSearchVectorStoreRetriever(BaseRetriever):
-    """Retriever that uses Azure Search to find similar documents."""
+    """Retriever that uses `Azure Cognitive Search`."""
 
     vectorstore: AzureSearch
     """Azure Search instance used to find similar documents."""
     search_type: str = "hybrid"
-    """Type of search to perform. Options are "similarity", "hybrid", 
+    """Type of search to perform. Options are "similarity", "hybrid",
     "semantic_hybrid"."""
     k: int = 4
     """Number of documents to return."""
@@ -553,15 +628,15 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
         query: str,
-        *,
         run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         if self.search_type == "similarity":
-            docs = self.vectorstore.vector_search(query, k=self.k)
+            docs = self.vectorstore.vector_search(query, k=self.k, **kwargs)
         elif self.search_type == "hybrid":
-            docs = self.vectorstore.hybrid_search(query, k=self.k)
+            docs = self.vectorstore.hybrid_search(query, k=self.k, **kwargs)
         elif self.search_type == "semantic_hybrid":
-            docs = self.vectorstore.semantic_hybrid_search(query, k=self.k)
+            docs = self.vectorstore.semantic_hybrid_search(query, k=self.k, **kwargs)
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs

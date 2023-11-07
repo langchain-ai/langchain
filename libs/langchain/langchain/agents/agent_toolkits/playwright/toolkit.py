@@ -3,9 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Type, cast
 
-from pydantic import Extra, root_validator
-
 from langchain.agents.agent_toolkits.base import BaseToolkit
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.tools.base import BaseTool
 from langchain.tools.playwright.base import (
     BaseBrowserTool,
@@ -32,7 +31,32 @@ else:
 
 
 class PlayWrightBrowserToolkit(BaseToolkit):
-    """Toolkit for PlayWright browser tools."""
+    """Toolkit for PlayWright browser tools.
+
+    **Security Note**: This toolkit provides code to control a web-browser.
+
+        Careful if exposing this toolkit to end-users. The tools in the toolkit
+        are capable of navigating to arbitrary webpages, clicking on arbitrary
+        elements, and extracting arbitrary text and hyperlinks from webpages.
+
+        Specifically, by default this toolkit allows navigating to:
+
+        - Any URL (including any internal network URLs)
+        - And local files
+
+        If exposing to end-users, consider limiting network access to the
+        server that hosts the agent; in addition, consider it is advised
+        to create a custom NavigationTool wht an args_schema that limits the URLs
+        that can be navigated to (e.g., only allow navigating to URLs that
+        start with a particular prefix).
+
+        Remember to scope permissions to the minimal permissions necessary for
+        the application. If the default tool selection is not appropriate for
+        the application, consider creating a custom toolkit with the appropriate
+        tools.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     sync_browser: Optional["SyncBrowser"] = None
     async_browser: Optional["AsyncBrowser"] = None

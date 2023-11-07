@@ -1,22 +1,36 @@
-"""Wrapper around FAISS vector database."""
 from __future__ import annotations
 
+import asyncio
+import logging
 import operator
 import os
 import pickle
 import uuid
 import warnings
+from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sized,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 
 from langchain.docstore.base import AddableMixin, Docstore
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
+
+logger = logging.getLogger(__name__)
 
 
 def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
@@ -46,22 +60,38 @@ def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
     return faiss
 
 
-class FAISS(VectorStore):
-    """Wrapper around FAISS vector database.
+def _len_check_if_sized(x: Any, y: Any, x_name: str, y_name: str) -> None:
+    if isinstance(x, Sized) and isinstance(y, Sized) and len(x) != len(y):
+        raise ValueError(
+            f"{x_name} and {y_name} expected to be equal length but "
+            f"len({x_name})={len(x)} and len({y_name})={len(y)}"
+        )
+    return
 
-    To use, you should have the ``faiss`` python package installed.
+
+class FAISS(VectorStore):
+    """`Meta Faiss` vector store.
+
+    To use, you must have the ``faiss`` python package installed.
 
     Example:
         .. code-block:: python
 
-            from langchain import FAISS
-            faiss = FAISS(embedding_function, index, docstore, index_to_docstore_id)
+            from langchain.embeddings.openai import OpenAIEmbeddings
+            from langchain.vectorstores import FAISS
+
+            embeddings = OpenAIEmbeddings()
+            texts = ["FAISS is an important library", "LangChain supports FAISS"]
+            faiss = FAISS.from_texts(texts, embeddings)
 
     """
 
     def __init__(
         self,
-        embedding_function: Callable,
+        embedding_function: Union[
+            Callable[[str], List[float]],
+            Embeddings,
+        ],
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
@@ -70,6 +100,11 @@ class FAISS(VectorStore):
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
     ):
         """Initialize with necessary components."""
+        if not isinstance(embedding_function, Embeddings):
+            logger.warning(
+                "`embedding_function` is expected to be an Embeddings object, support "
+                "for passing in a function will soon be removed."
+            )
         self.embedding_function = embedding_function
         self.index = index
         self.docstore = docstore
@@ -89,42 +124,83 @@ class FAISS(VectorStore):
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
-        # TODO: Accept embeddings object directly
-        return None
+        return (
+            self.embedding_function
+            if isinstance(self.embedding_function, Embeddings)
+            else None
+        )
+
+    def _embed_documents(self, texts: List[str]) -> List[List[float]]:
+        if isinstance(self.embedding_function, Embeddings):
+            return self.embedding_function.embed_documents(texts)
+        else:
+            return [self.embedding_function(text) for text in texts]
+
+    async def _aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        if isinstance(self.embedding_function, Embeddings):
+            return await self.embedding_function.aembed_documents(texts)
+        else:
+            # return await asyncio.gather(
+            #     [self.embedding_function(text) for text in texts]
+            # )
+            raise Exception(
+                "`embedding_function` is expected to be an Embeddings object, support "
+                "for passing in a function will soon be removed."
+            )
+
+    def _embed_query(self, text: str) -> List[float]:
+        if isinstance(self.embedding_function, Embeddings):
+            return self.embedding_function.embed_query(text)
+        else:
+            return self.embedding_function(text)
+
+    async def _aembed_query(self, text: str) -> List[float]:
+        if isinstance(self.embedding_function, Embeddings):
+            return await self.embedding_function.aembed_query(text)
+        else:
+            # return await self.embedding_function(text)
+            raise Exception(
+                "`embedding_function` is expected to be an Embeddings object, support "
+                "for passing in a function will soon be removed."
+            )
 
     def __add(
         self,
         texts: Iterable[str],
         embeddings: Iterable[List[float]],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[Iterable[dict]] = None,
         ids: Optional[List[str]] = None,
-        **kwargs: Any,
     ) -> List[str]:
+        faiss = dependable_faiss_import()
+
         if not isinstance(self.docstore, AddableMixin):
             raise ValueError(
                 "If trying to add texts, the underlying docstore should support "
                 f"adding items, which {self.docstore} does not"
             )
-        documents = []
-        for i, text in enumerate(texts):
-            metadata = metadatas[i] if metadatas else {}
-            documents.append(Document(page_content=text, metadata=metadata))
-        if ids is None:
-            ids = [str(uuid.uuid4()) for _ in texts]
-        # Add to the index, the index_to_id mapping, and the docstore.
-        starting_len = len(self.index_to_docstore_id)
-        faiss = dependable_faiss_import()
+
+        _len_check_if_sized(texts, metadatas, "texts", "metadatas")
+        _metadatas = metadatas or ({} for _ in texts)
+        documents = [
+            Document(page_content=t, metadata=m) for t, m in zip(texts, _metadatas)
+        ]
+
+        _len_check_if_sized(documents, embeddings, "documents", "embeddings")
+        _len_check_if_sized(documents, ids, "documents", "ids")
+
+        # Add to the index.
         vector = np.array(embeddings, dtype=np.float32)
         if self._normalize_L2:
             faiss.normalize_L2(vector)
         self.index.add(vector)
-        # Get list of index, id, and docs.
-        full_info = [(starting_len + i, ids[i], doc) for i, doc in enumerate(documents)]
+
         # Add information to docstore and index.
-        self.docstore.add({_id: doc for _, _id, doc in full_info})
-        index_to_id = {index: _id for index, _id, _ in full_info}
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
+        self.docstore.add({id_: doc for id_, doc in zip(ids, documents)})
+        starting_len = len(self.index_to_docstore_id)
+        index_to_id = {starting_len + j: id_ for j, id_ in enumerate(ids)}
         self.index_to_docstore_id.update(index_to_id)
-        return [_id for _, _id, _ in full_info]
+        return ids
 
     def add_texts(
         self,
@@ -143,14 +219,31 @@ class FAISS(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        if not isinstance(self.docstore, AddableMixin):
-            raise ValueError(
-                "If trying to add texts, the underlying docstore should support "
-                f"adding items, which {self.docstore} does not"
-            )
-        # Embed and create the documents.
-        embeddings = [self.embedding_function(text) for text in texts]
-        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids, **kwargs)
+        texts = list(texts)
+        embeddings = self._embed_documents(texts)
+        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
+
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore
+            asynchronously.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        texts = list(texts)
+        embeddings = await self._aembed_documents(texts)
+        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
 
     def add_embeddings(
         self,
@@ -159,7 +252,7 @@ class FAISS(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Add the given texts and embeddings to the vectorstore.
 
         Args:
             text_embeddings: Iterable pairs of string and embedding to
@@ -170,15 +263,9 @@ class FAISS(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        if not isinstance(self.docstore, AddableMixin):
-            raise ValueError(
-                "If trying to add texts, the underlying docstore should support "
-                f"adding items, which {self.docstore} does not"
-            )
         # Embed and create the documents.
         texts, embeddings = zip(*text_embeddings)
-
-        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids, **kwargs)
+        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
 
     def similarity_search_with_score_by_vector(
         self,
@@ -243,6 +330,42 @@ class FAISS(VectorStore):
             ]
         return docs[:k]
 
+    async def asimilarity_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query asynchronously.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, Any]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+            **kwargs: kwargs to be passed to similarity search. Can include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of documents most similar to the query text and L2 distance
+            in float for each. Lower score represents more similarity.
+        """
+
+        # This is a temporary workaround to make the similarity search asynchronous.
+        func = partial(
+            self.similarity_search_with_score_by_vector,
+            embedding,
+            k=k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
     def similarity_search_with_score(
         self,
         query: str,
@@ -264,8 +387,39 @@ class FAISS(VectorStore):
             List of documents most similar to the query text with
             L2 distance in float. Lower score represents more similarity.
         """
-        embedding = self.embedding_function(query)
+        embedding = self._embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
+            embedding,
+            k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        return docs
+
+    async def asimilarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query asynchronously.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+
+        Returns:
+            List of documents most similar to the query text with
+            L2 distance in float. Lower score represents more similarity.
+        """
+        embedding = await self._aembed_query(query)
+        docs = await self.asimilarity_search_with_score_by_vector(
             embedding,
             k,
             filter=filter,
@@ -303,6 +457,35 @@ class FAISS(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    async def asimilarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector asynchronously.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+
+        Returns:
+            List of Documents most similar to the embedding.
+        """
+        docs_and_scores = await self.asimilarity_search_with_score_by_vector(
+            embedding,
+            k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        return [doc for doc, _ in docs_and_scores]
+
     def similarity_search(
         self,
         query: str,
@@ -324,6 +507,31 @@ class FAISS(VectorStore):
             List of Documents most similar to the query.
         """
         docs_and_scores = self.similarity_search_with_score(
+            query, k, filter=filter, fetch_k=fetch_k, **kwargs
+        )
+        return [doc for doc, _ in docs_and_scores]
+
+    async def asimilarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to query asynchronously.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        docs_and_scores = await self.asimilarity_search_with_score(
             query, k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
@@ -400,6 +608,45 @@ class FAISS(VectorStore):
             docs_and_scores.append((doc, score))
         return docs_and_scores
 
+    async def amax_marginal_relevance_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        *,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and their similarity scores selected using the maximal marginal
+            relevance asynchronously.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch before filtering to
+                     pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents and similarity scores selected by maximal marginal
+                relevance and score for each.
+        """
+        # This is a temporary workaround to make the similarity search asynchronous.
+        func = partial(
+            self.max_marginal_relevance_search_with_score_by_vector,
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+        )
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -431,6 +678,39 @@ class FAISS(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance asynchronously.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch before filtering to
+                     pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        docs_and_scores = (
+            await self.amax_marginal_relevance_search_with_score_by_vector(
+                embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, filter=filter
+            )
+        )
+        return [doc for doc, _ in docs_and_scores]
+
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -457,8 +737,45 @@ class FAISS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        embedding = self.embedding_function(query)
+        embedding = self._embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )
+        return docs
+
+    async def amax_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance asynchronously.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch before filtering (if needed) to
+                     pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        embedding = await self._aembed_query(query)
+        docs = await self.amax_marginal_relevance_search_by_vector(
             embedding,
             k=k,
             fetch_k=fetch_k,
@@ -480,22 +797,26 @@ class FAISS(VectorStore):
         """
         if ids is None:
             raise ValueError("No ids provided to delete.")
+        missing_ids = set(ids).difference(self.index_to_docstore_id.values())
+        if missing_ids:
+            raise ValueError(
+                f"Some specified ids do not exist in the current store. Ids not found: "
+                f"{missing_ids}"
+            )
 
-        overlapping = set(ids).intersection(self.index_to_docstore_id.values())
-        if not overlapping:
-            raise ValueError("ids do not exist in the current object")
+        reversed_index = {id_: idx for idx, id_ in self.index_to_docstore_id.items()}
+        index_to_delete = [reversed_index[id_] for id_ in ids]
 
-        _reversed_index = {v: k for k, v in self.index_to_docstore_id.items()}
-
-        index_to_delete = [_reversed_index[i] for i in ids]
-
-        # Removing ids from index.
         self.index.remove_ids(np.array(index_to_delete, dtype=np.int64))
-        for _id in index_to_delete:
-            del self.index_to_docstore_id[_id]
-
-        # Remove items from docstore.
         self.docstore.delete(ids)
+
+        remaining_ids = [
+            id_
+            for i, id_ in sorted(self.index_to_docstore_id.items())
+            if i not in index_to_delete
+        ]
+        self.index_to_docstore_id = {i: id_ for i, id_ in enumerate(remaining_ids)}
+
         return True
 
     def merge_from(self, target: FAISS) -> None:
@@ -533,50 +854,32 @@ class FAISS(VectorStore):
     @classmethod
     def __from(
         cls,
-        texts: List[str],
+        texts: Iterable[str],
         embeddings: List[List[float]],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[Iterable[dict]] = None,
         ids: Optional[List[str]] = None,
         normalize_L2: bool = False,
+        distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
         **kwargs: Any,
     ) -> FAISS:
         faiss = dependable_faiss_import()
-        distance_strategy = kwargs.get(
-            "distance_strategy", DistanceStrategy.EUCLIDEAN_DISTANCE
-        )
         if distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             index = faiss.IndexFlatIP(len(embeddings[0]))
         else:
             # Default to L2, currently other metric types not initialized.
             index = faiss.IndexFlatL2(len(embeddings[0]))
-        vector = np.array(embeddings, dtype=np.float32)
-        if normalize_L2 and distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-            faiss.normalize_L2(vector)
-        index.add(vector)
-        documents = []
-        if ids is None:
-            ids = [str(uuid.uuid4()) for _ in texts]
-        for i, text in enumerate(texts):
-            metadata = metadatas[i] if metadatas else {}
-            documents.append(Document(page_content=text, metadata=metadata))
-        index_to_id = dict(enumerate(ids))
-
-        if len(index_to_id) != len(documents):
-            raise Exception(
-                f"{len(index_to_id)} ids provided for {len(documents)} documents."
-                " Each document should have an id."
-            )
-
-        docstore = InMemoryDocstore(dict(zip(index_to_id.values(), documents)))
-        return cls(
-            embedding.embed_query,
+        vecstore = cls(
+            embedding,
             index,
-            docstore,
-            index_to_id,
+            InMemoryDocstore(),
+            {},
             normalize_L2=normalize_L2,
+            distance_strategy=distance_strategy,
             **kwargs,
         )
+        vecstore.__add(texts, embeddings, metadatas=metadatas, ids=ids)
+        return vecstore
 
     @classmethod
     def from_texts(
@@ -599,8 +902,9 @@ class FAISS(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import FAISS
+                from langchain.vectorstores import FAISS
                 from langchain.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 faiss = FAISS.from_texts(texts, embeddings)
         """
@@ -615,11 +919,48 @@ class FAISS(VectorStore):
         )
 
     @classmethod
-    def from_embeddings(
+    async def afrom_texts(
         cls,
-        text_embeddings: List[Tuple[str, List[float]]],
+        texts: list[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> FAISS:
+        """Construct FAISS wrapper from raw documents asynchronously.
+
+        This is a user friendly interface that:
+            1. Embeds documents.
+            2. Creates an in memory docstore
+            3. Initializes the FAISS database
+
+        This is intended to be a quick way to get started.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.vectorstores import FAISS
+                from langchain.embeddings import OpenAIEmbeddings
+
+                embeddings = OpenAIEmbeddings()
+                faiss = await FAISS.afrom_texts(texts, embeddings)
+        """
+        embeddings = await embedding.aembed_documents(texts)
+        return cls.__from(
+            texts,
+            embeddings,
+            embedding,
+            metadatas=metadatas,
+            ids=ids,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_embeddings(
+        cls,
+        text_embeddings: Iterable[Tuple[str, List[float]]],
+        embedding: Embeddings,
+        metadatas: Optional[Iterable[dict]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> FAISS:
@@ -635,11 +976,12 @@ class FAISS(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import FAISS
+                from langchain.vectorstores import FAISS
                 from langchain.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
-                text_embedding_pairs = list(zip(texts, text_embeddings))
+                text_embedding_pairs = zip(texts, text_embeddings)
                 faiss = FAISS.from_embeddings(text_embedding_pairs, embeddings)
         """
         texts = [t[0] for t in text_embeddings]
@@ -647,6 +989,24 @@ class FAISS(VectorStore):
         return cls.__from(
             texts,
             embeddings,
+            embedding,
+            metadatas=metadatas,
+            ids=ids,
+            **kwargs,
+        )
+
+    @classmethod
+    async def afrom_embeddings(
+        cls,
+        text_embeddings: Iterable[Tuple[str, List[float]]],
+        embedding: Embeddings,
+        metadatas: Optional[Iterable[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> FAISS:
+        """Construct FAISS wrapper from raw documents asynchronously."""
+        return cls.from_embeddings(
+            text_embeddings,
             embedding,
             metadatas=metadatas,
             ids=ids,
@@ -689,6 +1049,7 @@ class FAISS(VectorStore):
                 and index_to_docstore_id from.
             embeddings: Embeddings to use when generating queries
             index_name: for saving with a specific index file name
+            asynchronous: whether to use async version or not
         """
         path = Path(folder_path)
         # load index separately since it is not picklable
@@ -700,9 +1061,7 @@ class FAISS(VectorStore):
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
-        return cls(
-            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
-        )
+        return cls(embeddings, index, docstore, index_to_docstore_id, **kwargs)
 
     def serialize_to_bytes(self) -> bytes:
         """Serialize FAISS index, docstore, and index_to_docstore_id to bytes."""
@@ -717,9 +1076,7 @@ class FAISS(VectorStore):
     ) -> FAISS:
         """Deserialize FAISS index, docstore, and index_to_docstore_id from bytes."""
         index, docstore, index_to_docstore_id = pickle.loads(serialized)
-        return cls(
-            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
-        )
+        return cls(embeddings, index, docstore, index_to_docstore_id, **kwargs)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
@@ -740,6 +1097,8 @@ class FAISS(VectorStore):
         elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             # Default behavior is to use euclidean distance relevancy
             return self._euclidean_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.COSINE:
+            return self._cosine_relevance_score_fn
         else:
             raise ValueError(
                 "Unknown distance strategy, must be cosine, max_inner_product,"
@@ -764,6 +1123,35 @@ class FAISS(VectorStore):
                 " FAISS constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(
+            query,
+            k=k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        docs_and_rel_scores = [
+            (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
+        ]
+        return docs_and_rel_scores
+
+    async def _asimilarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and their similarity scores on a scale from 0 to 1."""
+        # Pop score threshold so that only relevancy scores, not raw scores, are
+        # filtered.
+        relevance_score_fn = self._select_relevance_score_fn()
+        if relevance_score_fn is None:
+            raise ValueError(
+                "normalize_score_fn must be provided to"
+                " FAISS constructor to normalize scores"
+            )
+        docs_and_scores = await self.asimilarity_search_with_score(
             query,
             k=k,
             filter=filter,

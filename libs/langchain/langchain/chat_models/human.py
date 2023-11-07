@@ -5,7 +5,6 @@ from io import StringIO
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import yaml
-from pydantic import Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -13,6 +12,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Field
 from langchain.schema.messages import (
     BaseMessage,
     HumanMessage,
@@ -58,7 +58,10 @@ def _collect_yaml_input(
         if message is None:
             return HumanMessage(content="")
         if stop:
-            message.content = enforce_stop_tokens(message.content, stop)
+            if isinstance(message.content, str):
+                message.content = enforce_stop_tokens(message.content, stop)
+            else:
+                raise ValueError("Cannot use when output is not a string.")
         return message
     except yaml.YAMLError:
         raise ValueError("Invalid YAML string entered.")

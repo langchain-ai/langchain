@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from importlib.metadata import version
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,38 +14,48 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
+    Type,
     Union,
 )
 
-from pydantic import Field, root_validator
+from packaging.version import Version, parse
 
+from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _agenerate_from_stream,
+    _generate_from_stream,
+)
 from langchain.llms.base import create_base_retry_decorator
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.language_model import LanguageModelInput
 from langchain.schema.messages import (
-    AIMessage,
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
-    ChatMessage,
     ChatMessageChunk,
-    FunctionMessage,
     FunctionMessageChunk,
-    HumanMessage,
     HumanMessageChunk,
-    SystemMessage,
     SystemMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.schema.runnable import Runnable
+from langchain.utils import (
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 
 if TYPE_CHECKING:
+    import httpx
     import tiktoken
+
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +98,9 @@ async def acompletion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
+    if _is_openai_v1():
+        return await llm.async_client.create(**kwargs)
+
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
@@ -98,12 +112,17 @@ async def acompletion_with_retry(
 
 
 def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
     if _dict.get("function_call"):
         additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        if (
+            "name" in additional_kwargs["function_call"]
+            and additional_kwargs["function_call"]["name"] is None
+        ):
+            additional_kwargs["function_call"]["name"] = ""
     else:
         additional_kwargs = {}
 
@@ -121,65 +140,13 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
-    role = _dict["role"]
-    if role == "user":
-        return HumanMessage(content=_dict["content"])
-    elif role == "assistant":
-        # Fix for azure
-        # Also OpenAI returns None for tool invocations
-        content = _dict.get("content", "") or ""
-        if _dict.get("function_call"):
-            additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        else:
-            additional_kwargs = {}
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
-    elif role == "system":
-        return SystemMessage(content=_dict["content"])
-    elif role == "function":
-        return FunctionMessage(content=_dict["content"], name=_dict["name"])
-    else:
-        return ChatMessage(content=_dict["content"], role=role)
-
-
-def convert_openai_messages(messages: List[dict]) -> List[BaseMessage]:
-    """Convert dictionaries representing OpenAI messages to LangChain format.
-
-    Args:
-        messages: List of dictionaries representing OpenAI messages
-
-    Returns:
-        List of LangChain BaseMessage objects.
-    """
-    return [_convert_dict_to_message(m) for m in messages]
-
-
-def _convert_message_to_dict(message: BaseMessage) -> dict:
-    if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
-    elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
-    elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
-        if "function_call" in message.additional_kwargs:
-            message_dict["function_call"] = message.additional_kwargs["function_call"]
-    elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
-    elif isinstance(message, FunctionMessage):
-        message_dict = {
-            "role": "function",
-            "content": message.content,
-            "name": message.name,
-        }
-    else:
-        raise ValueError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
-        message_dict["name"] = message.additional_kwargs["name"]
-    return message_dict
+def _is_openai_v1() -> bool:
+    _version = parse(version("openai"))
+    return _version >= Version("1.0.0")
 
 
 class ChatOpenAI(BaseChatModel):
-    """Wrapper around OpenAI Chat large language models.
+    """`OpenAI` Chat large language models API.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key.
@@ -199,26 +166,48 @@ class ChatOpenAI(BaseChatModel):
         return {"openai_api_key": "OPENAI_API_KEY"}
 
     @property
-    def lc_serializable(self) -> bool:
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        if self.openai_organization != "":
+            attributes["openai_organization"] = self.openai_organization
+
+        if self.openai_api_base != "":
+            attributes["openai_api_base"] = self.openai_api_base
+
+        if self.openai_proxy != "":
+            attributes["openai_proxy"] = self.openai_proxy
+
+        return attributes
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[str] = None
+    # When updating this to use a SecretStr
+    # Check for classes that derive from this class (as some of them
+    # may assume openai_api_key is a str)
+    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
-    openai_api_base: Optional[str] = None
-    openai_organization: Optional[str] = None
+    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_organization: Optional[str] = Field(default=None, alias="organization")
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    request_timeout: Union[float, Tuple[float, float], httpx.Timeout, None] = Field(
+        default=None, alias="timeout"
+    )
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
-    max_retries: int = 6
+    max_retries: int = 2
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
@@ -300,14 +289,24 @@ class ChatOpenAI(BaseChatModel):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        try:
+
+        if _is_openai_v1():
+            values["client"] = openai.OpenAI(
+                api_key=values["openai_api_key"],
+                timeout=values["request_timeout"],
+                max_retries=values["max_retries"],
+                organization=values["openai_organization"],
+                base_url=values["openai_api_base"] or None,
+            ).chat.completions
+            values["async_client"] = openai.AsyncOpenAI(
+                api_key=values["openai_api_key"],
+                timeout=values["request_timeout"],
+                max_retries=values["max_retries"],
+                organization=values["openai_organization"],
+                base_url=values["openai_api_base"] or None,
+            ).chat.completions
+        else:
             values["client"] = openai.ChatCompletion
-        except AttributeError:
-            raise ValueError(
-                "`openai` has no `ChatCompletion` attribute, this is likely "
-                "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`."
-            )
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
@@ -317,20 +316,24 @@ class ChatOpenAI(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        return {
+        params = {
             "model": self.model_name,
-            "request_timeout": self.request_timeout,
-            "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
             **self.model_kwargs,
         }
+        if self.max_tokens is not None:
+            params["max_tokens"] = self.max_tokens
+        return params
 
     def completion_with_retry(
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
+        if _is_openai_v1():
+            return self.client.create(**kwargs)
+
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
         @retry_decorator
@@ -341,6 +344,7 @@ class ChatOpenAI(BaseChatModel):
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
+        system_fingerprint = None
         for output in llm_outputs:
             if output is None:
                 # Happens in streaming
@@ -351,7 +355,12 @@ class ChatOpenAI(BaseChatModel):
                     overall_token_usage[k] += v
                 else:
                     overall_token_usage[k] = v
-        return {"token_usage": overall_token_usage, "model_name": self.model_name}
+            if system_fingerprint is None:
+                system_fingerprint = output.get("system_fingerprint")
+        combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
+        if system_fingerprint:
+            combined["system_fingerprint"] = system_fingerprint
+        return combined
 
     def _stream(
         self,
@@ -367,14 +376,23 @@ class ChatOpenAI(BaseChatModel):
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
+            if not isinstance(chunk, dict):
+                chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
                 continue
-            delta = chunk["choices"][0]["delta"]
-            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            choice = chunk["choices"][0]
+            chunk = _convert_delta_to_message_chunk(
+                choice["delta"], default_chunk_class
+            )
+            finish_reason = choice.get("finish_reason")
+            generation_info = (
+                dict(finish_reason=finish_reason) if finish_reason is not None else None
+            )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     def _generate(
         self,
@@ -384,18 +402,12 @@ class ChatOpenAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if stream if stream is not None else self.streaming:
-            generation: Optional[ChatGenerationChunk] = None
-            for chunk in self._stream(
-                messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            ):
-                if generation is None:
-                    generation = chunk
-                else:
-                    generation += chunk
-            assert generation is not None
-            return ChatResult(generations=[generation])
-
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return _generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         response = self.completion_with_retry(
@@ -411,20 +423,26 @@ class ChatOpenAI(BaseChatModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        message_dicts = [convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
         generations = []
+        if not isinstance(response, dict):
+            response = response.dict()
         for res in response["choices"]:
-            message = _convert_dict_to_message(res["message"])
+            message = convert_dict_to_message(res["message"])
             gen = ChatGeneration(
                 message=message,
                 generation_info=dict(finish_reason=res.get("finish_reason")),
             )
             generations.append(gen)
         token_usage = response.get("usage", {})
-        llm_output = {"token_usage": token_usage, "model_name": self.model_name}
+        llm_output = {
+            "token_usage": token_usage,
+            "model_name": self.model_name,
+            "system_fingerprint": response.get("system_fingerprint", ""),
+        }
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
@@ -441,14 +459,23 @@ class ChatOpenAI(BaseChatModel):
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
+            if not isinstance(chunk, dict):
+                chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
                 continue
-            delta = chunk["choices"][0]["delta"]
-            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            choice = chunk["choices"][0]
+            chunk = _convert_delta_to_message_chunk(
+                choice["delta"], default_chunk_class
+            )
+            finish_reason = choice.get("finish_reason")
+            generation_info = (
+                dict(finish_reason=finish_reason) if finish_reason is not None else None
+            )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield chunk
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content)
+                await run_manager.on_llm_new_token(token=chunk.text, chunk=chunk)
 
     async def _agenerate(
         self,
@@ -458,17 +485,12 @@ class ChatOpenAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if stream if stream is not None else self.streaming:
-            generation: Optional[ChatGenerationChunk] = None
-            async for chunk in self._astream(
-                messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            ):
-                if generation is None:
-                    generation = chunk
-                else:
-                    generation += chunk
-            assert generation is not None
-            return ChatResult(generations=[generation])
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await _agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
@@ -486,11 +508,16 @@ class ChatOpenAI(BaseChatModel):
     def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
         openai_creds: Dict[str, Any] = {
-            "api_key": self.openai_api_key,
-            "api_base": self.openai_api_base,
-            "organization": self.openai_organization,
             "model": self.model_name,
         }
+        if not _is_openai_v1():
+            openai_creds.update(
+                {
+                    "api_key": self.openai_api_key,
+                    "api_base": self.openai_api_base,
+                    "organization": self.openai_organization,
+                }
+            )
         if self.openai_proxy:
             import openai
 
@@ -568,7 +595,7 @@ class ChatOpenAI(BaseChatModel):
                 "information on how messages are converted to tokens."
             )
         num_tokens = 0
-        messages_dict = [_convert_message_to_dict(m) for m in messages]
+        messages_dict = [convert_message_to_dict(m) for m in messages]
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
@@ -580,3 +607,45 @@ class ChatOpenAI(BaseChatModel):
         # every reply is primed with <im_start>assistant
         num_tokens += 3
         return num_tokens
+
+    def bind_functions(
+        self,
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+        function_call: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind functions (and other objects) to this chat model.
+
+        Args:
+            functions: A list of function definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, or callable. Pydantic
+                models and callables will be automatically converted to
+                their schema dictionary representation.
+            function_call: Which function to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any).
+            kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+        from langchain.chains.openai_functions.base import convert_to_openai_function
+
+        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
+        function_call_ = None
+        if function_call is not None:
+            if len(formatted_functions) != 1:
+                raise ValueError(
+                    "When specifying `function_call`, you must provide exactly one "
+                    "function."
+                )
+            if formatted_functions[0]["name"] != function_call:
+                raise ValueError(
+                    f"Function call {function_call} was specified, but the only "
+                    f"provided function was {formatted_functions[0]['name']}."
+                )
+            function_call_ = {"name": function_call}
+            kwargs = {**kwargs, "function_call": function_call_}
+        return super().bind(
+            functions=formatted_functions,
+            **kwargs,
+        )
