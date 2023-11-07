@@ -1,3 +1,3 @@
-from rag_Lancedb.chain import chain
+from rag_lancedb.chain import chain
 
 __all__ = ["chain"]

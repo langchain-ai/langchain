@@ -1,4 +1,4 @@
-# rag-Lancedb
+# rag-lancedb
 
 TODO: What does this package do
 
@@ -17,20 +17,20 @@ pip install -U "langchain-cli[serve]"
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package rag-Lancedb
+langchain app new my-app --package rag-lancedb
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add rag-Lancedb
+langchain app add rag-lancedb
 ```
 
 And add the following code to your `server.py` file:
 ```python
-from rag_Lancedb import chain as rag_Lancedb_chain
+from rag_lancedb import chain as rag_lancedb_chain
 
-add_routes(app, rag_Lancedb_chain, path="/rag-Lancedb")
+add_routes(app, rag_lancedb_chain, path="/rag-lancedb")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -55,12 +55,12 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/rag-Lancedb/playground](http://127.0.0.1:8000/rag-Lancedb/playground)  
+We can access the playground at [http://127.0.0.1:8000/rag-lancedb/playground](http://127.0.0.1:8000/rag-lancedb/playground)  
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/rag-Lancedb")
+runnable = RemoteRunnable("http://localhost:8000/rag-lancedb")
 ```

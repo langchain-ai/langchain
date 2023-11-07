@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rag-Lancedb"
+name = "rag-lancedb"
 version = "0.0.1"
 description = ""
 authors = []
@@ -17,7 +17,7 @@ fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
-export_module = "rag_Lancedb"
+export_module = "rag_lancedb"
 export_attr = "chain"
 
 [build-system]
