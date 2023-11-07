@@ -428,23 +428,7 @@ class PGVector(VectorStore):
             filter_by = self.EmbeddingStore.collection_id == collection.uuid
 
             if filter is not None:
-                filter_clauses = []
-                for key, value in filter.items():
-                    IN = "in"
-                    if isinstance(value, dict) and IN in map(str.lower, value):
-                        value_case_insensitive = {
-                            k.lower(): v for k, v in value.items()
-                        }
-                        filter_by_metadata = self.EmbeddingStore.cmetadata[
-                            key
-                        ].astext.in_(value_case_insensitive[IN])
-                        filter_clauses.append(filter_by_metadata)
-                    else:
-                        filter_by_metadata = self.EmbeddingStore.cmetadata[
-                            key
-                        ].astext == str(value)
-                        filter_clauses.append(filter_by_metadata)
-
+                filter_clauses = self._generate_filters(filter)
                 filter_by = sqlalchemy.and_(filter_by, *filter_clauses)
 
             _type = self.EmbeddingStore
@@ -464,6 +448,128 @@ class PGVector(VectorStore):
                 .all()
             )
         return results
+
+    def _generate_filters(
+        self,
+        filters: Optional[Dict[str, str]]
+    ) -> List[Any]:
+        """
+        Generate SQL WHERE clause from filter
+
+        Example filters:
+
+        {"column":"value"}
+        will result in:
+        WHERE langchain_pg_embedding.collection_id = 'xxxxx'::uuid::UUID AND (langchain_pg_embedding.cmetadata ->> 'column') = 'value'
+
+        {"column": {"in": ["value1", "value2"]}}
+        will result in:
+        WHERE langchain_pg_embedding.collection_id = 'xxxxx'::uuid::UUID AND (langchain_pg_embedding.cmetadata ->> 'column') IN ('value1', 'value2')
+
+        {"and":[
+            {"or":[
+                {"column1": "value1"},
+                {"column2": "value2"}
+            ]},
+            {"or":[
+                {"column3": "value3"},
+                {"column3": {"like": "value4%"}}
+            ]}
+        ]}
+        will result in:
+        WHERE langchain_pg_embedding.collection_id = 'xxxxx'::uuid::UUID
+            AND ((langchain_pg_embedding.cmetadata ->> 'column1') = 'value1'
+                OR (langchain_pg_embedding.cmetadata ->> 'column2') = 'value2')
+            AND ((langchain_pg_embedding.cmetadata ->> 'column3') = 'value3'
+                OR langchain_pg_embedding.cmetadata ->> 'column3' LIKE 'value4%')
+        """
+        AND = 'and'
+        OR = 'or'
+        IN = "in"
+        LIKE = "like"
+        EQUAL = "="
+        GREATER_THAN = ">"
+        LESS_THAN = "<"
+        GREATER_THAN_OR_EQUAL = ">="
+        LESS_THAN_OR_EQUAL = "<="
+
+        filter_clauses = []
+        for key, value in filters.items():
+
+            if isinstance(value, list):
+                # This is a AND or OR etc
+                # {"and" : [{"key":"value"}, {"key":"value1"}]}
+                sub_filter_clauses = []
+                for item in value:
+                    sub_filter_part = self._generate_filters(item)
+                    if len(sub_filter_part) == 1:
+                        sub_filter_part = sub_filter_part[0]
+                    sub_filter_clauses.append(sub_filter_part)
+
+                # Join the filter_clauses with AND or OR
+                if key.lower() == AND:
+                    and_filter_clause = sqlalchemy.and_(*sub_filter_clauses)
+                    filter_clauses.append(and_filter_clause)
+                elif key.lower() == OR:
+                    or_filter_clause = sqlalchemy.or_(sub_filter_clauses[0], sub_filter_clauses[1])
+                    filter_clauses.append(or_filter_clause)
+
+            elif isinstance(value, dict):
+                # {"key":{"OPERATOR": VALUE}} case
+                if IN in map(str.lower, value):
+                    # {"key":{"in":["value1", "value2"]}} case
+                    value_case_insensitive = {
+                        k.lower(): v for k, v in value.items()
+                    }
+                    filter_by_metadata = self.EmbeddingStore.cmetadata[
+                        key
+                    ].astext.in_(value_case_insensitive[IN])
+                    filter_clauses.append(filter_by_metadata)
+                if LIKE in map(str.lower, value):
+                    #{"key":{"like":"value%"}} case
+                    filter_by_metadata = self.EmbeddingStore.cmetadata[
+                        key
+                    ].astext.like(value[LIKE])
+                    filter_clauses.append(filter_by_metadata)
+                if EQUAL in map(str.lower, value):
+                    #{"key":{"=":"value"}} case
+                    filter_by_metadata = self.EmbeddingStore.cmetadata[
+                        key
+                    ].astext == str(value[EQUAL])
+                    filter_clauses.append(filter_by_metadata)
+                if GREATER_THAN in map(str.lower, value):
+                    #{"key":{">":"value"}} case
+                    filter_by_metadata = self.EmbeddingStore.cmetadata[
+                        key
+                    ].astext > (value[GREATER_THAN])
+                    filter_clauses.append(filter_by_metadata)
+                if GREATER_THAN_OR_EQUAL in map(str.lower, value):
+                    #{"key":{">=":"value"}} case
+                    filter_by_metadata = self.EmbeddingStore.cmetadata[
+                        key
+                    ].astext >= (value[GREATER_THAN])
+                    filter_clauses.append(filter_by_metadata)
+                if LESS_THAN in map(str.lower, value):
+                    #{"key":{"<":"value"}} case
+                    filter_by_metadata = self.EmbeddingStore.cmetadata[
+                        key
+                    ].astext < (value[GREATER_THAN])
+                    filter_clauses.append(filter_by_metadata)
+                if LESS_THAN_OR_EQUAL in map(str.lower, value):
+                    #{"key":{"<=":"value"}} case
+                    filter_by_metadata = self.EmbeddingStore.cmetadata[
+                        key
+                    ].astext <= (value[GREATER_THAN])
+                    filter_clauses.append(filter_by_metadata)
+
+            else:
+                # {"key":"value"} simple case
+                filter_by_metadata = self.EmbeddingStore.cmetadata[
+                    key
+                ].astext == str(value)
+                filter_clauses.append(filter_by_metadata)
+
+        return filter_clauses
 
     def similarity_search_by_vector(
         self,
