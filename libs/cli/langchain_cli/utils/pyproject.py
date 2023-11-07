@@ -1,8 +1,7 @@
 from pathlib import Path
-from typing import Iterable, cast, Dict, Any
+from typing import Any, Dict, Iterable
 
 from tomlkit import dump, inline_table, load
-from tomlkit.container import Container
 from tomlkit.items import InlineTable
 
 
