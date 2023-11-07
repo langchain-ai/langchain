@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Set, TypedDict
+from typing import Any, Dict, Optional, Set, TypedDict
 
 from tomlkit import load
 
@@ -35,7 +35,7 @@ class LangServeExport(TypedDict):
 
 def get_langserve_export(filepath: Path) -> LangServeExport:
     with open(filepath) as f:
-        data = load(f)
+        data: Dict[str, Any] = load(f)
     try:
         module = data["tool"]["langserve"]["export_module"]
         attr = data["tool"]["langserve"]["export_attr"]

@@ -18,7 +18,11 @@ from langchain_cli.utils.git import (
     parse_dependencies,
     update_repo,
 )
-from langchain_cli.utils.packages import get_langserve_export, get_package_root
+from langchain_cli.utils.packages import (
+    LangServeExport,
+    get_langserve_export,
+    get_package_root,
+)
 from langchain_cli.utils.pyproject import (
     add_dependencies_to_pyproject_toml,
     remove_dependencies_from_pyproject_toml,
@@ -102,7 +106,7 @@ def add(
 
     installed_destination_paths: List[Path] = []
     installed_destination_names: List[str] = []
-    installed_exports: List[Dict] = []
+    installed_exports: List[LangServeExport] = []
 
     for (git, ref), group_deps in grouped.items():
         if len(group_deps) == 1:
@@ -147,7 +151,7 @@ def add(
             project_root / "pyproject.toml",
             zip(installed_destination_names, installed_destination_paths),
         )
-    except ImportError:
+    except Exception:
         # Can fail if user modified/removed pyproject.toml
         typer.echo("Failed to add dependencies to pyproject.toml, continuing...")
 
@@ -228,12 +232,15 @@ def remove(
         if not package_dir.exists():
             typer.echo(f"Package {api_path} does not exist. Skipping...")
             continue
-        pyproject = package_dir / "pyproject.toml"
-        langserve_export = get_langserve_export(pyproject)
-        typer.echo(f"Removing {langserve_export['package_name']}...")
+        try:
+            pyproject = package_dir / "pyproject.toml"
+            langserve_export = get_langserve_export(pyproject)
+            typer.echo(f"Removing {langserve_export['package_name']}...")
 
-        shutil.rmtree(package_dir)
-        remove_deps.append(api_path)
+            shutil.rmtree(package_dir)
+            remove_deps.append(api_path)
+        except Exception:
+            pass
 
     try:
         remove_dependencies_from_pyproject_toml(project_pyproject, remove_deps)
