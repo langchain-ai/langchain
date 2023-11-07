@@ -457,7 +457,7 @@ class AmazonKendraRetriever(BaseRetriever):
         """
         result_items = self._kendra_query(query)
         top_k_docs = self._get_top_k_docs(result_items)
-        if self.score_confidence != "LOW":
+        if self.score_confidence != 0:
             # Filter results only if confidence higher than "LOW".
             self.validate_score_confidence()
             return self._filter_by_score_confidence(top_k_docs)
