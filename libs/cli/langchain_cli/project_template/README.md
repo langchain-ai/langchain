@@ -5,7 +5,7 @@
 Install the LangChain CLI if you haven't yet
 
 ```bash
-pip install -U "gigachain-cli[serve]"
+pip install -U "gigachain-cli"
 ```
 
 ## Adding packages

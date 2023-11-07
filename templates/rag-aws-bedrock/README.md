@@ -29,7 +29,7 @@ You should also set the following environment variables to reflect your AWS prof
 First, install the LangChain CLI:
 
 ```shell
-pip install -U "gigachain-cli[serve]"
+pip install -U gigachain-cli
 ```
 
 To create a new LangChain project and install this as the only package:
