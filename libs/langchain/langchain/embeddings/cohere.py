@@ -95,8 +95,6 @@ class CohereEmbeddings(BaseModel, Embeddings):
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        input_type = "search_document" if self.input_type is None else self.input_type
-
         """Call out to Cohere's embedding endpoint.
 
         Args:
@@ -108,14 +106,12 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.embed(
             model=self.model,
             texts=texts,
-            input_type=input_type,
+            input_type=self.input_type,
             truncate=self.truncate,
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        input_type = "search_document" if self.input_type is None else self.input_type
-
         """Async call out to Cohere's embedding endpoint.
 
         Args:
@@ -127,14 +123,12 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = await self.async_client.embed(
             model=self.model,
             texts=texts,
-            input_type=input_type,
+            input_type=self.input_type,
             truncate=self.truncate,
         )
         return [list(map(float, e)) for e in embeddings.embeddings]
 
     def embed_query(self, text: str) -> List[float]:
-        input_type = "search_query" if self.input_type is None else self.input_type
-
         """Call out to Cohere's embedding endpoint.
 
         Args:
@@ -146,14 +140,12 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.embed(
             model=self.model,
             texts=[text],
-            input_type=input_type,
+            input_type=self.input_type,
             truncate=self.truncate,
         ).embeddings
         return [list(map(float, e)) for e in embeddings][0]
 
     async def aembed_query(self, text: str) -> List[float]:
-        input_type = "search_query" if self.input_type is None else self.input_type
-
         """Async call out to Cohere's embedding endpoint.
 
         Args:
@@ -165,7 +157,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = await self.async_client.embed(
             model=self.model,
             texts=[text],
-            input_type=input_type,
+            input_type=self.input_type,
             truncate=self.truncate,
         )
         return [list(map(float, e)) for e in embeddings.embeddings][0]
