@@ -109,7 +109,7 @@ while(True):
 
 Инструкцию о получении ключей доступа к GigaChat вы можете посмотреть [здесь](docs/extras/integrations/chat/README.md).
 
-Развернутую версию примера смотрите в notebook [Работа с GigaChat](docs/extras/integrations/chat/gigachat.ipynb).
+Развернутую версию примера смотрите в notebook [Работа с GigaChat](docs/extras/integrations/chat/gigachat.ipynb). Здесь же показан пример работы со стримингом.
 
 Больше примеров в [коллекции](#коллекция-примеров). 
 
